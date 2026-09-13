@@ -68,13 +68,18 @@ final class CB_Reports_Composer_Compiler_Test extends WP_UnitTestCase {
 		);
 
 		self::assertSame(
-			[ 'text', 'text', 'text', 'container', 'text', 'page_footer' ],
+			[ 'columns', 'rule', 'heading', 'callout', 'callout', 'page_footer' ],
 			$types
 		);
-		self::assertSame( 'Brand marker', $document['blocks'][0]->payload() );
-		self::assertStringContainsString( 'Maintenance Report', (string) $document['blocks'][1]->payload() );
-		self::assertSame( 'container', $document['blocks'][3]->type() );
-		self::assertStringContainsString( 'Status marker', (string) $document['blocks'][4]->payload() );
+
+		/** @var array{columns:list<list<RenderBlock>>,weights:list<float>} $header */
+		$header = $document['blocks'][0]->payload();
+		self::assertSame( 'Brand marker', $header['columns'][0][0]->payload() );
+		self::assertSame( 'heading', $header['columns'][0][1]->type() );
+		self::assertSame( 'Maintenance Report', $header['columns'][0][1]->payload()['text'] );
+		self::assertSame( 'Notes / Observations', $document['blocks'][2]->payload()['text'] );
+		self::assertSame( 'Note marker', $document['blocks'][3]->payload()['title'] );
+		self::assertSame( 'Status marker', $document['blocks'][4]->payload()['title'] );
 	}
 
 	public function test_compiler_normalizes_untrusted_template_structure_before_dispatch(): void {
