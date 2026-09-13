@@ -31,6 +31,21 @@ The Modal Foundation includes the additive public `confirmCheck: { label }` opti
 
 `Stack` is the shared vertical composition primitive (`.cb-core-stack`, plus compact/loose spacing variants). `Field` and Stack share one semantic markup contract across Core Admin and standalone WordPress admin screens. Standalone consumers use the narrow WordPress-native Form Composition adapter so WordPress keeps ownership of native controls, colours and chrome while Base owns only field grouping and vertical rhythm; see `FORM-COMPOSITION-FOUNDATION.md`. Child components keep ownership of their internal geometry. `Form Controls` owns the Core-scoped native file-input and `::file-selector-button` presentation, so modules must not redraw upload controls locally.
 
+## Design Editor and Designer Mode
+
+The shared Design Foundation has two public consumption levels:
+
+- `CB\Core\Design\Editor\Assets::enqueue()` loads the Design Editor engine/shell contracts and `@cb-core/design-editor` for embedded or consumer-composed editor experiences.
+- `CB\Core\Design\Editor\Assets::enqueue_designer_mode()` adds the canonical Base-owned Designer Mode launch, header/chrome composition, responsive shell geometry and focus/fullscreen lifecycle.
+
+The semantic `design-editor` requirement maps to the engine/shell level. Consumers that want the canonical fullscreen Designer experience call `enqueue_designer_mode()` rather than rebuilding that chrome themselves.
+
+Designer Mode is self-contained for the Base presentation it generates. A standalone WordPress admin consumer does not add `.cb-core-wrap`, import private Base handles or load the full Core Admin theme as a workaround. Base may load narrow shared primitives, such as the Button Foundation, when Designer chrome requires them.
+
+The canonical Designer responsive contract is `>1280px` three columns, `901–1280px` two columns with the sidebar below, and `≤900px` one vertical column. Consumers own content inside palette/canvas/sidebar slots but must not replace the shell grid, fullscreen geometry, panel rails or canonical Designer toolbar presentation.
+
+The normative public contract is `DESIGNER-MODE.md`.
+
 ## Core Admin component contracts
 
 The frozen component layer includes Button, Badge, StateBadge, Status, Notice, Busy, Field, Form Controls, Stack, CheckRow, ChoiceGroup, ObjectPicker, SelectPicker, Toolbar, Disclosure, MasterSwitch, ChoiceCard/RadioCard, Empty State, Overview cards, metric tiles, Integration Grid, Detail Rows, KV Table and Scrollbar.
