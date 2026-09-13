@@ -25,6 +25,7 @@ final class Assets {
 	public const DESIGNER_MODE_SCRIPT = 'cb-core-designer-mode';
 	private const TOKEN_STYLE = 'cb-core-css-tokens';
 	private const BUTTON_STYLE = 'cb-core-css-buttons';
+	private const FORM_CONTROL_STYLE = 'cb-core-css-form-controls';
 	private const MOTION_MODULE_ID = '@cb-core/design-motion';
 
 	public static function enqueue(): void {
@@ -68,8 +69,8 @@ final class Assets {
 	 * `data-cb-design-*` shell contracts and domain callbacks. Base owns launch/
 	 * focus chrome, brand, shared labels, canonical composition primitives and
 	 * the private Designer Mode source path. Designer Mode also owns the narrow
-	 * shared Button presentation required by the Base chrome it composes;
-	 * consumers do not need the full Core Admin theme.
+	 * shared Button and Form Control presentation required by the Base chrome and
+	 * panel grammar it composes; consumers do not need the full Core Admin theme.
 	 */
 	public static function enqueue_designer_mode( string $title = '' ): void {
 		self::enqueue();
@@ -87,6 +88,13 @@ final class Assets {
 		);
 
 		wp_enqueue_style(
+			self::FORM_CONTROL_STYLE,
+			CB_CORE_URL . 'assets/css/components/form-controls.css',
+			[ self::TOKEN_STYLE ],
+			self::asset_version( 'assets/css/components/form-controls.css' )
+		);
+
+		wp_enqueue_style(
 			self::DESIGNER_MODE_STYLE,
 			CB_CORE_URL . 'assets/css/design/designer-mode.css',
 			[ self::SHELL_STYLE, self::BUTTON_STYLE ],
@@ -96,7 +104,7 @@ final class Assets {
 		wp_enqueue_style(
 			self::DESIGNER_COMPOSITION_STYLE,
 			CB_CORE_URL . 'assets/css/design/designer-composition.css',
-			[ self::DESIGNER_MODE_STYLE ],
+			[ self::DESIGNER_MODE_STYLE, self::FORM_CONTROL_STYLE ],
 			self::asset_version( 'assets/css/design/designer-composition.css' )
 		);
 
@@ -107,6 +115,17 @@ final class Assets {
 			self::asset_version( 'assets/js/features/designer-launch.js' ),
 			true
 		);
+
+		// Form Controls deliberately scopes itself to `.cb-core-form-scope` so
+		// unrelated WordPress admin controls remain untouched. Designer Mode owns
+		// that presentation boundary, so Base marks each consumer shell before the
+		// launch runtime hydrates it; consumers never add this scope themselves.
+		wp_add_inline_script(
+			self::DESIGNER_MODE_SCRIPT,
+			"document.querySelectorAll('[data-cb-design-shell]').forEach((shell) => shell.classList.add('cb-core-form-scope'));",
+			'before'
+		);
+
 		wp_localize_script(
 			self::DESIGNER_MODE_SCRIPT,
 			'cbCoreDesignerLaunch',
