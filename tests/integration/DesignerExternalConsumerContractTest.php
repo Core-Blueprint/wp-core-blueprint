@@ -18,17 +18,24 @@ final class CB_Designer_External_Consumer_Contract_Test extends WP_UnitTestCase 
 		self::assertStringNotContainsString( 'cb-core-wrap', $fixture );
 	}
 
-	public function test_designer_mode_enqueues_the_narrow_button_presentation_it_owns(): void {
+	public function test_designer_mode_enqueues_its_narrow_presentation_dependencies(): void {
 		DesignEditorAssets::enqueue_designer_mode( 'External Designer' );
 
+		self::assertTrue( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
 		self::assertTrue( wp_style_is( DesignEditorAssets::SHELL_STYLE, 'enqueued' ) );
 		self::assertTrue( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) );
 		self::assertTrue( wp_style_is( DesignEditorAssets::DESIGNER_MODE_STYLE, 'enqueued' ) );
 
 		$styles   = wp_styles();
+		$shell    = $styles->registered[ DesignEditorAssets::SHELL_STYLE ] ?? null;
+		$buttons  = $styles->registered['cb-core-css-buttons'] ?? null;
 		$designer = $styles->registered[ DesignEditorAssets::DESIGNER_MODE_STYLE ] ?? null;
 
+		self::assertInstanceOf( _WP_Dependency::class, $shell );
+		self::assertInstanceOf( _WP_Dependency::class, $buttons );
 		self::assertInstanceOf( _WP_Dependency::class, $designer );
+		self::assertContains( 'cb-core-css-tokens', $shell->deps );
+		self::assertContains( 'cb-core-css-tokens', $buttons->deps );
 		self::assertContains( DesignEditorAssets::SHELL_STYLE, $designer->deps );
 		self::assertContains( 'cb-core-css-buttons', $designer->deps );
 	}
@@ -56,9 +63,9 @@ final class CB_Designer_External_Consumer_Contract_Test extends WP_UnitTestCase 
 	}
 
 	public function test_collapsible_shell_keeps_the_canonical_three_two_one_geometry(): void {
-		$root          = dirname( __DIR__, 2 );
-		$designer_css  = (string) file_get_contents( $root . '/assets/css/design/designer-mode.css' );
-		$shell_css     = (string) file_get_contents( $root . '/assets/css/design/editor-shell.css' );
+		$root         = dirname( __DIR__, 2 );
+		$designer_css = (string) file_get_contents( $root . '/assets/css/design/designer-mode.css' );
+		$shell_css    = (string) file_get_contents( $root . '/assets/css/design/editor-shell.css' );
 
 		self::assertStringContainsString(
 			"grid-template-columns:\n\t\tvar(--cb-design-left-track)\n\t\tminmax(0, 1fr)\n\t\tvar(--cb-design-right-track);",
