@@ -19,13 +19,25 @@
 	vertical-align: middle;
 }
 
+/*
+ * These controls are always toolbar-visible when their capability exists.
+ * Responsive drawer launchers deliberately do not participate in this display
+ * rule: Designer Mode owns their visibility and only exposes them at <=1280px.
+ */
+.cb-core-design-shell__toolbar--designer :is(
+	.cb-core-design-shell__icon-button,
+	.cb-core-design-shell__compact-menu-trigger,
+	[data-cb-design-shell-primary-action]
+) {
+	display: inline-flex !important;
+}
+
 .cb-core-design-shell__toolbar--designer :is(
 	.cb-core-design-shell__icon-button,
 	.cb-core-design-shell__drawer-launcher,
 	.cb-core-design-shell__compact-menu-trigger,
 	[data-cb-design-shell-primary-action]
 ) {
-	display: inline-flex !important;
 	align-items: center !important;
 	justify-content: center !important;
 	align-self: center;

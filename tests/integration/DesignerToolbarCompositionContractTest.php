@@ -75,6 +75,28 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'box-shadow: inset 0 0 0 1px currentColor !important;', $toolbar_css );
 	}
 
+	public function test_drawer_launcher_visibility_remains_owned_by_responsive_designer_mode(): void {
+		$designer_css = $this->source( 'assets/css/design/designer-mode.css' );
+		$toolbar_css  = $this->source( 'assets/css/design/designer-toolbar.css' );
+
+		self::assertStringContainsString(
+			".cb-core-design-shell__drawer-launcher {\n\tdisplay: none !important;\n}",
+			$designer_css
+		);
+		self::assertMatchesRegularExpression(
+			'/@media \(max-width: 1280px\).*?\.cb-core-design-shell__drawer-launcher\s*\{\s*display:\s*inline-flex !important;/s',
+			$designer_css
+		);
+		self::assertStringContainsString(
+			".cb-core-design-shell__icon-button,\n\t.cb-core-design-shell__compact-menu-trigger,\n\t[data-cb-design-shell-primary-action]\n) {\n\tdisplay: inline-flex !important;",
+			$toolbar_css
+		);
+		self::assertStringContainsString(
+			".cb-core-design-shell__icon-button,\n\t.cb-core-design-shell__drawer-launcher,\n\t.cb-core-design-shell__compact-menu-trigger,\n\t[data-cb-design-shell-primary-action]\n) {\n\talign-items: center !important;",
+			$toolbar_css
+		);
+	}
+
 	public function test_compact_toolbar_presentation_is_base_owned_and_not_mail_owned(): void {
 		$css         = $this->source( 'assets/css/design/designer-mode.css' );
 		$toolbar_css = $this->source( 'assets/css/design/designer-toolbar.css' );
