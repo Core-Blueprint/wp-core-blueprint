@@ -27,10 +27,10 @@ final class Assets {
 	private const MOTION_MODULE_ID = '@cb-core/design-motion';
 
 	public static function enqueue(): void {
-		// The global Admin Theme normally provides semantic tokens on wp-admin,
-		// but this public editor boundary must not depend on that incidental load
-		// order. Enqueueing the same canonical handle is idempotent and keeps an
-		// explicitly opted-out/standalone host able to render the shared shell.
+		// The global Admin Theme normally enqueues semantic tokens first on
+		// wp-admin. This public editor boundary still owns the same canonical
+		// stylesheet dependency so its asset graph does not depend on incidental
+		// enqueue order. Theme-state resolution remains owned by AdminTheme.
 		wp_enqueue_style(
 			self::TOKEN_STYLE,
 			CB_CORE_URL . 'assets/css/tokens.css',
