@@ -22,14 +22,26 @@ final class Assets {
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
 	public const DESIGNER_MODE_SCRIPT = 'cb-core-designer-mode';
+	private const TOKEN_STYLE = 'cb-core-css-tokens';
 	private const BUTTON_STYLE = 'cb-core-css-buttons';
 	private const MOTION_MODULE_ID = '@cb-core/design-motion';
 
 	public static function enqueue(): void {
+		// The global Admin Theme normally provides semantic tokens on wp-admin,
+		// but this public editor boundary must not depend on that incidental load
+		// order. Enqueueing the same canonical handle is idempotent and keeps an
+		// explicitly opted-out/standalone host able to render the shared shell.
+		wp_enqueue_style(
+			self::TOKEN_STYLE,
+			CB_CORE_URL . 'assets/css/tokens.css',
+			[],
+			self::asset_version( 'assets/css/tokens.css' )
+		);
+
 		wp_enqueue_style(
 			self::SHELL_STYLE,
 			CB_CORE_URL . 'assets/css/design/editor-shell.css',
-			[ 'cb-core-css-tokens' ],
+			[ self::TOKEN_STYLE ],
 			self::asset_version( 'assets/css/design/editor-shell.css' )
 		);
 
@@ -68,7 +80,7 @@ final class Assets {
 		wp_enqueue_style(
 			self::BUTTON_STYLE,
 			CB_CORE_URL . 'assets/css/components/buttons.css',
-			[ 'cb-core-css-tokens' ],
+			[ self::TOKEN_STYLE ],
 			self::asset_version( 'assets/css/components/buttons.css' )
 		);
 
