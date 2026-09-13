@@ -4,7 +4,7 @@ Status: **public v1 Designer launch + composition contract**.
 
 > **Base owns Designer Mode. Consumers own what is being designed.**
 
-Base owns the shared Designer Shell chrome, viewport lifecycle, launch transition, responsive shell geometry, canonical composition grammar and focus/fullscreen behavior. Consumers own their editor semantics, domain content, persistence and business behavior.
+Base owns the shared Designer Shell chrome, viewport lifecycle, launch transition, responsive shell geometry, adaptive toolbar, canonical composition grammar and focus/fullscreen behavior. Consumers own their editor semantics, domain content, persistence and business behavior.
 
 ## Public entry points
 
@@ -26,7 +26,7 @@ The semantic `design-editor` Foundation requirement resolves to this engine/shel
 CB\Core\Design\Editor\Assets::enqueue_designer_mode( __( 'Example Designer', 'example' ) );
 ```
 
-This includes the editor engine and adds the canonical Designer Mode launch, toolbar composition, Button presentation required by Base-generated chrome, Form Control presentation inside the Designer, panel rails/collapse behavior, canonical panel/canvas composition primitives, responsive drawers and focus/fullscreen lifecycle.
+This includes the editor engine and adds the canonical Designer Mode launch, adaptive toolbar composition, Button presentation required by Base-generated chrome, Form Control presentation inside the Designer, panel rails/collapse behavior, canonical panel/canvas composition primitives, responsive drawers and focus/fullscreen lifecycle.
 
 `enqueue_designer_mode()` is presentation-self-contained for the Base chrome and composition grammar it exposes. A standalone WordPress admin consumer does **not** need `.cb-core-wrap`, `.cb-core-form-scope`, private Base asset handles or the full Core Admin theme in order to obtain the canonical Designer launch, controls and shell presentation. Base applies the narrow Designer form scope itself.
 
@@ -70,7 +70,7 @@ Direct mode rules:
 - Base gives the server-rendered shell fullscreen viewport composition from first paint; consumers must not add overlays, body masks, programmatic launch-button clicks or their own fullscreen geometry.
 - Base does not create the **Design with Core Blueprint** manual launch control in direct mode.
 - Base hydrates the existing Designer Shell fullscreen controller and keeps the direct route visually fullscreen throughout entry and exit.
-- Closing fullscreen, including Escape when no responsive drawer is open, navigates directly to the declared exit URL. The underlying WordPress admin page is not an intermediate visual state.
+- Closing fullscreen, including Escape when no responsive drawer or compact toolbar disclosure is open, navigates directly to the declared exit URL. The underlying WordPress admin page is not an intermediate visual state.
 - Consumer Designer Shell roots remain geometrically neutral. Outer margins, fixed positioning, viewport height and fullscreen transitions belong to Base.
 
 Direct mode is transient UI state. It does not change the consumer's document/workflow model and must not be persisted as domain data.
@@ -96,6 +96,62 @@ Responsive drawer behavior is also Base-owned:
 - returning to `>1280px` restores the persistent three-rail shell.
 
 Consumers must not redefine the Designer Shell column/drawer model, reorder these structural regions with local CSS, add their own responsive overlays/backdrops, or introduce product-specific breakpoints that replace this contract. A consumer may style layout **inside** its palette, canvas or sidebar slots only where the public composition contract deliberately leaves domain content open.
+
+## Adaptive toolbar composition
+
+The canonical Designer toolbar is capability-driven. Consumers declare controls and actions; Base decides whether those controls remain explicit or are compressed into compact disclosures when horizontal space becomes constrained.
+
+Base currently measures the **actual toolbar width** rather than relying on a product-specific viewport breakpoint. The internal compact threshold is not part of the public consumer API and may evolve without requiring consumer changes.
+
+Wide toolbar behavior:
+
+- viewport controls remain explicit when the consumer exposes `data-cb-design-shell-viewport` controls;
+- Undo/Redo, fullscreen/exit and the primary Save action remain explicit;
+- desktop palette/sidebar collapse controls keep their normal shell presentation.
+
+Compact toolbar behavior:
+
+- viewport controls are represented by one **View** disclosure whose trigger follows the active viewport icon;
+- Undo/Redo plus fullscreen/exit are represented by one **Actions** disclosure;
+- the primary action declared with `data-cb-design-shell-primary-action` stays pinned and is never moved into an overflow disclosure;
+- responsive left/right drawer openers stay pinned;
+- status text and redundant explicit controls are hidden while their compact equivalents are active;
+- only one disclosure may be open at a time;
+- clicking outside closes the open disclosure;
+- Escape closes the disclosure first and restores focus to its trigger before drawer/fullscreen Escape behavior may continue.
+
+The compact disclosure uses proxy controls that forward activation to the original control. Disabled, active, pressed, label and icon state are synchronized from the original control, so consumer-owned callbacks and command authority remain unchanged.
+
+### Extending the compact toolbar
+
+Built-in Designer capabilities are discovered automatically. A consumer may opt an additional toolbar button, or a wrapper containing toolbar buttons, into one of the two canonical compact groups:
+
+```html
+<button
+    type="button"
+    data-cb-design-shell-compact-group="actions"
+>
+    Duplicate
+</button>
+```
+
+or:
+
+```html
+<div data-cb-design-shell-compact-group="view">
+    <button type="button">Outline</button>
+    <button type="button">Preview</button>
+</div>
+```
+
+Supported public values are:
+
+- `data-cb-design-shell-compact-group="view"`
+- `data-cb-design-shell-compact-group="actions"`
+
+Consumers keep ownership of what those actions do. Base owns discovery, compact placement, disclosure presentation, keyboard/focus behavior and responsive compression. Do not place the primary Save action inside a compact group; `data-cb-design-shell-primary-action` is the canonical pinned action contract.
+
+Consumers must not implement their own mobile toolbar, overflow menu, compact breakpoint or duplicate proxy callbacks around these actions.
 
 ## Canonical composition grammar
 
@@ -219,6 +275,7 @@ Base owns:
 - launch-control spacing and branded presentation;
 - canonical Designer brand/header composition;
 - shared history/viewport/fullscreen/save-control presentation;
+- adaptive toolbar compression, View/Actions disclosures, pinned primary action and compact-action focus/state synchronization;
 - first-paint viewport composition for direct mode;
 - fullscreen/focus lifecycle and Escape handling;
 - palette/canvas/sidebar structural layout;
@@ -235,6 +292,7 @@ Consumers own:
 
 - deciding which route should request manual or direct mode;
 - rendering the shared shell markup and selecting applicable public composition primitives;
+- declaring optional additional compact-toolbar actions through the public grouping attribute;
 - deciding what objects/content/workflows are being edited;
 - palette item labels and semantics, not their shared presentation;
 - domain canvas rendering;
@@ -252,6 +310,7 @@ A Designer Mode consumer must not:
 - require or add `.cb-core-wrap` or `.cb-core-form-scope` as a presentation workaround;
 - enqueue private `cb-core-css-*` handles or Base CSS filenames directly;
 - reproduce the launch control or Base toolbar locally;
+- implement a product-specific compact toolbar, overflow dropdown, responsive toolbar breakpoint or duplicate action proxy layer;
 - implement its own fullscreen/focus overlay, fixed viewport shell or Escape lifecycle;
 - override `.cb-core-design-shell__workspace` / `__workspace--collapsible` desktop rail or responsive drawer geometry;
 - add consumer-owned responsive drawer toggles, backdrops or sidebar stacking rules;
@@ -275,6 +334,9 @@ Before a Base Designer change is considered release-ready, source/regression cov
 - `>1280px` persistent three-rail geometry;
 - `≤1280px` canvas-first off-canvas drawers with no palette/sidebar stacking;
 - left/right drawer open/close, backdrop, exclusivity, Escape and focus-return behavior;
+- wide toolbar explicit-control presentation;
+- constrained-width View and Actions disclosures with Save and drawer controls pinned;
+- compact toolbar outside-click, Escape, focus-return, disabled/active state synchronization and custom `view`/`actions` group discovery;
 - light and dark presentation where the host provides supported Core Blueprint tokens/theme state;
 - fullscreen, Escape and focus behavior;
 - keyboard/focus order for canonical chrome;
