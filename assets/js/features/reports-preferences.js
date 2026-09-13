@@ -1,19 +1,21 @@
 /**
  * Core Blueprint - Preferences → Reports Designer
  *
- * Reports owns branding values, validation, preview requests and persistence.
- * Base owns Designer Mode launch, shell, toolbar, responsive composition and
- * save-state presentation.
+ * Reports owns branding values, Composer state, validation, preview requests
+ * and persistence. Base owns Designer Mode launch, shell, toolbar, responsive
+ * composition and save-state presentation.
  *
  * @since 1.0.0
  */
 
-import { qs, apiPost } from '../core/dom.js';
+import { qs, qsa, apiPost } from '../core/dom.js';
 import { createDesignerShell } from '@cb-core/design-editor';
 
-const dataEl = document.getElementById( 'wp-script-module-data-@cb-core/reports-preferences' );
-const data   = dataEl ? JSON.parse( dataEl.textContent ) : {};
-const i18n   = data.i18n || {};
+const dataEl        = document.getElementById( 'wp-script-module-data-@cb-core/reports-preferences' );
+const data          = dataEl ? JSON.parse( dataEl.textContent ) : {};
+const i18n          = data.i18n || {};
+const blockLabels   = data.blockLabels || {};
+const composerUi    = data.composerUi || {};
 
 const FORM = qs( '#cb-core-branding-form' );
 if ( FORM ) {
@@ -31,11 +33,34 @@ if ( FORM ) {
 	const resetBtn          = qs( '#cb-core-reset-branding', FORM );
 	const previewFrame      = qs( '[data-cb-report-preview]', FORM );
 	const previewState      = qs( '[data-cb-report-preview-state]', FORM );
+	const paletteBody       = qs( '.cb-core-design-shell__palette .cb-core-design-shell__panel-body', FORM );
+	const sidebarBody       = qs( '.cb-core-design-shell__sidebar .cb-core-design-shell__panel-body', FORM );
 
 	if ( shell ) {
 		createDesignerShell( shell );
 	}
 
+	const normalizeClientTemplate = ( raw ) => ( {
+		schema_version: Number( raw?.schema_version ) || 1,
+		blocks: Array.isArray( raw?.blocks )
+			? raw.blocks
+				.filter( ( block ) => block && typeof block.type === 'string' )
+				.map( ( block ) => ( {
+					id: block.id || block.type,
+					type: block.type,
+					enabled: block.enabled !== false,
+					settings: {},
+				} ) )
+			: [],
+	} );
+
+	let composer = normalizeClientTemplate( data.composer || {} );
+	let selectedBlockType = composer.blocks[0]?.type || '';
+	let blockList = null;
+	let inspectorTitle = null;
+	let enabledControl = null;
+	let moveUpBtn = null;
+	let moveDownBtn = null;
 	let mediaFrame = null;
 	let previewTimer = null;
 	let previewSequence = 0;
@@ -61,6 +86,114 @@ if ( FORM ) {
 			return fallback;
 		}
 		return message;
+	};
+
+	const blockLabel = ( type ) => blockLabels[ type ] || type.replaceAll( '_', ' ' );
+	const selectedBlock = () => composer.blocks.find( ( block ) => block.type === selectedBlockType ) || null;
+	const isStructuralBlock = ( block ) => block?.type === 'header' || block?.type === 'footer';
+
+	const buildComposerControls = () => {
+		if ( paletteBody ) {
+			const section = document.createElement( 'section' );
+			section.className = 'cb-core-design-shell__panel-section';
+
+			const title = document.createElement( 'h3' );
+			title.className = 'cb-core-design-shell__panel-section-title';
+			title.textContent = composerUi.blocks || 'Blocks';
+
+			blockList = document.createElement( 'div' );
+			blockList.className = 'cb-core-design-shell__palette-grid';
+			blockList.dataset.cbReportBlockList = '';
+			section.append( title, blockList );
+			paletteBody.append( section );
+		}
+
+		if ( sidebarBody ) {
+			const section = document.createElement( 'section' );
+			section.className = 'cb-core-design-shell__panel-section';
+			section.dataset.cbReportBlockInspector = '';
+
+			inspectorTitle = document.createElement( 'h3' );
+			inspectorTitle.className = 'cb-core-design-shell__panel-section-title';
+
+			const enabledField = document.createElement( 'label' );
+			enabledField.className = 'cb-core-design-shell__field';
+			const enabledLabel = document.createElement( 'span' );
+			enabledLabel.className = 'cb-core-design-shell__field-label';
+			enabledLabel.textContent = composerUi.visible || 'Visible';
+			enabledControl = document.createElement( 'input' );
+			enabledControl.type = 'checkbox';
+			enabledControl.dataset.cbReportBlockEnabled = '';
+			enabledField.append( enabledLabel, enabledControl );
+
+			const actions = document.createElement( 'div' );
+			actions.className = 'cb-core-design-shell__panel-actions';
+			moveUpBtn = document.createElement( 'button' );
+			moveUpBtn.type = 'button';
+			moveUpBtn.className = 'button';
+			moveUpBtn.textContent = composerUi.moveUp || 'Move up';
+			moveUpBtn.dataset.cbReportBlockMoveUp = '';
+			moveDownBtn = document.createElement( 'button' );
+			moveDownBtn.type = 'button';
+			moveDownBtn.className = 'button';
+			moveDownBtn.textContent = composerUi.moveDown || 'Move down';
+			moveDownBtn.dataset.cbReportBlockMoveDown = '';
+			actions.append( moveUpBtn, moveDownBtn );
+
+			section.append( inspectorTitle, enabledField, actions );
+			sidebarBody.prepend( section );
+		}
+	};
+
+	const renderComposerControls = () => {
+		const selected = selectedBlock();
+		if ( blockList ) {
+			blockList.replaceChildren();
+			composer.blocks.forEach( ( block ) => {
+				const button = document.createElement( 'button' );
+				button.type = 'button';
+				button.className = 'cb-core-design-shell__palette-item';
+				button.dataset.cbReportBlock = block.type;
+				button.setAttribute( 'aria-pressed', block.type === selectedBlockType ? 'true' : 'false' );
+				button.textContent = blockLabel( block.type ) + ( block.enabled ? '' : ` · ${ composerUi.hidden || 'Hidden' }` );
+				button.addEventListener( 'click', () => {
+					selectedBlockType = block.type;
+					renderComposerControls();
+				} );
+				blockList.append( button );
+			} );
+		}
+
+		if ( ! selected ) return;
+		if ( inspectorTitle ) inspectorTitle.textContent = blockLabel( selected.type );
+		const index = composer.blocks.findIndex( ( block ) => block.type === selected.type );
+		const structural = isStructuralBlock( selected );
+		if ( enabledControl ) {
+			enabledControl.checked = selected.enabled !== false;
+			enabledControl.disabled = structural;
+		}
+		if ( moveUpBtn ) moveUpBtn.disabled = structural || index <= 1;
+		if ( moveDownBtn ) moveDownBtn.disabled = structural || index < 0 || index >= composer.blocks.length - 2;
+	};
+
+	const applyComposer = ( next ) => {
+		if ( ! next || ! Array.isArray( next.blocks ) ) return;
+		composer = normalizeClientTemplate( next );
+		if ( ! composer.blocks.some( ( block ) => block.type === selectedBlockType ) ) {
+			selectedBlockType = composer.blocks[0]?.type || '';
+		}
+		renderComposerControls();
+	};
+
+	const moveSelectedBlock = ( direction ) => {
+		const selected = selectedBlock();
+		if ( ! selected || isStructuralBlock( selected ) ) return;
+		const index = composer.blocks.findIndex( ( block ) => block.type === selected.type );
+		const target = index + direction;
+		if ( target < 1 || target > composer.blocks.length - 2 ) return;
+		[ composer.blocks[ index ], composer.blocks[ target ] ] = [ composer.blocks[ target ], composer.blocks[ index ] ];
+		renderComposerControls();
+		schedulePreview();
 	};
 
 	const updateLogoPreview = ( url ) => {
@@ -98,6 +231,11 @@ if ( FORM ) {
 		accent_color: colorHexEl?.value || colorEl?.value || '',
 	} );
 
+	const reportsPayload = () => ( {
+		...brandingPayload(),
+		template: JSON.stringify( composer ),
+	} );
+
 	const applyBranding = ( values ) => {
 		if ( logoIdEl && values.logo_attachment_id !== undefined ) {
 			logoIdEl.value = String( values.logo_attachment_id ?? 0 );
@@ -124,7 +262,7 @@ if ( FORM ) {
 		setPreviewState( i18n.previewLoading || 'Rendering report preview…', 'pending' );
 
 		try {
-			const response = await apiPost( 'cb_core_preview_report_branding', nonce, brandingPayload() );
+			const response = await apiPost( 'cb_core_preview_report_branding', nonce, reportsPayload() );
 			if ( requestSequence !== previewSequence ) return;
 
 			if ( ! response?.success || ! response.data?.html ) {
@@ -149,10 +287,23 @@ if ( FORM ) {
 		}
 	};
 
-	const schedulePreview = () => {
+	function schedulePreview() {
 		window.clearTimeout( previewTimer );
 		previewTimer = window.setTimeout( renderPreview, 180 );
-	};
+	}
+
+	buildComposerControls();
+	renderComposerControls();
+
+	enabledControl?.addEventListener( 'change', () => {
+		const selected = selectedBlock();
+		if ( ! selected || isStructuralBlock( selected ) ) return;
+		selected.enabled = enabledControl.checked;
+		renderComposerControls();
+		schedulePreview();
+	} );
+	moveUpBtn?.addEventListener( 'click', () => moveSelectedBlock( -1 ) );
+	moveDownBtn?.addEventListener( 'click', () => moveSelectedBlock( 1 ) );
 
 	colorEl?.addEventListener( 'input', ( event ) => {
 		const hex = event.target.value;
@@ -226,7 +377,7 @@ if ( FORM ) {
 		if ( resetBtn ) resetBtn.disabled = true;
 
 		try {
-			const response = await apiPost( 'cb_core_save_report_branding', nonce, brandingPayload() );
+			const response = await apiPost( 'cb_core_save_report_branding', nonce, reportsPayload() );
 			if ( ! response?.success ) {
 				setSaveState( 'error' );
 				setPreviewState( response?.data?.message || i18n.saveFailedShort || 'Save failed.', 'error' );
@@ -234,6 +385,7 @@ if ( FORM ) {
 			}
 
 			applyBranding( response.data || {} );
+			applyComposer( response.data?.template );
 			setSaveState( 'saved' );
 			await renderPreview();
 		} catch ( error ) {
@@ -256,7 +408,7 @@ if ( FORM ) {
 		const confirmed = modal
 			? await modal.show( {
 				title: i18n.brandingConfirmResetTitle || 'Reset report settings?',
-				body: i18n.brandingConfirmReset || 'Logo, report provider details, and accent colour will be cleared and reset to defaults.',
+				body: i18n.brandingConfirmReset || 'Logo, report provider details, accent colour, and report layout will be reset to defaults.',
 				confirmLabel: i18n.brandingConfirmResetConfirm || 'Reset to defaults',
 				confirmVariant: 'danger',
 			} )
@@ -277,6 +429,7 @@ if ( FORM ) {
 			}
 
 			applyBranding( response.data || {} );
+			applyComposer( response.data?.template );
 			setSaveState( 'saved' );
 			await renderPreview();
 		} catch ( error ) {

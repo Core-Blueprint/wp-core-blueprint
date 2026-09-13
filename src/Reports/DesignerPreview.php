@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace CB\Core\Reports;
 
 use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
-
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -23,8 +22,9 @@ final class DesignerPreview {
 
 	/**
 	 * @param array{logo_attachment_id:int,provider_name:string,provider_contact:string,accent_color:string} $branding
+	 * @param array<string,mixed>|null $template Unsaved Composer state; null resolves persisted state.
 	 */
-	public function render( array $branding ): string {
+	public function render( array $branding, ?array $template = null ): string {
 		$report = $this->preview_report();
 		$data   = $report['report_data'] ?? null;
 		if ( ! is_array( $data ) ) {
@@ -40,7 +40,8 @@ final class DesignerPreview {
 			$report,
 			$data,
 			MaintenanceFlowBranding::resolve_values( $branding ),
-			$locale
+			$locale,
+			$template
 		);
 
 		return $this->renderer->render(
@@ -77,9 +78,7 @@ final class DesignerPreview {
 		return $this->sample_report();
 	}
 
-	/**
-	 * @return array<string,mixed>
-	 */
+	/** @return array<string,mixed> */
 	private function sample_report(): array {
 		$end   = time();
 		$start = $end - ( 29 * DAY_IN_SECONDS );

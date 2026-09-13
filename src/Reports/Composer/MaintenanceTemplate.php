@@ -4,11 +4,11 @@ declare(strict_types=1);
 namespace CB\Core\Reports\Composer;
 
 use CB\Core\Settings;
-
 defined( 'ABSPATH' ) || exit;
 
 final class MaintenanceTemplate {
 	public const SCHEMA_VERSION = 1;
+	private const MAX_JSON_BYTES = 16384;
 
 	/** @return array{schema_version:int,blocks:list<array{id:string,type:string,enabled:bool,settings:array<string,mixed>}>} */
 	public static function defaults(): array {
@@ -23,6 +23,30 @@ final class MaintenanceTemplate {
 		$settings = Settings::get();
 		$raw      = $settings['reports']['composer']['maintenance'] ?? [];
 		return self::normalize( is_array( $raw ) ? $raw : [] );
+	}
+
+	/**
+	 * Parse one bounded Designer transport document, then apply the same
+	 * canonical normalizer used for persisted state.
+	 *
+	 * @return array{schema_version:int,blocks:list<array{id:string,type:string,enabled:bool,settings:array<string,mixed>}>}
+	 */
+	public static function from_json( string $json ): array {
+		if ( '' === trim( $json ) || strlen( $json ) > self::MAX_JSON_BYTES ) {
+			throw new \InvalidArgumentException( __( 'Invalid data.' ) );
+		}
+
+		try {
+			$decoded = json_decode( $json, true, 32, JSON_THROW_ON_ERROR );
+		} catch ( \JsonException $error ) {
+			throw new \InvalidArgumentException( __( 'Invalid data.' ), 0, $error );
+		}
+
+		if ( ! is_array( $decoded ) ) {
+			throw new \InvalidArgumentException( __( 'Invalid data.' ) );
+		}
+
+		return self::normalize( $decoded );
 	}
 
 	/**
