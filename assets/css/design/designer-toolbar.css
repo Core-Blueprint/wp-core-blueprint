@@ -1,0 +1,68 @@
+/**
+ * Canonical Core Blueprint Designer adaptive toolbar presentation.
+ *
+ * Base owns toolbar control geometry and alignment. Consumers declare commands;
+ * they do not size or align responsive toolbar controls themselves.
+ */
+
+.cb-core-design-shell__toolbar--designer {
+	--cb-design-toolbar-control-size: calc(var(--cb-control-height) + var(--cb-space-1));
+}
+
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-zone,
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group,
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__compact-menu {
+	align-items: center;
+}
+
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__compact-menu {
+	vertical-align: middle;
+}
+
+.cb-core-design-shell__toolbar--designer :is(
+	.cb-core-design-shell__icon-button,
+	.cb-core-design-shell__drawer-launcher,
+	.cb-core-design-shell__compact-menu-trigger,
+	[data-cb-design-shell-primary-action]
+) {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	align-self: center;
+	box-sizing: border-box !important;
+	inline-size: var(--cb-design-toolbar-control-size) !important;
+	min-inline-size: var(--cb-design-toolbar-control-size) !important;
+	max-inline-size: var(--cb-design-toolbar-control-size) !important;
+	block-size: var(--cb-design-toolbar-control-size) !important;
+	min-block-size: var(--cb-design-toolbar-control-size) !important;
+	max-block-size: var(--cb-design-toolbar-control-size) !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	line-height: 1 !important;
+	vertical-align: middle !important;
+}
+
+.cb-core-design-shell__toolbar--designer :is(
+	.cb-core-design-shell__icon-button,
+	.cb-core-design-shell__drawer-launcher,
+	.cb-core-design-shell__compact-menu-trigger,
+	[data-cb-design-shell-primary-action]
+) > .cb-core-design-shell__icon {
+	margin: 0;
+}
+
+/*
+ * The normal primary Button Foundation intentionally adds an outer accent ring.
+ * In the dense compact toolbar that makes Save appear physically larger than
+ * its sibling controls even when the CSS box is identical. The filled accent
+ * already establishes primary hierarchy here, so keep the ring inside the
+ * canonical control box. Focus-visible may still draw an external focus cue.
+ */
+.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-primary-action].cb-core-button--primary,
+.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-primary-action].cb-core-button--primary:hover {
+	box-shadow: inset 0 0 0 1px currentColor !important;
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-primary-action].cb-core-button--primary:focus-visible {
+	box-shadow: inset 0 0 0 1px currentColor, 0 0 0 2px var(--cb-accent-strong) !important;
+}
