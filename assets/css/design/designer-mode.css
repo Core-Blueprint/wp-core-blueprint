@@ -189,3 +189,16 @@
 		display: none;
 	}
 }
+
+@media (max-width: 900px) {
+	.cb-core-design-shell__workspace--collapsible {
+		grid-template-columns: 1fr;
+	}
+
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__canvas,
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		grid-column: 1;
+		grid-row: auto;
+	}
+}
