@@ -171,6 +171,10 @@
 }
 
 /* Adaptive compact toolbar. Consumers declare capabilities; Base owns compression. */
+[data-cb-design-shell-toolbar-extension] {
+	display: none !important;
+}
+
 .cb-core-design-shell__compact-menu {
 	position: relative;
 	display: none;
