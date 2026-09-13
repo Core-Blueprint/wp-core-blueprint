@@ -26,7 +26,7 @@ The semantic `design-editor` Foundation requirement resolves to this engine/shel
 CB\Core\Design\Editor\Assets::enqueue_designer_mode( __( 'Example Designer', 'example' ) );
 ```
 
-This includes the editor engine and adds the canonical Designer Mode launch, toolbar composition, Button presentation required by Base-generated chrome, Form Control presentation inside the Designer, panel rails/collapse behavior, canonical panel/canvas composition primitives and focus/fullscreen lifecycle.
+This includes the editor engine and adds the canonical Designer Mode launch, toolbar composition, Button presentation required by Base-generated chrome, Form Control presentation inside the Designer, panel rails/collapse behavior, canonical panel/canvas composition primitives, responsive drawers and focus/fullscreen lifecycle.
 
 `enqueue_designer_mode()` is presentation-self-contained for the Base chrome and composition grammar it exposes. A standalone WordPress admin consumer does **not** need `.cb-core-wrap`, `.cb-core-form-scope`, private Base asset handles or the full Core Admin theme in order to obtain the canonical Designer launch, controls and shell presentation. Base applies the narrow Designer form scope itself.
 
@@ -70,7 +70,7 @@ Direct mode rules:
 - Base gives the server-rendered shell fullscreen viewport composition from first paint; consumers must not add overlays, body masks, programmatic launch-button clicks or their own fullscreen geometry.
 - Base does not create the **Design with Core Blueprint** manual launch control in direct mode.
 - Base hydrates the existing Designer Shell fullscreen controller and keeps the direct route visually fullscreen throughout entry and exit.
-- Closing fullscreen, including Escape, navigates directly to the declared exit URL. The underlying WordPress admin page is not an intermediate visual state.
+- Closing fullscreen, including Escape when no responsive drawer is open, navigates directly to the declared exit URL. The underlying WordPress admin page is not an intermediate visual state.
 - Consumer Designer Shell roots remain geometrically neutral. Outer margins, fixed positioning, viewport height and fullscreen transitions belong to Base.
 
 Direct mode is transient UI state. It does not change the consumer's document/workflow model and must not be persisted as domain data.
@@ -81,13 +81,21 @@ Designer Mode has one Base-owned responsive contract:
 
 | Viewport | Canonical shell composition |
 | --- | --- |
-| `>1280px` | palette + canvas + sidebar in three columns |
-| `901–1280px` | palette + canvas in two columns; sidebar below across the full width |
-| `≤900px` | palette, canvas and sidebar in one vertical column |
+| `>1280px` | persistent palette + canvas + sidebar in three rails; palette/sidebar may use the canonical collapse controls |
+| `≤1280px` | canvas-first workspace; palette is an off-canvas drawer from the left and sidebar is an off-canvas drawer from the right |
 
-Panel-collapse controls are a wide-layout affordance and are hidden at `≤1280px`.
+Tablet and mobile **never stack** palette/sidebar above or below the canvas. Base inserts responsive toolbar openers for both drawers, a shared backdrop and the drawer close behavior. Opening one drawer closes the other so the canvas remains the stable primary workspace.
 
-Consumers must not redefine the Designer Shell column model, reorder these structural regions with local CSS, or introduce product-specific breakpoints that replace this contract. A consumer may style layout **inside** its palette, canvas or sidebar slots only where the public composition contract deliberately leaves domain content open.
+Responsive drawer behavior is also Base-owned:
+
+- drawers start closed when entering `≤1280px`;
+- the left drawer opens from the left and the right drawer opens from the right;
+- closed drawers are `aria-hidden` and `inert` so hidden controls do not remain keyboard-focusable;
+- focus moves into the drawer when opened and returns to its toolbar opener when closed through the drawer control, backdrop or Escape;
+- Escape closes an open drawer before the fullscreen Escape lifecycle is allowed to run;
+- returning to `>1280px` restores the persistent three-rail shell.
+
+Consumers must not redefine the Designer Shell column/drawer model, reorder these structural regions with local CSS, add their own responsive overlays/backdrops, or introduce product-specific breakpoints that replace this contract. A consumer may style layout **inside** its palette, canvas or sidebar slots only where the public composition contract deliberately leaves domain content open.
 
 ## Canonical composition grammar
 
@@ -214,7 +222,8 @@ Base owns:
 - first-paint viewport composition for direct mode;
 - fullscreen/focus lifecycle and Escape handling;
 - palette/canvas/sidebar structural layout;
-- responsive `3 → 2 → 1` shell geometry;
+- persistent desktop three-rail geometry and tablet/mobile off-canvas drawer geometry;
+- responsive drawer toolbar openers, backdrop, exclusivity, focus management and Escape-first-close behavior;
 - panel rails, headers and collapse affordances;
 - canonical palette/sidebar tabs and sidebar roles/order/icons where those roles are provided;
 - canonical palette/sidebar body inset, sections, dividers, field rhythm, action rows, form-control and palette-item presentation;
@@ -244,7 +253,8 @@ A Designer Mode consumer must not:
 - enqueue private `cb-core-css-*` handles or Base CSS filenames directly;
 - reproduce the launch control or Base toolbar locally;
 - implement its own fullscreen/focus overlay, fixed viewport shell or Escape lifecycle;
-- override `.cb-core-design-shell__workspace` / `__workspace--collapsible` column geometry;
+- override `.cb-core-design-shell__workspace` / `__workspace--collapsible` desktop rail or responsive drawer geometry;
+- add consumer-owned responsive drawer toggles, backdrops or sidebar stacking rules;
 - redraw panel rails, collapse controls, canonical tabs, canvas header/work-area rails or canonical sidebar role presentation;
 - redefine Base panel padding, section dividers, field rhythm, form controls, palette grids/items or shared panel action presentation in consumer CSS;
 - copy Base Button, document-surface or Designer spacing rules into consumer CSS;
@@ -262,7 +272,9 @@ Before a Base Designer change is considered release-ready, source/regression cov
 - canonical palette/sidebar composition with and without tabs;
 - canonical panel sections, fields, form controls and palette items without product-local presentation CSS;
 - canonical panel and canvas composition without product-local shell CSS;
-- `>1280`, `901–1280` and `≤900` shell geometry;
+- `>1280px` persistent three-rail geometry;
+- `≤1280px` canvas-first off-canvas drawers with no palette/sidebar stacking;
+- left/right drawer open/close, backdrop, exclusivity, Escape and focus-return behavior;
 - light and dark presentation where the host provides supported Core Blueprint tokens/theme state;
 - fullscreen, Escape and focus behavior;
 - keyboard/focus order for canonical chrome;
