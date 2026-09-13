@@ -101,13 +101,14 @@ Consumers must not redefine the Designer Shell column/drawer model, reorder thes
 
 The canonical Designer toolbar is capability-driven. Consumers declare controls and actions; Base decides whether those controls remain explicit or are compressed into compact disclosures when horizontal space becomes constrained.
 
-Base currently measures the **actual toolbar width** rather than relying on a product-specific viewport breakpoint. The internal compact threshold is not part of the public consumer API and may evolve without requiring consumer changes.
+Base measures the **actual toolbar width** rather than relying on a product-specific viewport breakpoint. The internal compact threshold is not part of the public consumer API and may evolve without requiring consumer changes.
 
 Wide toolbar behavior:
 
 - viewport controls remain explicit when the consumer exposes `data-cb-design-shell-viewport` controls;
 - Undo/Redo, fullscreen/exit and the primary Save action remain explicit;
-- desktop palette/sidebar collapse controls keep their normal shell presentation.
+- desktop palette/sidebar collapse controls keep their normal shell presentation;
+- declared toolbar extensions receive a Base-owned wide presentation.
 
 Compact toolbar behavior:
 
@@ -120,36 +121,39 @@ Compact toolbar behavior:
 - clicking outside closes the open disclosure;
 - Escape closes the disclosure first and restores focus to its trigger before drawer/fullscreen Escape behavior may continue.
 
-The compact disclosure uses proxy controls that forward activation to the original control. Disabled, active, pressed, label and icon state are synchronized from the original control, so consumer-owned callbacks and command authority remain unchanged.
+The compact disclosure uses Base-owned proxy controls that forward activation to the original command control. Disabled, active, pressed, label and icon state are synchronized from the original control, so consumer-owned callbacks and command authority remain unchanged.
 
-### Extending the compact toolbar
+### Extending the toolbar
 
-Built-in Designer capabilities are discovered automatically. A consumer may opt an additional toolbar button, or a wrapper containing toolbar buttons, into one of the two canonical compact groups:
+Additional consumer actions are declared as **command sources**, outside the internal toolbar structure. Base keeps those sources hidden and creates both the wide toolbar presentation and the compact disclosure presentation.
+
+For an additional action:
 
 ```html
-<button
-    type="button"
-    data-cb-design-shell-compact-group="actions"
->
-    Duplicate
-</button>
+<div data-cb-design-shell-toolbar-extension="actions">
+    <button type="button" data-my-duplicate-command>Duplicate</button>
+</div>
 ```
 
-or:
+For an additional view-related capability:
 
 ```html
-<div data-cb-design-shell-compact-group="view">
-    <button type="button">Outline</button>
-    <button type="button">Preview</button>
+<div data-cb-design-shell-toolbar-extension="view">
+    <button type="button" data-my-outline-command>Outline</button>
+    <button type="button" data-my-preview-command>Preview</button>
 </div>
 ```
 
 Supported public values are:
 
-- `data-cb-design-shell-compact-group="view"`
-- `data-cb-design-shell-compact-group="actions"`
+- `data-cb-design-shell-toolbar-extension="view"`
+- `data-cb-design-shell-toolbar-extension="actions"`
 
-Consumers keep ownership of what those actions do. Base owns discovery, compact placement, disclosure presentation, keyboard/focus behavior and responsive compression. Do not place the primary Save action inside a compact group; `data-cb-design-shell-primary-action` is the canonical pinned action contract.
+The command-source buttons remain consumer-owned: attach the domain callback, disabled state and pressed/active state to those buttons as usual. Base mirrors that state into its presentation and forwards activation back to the source button. Consumers do not inject markup into Base's generated toolbar zones and do not need to know the internal toolbar DOM.
+
+If a command source exposes a supported Designer icon through `data-cb-design-shell-icon`, Base may reuse that icon in the generated presentation. Text labels remain required because they provide the accessible action name and the compact disclosure label.
+
+Do not declare the primary Save command as a toolbar extension. `data-cb-design-shell-primary-action` remains the canonical pinned primary-action contract.
 
 Consumers must not implement their own mobile toolbar, overflow menu, compact breakpoint or duplicate proxy callbacks around these actions.
 
@@ -275,7 +279,7 @@ Base owns:
 - launch-control spacing and branded presentation;
 - canonical Designer brand/header composition;
 - shared history/viewport/fullscreen/save-control presentation;
-- adaptive toolbar compression, View/Actions disclosures, pinned primary action and compact-action focus/state synchronization;
+- adaptive toolbar compression, View/Actions disclosures, pinned primary action and toolbar-extension proxy/state synchronization;
 - first-paint viewport composition for direct mode;
 - fullscreen/focus lifecycle and Escape handling;
 - palette/canvas/sidebar structural layout;
@@ -292,7 +296,7 @@ Consumers own:
 
 - deciding which route should request manual or direct mode;
 - rendering the shared shell markup and selecting applicable public composition primitives;
-- declaring optional additional compact-toolbar actions through the public grouping attribute;
+- declaring optional toolbar command sources through `data-cb-design-shell-toolbar-extension`;
 - deciding what objects/content/workflows are being edited;
 - palette item labels and semantics, not their shared presentation;
 - domain canvas rendering;
@@ -310,6 +314,7 @@ A Designer Mode consumer must not:
 - require or add `.cb-core-wrap` or `.cb-core-form-scope` as a presentation workaround;
 - enqueue private `cb-core-css-*` handles or Base CSS filenames directly;
 - reproduce the launch control or Base toolbar locally;
+- inject product markup into Base-generated toolbar zones instead of using the public toolbar-extension source contract;
 - implement a product-specific compact toolbar, overflow dropdown, responsive toolbar breakpoint or duplicate action proxy layer;
 - implement its own fullscreen/focus overlay, fixed viewport shell or Escape lifecycle;
 - override `.cb-core-design-shell__workspace` / `__workspace--collapsible` desktop rail or responsive drawer geometry;
@@ -336,7 +341,8 @@ Before a Base Designer change is considered release-ready, source/regression cov
 - left/right drawer open/close, backdrop, exclusivity, Escape and focus-return behavior;
 - wide toolbar explicit-control presentation;
 - constrained-width View and Actions disclosures with Save and drawer controls pinned;
-- compact toolbar outside-click, Escape, focus-return, disabled/active state synchronization and custom `view`/`actions` group discovery;
+- compact toolbar outside-click, Escape, focus-return, disabled/active state synchronization and toolbar-extension discovery;
+- toolbar extension sources remain presentation-inert while Base owns their wide/compact proxies;
 - light and dark presentation where the host provides supported Core Blueprint tokens/theme state;
 - fullscreen, Escape and focus behavior;
 - keyboard/focus order for canonical chrome;
