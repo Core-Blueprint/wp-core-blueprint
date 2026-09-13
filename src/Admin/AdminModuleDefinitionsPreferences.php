@@ -105,6 +105,8 @@ final class AdminModuleDefinitionsPreferences {
 								'brandingConfirmResetConfirm' => __( 'Reset to defaults', 'core-blueprint' ),
 								'brandingResetting'           => __( 'Resetting…', 'core-blueprint' ),
 								'brandingResetDone'           => __( 'Reset to defaults.', 'core-blueprint' ),
+								'previewLoading'              => __( 'Rendering report preview…', 'core-blueprint' ),
+								'previewFailed'               => __( 'The report preview could not be rendered.', 'core-blueprint' ),
 							]
 						),
 					],
