@@ -1,0 +1,146 @@
+/**
+ * Canonical Core Blueprint Designer composition primitives.
+ *
+ * Base owns the visual grammar inside Designer Mode. Consumers own the domain
+ * content placed in these slots and may tune documented custom properties, but
+ * must not recreate shell chrome or structural layout locally.
+ */
+
+/* Manual Designer launch is a first-class Base component and owns its rhythm. */
+.cb-core-design-launch-wrap {
+	margin-top: var(--cb-space-3);
+}
+
+/*
+ * Opt-in composed canvas. Existing embedded editor consumers remain unaffected;
+ * full Designer Mode consumers use this modifier for the canonical canvas rail.
+ */
+.cb-core-design-shell__canvas--composed {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.cb-core-design-shell__canvas-header {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--cb-space-3);
+	padding: var(--cb-space-3);
+	border-bottom: 1px solid var(--cb-border);
+	background: var(--cb-surface-1);
+}
+
+.cb-core-design-shell__canvas-heading {
+	display: grid;
+	gap: var(--cb-space-1);
+	min-width: 0;
+}
+
+.cb-core-design-shell__canvas-title {
+	margin: 0;
+	color: var(--cb-text-strong);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-semibold);
+	line-height: 1.35;
+}
+
+.cb-core-design-shell__canvas-description {
+	margin: 0;
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-sm);
+	line-height: 1.45;
+}
+
+.cb-core-design-shell__canvas-actions {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--cb-space-2);
+	flex: 0 0 auto;
+}
+
+.cb-core-design-shell__canvas-workarea {
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: 360px;
+	padding: var(--cb-space-3);
+	box-sizing: border-box;
+	overflow: auto;
+	background: var(--cb-surface-2);
+}
+
+.cb-core-design-shell.is-fullscreen .cb-core-design-shell__canvas--composed,
+[data-cb-design-launch-root][data-cb-design-launch-mode="direct"] .cb-core-design-shell__canvas--composed {
+	overflow: hidden;
+}
+
+.cb-core-design-shell.is-fullscreen .cb-core-design-shell__canvas-workarea,
+[data-cb-design-launch-root][data-cb-design-launch-mode="direct"] .cb-core-design-shell__canvas-workarea {
+	min-height: 0;
+}
+
+/* Generic visual surface for preview/edit composition inside the canvas. */
+.cb-core-design-shell__surface {
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+/*
+ * Fixed-document preview surface. Consumers may change only the documented
+ * custom properties to match their domain page size; Base retains presentation.
+ */
+.cb-core-design-shell__surface--document {
+	--cb-design-document-width: 840px;
+	--cb-design-document-min-height: 640px;
+	--cb-design-document-padding: clamp(24px, 4vw, 48px);
+	width: min(100%, var(--cb-design-document-width));
+	min-height: var(--cb-design-document-min-height);
+	margin-inline: auto;
+	padding: var(--cb-design-document-padding);
+	border: 1px solid rgba(0, 0, 0, .08);
+	box-sizing: border-box;
+	background: #fff;
+	color: #1d2327;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+}
+
+.cb-core-design-shell__empty-state {
+	display: grid;
+	place-items: center;
+	min-height: 240px;
+	padding: var(--cb-space-5);
+	box-sizing: border-box;
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-sm);
+	line-height: 1.5;
+	text-align: center;
+}
+
+.cb-core-design-shell__composition-stack {
+	display: grid;
+	gap: var(--cb-space-3);
+	min-width: 0;
+}
+
+@media (max-width: 900px) {
+	.cb-core-design-shell__canvas-header {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.cb-core-design-shell__canvas-actions {
+		justify-content: flex-start;
+	}
+
+	.cb-core-design-shell__canvas-workarea {
+		padding: var(--cb-space-2);
+	}
+
+	.cb-core-design-shell__surface--document {
+		--cb-design-document-padding: var(--cb-space-4);
+	}
+}
