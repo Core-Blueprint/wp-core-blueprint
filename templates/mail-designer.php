@@ -109,63 +109,67 @@ foreach ( (array) $templates as $definition ) {
 							<div class="cb-core-design-shell__toolbar-group">
 								<button type="button" class="button cb-core-button" data-cb-design-shell-fullscreen aria-pressed="false" aria-label="<?php echo esc_attr( $fullscreen_label ); ?>"><?php echo esc_html( $fullscreen_label ); ?></button>
 							</div>
-							<div class="cb-core-mail-designer__toolbar-status" data-cb-design-shell-status data-cb-mail-preview-status aria-live="polite"></div>
+							<div class="cb-core-design-shell__toolbar-status cb-core-mail-designer__toolbar-status" data-cb-design-shell-status data-cb-mail-preview-status aria-live="polite"></div>
 							<button type="submit" class="button button-primary cb-core-button cb-core-button--primary" data-cb-design-shell-primary-action><?php esc_html_e( 'Save template', 'core-blueprint' ); ?></button>
 						</div>
 
 						<div class="cb-core-design-shell__workspace">
-							<section class="cb-core-design-shell__palette cb-core-design-shell__palette--tabbed cb-core-mail-designer__palette" aria-label="<?php esc_attr_e( 'Mail content', 'core-blueprint' ); ?>">
+							<section class="cb-core-design-shell__palette cb-core-design-shell__palette--tabbed cb-core-design-shell__palette--composed cb-core-mail-designer__palette" aria-label="<?php esc_attr_e( 'Mail content', 'core-blueprint' ); ?>">
 								<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Mail content panels', 'core-blueprint' ); ?>">
 									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-group="palette" data-cb-design-shell-tab="elements"><?php esc_html_e( 'Elements', 'core-blueprint' ); ?></button>
 									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-group="palette" data-cb-design-shell-tab="dynamic-data"><?php esc_html_e( 'Dynamic data', 'core-blueprint' ); ?></button>
 								</div>
 								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="elements">
-									<div class="cb-core-mail-designer__palette-list">
-										<?php foreach ( $components as $component_id => $component ) : ?>
-											<button type="button" class="button cb-core-mail-designer__element" data-cb-mail-add="<?php echo esc_attr( (string) $component_id ); ?>">
-												<?php echo esc_html( (string) ( $component['label'] ?? $component_id ) ); ?>
-												<?php if ( 'core' !== (string) ( $component['provider'] ?? 'core' ) ) : ?><small><?php echo esc_html( (string) $component['provider'] ); ?></small><?php endif; ?>
-											</button>
-										<?php endforeach; ?>
+									<div class="cb-core-design-shell__panel-body">
+										<div class="cb-core-design-shell__palette-grid">
+											<?php foreach ( $components as $component_id => $component ) : ?>
+												<button type="button" class="cb-core-design-shell__palette-item cb-core-mail-designer__element" data-cb-mail-add="<?php echo esc_attr( (string) $component_id ); ?>">
+													<?php echo esc_html( (string) ( $component['label'] ?? $component_id ) ); ?>
+													<?php if ( 'core' !== (string) ( $component['provider'] ?? 'core' ) ) : ?><small><?php echo esc_html( (string) $component['provider'] ); ?></small><?php endif; ?>
+												</button>
+											<?php endforeach; ?>
+										</div>
 									</div>
 								</div>
 								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="dynamic-data" hidden>
-									<p class="description"><?php esc_html_e( 'Click a token to copy it. Paste it into text, headings, buttons or URLs.', 'core-blueprint' ); ?></p>
-									<div class="cb-core-mail-designer__bindings">
-										<?php foreach ( $bindings as $binding ) : ?>
-											<button type="button" class="cb-core-mail-binding" data-cb-mail-binding="<?php echo esc_attr( '{{' . (string) $binding['id'] . '}}' ); ?>" title="<?php echo esc_attr( (string) $binding['label'] ); ?>"><?php echo esc_html( '{{' . (string) $binding['id'] . '}}' ); ?></button>
-										<?php endforeach; ?>
+									<div class="cb-core-design-shell__panel-body">
+										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Click a token to copy it. Paste it into text, headings, buttons or URLs.', 'core-blueprint' ); ?></p>
+										<div class="cb-core-mail-designer__bindings">
+											<?php foreach ( $bindings as $binding ) : ?>
+												<button type="button" class="cb-core-mail-binding" data-cb-mail-binding="<?php echo esc_attr( '{{' . (string) $binding['id'] . '}}' ); ?>" title="<?php echo esc_attr( (string) $binding['label'] ); ?>"><?php echo esc_html( '{{' . (string) $binding['id'] . '}}' ); ?></button>
+											<?php endforeach; ?>
+										</div>
 									</div>
 								</div>
 							</section>
 
-							<section class="cb-core-design-shell__canvas cb-core-mail-designer__canvas-panel" aria-label="<?php esc_attr_e( 'Visual mail canvas', 'core-blueprint' ); ?>">
-								<div class="cb-core-mail-designer__canvas-heading">
-									<div>
-										<strong><?php esc_html_e( 'Visual canvas', 'core-blueprint' ); ?></strong>
-										<span><?php esc_html_e( 'Click an email element to inspect and edit it.', 'core-blueprint' ); ?></span>
+							<section class="cb-core-design-shell__canvas cb-core-design-shell__canvas--composed cb-core-mail-designer__canvas-panel" aria-label="<?php esc_attr_e( 'Visual mail canvas', 'core-blueprint' ); ?>">
+								<div class="cb-core-design-shell__canvas-header">
+									<div class="cb-core-design-shell__canvas-heading">
+										<strong class="cb-core-design-shell__canvas-title"><?php esc_html_e( 'Visual canvas', 'core-blueprint' ); ?></strong>
+										<span class="cb-core-design-shell__canvas-description"><?php esc_html_e( 'Click an email element to inspect and edit it.', 'core-blueprint' ); ?></span>
 									</div>
 								</div>
-								<div class="cb-core-mail-designer__preview-frame" data-cb-mail-preview-frame>
+								<div class="cb-core-design-shell__canvas-workarea cb-core-mail-designer__preview-frame" data-cb-mail-preview-frame>
 									<iframe title="<?php esc_attr_e( 'Editable mail preview', 'core-blueprint' ); ?>" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" data-cb-mail-preview srcdoc="<?php echo esc_attr( (string) ( $preview['html'] ?? '' ) ); ?>"></iframe>
 								</div>
 							</section>
 
-							<aside class="cb-core-design-shell__sidebar cb-core-mail-designer__sidebar" aria-label="<?php esc_attr_e( 'Designer controls', 'core-blueprint' ); ?>">
+							<aside class="cb-core-design-shell__sidebar cb-core-design-shell__sidebar--composed cb-core-mail-designer__sidebar" aria-label="<?php esc_attr_e( 'Designer controls', 'core-blueprint' ); ?>">
 								<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Designer panels', 'core-blueprint' ); ?>">
 									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-tab="email" data-cb-design-shell-sidebar-role="settings"><?php esc_html_e( 'Email', 'core-blueprint' ); ?></button>
 									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="structure" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Structure', 'core-blueprint' ); ?></button>
 									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"><?php esc_html_e( 'Inspector', 'core-blueprint' ); ?></button>
 								</div>
-								<div class="cb-core-design-shell__panel" data-cb-design-shell-panel="email" data-cb-design-shell-sidebar-role="settings">
-									<div data-cb-mail-email-inspector></div>
+								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="email" data-cb-design-shell-sidebar-role="settings">
+									<div class="cb-core-design-shell__panel-body" data-cb-mail-email-inspector></div>
 								</div>
-								<div class="cb-core-design-shell__panel" data-cb-design-shell-panel="structure" data-cb-design-shell-sidebar-role="layers" hidden>
-									<div data-cb-mail-structure></div>
+								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="structure" data-cb-design-shell-sidebar-role="layers" hidden>
+									<div class="cb-core-design-shell__panel-body" data-cb-mail-structure></div>
 								</div>
-								<div class="cb-core-design-shell__panel" data-cb-design-shell-panel="inspector" data-cb-design-shell-sidebar-role="inspector" hidden>
-									<div data-cb-mail-inspector>
-										<p class="description"><?php esc_html_e( 'Select an element on the canvas or in Structure to edit it.', 'core-blueprint' ); ?></p>
+								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="inspector" data-cb-design-shell-sidebar-role="inspector" hidden>
+									<div class="cb-core-design-shell__panel-body" data-cb-mail-inspector>
+										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Select an element on the canvas or in Structure to edit it.', 'core-blueprint' ); ?></p>
 									</div>
 								</div>
 							</aside>

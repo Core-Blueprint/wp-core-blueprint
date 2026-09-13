@@ -229,10 +229,10 @@ if (root) {
 
 	const createInspectorField = (field, value, path) => {
 		const wrapper = document.createElement('div');
-		wrapper.className = 'cb-core-field cb-core-mail-inspector-field';
+		wrapper.className = 'cb-core-design-shell__field';
 		const id = `cb-mail-inspector-${field.key}-${path.join('-') || 'root'}`;
 		const label = document.createElement('label');
-		label.className = 'cb-core-field__label';
+		label.className = 'cb-core-design-shell__field-label';
 		label.htmlFor = id;
 		label.textContent = field.label || field.key;
 		wrapper.append(label);
@@ -264,10 +264,10 @@ if (root) {
 
 	const createRootField = (field) => {
 		const wrapper = document.createElement('div');
-		wrapper.className = 'cb-core-field cb-core-mail-inspector-field';
+		wrapper.className = 'cb-core-design-shell__field';
 		const id = `cb-mail-root-${field.key}`;
 		const label = document.createElement('label');
-		label.className = 'cb-core-field__label';
+		label.className = 'cb-core-design-shell__field-label';
 		label.htmlFor = id;
 		label.textContent = field.label;
 		let input;
@@ -295,9 +295,10 @@ if (root) {
 	const renderEmailInspector = () => {
 		emailInspector.replaceChildren();
 		const heading = document.createElement('h3');
+		heading.className = 'cb-core-design-shell__panel-section-title';
 		heading.textContent = 'Email style';
 		const description = document.createElement('p');
-		description.className = 'description';
+		description.className = 'cb-core-design-shell__panel-section-description';
 		description.textContent = 'Global presentation settings for this mail template.';
 		emailInspector.append(heading, description);
 
@@ -321,9 +322,10 @@ if (root) {
 		const selectedPath = session.editorState.selection.primary();
 		if (!selectedPath) {
 			const heading = document.createElement('h3');
+			heading.className = 'cb-core-design-shell__panel-section-title';
 			heading.textContent = 'Element inspector';
 			const description = document.createElement('p');
-			description.className = 'description';
+			description.className = 'cb-core-design-shell__panel-section-description';
 			description.textContent = 'Select an element on the canvas or in Structure to edit it.';
 			inspector.append(heading, description);
 			return;
@@ -333,6 +335,7 @@ if (root) {
 		if (!node) return;
 		const definition = definitionForNode(node);
 		const heading = document.createElement('h3');
+		heading.className = 'cb-core-design-shell__panel-section-title';
 		heading.textContent = definition?.label || node.type || 'Selected element';
 		inspector.append(heading);
 
@@ -343,7 +346,7 @@ if (root) {
 			});
 		} else {
 			const description = document.createElement('p');
-			description.className = 'description';
+			description.className = 'cb-core-design-shell__panel-section-description';
 			description.textContent = 'This element does not expose editable properties.';
 			inspector.append(description);
 		}
@@ -351,14 +354,17 @@ if (root) {
 		if (node.type !== 'mail.section') {
 			const remove = document.createElement('button');
 			remove.type = 'button';
-			remove.className = 'button cb-core-button cb-core-mail-inspector-remove';
+			remove.className = 'button cb-core-button';
 			remove.textContent = 'Remove element';
 			remove.addEventListener('click', () => {
 				session.execute(commands.removeNode(selectedPath));
 				session.editorState.selection.clear();
 				renderSelectionViews();
 			});
-			inspector.append(remove);
+			const actions = document.createElement('div');
+			actions.className = 'cb-core-design-shell__panel-actions';
+			actions.append(remove);
+			inspector.append(actions);
 		}
 	};
 
@@ -461,7 +467,7 @@ if (root) {
 		renderChildren(projectRoot?.children, [], 0);
 		if (!tree.children.length) {
 			const empty = document.createElement('p');
-			empty.className = 'description';
+			empty.className = 'cb-core-design-shell__empty-state';
 			empty.textContent = 'This mail template does not contain editable elements.';
 			structure.append(empty);
 			return;

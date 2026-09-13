@@ -21,14 +21,31 @@ final class Assets {
 	public const MODULE_ID = '@cb-core/design-editor';
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
+	public const DESIGNER_COMPOSITION_STYLE = 'cb-core-designer-composition';
+	public const DESIGNER_TOOLBAR_STYLE = 'cb-core-designer-toolbar';
 	public const DESIGNER_MODE_SCRIPT = 'cb-core-designer-mode';
+	public const DESIGNER_TOOLBAR_SCRIPT = 'cb-core-designer-toolbar';
+	private const TOKEN_STYLE = 'cb-core-css-tokens';
+	private const BUTTON_STYLE = 'cb-core-css-buttons';
+	private const FORM_CONTROL_STYLE = 'cb-core-css-form-controls';
 	private const MOTION_MODULE_ID = '@cb-core/design-motion';
 
 	public static function enqueue(): void {
+		// The global Admin Theme normally enqueues semantic tokens first on
+		// wp-admin. This public editor boundary still owns the same canonical
+		// stylesheet dependency so its asset graph does not depend on incidental
+		// enqueue order. Theme-state resolution remains owned by AdminTheme.
+		wp_enqueue_style(
+			self::TOKEN_STYLE,
+			CB_CORE_URL . 'assets/css/tokens.css',
+			[],
+			self::asset_version( 'assets/css/tokens.css' )
+		);
+
 		wp_enqueue_style(
 			self::SHELL_STYLE,
 			CB_CORE_URL . 'assets/css/design/editor-shell.css',
-			[ 'cb-core-css-tokens' ],
+			[ self::TOKEN_STYLE ],
 			self::asset_version( 'assets/css/design/editor-shell.css' )
 		);
 
@@ -52,7 +69,10 @@ final class Assets {
 	 *
 	 * Consumers provide their translated mode title plus declarative
 	 * `data-cb-design-*` shell contracts and domain callbacks. Base owns launch/
-	 * focus chrome, brand, shared labels and the private Designer Mode source path.
+	 * focus chrome, brand, shared labels, canonical composition primitives and
+	 * the private Designer Mode source path. Designer Mode also owns the narrow
+	 * shared Button and Form Control presentation required by the Base chrome and
+	 * panel grammar it composes; consumers do not need the full Core Admin theme.
 	 */
 	public static function enqueue_designer_mode( string $title = '' ): void {
 		self::enqueue();
@@ -63,10 +83,38 @@ final class Assets {
 		}
 
 		wp_enqueue_style(
+			self::BUTTON_STYLE,
+			CB_CORE_URL . 'assets/css/components/buttons.css',
+			[ self::TOKEN_STYLE ],
+			self::asset_version( 'assets/css/components/buttons.css' )
+		);
+
+		wp_enqueue_style(
+			self::FORM_CONTROL_STYLE,
+			CB_CORE_URL . 'assets/css/components/form-controls.css',
+			[ self::TOKEN_STYLE ],
+			self::asset_version( 'assets/css/components/form-controls.css' )
+		);
+
+		wp_enqueue_style(
 			self::DESIGNER_MODE_STYLE,
 			CB_CORE_URL . 'assets/css/design/designer-mode.css',
-			[ self::SHELL_STYLE ],
+			[ self::SHELL_STYLE, self::BUTTON_STYLE ],
 			self::asset_version( 'assets/css/design/designer-mode.css' )
+		);
+
+		wp_enqueue_style(
+			self::DESIGNER_COMPOSITION_STYLE,
+			CB_CORE_URL . 'assets/css/design/designer-composition.css',
+			[ self::DESIGNER_MODE_STYLE, self::FORM_CONTROL_STYLE ],
+			self::asset_version( 'assets/css/design/designer-composition.css' )
+		);
+
+		wp_enqueue_style(
+			self::DESIGNER_TOOLBAR_STYLE,
+			CB_CORE_URL . 'assets/css/design/designer-toolbar.css',
+			[ self::DESIGNER_COMPOSITION_STYLE, self::BUTTON_STYLE ],
+			self::asset_version( 'assets/css/design/designer-toolbar.css' )
 		);
 
 		wp_enqueue_script(
@@ -76,6 +124,25 @@ final class Assets {
 			self::asset_version( 'assets/js/features/designer-launch.js' ),
 			true
 		);
+
+		wp_enqueue_script(
+			self::DESIGNER_TOOLBAR_SCRIPT,
+			CB_CORE_URL . 'assets/js/features/designer-toolbar.js',
+			[ self::DESIGNER_MODE_SCRIPT ],
+			self::asset_version( 'assets/js/features/designer-toolbar.js' ),
+			true
+		);
+
+		// Form Controls deliberately scopes itself to `.cb-core-form-scope` so
+		// unrelated WordPress admin controls remain untouched. Designer Mode owns
+		// that presentation boundary, so Base marks each consumer shell before the
+		// launch runtime hydrates it; consumers never add this scope themselves.
+		wp_add_inline_script(
+			self::DESIGNER_MODE_SCRIPT,
+			"document.querySelectorAll('[data-cb-design-shell]').forEach((shell) => shell.classList.add('cb-core-form-scope'));",
+			'before'
+		);
+
 		wp_localize_script(
 			self::DESIGNER_MODE_SCRIPT,
 			'cbCoreDesignerLaunch',
@@ -95,6 +162,11 @@ final class Assets {
 					// WordPress editor vocabulary intentionally uses the default text domain.
 					'layers'    => __( 'Layers', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
 					'settings'  => __( 'Settings', 'core-blueprint' ),
+				],
+				'toolbarLabels' => [
+					'view'    => __( 'View', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
+					'actions' => __( 'Actions', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
+					'action'  => __( 'Action', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
 				],
 			]
 		);

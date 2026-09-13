@@ -21,8 +21,9 @@
 // deal in the Software without restriction, including without limitation
 // the rights to use, copy, modify, merge, publish, distribute, sublicense,
 // and/or sell copies of the Software, subject to inclusion of the copyright
-// and permission notice. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY
-// OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF
+// notice and this permission notice in all copies or substantial portions of
+// the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 const ICONS = Object.freeze({
@@ -33,6 +34,11 @@ const ICONS = Object.freeze({
 	'redo-2': Object.freeze([
 		['path', { d: 'm15 14 5-5-5-5' }],
 		['path', { d: 'M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13' }],
+	]),
+	ellipsis: Object.freeze([
+		['circle', { cx: '5', cy: '12', r: '1' }],
+		['circle', { cx: '12', cy: '12', r: '1' }],
+		['circle', { cx: '19', cy: '12', r: '1' }],
 	]),
 	smartphone: Object.freeze([
 		['rect', { width: '14', height: '20', x: '5', y: '2', rx: '2', ry: '2' }],

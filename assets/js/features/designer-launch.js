@@ -8,6 +8,7 @@
 	const DIRECT_ENTER_RETRY_LIMIT = 80;
 	const SAVE_EVENT = 'cb:design-shell:savechange';
 	const DIRECT_MODE = 'direct';
+	const RESPONSIVE_DRAWER_QUERY = '(max-width: 1280px)';
 
 	const sharedShellApi = () => window.cbCore?.designEditor?.shell ?? null;
 
@@ -71,17 +72,93 @@
 
 	const composePanelToggles = (shell, shellApi) => {
 		const workspace = shell.querySelector('.cb-core-design-shell__workspace');
-		if (!workspace || workspace.dataset.cbDesignShellPanelToggles === 'true') return;
+		if (!workspace || workspace.dataset.cbDesignShellPanelToggles === 'true') return null;
 
 		const leftPanel = workspace.querySelector(':scope > .cb-core-design-shell__palette');
 		const rightPanel = workspace.querySelector(':scope > .cb-core-design-shell__sidebar');
-		if (!leftPanel && !rightPanel) return;
+		if (!leftPanel && !rightPanel) return null;
 
 		workspace.dataset.cbDesignShellPanelToggles = 'true';
 		workspace.classList.add('cb-core-design-shell__workspace--collapsible');
 
+		const mediaQuery = window.matchMedia(RESPONSIVE_DRAWER_QUERY);
+		const records = {};
+		let responsiveMode = false;
+
+		const syncRecord = (record) => {
+			if (!record) return;
+			const collapsed = shell.classList.contains(record.className);
+			record.button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+			const label = panelToggleLabel(record.panel, collapsed);
+			const icon = record.side === 'left'
+				? (collapsed ? 'chevron-right' : 'chevron-left')
+				: (collapsed ? 'chevron-left' : 'chevron-right');
+			shellApi.icons.decorate(record.button, icon, { iconOnly: true, label });
+
+			if (record.launcher) {
+				record.launcher.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+				shellApi.icons.decorate(record.launcher, icon, {
+					iconOnly: true,
+					label,
+				});
+			}
+
+			if (responsiveMode) {
+				record.panel.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+				if (collapsed) record.panel.setAttribute('inert', '');
+				else record.panel.removeAttribute('inert');
+			} else {
+				record.panel.removeAttribute('aria-hidden');
+				record.panel.removeAttribute('inert');
+			}
+		};
+
+		const backdrop = document.createElement('button');
+		backdrop.type = 'button';
+		backdrop.className = 'cb-core-design-shell__drawer-backdrop';
+		backdrop.dataset.cbDesignShellDrawerBackdrop = '';
+		backdrop.setAttribute('aria-label', String(config.closeLabel || 'Close').trim());
+		backdrop.hidden = true;
+		workspace.append(backdrop);
+
+		const syncAll = () => {
+			Object.values(records).forEach(syncRecord);
+			const anyOpen = responsiveMode && Object.values(records).some(
+				(record) => !shell.classList.contains(record.className)
+			);
+			backdrop.hidden = !anyOpen;
+			shell.classList.toggle('has-responsive-drawer-open', anyOpen);
+		};
+
+		const focusRecord = (record, target) => {
+			const candidate = target === 'launcher' ? record?.launcher : record?.button;
+			if (!candidate || typeof candidate.focus !== 'function') return;
+			window.requestAnimationFrame(() => candidate.focus());
+		};
+
+		const setCollapsed = (record, collapsed, { focusPanel = false, focusLauncher = false } = {}) => {
+			if (!record) return false;
+			if (responsiveMode && !collapsed) {
+				Object.values(records).forEach((candidate) => {
+					if (candidate !== record) shell.classList.add(candidate.className);
+				});
+			}
+			shell.classList.toggle(record.className, collapsed);
+			syncAll();
+			if (!collapsed && focusPanel) focusRecord(record, 'panel');
+			if (collapsed && focusLauncher) focusRecord(record, 'launcher');
+			return true;
+		};
+
+		const closeDrawers = ({ focusLauncher = false } = {}) => {
+			const openRecord = Object.values(records).find((record) => !shell.classList.contains(record.className)) ?? null;
+			Object.values(records).forEach((record) => shell.classList.add(record.className));
+			syncAll();
+			if (focusLauncher && openRecord) focusRecord(openRecord, 'launcher');
+		};
+
 		const addToggle = (side, panel) => {
-			if (!panel) return;
+			if (!panel) return null;
 			const className = side === 'left' ? 'is-left-panel-collapsed' : 'is-right-panel-collapsed';
 			const header = document.createElement('div');
 			header.className = `cb-core-design-shell__panel-header cb-core-design-shell__panel-header--${side}`;
@@ -98,27 +175,62 @@
 			button.className = `cb-core-design-shell__panel-toggle cb-core-design-shell__panel-toggle--${side}`;
 			button.dataset.cbDesignShellPanelToggle = side;
 
-			const sync = () => {
-				const collapsed = shell.classList.contains(className);
-				button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-				const label = panelToggleLabel(panel, collapsed);
-				const icon = side === 'left'
-					? (collapsed ? 'chevron-right' : 'chevron-left')
-					: (collapsed ? 'chevron-left' : 'chevron-right');
-				shellApi.icons.decorate(button, icon, { iconOnly: true, label });
-			};
-
+			const record = { side, panel, className, button, launcher: null };
+			records[side] = record;
 			button.addEventListener('click', () => {
-				shell.classList.toggle(className);
-				sync();
+				setCollapsed(record, !shell.classList.contains(className), { focusLauncher: responsiveMode });
 			});
-			sync();
 			header.append(heading, button);
 			panel.prepend(header);
+			return record;
 		};
 
-		addToggle('left', leftPanel);
-		addToggle('right', rightPanel);
+		const createLauncher = (record) => {
+			if (!record) return null;
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = `button cb-core-button cb-core-design-shell__drawer-launcher cb-core-design-shell__drawer-launcher--${record.side}`;
+			button.dataset.cbDesignShellDrawerToggle = record.side;
+			record.launcher = button;
+			button.addEventListener('click', () => {
+				const collapsed = shell.classList.contains(record.className);
+				setCollapsed(record, !collapsed, {
+					focusPanel: collapsed,
+					focusLauncher: !collapsed,
+				});
+			});
+			return button;
+		};
+
+		const left = addToggle('left', leftPanel);
+		const right = addToggle('right', rightPanel);
+		const leftLauncher = createLauncher(left);
+		const rightLauncher = createLauncher(right);
+
+		const syncResponsiveMode = () => {
+			responsiveMode = mediaQuery.matches;
+			shell.classList.toggle('is-responsive-drawer-mode', responsiveMode);
+			if (responsiveMode) {
+				Object.values(records).forEach((record) => shell.classList.add(record.className));
+			} else {
+				Object.values(records).forEach((record) => shell.classList.remove(record.className));
+			}
+			syncAll();
+		};
+
+		backdrop.addEventListener('click', () => closeDrawers({ focusLauncher: true }));
+		document.addEventListener('keydown', (event) => {
+			if (!responsiveMode || event.defaultPrevented || event.key !== 'Escape') return;
+			const anyOpen = Object.values(records).some((record) => !shell.classList.contains(record.className));
+			if (!anyOpen) return;
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			closeDrawers({ focusLauncher: true });
+		}, true);
+		mediaQuery.addEventListener?.('change', syncResponsiveMode);
+		syncResponsiveMode();
+
+		return Object.freeze({ leftLauncher, rightLauncher });
 	};
 
 	const composeHeader = (root, shell, shellApi, { direct = false, exitUrl = '' } = {}) => {
@@ -168,7 +280,7 @@
 		}
 		bindSaveState(shell, save, status);
 		configureSidebar(shell, shellApi);
-		composePanelToggles(shell, shellApi);
+		const panelControls = composePanelToggles(shell, shellApi);
 
 		const start = document.createElement('div');
 		start.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--start';
@@ -192,6 +304,7 @@
 		wordmark.textContent = title;
 		brand.append(wordmark);
 		start.append(brand);
+		if (panelControls?.leftLauncher) start.append(panelControls.leftLauncher);
 
 		const center = document.createElement('div');
 		center.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--center';
@@ -199,6 +312,7 @@
 
 		const end = document.createElement('div');
 		end.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--end';
+		if (panelControls?.rightLauncher) end.append(panelControls.rightLauncher);
 		if (status) {
 			status.classList.add('cb-core-design-shell__toolbar-status');
 			end.append(status);

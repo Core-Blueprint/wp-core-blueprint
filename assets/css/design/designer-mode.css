@@ -2,7 +2,7 @@
  * Canonical Designer Mode chrome layered on top of the shared editor shell.
  *
  * Consumers own domain panels and canvas semantics. Base owns the panel rails,
- * sidebar headers, collapse affordances and direct-mode chrome composition.
+ * sidebar headers, collapse/drawer affordances, adaptive toolbar and direct-mode chrome composition.
  */
 
 @media (scripting: enabled) {
@@ -15,6 +15,7 @@
 	--cb-design-sidebar-header-height: 44px;
 	--cb-design-left-track: minmax(180px, 220px);
 	--cb-design-right-track: minmax(240px, 300px);
+	--cb-design-drawer-width: min(360px, calc(100% - var(--cb-space-5)));
 	display: grid;
 	grid-template-columns:
 		var(--cb-design-left-track)
@@ -111,6 +112,14 @@
 	grid-column: 1;
 }
 
+.cb-core-design-shell__drawer-launcher {
+	display: none !important;
+}
+
+.cb-core-design-shell__drawer-backdrop {
+	display: none;
+}
+
 .cb-core-design-shell.is-left-panel-collapsed .cb-core-design-shell__workspace--collapsible {
 	--cb-design-left-track: var(--cb-design-sidebar-header-height);
 }
@@ -161,31 +170,220 @@
 	color: var(--cb-text-strong) !important;
 }
 
+/* Adaptive compact toolbar. Consumers declare capabilities; Base owns compression. */
+[data-cb-design-shell-toolbar-extension] {
+	display: none !important;
+}
+
+.cb-core-design-shell__compact-menu {
+	position: relative;
+	display: none;
+}
+
+.cb-core-design-shell__compact-menu-popover {
+	position: absolute;
+	inset-block-start: calc(100% + var(--cb-space-2));
+	z-index: 40;
+	display: grid;
+	gap: var(--cb-space-1);
+	width: max-content;
+	min-width: 190px;
+	max-width: min(280px, calc(100vw - (2 * var(--cb-space-4))));
+	padding: var(--cb-space-2);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+	background: var(--cb-surface-1);
+	box-shadow: 0 14px 34px rgba(0, 0, 0, .24);
+}
+
+.cb-core-design-shell__compact-menu-popover[hidden] {
+	display: none;
+}
+
+.cb-core-design-shell__compact-menu--view .cb-core-design-shell__compact-menu-popover {
+	inset-inline-start: 50%;
+	transform: translateX(-50%);
+}
+
+.cb-core-design-shell__compact-menu--actions .cb-core-design-shell__compact-menu-popover {
+	inset-inline-end: 0;
+}
+
+.cb-core-design-shell__compact-menu-item {
+	appearance: none;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: var(--cb-space-2);
+	width: 100%;
+	min-height: 36px;
+	margin: 0;
+	padding: var(--cb-space-2) var(--cb-space-3);
+	border: 0;
+	border-radius: var(--cb-radius-sm);
+	background: transparent;
+	color: var(--cb-text);
+	font: inherit;
+	font-size: var(--cb-fs-sm);
+	line-height: 1.25;
+	text-align: start;
+	cursor: pointer;
+}
+
+.cb-core-design-shell__compact-menu-item:hover,
+.cb-core-design-shell__compact-menu-item:focus-visible,
+.cb-core-design-shell__compact-menu-item.is-active,
+.cb-core-design-shell__compact-menu-item[aria-pressed="true"] {
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-design-shell__compact-menu-item:focus-visible {
+	outline: 2px solid var(--cb-accent);
+	outline-offset: -2px;
+}
+
+.cb-core-design-shell__compact-menu-item:disabled {
+	opacity: .45;
+	cursor: not-allowed;
+}
+
+.cb-core-design-shell__compact-menu-item .cb-core-design-shell__icon {
+	flex: 0 0 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact {
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	gap: var(--cb-space-2);
+	padding: var(--cb-space-2);
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__brand-wordmark,
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-status,
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--viewport,
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--history,
+.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-fullscreen],
+.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-close],
+.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-compact-group] {
+	display: none !important;
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__compact-menu {
+	display: block;
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-zone {
+	gap: var(--cb-space-1);
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-zone--center {
+	justify-self: center;
+}
+
 @media (max-width: 1280px) {
 	.cb-core-design-shell__workspace--collapsible {
+		position: relative;
+		isolation: isolate;
 		display: grid;
-		grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
-		gap: var(--cb-space-3);
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
+		min-height: 0;
+		overflow: hidden;
 	}
 
-	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
-		display: block !important;
-		grid-column: 1;
-		grid-row: auto;
+	.cb-core-design-shell.is-fullscreen > .cb-core-design-shell__workspace--collapsible,
+	[data-cb-design-launch-root][data-cb-design-launch-mode="direct"][data-cb-design-exit-url]:not([data-cb-design-exit-url=""]) .cb-core-design-shell > .cb-core-design-shell__workspace--collapsible {
+		overflow: hidden;
 	}
 
 	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__canvas {
-		grid-column: 2;
-		grid-row: auto;
+		grid-column: 1;
+		grid-row: 1;
+		min-width: 0;
+		min-height: 0;
+	}
+
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		position: absolute !important;
+		inset-block: 0;
+		z-index: 4;
+		display: block !important;
+		width: var(--cb-design-drawer-width);
+		max-width: calc(100% - var(--cb-space-4));
+		min-height: 0;
+		max-height: none !important;
+		margin: 0;
+		box-sizing: border-box;
+		overflow: auto;
+		box-shadow: 0 16px 40px rgba(0, 0, 0, .24);
+		transition: transform 170ms cubic-bezier(.2, .8, .2, 1), visibility 170ms linear;
+	}
+
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
+		inset-inline-start: 0;
+		grid-column: 1;
+		grid-row: 1;
 	}
 
 	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
-		display: block !important;
-		grid-column: 1 / -1;
-		grid-row: auto;
+		inset-inline-end: 0;
+		grid-column: 1;
+		grid-row: 1;
 	}
 
-	.cb-core-design-shell__panel-toggle {
+	.cb-core-design-shell.is-left-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
+		visibility: hidden;
+		pointer-events: none;
+		transform: translateX(calc(-100% - var(--cb-space-3)));
+	}
+
+	.cb-core-design-shell.is-right-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		visibility: hidden;
+		pointer-events: none;
+		transform: translateX(calc(100% + var(--cb-space-3)));
+	}
+
+	.cb-core-design-shell:not(.is-left-panel-collapsed) .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
+	.cb-core-design-shell:not(.is-right-panel-collapsed) .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		visibility: visible;
+		pointer-events: auto;
+		transform: translateX(0);
+	}
+
+	.cb-core-design-shell__drawer-backdrop {
+		appearance: none;
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+		display: block;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: rgba(0, 0, 0, .38);
+		cursor: pointer;
+	}
+
+	.cb-core-design-shell__drawer-backdrop[hidden] {
 		display: none;
+	}
+
+	.cb-core-design-shell__drawer-launcher {
+		display: inline-flex !important;
+	}
+
+	.cb-core-design-shell__panel,
+	.cb-core-design-shell__sidebar-panel {
+		min-height: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		transition: none;
 	}
 }
