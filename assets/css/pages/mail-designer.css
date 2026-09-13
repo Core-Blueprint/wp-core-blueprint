@@ -1,7 +1,7 @@
 /**
  * Core Blueprint Mail Designer.
  * Mail-specific presentation only. Shared editor chrome/layout lives in the
- * Design Foundation editor shell.
+ * Design Foundation editor shell and canonical composition layer.
  */
 
 .cb-core-mail-feature-grid {
@@ -121,28 +121,11 @@
 	color: var(--cb-danger);
 }
 
-.cb-core-mail-designer__toolbar .is-active {
-	box-shadow: inset 0 0 0 1px var(--cb-accent);
-}
-
-.cb-core-mail-designer__palette h3 {
-	margin-top: 0;
-}
-
-.cb-core-mail-designer__palette-list {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: var(--cb-space-2);
-	margin-bottom: var(--cb-space-5);
-}
-
+/* Mail adds provider metadata beneath a canonical palette item label. */
 .cb-core-mail-designer__element {
-	display: flex !important;
 	flex-direction: column;
-	align-items: flex-start !important;
-	justify-content: center !important;
-	min-height: 52px;
-	white-space: normal !important;
+	align-items: flex-start;
+	text-align: left;
 }
 
 .cb-core-mail-designer__element small {
@@ -174,34 +157,11 @@
 	border-color: var(--cb-accent);
 }
 
-.cb-core-mail-designer__canvas-heading {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--cb-space-4);
-	padding: var(--cb-space-3);
-	border-bottom: 1px solid var(--cb-border);
-}
-
-.cb-core-mail-designer__canvas-heading > div {
-	display: grid;
-	gap: 2px;
-}
-
-.cb-core-mail-designer__canvas-heading span {
-	color: var(--cb-text-muted);
-	font-size: var(--cb-fs-sm);
-}
-
+/* The canonical canvas workarea owns padding, background and scrolling. */
 .cb-core-mail-designer__preview-frame {
 	display: flex;
 	justify-content: center;
-	width: 100%;
 	min-height: 700px;
-	padding: var(--cb-space-4);
-	box-sizing: border-box;
-	background: var(--cb-surface-2);
-	overflow: auto;
 	transition: padding .15s ease;
 }
 
@@ -222,21 +182,6 @@
 
 .cb-core-mail-designer__preview-frame.is-mobile iframe {
 	max-width: 430px;
-}
-
-.cb-core-mail-inspector-field {
-	margin-bottom: var(--cb-space-3);
-}
-
-.cb-core-mail-inspector-field input,
-.cb-core-mail-inspector-field select,
-.cb-core-mail-inspector-field textarea {
-	width: 100%;
-	max-width: none;
-}
-
-.cb-core-mail-inspector-remove {
-	margin-top: var(--cb-space-3) !important;
 }
 
 .cb-core-mail-structure {
@@ -333,7 +278,6 @@
 
 	.cb-core-mail-designer__preview-frame {
 		min-height: 560px;
-		padding: var(--cb-space-2);
 	}
 
 	.cb-core-mail-designer__preview-frame iframe {
