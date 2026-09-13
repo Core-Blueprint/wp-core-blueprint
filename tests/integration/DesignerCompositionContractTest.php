@@ -16,7 +16,16 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( "public const DESIGNER_COMPOSITION_STYLE = 'cb-core-designer-composition';", $assets );
 		self::assertStringContainsString( "CB_CORE_URL . 'assets/css/design/designer-composition.css'", $assets );
-		self::assertStringContainsString( '[ self::DESIGNER_MODE_STYLE ]', $assets );
+		self::assertStringContainsString( '[ self::DESIGNER_MODE_STYLE, self::FORM_CONTROL_STYLE ]', $assets );
+	}
+
+	public function test_designer_mode_owns_form_control_presentation_without_consumer_scope_hacks(): void {
+		$assets = $this->source( 'src/Design/Editor/Assets.php' );
+
+		self::assertStringContainsString( "private const FORM_CONTROL_STYLE = 'cb-core-css-form-controls';", $assets );
+		self::assertStringContainsString( "CB_CORE_URL . 'assets/css/components/form-controls.css'", $assets );
+		self::assertStringContainsString( "shell.classList.add('cb-core-form-scope')", $assets );
+		self::assertStringContainsString( 'wp_add_inline_script(', $assets );
 	}
 
 	public function test_composition_layer_exposes_the_canonical_canvas_grammar(): void {
@@ -60,6 +69,20 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_composed_tab_panels_delegate_inset_to_panel_body(): void {
+		$css = $this->source( 'assets/css/design/designer-composition.css' );
+
+		self::assertStringContainsString(
+			'.cb-core-design-shell__palette--composed > .cb-core-design-shell__panel',
+			$css
+		);
+		self::assertStringContainsString(
+			'.cb-core-design-shell__sidebar--composed > .cb-core-design-shell__sidebar-panel',
+			$css
+		);
+		self::assertStringContainsString( 'Base delegates all inset to that body', $css );
+	}
+
 	public function test_panel_grammar_is_product_neutral(): void {
 		$css = $this->source( 'assets/css/design/designer-composition.css' );
 
@@ -95,5 +118,6 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'A viewport switcher is **not** mandatory merely because Mail uses one', $docs );
 		self::assertStringContainsString( 'must not restyle the canonical rail locally', $docs );
 		self::assertStringContainsString( 'Consumers must not redefine panel padding, section dividers, field rhythm or palette item presentation locally.', $docs );
+		self::assertStringContainsString( 'Form Control presentation is Base-owned inside Designer Mode', $docs );
 	}
 }
