@@ -74,6 +74,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 
 	public function test_reports_designer_previews_and_saves_in_place(): void {
 		$runtime = $this->source( 'assets/js/features/reports-preferences.js' );
+		$i18n    = $this->source( 'src/Admin/AdminModuleDefinitionsPreferences.php' );
 
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding'", $runtime );
 		self::assertStringContainsString( 'previewSequence', $runtime );
@@ -83,6 +84,8 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "setSaveState( 'saving' )", $runtime );
 		self::assertStringContainsString( "setSaveState( 'saved' )", $runtime );
 		self::assertStringContainsString( "setSaveState( 'error' )", $runtime );
+		self::assertStringContainsString( "'previewLoading'", $i18n );
+		self::assertStringContainsString( "'previewFailed'", $i18n );
 		self::assertStringNotContainsString( 'window.location', $runtime );
 		self::assertStringNotContainsString( 'location.reload', $runtime );
 	}
