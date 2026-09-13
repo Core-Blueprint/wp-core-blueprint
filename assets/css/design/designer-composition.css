@@ -12,6 +12,147 @@
 }
 
 /*
+ * Canonical palette/sidebar composition. Base owns panel inset, section rhythm,
+ * shared field sizing and palette-item presentation.
+ */
+.cb-core-design-shell__palette--composed,
+.cb-core-design-shell__sidebar--composed {
+	padding: 0;
+	overflow: hidden;
+}
+
+.cb-core-design-shell__palette--composed > .cb-core-design-shell__panel-header,
+.cb-core-design-shell__sidebar--composed > .cb-core-design-shell__panel-header {
+	margin: 0;
+}
+
+.cb-core-design-shell__panel-body {
+	display: grid;
+	gap: var(--cb-space-3);
+	min-width: 0;
+	padding: var(--cb-space-3);
+	box-sizing: border-box;
+}
+
+.cb-core-design-shell.is-fullscreen .cb-core-design-shell__panel-body,
+[data-cb-design-launch-root][data-cb-design-launch-mode="direct"] .cb-core-design-shell__panel-body {
+	min-height: 0;
+	overflow: auto;
+}
+
+.cb-core-design-shell__panel-section {
+	display: grid;
+	gap: var(--cb-space-2);
+	min-width: 0;
+}
+
+.cb-core-design-shell__panel-section + .cb-core-design-shell__panel-section {
+	margin-top: var(--cb-space-1);
+	padding-top: var(--cb-space-3);
+	border-top: 1px solid var(--cb-border);
+}
+
+.cb-core-design-shell__panel-section-title {
+	margin: 0;
+	color: var(--cb-text-strong);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-semibold);
+	line-height: 1.35;
+}
+
+.cb-core-design-shell__panel-section-description {
+	margin: 0;
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-sm);
+	line-height: 1.45;
+}
+
+.cb-core-design-shell__field {
+	display: grid;
+	gap: var(--cb-space-1);
+	min-width: 0;
+}
+
+.cb-core-design-shell__field-label {
+	color: var(--cb-text-strong);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-semibold);
+	line-height: 1.35;
+}
+
+.cb-core-design-shell__field-hint {
+	margin: 0;
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-sm);
+	line-height: 1.45;
+}
+
+.cb-core-design-shell__field :is(
+	input:not([type="checkbox"]):not([type="radio"]),
+	select,
+	textarea
+) {
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.cb-core-design-shell__panel-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--cb-space-2);
+}
+
+.cb-core-design-shell__palette-grid {
+	--cb-design-palette-columns: 2;
+	display: grid;
+	grid-template-columns: repeat(var(--cb-design-palette-columns), minmax(0, 1fr));
+	gap: var(--cb-space-2);
+	min-width: 0;
+}
+
+.cb-core-design-shell__palette-item {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 0;
+	min-height: 44px;
+	padding: var(--cb-space-2);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+	box-sizing: border-box;
+	background: var(--cb-surface-1);
+	color: var(--cb-text-strong);
+	font: inherit;
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-semibold);
+	line-height: 1.25;
+	text-align: center;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.cb-core-design-shell__palette-item:hover,
+.cb-core-design-shell__palette-item:focus-visible {
+	border-color: var(--cb-accent);
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-design-shell__palette-item:focus-visible {
+	outline: 2px solid var(--cb-accent);
+	outline-offset: 1px;
+}
+
+.cb-core-design-shell__palette-item:disabled,
+.cb-core-design-shell__palette-item[aria-disabled="true"] {
+	opacity: .55;
+	cursor: default;
+}
+
+/*
  * Opt-in composed canvas. Existing embedded editor consumers remain unaffected;
  * full Designer Mode consumers use this modifier for the canonical canvas rail.
  */
@@ -142,5 +283,9 @@
 
 	.cb-core-design-shell__surface--document {
 		--cb-design-document-padding: var(--cb-space-4);
+	}
+
+	.cb-core-design-shell__palette-grid {
+		--cb-design-palette-columns: 1;
 	}
 }
