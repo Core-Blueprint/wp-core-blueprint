@@ -2,7 +2,7 @@
  * Canonical Designer Mode chrome layered on top of the shared editor shell.
  *
  * Consumers own domain panels and canvas semantics. Base owns the panel rails,
- * sidebar headers, collapse affordances and direct-mode chrome composition.
+ * sidebar headers, collapse/drawer affordances and direct-mode chrome composition.
  */
 
 @media (scripting: enabled) {
@@ -15,6 +15,7 @@
 	--cb-design-sidebar-header-height: 44px;
 	--cb-design-left-track: minmax(180px, 220px);
 	--cb-design-right-track: minmax(240px, 300px);
+	--cb-design-drawer-width: min(360px, calc(100% - var(--cb-space-5)));
 	display: grid;
 	grid-template-columns:
 		var(--cb-design-left-track)
@@ -111,6 +112,14 @@
 	grid-column: 1;
 }
 
+.cb-core-design-shell__drawer-launcher {
+	display: none !important;
+}
+
+.cb-core-design-shell__drawer-backdrop {
+	display: none;
+}
+
 .cb-core-design-shell.is-left-panel-collapsed .cb-core-design-shell__workspace--collapsible {
 	--cb-design-left-track: var(--cb-design-sidebar-header-height);
 }
@@ -163,42 +172,102 @@
 
 @media (max-width: 1280px) {
 	.cb-core-design-shell__workspace--collapsible {
+		position: relative;
+		isolation: isolate;
 		display: grid;
-		grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
-		gap: var(--cb-space-3);
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
+		min-height: 0;
+		overflow: hidden;
 	}
 
-	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
-		display: block !important;
-		grid-column: 1;
-		grid-row: auto;
+	.cb-core-design-shell.is-fullscreen > .cb-core-design-shell__workspace--collapsible,
+	[data-cb-design-launch-root][data-cb-design-launch-mode="direct"][data-cb-design-exit-url]:not([data-cb-design-exit-url=""]) .cb-core-design-shell > .cb-core-design-shell__workspace--collapsible {
+		overflow: hidden;
 	}
 
 	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__canvas {
-		grid-column: 2;
-		grid-row: auto;
-	}
-
-	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
-		display: block !important;
-		grid-column: 1 / -1;
-		grid-row: auto;
-	}
-
-	.cb-core-design-shell__panel-toggle {
-		display: none;
-	}
-}
-
-@media (max-width: 900px) {
-	.cb-core-design-shell__workspace--collapsible {
-		grid-template-columns: 1fr;
+		grid-column: 1;
+		grid-row: 1;
+		min-width: 0;
+		min-height: 0;
 	}
 
 	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
-	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__canvas,
 	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		position: absolute !important;
+		inset-block: 0;
+		z-index: 4;
+		display: block !important;
+		width: var(--cb-design-drawer-width);
+		max-width: calc(100% - var(--cb-space-4));
+		min-height: 0;
+		max-height: none !important;
+		margin: 0;
+		box-sizing: border-box;
+		overflow: auto;
+		box-shadow: 0 16px 40px rgba(0, 0, 0, .24);
+		transition: transform 170ms cubic-bezier(.2, .8, .2, 1), visibility 170ms linear;
+	}
+
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
+		inset-inline-start: 0;
 		grid-column: 1;
-		grid-row: auto;
+		grid-row: 1;
+	}
+
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		inset-inline-end: 0;
+		grid-column: 1;
+		grid-row: 1;
+	}
+
+	.cb-core-design-shell.is-left-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
+		visibility: hidden;
+		pointer-events: none;
+		transform: translateX(calc(-100% - var(--cb-space-3)));
+	}
+
+	.cb-core-design-shell.is-right-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		visibility: hidden;
+		pointer-events: none;
+		transform: translateX(calc(100% + var(--cb-space-3)));
+	}
+
+	.cb-core-design-shell:not(.is-left-panel-collapsed) .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
+	.cb-core-design-shell:not(.is-right-panel-collapsed) .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		visibility: visible;
+		pointer-events: auto;
+		transform: translateX(0);
+	}
+
+	.cb-core-design-shell__drawer-backdrop {
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+		display: block;
+		border: 0;
+		background: rgba(0, 0, 0, .38);
+		cursor: pointer;
+	}
+
+	.cb-core-design-shell__drawer-backdrop[hidden] {
+		display: none;
+	}
+
+	.cb-core-design-shell__drawer-launcher {
+		display: inline-flex !important;
+	}
+
+	.cb-core-design-shell__panel,
+	.cb-core-design-shell__sidebar-panel {
+		min-height: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		transition: none;
 	}
 }
