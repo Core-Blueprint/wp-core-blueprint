@@ -62,25 +62,30 @@ final class CB_Designer_External_Consumer_Contract_Test extends WP_UnitTestCase 
 		);
 	}
 
-	public function test_collapsible_shell_keeps_the_canonical_three_two_one_geometry(): void {
+	public function test_canonical_designer_keeps_three_rails_on_desktop_and_uses_off_canvas_drawers_below_1281(): void {
 		$root         = dirname( __DIR__, 2 );
 		$designer_css = (string) file_get_contents( $root . '/assets/css/design/designer-mode.css' );
-		$shell_css    = (string) file_get_contents( $root . '/assets/css/design/editor-shell.css' );
+		$launch       = (string) file_get_contents( $root . '/assets/js/features/designer-launch.js' );
 
 		self::assertStringContainsString(
 			"grid-template-columns:\n\t\tvar(--cb-design-left-track)\n\t\tminmax(0, 1fr)\n\t\tvar(--cb-design-right-track);",
 			$designer_css
 		);
 		self::assertMatchesRegularExpression(
-			'/@media \(max-width: 1280px\).*?\.cb-core-design-shell__workspace--collapsible\s*\{.*?grid-template-columns:\s*minmax\(180px, 220px\) minmax\(0, 1fr\);/s',
+			'/@media \(max-width: 1280px\).*?\.cb-core-design-shell__workspace--collapsible\s*\{.*?grid-template-columns:\s*minmax\(0, 1fr\);/s',
 			$designer_css
 		);
-		self::assertMatchesRegularExpression(
-			'/@media \(max-width: 900px\).*?\.cb-core-design-shell__workspace--collapsible\s*\{.*?grid-template-columns:\s*1fr;/s',
-			$designer_css
-		);
-		self::assertStringContainsString( '@media (max-width: 900px)', $shell_css );
-		self::assertStringContainsString( "\t\tgrid-template-columns: 1fr;", $shell_css );
+		self::assertStringContainsString( '--cb-design-drawer-width', $designer_css );
+		self::assertStringContainsString( 'position: absolute !important;', $designer_css );
+		self::assertStringContainsString( 'translateX(calc(-100% - var(--cb-space-3)))', $designer_css );
+		self::assertStringContainsString( 'translateX(calc(100% + var(--cb-space-3)))', $designer_css );
+		self::assertStringNotContainsString( 'grid-column: 1 / -1;', $designer_css );
+
+		self::assertStringContainsString( "const RESPONSIVE_DRAWER_QUERY = '(max-width: 1280px)';", $launch );
+		self::assertStringContainsString( 'cb-core-design-shell__drawer-launcher', $launch );
+		self::assertStringContainsString( 'cb-core-design-shell__drawer-backdrop', $launch );
+		self::assertStringContainsString( "record.panel.setAttribute('inert', '')", $launch );
+		self::assertStringContainsString( 'event.stopImmediatePropagation();', $launch );
 	}
 
 	public function test_public_designer_docs_distinguish_engine_from_canonical_mode(): void {
@@ -92,7 +97,7 @@ final class CB_Designer_External_Consumer_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( 'presentation-self-contained', $docs );
 		self::assertStringContainsString( 'does **not** need `.cb-core-wrap`', $docs );
 		self::assertStringContainsString( '`>1280px`', $docs );
-		self::assertStringContainsString( '`901–1280px`', $docs );
-		self::assertStringContainsString( '`≤900px`', $docs );
+		self::assertStringContainsString( '`≤1280px`', $docs );
+		self::assertStringContainsString( 'off-canvas', $docs );
 	}
 }
