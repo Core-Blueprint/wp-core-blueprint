@@ -22,6 +22,7 @@ final class Assets {
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
 	public const DESIGNER_MODE_SCRIPT = 'cb-core-designer-mode';
+	private const BUTTON_STYLE = 'cb-core-css-buttons';
 	private const MOTION_MODULE_ID = '@cb-core/design-motion';
 
 	public static function enqueue(): void {
@@ -53,6 +54,8 @@ final class Assets {
 	 * Consumers provide their translated mode title plus declarative
 	 * `data-cb-design-*` shell contracts and domain callbacks. Base owns launch/
 	 * focus chrome, brand, shared labels and the private Designer Mode source path.
+	 * Designer Mode also owns the narrow shared Button presentation required by
+	 * the Base chrome it composes; consumers do not need the full Core Admin theme.
 	 */
 	public static function enqueue_designer_mode( string $title = '' ): void {
 		self::enqueue();
@@ -63,9 +66,16 @@ final class Assets {
 		}
 
 		wp_enqueue_style(
+			self::BUTTON_STYLE,
+			CB_CORE_URL . 'assets/css/components/buttons.css',
+			[ 'cb-core-css-tokens' ],
+			self::asset_version( 'assets/css/components/buttons.css' )
+		);
+
+		wp_enqueue_style(
 			self::DESIGNER_MODE_STYLE,
 			CB_CORE_URL . 'assets/css/design/designer-mode.css',
-			[ self::SHELL_STYLE ],
+			[ self::SHELL_STYLE, self::BUTTON_STYLE ],
 			self::asset_version( 'assets/css/design/designer-mode.css' )
 		);
 
