@@ -16,7 +16,8 @@
 		|| ''
 	).trim();
 	const iconFor = (control) => String(
-		control?.querySelector?.('[data-cb-design-shell-lucide-icon]')?.dataset?.cbDesignShellLucideIcon
+		control?.dataset?.cbDesignShellIcon
+		|| control?.querySelector?.('[data-cb-design-shell-lucide-icon]')?.dataset?.cbDesignShellLucideIcon
 		|| ''
 	).trim();
 	const uniqueControls = (controls) => [...new Set(controls.filter(Boolean))];
@@ -25,6 +26,14 @@
 		return uniqueControls(Array.from(toolbar.querySelectorAll(selector)).flatMap((node) => {
 			if (node instanceof HTMLButtonElement) return [node];
 			return Array.from(node.querySelectorAll('button'));
+		}));
+	};
+	const controlsInExtension = (shell, group) => {
+		const selector = `[data-cb-design-shell-toolbar-extension="${group}"]`;
+		return uniqueControls(Array.from(shell.querySelectorAll(selector)).flatMap((host) => {
+			host.hidden = true;
+			host.setAttribute('aria-hidden', 'true');
+			return Array.from(host.querySelectorAll('button'));
 		}));
 	};
 
@@ -43,9 +52,12 @@
 		toolbar.dataset.cbDesignShellCompactToolbar = 'true';
 
 		const viewportControls = Array.from(toolbar.querySelectorAll('[data-cb-design-shell-viewport]'));
+		const extensionViewControls = controlsInExtension(shell, 'view');
+		const extensionActionControls = controlsInExtension(shell, 'actions');
 		const viewControls = uniqueControls([
 			...viewportControls,
 			...controlsInCompactGroup(toolbar, 'view'),
+			...extensionViewControls,
 		]);
 		const actionControls = uniqueControls([
 			toolbar.querySelector('[data-cb-design-shell-undo]'),
@@ -53,6 +65,7 @@
 			toolbar.querySelector('[data-cb-design-shell-fullscreen]'),
 			toolbar.querySelector('[data-cb-design-shell-close]'),
 			...controlsInCompactGroup(toolbar, 'actions'),
+			...extensionActionControls,
 		]).filter((control) => !control.hasAttribute('data-cb-design-shell-primary-action'));
 
 		let openRecord = null;
@@ -69,11 +82,11 @@
 		};
 
 		const syncProxy = (record) => {
-			const { source, proxy } = record;
+			const { source, proxy, iconOnly = false } = record;
 			const label = labelFor(source) || String(config.toolbarLabels?.action || 'Action').trim();
 			const icon = iconFor(source);
 			proxy.textContent = label;
-			if (icon) shellApi.icons.decorate(proxy, icon, { label });
+			if (icon) shellApi.icons.decorate(proxy, icon, { iconOnly, label });
 			else proxy.setAttribute('aria-label', label);
 			proxy.disabled = source.disabled === true;
 			const pressed = source.getAttribute('aria-pressed');
@@ -82,24 +95,50 @@
 			proxy.classList.toggle('is-active', source.classList.contains('is-active') || pressed === 'true');
 		};
 
-		const createProxy = (source, menuRecord) => {
-			const proxy = document.createElement('button');
-			proxy.type = 'button';
-			proxy.className = 'cb-core-design-shell__compact-menu-item';
-			const record = { source, proxy };
+		const bindProxy = (source, proxy, { iconOnly = false, afterActivate = null } = {}) => {
+			const record = { source, proxy, iconOnly };
 			syncProxy(record);
 			new MutationObserver(() => syncProxy(record)).observe(source, {
 				attributes: true,
-				attributeFilter: ['aria-pressed', 'aria-label', 'title', 'class', 'disabled'],
+				attributeFilter: ['aria-pressed', 'aria-label', 'title', 'class', 'disabled', 'data-cb-design-shell-icon'],
 			});
 			proxy.addEventListener('click', () => {
 				if (proxy.disabled) return;
 				source.click();
 				window.requestAnimationFrame(() => syncProxy(record));
-				closeMenu(menuRecord, { restoreFocus: false });
+				if (typeof afterActivate === 'function') afterActivate();
 			});
 			return proxy;
 		};
+
+		const createCompactProxy = (source, menuRecord) => {
+			const proxy = document.createElement('button');
+			proxy.type = 'button';
+			proxy.className = 'cb-core-design-shell__compact-menu-item';
+			return bindProxy(source, proxy, {
+				afterActivate: () => closeMenu(menuRecord, { restoreFocus: false }),
+			});
+		};
+
+		const createExtensionGroup = ({ controls, group, mount, before = null }) => {
+			if (!controls.length || !mount) return null;
+			const wrapper = document.createElement('div');
+			wrapper.className = 'cb-core-design-shell__toolbar-group cb-core-design-shell__toolbar-group--extension';
+			wrapper.dataset.cbDesignShellCompactGroup = group;
+			controls.forEach((source) => {
+				const proxy = document.createElement('button');
+				proxy.type = 'button';
+				proxy.className = 'button cb-core-button cb-core-design-shell__toolbar-extension-action';
+				bindProxy(source, proxy, { iconOnly: Boolean(iconFor(source)) });
+				wrapper.append(proxy);
+			});
+			if (before && before.parentElement === mount) mount.insertBefore(wrapper, before);
+			else mount.append(wrapper);
+			return wrapper;
+		};
+
+		createExtensionGroup({ controls: extensionViewControls, group: 'view', mount: center });
+		createExtensionGroup({ controls: extensionActionControls, group: 'actions', mount: end, before: save });
 
 		const createMenu = ({ name, label, icon, controls, mount, before = null }) => {
 			if (!controls.length || !mount) return null;
@@ -125,7 +164,7 @@
 			trigger.setAttribute('aria-controls', panel.id);
 
 			const record = { name, wrapper, trigger, panel, controls };
-			controls.forEach((control) => panel.append(createProxy(control, record)));
+			controls.forEach((control) => panel.append(createCompactProxy(control, record)));
 			trigger.addEventListener('click', () => {
 				const opening = panel.hidden;
 				closeAll();
@@ -174,6 +213,7 @@
 		} else {
 			window.addEventListener('resize', applyCompactState, { passive: true });
 		}
+		shell.addEventListener('cb:design-shell:fullscreenchange', () => window.requestAnimationFrame(applyCompactState));
 		applyCompactState();
 
 		window.addEventListener('keydown', (event) => {
@@ -193,7 +233,7 @@
 		const shellApi = sharedShellApi();
 		if (!shellApi?.icons?.decorate) return false;
 		let pending = false;
-		document.querySelectorAll('[data-cb-design-shell]').forEach((shell) => {
+		document.querySelectorAll('[data-cb-design-launch-root] [data-cb-design-shell]').forEach((shell) => {
 			if (initialized.has(shell)) return;
 			if (!composeCompactToolbar(shell, shellApi)) pending = true;
 		});
