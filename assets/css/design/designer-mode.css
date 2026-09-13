@@ -2,7 +2,7 @@
  * Canonical Designer Mode chrome layered on top of the shared editor shell.
  *
  * Consumers own domain panels and canvas semantics. Base owns the panel rails,
- * sidebar headers, collapse/drawer affordances and direct-mode chrome composition.
+ * sidebar headers, collapse/drawer affordances, adaptive toolbar and direct-mode chrome composition.
  */
 
 @media (scripting: enabled) {
@@ -168,6 +168,114 @@
 .cb-core-design-shell__close:focus-visible {
 	border-color: var(--cb-text-muted) !important;
 	color: var(--cb-text-strong) !important;
+}
+
+/* Adaptive compact toolbar. Consumers declare capabilities; Base owns compression. */
+.cb-core-design-shell__compact-menu {
+	position: relative;
+	display: none;
+}
+
+.cb-core-design-shell__compact-menu-popover {
+	position: absolute;
+	inset-block-start: calc(100% + var(--cb-space-2));
+	z-index: 40;
+	display: grid;
+	gap: var(--cb-space-1);
+	width: max-content;
+	min-width: 190px;
+	max-width: min(280px, calc(100vw - (2 * var(--cb-space-4))));
+	padding: var(--cb-space-2);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+	background: var(--cb-surface-1);
+	box-shadow: 0 14px 34px rgba(0, 0, 0, .24);
+}
+
+.cb-core-design-shell__compact-menu-popover[hidden] {
+	display: none;
+}
+
+.cb-core-design-shell__compact-menu--view .cb-core-design-shell__compact-menu-popover {
+	inset-inline-start: 50%;
+	transform: translateX(-50%);
+}
+
+.cb-core-design-shell__compact-menu--actions .cb-core-design-shell__compact-menu-popover {
+	inset-inline-end: 0;
+}
+
+.cb-core-design-shell__compact-menu-item {
+	appearance: none;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: var(--cb-space-2);
+	width: 100%;
+	min-height: 36px;
+	margin: 0;
+	padding: var(--cb-space-2) var(--cb-space-3);
+	border: 0;
+	border-radius: var(--cb-radius-sm);
+	background: transparent;
+	color: var(--cb-text);
+	font: inherit;
+	font-size: var(--cb-fs-sm);
+	line-height: 1.25;
+	text-align: start;
+	cursor: pointer;
+}
+
+.cb-core-design-shell__compact-menu-item:hover,
+.cb-core-design-shell__compact-menu-item:focus-visible,
+.cb-core-design-shell__compact-menu-item.is-active,
+.cb-core-design-shell__compact-menu-item[aria-pressed="true"] {
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-design-shell__compact-menu-item:focus-visible {
+	outline: 2px solid var(--cb-accent);
+	outline-offset: -2px;
+}
+
+.cb-core-design-shell__compact-menu-item:disabled {
+	opacity: .45;
+	cursor: not-allowed;
+}
+
+.cb-core-design-shell__compact-menu-item .cb-core-design-shell__icon {
+	flex: 0 0 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact {
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	gap: var(--cb-space-2);
+	padding: var(--cb-space-2);
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__brand-wordmark,
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-status,
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--viewport,
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--history,
+.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-fullscreen],
+.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-close],
+.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-compact-group] {
+	display: none !important;
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__compact-menu {
+	display: block;
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-zone {
+	gap: var(--cb-space-1);
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-zone--center {
+	justify-self: center;
 }
 
 @media (max-width: 1280px) {
