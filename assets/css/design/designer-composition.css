@@ -26,6 +26,14 @@
 	margin: 0;
 }
 
+/* Tabbed shell panels already have legacy inset in editor-shell.css. When a
+ * composed panel-body is used, Base delegates all inset to that body so tabbed
+ * and untabbed Designer panels share exactly one spacing authority. */
+.cb-core-design-shell__palette--composed > .cb-core-design-shell__panel,
+.cb-core-design-shell__sidebar--composed > .cb-core-design-shell__sidebar-panel {
+	padding: 0;
+}
+
 .cb-core-design-shell__panel-body {
 	display: grid;
 	gap: var(--cb-space-3);
