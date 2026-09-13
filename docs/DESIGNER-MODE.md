@@ -26,9 +26,9 @@ The semantic `design-editor` Foundation requirement resolves to this engine/shel
 CB\Core\Design\Editor\Assets::enqueue_designer_mode( __( 'Example Designer', 'example' ) );
 ```
 
-This includes the editor engine and adds the canonical Designer Mode launch, toolbar composition, Button presentation required by Base-generated chrome, panel rails/collapse behavior, canonical panel/canvas composition primitives and focus/fullscreen lifecycle.
+This includes the editor engine and adds the canonical Designer Mode launch, toolbar composition, Button presentation required by Base-generated chrome, Form Control presentation inside the Designer, panel rails/collapse behavior, canonical panel/canvas composition primitives and focus/fullscreen lifecycle.
 
-`enqueue_designer_mode()` is presentation-self-contained for the Base chrome and composition grammar it exposes. A standalone WordPress admin consumer does **not** need `.cb-core-wrap`, private Base asset handles or the full Core Admin theme in order to obtain the canonical Designer launch and shell presentation.
+`enqueue_designer_mode()` is presentation-self-contained for the Base chrome and composition grammar it exposes. A standalone WordPress admin consumer does **not** need `.cb-core-wrap`, `.cb-core-form-scope`, private Base asset handles or the full Core Admin theme in order to obtain the canonical Designer launch, controls and shell presentation. Base applies the narrow Designer form scope itself.
 
 Consumers must not import private Base CSS filenames or handles to complete Designer Mode styling.
 
@@ -138,6 +138,8 @@ For a sidebar field section, use the same panel grammar:
 
 Base owns panel inset, scroll behavior, section spacing/dividers, title/description hierarchy, field rhythm, action-row spacing and palette item visual states. Consumers supply the labels, domain controls, values, validation and behavior.
 
+**Form Control presentation is Base-owned inside Designer Mode.** `enqueue_designer_mode()` loads the canonical Base Form Controls Foundation and applies its safe form scope to the Designer shell itself. Consumers render semantic native controls inside the public field/panel primitives; they must not add `.cb-core-form-scope`, restyle inputs/selects/textareas locally or depend on an incidental Core Admin wrapper.
+
 The public panel primitives are:
 
 - `.cb-core-design-shell__palette--composed`
@@ -153,7 +155,7 @@ The public panel primitives are:
 - `.cb-core-design-shell__palette-grid`
 - `.cb-core-design-shell__palette-item`
 
-Existing `.cb-core-design-shell__tabs` / `__panel` and `.cb-core-design-shell__sidebar-tabs` / `__sidebar-panel` remain the only canonical tab rails. When tabs are present, place the Base panel-body grammar inside the applicable active panel; do not create a second tab system.
+Existing `.cb-core-design-shell__tabs` / `__panel` and `.cb-core-design-shell__sidebar-tabs` / `__sidebar-panel` remain the only canonical tab rails. When tabs are present, place the Base panel-body grammar inside the applicable active panel; Base neutralizes the legacy tab-panel inset so `__panel-body` remains the single spacing authority. Do not create a second tab system.
 
 Inspector, Layers and Settings remain capability-driven roles. A consumer without those capabilities may use an untabbed composed sidebar, but the absence of tabs does **not** permit a product-specific panel grammar.
 
@@ -215,7 +217,7 @@ Base owns:
 - responsive `3 → 2 → 1` shell geometry;
 - panel rails, headers and collapse affordances;
 - canonical palette/sidebar tabs and sidebar roles/order/icons where those roles are provided;
-- canonical palette/sidebar body inset, sections, dividers, field rhythm, action rows and palette-item presentation;
+- canonical palette/sidebar body inset, sections, dividers, field rhythm, action rows, form-control and palette-item presentation;
 - canonical canvas header/work-area composition, visual surfaces and empty-state presentation;
 - direct-mode exit navigation;
 - the Base Button presentation required by Designer chrome.
@@ -238,13 +240,13 @@ Consumers own:
 
 A Designer Mode consumer must not:
 
-- require or add `.cb-core-wrap` as a presentation workaround;
+- require or add `.cb-core-wrap` or `.cb-core-form-scope` as a presentation workaround;
 - enqueue private `cb-core-css-*` handles or Base CSS filenames directly;
 - reproduce the launch control or Base toolbar locally;
 - implement its own fullscreen/focus overlay, fixed viewport shell or Escape lifecycle;
 - override `.cb-core-design-shell__workspace` / `__workspace--collapsible` column geometry;
 - redraw panel rails, collapse controls, canonical tabs, canvas header/work-area rails or canonical sidebar role presentation;
-- redefine Base panel padding, section dividers, field rhythm, palette grids/items or shared panel action presentation in consumer CSS;
+- redefine Base panel padding, section dividers, field rhythm, form controls, palette grids/items or shared panel action presentation in consumer CSS;
 - copy Base Button, document-surface or Designer spacing rules into consumer CSS;
 - treat Mail, Automations or another first-party product's local CSS as the public Designer API.
 
@@ -258,7 +260,7 @@ Before a Base Designer change is considered release-ready, source/regression cov
 
 - canonical launch control presentation and rhythm outside `.cb-core-wrap`;
 - canonical palette/sidebar composition with and without tabs;
-- canonical panel sections, fields and palette items without product-local presentation CSS;
+- canonical panel sections, fields, form controls and palette items without product-local presentation CSS;
 - canonical panel and canvas composition without product-local shell CSS;
 - `>1280`, `901–1280` and `≤900` shell geometry;
 - light and dark presentation where the host provides supported Core Blueprint tokens/theme state;
