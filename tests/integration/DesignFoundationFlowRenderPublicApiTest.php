@@ -38,7 +38,7 @@ final class CB_Design_Foundation_Flow_Render_Public_Api_Test extends WP_UnitTest
 			$this->layout(),
 			$this->blocks(),
 			'en_GB',
-			new Presentation( '#0ea5e9' )
+			Presentation::from_accent( '#0ea5e9' )
 		);
 
 		self::assertStringStartsWith( '<!doctype html>', $html );
