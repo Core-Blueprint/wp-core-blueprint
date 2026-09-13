@@ -22,6 +22,7 @@ final class Assets {
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
 	public const DESIGNER_COMPOSITION_STYLE = 'cb-core-designer-composition';
+	public const DESIGNER_TOOLBAR_STYLE = 'cb-core-designer-toolbar';
 	public const DESIGNER_MODE_SCRIPT = 'cb-core-designer-mode';
 	public const DESIGNER_TOOLBAR_SCRIPT = 'cb-core-designer-toolbar';
 	private const TOKEN_STYLE = 'cb-core-css-tokens';
@@ -107,6 +108,13 @@ final class Assets {
 			CB_CORE_URL . 'assets/css/design/designer-composition.css',
 			[ self::DESIGNER_MODE_STYLE, self::FORM_CONTROL_STYLE ],
 			self::asset_version( 'assets/css/design/designer-composition.css' )
+		);
+
+		wp_enqueue_style(
+			self::DESIGNER_TOOLBAR_STYLE,
+			CB_CORE_URL . 'assets/css/design/designer-toolbar.css',
+			[ self::DESIGNER_COMPOSITION_STYLE, self::BUTTON_STYLE ],
+			self::asset_version( 'assets/css/design/designer-toolbar.css' )
 		);
 
 		wp_enqueue_script(
