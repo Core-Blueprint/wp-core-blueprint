@@ -72,10 +72,13 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'DesignEditorAssets::enqueue_designer_mode', $bootstrap );
 	}
 
-	public function test_reports_designer_previews_and_saves_in_place(): void {
+	public function test_reports_designer_initializes_the_shared_shell_and_saves_in_place(): void {
 		$runtime = $this->source( 'assets/js/features/reports-preferences.js' );
 		$i18n    = $this->source( 'src/Admin/AdminModuleDefinitionsPreferences.php' );
 
+		self::assertStringContainsString( "from '@cb-core/design-editor'", $runtime );
+		self::assertStringContainsString( 'createDesignerShell( shell )', $runtime );
+		self::assertStringContainsString( "'@cb-core/design-editor'", $i18n );
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding'", $runtime );
 		self::assertStringContainsString( 'previewSequence', $runtime );
 		self::assertStringContainsString( 'previewFrame.srcdoc = response.data.html', $runtime );

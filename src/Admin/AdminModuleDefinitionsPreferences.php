@@ -86,7 +86,7 @@ final class AdminModuleDefinitionsPreferences {
 				return [
 					'id'   => '@cb-core/reports-preferences',
 					'src'  => 'features/reports-preferences.js',
-					'deps' => [ '@cb-core/dom', '@cb-core/modal' ],
+					'deps' => [ '@cb-core/dom', '@cb-core/modal', '@cb-core/design-editor' ],
 					'data' => [
 						'i18n' => array_merge(
 							$save_status,

@@ -9,6 +9,7 @@
  */
 
 import { qs, apiPost } from '../core/dom.js';
+import { createDesignerShell } from '@cb-core/design-editor';
 
 const dataEl = document.getElementById( 'wp-script-module-data-@cb-core/reports-preferences' );
 const data   = dataEl ? JSON.parse( dataEl.textContent ) : {};
@@ -30,6 +31,10 @@ if ( FORM ) {
 	const resetBtn          = qs( '#cb-core-reset-branding', FORM );
 	const previewFrame      = qs( '[data-cb-report-preview]', FORM );
 	const previewState      = qs( '[data-cb-report-preview-state]', FORM );
+
+	if ( shell ) {
+		createDesignerShell( shell );
+	}
 
 	let mediaFrame = null;
 	let previewTimer = null;
