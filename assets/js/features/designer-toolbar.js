@@ -36,6 +36,7 @@
 		const start = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--start');
 		const center = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--center');
 		const end = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--end');
+		const save = toolbar.querySelector('[data-cb-design-shell-primary-action]');
 		if (!start || !center || !end) return false;
 
 		initialized.add(shell);
@@ -69,6 +70,11 @@
 
 		const syncProxy = (record) => {
 			const { source, proxy } = record;
+			const label = labelFor(source) || String(config.toolbarLabels?.action || 'Action').trim();
+			const icon = iconFor(source);
+			proxy.textContent = label;
+			if (icon) shellApi.icons.decorate(proxy, icon, { label });
+			else proxy.setAttribute('aria-label', label);
 			proxy.disabled = source.disabled === true;
 			const pressed = source.getAttribute('aria-pressed');
 			if (pressed === 'true' || pressed === 'false') proxy.setAttribute('aria-pressed', pressed);
@@ -80,12 +86,6 @@
 			const proxy = document.createElement('button');
 			proxy.type = 'button';
 			proxy.className = 'cb-core-design-shell__compact-menu-item';
-			const label = labelFor(source) || String(config.toolbarLabels?.action || 'Action').trim();
-			proxy.textContent = label;
-			const icon = iconFor(source);
-			if (icon) shellApi.icons.decorate(proxy, icon, { label });
-			else proxy.setAttribute('aria-label', label);
-
 			const record = { source, proxy };
 			syncProxy(record);
 			new MutationObserver(() => syncProxy(record)).observe(source, {
@@ -101,7 +101,7 @@
 			return proxy;
 		};
 
-		const createMenu = ({ name, label, icon, controls, mount }) => {
+		const createMenu = ({ name, label, icon, controls, mount, before = null }) => {
 			if (!controls.length || !mount) return null;
 			const wrapper = document.createElement('div');
 			wrapper.className = `cb-core-design-shell__compact-menu cb-core-design-shell__compact-menu--${name}`;
@@ -137,7 +137,8 @@
 				panel.querySelector('button:not([disabled])')?.focus();
 			});
 			wrapper.append(trigger, panel);
-			mount.append(wrapper);
+			if (before && before.parentElement === mount) mount.insertBefore(wrapper, before);
+			else mount.append(wrapper);
 			menuRecords.push(record);
 			return record;
 		};
@@ -145,7 +146,7 @@
 		const viewLabel = String(config.toolbarLabels?.view || 'View').trim();
 		const actionsLabel = String(config.toolbarLabels?.actions || 'Actions').trim();
 		const viewMenu = createMenu({ name: 'view', label: viewLabel, icon: 'monitor', controls: viewControls, mount: center });
-		createMenu({ name: 'actions', label: actionsLabel, icon: 'ellipsis', controls: actionControls, mount: end });
+		createMenu({ name: 'actions', label: actionsLabel, icon: 'ellipsis', controls: actionControls, mount: end, before: save });
 
 		const syncViewTrigger = () => {
 			if (!viewMenu) return;
