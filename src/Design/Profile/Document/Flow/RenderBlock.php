@@ -139,7 +139,7 @@ final readonly class RenderBlock {
 				if ( ! $child instanceof self ) {
 					throw new \InvalidArgumentException( 'Flow columns accept typed render blocks only.' );
 				}
-		}
+			}
 		}
 
 		if ( [] === $weights ) {
@@ -196,6 +196,7 @@ final readonly class RenderBlock {
 			foreach ( $columns as $column ) {
 				if ( ! $column instanceof TableColumn ) {
 					throw new \InvalidArgumentException( 'Flow tables accept typed column metadata only.' );
+				}
 			}
 		}
 
