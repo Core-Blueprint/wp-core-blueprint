@@ -53,7 +53,8 @@
 
 		const viewportControls = Array.from(toolbar.querySelectorAll('[data-cb-design-shell-viewport]'));
 		const extensionViewControls = controlsInExtension(shell, 'view');
-		const extensionActionControls = controlsInExtension(shell, 'actions');
+		const extensionActionControls = controlsInExtension(shell, 'actions')
+			.filter((control) => !control.hasAttribute('data-cb-design-shell-primary-action'));
 		const viewControls = uniqueControls([
 			...viewportControls,
 			...controlsInCompactGroup(toolbar, 'view'),
@@ -100,6 +101,9 @@
 			syncProxy(record);
 			new MutationObserver(() => syncProxy(record)).observe(source, {
 				attributes: true,
+				childList: true,
+				characterData: true,
+				subtree: true,
 				attributeFilter: ['aria-pressed', 'aria-label', 'title', 'class', 'disabled', 'data-cb-design-shell-icon'],
 			});
 			proxy.addEventListener('click', () => {
@@ -116,7 +120,7 @@
 			proxy.type = 'button';
 			proxy.className = 'cb-core-design-shell__compact-menu-item';
 			return bindProxy(source, proxy, {
-				afterActivate: () => closeMenu(menuRecord, { restoreFocus: false }),
+				afterActivate: () => closeMenu(menuRecord, { restoreFocus: true }),
 			});
 		};
 
@@ -223,6 +227,10 @@
 			closeMenu(openRecord, { restoreFocus: true });
 		}, true);
 		document.addEventListener('pointerdown', (event) => {
+			if (!openRecord || openRecord.wrapper.contains(event.target)) return;
+			closeMenu(openRecord);
+		}, true);
+		document.addEventListener('focusin', (event) => {
 			if (!openRecord || openRecord.wrapper.contains(event.target)) return;
 			closeMenu(openRecord);
 		}, true);
