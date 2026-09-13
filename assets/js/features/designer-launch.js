@@ -97,9 +97,9 @@
 
 			if (record.launcher) {
 				record.launcher.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-				shellApi.icons.decorate(record.launcher, record.side === 'left' ? 'chevron-right' : 'chevron-left', {
+				shellApi.icons.decorate(record.launcher, icon, {
 					iconOnly: true,
-					label: panelToggleLabel(record.panel, true),
+					label,
 				});
 			}
 
@@ -192,7 +192,13 @@
 			button.className = `button cb-core-button cb-core-design-shell__drawer-launcher cb-core-design-shell__drawer-launcher--${record.side}`;
 			button.dataset.cbDesignShellDrawerToggle = record.side;
 			record.launcher = button;
-			button.addEventListener('click', () => setCollapsed(record, false, { focusPanel: true }));
+			button.addEventListener('click', () => {
+				const collapsed = shell.classList.contains(record.className);
+				setCollapsed(record, !collapsed, {
+					focusPanel: collapsed,
+					focusLauncher: !collapsed,
+				});
+			});
 			return button;
 		};
 
