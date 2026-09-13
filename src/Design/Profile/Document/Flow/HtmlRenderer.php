@@ -184,6 +184,8 @@ final class HtmlRenderer {
 				foreach ( $row as $index => $cell ) {
 					$html .= '<td' . $this->table_cell_style( $columns[ $index ] ?? null ) . '>' . self::escape( $cell ) . '</td>';
 				}
+				$html .= '</tr>';
+			}
 			return $html . '</tbody></table></div>';
 		}
 
