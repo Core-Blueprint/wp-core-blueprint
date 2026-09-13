@@ -109,6 +109,38 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( '--cb-design-document-padding', $css );
 	}
 
+	public function test_mail_designer_consumes_canonical_composition_primitives(): void {
+		$template = $this->source( 'templates/mail-designer.php' );
+		$script   = $this->source( 'assets/js/features/mail-designer.js' );
+		$mail_css = $this->source( 'assets/css/pages/mail-designer.css' );
+
+		foreach ( [
+			'cb-core-design-shell__palette--composed',
+			'cb-core-design-shell__panel-body',
+			'cb-core-design-shell__palette-grid',
+			'cb-core-design-shell__palette-item',
+			'cb-core-design-shell__canvas--composed',
+			'cb-core-design-shell__canvas-header',
+			'cb-core-design-shell__canvas-workarea',
+			'cb-core-design-shell__sidebar--composed',
+			'cb-core-design-shell__sidebar-panel',
+		] as $primitive ) {
+			self::assertStringContainsString( $primitive, $template );
+		}
+
+		self::assertStringContainsString( "wrapper.className = 'cb-core-design-shell__field';", $script );
+		self::assertStringContainsString( "label.className = 'cb-core-design-shell__field-label';", $script );
+		self::assertStringContainsString( "actions.className = 'cb-core-design-shell__panel-actions';", $script );
+		self::assertStringContainsString( "empty.className = 'cb-core-design-shell__empty-state';", $script );
+
+		self::assertStringNotContainsString( '.cb-core-mail-designer__palette-list {', $mail_css );
+		self::assertStringNotContainsString( '.cb-core-mail-inspector-field', $mail_css );
+		self::assertStringNotContainsString( '.cb-core-mail-designer__canvas-heading', $mail_css );
+		self::assertStringContainsString( '.cb-core-mail-designer__preview-frame iframe', $mail_css );
+		self::assertStringContainsString( '.cb-core-mail-binding', $mail_css );
+		self::assertStringContainsString( '.cb-core-mail-structure', $mail_css );
+	}
+
 	public function test_public_designer_contract_documents_composition_ownership(): void {
 		$docs = $this->source( 'docs/DESIGNER-MODE.md' );
 
