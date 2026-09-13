@@ -13,6 +13,8 @@ final readonly class RenderBlock {
 	private const MAX_ROWS = 2000;
 	private const MAX_COMPOSITION_COLUMNS = 4;
 	private const MAX_COLUMN_WEIGHT = 100.0;
+	private const MAX_METRICS = 8;
+	private const CALLOUT_TONES = [ 'neutral', 'info', 'success', 'warning', 'critical' ];
 
 	/** @param mixed $payload @param array{space_before:float,space_after:float,break_before:bool,break_after:bool,keep_together:bool} $hints */
 	private function __construct( private string $type, private mixed $payload, private array $hints ) {}
@@ -34,6 +36,71 @@ final readonly class RenderBlock {
 			throw new \InvalidArgumentException( 'Unsupported Flow heading role.' );
 		}
 		return new self( 'heading', [ 'text' => $text, 'role' => $role ], self::normalize_hints( $hints ) );
+	}
+
+	/**
+	 * Bounded semantic callout. Tone selects renderer-owned presentation only;
+	 * consumers cannot supply colours, classes or style values.
+	 *
+	 * @param array<string,mixed> $hints
+	 */
+	public static function callout( string $title, string $body = '', string $tone = 'neutral', array $hints = [] ): self {
+		self::assert_text_size( $title, 'Flow callout title exceeds the supported size.' );
+		self::assert_text_size( $body, 'Flow callout body exceeds the supported size.' );
+		if ( '' === trim( $title ) ) {
+			throw new \InvalidArgumentException( 'Flow callouts require a title.' );
+		}
+		if ( ! in_array( $tone, self::CALLOUT_TONES, true ) ) {
+			throw new \InvalidArgumentException( 'Unsupported Flow callout tone.' );
+		}
+		return new self(
+			'callout',
+			[ 'title' => $title, 'body' => $body, 'tone' => $tone ],
+			self::normalize_hints( $hints )
+		);
+	}
+
+	/**
+	 * Bounded KPI/metric group. Every item has a required label and value and an
+	 * optional detail line. Grid geometry remains renderer-owned.
+	 *
+	 * @param list<array{label:string,value:string,detail?:string}> $items
+	 * @param array<string,mixed> $hints
+	 */
+	public static function metrics( array $items, array $hints = [] ): self {
+		if ( ! array_is_list( $items ) || [] === $items || count( $items ) > self::MAX_METRICS ) {
+			throw new \InvalidArgumentException( 'Flow metrics require between 1 and 8 ordered items.' );
+		}
+
+		$normalized = [];
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				throw new \InvalidArgumentException( 'Every Flow metric must be an object.' );
+			}
+			foreach ( array_keys( $item ) as $key ) {
+				if ( ! is_string( $key ) || ! in_array( $key, [ 'label', 'value', 'detail' ], true ) ) {
+					throw new \InvalidArgumentException( 'Flow metrics contain an unsupported key.' );
+				}
+			}
+
+			$label  = $item['label'] ?? null;
+			$value  = $item['value'] ?? null;
+			$detail = $item['detail'] ?? '';
+			if ( ! is_string( $label ) || '' === trim( $label ) || ! is_string( $value ) || '' === trim( $value ) || ! is_string( $detail ) ) {
+				throw new \InvalidArgumentException( 'Flow metric label/value must be non-empty strings and detail must be a string.' );
+			}
+			self::assert_text_size( $label, 'Flow metric label exceeds the supported size.' );
+			self::assert_text_size( $value, 'Flow metric value exceeds the supported size.' );
+			self::assert_text_size( $detail, 'Flow metric detail exceeds the supported size.' );
+			$normalized[] = [ 'label' => $label, 'value' => $value, 'detail' => $detail ];
+		}
+
+		return new self( 'metrics', $normalized, self::normalize_hints( $hints ) );
+	}
+
+	/** @param array<string,mixed> $hints */
+	public static function rule( array $hints = [] ): self {
+		return new self( 'rule', null, self::normalize_hints( $hints ) );
 	}
 
 	/** @param array<string,mixed> $hints */
@@ -72,7 +139,7 @@ final readonly class RenderBlock {
 				if ( ! $child instanceof self ) {
 					throw new \InvalidArgumentException( 'Flow columns accept typed render blocks only.' );
 				}
-			}
+		}
 		}
 
 		if ( [] === $weights ) {
@@ -129,7 +196,6 @@ final readonly class RenderBlock {
 			foreach ( $columns as $column ) {
 				if ( ! $column instanceof TableColumn ) {
 					throw new \InvalidArgumentException( 'Flow tables accept typed column metadata only.' );
-				}
 			}
 		}
 

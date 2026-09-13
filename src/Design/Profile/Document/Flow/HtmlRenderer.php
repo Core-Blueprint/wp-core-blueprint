@@ -37,6 +37,17 @@ final class HtmlRenderer {
 			. '.cb-flow-heading--title{font-size:22pt;font-weight:700;color:' . self::escape( $accent ) . ';}'
 			. '.cb-flow-heading--section{font-size:11pt;font-weight:700;color:#111;}'
 			. '.cb-flow-heading--subsection{font-size:9.5pt;font-weight:700;color:#333;}'
+			. '.cb-flow-callout{padding:10pt 12pt;border:1px solid #dbe2ea;border-left:3pt solid ' . self::escape( $accent ) . ';border-radius:6pt;background:#f8fafc;}'
+			. '.cb-flow-callout__title{margin:0 0 3pt;font-size:13pt;font-weight:700;line-height:1.2;color:#0f172a;}'
+			. '.cb-flow-callout__body{font-size:9.5pt;line-height:1.45;color:#334155;}'
+			. '.cb-flow-callout--info{border-left-color:#2563eb;background:#eff6ff;}.cb-flow-callout--success{border-left-color:#16a34a;background:#f0fdf4;}'
+			. '.cb-flow-callout--warning{border-left-color:#d97706;background:#fffbeb;}.cb-flow-callout--critical{border-left-color:#dc2626;background:#fef2f2;}'
+			. '.cb-flow-metrics-table{width:100%;border-collapse:collapse;table-layout:fixed;}.cb-flow-metrics-table td{padding:2pt;vertical-align:top;border:0;}'
+			. '.cb-flow-metric-card{min-height:48pt;padding:8pt;border:1px solid #dbe2ea;border-radius:5pt;background:#f8fafc;}'
+			. '.cb-flow-metric-card__label{font-size:8pt;font-weight:700;line-height:1.25;color:#64748b;}'
+			. '.cb-flow-metric-card__value{margin-top:2pt;font-size:17pt;font-weight:700;line-height:1.1;color:' . self::escape( $accent ) . ';}'
+			. '.cb-flow-metric-card__detail{margin-top:3pt;font-size:8pt;line-height:1.35;color:#64748b;}'
+			. '.cb-flow-rule__line{border-top:1px solid #dbe2ea;height:0;line-height:0;}'
 			. '.cb-flow-columns-table{width:100%;border-collapse:collapse;table-layout:fixed;}.cb-flow-columns-table>tbody>tr>td{border:0;padding:0 6pt;vertical-align:top;}'
 			. '.cb-flow-columns-table>tbody>tr>td:first-child{padding-left:0;}.cb-flow-columns-table>tbody>tr>td:last-child{padding-right:0;}'
 			. '.cb-flow-table{width:100%;border-collapse:collapse;}.cb-flow-table th,.cb-flow-table td{padding:4pt;border-bottom:1px solid #ddd;text-align:left;vertical-align:top;}'
@@ -74,6 +85,45 @@ final class HtmlRenderer {
 				throw new \InvalidArgumentException( 'Unsupported Flow heading role.' );
 			}
 			return $open . '<' . $tag . ' class="cb-flow-heading--' . self::escape( $heading['role'] ) . '">' . self::escape( $heading['text'] ) . '</' . $tag . '></div>';
+		}
+
+		if ( 'callout' === $block->type() ) {
+			/** @var array{title:string,body:string,tone:string} $callout */
+			$callout = $block->payload();
+			$html = '<div class="cb-flow-callout cb-flow-callout--' . self::escape( $callout['tone'] ) . '">';
+			$html .= '<div class="cb-flow-callout__title">' . self::escape( $callout['title'] ) . '</div>';
+			if ( '' !== $callout['body'] ) {
+				$html .= '<div class="cb-flow-callout__body">' . nl2br( self::escape( $callout['body'] ), false ) . '</div>';
+			}
+			return $open . $html . '</div></div>';
+		}
+
+		if ( 'metrics' === $block->type() ) {
+			/** @var list<array{label:string,value:string,detail:string}> $metrics */
+			$metrics = $block->payload();
+			$columns = self::metric_columns( count( $metrics ) );
+			$html = $open . '<table class="cb-flow-metrics-table"><tbody>';
+			foreach ( array_chunk( $metrics, $columns ) as $row ) {
+				$html .= '<tr>';
+				foreach ( $row as $metric ) {
+					$html .= '<td><div class="cb-flow-metric-card">'
+						. '<div class="cb-flow-metric-card__label">' . self::escape( $metric['label'] ) . '</div>'
+						. '<div class="cb-flow-metric-card__value">' . self::escape( $metric['value'] ) . '</div>';
+					if ( '' !== $metric['detail'] ) {
+						$html .= '<div class="cb-flow-metric-card__detail">' . self::escape( $metric['detail'] ) . '</div>';
+					}
+					$html .= '</div></td>';
+				}
+				for ( $index = count( $row ); $index < $columns; $index++ ) {
+					$html .= '<td></td>';
+				}
+				$html .= '</tr>';
+			}
+			return $html . '</tbody></table></div>';
+		}
+
+		if ( 'rule' === $block->type() ) {
+			return $open . '<div class="cb-flow-rule__line"></div></div>';
 		}
 
 		if ( 'image' === $block->type() ) {
@@ -147,6 +197,16 @@ final class HtmlRenderer {
 			$style .= 'white-space:nowrap;';
 		}
 		return ' style="' . $style . '"';
+	}
+
+	private static function metric_columns( int $count ): int {
+		if ( $count <= 3 ) {
+			return $count;
+		}
+		if ( $count <= 6 ) {
+			return 3;
+		}
+		return 4;
 	}
 
 	/** @param list<float> $weights @return list<float> */
