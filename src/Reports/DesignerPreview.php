@@ -39,7 +39,7 @@ final class DesignerPreview {
 		$document = $this->compiler->compile(
 			$report,
 			$data,
-			$this->resolve_branding( $branding ),
+			MaintenanceFlowBranding::resolve_values( $branding ),
 			$locale
 		);
 
@@ -116,29 +116,6 @@ final class DesignerPreview {
 				],
 				'notes'            => [],
 			],
-		];
-	}
-
-	/**
-	 * @param array{logo_attachment_id:int,provider_name:string,provider_contact:string,accent_color:string} $branding
-	 * @return array{logo_url:string,fallback_text:string,provider_name:string,provider_contact:string,accent_color:string,is_default:bool}
-	 */
-	private function resolve_branding( array $branding ): array {
-		$logo_id  = (int) $branding['logo_attachment_id'];
-		$logo_url = $logo_id > 0 && ReportBranding::is_supported_logo_attachment( $logo_id )
-			? ReportBranding::attachment_url( $logo_id )
-			: (string) ReportBranding::fallback()['logo_url'];
-
-		return [
-			'logo_url'         => $logo_url,
-			'fallback_text'    => '' === $logo_url ? 'Core Blueprint' : '',
-			'provider_name'    => (string) $branding['provider_name'],
-			'provider_contact' => (string) $branding['provider_contact'],
-			'accent_color'     => (string) $branding['accent_color'],
-			'is_default'       => 0 === $logo_id
-				&& '' === (string) $branding['provider_name']
-				&& '' === (string) $branding['provider_contact']
-				&& ReportBranding::DEFAULT_ACCENT === strtolower( (string) $branding['accent_color'] ),
 		];
 	}
 }

@@ -52,6 +52,17 @@ if ( FORM ) {
 		previewState.hidden = message === '';
 	};
 
+	const requestErrorMessage = ( error, fallback ) => {
+		if ( error instanceof TypeError ) {
+			return i18n.networkError || 'Network error - try again.';
+		}
+		const message = error instanceof Error ? String( error.message || '' ).trim() : '';
+		if ( ! message || error instanceof SyntaxError || /^HTTP \d+$/.test( message ) ) {
+			return fallback;
+		}
+		return message;
+	};
+
 	const updateLogoPreview = ( url ) => {
 		if ( ! logoPreview ) return;
 
@@ -128,10 +139,13 @@ if ( FORM ) {
 			previewFrame.srcdoc = response.data.html;
 			previewFrame.hidden = false;
 			setPreviewState( '', 'success' );
-		} catch {
+		} catch ( error ) {
 			if ( requestSequence !== previewSequence ) return;
 			previewFrame.hidden = true;
-			setPreviewState( i18n.networkError || 'Network error - try again.', 'error' );
+			setPreviewState(
+				requestErrorMessage( error, i18n.previewFailed || 'The report preview could not be rendered.' ),
+				'error'
+			);
 		}
 	};
 
@@ -222,9 +236,9 @@ if ( FORM ) {
 			applyBranding( response.data || {} );
 			setSaveState( 'saved' );
 			await renderPreview();
-		} catch {
+		} catch ( error ) {
 			setSaveState( 'error' );
-			setPreviewState( i18n.networkError || 'Network error - try again.', 'error' );
+			setPreviewState( requestErrorMessage( error, i18n.saveFailedShort || 'Save failed.' ), 'error' );
 		} finally {
 			saveBtn.disabled = false;
 			if ( resetBtn ) resetBtn.disabled = false;
@@ -265,9 +279,9 @@ if ( FORM ) {
 			applyBranding( response.data || {} );
 			setSaveState( 'saved' );
 			await renderPreview();
-		} catch {
+		} catch ( error ) {
 			setSaveState( 'error' );
-			setPreviewState( i18n.networkError || 'Network error - try again.', 'error' );
+			setPreviewState( requestErrorMessage( error, i18n.saveFailedShort || 'Save failed.' ), 'error' );
 		} finally {
 			resetBtn.disabled = false;
 			saveBtn.disabled = false;

@@ -33,15 +33,8 @@ final class ReportBrandingInput {
 			}
 		}
 
-		$provider_name    = sanitize_text_field( (string) ( $input['provider_name'] ?? '' ) );
-		$provider_contact = sanitize_text_field( (string) ( $input['provider_contact'] ?? '' ) );
-
-		if ( mb_strlen( $provider_name ) > 120 ) {
-			$provider_name = mb_substr( $provider_name, 0, 120 );
-		}
-		if ( mb_strlen( $provider_contact ) > 200 ) {
-			$provider_contact = mb_substr( $provider_contact, 0, 200 );
-		}
+		$provider_name    = self::truncate_text( sanitize_text_field( (string) ( $input['provider_name'] ?? '' ) ), 120 );
+		$provider_contact = self::truncate_text( sanitize_text_field( (string) ( $input['provider_contact'] ?? '' ) ), 200 );
 
 		$accent_color = sanitize_hex_color( (string) ( $input['accent_color'] ?? '' ) );
 		if ( null === $accent_color || '' === $accent_color ) {
@@ -54,6 +47,26 @@ final class ReportBrandingInput {
 			'provider_contact'    => $provider_contact,
 			'accent_color'        => $accent_color,
 		];
+	}
+
+	/**
+	 * Unicode-aware truncation without making ext-mbstring a hidden runtime
+	 * requirement. sanitize_text_field() has already removed invalid UTF-8.
+	 */
+	private static function truncate_text( string $value, int $max_chars ): string {
+		if ( '' === $value || $max_chars <= 0 ) {
+			return '';
+		}
+
+		$matched = preg_match_all( '/./us', $value, $characters );
+		if ( false === $matched ) {
+			return substr( $value, 0, $max_chars );
+		}
+		if ( $matched <= $max_chars ) {
+			return $value;
+		}
+
+		return implode( '', array_slice( $characters[0], 0, $max_chars ) );
 	}
 
 	private function __construct() {}

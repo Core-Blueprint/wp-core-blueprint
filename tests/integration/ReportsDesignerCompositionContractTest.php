@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Reports\DesignerPreview;
+use CB\Core\Reports\MaintenanceFlowBranding;
 use CB\Core\Reports\ReportBranding;
 use CB\Core\Reports\ReportBrandingInput;
 
@@ -21,21 +23,52 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			ReportBrandingInput::normalize( [] )
 		);
 
-		$handler = $this->source( 'src/Ajax/Handlers/Branding.php' );
+		$unicode = ReportBrandingInput::normalize( [
+			'provider_name'    => str_repeat( 'é', 121 ),
+			'provider_contact' => str_repeat( 'ø', 201 ),
+		] );
+		self::assertSame( str_repeat( 'é', 120 ), $unicode['provider_name'] );
+		self::assertSame( str_repeat( 'ø', 200 ), $unicode['provider_contact'] );
+
+		$handler    = $this->source( 'src/Ajax/Handlers/Branding.php' );
+		$normalizer = $this->source( 'src/Reports/ReportBrandingInput.php' );
 		self::assertStringContainsString( 'ReportBrandingInput::normalize', $handler );
 		self::assertStringContainsString( 'cb_core_save_report_branding', $handler );
 		self::assertStringContainsString( 'cb_core_preview_report_branding', $handler );
+		self::assertStringNotContainsString( 'mb_strlen(', $normalizer );
+		self::assertStringNotContainsString( 'mb_substr(', $normalizer );
 	}
 
 	public function test_designer_preview_uses_the_typed_flow_pipeline_instead_of_a_parallel_html_template(): void {
 		$preview = $this->source( 'src/Reports/DesignerPreview.php' );
 
 		self::assertStringContainsString( 'MaintenanceFlowCompiler', $preview );
+		self::assertStringContainsString( 'MaintenanceFlowBranding::resolve_values', $preview );
 		self::assertStringContainsString( 'HtmlRenderer', $preview );
 		self::assertStringContainsString( 'Storage::find_recent( 1 )', $preview );
 		self::assertStringContainsString( 'MaintenanceAggregator::SNAPSHOT_VERSION', $preview );
+		self::assertStringNotContainsString( 'ReportBranding::attachment_url', $preview );
+		self::assertStringNotContainsString( 'ReportBranding::fallback', $preview );
 		self::assertStringNotContainsString( '<html', $preview );
 		self::assertStringNotContainsString( '<table', $preview );
+	}
+
+	public function test_designer_preview_renders_typed_flow_end_to_end(): void {
+		$branding = ReportBrandingInput::normalize( [] );
+		$resolved = MaintenanceFlowBranding::resolve_values( $branding );
+
+		self::assertFalse( str_starts_with( $resolved['logo_url'], 'http://' ) );
+		self::assertFalse( str_starts_with( $resolved['logo_url'], 'https://' ) );
+		if ( '' !== $resolved['logo_url'] ) {
+			self::assertStringStartsWith( 'data:image/', $resolved['logo_url'] );
+		} else {
+			self::assertSame( 'Core Blueprint', $resolved['fallback_text'] );
+		}
+
+		$html = ( new DesignerPreview() )->render( $branding );
+		self::assertStringStartsWith( '<!doctype html>', $html );
+		self::assertStringContainsString( 'Maintenance Report', $html );
+		self::assertStringContainsString( 'cb-flow-block', $html );
 	}
 
 	public function test_reports_template_is_a_thin_golden_designer_consumer(): void {
@@ -82,6 +115,8 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding'", $runtime );
 		self::assertStringContainsString( 'previewSequence', $runtime );
 		self::assertStringContainsString( 'previewFrame.srcdoc = response.data.html', $runtime );
+		self::assertStringContainsString( 'requestErrorMessage', $runtime );
+		self::assertStringContainsString( 'catch ( error )', $runtime );
 		self::assertStringContainsString( "apiPost( 'cb_core_save_report_branding'", $runtime );
 		self::assertStringContainsString( "cb:design-shell:savechange", $runtime );
 		self::assertStringContainsString( "setSaveState( 'saving' )", $runtime );
