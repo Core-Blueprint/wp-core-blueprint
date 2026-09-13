@@ -15,7 +15,7 @@
  *      native admin buttons CB theming inside CB themes (cb-dark /
  *      cb-light) so they don't pop out as wp-admin defaults.
  *
- * Each rule has two selector forms:
+ * Shared button presentation has explicit safe scopes:
  *
  *   .cb-core-wrap .button…
  *     → buttons inside CB admin pages
@@ -23,13 +23,17 @@
  *   dialog.cb-core-modal--core .button…
  *     → buttons inside CB modal dialogs (top-layer)
  *
+ *   [data-cb-design-launch-root] .cb-core-design-shell .cb-core-button…
+ *   [data-cb-design-launch-root] .cb-core-design-launch…
+ *     → formal Core Blueprint button primitives inside public Designer Mode
+ *
  * The split exists because <dialog> opened via .showModal() renders
  * in the browser's top-layer - outside .cb-core-wrap. A single
  * .cb-core-wrap-scoped selector would miss buttons in modals; a
  * scope-less selector would risk styling WP admin chrome buttons
  * (admin-bar, dashboard widgets, plugin notices) we don't own.
- *
- * Adding a third dialog-scope is the explicit, safe extension.
+ * Designer Mode is likewise an explicit presentation scope and never
+ * promotes arbitrary WordPress buttons in the surrounding admin context.
  *
  * Theme-aware via --cb-* tokens.
  *
@@ -233,7 +237,8 @@ dialog.cb-core-modal--core .cb-core-button--danger:disabled {
  * The primary action button - solid accent fill with the brand glow.
  * Applied to any .button.button-primary inside CB pages or CB modals.
  * Outside those scopes (WP admin chrome, third-party widgets) the
- * native WP styling stays untouched.
+ * native WP styling stays untouched. Designer Mode adds only formal
+ * Core Blueprint primary controls inside its explicit root/shell scope.
  * ═══════════════════════════════════════════════════════════════════════ */
 
 .cb-core-wrap .button.button-primary,
@@ -243,7 +248,10 @@ dialog.cb-core-modal--core .cb-core-button--danger:disabled {
 dialog.cb-core-modal--core .button.button-primary,
 dialog.cb-core-modal--core button.button-primary,
 dialog.cb-core-modal--core .button.cb-core-button--primary,
-dialog.cb-core-modal--core button.cb-core-button--primary {
+dialog.cb-core-modal--core button.cb-core-button--primary,
+[data-cb-design-launch-root] .cb-core-design-launch.cb-core-button--primary,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button--primary,
+[data-cb-design-launch-root] .cb-core-design-shell button.cb-core-button--primary {
 	background: var(--cb-accent);
 	border-color: var(--cb-accent);
 	color: var(--cb-surface-0);
@@ -259,7 +267,10 @@ dialog.cb-core-modal--core button.cb-core-button--primary {
 dialog.cb-core-modal--core .button.button-primary:hover,
 dialog.cb-core-modal--core button.button-primary:hover,
 dialog.cb-core-modal--core .button.cb-core-button--primary:hover,
-dialog.cb-core-modal--core button.cb-core-button--primary:hover {
+dialog.cb-core-modal--core button.cb-core-button--primary:hover,
+[data-cb-design-launch-root] .cb-core-design-launch.cb-core-button--primary:hover,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button--primary:hover,
+[data-cb-design-launch-root] .cb-core-design-shell button.cb-core-button--primary:hover {
 	background: var(--cb-accent-strong);
 	border-color: var(--cb-accent-strong);
 	box-shadow: 0 0 0 1px var(--cb-accent-strong), 0 0 18px color-mix(in srgb, var(--cb-accent-strong) 40%, transparent);
@@ -272,7 +283,10 @@ dialog.cb-core-modal--core button.cb-core-button--primary:hover {
 dialog.cb-core-modal--core .button.button-primary:focus,
 dialog.cb-core-modal--core button.button-primary:focus,
 dialog.cb-core-modal--core .button.cb-core-button--primary:focus,
-dialog.cb-core-modal--core button.cb-core-button--primary:focus {
+dialog.cb-core-modal--core button.cb-core-button--primary:focus,
+[data-cb-design-launch-root] .cb-core-design-launch.cb-core-button--primary:focus,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button--primary:focus,
+[data-cb-design-launch-root] .cb-core-design-shell button.cb-core-button--primary:focus {
 	box-shadow: 0 0 0 2px var(--cb-accent-strong), 0 0 18px color-mix(in srgb, var(--cb-accent-strong) 35%, transparent);
 	outline: none;
 }
@@ -284,7 +298,10 @@ dialog.cb-core-modal--core button.cb-core-button--primary:focus {
 dialog.cb-core-modal--core .button.button-primary:disabled,
 dialog.cb-core-modal--core button.button-primary:disabled,
 dialog.cb-core-modal--core .button.cb-core-button--primary:disabled,
-dialog.cb-core-modal--core button.cb-core-button--primary:disabled {
+dialog.cb-core-modal--core button.cb-core-button--primary:disabled,
+[data-cb-design-launch-root] .cb-core-design-launch.cb-core-button--primary:disabled,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button--primary:disabled,
+[data-cb-design-launch-root] .cb-core-design-shell button.cb-core-button--primary:disabled {
 	background: var(--cb-surface-3);
 	border-color: var(--cb-surface-3);
 	color: var(--cb-text-muted);
@@ -297,13 +314,17 @@ dialog.cb-core-modal--core button.cb-core-button--primary:disabled {
  *
  * The neutral / cancel button - transparent with subtle border, hover
  * picks up the accent border for affordance. Applied to any .button
- * that is NOT button-primary inside CB pages or CB modals.
+ * that is NOT button-primary inside CB pages or CB modals. Designer
+ * Mode applies the fallback only to formal .cb-core-button controls in
+ * the shell so surrounding WordPress buttons remain native.
  * ═══════════════════════════════════════════════════════════════════════ */
 
 .cb-core-wrap .button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger),
 .cb-core-wrap button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger),
 dialog.cb-core-modal--core .button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger),
-dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger) {
+dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger),
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger),
+[data-cb-design-launch-root] .cb-core-design-shell button.button.cb-core-button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger) {
 	background: transparent;
 	border: 1px solid var(--cb-surface-3);
 	color: var(--cb-text-strong);
@@ -315,7 +336,9 @@ dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-butto
 .cb-core-wrap .button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):hover,
 .cb-core-wrap button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):hover,
 dialog.cb-core-modal--core .button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):hover,
-dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):hover {
+dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):hover,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):hover,
+[data-cb-design-launch-root] .cb-core-design-shell button.button.cb-core-button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):hover {
 	background: color-mix(in srgb, var(--cb-accent) 8%, transparent);
 	border-color: var(--cb-accent);
 	color: var(--cb-text-strong);
@@ -324,7 +347,9 @@ dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-butto
 .cb-core-wrap .button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):focus,
 .cb-core-wrap button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):focus,
 dialog.cb-core-modal--core .button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):focus,
-dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):focus {
+dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):focus,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):focus,
+[data-cb-design-launch-root] .cb-core-design-shell button.button.cb-core-button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):focus {
 	border-color: var(--cb-accent);
 	box-shadow: 0 0 0 2px var(--cb-accent);
 	outline: none;
@@ -333,7 +358,9 @@ dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-butto
 .cb-core-wrap .button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):disabled,
 .cb-core-wrap button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):disabled,
 dialog.cb-core-modal--core .button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):disabled,
-dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):disabled {
+dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):disabled,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):disabled,
+[data-cb-design-launch-root] .cb-core-design-shell button.button.cb-core-button:not(.button-primary):not(.cb-core-button--primary):not(.cb-core-button--warning):not(.cb-core-button--remediation):not(.cb-core-button--danger):disabled {
 	background: transparent;
 	border-color: var(--cb-surface-3);
 	color: var(--cb-text-muted);
@@ -346,7 +373,9 @@ dialog.cb-core-modal--core button.button:not(.button-primary):not(.cb-core-butto
 .cb-core-wrap .button.cb-core-button--secondary,
 .cb-core-wrap button.cb-core-button--secondary,
 dialog.cb-core-modal--core .button.cb-core-button--secondary,
-dialog.cb-core-modal--core button.cb-core-button--secondary {
+dialog.cb-core-modal--core button.cb-core-button--secondary,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button--secondary,
+[data-cb-design-launch-root] .cb-core-design-shell button.cb-core-button--secondary {
 	background: transparent;
 	border: 1px solid var(--cb-surface-3);
 	color: var(--cb-text-strong);
@@ -358,7 +387,9 @@ dialog.cb-core-modal--core button.cb-core-button--secondary {
 .cb-core-wrap .button.cb-core-button--secondary:hover,
 .cb-core-wrap button.cb-core-button--secondary:hover,
 dialog.cb-core-modal--core .button.cb-core-button--secondary:hover,
-dialog.cb-core-modal--core button.cb-core-button--secondary:hover {
+dialog.cb-core-modal--core button.cb-core-button--secondary:hover,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button--secondary:hover,
+[data-cb-design-launch-root] .cb-core-design-shell button.cb-core-button--secondary:hover {
 	background: color-mix(in srgb, var(--cb-accent) 8%, transparent);
 	border-color: var(--cb-accent);
 	color: var(--cb-text-strong);
@@ -367,7 +398,9 @@ dialog.cb-core-modal--core button.cb-core-button--secondary:hover {
 .cb-core-wrap .button.cb-core-button--secondary:focus-visible,
 .cb-core-wrap button.cb-core-button--secondary:focus-visible,
 dialog.cb-core-modal--core .button.cb-core-button--secondary:focus-visible,
-dialog.cb-core-modal--core button.cb-core-button--secondary:focus-visible {
+dialog.cb-core-modal--core button.cb-core-button--secondary:focus-visible,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button--secondary:focus-visible,
+[data-cb-design-launch-root] .cb-core-design-shell button.cb-core-button--secondary:focus-visible {
 	border-color: var(--cb-accent);
 	box-shadow: 0 0 0 2px var(--cb-accent);
 	outline: none;
@@ -376,7 +409,9 @@ dialog.cb-core-modal--core button.cb-core-button--secondary:focus-visible {
 .cb-core-wrap .button.cb-core-button--secondary:disabled,
 .cb-core-wrap button.cb-core-button--secondary:disabled,
 dialog.cb-core-modal--core .button.cb-core-button--secondary:disabled,
-dialog.cb-core-modal--core button.cb-core-button--secondary:disabled {
+dialog.cb-core-modal--core button.cb-core-button--secondary:disabled,
+[data-cb-design-launch-root] .cb-core-design-shell .button.cb-core-button--secondary:disabled,
+[data-cb-design-launch-root] .cb-core-design-shell button.cb-core-button--secondary:disabled {
 	background: transparent;
 	border-color: var(--cb-surface-3);
 	color: var(--cb-text-muted);
