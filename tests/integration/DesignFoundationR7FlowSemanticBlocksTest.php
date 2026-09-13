@@ -53,7 +53,7 @@ final class CB_Design_Foundation_R7_Flow_Semantic_Blocks_Test extends WP_UnitTes
 		self::assertStringContainsString( 'Site status &lt;healthy&gt;', $html );
 		self::assertStringContainsString( 'No action required &lt;today&gt;.', $html );
 		self::assertStringContainsString( 'cb-flow-metrics-table', $html );
-		self::assertSame( 5, substr_count( $html, 'cb-flow-metric-card__label' ) );
+		self::assertSame( 5, substr_count( $html, '<div class="cb-flow-metric-card__label">' ) );
 		self::assertStringContainsString( 'Updates &lt;performed&gt;', $html );
 		self::assertStringContainsString( '&lt;0&gt;', $html );
 		self::assertStringContainsString( 'cb-flow-rule__line', $html );
