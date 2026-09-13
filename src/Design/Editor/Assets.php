@@ -23,6 +23,7 @@ final class Assets {
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
 	public const DESIGNER_COMPOSITION_STYLE = 'cb-core-designer-composition';
 	public const DESIGNER_MODE_SCRIPT = 'cb-core-designer-mode';
+	public const DESIGNER_TOOLBAR_SCRIPT = 'cb-core-designer-toolbar';
 	private const TOKEN_STYLE = 'cb-core-css-tokens';
 	private const BUTTON_STYLE = 'cb-core-css-buttons';
 	private const FORM_CONTROL_STYLE = 'cb-core-css-form-controls';
@@ -116,6 +117,14 @@ final class Assets {
 			true
 		);
 
+		wp_enqueue_script(
+			self::DESIGNER_TOOLBAR_SCRIPT,
+			CB_CORE_URL . 'assets/js/features/designer-toolbar.js',
+			[ self::DESIGNER_MODE_SCRIPT ],
+			self::asset_version( 'assets/js/features/designer-toolbar.js' ),
+			true
+		);
+
 		// Form Controls deliberately scopes itself to `.cb-core-form-scope` so
 		// unrelated WordPress admin controls remain untouched. Designer Mode owns
 		// that presentation boundary, so Base marks each consumer shell before the
@@ -145,6 +154,11 @@ final class Assets {
 					// WordPress editor vocabulary intentionally uses the default text domain.
 					'layers'    => __( 'Layers', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
 					'settings'  => __( 'Settings', 'core-blueprint' ),
+				],
+				'toolbarLabels' => [
+					'view'    => __( 'View', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
+					'actions' => __( 'Actions', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
+					'action'  => __( 'Action', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
 				],
 			]
 		);
