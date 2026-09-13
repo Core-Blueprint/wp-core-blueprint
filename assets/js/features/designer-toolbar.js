@@ -111,7 +111,6 @@
 			trigger.type = 'button';
 			trigger.className = 'button cb-core-button cb-core-design-shell__compact-menu-trigger';
 			trigger.dataset.cbDesignShellCompactMenuTrigger = name;
-			trigger.setAttribute('aria-haspopup', 'true');
 			trigger.setAttribute('aria-expanded', 'false');
 			shellApi.icons.decorate(trigger, icon, { iconOnly: true, label });
 
