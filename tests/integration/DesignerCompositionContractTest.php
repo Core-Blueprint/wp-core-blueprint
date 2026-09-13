@@ -39,6 +39,37 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_composition_layer_exposes_the_canonical_panel_grammar(): void {
+		$css = $this->source( 'assets/css/design/designer-composition.css' );
+
+		foreach ( [
+			'.cb-core-design-shell__palette--composed',
+			'.cb-core-design-shell__sidebar--composed',
+			'.cb-core-design-shell__panel-body',
+			'.cb-core-design-shell__panel-section',
+			'.cb-core-design-shell__panel-section-title',
+			'.cb-core-design-shell__panel-section-description',
+			'.cb-core-design-shell__field',
+			'.cb-core-design-shell__field-label',
+			'.cb-core-design-shell__field-hint',
+			'.cb-core-design-shell__panel-actions',
+			'.cb-core-design-shell__palette-grid',
+			'.cb-core-design-shell__palette-item',
+		] as $selector ) {
+			self::assertStringContainsString( $selector, $css );
+		}
+	}
+
+	public function test_panel_grammar_is_product_neutral(): void {
+		$css = $this->source( 'assets/css/design/designer-composition.css' );
+
+		self::assertStringNotContainsString( 'cb-contracts', $css );
+		self::assertStringNotContainsString( 'cb-commerce', $css );
+		self::assertStringNotContainsString( 'cb-certificates', $css );
+		self::assertStringNotContainsString( 'cb-automations', $css );
+		self::assertStringNotContainsString( 'cb-mail', $css );
+	}
+
 	public function test_manual_launch_rhythm_is_base_owned_without_core_admin_scope_hacks(): void {
 		$css = $this->source( 'assets/css/design/designer-composition.css' );
 
@@ -59,8 +90,10 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 		$docs = $this->source( 'docs/DESIGNER-MODE.md' );
 
 		self::assertStringContainsString( '## Canonical composition grammar', $docs );
+		self::assertStringContainsString( '### Canonical panel composition', $docs );
 		self::assertStringContainsString( 'Base owns Designer Mode. Consumers own what is being designed.', $docs );
 		self::assertStringContainsString( 'A viewport switcher is **not** mandatory merely because Mail uses one', $docs );
 		self::assertStringContainsString( 'must not restyle the canonical rail locally', $docs );
+		self::assertStringContainsString( 'Consumers must not redefine panel padding, section dividers, field rhythm or palette item presentation locally.', $docs );
 	}
 }
