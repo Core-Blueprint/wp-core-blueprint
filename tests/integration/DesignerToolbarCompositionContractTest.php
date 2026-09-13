@@ -75,9 +75,10 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'box-shadow: inset 0 0 0 1px currentColor !important;', $toolbar_css );
 	}
 
-	public function test_drawer_launcher_visibility_remains_owned_by_responsive_designer_mode(): void {
+	public function test_drawer_launcher_visibility_remains_owned_by_responsive_designer_mode_after_icon_decoration(): void {
 		$designer_css = $this->source( 'assets/css/design/designer-mode.css' );
 		$toolbar_css  = $this->source( 'assets/css/design/designer-toolbar.css' );
+		$icons        = $this->source( 'assets/js/design/shell/icons.js' );
 
 		self::assertStringContainsString(
 			".cb-core-design-shell__drawer-launcher {\n\tdisplay: none !important;\n}",
@@ -88,7 +89,11 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 			$designer_css
 		);
 		self::assertStringContainsString(
-			".cb-core-design-shell__icon-button,\n\t.cb-core-design-shell__compact-menu-trigger,\n\t[data-cb-design-shell-primary-action]\n) {\n\tdisplay: inline-flex !important;",
+			"control.classList?.add('cb-core-design-shell__icon-button');",
+			$icons
+		);
+		self::assertStringContainsString(
+			'.cb-core-design-shell__icon-button:not(.cb-core-design-shell__drawer-launcher),',
 			$toolbar_css
 		);
 		self::assertStringContainsString(
