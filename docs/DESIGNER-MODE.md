@@ -1,10 +1,10 @@
 # Core Blueprint Designer Mode
 
-Status: **public v1 Designer launch contract**.
+Status: **public v1 Designer launch + composition contract**.
 
 > **Base owns Designer Mode. Consumers own what is being designed.**
 
-Base owns the shared Designer Shell chrome, viewport lifecycle, launch transition, responsive shell geometry and focus/fullscreen behavior. Consumers own their editor semantics, canvas content, persistence and business behavior.
+Base owns the shared Designer Shell chrome, viewport lifecycle, launch transition, responsive shell geometry, canonical composition grammar and focus/fullscreen behavior. Consumers own their editor semantics, domain content, persistence and business behavior.
 
 ## Public entry points
 
@@ -26,9 +26,9 @@ The semantic `design-editor` Foundation requirement resolves to this engine/shel
 CB\Core\Design\Editor\Assets::enqueue_designer_mode( __( 'Example Designer', 'example' ) );
 ```
 
-This includes the editor engine and adds the canonical Designer Mode launch, toolbar composition, Button presentation required by Base-generated chrome, panel rails/collapse behavior and focus/fullscreen lifecycle.
+This includes the editor engine and adds the canonical Designer Mode launch, toolbar composition, Button presentation required by Base-generated chrome, panel rails/collapse behavior, canonical canvas composition primitives and focus/fullscreen lifecycle.
 
-`enqueue_designer_mode()` is presentation-self-contained for the Base chrome it generates. A standalone WordPress admin consumer does **not** need `.cb-core-wrap`, private Base asset handles or the full Core Admin theme in order to obtain the canonical Designer launch and shell presentation.
+`enqueue_designer_mode()` is presentation-self-contained for the Base chrome and composition grammar it exposes. A standalone WordPress admin consumer does **not** need `.cb-core-wrap`, private Base asset handles or the full Core Admin theme in order to obtain the canonical Designer launch and shell presentation.
 
 Consumers must not import private Base CSS filenames or handles to complete Designer Mode styling.
 
@@ -43,7 +43,7 @@ Manual mode remains the default. Use it when a normal WordPress admin page shoul
 </div>
 ```
 
-After `CB\Core\Design\Editor\Assets::enqueue_designer_mode()` Base adds the canonical **Design with Core Blueprint** launch control, keeps the shell hidden until launch and returns to the normal admin context when fullscreen closes.
+After `CB\Core\Design\Editor\Assets::enqueue_designer_mode()` Base adds the canonical **Design with Core Blueprint** launch control, owns the vertical rhythm around that control, keeps the shell hidden until launch and returns to the normal admin context when fullscreen closes.
 
 The surrounding admin page may remain WordPress-native. Do not add `.cb-core-wrap` merely to make Designer chrome look correct.
 
@@ -89,11 +89,60 @@ Panel-collapse controls are a wide-layout affordance and are hidden at `≤1280p
 
 Consumers must not redefine the Designer Shell column model, reorder these structural regions with local CSS, or introduce product-specific breakpoints that replace this contract. A consumer may style layout **inside** its palette, canvas or sidebar slots.
 
+## Canonical composition grammar
+
+Full Designer Mode consumers should compose their domain UI with the public Base primitives below instead of recreating Mail, Automations or another product's local presentation.
+
+Base provides the visual grammar; the consumer supplies the labels, controls and domain rendering.
+
+### Canvas
+
+Use the composed canvas modifier when the Designer has a visual work area:
+
+```html
+<section class="cb-core-design-shell__canvas cb-core-design-shell__canvas--composed">
+    <header class="cb-core-design-shell__canvas-header">
+        <div class="cb-core-design-shell__canvas-heading">
+            <h2 class="cb-core-design-shell__canvas-title">Document canvas</h2>
+            <p class="cb-core-design-shell__canvas-description">Select an item to edit it.</p>
+        </div>
+        <div class="cb-core-design-shell__canvas-actions">…domain controls…</div>
+    </header>
+
+    <div class="cb-core-design-shell__canvas-workarea">
+        …domain canvas…
+    </div>
+</section>
+```
+
+The header, heading hierarchy, action rail, work-area spacing, scrolling and responsive stacking are Base-owned. Consumers may populate the slots but must not restyle the canonical rail locally.
+
+### Visual surfaces
+
+Use `.cb-core-design-shell__surface` for a generic preview/edit surface inside the work area.
+
+For page-like documents, add `.cb-core-design-shell__surface--document`. Base owns its paper presentation. Consumers may tune only these public custom properties when their domain requires a different page size:
+
+- `--cb-design-document-width`
+- `--cb-design-document-min-height`
+- `--cb-design-document-padding`
+
+Do not copy the document-surface CSS into the extension.
+
+Email, workflow, certificate and contract semantics remain consumer-owned. A viewport switcher is **not** mandatory merely because Mail uses one; expose viewport controls only where the domain supports meaningful viewport states.
+
+### Empty states and internal flow
+
+Use `.cb-core-design-shell__empty-state` for an empty canvas/panel state and `.cb-core-design-shell__composition-stack` for canonical vertical composition inside a Designer slot.
+
+Palette and sidebar tabs continue to use the existing Base shell primitives. Inspector, Layers and Settings are capability-driven canonical roles: consumers should expose only roles they actually implement.
+
 ## Ownership boundary
 
 Base owns:
 
 - launch mode interpretation and the **Design with Core Blueprint** launch control;
+- launch-control spacing and branded presentation;
 - canonical Designer brand/header composition;
 - shared history/viewport/fullscreen/save-control presentation;
 - first-paint viewport composition for direct mode;
@@ -101,16 +150,18 @@ Base owns:
 - palette/canvas/sidebar structural layout;
 - responsive `3 → 2 → 1` shell geometry;
 - panel rails, headers and collapse affordances;
-- canonical sidebar roles/order/icons where those roles are provided;
+- canonical palette/sidebar tabs and sidebar roles/order/icons where those roles are provided;
+- canonical canvas header/work-area composition, visual surfaces and empty-state presentation;
 - direct-mode exit navigation;
 - the Base Button presentation required by Designer chrome.
 
 Consumers own:
 
 - deciding which route should request manual or direct mode;
-- rendering the shared shell markup and their domain-specific slots;
+- rendering the shared shell markup and selecting applicable public composition primitives;
 - deciding what objects/content/workflows are being edited;
-- palette items and canvas rendering;
+- palette items and domain canvas rendering;
+- labels and domain controls placed in Base-owned composition slots;
 - Inspector/Layers/Settings domain content;
 - domain validation and command policy;
 - persistence, permissions and save authority;
@@ -126,8 +177,8 @@ A Designer Mode consumer must not:
 - reproduce the launch control or Base toolbar locally;
 - implement its own fullscreen/focus overlay, fixed viewport shell or Escape lifecycle;
 - override `.cb-core-design-shell__workspace` / `__workspace--collapsible` column geometry;
-- redraw panel rails, collapse controls or canonical sidebar role presentation;
-- copy Base Button styling into consumer CSS;
+- redraw panel rails, collapse controls, canonical tabs, canvas header/work-area rails or canonical sidebar role presentation;
+- copy Base Button, document-surface or Designer spacing rules into consumer CSS;
 - treat Mail, Automations or another first-party product's local CSS as the public Designer API.
 
 If a reusable Designer behavior is missing, stop and extend the Base Foundation contract deliberately instead of adding a product-local workaround.
@@ -138,7 +189,8 @@ The public Designer contract must remain usable by a standalone extension that i
 
 Before a Base Designer change is considered release-ready, source/regression coverage and field QC should verify at minimum:
 
-- canonical launch control presentation outside `.cb-core-wrap`;
+- canonical launch control presentation and rhythm outside `.cb-core-wrap`;
+- canonical panel and canvas composition without product-local shell CSS;
 - `>1280`, `901–1280` and `≤900` shell geometry;
 - light and dark presentation where the host provides supported Core Blueprint tokens/theme state;
 - fullscreen, Escape and focus behavior;
