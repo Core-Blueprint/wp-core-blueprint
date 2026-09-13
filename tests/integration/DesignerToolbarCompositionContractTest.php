@@ -24,16 +24,26 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 	public function test_compact_toolbar_is_capability_driven_and_keeps_primary_save_pinned(): void {
 		$runtime = $this->source( 'assets/js/features/designer-toolbar.js' );
 
-		self::assertStringContainsString( "const COMPACT_WIDTH = 800;", $runtime );
-		self::assertStringContainsString( "new ResizeObserver(applyCompactState).observe(toolbar)", $runtime );
-		self::assertStringContainsString( "[data-cb-design-shell-viewport]", $runtime );
-		self::assertStringContainsString( "[data-cb-design-shell-compact-group=\"${group}\"]", $runtime );
-		self::assertStringContainsString( "controlsInCompactGroup(toolbar, 'view')", $runtime );
-		self::assertStringContainsString( "controlsInCompactGroup(toolbar, 'actions')", $runtime );
-		self::assertStringContainsString( "[data-cb-design-shell-primary-action]", $runtime );
-		self::assertStringContainsString( "before: save", $runtime );
-		self::assertStringContainsString( "source.click();", $runtime );
-		self::assertStringContainsString( "new MutationObserver(() => syncProxy(record))", $runtime );
+		self::assertStringContainsString( 'const COMPACT_WIDTH = 800;', $runtime );
+		self::assertStringContainsString( 'new ResizeObserver(applyCompactState).observe(toolbar)', $runtime );
+		self::assertStringContainsString( '[data-cb-design-shell-viewport]', $runtime );
+		self::assertStringContainsString( 'controlsInExtension(shell, \'view\')', $runtime );
+		self::assertStringContainsString( 'controlsInExtension(shell, \'actions\')', $runtime );
+		self::assertStringContainsString( '[data-cb-design-shell-primary-action]', $runtime );
+		self::assertStringContainsString( 'before: save', $runtime );
+		self::assertStringContainsString( 'source.click();', $runtime );
+		self::assertStringContainsString( 'new MutationObserver(() => syncProxy(record))', $runtime );
+	}
+
+	public function test_toolbar_extensions_are_declared_outside_internal_toolbar_structure(): void {
+		$runtime = $this->source( 'assets/js/features/designer-toolbar.js' );
+		$css     = $this->source( 'assets/css/design/designer-mode.css' );
+
+		self::assertStringContainsString( 'data-cb-design-shell-toolbar-extension', $runtime );
+		self::assertStringContainsString( 'createExtensionGroup', $runtime );
+		self::assertStringContainsString( 'cb-core-design-shell__toolbar-group--extension', $runtime );
+		self::assertStringContainsString( '[data-cb-design-shell-toolbar-extension]', $css );
+		self::assertStringContainsString( 'display: none !important;', $css );
 	}
 
 	public function test_compact_toolbar_owns_disclosures_escape_and_outside_click_without_aria_menu_mismatch(): void {
@@ -44,7 +54,7 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "window.addEventListener('keydown'", $runtime );
 		self::assertStringContainsString( "event.key !== 'Escape'", $runtime );
 		self::assertStringContainsString( "document.addEventListener('pointerdown'", $runtime );
-		self::assertStringNotContainsString( "aria-haspopup", $runtime );
+		self::assertStringNotContainsString( 'aria-haspopup', $runtime );
 	}
 
 	public function test_compact_toolbar_presentation_is_base_owned_and_not_mail_owned(): void {
@@ -64,8 +74,8 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		$docs = $this->source( 'docs/DESIGNER-MODE.md' );
 
 		self::assertStringContainsString( '## Adaptive toolbar composition', $docs );
-		self::assertStringContainsString( 'data-cb-design-shell-compact-group="view"', $docs );
-		self::assertStringContainsString( 'data-cb-design-shell-compact-group="actions"', $docs );
+		self::assertStringContainsString( 'data-cb-design-shell-toolbar-extension="view"', $docs );
+		self::assertStringContainsString( 'data-cb-design-shell-toolbar-extension="actions"', $docs );
 		self::assertStringContainsString( 'data-cb-design-shell-primary-action', $docs );
 		self::assertStringContainsString( 'actual toolbar width', $docs );
 		self::assertStringContainsString( 'Consumers must not implement their own mobile toolbar', $docs );
