@@ -90,6 +90,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			'data-cb-design-shell-sidebar-role="inspector"',
 			'data-cb-design-shell-sidebar-role="layers"',
 			'data-cb-design-shell-sidebar-role="settings"',
+			'data-cb-report-elements',
 			'data-cb-report-inspector',
 			'data-cb-report-layers',
 		] as $contract ) {
@@ -108,6 +109,27 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "'reports' !== \$tab", $bootstrap );
 		self::assertStringContainsString( "current_user_can( 'cb_manage_branding' )", $bootstrap );
 		self::assertStringContainsString( 'DesignEditorAssets::enqueue_designer_mode', $bootstrap );
+		self::assertStringContainsString( "'cb-core-reports-designer'", $bootstrap );
+		self::assertStringContainsString( "'assets/css/pages/reports-designer.css'", $bootstrap );
+	}
+
+	public function test_reports_designer_separates_elements_layers_inspector_and_settings(): void {
+		$runtime = $this->source( 'assets/js/features/reports-preferences.js' );
+		$style   = $this->source( 'assets/css/pages/reports-designer.css' );
+
+		self::assertStringContainsString( "qs( '[data-cb-report-elements]'", $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-layers]'", $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-inspector]'", $runtime );
+		self::assertStringContainsString( 'renderElements', $runtime );
+		self::assertStringContainsString( 'renderLayers', $runtime );
+		self::assertStringContainsString( "layerList.className = 'cb-core-reports-structure'", $runtime );
+		self::assertStringContainsString( 'row.dataset.cbReportLayer = block.type', $runtime );
+		self::assertStringContainsString( 'createLayerMoveButton', $runtime );
+		self::assertStringContainsString( "activatePanel( 'inspector' )", $runtime );
+		self::assertStringNotContainsString( "layerList.className = 'cb-core-design-shell__palette-grid'", $runtime );
+		self::assertStringContainsString( '.cb-core-reports-structure__row', $style );
+		self::assertStringContainsString( '.cb-core-reports-structure__select', $style );
+		self::assertStringNotContainsString( '.cb-core-design-shell__workspace', $style );
 	}
 
 	public function test_reports_designer_initializes_the_shared_shell_and_saves_in_place(): void {
@@ -116,9 +138,6 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 
 		self::assertStringContainsString( "from '@cb-core/design-editor'", $runtime );
 		self::assertStringContainsString( 'createDesignerShell( shell )', $runtime );
-		self::assertStringContainsString( "qs( '[data-cb-report-layers]'", $runtime );
-		self::assertStringContainsString( "qs( '[data-cb-report-inspector]'", $runtime );
-		self::assertStringContainsString( "activatePanel( 'inspector' )", $runtime );
 		self::assertStringContainsString( "'@cb-core/design-editor'", $i18n );
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding'", $runtime );
 		self::assertStringContainsString( 'previewSequence', $runtime );
