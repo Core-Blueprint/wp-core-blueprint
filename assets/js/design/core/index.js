@@ -6,6 +6,7 @@ export {
 	setPropertyCommand,
 } from './commands.js';
 export { CommandHistory } from './history.js';
+export { createSnapshotHistory } from './snapshot-history.js';
 export { InspectorState, buildInspectorContext, resolveInspectorTarget } from './inspector.js';
 export { handleEditorShortcut, shortcutForEvent } from './keyboard.js';
 export {

@@ -1,5 +1,6 @@
 import {
 	CommandHistory,
+	createSnapshotHistory,
 	EditorState,
 	ProjectState,
 	buildInspectorContext,
@@ -189,6 +190,7 @@ export const commands = Object.freeze({
 });
 export {
 	CommandHistory,
+	createSnapshotHistory,
 	DESIGNER_ICON_NAMES,
 	DESIGNER_MOTION_DEFAULTS,
 	DESIGNER_MOTION_KEY_ATTRIBUTE,
@@ -230,6 +232,7 @@ const publicApi = Object.freeze({
 			decorate: decorateDesignerControl,
 		}),
 	}),
+	history: Object.freeze({ createSnapshot: createSnapshotHistory }),
 	commands,
 });
 
