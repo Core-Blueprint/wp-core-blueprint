@@ -34,6 +34,11 @@
 	display: inline-flex !important;
 }
 
+/*
+ * All canonical toolbar controls share one height and alignment rhythm.
+ * Their inline geometry is intentionally split below: icon controls stay
+ * square, while textual primary actions grow with translated content.
+ */
 .cb-core-design-shell__toolbar--designer :is(
 	.cb-core-design-shell__icon-button,
 	.cb-core-design-shell__drawer-launcher,
@@ -44,16 +49,38 @@
 	justify-content: center !important;
 	align-self: center;
 	box-sizing: border-box !important;
-	inline-size: var(--cb-design-toolbar-control-size) !important;
-	min-inline-size: var(--cb-design-toolbar-control-size) !important;
-	max-inline-size: var(--cb-design-toolbar-control-size) !important;
 	block-size: var(--cb-design-toolbar-control-size) !important;
 	min-block-size: var(--cb-design-toolbar-control-size) !important;
 	max-block-size: var(--cb-design-toolbar-control-size) !important;
 	margin: 0 !important;
-	padding: 0 !important;
 	line-height: 1 !important;
 	vertical-align: middle !important;
+}
+
+/* Icon-only toolbar controls keep the canonical square hit target. */
+.cb-core-design-shell__toolbar--designer :is(
+	.cb-core-design-shell__icon-button,
+	.cb-core-design-shell__drawer-launcher,
+	.cb-core-design-shell__compact-menu-trigger
+) {
+	inline-size: var(--cb-design-toolbar-control-size) !important;
+	min-inline-size: var(--cb-design-toolbar-control-size) !important;
+	max-inline-size: var(--cb-design-toolbar-control-size) !important;
+	padding: 0 !important;
+}
+
+/*
+ * Primary actions are textual commands (Save, Validate import, Apply import,
+ * translated equivalents). Keep the canonical toolbar height, but let the
+ * label determine width instead of forcing it into an icon-sized square.
+ */
+.cb-core-design-shell__toolbar--designer [data-cb-design-shell-primary-action] {
+	inline-size: auto !important;
+	min-inline-size: var(--cb-design-toolbar-control-size) !important;
+	max-inline-size: none !important;
+	padding-block: 0 !important;
+	padding-inline: var(--cb-space-3) !important;
+	white-space: nowrap;
 }
 
 .cb-core-design-shell__toolbar--designer :is(
