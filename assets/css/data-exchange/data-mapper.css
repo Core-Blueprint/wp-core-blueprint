@@ -6,6 +6,11 @@
  * Mapper-specific content inside those canonical slots.
  */
 
+/* The composed palette already exposes its source label in the canonical rail header. */
+.cb-core-data-mapper .cb-core-design-shell__palette .cb-core-design-shell__panel-section-title:first-child {
+	display: none;
+}
+
 .cb-core-data-mapper__source-field {
 	appearance: none;
 	display: flex;
