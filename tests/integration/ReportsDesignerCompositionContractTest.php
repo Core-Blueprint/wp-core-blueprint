@@ -87,6 +87,11 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			'cb-core-design-shell__panel-section',
 			'cb-core-design-shell__field',
 			'cb-core-design-shell__surface--document',
+			'data-cb-design-shell-sidebar-role="inspector"',
+			'data-cb-design-shell-sidebar-role="layers"',
+			'data-cb-design-shell-sidebar-role="settings"',
+			'data-cb-report-inspector',
+			'data-cb-report-layers',
 		] as $contract ) {
 			self::assertStringContainsString( $contract, $template );
 		}
@@ -111,6 +116,9 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 
 		self::assertStringContainsString( "from '@cb-core/design-editor'", $runtime );
 		self::assertStringContainsString( 'createDesignerShell( shell )', $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-layers]'", $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-inspector]'", $runtime );
+		self::assertStringContainsString( "activatePanel( 'inspector' )", $runtime );
 		self::assertStringContainsString( "'@cb-core/design-editor'", $i18n );
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding'", $runtime );
 		self::assertStringContainsString( 'previewSequence', $runtime );
