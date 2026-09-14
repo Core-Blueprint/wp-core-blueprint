@@ -7,7 +7,7 @@ const styleUrl = new URL('../../assets/css/data-exchange/data-mapper.css', impor
 const assetsUrl = new URL('../../src/DataExchange/Mapper/Assets.php', import.meta.url);
 const rendererUrl = new URL('../../src/DataExchange/Mapper/Renderer.php', import.meta.url);
 
-test('Data Mapper consumes the public shared Designer Shell without owning document profiles', async () => {
+test('Data Mapper consumes the public shared Designer Shell without owning document profiles or shell geometry', async () => {
 	const [runtime, styles, assets, renderer] = await Promise.all([
 		readFile(runtimeUrl, 'utf8'),
 		readFile(styleUrl, 'utf8'),
@@ -22,12 +22,25 @@ test('Data Mapper consumes the public shared Designer Shell without owning docum
 	assert.match(renderer, /data-cb-design-launch-root/);
 	assert.match(renderer, /data-cb-design-shell/);
 	assert.match(renderer, /data-cb-design-shell-group=\"mapper-details\"/);
+	assert.match(renderer, /cb-core-design-shell__palette--composed/);
+	assert.match(renderer, /cb-core-design-shell__panel-body/);
+	assert.match(renderer, /cb-core-design-shell__panel-section/);
+	assert.match(renderer, /cb-core-design-shell__field/);
+	assert.match(renderer, /cb-core-design-shell__canvas--composed/);
+	assert.match(renderer, /cb-core-design-shell__canvas-header/);
+	assert.match(renderer, /cb-core-design-shell__canvas-workarea/);
+	assert.match(renderer, /cb-core-design-shell__composition-stack/);
 
 	for (const source of [runtime, styles, assets, renderer]) {
 		assert.doesNotMatch(source, /\b(?:document-fixed|document-flow|mailProfile|Bricks|Brevo|Mailchimp)\b/i);
 	}
 	assert.doesNotMatch(runtime, /\bjQuery\b|\$\s*\(/);
 	assert.doesNotMatch(styles, /position\s*:\s*fixed/i);
+	assert.doesNotMatch(styles, /\.cb-core-data-mapper__workspace\b/);
+	assert.doesNotMatch(styles, /\.cb-core-data-mapper__(?:source|canvas|sidebar)\s*\{/);
+	assert.doesNotMatch(styles, /\.cb-core-data-mapper__control\b/);
+	assert.doesNotMatch(styles, /\.cb-core-data-mapper__file-control\b/);
+	assert.doesNotMatch(renderer, /cb-core-design-shell__workspace\s+cb-core-data-mapper__workspace/);
 });
 
 test('Data Mapper browser contract exposes controlled change, submit, intake and validation boundaries', async () => {

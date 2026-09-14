@@ -151,7 +151,7 @@ final class Renderer {
 		ob_start();
 		?>
 		<div <?php echo $root_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from escaped values. ?>>
-			<div data-cb-design-launch-context class="cb-core-data-mapper__launch-context">
+			<div data-cb-design-launch-context>
 				<p><?php echo esc_html__( 'Map source fields to a target structure, validate the result, and review what will happen before data moves.', 'core-blueprint' ); ?></p>
 			</div>
 
@@ -173,43 +173,60 @@ final class Renderer {
 					<button type="button" class="button button-primary cb-core-button cb-core-button--primary" data-cb-design-shell-primary-action data-cb-data-mapper-primary><?php echo esc_html( $primary_label ); ?></button>
 				</div>
 
-				<div class="cb-core-design-shell__workspace cb-core-data-mapper__workspace">
-					<aside class="cb-core-design-shell__palette cb-core-data-mapper__source" aria-label="<?php echo esc_attr( $source_label ); ?>">
-						<div class="cb-core-data-mapper__panel-heading">
-							<strong><?php echo esc_html( $source_label ); ?></strong>
-							<?php if ( $intake ) : ?>
-								<label class="cb-core-data-mapper__file-control">
-									<span><?php echo esc_html__( 'Source file', 'core-blueprint' ); ?></span>
-									<input type="file" data-cb-data-mapper-file accept="<?php echo esc_attr( $accept ); ?>">
+				<div class="cb-core-design-shell__workspace">
+					<aside class="cb-core-design-shell__palette cb-core-design-shell__palette--composed" aria-label="<?php echo esc_attr( $source_label ); ?>">
+						<div class="cb-core-design-shell__panel-body">
+							<section class="cb-core-design-shell__panel-section">
+								<h3 class="cb-core-design-shell__panel-section-title"><?php echo esc_html( $source_label ); ?></h3>
+								<?php if ( $intake ) : ?>
+									<label class="cb-core-design-shell__field">
+										<span class="cb-core-design-shell__field-label"><?php echo esc_html__( 'Source file', 'core-blueprint' ); ?></span>
+										<input type="file" data-cb-data-mapper-file accept="<?php echo esc_attr( $accept ); ?>">
+										<span class="cb-core-design-shell__field-hint" data-cb-data-mapper-file-name><?php echo esc_html__( 'Choose a source file to begin mapping.', 'core-blueprint' ); ?></span>
+									</label>
+								<?php endif; ?>
+								<label class="cb-core-design-shell__field">
+									<span class="cb-core-design-shell__field-label"><?php echo esc_html__( 'Search fields', 'core-blueprint' ); ?></span>
+									<input type="search" data-cb-data-mapper-search placeholder="<?php echo esc_attr__( 'Search fields', 'core-blueprint' ); ?>"<?php echo [] === $source_fields ? ' disabled' : ''; ?>>
 								</label>
-								<span class="description" data-cb-data-mapper-file-name><?php echo esc_html__( 'Choose a source file to begin mapping.', 'core-blueprint' ); ?></span>
-							<?php endif; ?>
-							<input type="search" class="regular-text" data-cb-data-mapper-search placeholder="<?php echo esc_attr__( 'Search fields', 'core-blueprint' ); ?>"<?php echo [] === $source_fields ? ' disabled' : ''; ?>>
+								<div class="cb-core-design-shell__composition-stack" data-cb-data-mapper-source-fields></div>
+							</section>
 						</div>
-						<div data-cb-data-mapper-source-fields></div>
 					</aside>
 
-					<main class="cb-core-design-shell__canvas cb-core-data-mapper__canvas">
-						<div class="cb-core-data-mapper__canvas-header">
-							<div>
-								<strong><?php echo esc_html__( 'Field mapping', 'core-blueprint' ); ?></strong>
-								<span data-cb-data-mapper-summary></span>
+					<main class="cb-core-design-shell__canvas cb-core-design-shell__canvas--composed">
+						<header class="cb-core-design-shell__canvas-header">
+							<div class="cb-core-design-shell__canvas-heading">
+								<h2 class="cb-core-design-shell__canvas-title"><?php echo esc_html__( 'Field mapping', 'core-blueprint' ); ?></h2>
+								<p class="cb-core-design-shell__canvas-description" data-cb-data-mapper-summary></p>
 							</div>
-							<button type="button" class="button cb-core-button" data-cb-data-mapper-auto<?php echo [] === $source_fields ? ' disabled' : ''; ?>><?php echo esc_html__( 'Auto-match', 'core-blueprint' ); ?></button>
+							<div class="cb-core-design-shell__canvas-actions">
+								<button type="button" class="button cb-core-button" data-cb-data-mapper-auto<?php echo [] === $source_fields ? ' disabled' : ''; ?>><?php echo esc_html__( 'Auto-match', 'core-blueprint' ); ?></button>
+							</div>
+						</header>
+						<div class="cb-core-design-shell__canvas-workarea">
+							<div class="cb-core-design-shell__composition-stack cb-core-data-mapper__mapping-list" data-cb-data-mapper-mappings></div>
 						</div>
-						<div class="cb-core-data-mapper__mapping-list" data-cb-data-mapper-mappings></div>
 					</main>
 
-					<aside class="cb-core-design-shell__sidebar cb-core-data-mapper__sidebar" aria-label="<?php echo esc_attr__( 'Data Mapper details', 'core-blueprint' ); ?>">
+					<aside class="cb-core-design-shell__sidebar" aria-label="<?php echo esc_attr__( 'Data Mapper details', 'core-blueprint' ); ?>">
 						<div class="cb-core-design-shell__sidebar-tabs" role="tablist" aria-label="<?php echo esc_attr__( 'Data Mapper details', 'core-blueprint' ); ?>">
 							<button type="button" class="cb-core-design-shell__sidebar-tab is-active" role="tab" aria-selected="true" data-cb-design-shell-group="mapper-details" data-cb-design-shell-tab="mapping"><?php echo esc_html__( 'Mapping', 'core-blueprint' ); ?></button>
 							<button type="button" class="cb-core-design-shell__sidebar-tab" role="tab" aria-selected="false" data-cb-design-shell-group="mapper-details" data-cb-design-shell-tab="preview"><?php echo esc_html__( 'Preview', 'core-blueprint' ); ?></button>
 						</div>
 						<section class="cb-core-design-shell__sidebar-panel" role="tabpanel" data-cb-design-shell-group="mapper-details" data-cb-design-shell-panel="mapping">
-							<div data-cb-data-mapper-inspector></div>
+							<div class="cb-core-design-shell__panel-body">
+								<section class="cb-core-design-shell__panel-section">
+									<div class="cb-core-design-shell__composition-stack" data-cb-data-mapper-inspector></div>
+								</section>
+							</div>
 						</section>
 						<section class="cb-core-design-shell__sidebar-panel" role="tabpanel" data-cb-design-shell-group="mapper-details" data-cb-design-shell-panel="preview" hidden>
-							<div data-cb-data-mapper-preview></div>
+							<div class="cb-core-design-shell__panel-body">
+								<section class="cb-core-design-shell__panel-section">
+									<div class="cb-core-design-shell__composition-stack" data-cb-data-mapper-preview></div>
+								</section>
+							</div>
 						</section>
 					</aside>
 				</div>

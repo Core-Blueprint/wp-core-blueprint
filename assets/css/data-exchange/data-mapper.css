@@ -1,73 +1,10 @@
 /*
- * Core Blueprint Data Mapper workspace.
+ * Core Blueprint Data Mapper domain components.
  *
- * Consumer-specific composition only. Shared Designer chrome remains owned by
- * the Design Foundation and all visual values consume Base design tokens.
+ * Designer shell geometry, panel composition, form controls and responsive
+ * drawers are owned by the Base Designer Foundation. This file styles only
+ * Mapper-specific content inside those canonical slots.
  */
-
-.cb-core-data-mapper__launch-context {
-	margin: 0 0 var(--cb-space-4);
-}
-
-.cb-core-data-mapper__workspace {
-	grid-template-columns: minmax(220px, 260px) minmax(420px, 1fr) minmax(280px, 340px);
-}
-
-.cb-core-data-mapper__source,
-.cb-core-data-mapper__canvas,
-.cb-core-data-mapper__sidebar {
-	min-height: 520px;
-}
-
-.cb-core-design-shell.is-fullscreen .cb-core-data-mapper__source,
-.cb-core-design-shell.is-fullscreen .cb-core-data-mapper__canvas,
-.cb-core-design-shell.is-fullscreen .cb-core-data-mapper__sidebar {
-	min-height: 0;
-}
-
-.cb-core-data-mapper__panel-heading,
-.cb-core-data-mapper__canvas-header,
-.cb-core-data-mapper__inspector-heading {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--cb-space-2);
-}
-
-.cb-core-data-mapper__panel-heading {
-	align-items: stretch;
-	flex-direction: column;
-	margin-bottom: var(--cb-space-3);
-}
-
-.cb-core-data-mapper__panel-heading strong,
-.cb-core-data-mapper__canvas-header strong,
-.cb-core-data-mapper__inspector-heading strong {
-	color: var(--cb-text-strong);
-}
-
-.cb-core-data-mapper__panel-heading input[type="search"] {
-	width: 100%;
-	max-width: none;
-}
-
-.cb-core-data-mapper__file-control {
-	display: grid;
-	gap: var(--cb-space-2);
-	padding: var(--cb-space-3);
-	border: 1px dashed var(--cb-border);
-	border-radius: var(--cb-radius-md);
-	background: var(--cb-surface-2);
-}
-
-.cb-core-data-mapper__file-control > span {
-	font-weight: var(--cb-fw-semibold);
-}
-
-.cb-core-data-mapper__file-control input[type="file"] {
-	width: 100%;
-	max-width: 100%;
-}
 
 .cb-core-data-mapper__source-field {
 	appearance: none;
@@ -76,7 +13,6 @@
 	justify-content: space-between;
 	gap: var(--cb-space-2);
 	width: 100%;
-	margin: 0 0 var(--cb-space-1);
 	padding: var(--cb-space-2) var(--cb-space-3);
 	border: 1px solid transparent;
 	border-radius: var(--cb-radius-sm);
@@ -112,43 +48,16 @@
 	font-size: var(--cb-fs-xs);
 }
 
-.cb-core-data-mapper__canvas {
-	overflow: auto;
-}
-
-.cb-core-data-mapper__canvas-header {
-	position: sticky;
-	top: 0;
-	z-index: 2;
-	padding: var(--cb-space-3);
-	border-bottom: 1px solid var(--cb-border);
-	background: var(--cb-surface-1);
-}
-
-.cb-core-data-mapper__canvas-header > div {
-	display: flex;
-	align-items: baseline;
-	gap: var(--cb-space-2);
-	min-width: 0;
-}
-
-.cb-core-data-mapper__canvas-header [data-cb-data-mapper-summary] {
+[data-cb-data-mapper-summary] {
 	color: var(--cb-text-muted);
-	font-size: var(--cb-fs-sm);
 }
 
-.cb-core-data-mapper__canvas-header [data-cb-data-mapper-summary].is-valid {
+[data-cb-data-mapper-summary].is-valid {
 	color: var(--cb-success-text, var(--cb-text));
 }
 
-.cb-core-data-mapper__canvas-header [data-cb-data-mapper-summary].is-invalid {
+[data-cb-data-mapper-summary].is-invalid {
 	color: var(--cb-danger-text, var(--cb-text));
-}
-
-.cb-core-data-mapper__mapping-list {
-	display: grid;
-	gap: var(--cb-space-2);
-	padding: var(--cb-space-3);
 }
 
 .cb-core-data-mapper__mapping-row {
@@ -204,32 +113,10 @@
 	font-size: var(--cb-fs-lg);
 }
 
-.cb-core-data-mapper__inspector-heading {
-	align-items: flex-start;
-	flex-direction: column;
-	margin-bottom: var(--cb-space-4);
-}
-
 .cb-core-data-mapper__inspector-heading code {
 	max-width: 100%;
 	overflow-wrap: anywhere;
 	color: var(--cb-text-muted);
-}
-
-.cb-core-data-mapper__control {
-	display: grid;
-	gap: var(--cb-space-2);
-	margin: 0 0 var(--cb-space-4);
-}
-
-.cb-core-data-mapper__control > span {
-	font-weight: var(--cb-fw-semibold);
-}
-
-.cb-core-data-mapper__control select,
-.cb-core-data-mapper__control input {
-	width: 100%;
-	max-width: none;
 }
 
 .cb-core-data-mapper__validation {
@@ -268,28 +155,7 @@
 	font-weight: var(--cb-fw-semibold);
 }
 
-@media (max-width: 1280px) {
-	.cb-core-data-mapper__workspace {
-		grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
-	}
-
-	.cb-core-data-mapper__sidebar {
-		grid-column: 1 / -1;
-	}
-}
-
 @media (max-width: 782px) {
-	.cb-core-data-mapper__workspace {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
-	.cb-core-data-mapper__source,
-	.cb-core-data-mapper__canvas,
-	.cb-core-data-mapper__sidebar {
-		grid-column: 1;
-		min-height: 0;
-	}
-
 	.cb-core-data-mapper__mapping-row {
 		grid-template-columns: minmax(0, 1fr);
 	}
