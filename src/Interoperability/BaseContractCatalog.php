@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Interoperability;
 
+use CB\Core\DataExchange\Foundation as DataExchangeFoundation;
 use CB\Core\Forms\Foundation as FormsFoundation;
 
 defined( 'ABSPATH' ) || exit;
@@ -26,6 +27,7 @@ final class BaseContractCatalog {
 	public static function definitions(): array {
 		return [
 			FormsFoundation::contract_definition(),
+			DataExchangeFoundation::contract_definition(),
 		];
 	}
 }

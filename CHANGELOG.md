@@ -4,6 +4,15 @@
 
 ## 1.0.0-rc1 — 2026-09-09
 
+### Data Exchange + Data Mapper Foundations v1
+
+- Add the Base-owned `core-blueprint::data-exchange.entity@1` contract on top of Generic Interoperability so extensions can expose versioned import/export entities without moving domain semantics or persistence into Base.
+- Add bounded JSON and self-describing CSV transport with strict envelopes, provider authorization, full preflight, deterministic preview fingerprints, stale-plan protection, duplicate-reference rejection and explicit partial-result semantics.
+- Add the provider-neutral Data Mapper field-schema and mapping boundary with deterministic id/label/alias matching, explicit direct/ignore/constant transforms and no fuzzy guessing for ambiguous fields.
+- Add the shared Data Mapper workspace as a consumer of the existing public Designer Shell, including request-local file intake, field mapping, Undo/Redo, auto-match, inspection and preview handoff without Base-owned AJAX or browser persistence.
+- Keep extension providers authoritative for field meaning, portable identity, canonical validation, mutations, audit meaning and authorized upload/download transport; Base does not write provider records directly.
+- Add DX/Mapper regression coverage for canonical identity, stale/tampered plans, CSV formula protection, mapping ambiguity, required fields, malformed initial mappings and the request-local browser boundary while keeping `1.0.0-rc1` and Core API `1.0` unchanged.
+
 ### Forms Foundation v1 — normalized form ingress
 
 - Add the Base-owned `core-blueprint::forms.provider@1` platform contract on top of Generic Interoperability while keeping every concrete provider extension-admitted and builder-neutral.
