@@ -144,6 +144,15 @@ export const createDesignerShell = (root, {
 		if (redo instanceof HTMLButtonElement) redo.disabled = !session.history.canRedo;
 	};
 
+	const scheduleHistorySync = () => {
+		if (!session?.history) return;
+		if (typeof queueMicrotask === 'function') queueMicrotask(syncHistory);
+		else Promise.resolve().then(syncHistory);
+	};
+	// ProjectState emits during CommandHistory.execute(), before the new history
+	// entry is pushed. Defer one microtask so chrome reflects the committed stack.
+	session?.projectState?.subscribe?.(scheduleHistorySync);
+
 	const syncFullscreenControl = () => {
 		if (!fullscreen) return;
 		fullscreen.setAttribute('aria-pressed', fullscreenState ? 'true' : 'false');
