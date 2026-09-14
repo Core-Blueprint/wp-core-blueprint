@@ -107,3 +107,12 @@
 .cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-primary-action].cb-core-button--primary:focus-visible {
 	box-shadow: inset 0 0 0 1px currentColor, 0 0 0 2px var(--cb-accent-strong) !important;
 }
+
+/*
+ * Designer focus mode is an immersive working surface. Suppress the global HUD
+ * while any Designer Shell owns fullscreen state so it cannot overlap inspector
+ * controls. The shell runtime already owns this document-level focus marker.
+ */
+html.cb-core-design-shell-focus-mode .cb-hud {
+	display: none !important;
+}
