@@ -41,18 +41,29 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 	}
 
 	public function test_reports_runtime_mutates_composer_state_inside_public_designer_primitives(): void {
-		$runtime = $this->source( 'assets/js/features/reports-preferences.js' );
+		$runtime  = $this->source( 'assets/js/features/reports-preferences.js' );
+		$template = $this->source( 'templates/preferences-reports.php' );
 
 		self::assertStringContainsString( 'normalizeClientTemplate', $runtime );
 		self::assertStringContainsString( 'buildComposerControls', $runtime );
 		self::assertStringContainsString( 'renderComposerControls', $runtime );
-		self::assertStringContainsString( 'moveSelectedBlock', $runtime );
+		self::assertStringContainsString( 'renderElements', $runtime );
+		self::assertStringContainsString( 'renderLayers', $runtime );
+		self::assertStringContainsString( 'moveBlock', $runtime );
+		self::assertStringContainsString( 'createLayerMoveButton', $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-elements]'", $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-layers]'", $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-inspector]'", $runtime );
+		self::assertStringContainsString( "layerList.className = 'cb-core-reports-structure'", $runtime );
+		self::assertStringContainsString( "activatePanel( 'inspector' )", $runtime );
 		self::assertStringContainsString( "template: JSON.stringify( composer )", $runtime );
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding', nonce, reportsPayload() )", $runtime );
 		self::assertStringContainsString( "apiPost( 'cb_core_save_report_branding', nonce, reportsPayload() )", $runtime );
-		self::assertStringContainsString( 'cb-core-design-shell__palette-grid', $runtime );
 		self::assertStringContainsString( 'cb-core-design-shell__panel-section', $runtime );
 		self::assertStringContainsString( 'cb-core-design-shell__field', $runtime );
+		self::assertStringContainsString( 'cb-core-design-shell__palette-grid', $template );
+		self::assertStringContainsString( 'data-cb-report-elements', $template );
+		self::assertStringNotContainsString( 'moveSelectedBlock', $runtime );
 		self::assertStringNotContainsString( 'window.location', $runtime );
 		self::assertStringNotContainsString( 'location.reload', $runtime );
 	}
