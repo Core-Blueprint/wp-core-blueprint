@@ -78,6 +78,9 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			'data-cb-design-launch-root',
 			'data-cb-design-launch-context',
 			'data-cb-design-shell',
+			'data-cb-design-shell-context',
+			'data-cb-design-shell-undo',
+			'data-cb-design-shell-redo',
 			'data-cb-design-shell-primary-action',
 			'data-cb-design-shell-toolbar-extension="actions"',
 			'cb-core-design-shell__palette--tabbed',
@@ -97,11 +100,11 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			'data-cb-report-elements',
 			'data-cb-report-inspector',
 			'data-cb-report-layers',
+			'Maintenance Report',
 		] as $contract ) {
 			self::assertStringContainsString( $contract, $template );
 		}
 
-		self::assertStringNotContainsString( 'data-cb-report-type=', $template );
 		self::assertStringNotContainsString( '@media', $template );
 		self::assertStringNotContainsString( 'cb-core-form-scope', $template );
 	}
@@ -118,6 +121,42 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "'assets/css/pages/reports-designer.css'", $bootstrap );
 	}
 
+	public function test_mail_and_reports_share_one_layer_primitive_and_context_chrome(): void {
+		$reports_runtime = $this->source( 'assets/js/features/reports-preferences.js' );
+		$mail_runtime    = $this->source( 'assets/js/features/mail-designer.js' );
+		$reports_style   = $this->source( 'assets/css/pages/reports-designer.css' );
+		$mail_style      = $this->source( 'assets/css/pages/mail-designer.css' );
+
+		foreach ( [ $reports_runtime, $mail_runtime ] as $runtime ) {
+			self::assertStringContainsString( 'cb-core-design-shell__layer-list', $runtime );
+			self::assertStringContainsString( 'cb-core-design-shell__layer-row', $runtime );
+			self::assertStringContainsString( 'cb-core-design-shell__layer-select', $runtime );
+			self::assertStringContainsString( 'cb-core-design-shell__layer-actions', $runtime );
+			self::assertStringContainsString( 'cb-core-design-shell__layer-action', $runtime );
+			self::assertStringContainsString( 'decorateDesignerControl', $runtime );
+			self::assertStringNotContainsString( 'cb-core-reports-structure__row', $runtime );
+			self::assertStringNotContainsString( 'cb-core-mail-structure__row', $runtime );
+		}
+
+		self::assertStringContainsString( "templateControl.dataset.cbDesignShellContext = '';", $mail_runtime );
+		self::assertStringNotContainsString( '.cb-core-reports-structure__row', $reports_style );
+		self::assertStringNotContainsString( '.cb-core-mail-structure__row', $mail_style );
+	}
+
+	public function test_reports_designer_uses_the_canonical_design_session_history(): void {
+		$runtime = $this->source( 'assets/js/features/reports-preferences.js' );
+
+		self::assertStringContainsString( 'createSession', $runtime );
+		self::assertStringContainsString( "profile: 'document-flow'", $runtime );
+		self::assertStringContainsString( 'createDesignerShell( shell, { session } )', $runtime );
+		self::assertStringContainsString( 'commands.reorderNode', $runtime );
+		self::assertStringContainsString( 'commands.setProperty', $runtime );
+		self::assertStringContainsString( "command?.label === 'remove-node'", $runtime );
+		self::assertStringContainsString( "command?.label === 'insert-node'", $runtime );
+		self::assertStringNotContainsString( 'createSnapshotHistory', $runtime );
+		self::assertStringNotContainsString( 'checkpoint()', $runtime );
+	}
+
 	public function test_reports_designer_separates_elements_layers_inspector_and_settings(): void {
 		$runtime = $this->source( 'assets/js/features/reports-preferences.js' );
 		$style   = $this->source( 'assets/css/pages/reports-designer.css' );
@@ -127,14 +166,13 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "qs( '[data-cb-report-inspector]'", $runtime );
 		self::assertStringContainsString( 'renderElements', $runtime );
 		self::assertStringContainsString( 'renderLayers', $runtime );
-		self::assertStringContainsString( "layerList.className = 'cb-core-reports-structure'", $runtime );
+		self::assertStringContainsString( "layerList.className = 'cb-core-design-shell__layer-list'", $runtime );
 		self::assertStringContainsString( 'row.dataset.cbReportLayer = block.type', $runtime );
 		self::assertStringContainsString( 'createLayerMoveButton', $runtime );
 		self::assertStringContainsString( "activatePanel( 'inspector' )", $runtime );
 		self::assertStringNotContainsString( "layerList.className = 'cb-core-design-shell__palette-grid'", $runtime );
-		self::assertStringContainsString( '.cb-core-reports-structure__row', $style );
-		self::assertStringContainsString( '.cb-core-reports-structure__select', $style );
 		self::assertStringNotContainsString( '.cb-core-design-shell__workspace', $style );
+		self::assertStringNotContainsString( '.cb-core-design-shell__layer-row', $style );
 	}
 
 	public function test_reports_designer_initializes_the_shared_shell_and_saves_in_place(): void {
@@ -142,7 +180,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		$i18n    = $this->source( 'src/Admin/AdminModuleDefinitionsPreferences.php' );
 
 		self::assertStringContainsString( "from '@cb-core/design-editor'", $runtime );
-		self::assertStringContainsString( 'createDesignerShell( shell )', $runtime );
+		self::assertStringContainsString( 'createDesignerShell( shell, { session } )', $runtime );
 		self::assertStringContainsString( "'@cb-core/design-editor'", $i18n );
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding'", $runtime );
 		self::assertStringContainsString( 'previewSequence', $runtime );

@@ -75,8 +75,19 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 		>
 			<div class="cb-core-design-shell" data-cb-design-shell hidden>
 				<div class="cb-core-design-shell__toolbar">
+					<div data-cb-design-shell-context>
+						<label class="screen-reader-text" for="cb-core-report-type-switcher"><?php esc_html_e( 'Report type', 'core-blueprint' ); ?></label>
+						<select id="cb-core-report-type-switcher" aria-label="<?php esc_attr_e( 'Report type', 'core-blueprint' ); ?>">
+							<option value="maintenance" selected><?php esc_html_e( 'Maintenance Report', 'core-blueprint' ); ?></option>
+						</select>
+					</div>
 					<div class="cb-core-design-shell__toolbar-group">
 						<span data-cb-design-shell-status aria-live="polite"></span>
+					</div>
+					<div class="cb-core-design-shell__toolbar-group">
+						<span data-cb-design-shell-group-label><?php esc_html_e( 'History', 'core-blueprint' ); ?></span>
+						<button type="button" class="button cb-core-button" data-cb-design-shell-undo disabled><?php esc_html_e( 'Undo', 'core-blueprint' ); ?></button>
+						<button type="button" class="button cb-core-button" data-cb-design-shell-redo disabled><?php esc_html_e( 'Redo', 'core-blueprint' ); ?></button>
 					</div>
 					<div class="cb-core-design-shell__toolbar-group">
 						<button
