@@ -33,6 +33,7 @@ if ( FORM ) {
 	const resetBtn          = qs( '#cb-core-reset-branding', FORM );
 	const previewFrame      = qs( '[data-cb-report-preview]', FORM );
 	const previewState      = qs( '[data-cb-report-preview-state]', FORM );
+	const elementsBody      = qs( '[data-cb-report-elements]', FORM );
 	const layersBody        = qs( '[data-cb-report-layers]', FORM );
 	const inspectorBody     = qs( '[data-cb-report-inspector]', FORM );
 
@@ -53,12 +54,13 @@ if ( FORM ) {
 	} );
 
 	let composer = normalizeClientTemplate( data.composer || {} );
+	const elementTypes = Object.keys( blockLabels ).length
+		? Object.keys( blockLabels )
+		: composer.blocks.map( ( block ) => block.type );
 	let selectedBlockType = composer.blocks[0]?.type || '';
-	let blockList = null;
+	let layerList = null;
 	let inspectorTitle = null;
 	let enabledControl = null;
-	let moveUpBtn = null;
-	let moveDownBtn = null;
 	let mediaFrame = null;
 	let previewTimer = null;
 	let previewSequence = 0;
@@ -90,19 +92,23 @@ if ( FORM ) {
 	const selectedBlock = () => composer.blocks.find( ( block ) => block.type === selectedBlockType ) || null;
 	const isStructuralBlock = ( block ) => block?.type === 'header' || block?.type === 'footer';
 
+	const selectBlock = ( type, { openInspector = true } = {} ) => {
+		if ( ! composer.blocks.some( ( block ) => block.type === type ) ) return false;
+		selectedBlockType = type;
+		renderComposerControls();
+		if ( openInspector ) designerShell?.activatePanel( 'inspector' );
+		return true;
+	};
+
 	const buildComposerControls = () => {
 		if ( layersBody ) {
 			const section = document.createElement( 'section' );
 			section.className = 'cb-core-design-shell__panel-section';
 
-			const title = document.createElement( 'h3' );
-			title.className = 'cb-core-design-shell__panel-section-title';
-			title.textContent = composerUi.blocks || 'Blocks';
-
-			blockList = document.createElement( 'div' );
-			blockList.className = 'cb-core-design-shell__palette-grid';
-			blockList.dataset.cbReportBlockList = '';
-			section.append( title, blockList );
+			layerList = document.createElement( 'div' );
+			layerList.className = 'cb-core-reports-structure';
+			layerList.dataset.cbReportLayerList = '';
+			section.append( layerList );
 			layersBody.append( section );
 		}
 
@@ -124,55 +130,92 @@ if ( FORM ) {
 			enabledControl.dataset.cbReportBlockEnabled = '';
 			enabledField.append( enabledLabel, enabledControl );
 
-			const actions = document.createElement( 'div' );
-			actions.className = 'cb-core-design-shell__panel-actions';
-			moveUpBtn = document.createElement( 'button' );
-			moveUpBtn.type = 'button';
-			moveUpBtn.className = 'button';
-			moveUpBtn.textContent = composerUi.moveUp || 'Move up';
-			moveUpBtn.dataset.cbReportBlockMoveUp = '';
-			moveDownBtn = document.createElement( 'button' );
-			moveDownBtn.type = 'button';
-			moveDownBtn.className = 'button';
-			moveDownBtn.textContent = composerUi.moveDown || 'Move down';
-			moveDownBtn.dataset.cbReportBlockMoveDown = '';
-			actions.append( moveUpBtn, moveDownBtn );
-
-			section.append( inspectorTitle, enabledField, actions );
+			section.append( inspectorTitle, enabledField );
 			inspectorBody.append( section );
 		}
 	};
 
+	const createLayerMoveButton = ( block, direction, disabled ) => {
+		const button = document.createElement( 'button' );
+		button.type = 'button';
+		button.className = 'button cb-core-button';
+		button.textContent = direction < 0 ? '↑' : '↓';
+		button.disabled = disabled;
+		const action = direction < 0 ? ( composerUi.moveUp || 'Move up' ) : ( composerUi.moveDown || 'Move down' );
+		button.setAttribute( 'aria-label', `${ action }: ${ blockLabel( block.type ) }` );
+		button.addEventListener( 'click', () => moveBlock( block.type, direction ) );
+		return button;
+	};
+
+	const renderElements = () => {
+		if ( ! elementsBody ) return;
+		elementsBody.replaceChildren();
+		elementTypes.forEach( ( type ) => {
+			const block = composer.blocks.find( ( candidate ) => candidate.type === type );
+			if ( ! block ) return;
+			const button = document.createElement( 'button' );
+			button.type = 'button';
+			button.className = 'cb-core-design-shell__palette-item';
+			button.dataset.cbReportElement = type;
+			button.setAttribute( 'aria-pressed', type === selectedBlockType ? 'true' : 'false' );
+			button.textContent = blockLabel( type );
+			button.addEventListener( 'click', () => selectBlock( type ) );
+			elementsBody.append( button );
+		} );
+	};
+
+	const renderLayers = () => {
+		if ( ! layerList ) return;
+		layerList.replaceChildren();
+		composer.blocks.forEach( ( block, index ) => {
+			const row = document.createElement( 'div' );
+			row.className = 'cb-core-reports-structure__row';
+			row.dataset.cbReportLayer = block.type;
+			if ( block.type === selectedBlockType ) row.classList.add( 'is-selected' );
+
+			const select = document.createElement( 'button' );
+			select.type = 'button';
+			select.className = 'cb-core-reports-structure__select';
+
+			const label = document.createElement( 'span' );
+			label.className = 'cb-core-reports-structure__label';
+			label.textContent = blockLabel( block.type );
+
+			const meta = document.createElement( 'span' );
+			meta.className = 'cb-core-reports-structure__meta';
+			meta.textContent = block.enabled !== false
+				? ( composerUi.visible || 'Visible' )
+				: ( composerUi.hidden || 'Hidden' );
+
+			select.append( label, meta );
+			select.addEventListener( 'click', () => selectBlock( block.type ) );
+
+			const actions = document.createElement( 'div' );
+			actions.className = 'cb-core-reports-structure__actions';
+			if ( ! isStructuralBlock( block ) ) {
+				actions.append(
+					createLayerMoveButton( block, -1, index <= 1 ),
+					createLayerMoveButton( block, 1, index >= composer.blocks.length - 2 )
+				);
+			}
+
+			row.append( select, actions );
+			layerList.append( row );
+		} );
+	};
+
 	const renderComposerControls = () => {
 		const selected = selectedBlock();
-		if ( blockList ) {
-			blockList.replaceChildren();
-			composer.blocks.forEach( ( block ) => {
-				const button = document.createElement( 'button' );
-				button.type = 'button';
-				button.className = 'cb-core-design-shell__palette-item';
-				button.dataset.cbReportBlock = block.type;
-				button.setAttribute( 'aria-pressed', block.type === selectedBlockType ? 'true' : 'false' );
-				button.textContent = blockLabel( block.type ) + ( block.enabled ? '' : ` · ${ composerUi.hidden || 'Hidden' }` );
-				button.addEventListener( 'click', () => {
-					selectedBlockType = block.type;
-					renderComposerControls();
-					designerShell?.activatePanel( 'inspector' );
-				} );
-				blockList.append( button );
-			} );
-		}
+		renderElements();
+		renderLayers();
 
 		if ( ! selected ) return;
 		if ( inspectorTitle ) inspectorTitle.textContent = blockLabel( selected.type );
-		const index = composer.blocks.findIndex( ( block ) => block.type === selected.type );
 		const structural = isStructuralBlock( selected );
 		if ( enabledControl ) {
 			enabledControl.checked = selected.enabled !== false;
 			enabledControl.disabled = structural;
 		}
-		if ( moveUpBtn ) moveUpBtn.disabled = structural || index <= 1;
-		if ( moveDownBtn ) moveDownBtn.disabled = structural || index < 0 || index >= composer.blocks.length - 2;
 	};
 
 	const applyComposer = ( next ) => {
@@ -184,13 +227,14 @@ if ( FORM ) {
 		renderComposerControls();
 	};
 
-	const moveSelectedBlock = ( direction ) => {
-		const selected = selectedBlock();
-		if ( ! selected || isStructuralBlock( selected ) ) return;
-		const index = composer.blocks.findIndex( ( block ) => block.type === selected.type );
+	const moveBlock = ( type, direction ) => {
+		const block = composer.blocks.find( ( candidate ) => candidate.type === type );
+		if ( ! block || isStructuralBlock( block ) ) return;
+		const index = composer.blocks.findIndex( ( candidate ) => candidate.type === type );
 		const target = index + direction;
 		if ( target < 1 || target > composer.blocks.length - 2 ) return;
 		[ composer.blocks[ index ], composer.blocks[ target ] ] = [ composer.blocks[ target ], composer.blocks[ index ] ];
+		selectedBlockType = type;
 		renderComposerControls();
 		schedulePreview();
 	};
@@ -301,8 +345,6 @@ if ( FORM ) {
 		renderComposerControls();
 		schedulePreview();
 	} );
-	moveUpBtn?.addEventListener( 'click', () => moveSelectedBlock( -1 ) );
-	moveDownBtn?.addEventListener( 'click', () => moveSelectedBlock( 1 ) );
 
 	colorEl?.addEventListener( 'input', ( event ) => {
 		const hex = event.target.value;
