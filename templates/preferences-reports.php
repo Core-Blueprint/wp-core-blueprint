@@ -102,29 +102,30 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 				</div>
 
 				<div class="cb-core-design-shell__workspace">
-					<aside
-						class="cb-core-design-shell__palette cb-core-design-shell__palette--composed"
-						aria-label="<?php esc_attr_e( 'Report type', 'core-blueprint' ); ?>"
+					<section
+						class="cb-core-design-shell__palette cb-core-design-shell__palette--tabbed cb-core-design-shell__palette--composed"
+						aria-label="<?php esc_attr_e( 'Content', 'core-blueprint' ); ?>"
 					>
-						<div class="cb-core-design-shell__panel-body">
-							<section class="cb-core-design-shell__panel-section">
-								<h3 class="cb-core-design-shell__panel-section-title"><?php esc_html_e( 'Report type', 'core-blueprint' ); ?></h3>
-								<div class="cb-core-design-shell__palette-grid">
-									<button
-										type="button"
-										class="cb-core-design-shell__palette-item"
-										data-cb-report-type="maintenance"
-										aria-pressed="true"
-									><?php esc_html_e( 'Maintenance Report', 'core-blueprint' ); ?></button>
-								</div>
-							</section>
-
-							<section class="cb-core-design-shell__panel-section">
-								<h3 class="cb-core-design-shell__panel-section-title"><?php esc_html_e( 'Elements', 'core-blueprint' ); ?></h3>
-								<div class="cb-core-design-shell__palette-grid" data-cb-report-elements></div>
-							</section>
+						<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Content', 'core-blueprint' ); ?>">
+							<button
+								type="button"
+								class="cb-core-design-shell__tab is-active"
+								role="tab"
+								aria-selected="true"
+								data-cb-design-shell-group="palette"
+								data-cb-design-shell-tab="elements"
+							><?php esc_html_e( 'Elements', 'core-blueprint' ); ?></button>
 						</div>
-					</aside>
+						<div
+							class="cb-core-design-shell__panel"
+							data-cb-design-shell-group="palette"
+							data-cb-design-shell-panel="elements"
+						>
+							<div class="cb-core-design-shell__panel-body">
+								<div class="cb-core-design-shell__palette-grid" data-cb-report-elements></div>
+							</div>
+						</div>
+					</section>
 
 					<main class="cb-core-design-shell__canvas cb-core-design-shell__canvas--composed">
 						<header class="cb-core-design-shell__canvas-header">
