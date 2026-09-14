@@ -33,12 +33,10 @@ if ( FORM ) {
 	const resetBtn          = qs( '#cb-core-reset-branding', FORM );
 	const previewFrame      = qs( '[data-cb-report-preview]', FORM );
 	const previewState      = qs( '[data-cb-report-preview-state]', FORM );
-	const paletteBody       = qs( '.cb-core-design-shell__palette .cb-core-design-shell__panel-body', FORM );
-	const sidebarBody       = qs( '.cb-core-design-shell__sidebar .cb-core-design-shell__panel-body', FORM );
+	const layersBody        = qs( '[data-cb-report-layers]', FORM );
+	const inspectorBody     = qs( '[data-cb-report-inspector]', FORM );
 
-	if ( shell ) {
-		createDesignerShell( shell );
-	}
+	const designerShell = shell ? createDesignerShell( shell ) : null;
 
 	const normalizeClientTemplate = ( raw ) => ( {
 		schema_version: Number( raw?.schema_version ) || 1,
@@ -93,7 +91,7 @@ if ( FORM ) {
 	const isStructuralBlock = ( block ) => block?.type === 'header' || block?.type === 'footer';
 
 	const buildComposerControls = () => {
-		if ( paletteBody ) {
+		if ( layersBody ) {
 			const section = document.createElement( 'section' );
 			section.className = 'cb-core-design-shell__panel-section';
 
@@ -105,10 +103,10 @@ if ( FORM ) {
 			blockList.className = 'cb-core-design-shell__palette-grid';
 			blockList.dataset.cbReportBlockList = '';
 			section.append( title, blockList );
-			paletteBody.append( section );
+			layersBody.append( section );
 		}
 
-		if ( sidebarBody ) {
+		if ( inspectorBody ) {
 			const section = document.createElement( 'section' );
 			section.className = 'cb-core-design-shell__panel-section';
 			section.dataset.cbReportBlockInspector = '';
@@ -141,7 +139,7 @@ if ( FORM ) {
 			actions.append( moveUpBtn, moveDownBtn );
 
 			section.append( inspectorTitle, enabledField, actions );
-			sidebarBody.prepend( section );
+			inspectorBody.append( section );
 		}
 	};
 
@@ -159,6 +157,7 @@ if ( FORM ) {
 				button.addEventListener( 'click', () => {
 					selectedBlockType = block.type;
 					renderComposerControls();
+					designerShell?.activatePanel( 'inspector' );
 				} );
 				blockList.append( button );
 			} );
