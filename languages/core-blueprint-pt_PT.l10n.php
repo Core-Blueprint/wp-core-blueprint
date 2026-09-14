@@ -44,7 +44,7 @@ $catalog['messages'] = array_replace(
         'Source file selected.' => 'Ficheiro de origem selecionado.',
         'Target field' => 'Campo de destino',
         'Transform' => 'Transformação',
-        'Validate mapping.' => 'Validar mapeamento.',
+        'Validate mapping' => 'Validar mapeamento',
     ]
 );
 

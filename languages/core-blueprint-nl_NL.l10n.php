@@ -44,7 +44,7 @@ $catalog['messages'] = array_replace(
         'Source file selected.' => 'Bronbestand geselecteerd.',
         'Target field' => 'Doelveld',
         'Transform' => 'Transformatie',
-        'Validate mapping.' => 'Koppeling valideren.',
+        'Validate mapping' => 'Koppeling valideren',
     ]
 );
 
