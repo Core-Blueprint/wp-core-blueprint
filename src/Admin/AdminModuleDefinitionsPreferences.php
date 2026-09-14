@@ -117,7 +117,7 @@ final class AdminModuleDefinitionsPreferences {
 								'brandingPickerButton'        => __( 'Use this image', 'core-blueprint' ),
 								'brandingMediaUnavailable'    => __( 'Media Library not available - reload the page.', 'core-blueprint' ),
 								'brandingInvalidHex'          => __( 'Hex colour must be in #RRGGBB form.', 'core-blueprint' ),
-								'brandingConfirmReset'        => __( 'Reset report settings to defaults? Logo, report provider details, and accent colour will be cleared.', 'core-blueprint' ),
+								'brandingConfirmReset'        => __( 'Logo, report provider details, accent colour, and report layout will be reset to defaults.', 'core-blueprint' ),
 								'brandingConfirmResetTitle'   => __( 'Reset report settings?', 'core-blueprint' ),
 								'brandingConfirmResetConfirm' => __( 'Reset to defaults', 'core-blueprint' ),
 								'brandingResetting'           => __( 'Resetting…', 'core-blueprint' ),
