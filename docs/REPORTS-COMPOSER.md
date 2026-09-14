@@ -74,9 +74,11 @@ Future versions may add repeatable editorial blocks such as a section heading or
 
 Designer Mode keeps the Golden three-region ownership model:
 
-- **Left palette / structure:** report block library and current block order.
+- **Left palette:** report-type context and future bounded report-type choices.
 - **Canvas:** canonical document surface rendered through the real typed Flow pipeline.
-- **Right inspector:** settings for the selected Reports block plus report appearance/provider settings.
+- **Right sidebar:** the shared Designer roles are used canonically: **Inspector** for the selected block, **Layers** for current block order, and **Settings** for report appearance/provider settings.
+
+Reports must not duplicate the block structure in the left palette and Layers. Selecting a block from Layers opens Inspector for that block.
 
 The consumer may implement block selection, reorder and domain commands. It must not reimplement shell geometry, toolbar overflow, drawer behavior, panel spacing or control presentation.
 
