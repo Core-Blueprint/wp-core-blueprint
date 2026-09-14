@@ -80,6 +80,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			'data-cb-design-shell',
 			'data-cb-design-shell-primary-action',
 			'data-cb-design-shell-toolbar-extension="actions"',
+			'cb-core-design-shell__palette--tabbed',
 			'cb-core-design-shell__palette--composed',
 			'cb-core-design-shell__canvas--composed',
 			'cb-core-design-shell__sidebar--composed',
@@ -87,6 +88,9 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			'cb-core-design-shell__panel-section',
 			'cb-core-design-shell__field',
 			'cb-core-design-shell__surface--document',
+			'data-cb-design-shell-group="palette"',
+			'data-cb-design-shell-tab="elements"',
+			'data-cb-design-shell-panel="elements"',
 			'data-cb-design-shell-sidebar-role="inspector"',
 			'data-cb-design-shell-sidebar-role="layers"',
 			'data-cb-design-shell-sidebar-role="settings"',
@@ -97,6 +101,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			self::assertStringContainsString( $contract, $template );
 		}
 
+		self::assertStringNotContainsString( 'data-cb-report-type=', $template );
 		self::assertStringNotContainsString( '@media', $template );
 		self::assertStringNotContainsString( 'cb-core-form-scope', $template );
 	}
