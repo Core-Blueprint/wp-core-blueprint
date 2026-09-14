@@ -149,6 +149,13 @@
 	color: var(--cb-text-strong);
 }
 
+.cb-core-design-shell__palette-item.is-active,
+.cb-core-design-shell__palette-item[aria-pressed="true"] {
+	border-color: var(--cb-accent);
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+}
+
 .cb-core-design-shell__palette-item:focus-visible {
 	outline: 2px solid var(--cb-accent);
 	outline-offset: 1px;

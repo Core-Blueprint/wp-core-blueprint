@@ -5,6 +5,8 @@ namespace CB\Core\Reports;
 
 use CB\Core\Design\Profile\Document\Flow\Presentation;
 use CB\Core\Design\Profile\Document\Flow\RenderBlock;
+use CB\Core\Reports\Composer\BlockCatalog;
+use CB\Core\Reports\Composer\MaintenanceTemplate;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -27,14 +29,63 @@ final class MaintenanceFlowCompiler {
 	 * @param array<string,mixed> $report
 	 * @param array<string,mixed> $snapshot
 	 * @param array<string,mixed> $branding
+	 * @param array<string,mixed>|null $template Unsaved Designer template; null resolves persisted state.
 	 * @return array{layout:array<string,mixed>,blocks:list<RenderBlock>,locale:string,presentation:Presentation}
 	 */
-	public function compile( array $report, array $snapshot, array $branding, string $locale ): array {
+	public function compile( array $report, array $snapshot, array $branding, string $locale, ?array $template = null ): array {
 		$this->assert_input( $report, $snapshot, $locale );
 
-		$site = is_array( $snapshot['site'] ?? null ) ? $snapshot['site'] : [];
+		$template = null === $template
+			? MaintenanceTemplate::current()
+			: MaintenanceTemplate::normalize( $template );
 		$blocks = [];
-		$logo = (string) ( $branding['logo_url'] ?? '' );
+
+		foreach ( $template['blocks'] as $definition ) {
+			if ( empty( $definition['enabled'] ) ) {
+				continue;
+			}
+			$type = (string) ( $definition['type'] ?? '' );
+			foreach ( $this->compile_block( $type, $report, $snapshot, $branding ) as $block ) {
+				$blocks[] = $block;
+			}
+		}
+
+		return [
+			'layout'       => self::layout(),
+			'blocks'       => $blocks,
+			'locale'       => $locale,
+			'presentation' => Presentation::from_accent( (string) ( $branding['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ) ),
+		];
+	}
+
+	/**
+	 * Dispatch one bounded Reports Composer block into typed Document Flow blocks.
+	 *
+	 * @param array<string,mixed> $report
+	 * @param array<string,mixed> $snapshot
+	 * @param array<string,mixed> $branding
+	 * @return list<RenderBlock>
+	 */
+	private function compile_block( string $type, array $report, array $snapshot, array $branding ): array {
+		return match ( $type ) {
+			BlockCatalog::HEADER        => $this->header_blocks( $report, $snapshot, $branding ),
+			BlockCatalog::STATUS        => $this->status_blocks( $snapshot ),
+			BlockCatalog::KPIS          => $this->kpi_blocks( $snapshot ),
+			BlockCatalog::CURRENT_STATE => $this->current_state_blocks( $snapshot ),
+			BlockCatalog::ACTIVITY      => $this->maintenance_activity_blocks( $snapshot ),
+			BlockCatalog::SUMMARY       => $this->summary_blocks( $snapshot ),
+			BlockCatalog::NOTES         => $this->notes_blocks( $snapshot ),
+			BlockCatalog::FOOTER        => $this->footer_blocks( $snapshot ),
+			default                     => [],
+		};
+	}
+
+	/** @param array<string,mixed> $report @param array<string,mixed> $snapshot @param array<string,mixed> $branding @return list<RenderBlock> */
+	private function header_blocks( array $report, array $snapshot, array $branding ): array {
+		$site   = is_array( $snapshot['site'] ?? null ) ? $snapshot['site'] : [];
+		$blocks = [];
+		$logo   = (string) ( $branding['logo_url'] ?? '' );
+
 		if ( '' !== $logo ) {
 			$blocks[] = RenderBlock::image( $logo, [ 'space_after' => 4.0, 'keep_together' => true ] );
 		} elseif ( '' !== (string) ( $branding['fallback_text'] ?? '' ) ) {
@@ -48,63 +99,88 @@ final class MaintenanceFlowCompiler {
 			[ 'space_after' => 4.0, 'keep_together' => true ]
 		);
 		$blocks[] = RenderBlock::text( $this->metadata_text( $report, $branding ), [ 'space_after' => 5.0, 'keep_together' => true ] );
-		$blocks[] = RenderBlock::text( $this->status_text( $snapshot ), [ 'space_after' => 5.0, 'keep_together' => true ] );
+		return $blocks;
+	}
 
+	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
+	private function status_blocks( array $snapshot ): array {
+		return [ RenderBlock::text( $this->status_text( $snapshot ), [ 'space_after' => 5.0, 'keep_together' => true ] ) ];
+	}
+
+	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
+	private function kpi_blocks( array $snapshot ): array {
 		$kpi = $this->kpi_table( $snapshot );
-		if ( null !== $kpi ) {
-			$blocks[] = RenderBlock::text( __( 'Maintenance summary', 'core-blueprint' ), [ 'space_after' => 1.0 ] );
-			$blocks[] = $kpi;
+		if ( null === $kpi ) {
+			return [];
 		}
+		return [
+			RenderBlock::text( __( 'Maintenance summary', 'core-blueprint' ), [ 'space_after' => 1.0 ] ),
+			$kpi,
+		];
+	}
 
+	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
+	private function current_state_blocks( array $snapshot ): array {
 		$state = $this->site_state_table( $snapshot );
-		if ( null !== $state ) {
-			$blocks[] = RenderBlock::text( __( 'Current State', 'core-blueprint' ), [ 'space_before' => 5.0, 'space_after' => 1.0 ] );
-			$blocks[] = $state;
+		if ( null === $state ) {
+			return [];
 		}
+		return [
+			RenderBlock::text( __( 'Current State', 'core-blueprint' ), [ 'space_before' => 5.0, 'space_after' => 1.0 ] ),
+			$state,
+		];
+	}
 
-		$notes = $snapshot['notes'] ?? [];
-		if ( is_array( $notes ) && [] !== $notes ) {
-			$note_blocks = [ RenderBlock::text( __( 'Notes / Observations', 'core-blueprint' ), [ 'space_after' => 1.0 ] ) ];
-			foreach ( $notes as $note ) {
-				if ( ! is_array( $note ) ) { continue; }
-				$note_blocks[] = RenderBlock::text(
-					$this->status_glyph( (string) ( $note['type'] ?? 'ok' ) ) . ' ' . (string) ( $note['title'] ?? '' ) . "\n" . (string) ( $note['body'] ?? '' ),
-					[ 'space_after' => 2.0, 'keep_together' => true ]
-				);
-			}
-			$blocks[] = RenderBlock::container( $note_blocks, [ 'space_before' => 5.0 ] );
-		}
-
-		$blocks[] = RenderBlock::text(
-			__( 'Maintenance Details', 'core-blueprint' ) . "\n" . __( 'Overview of all maintenance actions performed in this period.', 'core-blueprint' ),
-			[ 'break_before' => true, 'space_after' => 3.0 ]
+	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
+	private function maintenance_activity_blocks( array $snapshot ): array {
+		return array_merge(
+			[
+				RenderBlock::text(
+					__( 'Maintenance Details', 'core-blueprint' ) . "\n" . __( 'Overview of all maintenance actions performed in this period.', 'core-blueprint' ),
+					[ 'break_before' => true, 'space_after' => 3.0 ]
+				),
+			],
+			$this->activity_blocks( $snapshot )
 		);
-		foreach ( $this->activity_blocks( $snapshot ) as $block ) {
-			$blocks[] = $block;
-		}
-		foreach ( $this->summary_blocks( $snapshot ) as $block ) {
-			$blocks[] = $block;
+	}
+
+	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
+	private function notes_blocks( array $snapshot ): array {
+		$notes = $snapshot['notes'] ?? [];
+		if ( ! is_array( $notes ) || [] === $notes ) {
+			return [];
 		}
 
-		$site_url = (string) ( $site['url'] ?? '' );
+		$note_blocks = [ RenderBlock::text( __( 'Notes / Observations', 'core-blueprint' ), [ 'space_after' => 1.0 ] ) ];
+		foreach ( $notes as $note ) {
+			if ( ! is_array( $note ) ) {
+				continue;
+			}
+			$note_blocks[] = RenderBlock::text(
+				$this->status_glyph( (string) ( $note['type'] ?? 'ok' ) ) . ' ' . (string) ( $note['title'] ?? '' ) . "\n" . (string) ( $note['body'] ?? '' ),
+				[ 'space_after' => 2.0, 'keep_together' => true ]
+			);
+		}
+		return [ RenderBlock::container( $note_blocks, [ 'space_before' => 5.0 ] ) ];
+	}
+
+	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
+	private function footer_blocks( array $snapshot ): array {
+		$site      = is_array( $snapshot['site'] ?? null ) ? $snapshot['site'] : [];
+		$site_url  = (string) ( $site['url'] ?? '' );
 		$site_host = wp_parse_url( $site_url, PHP_URL_HOST );
 		if ( ! is_string( $site_host ) || '' === $site_host ) {
 			$site_host = (string) preg_replace( '#^https?://#i', '', $site_url );
 		}
-		$blocks[] = RenderBlock::page_footer(
-			sprintf(
-				/* translators: %s: site host (e.g., example.nl). */
-				__( 'Report generated for %s', 'core-blueprint' ),
-				$site_host
-			),
-			__( 'Page', 'core-blueprint' )
-		);
-
 		return [
-			'layout'       => self::layout(),
-			'blocks'       => $blocks,
-			'locale'       => $locale,
-			'presentation' => Presentation::from_accent( (string) ( $branding['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ) ),
+			RenderBlock::page_footer(
+				sprintf(
+					/* translators: %s: site host (e.g., example.nl). */
+					__( 'Report generated for %s', 'core-blueprint' ),
+					$site_host
+				),
+				__( 'Page', 'core-blueprint' )
+			),
 		];
 	}
 
