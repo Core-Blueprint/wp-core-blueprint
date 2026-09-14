@@ -118,6 +118,11 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 									><?php esc_html_e( 'Maintenance Report', 'core-blueprint' ); ?></button>
 								</div>
 							</section>
+
+							<section class="cb-core-design-shell__panel-section">
+								<h3 class="cb-core-design-shell__panel-section-title"><?php esc_html_e( 'Elements', 'core-blueprint' ); ?></h3>
+								<div class="cb-core-design-shell__palette-grid" data-cb-report-elements></div>
+							</section>
 						</div>
 					</aside>
 
