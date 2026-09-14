@@ -72,13 +72,15 @@ Future versions may add repeatable editorial blocks such as a section heading or
 
 ## Designer UX contract
 
-Designer Mode keeps the Golden three-region ownership model:
+Designer Mode follows the same semantic split as the Base Mail Designer:
 
-- **Left palette:** report-type context and future bounded report-type choices.
+- **Left palette:** report-type context plus the canonical **Elements** catalog. This is the available Reports block vocabulary and remains in canonical catalog order; it is not the current document hierarchy.
 - **Canvas:** canonical document surface rendered through the real typed Flow pipeline.
-- **Right sidebar:** the shared Designer roles are used canonically: **Inspector** for the selected block, **Layers** for current block order, and **Settings** for report appearance/provider settings.
+- **Inspector:** properties for the selected report block. In v1 this includes visibility; required Header/Footer remain immutable.
+- **Layers:** the current normalized report document structure in persisted order, including current visibility state. Reorder commands live with this structure view.
+- **Settings:** report-wide appearance/provider values such as logo, accent colour and provider details.
 
-Reports must not duplicate the block structure in the left palette and Layers. Selecting a block from Layers opens Inspector for that block.
+Because Reports v1 uses bounded singleton blocks, choosing an item from Elements selects its governed block instance instead of creating duplicate nodes. Layers remains the authority for current document order/state; Elements remains the block catalog. This preserves the Mail Designer mental model without introducing a free-form insert/delete tree.
 
 The consumer may implement block selection, reorder and domain commands. It must not reimplement shell geometry, toolbar overflow, drawer behavior, panel spacing or control presentation.
 
@@ -144,6 +146,6 @@ Reports Composer v1 does not provide:
 
 1. **Domain contract** — block catalog, versioned template normalizer/defaults and persistence shape.
 2. **Compiler ordering** — current Maintenance output routed through normalized block order with no content loss.
-3. **Composer interaction** — structure list, selection, enable/disable, reorder, atomic save/reset and live preview.
+3. **Composer interaction** — Elements catalog, Layers structure, selection, enable/disable, reorder, atomic save/reset and live preview.
 4. **Modern block presentation** — add or improve generic Document Flow primitives where needed, then split the aggregate `summary` into richer Security and Backups blocks.
 5. **Presets/sample data** — curated templates such as Modern, Executive and Detailed built from the same block schema.
