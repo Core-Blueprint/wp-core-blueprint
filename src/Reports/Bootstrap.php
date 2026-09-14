@@ -81,6 +81,12 @@ final class Bootstrap {
 		}
 
 		DesignEditorAssets::enqueue_designer_mode( __( 'Reports', 'core-blueprint' ) );
+		wp_enqueue_style(
+			'cb-core-reports-designer',
+			CB_CORE_URL . 'assets/css/pages/reports-designer.css',
+			[],
+			CB_CORE_VERSION
+		);
 		wp_enqueue_media();
 	}
 
