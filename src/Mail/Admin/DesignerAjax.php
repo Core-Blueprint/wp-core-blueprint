@@ -98,7 +98,10 @@ final class DesignerAjax {
 	}
 
 	private static function template_id(): string {
-		$template_id = isset( $_POST['template_id'] ) ? sanitize_key( wp_unslash( $_POST['template_id'] ) ) : '';
+		$template_id = isset( $_POST['template_id'] ) ? trim( (string) wp_unslash( $_POST['template_id'] ) ) : '';
+		// TemplateRegistry owns the canonical identifier grammar, which deliberately
+		// permits provider-qualified dot-separated IDs. Do not run sanitize_key()
+		// here because it strips dots and would corrupt valid registered IDs.
 		if ( '' === $template_id || null === TemplateRegistry::get( $template_id ) ) {
 			wp_send_json_error( [ 'message' => __( 'Unknown mail template.', 'core-blueprint' ) ], 404 );
 		}
