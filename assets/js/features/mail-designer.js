@@ -5,12 +5,6 @@ const root = document.querySelector('[data-cb-mail-designer]');
 if (root) {
 	const form = root.querySelector('[data-cb-mail-designer-form]');
 	const shellRoot = root.querySelector('[data-cb-design-shell]');
-	const templateControl = root.querySelector('.cb-core-mail-designer__template-control');
-	const shellToolbar = shellRoot?.querySelector('.cb-core-design-shell__toolbar');
-	if (templateControl && shellToolbar) {
-		templateControl.dataset.cbDesignShellContext = '';
-		shellToolbar.prepend(templateControl);
-	}
 	const projectField = root.querySelector('[data-cb-mail-project]');
 	const componentField = root.querySelector('[data-cb-mail-components]');
 	const subjectField = root.querySelector('[data-cb-mail-subject]');
