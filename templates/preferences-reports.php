@@ -139,12 +139,6 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 					</section>
 
 					<main class="cb-core-design-shell__canvas cb-core-design-shell__canvas--composed">
-						<header class="cb-core-design-shell__canvas-header">
-							<div class="cb-core-design-shell__canvas-heading">
-								<h2 class="cb-core-design-shell__canvas-title"><?php esc_html_e( 'Maintenance Report', 'core-blueprint' ); ?></h2>
-							</div>
-						</header>
-
 						<div class="cb-core-design-shell__canvas-workarea">
 							<div class="cb-core-design-shell__surface cb-core-design-shell__surface--document">
 								<div class="cb-core-design-shell__empty-state" data-cb-report-preview-state>
