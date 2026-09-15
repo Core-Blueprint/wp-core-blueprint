@@ -11,6 +11,11 @@
 		|| (role === 'dynamic-data' ? 'Dynamic data' : 'Elements')
 	).trim();
 
+	const setData = (node, key, value) => {
+		if (!node || node.dataset?.[key] === value) return;
+		node.dataset[key] = value;
+	};
+
 	const orderedSubset = (parent, nodes) => {
 		if (!parent || nodes.length < 2) return;
 		const current = Array.from(parent.children).filter((child) => nodes.includes(child));
@@ -35,16 +40,12 @@
 			const current = Array.from(workspace.children).filter((child) => canonical.includes(child));
 			const differs = current.length !== canonical.length || canonical.some((node, index) => current[index] !== node);
 			if (differs) {
-				const anchor = workspace.firstElementChild;
-				if (anchor && !canonical.includes(anchor)) {
-					canonical.forEach((node) => workspace.insertBefore(node, anchor));
-				} else {
-					canonical.forEach((node) => workspace.append(node));
-				}
+				const anchor = Array.from(workspace.children).find((child) => !canonical.includes(child)) || null;
+				canonical.forEach((node) => workspace.insertBefore(node, anchor));
 			}
 		}
 
-		workspace.dataset.cbDesignShellLayout = 'canonical';
+		setData(workspace, 'cbDesignShellLayout', 'canonical');
 	};
 
 	const normalizePalette = (shell) => {
@@ -65,16 +66,16 @@
 			if (!panel) return null;
 			const panelId = String(panel.dataset.cbDesignShellPanel || '').trim();
 			const tab = tabs.find((candidate) => String(candidate.dataset.cbDesignShellTab || '').trim() === panelId) || null;
-			return tab ? { role, panelId, panel, tab } : null;
+			return tab ? { role, panel, tab } : null;
 		}).filter(Boolean);
 
 		if (!records.length) return;
 
 		records.forEach(({ role, panel, tab }) => {
-			panel.dataset.cbDesignShellPaletteRole = role;
-			panel.dataset.cbDesignShellGroup = 'palette';
-			tab.dataset.cbDesignShellPaletteRole = role;
-			tab.dataset.cbDesignShellGroup = 'palette';
+			setData(panel, 'cbDesignShellPaletteRole', role);
+			setData(panel, 'cbDesignShellGroup', 'palette');
+			setData(tab, 'cbDesignShellPaletteRole', role);
+			setData(tab, 'cbDesignShellGroup', 'palette');
 			const label = canonicalPaletteLabel(role);
 			if (tab.textContent?.trim() !== label) tab.textContent = label;
 		});
@@ -82,7 +83,7 @@
 		orderedSubset(tablist, records.map(({ tab }) => tab));
 		orderedSubset(palette, records.map(({ panel }) => panel));
 		palette.classList.add('cb-core-design-shell__palette--tabbed', 'cb-core-design-shell__palette--composed');
-		palette.dataset.cbDesignShellRail = 'left';
+		setData(palette, 'cbDesignShellRail', 'left');
 	};
 
 	const positionContextSelector = (root, shell) => {
@@ -103,7 +104,7 @@
 		if (brand.nextElementSibling !== context || context.parentElement !== start) {
 			start.insertBefore(context, brand.nextSibling);
 		}
-		context.dataset.cbDesignShellContextPosition = 'canonical';
+		setData(context, 'cbDesignShellContextPosition', 'canonical');
 	};
 
 	const normalizeRoot = (root) => {
