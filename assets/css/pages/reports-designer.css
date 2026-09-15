@@ -4,9 +4,18 @@
  * presentation, panel spacing and controls remain owned by Design Foundation.
  */
 
+.cb-core-reports__designer-preview-surface {
+	width: min(100%, 210mm);
+	margin-inline: auto;
+}
+
 [data-cb-report-preview] {
 	display: block;
+	width: 100%;
+	height: 0;
 	border: 0;
+	background: transparent;
+	overflow: hidden;
 }
 
 #cb-core-logo-preview img {
