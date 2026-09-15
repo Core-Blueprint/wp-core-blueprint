@@ -18,6 +18,7 @@ final class CB_Base_Public_API_Smoke_Test extends WP_UnitTestCase {
             \CB\Core\Governance\RetentionStoreRegistry::class => [ 'register' ],
             \CB\Core\Database\SchemaRegistry::class => [ 'register' ],
             \CB\Core\ContentModels\Api::class => [],
+            \CB\Core\Design\Profile\Document\Flow\Api\FlowRenderApi::class => [ 'preview_html', 'pdf', 'is_pdf_available' ],
         ];
 
         foreach ( $contracts as $class => $methods ) {

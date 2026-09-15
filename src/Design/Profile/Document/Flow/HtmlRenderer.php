@@ -58,6 +58,71 @@ final class HtmlRenderer {
 			. '</style></head><body>' . $body . '</body></html>';
 	}
 
+	/**
+	 * Internal continuous-screen target used by the public Flow render facade.
+	 *
+	 * PDF pagination and page counters are deliberately not simulated here.
+	 * Consumers must use the public FlowRenderApi rather than this renderer.
+	 *
+	 * @internal
+	 * @param array<string,mixed> $layout
+	 * @param list<RenderBlock>    $blocks
+	 */
+	public function render_preview( array $layout, array $blocks, string $locale, ?Presentation $presentation = null ): string {
+		if ( ! Layout::matches_contract( $layout ) ) {
+			throw new \InvalidArgumentException( 'Flow rendering requires the exact root-owned Flow layout contract.' );
+		}
+		$page = Layout::page( $layout );
+		$margins = Layout::margins( $layout );
+		if ( null === $page || null === $margins || ! Layout::has_content_area( $page, $margins ) ) {
+			throw new \InvalidArgumentException( 'Invalid Flow render layout.' );
+		}
+		if ( 1 !== preg_match( '/^[A-Za-z]{2,3}(?:[_-][A-Za-z0-9]{2,8})*$/', $locale ) ) {
+			throw new \InvalidArgumentException( 'Flow rendering requires an explicit valid locale.' );
+		}
+		foreach ( $blocks as $block ) {
+			if ( ! $block instanceof RenderBlock ) { throw new \InvalidArgumentException( 'Flow rendering accepts typed render blocks only.' ); }
+		}
+
+		$lang = str_replace( '_', '-', $locale );
+		$body = implode( '', array_map( fn ( RenderBlock $block ): string => $this->block( $block ), $blocks ) );
+		$width = self::number( $page['width'] );
+		$height = self::number( $page['height'] );
+		$padding = implode( ' ', [ self::number( $margins['top'] ) . 'mm', self::number( $margins['right'] ) . 'mm', self::number( $margins['bottom'] ) . 'mm', self::number( $margins['left'] ) . 'mm' ] );
+		$accent = ( $presentation ?? Presentation::defaults() )->accent();
+
+		return '<!doctype html><html lang="' . self::escape( $lang ) . '"><head><meta charset="utf-8">'
+			. '<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; img-src data:; style-src &#39;unsafe-inline&#39;; base-uri &#39;none&#39;; form-action &#39;none&#39;;">'
+			. '<meta name="viewport" content="width=device-width, initial-scale=1"><style>'
+			. 'html,body{margin:0;padding:0;background:#fff;}body{font-family:"DejaVu Sans",sans-serif;font-size:10pt;line-height:1.4;color:#111;}'
+			. '.cb-flow-preview-page{box-sizing:border-box;width:100%;max-width:' . $width . 'mm;min-height:' . $height . 'mm;margin:0 auto;padding:' . $padding . ';background:#fff;}'
+			. '.cb-flow-preview-page .cb-flow-block{page-break-before:auto!important;page-break-after:auto!important;page-break-inside:auto!important;break-before:auto!important;break-after:auto!important;break-inside:auto!important;}'
+			. '.cb-flow-block{box-sizing:border-box;}.cb-flow-image img{display:block;max-width:100%;height:auto;border:0;}'
+			. '.cb-flow-heading h1,.cb-flow-heading h2,.cb-flow-heading h3{margin:0;padding:0;line-height:1.2;}'
+			. '.cb-flow-heading--title{font-size:22pt;font-weight:700;color:' . self::escape( $accent ) . ';}'
+			. '.cb-flow-heading--section{font-size:11pt;font-weight:700;color:#111;}'
+			. '.cb-flow-heading--subsection{font-size:9.5pt;font-weight:700;color:#333;}'
+			. '.cb-flow-callout{padding:10pt 12pt;border:1px solid #dbe2ea;border-left:3pt solid ' . self::escape( $accent ) . ';border-radius:6pt;background:#f8fafc;}'
+			. '.cb-flow-callout__title{margin:0 0 3pt;font-size:13pt;font-weight:700;line-height:1.2;color:#0f172a;}'
+			. '.cb-flow-callout__body{font-size:9.5pt;line-height:1.45;color:#334155;}'
+			. '.cb-flow-callout--info{border-left-color:#2563eb;background:#eff6ff;}.cb-flow-callout--success{border-left-color:#16a34a;background:#f0fdf4;}'
+			. '.cb-flow-callout--warning{border-left-color:#d97706;background:#fffbeb;}.cb-flow-callout--critical{border-left-color:#dc2626;background:#fef2f2;}'
+			. '.cb-flow-metrics-table{width:100%;border-collapse:collapse;table-layout:fixed;}.cb-flow-metrics-table td{padding:2pt;vertical-align:top;border:0;}'
+			. '.cb-flow-metric-card{min-height:48pt;padding:8pt;border:1px solid #dbe2ea;border-radius:5pt;background:#f8fafc;}'
+			. '.cb-flow-metric-card__label{font-size:8pt;font-weight:700;line-height:1.25;color:#64748b;}'
+			. '.cb-flow-metric-card__value{margin-top:2pt;font-size:17pt;font-weight:700;line-height:1.1;color:' . self::escape( $accent ) . ';}'
+			. '.cb-flow-metric-card__detail{margin-top:3pt;font-size:8pt;line-height:1.35;color:#64748b;}'
+			. '.cb-flow-rule__line{border-top:1px solid #dbe2ea;height:0;line-height:0;}'
+			. '.cb-flow-columns-table{width:100%;border-collapse:collapse;table-layout:fixed;}.cb-flow-columns-table>tbody>tr>td{border:0;padding:0 6pt;vertical-align:top;}'
+			. '.cb-flow-columns-table>tbody>tr>td:first-child{padding-left:0;}.cb-flow-columns-table>tbody>tr>td:last-child{padding-right:0;}'
+			. '.cb-flow-table{width:100%;border-collapse:collapse;}.cb-flow-table th,.cb-flow-table td{padding:4pt;border-bottom:1px solid #ddd;text-align:left;vertical-align:top;}'
+			. '.cb-flow-table th{color:' . self::escape( $accent ) . ';border-bottom-color:' . self::escape( $accent ) . ';}'
+			. '.cb-flow-page-footer{position:static;border-top:1px solid #ddd;margin-top:8mm;padding-top:2mm;font-size:8pt;color:#666;}'
+			. '.cb-flow-page-footer table{width:100%;border-collapse:collapse;}.cb-flow-page-footer td{border:0;padding:0;vertical-align:top;}'
+			. '.cb-flow-page-footer__page{display:none;}'
+			. '</style></head><body><div class="cb-flow-preview-page" data-cb-flow-preview>' . $body . '</div></body></html>';
+	}
+
 	private function block( RenderBlock $block ): string {
 		if ( 'page_footer' === $block->type() ) {
 			/** @var array{left_text:string,page_label:string,show_page_number:bool} $footer */

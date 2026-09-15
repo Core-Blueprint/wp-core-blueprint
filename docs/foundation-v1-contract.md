@@ -46,6 +46,16 @@ The canonical Designer responsive contract is `>1280px` three columns, `901–12
 
 The normative public contract is `DESIGNER-MODE.md`.
 
+## Document Flow rendering
+
+`CB\Core\Design\Profile\Document\Flow\Api\FlowRenderApi` is the public v1 facade for external consumers that render typed Flow documents.
+
+`FlowRenderApi::preview_html()` returns a safe continuous screen target for isolated Designer/document-canvas previews. `FlowRenderApi::pdf()` returns the authoritative paged PDF output for the same typed layout, `RenderBlock` list, locale and optional `Presentation`. `FlowRenderApi::is_pdf_available()` reports PDF-backend availability; screen preview rendering does not depend on that backend.
+
+The public typed Flow rendering vocabulary is `RenderBlock`, `TableColumn`, `Presentation` and the exact root-owned Flow layout contract. Consumers must not depend on `HtmlRenderer`, `PdfRenderer`, Dompdf or other backend classes merely because their methods are technically public.
+
+Screen preview deliberately does not simulate PDF pagination/page counters. PDF remains authoritative for page breaks and fixed per-page footer behavior. The normative contract is `DOCUMENT-FLOW-RENDERING.md`.
+
 ## Core Admin component contracts
 
 The frozen component layer includes Button, Badge, StateBadge, Status, Notice, Busy, Field, Form Controls, Stack, CheckRow, ChoiceGroup, ObjectPicker, SelectPicker, Toolbar, Disclosure, MasterSwitch, ChoiceCard/RadioCard, Empty State, Overview cards, metric tiles, Integration Grid, Detail Rows, KV Table and Scrollbar.
