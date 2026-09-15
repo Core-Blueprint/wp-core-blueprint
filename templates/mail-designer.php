@@ -54,7 +54,7 @@ foreach ( (array) $templates as $definition ) {
 			data-template-id="<?php echo esc_attr( $template_id ); ?>"
 		>
 			<section class="cb-core-panel cb-core-mail-designer__context" data-cb-design-launch-context aria-label="<?php esc_attr_e( 'Mail template context', 'core-blueprint' ); ?>">
-				<div class="cb-core-mail-designer__template-control cb-core-field">
+				<div class="cb-core-mail-designer__template-control cb-core-field" data-cb-design-shell-context>
 					<label class="cb-core-field__label" for="cb-mail-designer-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
 					<select id="cb-mail-designer-template" data-cb-mail-template-select>
 						<?php foreach ( $template_groups as $group => $definitions ) : ?>
@@ -119,7 +119,7 @@ foreach ( (array) $templates as $definition ) {
 									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-group="palette" data-cb-design-shell-tab="elements"><?php esc_html_e( 'Elements', 'core-blueprint' ); ?></button>
 									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-group="palette" data-cb-design-shell-tab="dynamic-data"><?php esc_html_e( 'Dynamic data', 'core-blueprint' ); ?></button>
 								</div>
-								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="elements">
+								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="elements" data-cb-design-shell-palette-role="elements">
 									<div class="cb-core-design-shell__panel-body">
 										<div class="cb-core-design-shell__palette-grid">
 											<?php foreach ( $components as $component_id => $component ) : ?>
@@ -131,7 +131,7 @@ foreach ( (array) $templates as $definition ) {
 										</div>
 									</div>
 								</div>
-								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="dynamic-data" hidden>
+								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="dynamic-data" data-cb-design-shell-palette-role="dynamic-data" hidden>
 									<div class="cb-core-design-shell__panel-body">
 										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Click a token to copy it. Paste it into text, headings, buttons or URLs.', 'core-blueprint' ); ?></p>
 										<div class="cb-core-mail-designer__bindings">
