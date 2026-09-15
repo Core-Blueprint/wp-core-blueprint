@@ -6,6 +6,11 @@
  * must not recreate shell chrome or structural layout locally.
  */
 
+/* Native hidden semantics must remain authoritative inside Designer Mode. */
+.cb-core-design-shell [hidden] {
+	display: none !important;
+}
+
 /* Manual Designer launch is a first-class Base component and owns its rhythm. */
 .cb-core-design-launch-wrap {
 	margin-top: var(--cb-space-3);

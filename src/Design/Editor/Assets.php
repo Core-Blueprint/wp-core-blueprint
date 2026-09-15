@@ -28,7 +28,6 @@ final class Assets {
 	public const DESIGNER_LAYOUT_SCRIPT = 'cb-core-designer-layout';
 	public const DESIGNER_CONTEXT_SCRIPT = 'cb-core-designer-context';
 	public const DESIGNER_TOOLBAR_SCRIPT = 'cb-core-designer-toolbar';
-	public const FLOW_PREVIEW_SCRIPT = 'cb-core-flow-preview-host';
 	private const TOKEN_STYLE = 'cb-core-css-tokens';
 	private const BUTTON_STYLE = 'cb-core-css-buttons';
 	private const FORM_CONTROL_STYLE = 'cb-core-css-form-controls';
@@ -160,14 +159,6 @@ final class Assets {
 			CB_CORE_URL . 'assets/js/features/designer-toolbar.js',
 			[ self::DESIGNER_MODE_SCRIPT, self::DESIGNER_LAYOUT_SCRIPT, self::DESIGNER_CONTEXT_SCRIPT ],
 			self::asset_version( 'assets/js/features/designer-toolbar.js' ),
-			true
-		);
-
-		wp_enqueue_script(
-			self::FLOW_PREVIEW_SCRIPT,
-			CB_CORE_URL . 'assets/js/design/document/flow/preview-host.js',
-			[ self::DESIGNER_MODE_SCRIPT ],
-			self::asset_version( 'assets/js/design/document/flow/preview-host.js' ),
 			true
 		);
 

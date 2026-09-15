@@ -1,279 +1,223 @@
-(function (global) {
-	'use strict';
+const PROTOCOL_VERSION = 1;
+const MIN_HEIGHT = 1;
+const MAX_HEIGHT = 100000;
+const FIRST_SIZE_TIMEOUT_MS = 5000;
+const PROTOCOL_META = '<meta name="cb-core-flow-preview-protocol" content="1">';
+const DOCUMENT_PROTOCOL_MARKER = 'data-cb-core-flow-preview-protocol="1"';
+const GENERATION_MARKER = 'data-cb-core-flow-preview-generation="0"';
+const ROOT_MARKER = 'data-cb-flow-preview-root="1"';
+const BRIDGE_MARKER = 'data-cb-core-flow-preview-sizing="1"';
 
-	var PROTOCOL = 'cb-flow-preview-v1';
-	var MAX_HEIGHT = 100000;
-	var BRIDGE_HASH = 'sha256-0sZcoribBRWR5qZ/6zmLFnkQ04dRR81sc94w6ib7Abw=';
-	var BRIDGE_SCRIPT = [
-		"(function () {",
-		"\t'use strict';",
-		"",
-		"\tvar PROTOCOL = 'cb-flow-preview-v1';",
-		"\tvar generation = null;",
-		"\tvar token = null;",
-		"\tvar observer = null;",
-		"\tvar scheduled = false;",
-		"\tvar lastHeight = 0;",
-		"",
-		"\tfunction measure() {",
-		"\t\tvar root;",
-		"\t\tvar body;",
-		"\t\tvar page;",
-		"\t\tvar height;",
-		"",
-		"\t\tscheduled = false;",
-		"",
-		"\t\tif (generation === null || token === null) {",
-		"\t\t\treturn;",
-		"\t\t}",
-		"",
-		"\t\troot = document.documentElement;",
-		"\t\tbody = document.body;",
-		"\t\tpage = document.querySelector('.cb-flow-preview-page');",
-		"\t\theight = Math.ceil(Math.max(",
-		"\t\t\troot ? root.scrollHeight : 0,",
-		"\t\t\troot ? root.offsetHeight : 0,",
-		"\t\t\tbody ? body.scrollHeight : 0,",
-		"\t\t\tbody ? body.offsetHeight : 0,",
-		"\t\t\tpage ? page.scrollHeight : 0,",
-		"\t\t\tpage ? page.offsetHeight : 0",
-		"\t\t));",
-		"",
-		"\t\tif (!Number.isFinite(height) || height < 1 || height === lastHeight) {",
-		"\t\t\treturn;",
-		"\t\t}",
-		"",
-		"\t\tlastHeight = height;",
-		"\t\tparent.postMessage({",
-		"\t\t\tprotocol: PROTOCOL,",
-		"\t\t\ttype: 'height',",
-		"\t\t\tgeneration: generation,",
-		"\t\t\ttoken: token,",
-		"\t\t\theight: height",
-		"\t\t}, '*');",
-		"\t}",
-		"",
-		"\tfunction schedule() {",
-		"\t\tif (scheduled) {",
-		"\t\t\treturn;",
-		"\t\t}",
-		"",
-		"\t\tscheduled = true;",
-		"\t\trequestAnimationFrame(measure);",
-		"\t}",
-		"",
-		"\tfunction observe() {",
-		"\t\tvar page;",
-		"",
-		"\t\tif (!observer && 'ResizeObserver' in window) {",
-		"\t\t\tobserver = new ResizeObserver(schedule);",
-		"\t\t\tif (document.documentElement) {",
-		"\t\t\t\tobserver.observe(document.documentElement);",
-		"\t\t\t}",
-		"\t\t\tif (document.body) {",
-		"\t\t\t\tobserver.observe(document.body);",
-		"\t\t\t}",
-		"",
-		"\t\t\tpage = document.querySelector('.cb-flow-preview-page');",
-		"\t\t\tif (page) {",
-		"\t\t\t\tobserver.observe(page);",
-		"\t\t\t}",
-		"\t\t}",
-		"",
-		"\t\tschedule();",
-		"\t}",
-		"",
-		"\twindow.addEventListener('message', function (event) {",
-		"\t\tvar data = event.data;",
-		"",
-		"\t\tif (",
-		"\t\t\tevent.source !== parent",
-		"\t\t\t|| !data",
-		"\t\t\t|| data.protocol !== PROTOCOL",
-		"\t\t\t|| data.type !== 'init'",
-		"\t\t\t|| !Number.isInteger(data.generation)",
-		"\t\t\t|| data.generation < 1",
-		"\t\t\t|| typeof data.token !== 'string'",
-		"\t\t\t|| data.token.length < 16",
-		"\t\t\t|| data.token.length > 128",
-		"\t\t) {",
-		"\t\t\treturn;",
-		"\t\t}",
-		"",
-		"\t\tgeneration = data.generation;",
-		"\t\ttoken = data.token;",
-		"\t\tlastHeight = 0;",
-		"\t\tobserve();",
-		"\t});",
-		"",
-		"\twindow.addEventListener('load', schedule);",
-		"}());"
-	].join('\n');
+const countMatches = (value, pattern) => (value.match(pattern) || []).length;
 
-	function randomToken() {
-		var values;
-		var token = '';
-		var index;
-
-		if (global.crypto && typeof global.crypto.getRandomValues === 'function') {
-			values = new Uint32Array(4);
-			global.crypto.getRandomValues(values);
-			for (index = 0; index < values.length; index += 1) {
-				token += values[index].toString(16).padStart(8, '0');
-			}
-			return token;
-		}
-
-		return String(Date.now()) + '-' + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
+const isCanonicalFlowPreviewHtml = (html) => {
+	if (typeof html !== 'string' || html.length === 0 || !html.startsWith('<!doctype html><html ')) {
+		return false;
 	}
 
-	function preparePreviewDocument(html) {
-		var parser;
-		var documentNode;
-		var csp;
-		var policy;
-		var script;
-
-		if (typeof html !== 'string' || html.trim() === '') {
-			throw new TypeError('Flow preview HTML must be a non-empty string.');
-		}
-		if (typeof global.DOMParser !== 'function') {
-			throw new Error('Flow preview host requires DOMParser.');
-		}
-
-		parser = new global.DOMParser();
-		documentNode = parser.parseFromString(html, 'text/html');
-		csp = documentNode.querySelector('meta[http-equiv="Content-Security-Policy"]');
-
-		if (!csp) {
-			throw new Error('Flow preview document must provide a Content-Security-Policy.');
-		}
-
-		policy = (csp.getAttribute('content') || '').trim();
-		if (/(^|;)\s*script-src(?:\s|;|$)/i.test(policy)) {
-			throw new Error('Flow preview document already defines script-src.');
-		}
-		if (policy !== '' && policy.charAt(policy.length - 1) !== ';') {
-			policy += ';';
-		}
-
-		csp.setAttribute('content', (policy + " script-src '" + BRIDGE_HASH + "';").trim());
-
-		script = documentNode.createElement('script');
-		script.textContent = BRIDGE_SCRIPT;
-		documentNode.body.appendChild(script);
-
-		return '<!doctype html>\n' + documentNode.documentElement.outerHTML;
+	if (countMatches(html, /<meta\s+[^>]*name=["']cb-core-flow-preview-protocol["'][^>]*>/gi) !== 1 || !html.includes(PROTOCOL_META)) {
+		return false;
+	}
+	if (countMatches(html, /data-cb-core-flow-preview-protocol\s*=/gi) !== 1 || !html.includes(DOCUMENT_PROTOCOL_MARKER)) {
+		return false;
+	}
+	if (countMatches(html, /data-cb-core-flow-preview-generation\s*=/gi) !== 1 || !html.includes(GENERATION_MARKER)) {
+		return false;
+	}
+	if (countMatches(html, /data-cb-flow-preview-root\s*=/gi) !== 1 || !html.includes(ROOT_MARKER)) {
+		return false;
+	}
+	if (countMatches(html, /data-cb-core-flow-preview-sizing\s*=/gi) !== 1 || !html.includes(BRIDGE_MARKER)) {
+		return false;
+	}
+	if (countMatches(html, /<meta\s+[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi) !== 1) {
+		return false;
+	}
+	if (!html.includes('script-src &#39;sha256-')) {
+		return false;
 	}
 
-	function createPreviewHost(frame) {
-		var generation = 0;
-		var token = null;
-		var destroyed = false;
+	return html.endsWith('</body></html>');
+};
 
-		if (!frame || String(frame.tagName).toUpperCase() !== 'IFRAME') {
-			throw new TypeError('Flow preview host requires an iframe element.');
-		}
-
-		frame.setAttribute('data-cb-flow-preview-host', '');
-		frame.setAttribute('sandbox', 'allow-scripts');
-		frame.setAttribute('scrolling', 'no');
-		frame.hidden = true;
-
-		function postInit() {
-			if (destroyed || token === null || !frame.contentWindow) {
-				return;
-			}
-
-			frame.contentWindow.postMessage({
-				protocol: PROTOCOL,
-				type: 'init',
-				generation: generation,
-				token: token
-			}, '*');
-		}
-
-		function handleMessage(event) {
-			var data = event.data;
-			var height;
-
-			if (
-				destroyed
-				|| token === null
-				|| event.source !== frame.contentWindow
-				|| !data
-				|| data.protocol !== PROTOCOL
-				|| data.type !== 'height'
-				|| data.generation !== generation
-				|| data.token !== token
-			) {
-				return;
-			}
-
-			height = data.height;
-			if (typeof height !== 'number' || !Number.isFinite(height) || height < 1 || height > MAX_HEIGHT) {
-				return;
-			}
-
-			frame.style.height = Math.ceil(height) + 'px';
-			frame.style.visibility = '';
-			frame.removeAttribute('aria-busy');
-		}
-
-		frame.addEventListener('load', postInit);
-		global.addEventListener('message', handleMessage);
-
-		return Object.freeze({
-			render: function (html) {
-				if (destroyed) {
-					throw new Error('Flow preview host has been destroyed.');
-				}
-
-				generation += 1;
-				token = randomToken();
-				frame.hidden = false;
-				frame.setAttribute('aria-busy', 'true');
-				frame.style.visibility = 'hidden';
-				frame.style.height = '1px';
-				frame.srcdoc = preparePreviewDocument(html);
-
-				return generation;
-			},
-			clear: function () {
-				if (destroyed) {
-					return;
-				}
-
-				generation += 1;
-				token = null;
-				frame.hidden = true;
-				frame.removeAttribute('aria-busy');
-				frame.style.visibility = '';
-				frame.style.height = '';
-				frame.srcdoc = '';
-			},
-			destroy: function () {
-				if (destroyed) {
-					return;
-				}
-
-				destroyed = true;
-				token = null;
-				frame.removeEventListener('load', postInit);
-				global.removeEventListener('message', handleMessage);
-				frame.hidden = true;
-				frame.removeAttribute('aria-busy');
-				frame.style.visibility = '';
-				frame.style.height = '';
-				frame.srcdoc = '';
-			}
-		});
+const isSizingMessage = (data) => {
+	if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+		return false;
 	}
 
-	global.CBBase = global.CBBase || {};
-	global.CBBase.Document = global.CBBase.Document || {};
-	global.CBBase.Document.FlowPreview = Object.freeze({
-		version: 1,
-		createHost: createPreviewHost
-	});
-}(window));
+	const keys = Object.keys(data).sort();
+	if (keys.length !== 4 || keys.join('|') !== 'generation|height|type|version') {
+		return false;
+	}
+
+	return data.type === 'cb-core-flow-preview-size'
+		&& data.version === PROTOCOL_VERSION
+		&& Number.isSafeInteger(data.generation)
+		&& data.generation > 0
+		&& Number.isSafeInteger(data.height)
+		&& data.height >= MIN_HEIGHT
+		&& data.height <= MAX_HEIGHT;
+};
+
+const nextGeneration = (current) => current >= Number.MAX_SAFE_INTEGER ? 1 : current + 1;
+
+export const createFlowPreviewHost = (iframe) => {
+	if (!iframe || String(iframe.tagName || '').toUpperCase() !== 'IFRAME') {
+		throw new TypeError('Flow preview host requires an iframe element.');
+	}
+
+	const documentRef = iframe.ownerDocument;
+	const windowRef = documentRef?.defaultView;
+	const parentNode = iframe.parentNode;
+	if (!documentRef || !windowRef || !parentNode || typeof windowRef.addEventListener !== 'function') {
+		throw new TypeError('Flow preview host requires an attached iframe with a parent window.');
+	}
+
+	const state = documentRef.createElement('div');
+	state.className = 'cb-core-design-shell__empty-state cb-core-design-shell__flow-preview-state';
+	state.setAttribute('data-cb-core-flow-preview-state', 'loading');
+	state.setAttribute('role', 'status');
+	state.setAttribute('aria-live', 'polite');
+	state.textContent = 'Loading preview…';
+	parentNode.insertBefore(state, iframe);
+
+	iframe.setAttribute('sandbox', 'allow-scripts');
+	iframe.removeAttribute('scrolling');
+	iframe.removeAttribute('height');
+	iframe.setAttribute('data-cb-core-flow-preview-host', '1');
+	iframe.style.height = '0px';
+	iframe.style.minHeight = '0px';
+	iframe.style.visibility = 'hidden';
+	iframe.setAttribute('aria-hidden', 'true');
+
+	let generation = 0;
+	let activeGeneration = 0;
+	let lastAppliedHeight = null;
+	let awaitingFirstSize = false;
+	let firstSizeTimer = null;
+	let lifecycle = 'idle';
+	let destroyed = false;
+
+	const clearFirstSizeTimer = () => {
+		if (firstSizeTimer !== null) {
+			windowRef.clearTimeout(firstSizeTimer);
+			firstSizeTimer = null;
+		}
+	};
+
+	const setState = (kind) => {
+		lifecycle = kind;
+		iframe.setAttribute('data-cb-core-flow-preview-state', kind);
+		state.setAttribute('data-cb-core-flow-preview-state', kind);
+
+		if (kind === 'ready') {
+			state.hidden = true;
+			iframe.style.visibility = 'visible';
+			iframe.removeAttribute('aria-hidden');
+			return;
+		}
+
+		iframe.style.height = '0px';
+		iframe.style.minHeight = '0px';
+		iframe.style.visibility = 'hidden';
+		iframe.setAttribute('aria-hidden', 'true');
+		state.hidden = false;
+		state.textContent = kind === 'failure' ? 'Preview unavailable.' : 'Loading preview…';
+	};
+
+	const failCurrentRender = () => {
+		awaitingFirstSize = false;
+		lastAppliedHeight = null;
+		clearFirstSizeTimer();
+		setState('failure');
+	};
+
+	const onMessage = (event) => {
+		if (
+			destroyed
+			|| (lifecycle !== 'loading' && lifecycle !== 'ready')
+			|| event.source !== iframe.contentWindow
+			|| !isSizingMessage(event.data)
+		) {
+			return;
+		}
+
+		const { generation: messageGeneration, height } = event.data;
+		if (messageGeneration !== activeGeneration) {
+			return;
+		}
+		if (lastAppliedHeight === height) {
+			return;
+		}
+
+		iframe.style.height = `${height}px`;
+		lastAppliedHeight = height;
+
+		if (awaitingFirstSize) {
+			awaitingFirstSize = false;
+			clearFirstSizeTimer();
+			setState('ready');
+		}
+	};
+
+	windowRef.addEventListener('message', onMessage);
+
+	const render = (html) => {
+		if (destroyed) {
+			throw new Error('Flow preview host has been destroyed.');
+		}
+
+		generation = nextGeneration(generation);
+		activeGeneration = generation;
+		lastAppliedHeight = null;
+		awaitingFirstSize = false;
+		clearFirstSizeTimer();
+		setState('loading');
+
+		if (!isCanonicalFlowPreviewHtml(html)) {
+			failCurrentRender();
+			return false;
+		}
+
+		const hydratedHtml = html.replace(
+			GENERATION_MARKER,
+			`data-cb-core-flow-preview-generation="${activeGeneration}"`
+		);
+
+		awaitingFirstSize = true;
+		const renderGeneration = activeGeneration;
+		firstSizeTimer = windowRef.setTimeout(() => {
+			if (!destroyed && awaitingFirstSize && activeGeneration === renderGeneration) {
+				failCurrentRender();
+			}
+		}, FIRST_SIZE_TIMEOUT_MS);
+
+		iframe.srcdoc = hydratedHtml;
+		return true;
+	};
+
+	const destroy = () => {
+		if (destroyed) {
+			return;
+		}
+
+		destroyed = true;
+		lifecycle = 'destroyed';
+		generation = nextGeneration(generation);
+		activeGeneration = generation;
+		awaitingFirstSize = false;
+		clearFirstSizeTimer();
+		windowRef.removeEventListener('message', onMessage);
+		iframe.srcdoc = '';
+		iframe.style.height = '0px';
+		iframe.style.minHeight = '0px';
+		iframe.style.visibility = 'hidden';
+		iframe.setAttribute('aria-hidden', 'true');
+		iframe.setAttribute('data-cb-core-flow-preview-state', 'destroyed');
+		if (state.parentNode) {
+			state.parentNode.removeChild(state);
+		}
+	};
+
+	return { render, destroy };
+};

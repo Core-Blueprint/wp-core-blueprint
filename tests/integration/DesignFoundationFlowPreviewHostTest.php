@@ -1,64 +1,86 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Editor\Assets;
+use CB\Core\Design\Profile\Document\Flow\Api\FlowRenderApi;
+use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CB\Core\Design\Profile\Document\Flow\RenderBlock;
 
 final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase {
-
-	private function source(): string {
-		$source = file_get_contents( CB_CORE_DIR . 'assets/js/design/document/flow/preview-host.js' );
-		self::assertIsString( $source );
-		return $source;
+	/** @return array<string,mixed> */
+	private function layout(): array {
+		return [
+			'mode'    => 'flow',
+			'units'   => 'mm',
+			'page'    => [ 'width' => 210.0, 'height' => 297.0 ],
+			'margins' => [ 'top' => 12.0, 'right' => 12.0, 'bottom' => 15.0, 'left' => 12.0 ],
+		];
 	}
 
-	public function test_designer_mode_enqueues_public_flow_preview_host(): void {
-		Assets::enqueue_designer_mode( 'Flow preview host test' );
-
-		self::assertTrue( wp_script_is( Assets::FLOW_PREVIEW_SCRIPT, 'enqueued' ) );
-
-		$registered = wp_scripts()->registered[ Assets::FLOW_PREVIEW_SCRIPT ] ?? null;
-		self::assertInstanceOf( _WP_Dependency::class, $registered );
-		self::assertStringEndsWith( '/assets/js/design/document/flow/preview-host.js', (string) $registered->src );
-		self::assertContains( Assets::DESIGNER_MODE_SCRIPT, $registered->deps );
+	private function bridge( string $html ): string {
+		$matches = [];
+		self::assertSame( 1, preg_match( '/<script data-cb-core-flow-preview-sizing="1">(.*?)<\/script>/s', $html, $matches ) );
+		self::assertArrayHasKey( 1, $matches );
+		return (string) $matches[1];
 	}
 
-	public function test_host_uses_opaque_sandbox_and_cross_document_height_protocol(): void {
-		$source = $this->source();
+	public function test_preview_html_exposes_one_canonical_protocol_marker_and_static_bridge(): void {
+		$first = FlowRenderApi::preview_html( $this->layout(), [ RenderBlock::text( 'First render' ) ], 'en_GB' );
+		$second = FlowRenderApi::preview_html( $this->layout(), [ RenderBlock::text( 'Second render' ) ], 'en_GB' );
 
-		self::assertStringContainsString( "setAttribute('sandbox', 'allow-scripts')", $source );
-		self::assertStringNotContainsString( 'allow-same-origin', $source );
-		self::assertStringNotContainsString( 'contentDocument', $source );
-		self::assertStringContainsString( "PROTOCOL = 'cb-flow-preview-v1'", $source );
-		self::assertStringContainsString( 'event.source !== frame.contentWindow', $source );
-		self::assertStringContainsString( 'token === null', $source );
-		self::assertStringContainsString( 'ResizeObserver', $source );
-		self::assertStringContainsString( 'generation', $source );
-		self::assertStringContainsString( 'token', $source );
-		self::assertStringContainsString( 'MAX_HEIGHT = 100000', $source );
-		self::assertStringContainsString( 'frame.hidden = true', $source );
+		self::assertSame( 1, substr_count( $first, '<meta name="cb-core-flow-preview-protocol" content="1">' ) );
+		self::assertSame( 1, substr_count( $first, 'data-cb-core-flow-preview-protocol="1"' ) );
+		self::assertSame( 1, substr_count( $first, 'data-cb-core-flow-preview-generation="0"' ) );
+		self::assertSame( 1, substr_count( $first, 'data-cb-flow-preview-root="1"' ) );
+		self::assertSame( 1, substr_count( $first, 'data-cb-core-flow-preview-sizing="1"' ) );
+
+		$first_bridge = $this->bridge( $first );
+		$second_bridge = $this->bridge( $second );
+		self::assertSame( $first_bridge, $second_bridge, 'The hashed sizing bridge must remain byte-for-byte static across renders.' );
+		self::assertStringNotContainsString( 'First render', $first_bridge );
+		self::assertStringNotContainsString( 'Second render', $second_bridge );
+		self::assertStringNotContainsString( 'data-cb-core-flow-preview-generation="1"', $first );
+
+		$hash = base64_encode( hash( 'sha256', $first_bridge, true ) );
+		self::assertStringContainsString( "script-src &#39;sha256-{$hash}&#39;", $first );
+		self::assertStringContainsString( "script-src &#39;sha256-{$hash}&#39;", $second );
+		self::assertStringNotContainsString( 'allow-same-origin', $first );
 	}
 
-	public function test_host_fails_closed_without_expected_csp_and_allows_only_hashed_bridge_script(): void {
-		$source = $this->source();
+	public function test_paged_html_renderer_does_not_gain_preview_protocol_or_bridge(): void {
+		$paged = ( new HtmlRenderer() )->render( $this->layout(), [ RenderBlock::text( 'Paged' ) ], 'en_GB' );
 
-		self::assertStringContainsString( 'Flow preview document must provide a Content-Security-Policy.', $source );
-		self::assertStringContainsString( 'Flow preview document already defines script-src.', $source );
-		self::assertStringContainsString( "script-src '\" + BRIDGE_HASH + \"'", $source );
+		self::assertStringNotContainsString( 'cb-core-flow-preview-protocol', $paged );
+		self::assertStringNotContainsString( 'cb-core-flow-preview-sizing', $paged );
+		self::assertStringNotContainsString( 'cb-flow-preview-root', $paged );
+	}
 
-		self::assertSame( 1, preg_match( "/var BRIDGE_HASH = '(sha256-[A-Za-z0-9+\\/=]+)';/", $source, $hash_match ) );
-		self::assertSame( 1, preg_match( "/var BRIDGE_SCRIPT = \\[(.*?)\\n\\t\\]\\.join\\('\\\\n'\\);/s", $source, $script_match ) );
-		$line_count = preg_match_all( '/^\\t\\t("(?:[^"\\\\]|\\\\.)*")[,]?$/m', $script_match[1], $line_matches );
-		self::assertGreaterThan( 0, (int) $line_count );
+	public function test_designer_hidden_semantics_override_component_display_modes(): void {
+		$css = file_get_contents( dirname( __DIR__, 2 ) . '/assets/css/design/designer-composition.css' );
+		self::assertIsString( $css );
+		self::assertMatchesRegularExpression(
+			'/\.cb-core-design-shell\s+\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/s',
+			$css
+		);
+		self::assertStringContainsString( '.cb-core-design-shell__panel-body {', $css );
+		self::assertStringContainsString( 'display: grid;', $css );
+		self::assertStringContainsString( '.cb-core-design-shell__canvas--composed {', $css );
+		self::assertStringContainsString( 'display: flex;', $css );
+		self::assertStringContainsString( '.cb-core-design-shell__layer-label,', $css );
+		self::assertStringContainsString( 'display: block;', $css );
+	}
 
-		$lines = [];
-		foreach ( $line_matches[1] as $encoded_line ) {
-			$decoded_line = json_decode( $encoded_line, true );
-			self::assertIsString( $decoded_line );
-			$lines[] = $decoded_line;
-		}
+	public function test_public_flow_facade_exports_host_without_parent_iframe_dom_reads(): void {
+		$root = dirname( __DIR__, 2 );
+		$index = file_get_contents( $root . '/assets/js/design/document/flow/index.js' );
+		$host = file_get_contents( $root . '/assets/js/design/document/flow/preview-host.js' );
+		self::assertIsString( $index );
+		self::assertIsString( $host );
 
-		$bridge = implode( "\n", $lines );
-		$actual_hash = 'sha256-' . base64_encode( hash( 'sha256', $bridge, true ) );
-		self::assertSame( $hash_match[1], $actual_hash );
+		self::assertStringContainsString( "export { createFlowPreviewHost } from './preview-host.js';", $index );
+		self::assertStringContainsString( "iframe.setAttribute('sandbox', 'allow-scripts');", $host );
+		self::assertStringNotContainsString( 'allow-same-origin', $host );
+		self::assertStringNotContainsString( 'contentDocument', $host );
+		self::assertStringNotContainsString( 'contentWindow.document', $host );
+		self::assertStringNotContainsString( 'scrollHeight', $host );
 	}
 }

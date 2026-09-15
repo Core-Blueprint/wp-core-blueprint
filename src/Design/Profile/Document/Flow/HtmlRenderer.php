@@ -6,6 +6,8 @@ namespace CB\Core\Design\Profile\Document\Flow;
 defined( 'ABSPATH' ) || exit;
 
 final class HtmlRenderer {
+	private const PREVIEW_SIZING_BRIDGE = "(()=>{'use strict';const protocol=document.querySelectorAll('meta[name=\"cb-core-flow-preview-protocol\"]');const roots=document.querySelectorAll('[data-cb-flow-preview-root=\"1\"]');const generation=Number(document.documentElement.getAttribute('data-cb-core-flow-preview-generation'));if(protocol.length!==1||protocol[0].content!=='1'||roots.length!==1||!Number.isSafeInteger(generation)||generation<1||typeof ResizeObserver!=='function')return;const root=roots[0];let lastHeight=0;let frame=0;const report=()=>{const rect=root.getBoundingClientRect();const height=Math.ceil(Math.max(root.scrollHeight,root.offsetHeight,rect.height));if(!Number.isSafeInteger(height)||height<1||height>100000||height===lastHeight)return;lastHeight=height;window.parent.postMessage({type:'cb-core-flow-preview-size',version:1,generation,height},'*');};const schedule=()=>{if(frame!==0)return;frame=requestAnimationFrame(()=>{frame=0;report();});};const observer=new ResizeObserver(schedule);observer.observe(root);window.addEventListener('load',schedule,{once:true});report();})();";
+
 	/** @param array<string,mixed> $layout @param list<RenderBlock> $blocks */
 	public function render( array $layout, array $blocks, string $locale, ?Presentation $presentation = null ): string {
 		if ( ! Layout::matches_contract( $layout ) ) {
@@ -90,9 +92,11 @@ final class HtmlRenderer {
 		$height = self::number( $page['height'] );
 		$padding = implode( ' ', [ self::number( $margins['top'] ) . 'mm', self::number( $margins['right'] ) . 'mm', self::number( $margins['bottom'] ) . 'mm', self::number( $margins['left'] ) . 'mm' ] );
 		$accent = ( $presentation ?? Presentation::defaults() )->accent();
+		$bridge_hash = base64_encode( hash( 'sha256', self::PREVIEW_SIZING_BRIDGE, true ) );
 
-		return '<!doctype html><html lang="' . self::escape( $lang ) . '"><head><meta charset="utf-8">'
-			. '<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; img-src data:; style-src &#39;unsafe-inline&#39;; base-uri &#39;none&#39;; form-action &#39;none&#39;;">'
+		return '<!doctype html><html lang="' . self::escape( $lang ) . '" data-cb-core-flow-preview-protocol="1" data-cb-core-flow-preview-generation="0"><head><meta charset="utf-8">'
+			. '<meta name="cb-core-flow-preview-protocol" content="1">'
+			. '<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; img-src data:; style-src &#39;unsafe-inline&#39;; script-src &#39;sha256-' . self::escape( $bridge_hash ) . '&#39;; base-uri &#39;none&#39;; form-action &#39;none&#39;;">'
 			. '<meta name="viewport" content="width=device-width, initial-scale=1"><style>'
 			. 'html,body{margin:0;padding:0;background:#fff;}body{font-family:"DejaVu Sans",sans-serif;font-size:10pt;line-height:1.4;color:#111;}'
 			. '.cb-flow-preview-page{box-sizing:border-box;width:100%;max-width:' . $width . 'mm;min-height:' . $height . 'mm;margin:0 auto;padding:' . $padding . ';background:#fff;}'
@@ -120,7 +124,8 @@ final class HtmlRenderer {
 			. '.cb-flow-page-footer{position:static;border-top:1px solid #ddd;margin-top:8mm;padding-top:2mm;font-size:8pt;color:#666;}'
 			. '.cb-flow-page-footer table{width:100%;border-collapse:collapse;}.cb-flow-page-footer td{border:0;padding:0;vertical-align:top;}'
 			. '.cb-flow-page-footer__page{display:none;}'
-			. '</style></head><body><div class="cb-flow-preview-page" data-cb-flow-preview>' . $body . '</div></body></html>';
+			. '</style></head><body><div class="cb-flow-preview-page" data-cb-flow-preview-root="1">' . $body . '</div>'
+			. '<script data-cb-core-flow-preview-sizing="1">' . self::PREVIEW_SIZING_BRIDGE . '</script></body></html>';
 	}
 
 	private function block( RenderBlock $block ): string {
