@@ -2,6 +2,7 @@ const PROTOCOL_VERSION = 1;
 const MIN_HEIGHT = 1;
 const MAX_HEIGHT = 100000;
 const FIRST_SIZE_TIMEOUT_MS = 5000;
+const MEASURE_MESSAGE_TYPE = 'cb-core-flow-preview-measure';
 const PROTOCOL_META = '<meta name="cb-core-flow-preview-protocol" content="1">';
 const DOCUMENT_PROTOCOL_MARKER = 'data-cb-core-flow-preview-protocol="1"';
 const GENERATION_MARKER = 'data-cb-core-flow-preview-generation="0"';
@@ -95,6 +96,7 @@ export const createFlowPreviewHost = (iframe) => {
 	let lastAppliedHeight = null;
 	let awaitingFirstSize = false;
 	let firstSizeTimer = null;
+	let pendingLoadHandler = null;
 	let lifecycle = 'idle';
 	let destroyed = false;
 
@@ -102,6 +104,13 @@ export const createFlowPreviewHost = (iframe) => {
 		if (firstSizeTimer !== null) {
 			windowRef.clearTimeout(firstSizeTimer);
 			firstSizeTimer = null;
+		}
+	};
+
+	const clearPendingLoadHandler = () => {
+		if (pendingLoadHandler !== null) {
+			iframe.removeEventListener('load', pendingLoadHandler);
+			pendingLoadHandler = null;
 		}
 	};
 
@@ -129,6 +138,7 @@ export const createFlowPreviewHost = (iframe) => {
 		awaitingFirstSize = false;
 		lastAppliedHeight = null;
 		clearFirstSizeTimer();
+		clearPendingLoadHandler();
 		setState('failure');
 	};
 
@@ -167,6 +177,7 @@ export const createFlowPreviewHost = (iframe) => {
 			throw new Error('Flow preview host has been destroyed.');
 		}
 
+		clearPendingLoadHandler();
 		generation = nextGeneration(generation);
 		activeGeneration = generation;
 		lastAppliedHeight = null;
@@ -192,6 +203,30 @@ export const createFlowPreviewHost = (iframe) => {
 			}
 		}, FIRST_SIZE_TIMEOUT_MS);
 
+		const onLoad = () => {
+			if (pendingLoadHandler === onLoad) {
+				pendingLoadHandler = null;
+			}
+			if (
+				destroyed
+				|| activeGeneration !== renderGeneration
+				|| (lifecycle !== 'loading' && lifecycle !== 'ready')
+			) {
+				return;
+			}
+			const childWindow = iframe.contentWindow;
+			if (!childWindow || typeof childWindow.postMessage !== 'function') {
+				return;
+			}
+			childWindow.postMessage({
+				type: MEASURE_MESSAGE_TYPE,
+				version: PROTOCOL_VERSION,
+				generation: renderGeneration,
+			}, '*');
+		};
+
+		pendingLoadHandler = onLoad;
+		iframe.addEventListener('load', onLoad, { once: true });
 		iframe.srcdoc = hydratedHtml;
 		return true;
 	};
@@ -207,6 +242,7 @@ export const createFlowPreviewHost = (iframe) => {
 		activeGeneration = generation;
 		awaitingFirstSize = false;
 		clearFirstSizeTimer();
+		clearPendingLoadHandler();
 		windowRef.removeEventListener('message', onMessage);
 		iframe.srcdoc = '';
 		iframe.style.height = '0px';
