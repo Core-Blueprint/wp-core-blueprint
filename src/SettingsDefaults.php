@@ -77,6 +77,9 @@ final class SettingsDefaults {
 					'provider_contact'    => '',
 					'accent_color'        => '#0064c8',
 				],
+				'composer'           => [
+					'maintenance' => \CB\Core\Reports\Composer\MaintenanceTemplate::defaults(),
+				],
 			],
 			'permissions'    => [
 				'hide_from_admins'       => false,

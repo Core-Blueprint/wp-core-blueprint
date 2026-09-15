@@ -3,7 +3,6 @@ declare(strict_types=1);
 /** Private BASE-10E.2 module definitions: Preferences. */
 
 namespace CB\Core\Admin;
-
 defined( 'ABSPATH' ) || exit;
 
 final class AdminModuleDefinitionsPreferences {
@@ -86,8 +85,26 @@ final class AdminModuleDefinitionsPreferences {
 				return [
 					'id'   => '@cb-core/reports-preferences',
 					'src'  => 'features/reports-preferences.js',
-					'deps' => [ '@cb-core/dom', '@cb-core/modal' ],
+					'deps' => [ '@cb-core/dom', '@cb-core/modal', '@cb-core/design-editor' ],
 					'data' => [
+						'composer' => \CB\Core\Reports\Composer\MaintenanceTemplate::current(),
+						'blockLabels' => [
+							'header'        => __( 'Header' ),
+							'status'        => __( 'Status', 'core-blueprint' ),
+							'kpis'          => __( 'Maintenance summary', 'core-blueprint' ),
+							'current_state' => __( 'Current State', 'core-blueprint' ),
+							'activity'      => __( 'Maintenance Details', 'core-blueprint' ),
+							'summary'       => __( 'Summary' ),
+							'notes'         => __( 'Notes / Observations', 'core-blueprint' ),
+							'footer'        => __( 'Footer' ),
+						],
+						'composerUi' => [
+							'blocks'   => __( 'Blocks' ),
+							'visible'  => __( 'Visible' ),
+							'hidden'   => __( 'Hidden' ),
+							'moveUp'   => __( 'Move up' ),
+							'moveDown' => __( 'Move down' ),
+						],
 						'i18n' => array_merge(
 							$save_status,
 							[
@@ -100,11 +117,18 @@ final class AdminModuleDefinitionsPreferences {
 								'brandingPickerButton'        => __( 'Use this image', 'core-blueprint' ),
 								'brandingMediaUnavailable'    => __( 'Media Library not available - reload the page.', 'core-blueprint' ),
 								'brandingInvalidHex'          => __( 'Hex colour must be in #RRGGBB form.', 'core-blueprint' ),
-								'brandingConfirmReset'        => __( 'Reset report settings to defaults? Logo, report provider details, and accent colour will be cleared.', 'core-blueprint' ),
+								'brandingConfirmReset'        => sprintf(
+									'%1$s %2$s: %3$s.',
+									__( 'Reset report settings to defaults? Logo, report provider details, and accent colour will be cleared.', 'core-blueprint' ),
+									__( 'Blocks' ),
+									__( 'Reset to defaults', 'core-blueprint' )
+								),
 								'brandingConfirmResetTitle'   => __( 'Reset report settings?', 'core-blueprint' ),
 								'brandingConfirmResetConfirm' => __( 'Reset to defaults', 'core-blueprint' ),
 								'brandingResetting'           => __( 'Resetting…', 'core-blueprint' ),
 								'brandingResetDone'           => __( 'Reset to defaults.', 'core-blueprint' ),
+								'previewLoading'              => __( 'Loading…' ),
+								'previewFailed'               => __( 'An error occurred.' ),
 							]
 						),
 					],

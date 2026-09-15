@@ -116,3 +116,41 @@
 html.cb-core-design-shell-focus-mode .cb-hud {
 	display: none !important;
 }
+
+/* Canonical active design target. Consumers supply the select/options; Base owns placement and geometry. */
+.cb-core-design-shell__toolbar-context {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	max-width: min(420px, 42vw);
+}
+
+.cb-core-design-shell__toolbar-context select {
+	box-sizing: border-box;
+	block-size: var(--cb-design-toolbar-control-size) !important;
+	min-block-size: var(--cb-design-toolbar-control-size) !important;
+	max-block-size: var(--cb-design-toolbar-control-size) !important;
+	min-width: 0;
+	max-width: 100%;
+	margin: 0 !important;
+	padding-block: 0 !important;
+	padding-inline: var(--cb-space-3) calc(var(--cb-space-5) + var(--cb-space-1)) !important;
+	border-color: var(--cb-border) !important;
+	border-radius: var(--cb-radius-md) !important;
+	background-color: var(--cb-surface-1) !important;
+	color: var(--cb-text-strong) !important;
+	font-weight: var(--cb-fw-semibold);
+	line-height: 1 !important;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cb-core-design-shell__brand--contextual .cb-core-design-shell__brand-mark {
+	margin-inline-end: 0;
+}
+
+@media (max-width: 900px) {
+	.cb-core-design-shell__toolbar-context {
+		max-width: min(260px, 48vw);
+	}
+}
