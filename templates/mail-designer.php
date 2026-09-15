@@ -54,7 +54,7 @@ foreach ( (array) $templates as $definition ) {
 			data-template-id="<?php echo esc_attr( $template_id ); ?>"
 		>
 			<section class="cb-core-panel cb-core-mail-designer__context" data-cb-design-launch-context aria-label="<?php esc_attr_e( 'Mail template context', 'core-blueprint' ); ?>">
-				<div class="cb-core-mail-designer__template-control cb-core-field">
+				<div class="cb-core-mail-designer__template-control cb-core-field" data-cb-design-shell-context>
 					<label class="cb-core-field__label" for="cb-mail-designer-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
 					<select id="cb-mail-designer-template" data-cb-mail-template-select>
 						<?php foreach ( $template_groups as $group => $definitions ) : ?>
@@ -157,9 +157,9 @@ foreach ( (array) $templates as $definition ) {
 
 							<aside class="cb-core-design-shell__sidebar cb-core-design-shell__sidebar--composed cb-core-mail-designer__sidebar" aria-label="<?php esc_attr_e( 'Designer controls', 'core-blueprint' ); ?>">
 								<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Designer panels', 'core-blueprint' ); ?>">
-									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-tab="email" data-cb-design-shell-sidebar-role="settings"><?php esc_html_e( 'Email', 'core-blueprint' ); ?></button>
-									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="structure" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Structure', 'core-blueprint' ); ?></button>
-									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"><?php esc_html_e( 'Inspector', 'core-blueprint' ); ?></button>
+									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"><?php esc_html_e( 'Inspector', 'core-blueprint' ); ?></button>
+									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="structure" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Layers', 'default' ); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary. ?></button>
+									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="email" data-cb-design-shell-sidebar-role="settings"><?php esc_html_e( 'Settings', 'core-blueprint' ); ?></button>
 								</div>
 								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="email" data-cb-design-shell-sidebar-role="settings">
 									<div class="cb-core-design-shell__panel-body" data-cb-mail-email-inspector></div>
@@ -169,7 +169,7 @@ foreach ( (array) $templates as $definition ) {
 								</div>
 								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="inspector" data-cb-design-shell-sidebar-role="inspector" hidden>
 									<div class="cb-core-design-shell__panel-body" data-cb-mail-inspector>
-										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Select an element on the canvas or in Structure to edit it.', 'core-blueprint' ); ?></p>
+										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Select an element on the canvas or in Layers to edit it.', 'core-blueprint' ); ?></p>
 									</div>
 								</div>
 							</aside>

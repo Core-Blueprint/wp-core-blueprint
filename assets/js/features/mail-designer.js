@@ -5,13 +5,6 @@ const root = document.querySelector('[data-cb-mail-designer]');
 if (root) {
 	const form = root.querySelector('[data-cb-mail-designer-form]');
 	const shellRoot = root.querySelector('[data-cb-design-shell]');
-	const templateControl = root.querySelector('.cb-core-mail-designer__template-control');
-	const shellToolbar = shellRoot?.querySelector('.cb-core-design-shell__toolbar');
-	if (templateControl && shellToolbar) {
-		templateControl.dataset.cbDesignShellContext = '';
-		shellToolbar.prepend(templateControl);
-	}
-	const templateSelects = Array.from(root.querySelectorAll('[data-cb-mail-template-select]'));
 	const projectField = root.querySelector('[data-cb-mail-project]');
 	const componentField = root.querySelector('[data-cb-mail-components]');
 	const subjectField = root.querySelector('[data-cb-mail-subject]');
@@ -23,7 +16,7 @@ if (root) {
 	const previewStatus = root.querySelector('[data-cb-mail-preview-status]');
 	const ajaxUrl = root.dataset.ajaxUrl || '';
 	const nonce = root.dataset.previewNonce || '';
-	const templateId = root.dataset.templateId || '';
+	let templateId = root.dataset.templateId || '';
 	const mailProfile = profiles.mail;
 
 	const parseJson = (field, fallback) => {
@@ -59,6 +52,7 @@ if (root) {
 	let previewController = null;
 	let dragPath = null;
 	let shell = null;
+	let contextHydrating = false;
 
 	const pathKey = (path) => JSON.stringify(Array.isArray(path) ? path : []);
 	const samePath = (left, right) => pathKey(left) === pathKey(right);
@@ -487,7 +481,7 @@ if (root) {
 		renderStructure();
 		renderInspector();
 		shell?.syncHistory();
-		schedulePreview();
+		if (!contextHydrating) schedulePreview();
 	};
 
 	const session = createSession({
@@ -499,6 +493,83 @@ if (root) {
 	shell = createDesignerShell(shellRoot, {
 		session,
 		defaultPanel: 'email',
+	});
+
+	const templateIdFields = Array.from(root.querySelectorAll('input[name="template_id"]'));
+	const resolveTemplateSelection = (value) => {
+		const raw = String(value || '').trim();
+		if (!raw) return { templateId: '', url: '' };
+		try {
+			const url = new URL(raw, window.location.href);
+			if (url.origin !== window.location.origin) throw new Error('Cross-origin template URLs are not allowed.');
+			return {
+				templateId: String(url.searchParams.get('template') || '').trim(),
+				url: url.href,
+			};
+		} catch (error) {
+			return { templateId: raw, url: '' };
+		}
+	};
+
+	const loadTemplateContext = async (selectionValue) => {
+		const selection = resolveTemplateSelection(selectionValue);
+		if (!selection.templateId) throw new Error('The selected mail template is invalid.');
+		if (!ajaxUrl || !nonce) throw new Error('Mail Designer context switching is unavailable.');
+
+		previewController?.abort();
+		window.clearTimeout(previewTimer);
+		const body = new URLSearchParams({
+			action: 'cb_core_mail_designer_context',
+			nonce,
+			template_id: selection.templateId,
+		});
+		const response = await fetch(ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+			body: body.toString(),
+		});
+		const payload = await response.json();
+		const data = payload?.data;
+		if (
+			!response.ok
+			|| !payload?.success
+			|| !data
+			|| typeof data.template_id !== 'string'
+			|| typeof data.subject !== 'string'
+			|| typeof data.html !== 'string'
+			|| !data.project
+			|| typeof data.project !== 'object'
+		) {
+			throw new Error(data?.message || 'The selected mail template could not be loaded.');
+		}
+
+		templateId = data.template_id;
+		root.dataset.templateId = templateId;
+		templateIdFields.forEach((field) => { field.value = templateId; });
+		subjectField.value = data.subject;
+		projectField.value = JSON.stringify(data.project);
+		session.editorState.selection.clear();
+
+		contextHydrating = true;
+		try {
+			session.replace(data.project, { source: 'context-switch' });
+		} finally {
+			contextHydrating = false;
+		}
+
+		preview.srcdoc = data.html;
+		setPreviewStatus('Preview updated');
+		shell.syncHistory();
+		if (selection.url) window.history.replaceState(window.history.state, '', selection.url);
+		return { templateId, customized: Boolean(data.customized) };
+	};
+
+	root.addEventListener('cb:design-shell:contextrequest', (event) => {
+		const control = event.detail?.control;
+		if (!(control instanceof HTMLSelectElement) || !control.matches('[data-cb-mail-template-select]')) return;
+		if (typeof event.detail?.respondWith !== 'function') return;
+		event.detail.respondWith(loadTemplateContext(event.detail.value));
 	});
 
 	root.querySelectorAll('[data-cb-mail-add]').forEach((button) => {
@@ -525,13 +596,6 @@ if (root) {
 			} catch (error) {
 				button.focus();
 			}
-		});
-	});
-
-	templateSelects.forEach((templateSelect) => {
-		templateSelect.addEventListener('change', () => {
-			const url = String(templateSelect.value || '').trim();
-			if (url) window.location.assign(url);
 		});
 	});
 

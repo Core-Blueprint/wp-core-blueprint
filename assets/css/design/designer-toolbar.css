@@ -121,12 +121,29 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 .cb-core-design-shell__toolbar-context {
 	display: flex;
 	align-items: center;
+	justify-content: flex-start;
+	align-self: center;
+	flex: 0 1 auto;
+	width: auto;
 	min-width: 0;
 	max-width: min(420px, 42vw);
+	block-size: var(--cb-design-toolbar-control-size);
+	min-block-size: var(--cb-design-toolbar-control-size);
+	margin-block: 0 !important;
+}
+
+.cb-core-design-shell__toolbar-zone--start > .cb-core-design-shell__toolbar-context {
+	align-self: center;
+}
+
+.cb-core-design-shell__toolbar-context > .cb-core-field__label,
+.cb-core-design-shell__toolbar-context > .description {
+	display: none !important;
 }
 
 .cb-core-design-shell__toolbar-context select {
 	box-sizing: border-box;
+	align-self: center;
 	block-size: var(--cb-design-toolbar-control-size) !important;
 	min-block-size: var(--cb-design-toolbar-control-size) !important;
 	max-block-size: var(--cb-design-toolbar-control-size) !important;

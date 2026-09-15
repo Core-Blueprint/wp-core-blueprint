@@ -64,18 +64,6 @@
 	margin-bottom: 0;
 }
 
-/* Mail contributes only its select to the Base-owned toolbar context geometry. */
-.cb-core-design-shell__toolbar-context.cb-core-mail-designer__template-control {
-	flex: 0 1 auto;
-	width: auto;
-	max-width: min(420px, 42vw);
-}
-
-.cb-core-design-shell__toolbar-context.cb-core-mail-designer__template-control > .cb-core-field__label,
-.cb-core-design-shell__toolbar-context.cb-core-mail-designer__template-control > .description {
-	display: none;
-}
-
 .cb-core-mail-designer__context-state {
 	display: flex;
 	flex: 0 0 auto;

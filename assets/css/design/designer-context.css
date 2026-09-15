@@ -1,0 +1,93 @@
+/**
+ * Canonical Core Blueprint Designer context-switch transition.
+ *
+ * Base owns the visual loading/ready/error lifecycle while a consumer swaps
+ * the active file/template/document behind the persistent Designer shell.
+ */
+
+.cb-core-design-shell__canvas-workarea {
+	position: relative;
+}
+
+.cb-core-design-shell__context-transition {
+	position: absolute;
+	inset: 0;
+	z-index: 20;
+	display: grid;
+	place-items: center;
+	padding: var(--cb-space-5);
+	box-sizing: border-box;
+	background: color-mix(in srgb, var(--cb-surface-2) 78%, transparent);
+	backdrop-filter: blur(2px);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 150ms ease;
+}
+
+.cb-core-design-shell__context-transition[hidden] {
+	display: none;
+}
+
+.cb-core-design-shell__context-transition.is-active {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.cb-core-design-shell__context-transition-card {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--cb-space-3);
+	min-width: 180px;
+	max-width: min(360px, 80%);
+	padding: var(--cb-space-3) var(--cb-space-4);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+	box-sizing: border-box;
+	background: var(--cb-surface-1);
+	color: var(--cb-text-strong);
+	box-shadow: var(--cb-shadow-sm);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-semibold);
+}
+
+.cb-core-design-shell__context-transition-spinner {
+	flex: 0 0 18px;
+	width: 18px;
+	height: 18px;
+	border: 2px solid var(--cb-border);
+	border-top-color: var(--cb-accent);
+	border-radius: 50%;
+	box-sizing: border-box;
+	animation: cb-core-designer-context-spin 700ms linear infinite;
+}
+
+.cb-core-design-shell__context-transition[data-state="ready"] .cb-core-design-shell__context-transition-spinner {
+	border-color: var(--cb-success, var(--cb-accent));
+	animation: none;
+}
+
+.cb-core-design-shell__context-transition[data-state="error"] .cb-core-design-shell__context-transition-spinner {
+	border-color: var(--cb-danger);
+	animation: none;
+}
+
+.cb-core-design-shell.is-context-switching .cb-core-design-shell__canvas-workarea > :not(.cb-core-design-shell__context-transition) {
+	opacity: .62;
+	transform: scale(.997);
+	transition: opacity 150ms ease, transform 150ms ease;
+}
+
+@keyframes cb-core-designer-context-spin {
+	to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cb-core-design-shell__context-transition,
+	.cb-core-design-shell.is-context-switching .cb-core-design-shell__canvas-workarea > :not(.cb-core-design-shell__context-transition) {
+		transition: none;
+	}
+
+	.cb-core-design-shell__context-transition-spinner {
+		animation: none;
+	}
+}
