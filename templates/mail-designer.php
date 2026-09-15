@@ -119,7 +119,7 @@ foreach ( (array) $templates as $definition ) {
 									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-group="palette" data-cb-design-shell-tab="elements"><?php esc_html_e( 'Elements', 'core-blueprint' ); ?></button>
 									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-group="palette" data-cb-design-shell-tab="dynamic-data"><?php esc_html_e( 'Dynamic data', 'core-blueprint' ); ?></button>
 								</div>
-								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="elements" data-cb-design-shell-palette-role="elements">
+								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="elements">
 									<div class="cb-core-design-shell__panel-body">
 										<div class="cb-core-design-shell__palette-grid">
 											<?php foreach ( $components as $component_id => $component ) : ?>
@@ -131,7 +131,7 @@ foreach ( (array) $templates as $definition ) {
 										</div>
 									</div>
 								</div>
-								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="dynamic-data" data-cb-design-shell-palette-role="dynamic-data" hidden>
+								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="dynamic-data" hidden>
 									<div class="cb-core-design-shell__panel-body">
 										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Click a token to copy it. Paste it into text, headings, buttons or URLs.', 'core-blueprint' ); ?></p>
 										<div class="cb-core-mail-designer__bindings">
@@ -157,9 +157,9 @@ foreach ( (array) $templates as $definition ) {
 
 							<aside class="cb-core-design-shell__sidebar cb-core-design-shell__sidebar--composed cb-core-mail-designer__sidebar" aria-label="<?php esc_attr_e( 'Designer controls', 'core-blueprint' ); ?>">
 								<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Designer panels', 'core-blueprint' ); ?>">
-									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-tab="email" data-cb-design-shell-sidebar-role="settings"><?php esc_html_e( 'Email', 'core-blueprint' ); ?></button>
-									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="structure" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Structure', 'core-blueprint' ); ?></button>
-									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"><?php esc_html_e( 'Inspector', 'core-blueprint' ); ?></button>
+									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"><?php esc_html_e( 'Inspector', 'core-blueprint' ); ?></button>
+									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="structure" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Layers', 'default' ); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary. ?></button>
+									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="email" data-cb-design-shell-sidebar-role="settings"><?php esc_html_e( 'Settings', 'core-blueprint' ); ?></button>
 								</div>
 								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="email" data-cb-design-shell-sidebar-role="settings">
 									<div class="cb-core-design-shell__panel-body" data-cb-mail-email-inspector></div>
@@ -169,7 +169,7 @@ foreach ( (array) $templates as $definition ) {
 								</div>
 								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="inspector" data-cb-design-shell-sidebar-role="inspector" hidden>
 									<div class="cb-core-design-shell__panel-body" data-cb-mail-inspector>
-										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Select an element on the canvas or in Structure to edit it.', 'core-blueprint' ); ?></p>
+										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Select an element on the canvas or in Layers to edit it.', 'core-blueprint' ); ?></p>
 									</div>
 								</div>
 							</aside>
