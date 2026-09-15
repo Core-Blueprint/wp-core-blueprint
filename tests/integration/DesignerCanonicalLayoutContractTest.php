@@ -45,8 +45,9 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_base_localizes_palette_vocabulary_and_centers_context_selector(): void {
-		$assets  = $this->source( 'src/Design/Editor/Assets.php' );
-		$toolbar = $this->source( 'assets/css/design/designer-toolbar.css' );
+		$assets   = $this->source( 'src/Design/Editor/Assets.php' );
+		$toolbar  = $this->source( 'assets/css/design/designer-toolbar.css' );
+		$mail_css = $this->source( 'assets/css/pages/mail-designer.css' );
 
 		self::assertStringContainsString( "'paletteLabels' => [", $assets );
 		self::assertStringContainsString( "'elements'     => __( 'Elements', 'core-blueprint' )", $assets );
@@ -55,5 +56,7 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'align-self: center;', $toolbar );
 		self::assertStringContainsString( 'block-size: var(--cb-design-toolbar-control-size);', $toolbar );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar-zone--start > .cb-core-design-shell__toolbar-context', $toolbar );
+		self::assertStringContainsString( '.cb-core-design-shell__toolbar-context > .cb-core-field__label', $toolbar );
+		self::assertStringNotContainsString( '.cb-core-design-shell__toolbar-context.cb-core-mail-designer__template-control', $mail_css );
 	}
 }
