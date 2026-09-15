@@ -21,6 +21,23 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Preview_Host_Test extend
 		self::assertStringNotContainsString( 'scrollHeight', $source );
 	}
 
+	public function test_reports_initial_preview_follows_designer_fullscreen_lifecycle(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'assets/js/features/reports-preferences.js' );
+		self::assertIsString( $source );
+
+		// Hidden Designer initialization must not trigger an unconditional preview render.
+		self::assertStringNotContainsString( "\n\trenderPreview();\n}", $source );
+
+		// Entering Designer Mode schedules the first preview; leaving it does not.
+		self::assertStringContainsString(
+			"shell?.addEventListener( 'cb:design-shell:fullscreenchange', ( event ) => {\n\t\tif ( event.detail?.fullscreen === true ) schedulePreview();\n\t} );",
+			$source
+		);
+
+		// If Reports initializes after Designer Mode is already active, schedule immediately.
+		self::assertStringContainsString( 'if ( designerShell?.isFullscreen() ) schedulePreview();', $source );
+	}
+
 	public function test_reports_template_and_css_do_not_own_iframe_isolation_or_height(): void {
 		$template = file_get_contents( CB_CORE_DIR . 'templates/preferences-reports.php' );
 		$css = file_get_contents( CB_CORE_DIR . 'assets/css/pages/reports-designer.css' );
