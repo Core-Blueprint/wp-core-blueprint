@@ -147,8 +147,6 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 								<iframe
 									data-cb-report-preview
 									title="<?php esc_attr_e( 'Maintenance Report', 'core-blueprint' ); ?>"
-									sandbox="allow-same-origin"
-									scrolling="no"
 									hidden
 								></iframe>
 							</div>
