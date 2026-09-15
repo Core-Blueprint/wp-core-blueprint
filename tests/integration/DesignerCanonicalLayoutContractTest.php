@@ -23,6 +23,7 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		self::assertInstanceOf( _WP_Dependency::class, $layout );
 		self::assertInstanceOf( _WP_Dependency::class, $toolbar );
 		self::assertContains( DesignEditorAssets::DESIGNER_MODE_SCRIPT, $layout->deps );
+		self::assertContains( DesignEditorAssets::DESIGNER_MODE_SCRIPT, $toolbar->deps );
 		self::assertContains( DesignEditorAssets::DESIGNER_LAYOUT_SCRIPT, $toolbar->deps );
 	}
 
@@ -32,11 +33,12 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "const PALETTE_ROLE_ORDER = Object.freeze(['elements', 'dynamic-data']);", $layout );
 		self::assertStringContainsString( 'normalizeWorkspace', $layout );
 		self::assertStringContainsString( 'normalizePalette', $layout );
-		self::assertStringContainsString( "workspace.dataset.cbDesignShellLayout = 'canonical';", $layout );
-		self::assertStringContainsString( "palette.dataset.cbDesignShellRail = 'left';", $layout );
+		self::assertStringContainsString( "setData(workspace, 'cbDesignShellLayout', 'canonical');", $layout );
+		self::assertStringContainsString( "setData(palette, 'cbDesignShellRail', 'left');", $layout );
 		self::assertStringContainsString( "root.querySelector('[data-cb-design-shell-context]')", $layout );
 		self::assertStringContainsString( "start.insertBefore(context, brand.nextSibling);", $layout );
-		self::assertStringContainsString( "context.dataset.cbDesignShellContextPosition = 'canonical';", $layout );
+		self::assertStringContainsString( "setData(context, 'cbDesignShellContextPosition', 'canonical');", $layout );
+		self::assertStringContainsString( "if (!node || node.dataset?.[key] === value) return;", $layout );
 		self::assertStringContainsString( 'new MutationObserver', $layout );
 
 		self::assertStringNotContainsString( 'cb-core-mail-', $layout );
