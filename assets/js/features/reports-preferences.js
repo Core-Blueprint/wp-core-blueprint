@@ -570,9 +570,13 @@ if ( FORM ) {
 		}
 	} );
 
+	shell?.addEventListener( 'cb:design-shell:fullscreenchange', ( event ) => {
+		if ( event.detail?.fullscreen === true ) schedulePreview();
+	} );
+	if ( designerShell?.isFullscreen() ) schedulePreview();
+
 	window.addEventListener( 'beforeunload', () => {
 		previewHost?.destroy();
 		session.dispose();
 	}, { once: true } );
-	renderPreview();
 }
