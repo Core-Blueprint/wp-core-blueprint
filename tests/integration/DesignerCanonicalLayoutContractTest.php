@@ -87,7 +87,7 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( 'cb-ce-', $runtime );
 	}
 
-	public function test_mail_consumes_context_contract_without_page_navigation(): void {
+	public function test_mail_consumes_context_contract_without_page_navigation_or_context_placement(): void {
 		$mail = $this->source( 'assets/js/features/mail-designer.js' );
 		$ajax = $this->source( 'src/Mail/Admin/DesignerAjax.php' );
 
@@ -97,6 +97,8 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "session.replace(data.project, { source: 'context-switch' });", $mail );
 		self::assertStringContainsString( 'window.history.replaceState', $mail );
 		self::assertStringNotContainsString( 'window.location.assign(url)', $mail );
+		self::assertStringNotContainsString( 'shellToolbar.prepend', $mail );
+		self::assertStringNotContainsString( "templateControl.dataset.cbDesignShellContext", $mail );
 
 		self::assertStringContainsString( "add_action( 'wp_ajax_cb_core_mail_designer_context'", $ajax );
 		self::assertStringContainsString( 'current_user_can( \'manage_options\' )', $ajax );
