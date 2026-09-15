@@ -137,7 +137,7 @@ final class Assets {
 		wp_enqueue_script(
 			self::DESIGNER_TOOLBAR_SCRIPT,
 			CB_CORE_URL . 'assets/js/features/designer-toolbar.js',
-			[ self::DESIGNER_LAYOUT_SCRIPT ],
+			[ self::DESIGNER_MODE_SCRIPT, self::DESIGNER_LAYOUT_SCRIPT ],
 			self::asset_version( 'assets/js/features/designer-toolbar.js' ),
 			true
 		);
