@@ -9,6 +9,7 @@
  */
 
 import { qs, qsa, apiPost } from '../core/dom.js';
+import { createFlowPreviewHost } from '../design/document/flow/index.js';
 import {
 	createDesignerShell,
 	createSession,
@@ -110,6 +111,7 @@ if ( FORM ) {
 	let mediaFrame = null;
 	let previewTimer = null;
 	let previewSequence = 0;
+	let previewHost = null;
 	let designerShell = null;
 
 	const setSaveState = ( state ) => {
@@ -122,6 +124,14 @@ if ( FORM ) {
 		previewState.textContent = message;
 		previewState.dataset.kind = kind;
 		previewState.hidden = message === '';
+	};
+
+	const ensurePreviewHost = () => {
+		if ( ! previewFrame ) return null;
+		if ( previewHost ) return previewHost;
+		previewFrame.hidden = false;
+		previewHost = createFlowPreviewHost( previewFrame );
+		return previewHost;
 	};
 
 	const requestErrorMessage = ( error, fallback ) => {
@@ -139,7 +149,6 @@ if ( FORM ) {
 	const selectedBlock = () => composer.blocks.find( ( block ) => block.type === selectedBlockType ) || null;
 	const selectedIndex = () => composer.blocks.findIndex( ( block ) => block.type === selectedBlockType );
 	const isStructuralBlock = ( block ) => block?.type === 'header' || block?.type === 'footer';
-
 	const schedulePreview = () => {
 		window.clearTimeout( previewTimer );
 		previewTimer = window.setTimeout( renderPreview, 180 );
@@ -380,14 +389,17 @@ if ( FORM ) {
 		if ( ! nonce || ! previewFrame ) return;
 
 		const requestSequence = ++previewSequence;
-		setPreviewState( i18n.previewLoading || 'Rendering report preview…', 'pending' );
+		if ( previewHost ) {
+			setPreviewState( '', 'pending' );
+		} else {
+			setPreviewState( i18n.previewLoading || 'Rendering report preview…', 'pending' );
+		}
 
 		try {
 			const response = await apiPost( 'cb_core_preview_report_branding', nonce, reportsPayload() );
 			if ( requestSequence !== previewSequence ) return;
 
 			if ( ! response?.success || ! response.data?.html ) {
-				previewFrame.hidden = true;
 				setPreviewState(
 					response?.data?.message || i18n.previewFailed || 'The report preview could not be rendered.',
 					'error'
@@ -395,12 +407,15 @@ if ( FORM ) {
 				return;
 			}
 
-			previewFrame.srcdoc = response.data.html;
-			previewFrame.hidden = false;
+			const host = ensurePreviewHost();
+			if ( ! host ) {
+				setPreviewState( 'The report preview host is unavailable. Reload the page.', 'error' );
+				return;
+			}
+			host.render( response.data.html );
 			setPreviewState( '', 'success' );
 		} catch ( error ) {
 			if ( requestSequence !== previewSequence ) return;
-			previewFrame.hidden = true;
 			setPreviewState(
 				requestErrorMessage( error, i18n.previewFailed || 'The report preview could not be rendered.' ),
 				'error'
@@ -555,6 +570,13 @@ if ( FORM ) {
 		}
 	} );
 
-	window.addEventListener( 'beforeunload', () => session.dispose(), { once: true } );
-	renderPreview();
+	shell?.addEventListener( 'cb:design-shell:fullscreenchange', ( event ) => {
+		if ( event.detail?.fullscreen === true ) schedulePreview();
+	} );
+	if ( designerShell?.isFullscreen() ) schedulePreview();
+
+	window.addEventListener( 'beforeunload', () => {
+		previewHost?.destroy();
+		session.dispose();
+	}, { once: true } );
 }
