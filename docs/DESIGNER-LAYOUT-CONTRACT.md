@@ -42,7 +42,7 @@ Base places that control directly to the right of the Core Blueprint mark and ow
 
 The selector remains visible even when there is only one available target. A single option is still useful structural context and keeps every Core Blueprint Designer visually consistent.
 
-Consumers must not position or align this selector with product CSS.
+Consumers must not position or align this selector with product CSS or product JavaScript.
 
 ## Context switching without page reload
 
