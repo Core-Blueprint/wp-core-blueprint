@@ -48,6 +48,10 @@ if ( FORM ) {
 	const elementsBody      = qs( '[data-cb-report-elements]', FORM );
 	const layersBody        = qs( '[data-cb-report-layers]', FORM );
 	const inspectorBody     = qs( '[data-cb-report-inspector]', FORM );
+	const previewHostApi    = window.CBBase?.Document?.FlowPreview;
+	const previewHost       = previewFrame && typeof previewHostApi?.createHost === 'function'
+		? previewHostApi.createHost( previewFrame )
+		: null;
 
 	const normalizeClientTemplate = ( raw ) => ( {
 		schema_version: Number( raw?.schema_version ) || 1,
@@ -124,24 +128,6 @@ if ( FORM ) {
 		previewState.hidden = message === '';
 	};
 
-	const syncPreviewFrameHeight = () => {
-		if ( ! previewFrame ) return;
-
-		const previewDocument = previewFrame.contentDocument;
-		const root = previewDocument?.documentElement;
-		const body = previewDocument?.body;
-		if ( ! root || ! body ) return;
-
-		previewFrame.style.height = '0px';
-		const contentHeight = Math.max(
-			root.scrollHeight,
-			root.offsetHeight,
-			body.scrollHeight,
-			body.offsetHeight
-		);
-		previewFrame.style.height = `${ Math.max( 1, Math.ceil( contentHeight ) ) }px`;
-	};
-
 	const requestErrorMessage = ( error, fallback ) => {
 		if ( error instanceof TypeError ) {
 			return i18n.networkError || 'Network error - try again.';
@@ -157,7 +143,6 @@ if ( FORM ) {
 	const selectedBlock = () => composer.blocks.find( ( block ) => block.type === selectedBlockType ) || null;
 	const selectedIndex = () => composer.blocks.findIndex( ( block ) => block.type === selectedBlockType );
 	const isStructuralBlock = ( block ) => block?.type === 'header' || block?.type === 'footer';
-
 	const schedulePreview = () => {
 		window.clearTimeout( previewTimer );
 		previewTimer = window.setTimeout( renderPreview, 180 );
@@ -396,6 +381,11 @@ if ( FORM ) {
 
 	async function renderPreview() {
 		if ( ! nonce || ! previewFrame ) return;
+		if ( ! previewHost ) {
+			previewFrame.hidden = true;
+			setPreviewState( 'The report preview host is unavailable. Reload the page.', 'error' );
+			return;
+		}
 
 		const requestSequence = ++previewSequence;
 		setPreviewState( i18n.previewLoading || 'Rendering report preview…', 'pending' );
@@ -405,7 +395,7 @@ if ( FORM ) {
 			if ( requestSequence !== previewSequence ) return;
 
 			if ( ! response?.success || ! response.data?.html ) {
-				previewFrame.hidden = true;
+				previewHost.clear();
 				setPreviewState(
 					response?.data?.message || i18n.previewFailed || 'The report preview could not be rendered.',
 					'error'
@@ -413,12 +403,11 @@ if ( FORM ) {
 				return;
 			}
 
-			previewFrame.srcdoc = response.data.html;
-			previewFrame.hidden = false;
+			previewHost.render( response.data.html );
 			setPreviewState( '', 'success' );
 		} catch ( error ) {
 			if ( requestSequence !== previewSequence ) return;
-			previewFrame.hidden = true;
+			previewHost.clear();
 			setPreviewState(
 				requestErrorMessage( error, i18n.previewFailed || 'The report preview could not be rendered.' ),
 				'error'
@@ -429,7 +418,6 @@ if ( FORM ) {
 	buildComposerControls();
 	selectBlock( selectedBlockType, { openInspector: false } );
 	designerShell?.syncHistory();
-	previewFrame?.addEventListener( 'load', syncPreviewFrameHeight );
 
 	enabledControl?.addEventListener( 'change', () => {
 		const selected = selectedBlock();
@@ -574,6 +562,9 @@ if ( FORM ) {
 		}
 	} );
 
-	window.addEventListener( 'beforeunload', () => session.dispose(), { once: true } );
+	window.addEventListener( 'beforeunload', () => {
+		previewHost?.destroy();
+		session.dispose();
+	}, { once: true } );
 	renderPreview();
 }
