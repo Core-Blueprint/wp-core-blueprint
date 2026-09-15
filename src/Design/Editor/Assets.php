@@ -22,9 +22,11 @@ final class Assets {
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
 	public const DESIGNER_COMPOSITION_STYLE = 'cb-core-designer-composition';
+	public const DESIGNER_CONTEXT_STYLE = 'cb-core-designer-context';
 	public const DESIGNER_TOOLBAR_STYLE = 'cb-core-designer-toolbar';
 	public const DESIGNER_MODE_SCRIPT = 'cb-core-designer-mode';
 	public const DESIGNER_LAYOUT_SCRIPT = 'cb-core-designer-layout';
+	public const DESIGNER_CONTEXT_SCRIPT = 'cb-core-designer-context';
 	public const DESIGNER_TOOLBAR_SCRIPT = 'cb-core-designer-toolbar';
 	private const TOKEN_STYLE = 'cb-core-css-tokens';
 	private const BUTTON_STYLE = 'cb-core-css-buttons';
@@ -112,9 +114,16 @@ final class Assets {
 		);
 
 		wp_enqueue_style(
+			self::DESIGNER_CONTEXT_STYLE,
+			CB_CORE_URL . 'assets/css/design/designer-context.css',
+			[ self::DESIGNER_COMPOSITION_STYLE ],
+			self::asset_version( 'assets/css/design/designer-context.css' )
+		);
+
+		wp_enqueue_style(
 			self::DESIGNER_TOOLBAR_STYLE,
 			CB_CORE_URL . 'assets/css/design/designer-toolbar.css',
-			[ self::DESIGNER_COMPOSITION_STYLE, self::BUTTON_STYLE ],
+			[ self::DESIGNER_CONTEXT_STYLE, self::BUTTON_STYLE ],
 			self::asset_version( 'assets/css/design/designer-toolbar.css' )
 		);
 
@@ -135,9 +144,17 @@ final class Assets {
 		);
 
 		wp_enqueue_script(
+			self::DESIGNER_CONTEXT_SCRIPT,
+			CB_CORE_URL . 'assets/js/features/designer-context.js',
+			[ self::DESIGNER_MODE_SCRIPT, self::DESIGNER_LAYOUT_SCRIPT ],
+			self::asset_version( 'assets/js/features/designer-context.js' ),
+			true
+		);
+
+		wp_enqueue_script(
 			self::DESIGNER_TOOLBAR_SCRIPT,
 			CB_CORE_URL . 'assets/js/features/designer-toolbar.js',
-			[ self::DESIGNER_MODE_SCRIPT, self::DESIGNER_LAYOUT_SCRIPT ],
+			[ self::DESIGNER_MODE_SCRIPT, self::DESIGNER_LAYOUT_SCRIPT, self::DESIGNER_CONTEXT_SCRIPT ],
 			self::asset_version( 'assets/js/features/designer-toolbar.js' ),
 			true
 		);
@@ -180,6 +197,11 @@ final class Assets {
 					'view'    => __( 'View', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
 					'actions' => __( 'Actions', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
 					'action'  => __( 'Action', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
+				],
+				'contextLabels' => [
+					'loading' => __( 'Loading design…', 'core-blueprint' ),
+					'ready'   => __( 'Design loaded', 'core-blueprint' ),
+					'error'   => __( 'The selected design could not be loaded.', 'core-blueprint' ),
 				],
 			]
 		);
