@@ -12,10 +12,8 @@
 [data-cb-report-preview] {
 	display: block;
 	width: 100%;
-	min-height: 297mm;
 	border: 0;
 	background: transparent;
-	overflow: hidden;
 }
 
 #cb-core-logo-preview img {
