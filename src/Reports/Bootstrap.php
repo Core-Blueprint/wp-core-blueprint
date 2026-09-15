@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace CB\Core\Reports;
 
+use CB\Core\Design\Editor\Assets as DesignEditorAssets;
+
 defined( 'ABSPATH' ) || exit;
 
 final class Bootstrap {
@@ -53,6 +55,39 @@ final class Bootstrap {
 		// check needed in the registration callbacks.
 		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
 		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_quick_action' ] );
+
+		// Designer Mode is deliberately route-scoped. Reports may consume the
+		// public Golden shell on its own Preferences tab without turning the
+		// entire Preferences page into a Designer consumer.
+		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_preferences_designer' ] );
+	}
+
+	/**
+	 * Enqueue the canonical Designer Mode only for Preferences → Reports.
+	 *
+	 * Users without cb_manage_branding retain the normal read-only Preferences
+	 * context and never receive an editing shell they cannot persist.
+	 */
+	public static function enqueue_preferences_designer(): void {
+		if ( ! current_user_can( 'cb_manage_branding' ) ) {
+			return;
+		}
+
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- route-only asset selection.
+		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- route-only asset selection.
+
+		if ( 'core-blueprint-preferences' !== $page || 'reports' !== $tab ) {
+			return;
+		}
+
+		DesignEditorAssets::enqueue_designer_mode( __( 'Reports', 'core-blueprint' ) );
+		wp_enqueue_style(
+			'cb-core-reports-designer',
+			CB_CORE_URL . 'assets/css/pages/reports-designer.css',
+			[],
+			CB_CORE_VERSION
+		);
+		wp_enqueue_media();
 	}
 
 	/**

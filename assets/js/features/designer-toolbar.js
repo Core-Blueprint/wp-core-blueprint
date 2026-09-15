@@ -46,6 +46,8 @@
 		const center = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--center');
 		const end = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--end');
 		const save = toolbar.querySelector('[data-cb-design-shell-primary-action]');
+		const closeControl = toolbar.querySelector('[data-cb-design-shell-close], [data-cb-design-shell-fullscreen]');
+		const actionAnchor = closeControl || save;
 		if (!start || !center || !end) return false;
 
 		initialized.add(shell);
@@ -63,8 +65,6 @@
 		const actionControls = uniqueControls([
 			toolbar.querySelector('[data-cb-design-shell-undo]'),
 			toolbar.querySelector('[data-cb-design-shell-redo]'),
-			toolbar.querySelector('[data-cb-design-shell-fullscreen]'),
-			toolbar.querySelector('[data-cb-design-shell-close]'),
 			...controlsInCompactGroup(toolbar, 'actions'),
 			...extensionActionControls,
 		]).filter((control) => !control.hasAttribute('data-cb-design-shell-primary-action'));
@@ -142,7 +142,7 @@
 		};
 
 		createExtensionGroup({ controls: extensionViewControls, group: 'view', mount: center });
-		createExtensionGroup({ controls: extensionActionControls, group: 'actions', mount: end, before: save });
+		createExtensionGroup({ controls: extensionActionControls, group: 'actions', mount: end, before: actionAnchor });
 
 		const createMenu = ({ name, label, icon, controls, mount, before = null }) => {
 			if (!controls.length || !mount) return null;
@@ -188,7 +188,7 @@
 		const viewLabel = String(config.toolbarLabels?.view || 'View').trim();
 		const actionsLabel = String(config.toolbarLabels?.actions || 'Actions').trim();
 		const viewMenu = createMenu({ name: 'view', label: viewLabel, icon: 'monitor', controls: viewControls, mount: center });
-		createMenu({ name: 'actions', label: actionsLabel, icon: 'ellipsis', controls: actionControls, mount: end, before: save });
+		createMenu({ name: 'actions', label: actionsLabel, icon: 'ellipsis', controls: actionControls, mount: end, before: actionAnchor });
 
 		const syncViewTrigger = () => {
 			if (!viewMenu) return;

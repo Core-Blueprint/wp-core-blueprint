@@ -11,21 +11,44 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Resolve render-time Maintenance branding for the typed Document Flow path.
  *
- * Admin preview branding remains unchanged. Canonical Flow rendering receives
- * only local PNG/JPEG data URIs and never receives a URL or filesystem path.
+ * Canonical Flow rendering receives only validated local image data URIs and
+ * never receives a browser URL or filesystem path. Saved PDF rendering and the
+ * unsaved Reports Designer preview share this exact boundary.
  */
 final class MaintenanceFlowBranding {
 	private const FALLBACK_TEXT = 'Core Blueprint';
 
 	/**
+	 * Resolve the currently saved Reports branding for production rendering.
+	 *
 	 * @return array{logo_url:string,fallback_text:string,provider_name:string,provider_contact:string,accent_color:string,is_default:bool}
 	 */
 	public static function resolve(): array {
-		$resolved = ReportBranding::current();
+		$resolved   = ReportBranding::current();
 		$configured = Settings::get()['reports']['branding'] ?? [];
 		$configured = is_array( $configured ) ? $configured : [];
-		$logo_id = (int) ( $configured['logo_attachment_id'] ?? 0 );
-		$logo = '';
+
+		return self::resolve_values( [
+			'logo_attachment_id' => (int) ( $configured['logo_attachment_id'] ?? 0 ),
+			'provider_name'       => (string) ( $resolved['provider_name'] ?? '' ),
+			'provider_contact'    => (string) ( $resolved['provider_contact'] ?? '' ),
+			'accent_color'        => (string) ( $resolved['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ),
+		] );
+	}
+
+	/**
+	 * Resolve normalized, possibly unsaved branding into the typed Flow image
+	 * contract. This is the canonical bridge for Designer preview data.
+	 *
+	 * @param array{logo_attachment_id:int,provider_name:string,provider_contact:string,accent_color:string} $branding
+	 * @return array{logo_url:string,fallback_text:string,provider_name:string,provider_contact:string,accent_color:string,is_default:bool}
+	 */
+	public static function resolve_values( array $branding ): array {
+		$logo_id          = max( 0, (int) ( $branding['logo_attachment_id'] ?? 0 ) );
+		$provider_name    = trim( (string) ( $branding['provider_name'] ?? '' ) );
+		$provider_contact = trim( (string) ( $branding['provider_contact'] ?? '' ) );
+		$accent_color     = strtolower( (string) ( $branding['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ) );
+		$logo             = '';
 
 		if ( ReportBranding::is_supported_logo_attachment( $logo_id ) ) {
 			$logo = self::validated_document_image( ReportBranding::attachment_data_uri( $logo_id ) );
@@ -36,12 +59,15 @@ final class MaintenanceFlowBranding {
 		}
 
 		return [
-			'logo_url'          => $logo,
-			'fallback_text'     => '' === $logo ? self::FALLBACK_TEXT : '',
-			'provider_name'     => (string) ( $resolved['provider_name'] ?? '' ),
-			'provider_contact'  => (string) ( $resolved['provider_contact'] ?? '' ),
-			'accent_color'      => (string) ( $resolved['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ),
-			'is_default'        => (bool) ( $resolved['is_default'] ?? false ),
+			'logo_url'         => $logo,
+			'fallback_text'    => '' === $logo ? self::FALLBACK_TEXT : '',
+			'provider_name'    => $provider_name,
+			'provider_contact' => $provider_contact,
+			'accent_color'     => $accent_color,
+			'is_default'       => 0 === $logo_id
+				&& '' === $provider_name
+				&& '' === $provider_contact
+				&& ReportBranding::DEFAULT_ACCENT === $accent_color,
 		];
 	}
 

@@ -99,7 +99,7 @@ foreach ( [ 'includes', 'src', 'templates' ] as $directory ) {
         new RecursiveDirectoryIterator( $path, FilesystemIterator::SKIP_DOTS )
     );
     foreach ( $iterator as $file ) {
-        if ( $file->isFile() && 'php' === strtolower( $file->getExtension() ) ) {
+        if ( $file->isFile() && 'php' === strtolower($file->getExtension()) ) {
             $files[] = $file->getPathname();
         }
     }
@@ -189,8 +189,8 @@ foreach ( $files as $file ) {
     }
 }
 
-if ( 3348 !== count( $source ) ) {
-    fail_translation_check( 'Expected 3348 canonical source keys, found ' . count( $source ) . '.' );
+if ( 3376 !== count( $source ) ) {
+    fail_translation_check( 'Expected 3376 canonical source keys, found ' . count( $source ) . '.' );
 }
 
 if ( in_array( '--export-source', $argv ?? [], true ) ) {
