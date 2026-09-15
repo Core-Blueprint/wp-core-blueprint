@@ -124,6 +124,24 @@ if ( FORM ) {
 		previewState.hidden = message === '';
 	};
 
+	const syncPreviewFrameHeight = () => {
+		if ( ! previewFrame ) return;
+
+		const previewDocument = previewFrame.contentDocument;
+		const root = previewDocument?.documentElement;
+		const body = previewDocument?.body;
+		if ( ! root || ! body ) return;
+
+		previewFrame.style.height = '0px';
+		const contentHeight = Math.max(
+			root.scrollHeight,
+			root.offsetHeight,
+			body.scrollHeight,
+			body.offsetHeight
+		);
+		previewFrame.style.height = `${ Math.max( 1, Math.ceil( contentHeight ) ) }px`;
+	};
+
 	const requestErrorMessage = ( error, fallback ) => {
 		if ( error instanceof TypeError ) {
 			return i18n.networkError || 'Network error - try again.';
@@ -411,6 +429,7 @@ if ( FORM ) {
 	buildComposerControls();
 	selectBlock( selectedBlockType, { openInspector: false } );
 	designerShell?.syncHistory();
+	previewFrame?.addEventListener( 'load', syncPreviewFrameHeight );
 
 	enabledControl?.addEventListener( 'change', () => {
 		const selected = selectedBlock();
