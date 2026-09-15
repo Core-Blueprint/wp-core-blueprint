@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Reports;
 
-use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CB\Core\Design\Profile\Document\Flow\Api\FlowRenderApi;
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -11,12 +11,11 @@ defined( 'ABSPATH' ) || exit;
  *
  * The preview compiles the same typed Maintenance Flow used by PDF rendering.
  * When no stored report exists, only the data snapshot is synthetic; the
- * compiler and HTML renderer remain the canonical production path.
+ * compiler and public Flow preview target remain the canonical production path.
  */
 final class DesignerPreview {
 
 	public function __construct(
-		private readonly HtmlRenderer $renderer = new HtmlRenderer(),
 		private readonly MaintenanceFlowCompiler $compiler = new MaintenanceFlowCompiler()
 	) {}
 
@@ -44,7 +43,7 @@ final class DesignerPreview {
 			$template
 		);
 
-		return $this->renderer->render(
+		return FlowRenderApi::preview_html(
 			$document['layout'],
 			$document['blocks'],
 			$document['locale'],
