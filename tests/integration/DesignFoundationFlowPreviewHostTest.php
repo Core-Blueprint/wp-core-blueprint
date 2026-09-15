@@ -39,6 +39,11 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 		self::assertStringNotContainsString( 'First render', $first_bridge );
 		self::assertStringNotContainsString( 'Second render', $second_bridge );
 		self::assertStringNotContainsString( 'data-cb-core-flow-preview-generation="1"', $first );
+		self::assertStringContainsString( "window.addEventListener('message'", $first_bridge );
+		self::assertStringContainsString( 'event.source!==window.parent', $first_bridge );
+		self::assertStringContainsString( "data.type==='cb-core-flow-preview-measure'", $first_bridge );
+		self::assertStringContainsString( 'data.version===1', $first_bridge );
+		self::assertStringContainsString( 'event.data.generation!==generation', $first_bridge );
 
 		$hash = base64_encode( hash( 'sha256', $first_bridge, true ) );
 		self::assertStringContainsString( "script-src &#39;sha256-{$hash}&#39;", $first );
@@ -78,6 +83,9 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 
 		self::assertStringContainsString( "export { createFlowPreviewHost } from './preview-host.js';", $index );
 		self::assertStringContainsString( "iframe.setAttribute('sandbox', 'allow-scripts');", $host );
+		self::assertStringContainsString( "const MEASURE_MESSAGE_TYPE = 'cb-core-flow-preview-measure';", $host );
+		self::assertStringContainsString( "iframe.addEventListener('load', onLoad, { once: true });", $host );
+		self::assertStringContainsString( 'clearPendingLoadHandler();', $host );
 		self::assertStringNotContainsString( 'allow-same-origin', $host );
 		self::assertStringNotContainsString( 'contentDocument', $host );
 		self::assertStringNotContainsString( 'contentWindow.document', $host );
