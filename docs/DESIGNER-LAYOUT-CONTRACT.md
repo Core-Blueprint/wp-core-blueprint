@@ -44,6 +44,40 @@ The selector remains visible even when there is only one available target. A sin
 
 Consumers must not position or align this selector with product CSS.
 
+## Context switching without page reload
+
+Changing the active file/template/document is a Designer session transition, not a page navigation. Base owns the switch lifecycle so every consumer keeps the same Designer shell open while domain data changes behind it.
+
+For a `<select>` inside `data-cb-design-shell-context`, Base intercepts the change and dispatches:
+
+```text
+cb:design-shell:contextrequest
+```
+
+The event detail exposes the requested `value`, the `previousValue`, the `control`, and a `respondWith(promise)` callback. A consumer handles only its domain loading and applies its new project/context, then resolves that Promise. It must not navigate the browser, close Designer Mode, build its own loader overlay or replace the Base shell.
+
+Example consumer pattern:
+
+```js
+root.addEventListener('cb:design-shell:contextrequest', (event) => {
+    if (!event.detail?.respondWith) return;
+    event.detail.respondWith(loadDomainContext(event.detail.value));
+});
+```
+
+During the Promise Base owns the canvas/main-area transition:
+
+- the current canvas remains mounted;
+- the work area is marked busy;
+- Base shows the canonical loading transition;
+- the context selector is temporarily disabled;
+- success emits `cb:design-shell:contextchanged` and fades the transition away;
+- failure restores the previous selector value, keeps the existing design intact and shows the canonical error transition.
+
+The consumer remains responsible for fetching/validating the requested domain context and replacing its editor project/state safely. A context switch should clear history that belongs to the previous document/template; it must not make edits from one target undoable inside another target.
+
+Normal URL state may be updated with the History API after a successful switch, but a full page reload is not part of the Designer context contract.
+
 ## Left rail
 
 The canonical left roles are:
@@ -74,6 +108,7 @@ A product may omit a role only when that capability does not exist. Product-spec
 Base owns:
 
 - header composition and active-context placement;
+- context-switch interception, busy state, transition and success/error lifecycle;
 - toolbar control geometry;
 - left/canvas/right workspace order;
 - left palette role order and shared labels;
@@ -83,6 +118,8 @@ Base owns:
 
 Consumers own:
 
+- loading and validating the requested domain context behind `respondWith()`;
+- replacing their domain project/editor state after a successful context fetch;
 - element definitions;
 - dynamic-data definitions;
 - Inspector fields and validation;
@@ -91,4 +128,4 @@ Consumers own:
 - canvas/render semantics;
 - persistence and permissions.
 
-This contract deliberately separates a stable Designer structure from flexible product composition.
+This contract deliberately separates a stable Designer structure and session experience from flexible product composition.
