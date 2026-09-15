@@ -140,17 +140,15 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 
 					<main class="cb-core-design-shell__canvas cb-core-design-shell__canvas--composed">
 						<div class="cb-core-design-shell__canvas-workarea">
-							<div class="cb-core-design-shell__surface cb-core-design-shell__surface--document">
+							<div class="cb-core-reports__designer-preview-surface">
 								<div class="cb-core-design-shell__empty-state" data-cb-report-preview-state>
 									<?php esc_html_e( 'Loading…' ); ?>
 								</div>
 								<iframe
 									data-cb-report-preview
 									title="<?php esc_attr_e( 'Maintenance Report', 'core-blueprint' ); ?>"
-									sandbox=""
-									width="100%"
-									height="980"
-									style="background:#fff;"
+									sandbox="allow-same-origin"
+									scrolling="no"
 									hidden
 								></iframe>
 							</div>
