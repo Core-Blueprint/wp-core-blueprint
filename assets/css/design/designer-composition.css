@@ -168,6 +168,99 @@
 }
 
 /*
+ * Canonical Layers list. The whole structural row owns hover/selection while
+ * the text target and bounded row actions remain separate interactive controls.
+ */
+.cb-core-design-shell__layer-list {
+	display: grid;
+	gap: var(--cb-space-1);
+	min-width: 0;
+}
+
+.cb-core-design-shell__layer-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--cb-space-1);
+	min-width: 0;
+	padding: var(--cb-space-1);
+	padding-inline-start: calc(var(--cb-space-1) + (var(--cb-design-layer-depth, 0) * 12px));
+	border: 1px solid transparent;
+	border-radius: var(--cb-radius-md);
+	box-sizing: border-box;
+	background: transparent;
+	transition: border-color .12s ease, background-color .12s ease;
+}
+
+.cb-core-design-shell__layer-row:hover,
+.cb-core-design-shell__layer-row:focus-within {
+	border-color: var(--cb-border);
+	background: var(--cb-interactive-hover);
+}
+
+.cb-core-design-shell__layer-row.is-selected {
+	border-color: var(--cb-accent);
+	background: var(--cb-interactive-hover);
+}
+
+.cb-core-design-shell__layer-select {
+	appearance: none;
+	min-width: 0;
+	padding: var(--cb-space-2);
+	border: 0;
+	border-radius: var(--cb-radius-sm);
+	background: transparent;
+	color: var(--cb-text);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.cb-core-design-shell__layer-select:focus-visible {
+	outline: 2px solid var(--cb-accent);
+	outline-offset: -1px;
+}
+
+.cb-core-design-shell__layer-label,
+.cb-core-design-shell__layer-meta {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cb-core-design-shell__layer-meta {
+	margin-top: 2px;
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-2xs);
+}
+
+.cb-core-design-shell__layer-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.cb-core-design-shell__layer-action.button {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 30px !important;
+	min-width: 30px !important;
+	height: 30px !important;
+	min-height: 30px !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	line-height: 1 !important;
+}
+
+.cb-core-design-shell__layer-action .cb-core-design-shell__icon,
+.cb-core-design-shell__layer-action .cb-core-design-shell__icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+/*
  * Opt-in composed canvas. Existing embedded editor consumers remain unaffected;
  * full Designer Mode consumers use this modifier for the canonical canvas rail.
  */

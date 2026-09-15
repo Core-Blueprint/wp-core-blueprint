@@ -240,6 +240,7 @@
 		const historyGroup = toolbar.querySelector('[data-cb-design-shell-undo]')?.closest('.cb-core-design-shell__toolbar-group') ?? null;
 		const viewportGroup = toolbar.querySelector('[data-cb-design-shell-viewport]')?.closest('.cb-core-design-shell__toolbar-group') ?? null;
 		const fullscreen = toolbar.querySelector('[data-cb-design-shell-fullscreen]');
+		const contextSwitcher = toolbar.querySelector('[data-cb-design-shell-context]');
 		const save = toolbar.querySelector('[data-cb-design-shell-primary-action]');
 		const status = toolbar.querySelector('[data-cb-design-shell-status]');
 
@@ -271,8 +272,11 @@
 		}
 
 		if (fullscreen) {
-			const label = String(fullscreen.getAttribute('aria-label') || fullscreen.textContent || 'Fullscreen mode').trim();
-			shellApi.icons.decorate(fullscreen, 'maximize-2', { iconOnly: true, label });
+			const enterLabel = String(fullscreen.dataset.cbDesignShellFullscreenEnterLabel || fullscreen.getAttribute('aria-label') || fullscreen.textContent || 'Fullscreen mode').trim();
+			const closeLabel = String(fullscreen.dataset.cbDesignShellFullscreenExitLabel || config.closeLabel || 'Close').trim();
+			fullscreen.dataset.cbDesignShellFullscreenEnterLabel = enterLabel;
+			fullscreen.dataset.cbDesignShellFullscreenExitLabel = closeLabel;
+			shellApi.icons.decorate(fullscreen, 'maximize-2', { iconOnly: true, label: enterLabel });
 		}
 		if (save) {
 			const label = String(save.textContent || 'Save').trim();
@@ -299,11 +303,19 @@
 			markWrap.append(mark);
 			brand.append(markWrap);
 		}
-		const wordmark = document.createElement('span');
-		wordmark.className = 'cb-core-design-shell__brand-wordmark';
-		wordmark.textContent = title;
-		brand.append(wordmark);
+		if (!contextSwitcher) {
+			const wordmark = document.createElement('span');
+			wordmark.className = 'cb-core-design-shell__brand-wordmark';
+			wordmark.textContent = title;
+			brand.append(wordmark);
+		} else {
+			brand.classList.add('cb-core-design-shell__brand--contextual');
+			contextSwitcher.classList.add('cb-core-design-shell__toolbar-context');
+			contextSwitcher.hidden = false;
+			contextSwitcher.removeAttribute('aria-hidden');
+		}
 		start.append(brand);
+		if (contextSwitcher) start.append(contextSwitcher);
 		if (panelControls?.leftLauncher) start.append(panelControls.leftLauncher);
 
 		const center = document.createElement('div');
@@ -342,8 +354,10 @@
 	};
 
 	const syncFullscreenIcon = (fullscreen, active, shellApi) => {
-		const labelText = String(fullscreen.getAttribute('aria-label') || 'Fullscreen mode').trim();
-		shellApi.icons.decorate(fullscreen, active ? 'minimize-2' : 'maximize-2', {
+		const labelText = active
+			? String(fullscreen.dataset.cbDesignShellFullscreenExitLabel || config.closeLabel || 'Close').trim()
+			: String(fullscreen.dataset.cbDesignShellFullscreenEnterLabel || fullscreen.getAttribute('aria-label') || 'Fullscreen mode').trim();
+		shellApi.icons.decorate(fullscreen, active ? 'x' : 'maximize-2', {
 			iconOnly: true,
 			label: labelText,
 		});

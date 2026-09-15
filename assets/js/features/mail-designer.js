@@ -1,11 +1,17 @@
-import { createDesignerShell, createSession, commands, profiles } from '@cb-core/design-editor';
+import { createDesignerShell, createSession, commands, profiles, decorateDesignerControl } from '@cb-core/design-editor';
 
 const root = document.querySelector('[data-cb-mail-designer]');
 
 if (root) {
 	const form = root.querySelector('[data-cb-mail-designer-form]');
 	const shellRoot = root.querySelector('[data-cb-design-shell]');
-	const templateSelect = root.querySelector('[data-cb-mail-template-select]');
+	const templateControl = root.querySelector('.cb-core-mail-designer__template-control');
+	const shellToolbar = shellRoot?.querySelector('.cb-core-design-shell__toolbar');
+	if (templateControl && shellToolbar) {
+		templateControl.dataset.cbDesignShellContext = '';
+		shellToolbar.prepend(templateControl);
+	}
+	const templateSelects = Array.from(root.querySelectorAll('[data-cb-mail-template-select]'));
 	const projectField = root.querySelector('[data-cb-mail-project]');
 	const componentField = root.querySelector('[data-cb-mail-components]');
 	const subjectField = root.querySelector('[data-cb-mail-subject]');
@@ -386,40 +392,40 @@ if (root) {
 
 	const createStructureRow = (node, path, depth, siblingCount) => {
 		const row = document.createElement('div');
-		row.className = 'cb-core-mail-structure__row';
-		row.style.setProperty('--cb-mail-depth', String(depth));
+		row.className = 'cb-core-design-shell__layer-row';
+		row.style.setProperty('--cb-design-layer-depth', String(depth));
 		row.draggable = path.length > 0;
 		if (samePath(path, session.editorState.selection.primary())) row.classList.add('is-selected');
 
 		const select = document.createElement('button');
 		select.type = 'button';
-		select.className = 'cb-core-mail-structure__select';
+		select.className = 'cb-core-design-shell__layer-select';
 		const definition = definitionForNode(node);
 		const label = document.createElement('span');
-		label.className = 'cb-core-mail-structure__label';
+		label.className = 'cb-core-design-shell__layer-label';
 		label.textContent = definition?.label || (node.type === 'mail.section' ? 'Section' : node.type || 'Element');
 		const meta = document.createElement('span');
-		meta.className = 'cb-core-mail-structure__meta';
+		meta.className = 'cb-core-design-shell__layer-meta';
 		meta.textContent = nodeSummary(node, definition);
 		select.append(label, meta);
 		select.addEventListener('click', () => selectPath(path));
 
 		const actions = document.createElement('div');
-		actions.className = 'cb-core-mail-structure__actions';
+		actions.className = 'cb-core-design-shell__layer-actions';
 		const index = path.at(-1);
-		const addMoveButton = (symbol, targetIndex, disabled, ariaLabel) => {
+		const addMoveButton = (icon, targetIndex, disabled, ariaLabel) => {
 			const button = document.createElement('button');
 			button.type = 'button';
-			button.className = 'button cb-core-button';
-			button.textContent = symbol;
+			button.className = 'button cb-core-button cb-core-design-shell__layer-action';
+			button.textContent = ariaLabel;
 			button.disabled = disabled;
-			button.setAttribute('aria-label', ariaLabel);
+			decorateDesignerControl(button, icon, { iconOnly: true, label: ariaLabel });
 			button.addEventListener('click', () => moveNode(path, targetIndex));
 			actions.append(button);
 		};
 		if (path.length > 0 && Number.isInteger(index)) {
-			addMoveButton('↑', Math.max(0, index - 1), index === 0, 'Move element up');
-			addMoveButton('↓', Math.min(siblingCount - 1, index + 1), index === siblingCount - 1, 'Move element down');
+			addMoveButton('arrow-up', Math.max(0, index - 1), index === 0, 'Move element up');
+			addMoveButton('arrow-down', Math.min(siblingCount - 1, index + 1), index === siblingCount - 1, 'Move element down');
 		}
 
 		row.addEventListener('dragstart', (event) => {
@@ -453,7 +459,7 @@ if (root) {
 	const renderStructure = () => {
 		structure.replaceChildren();
 		const tree = document.createElement('div');
-		tree.className = 'cb-core-mail-structure';
+		tree.className = 'cb-core-design-shell__layer-list';
 		const projectRoot = session.project()?.root;
 		const renderChildren = (children, parent, depth) => {
 			if (!Array.isArray(children)) return;
@@ -522,9 +528,11 @@ if (root) {
 		});
 	});
 
-	templateSelect?.addEventListener('change', () => {
-		const url = String(templateSelect.value || '').trim();
-		if (url) window.location.assign(url);
+	templateSelects.forEach((templateSelect) => {
+		templateSelect.addEventListener('change', () => {
+			const url = String(templateSelect.value || '').trim();
+			if (url) window.location.assign(url);
+		});
 	});
 
 	root.querySelectorAll('[data-cb-mail-viewport]').forEach((button) => {

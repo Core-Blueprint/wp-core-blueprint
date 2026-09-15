@@ -40,19 +40,40 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "'@cb-core/design-editor'", $definitions );
 	}
 
-	public function test_reports_runtime_mutates_composer_state_inside_public_designer_primitives(): void {
-		$runtime = $this->source( 'assets/js/features/reports-preferences.js' );
+	public function test_reports_runtime_adapts_bounded_composer_to_the_public_design_session(): void {
+		$runtime  = $this->source( 'assets/js/features/reports-preferences.js' );
+		$template = $this->source( 'templates/preferences-reports.php' );
 
 		self::assertStringContainsString( 'normalizeClientTemplate', $runtime );
+		self::assertStringContainsString( 'projectFromComposer', $runtime );
+		self::assertStringContainsString( 'composerFromProject', $runtime );
+		self::assertStringContainsString( 'createSession', $runtime );
+		self::assertStringContainsString( "profile: 'document-flow'", $runtime );
 		self::assertStringContainsString( 'buildComposerControls', $runtime );
 		self::assertStringContainsString( 'renderComposerControls', $runtime );
-		self::assertStringContainsString( 'moveSelectedBlock', $runtime );
+		self::assertStringContainsString( 'renderElements', $runtime );
+		self::assertStringContainsString( 'renderLayers', $runtime );
+		self::assertStringContainsString( 'moveBlock', $runtime );
+		self::assertStringContainsString( 'createLayerMoveButton', $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-elements]'", $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-layers]'", $runtime );
+		self::assertStringContainsString( "qs( '[data-cb-report-inspector]'", $runtime );
+		self::assertStringContainsString( "layerList.className = 'cb-core-design-shell__layer-list'", $runtime );
+		self::assertStringContainsString( "activatePanel( 'inspector' )", $runtime );
+		self::assertStringContainsString( 'commands.reorderNode( [], index, target )', $runtime );
+		self::assertStringContainsString( "commands.setProperty( [ index ], [ 'enabled' ]", $runtime );
 		self::assertStringContainsString( "template: JSON.stringify( composer )", $runtime );
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding', nonce, reportsPayload() )", $runtime );
 		self::assertStringContainsString( "apiPost( 'cb_core_save_report_branding', nonce, reportsPayload() )", $runtime );
-		self::assertStringContainsString( 'cb-core-design-shell__palette-grid', $runtime );
 		self::assertStringContainsString( 'cb-core-design-shell__panel-section', $runtime );
 		self::assertStringContainsString( 'cb-core-design-shell__field', $runtime );
+		self::assertStringContainsString( 'cb-core-design-shell__palette-grid', $template );
+		self::assertStringContainsString( 'data-cb-report-elements', $template );
+		self::assertStringContainsString( 'data-cb-design-shell-context', $template );
+		self::assertStringContainsString( 'data-cb-design-shell-undo', $template );
+		self::assertStringContainsString( 'data-cb-design-shell-redo', $template );
+		self::assertStringNotContainsString( 'createSnapshotHistory', $runtime );
+		self::assertStringNotContainsString( 'moveSelectedBlock', $runtime );
 		self::assertStringNotContainsString( 'window.location', $runtime );
 		self::assertStringNotContainsString( 'location.reload', $runtime );
 	}

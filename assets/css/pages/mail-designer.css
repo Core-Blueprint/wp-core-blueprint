@@ -64,6 +64,18 @@
 	margin-bottom: 0;
 }
 
+/* Mail contributes only its select to the Base-owned toolbar context geometry. */
+.cb-core-design-shell__toolbar-context.cb-core-mail-designer__template-control {
+	flex: 0 1 auto;
+	width: auto;
+	max-width: min(420px, 42vw);
+}
+
+.cb-core-design-shell__toolbar-context.cb-core-mail-designer__template-control > .cb-core-field__label,
+.cb-core-design-shell__toolbar-context.cb-core-mail-designer__template-control > .description {
+	display: none;
+}
+
 .cb-core-mail-designer__context-state {
 	display: flex;
 	flex: 0 0 auto;
@@ -184,66 +196,7 @@
 	max-width: 430px;
 }
 
-.cb-core-mail-structure {
-	display: grid;
-	gap: var(--cb-space-1);
-}
-
-.cb-core-mail-structure__row {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
-	gap: var(--cb-space-1);
-	align-items: center;
-	padding-left: calc(var(--cb-mail-depth, 0) * 12px);
-}
-
-.cb-core-mail-structure__select {
-	min-width: 0;
-	padding: var(--cb-space-2);
-	border: 1px solid transparent;
-	border-radius: var(--cb-radius-sm);
-	background: transparent;
-	color: var(--cb-text);
-	font: inherit;
-	text-align: left;
-	cursor: pointer;
-}
-
-.cb-core-mail-structure__select:hover,
-.cb-core-mail-structure__select:focus-visible,
-.cb-core-mail-structure__row.is-selected .cb-core-mail-structure__select {
-	border-color: var(--cb-border);
-	background: var(--cb-interactive-hover);
-	outline: none;
-}
-
-.cb-core-mail-structure__row.is-selected .cb-core-mail-structure__select {
-	border-color: var(--cb-accent);
-}
-
-.cb-core-mail-structure__label,
-.cb-core-mail-structure__meta {
-	display: block;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.cb-core-mail-structure__meta {
-	margin-top: 2px;
-	color: var(--cb-text-muted);
-	font-size: var(--cb-fs-2xs);
-}
-
-.cb-core-mail-structure__actions {
-	display: flex;
-	gap: 2px;
-}
-
-.cb-core-mail-structure__actions .button {
-	min-width: 30px;
-	padding-inline: 6px !important;
-}
+/* Layer-list presentation is Base-owned by the canonical Designer composition primitive. */
 
 .cb-core-mail-designer__reset-form {
 	margin-top: var(--cb-space-4);

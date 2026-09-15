@@ -1,21 +1,33 @@
 /**
  * Core Blueprint - Preferences → Reports Designer
  *
- * Reports owns branding values, Composer state, validation, preview requests
- * and persistence. Base owns Designer Mode launch, shell, toolbar, responsive
- * composition and save-state presentation.
+ * Reports owns branding values, bounded Composer semantics, preview requests
+ * and persistence. Base owns Designer Mode, DesignProject/session/history,
+ * toolbar, Layers presentation and responsive chrome.
  *
  * @since 1.0.0
  */
 
 import { qs, qsa, apiPost } from '../core/dom.js';
-import { createDesignerShell } from '@cb-core/design-editor';
+import {
+	createDesignerShell,
+	createSession,
+	commands,
+	decorateDesignerControl,
+} from '@cb-core/design-editor';
 
-const dataEl        = document.getElementById( 'wp-script-module-data-@cb-core/reports-preferences' );
-const data          = dataEl ? JSON.parse( dataEl.textContent ) : {};
-const i18n          = data.i18n || {};
-const blockLabels   = data.blockLabels || {};
-const composerUi    = data.composerUi || {};
+const dataEl      = document.getElementById( 'wp-script-module-data-@cb-core/reports-preferences' );
+const data        = dataEl ? JSON.parse( dataEl.textContent ) : {};
+const i18n        = data.i18n || {};
+const blockLabels = data.blockLabels || {};
+const composerUi  = data.composerUi || {};
+
+const FLOW_LAYOUT = Object.freeze( {
+	mode: 'flow',
+	units: 'mm',
+	page: Object.freeze( { width: 210, height: 297 } ),
+	margins: Object.freeze( { top: 18, right: 18, bottom: 18, left: 18 } ),
+} );
 
 const FORM = qs( '#cb-core-branding-form' );
 if ( FORM ) {
@@ -33,12 +45,9 @@ if ( FORM ) {
 	const resetBtn          = qs( '#cb-core-reset-branding', FORM );
 	const previewFrame      = qs( '[data-cb-report-preview]', FORM );
 	const previewState      = qs( '[data-cb-report-preview-state]', FORM );
-	const paletteBody       = qs( '.cb-core-design-shell__palette .cb-core-design-shell__panel-body', FORM );
-	const sidebarBody       = qs( '.cb-core-design-shell__sidebar .cb-core-design-shell__panel-body', FORM );
-
-	if ( shell ) {
-		createDesignerShell( shell );
-	}
+	const elementsBody      = qs( '[data-cb-report-elements]', FORM );
+	const layersBody        = qs( '[data-cb-report-layers]', FORM );
+	const inspectorBody     = qs( '[data-cb-report-inspector]', FORM );
 
 	const normalizeClientTemplate = ( raw ) => ( {
 		schema_version: Number( raw?.schema_version ) || 1,
@@ -54,16 +63,54 @@ if ( FORM ) {
 			: [],
 	} );
 
+	const projectFromComposer = ( template ) => ( {
+		schema_version: 1,
+		design_type: 'reports.maintenance',
+		root: {
+			type: 'reports.maintenance',
+			provider: 'core',
+			properties: { layout: FLOW_LAYOUT },
+			children: template.blocks.map( ( block ) => ( {
+				type: `reports.block.${ block.type }`,
+				provider: 'core',
+				properties: {
+					id: block.id || block.type,
+					type: block.type,
+					enabled: block.enabled !== false,
+				},
+				children: [],
+			} ) ),
+		},
+	} );
+
+	const composerFromProject = ( project, schemaVersion ) => ( {
+		schema_version: Number( schemaVersion ) || 1,
+		blocks: Array.isArray( project?.root?.children )
+			? project.root.children
+				.filter( ( node ) => node && typeof node?.properties?.type === 'string' )
+				.map( ( node ) => ( {
+					id: node.properties.id || node.properties.type,
+					type: node.properties.type,
+					enabled: node.properties.enabled !== false,
+					settings: {},
+				} ) )
+			: [],
+	} );
+
 	let composer = normalizeClientTemplate( data.composer || {} );
+	const composerSchemaVersion = composer.schema_version;
+	const elementTypes = Object.keys( blockLabels ).length
+		? Object.keys( blockLabels )
+		: composer.blocks.map( ( block ) => block.type );
+
 	let selectedBlockType = composer.blocks[0]?.type || '';
-	let blockList = null;
+	let layerList = null;
 	let inspectorTitle = null;
 	let enabledControl = null;
-	let moveUpBtn = null;
-	let moveDownBtn = null;
 	let mediaFrame = null;
 	let previewTimer = null;
 	let previewSequence = 0;
+	let designerShell = null;
 
 	const setSaveState = ( state ) => {
 		if ( ! shell ) return;
@@ -90,25 +137,56 @@ if ( FORM ) {
 
 	const blockLabel = ( type ) => blockLabels[ type ] || type.replaceAll( '_', ' ' );
 	const selectedBlock = () => composer.blocks.find( ( block ) => block.type === selectedBlockType ) || null;
+	const selectedIndex = () => composer.blocks.findIndex( ( block ) => block.type === selectedBlockType );
 	const isStructuralBlock = ( block ) => block?.type === 'header' || block?.type === 'footer';
 
+	const schedulePreview = () => {
+		window.clearTimeout( previewTimer );
+		previewTimer = window.setTimeout( renderPreview, 180 );
+	};
+
+	const session = createSession( {
+		project: projectFromComposer( composer ),
+		profile: 'document-flow',
+		onChange: ( project ) => {
+			composer = composerFromProject( project, composerSchemaVersion );
+			if ( ! composer.blocks.some( ( block ) => block.type === selectedBlockType ) ) {
+				selectedBlockType = composer.blocks[0]?.type || '';
+			}
+			renderComposerControls();
+			schedulePreview();
+		},
+		allowCommand: ( command ) => {
+			if ( command?.label === 'remove-node' || command?.label === 'insert-node' ) return false;
+			return true;
+		},
+	} );
+
+	designerShell = shell ? createDesignerShell( shell, { session } ) : null;
+
+	const selectBlock = ( type, { openInspector = true } = {} ) => {
+		const index = composer.blocks.findIndex( ( block ) => block.type === type );
+		if ( index < 0 ) return false;
+		selectedBlockType = type;
+		session.editorState.selection.select( [ index ] );
+		renderComposerControls();
+		if ( openInspector ) designerShell?.activatePanel( 'inspector' );
+		return true;
+	};
+
 	const buildComposerControls = () => {
-		if ( paletteBody ) {
+		if ( layersBody ) {
 			const section = document.createElement( 'section' );
 			section.className = 'cb-core-design-shell__panel-section';
 
-			const title = document.createElement( 'h3' );
-			title.className = 'cb-core-design-shell__panel-section-title';
-			title.textContent = composerUi.blocks || 'Blocks';
-
-			blockList = document.createElement( 'div' );
-			blockList.className = 'cb-core-design-shell__palette-grid';
-			blockList.dataset.cbReportBlockList = '';
-			section.append( title, blockList );
-			paletteBody.append( section );
+			layerList = document.createElement( 'div' );
+			layerList.className = 'cb-core-design-shell__layer-list';
+			layerList.dataset.cbReportLayerList = '';
+			section.append( layerList );
+			layersBody.append( section );
 		}
 
-		if ( sidebarBody ) {
+		if ( inspectorBody ) {
 			const section = document.createElement( 'section' );
 			section.className = 'cb-core-design-shell__panel-section';
 			section.dataset.cbReportBlockInspector = '';
@@ -126,75 +204,123 @@ if ( FORM ) {
 			enabledControl.dataset.cbReportBlockEnabled = '';
 			enabledField.append( enabledLabel, enabledControl );
 
-			const actions = document.createElement( 'div' );
-			actions.className = 'cb-core-design-shell__panel-actions';
-			moveUpBtn = document.createElement( 'button' );
-			moveUpBtn.type = 'button';
-			moveUpBtn.className = 'button';
-			moveUpBtn.textContent = composerUi.moveUp || 'Move up';
-			moveUpBtn.dataset.cbReportBlockMoveUp = '';
-			moveDownBtn = document.createElement( 'button' );
-			moveDownBtn.type = 'button';
-			moveDownBtn.className = 'button';
-			moveDownBtn.textContent = composerUi.moveDown || 'Move down';
-			moveDownBtn.dataset.cbReportBlockMoveDown = '';
-			actions.append( moveUpBtn, moveDownBtn );
-
-			section.append( inspectorTitle, enabledField, actions );
-			sidebarBody.prepend( section );
+			section.append( inspectorTitle, enabledField );
+			inspectorBody.append( section );
 		}
+	};
+
+	const createLayerMoveButton = ( block, direction, disabled ) => {
+		const button = document.createElement( 'button' );
+		button.type = 'button';
+		button.className = 'button cb-core-button cb-core-design-shell__layer-action';
+		button.disabled = disabled;
+		const action = direction < 0 ? ( composerUi.moveUp || 'Move up' ) : ( composerUi.moveDown || 'Move down' );
+		const label = `${ action }: ${ blockLabel( block.type ) }`;
+		button.textContent = label;
+		decorateDesignerControl( button, direction < 0 ? 'arrow-up' : 'arrow-down', { iconOnly: true, label } );
+		button.addEventListener( 'click', () => moveBlock( block.type, direction ) );
+		return button;
+	};
+
+	const renderElements = () => {
+		if ( ! elementsBody ) return;
+		elementsBody.replaceChildren();
+		elementTypes.forEach( ( type ) => {
+			const block = composer.blocks.find( ( candidate ) => candidate.type === type );
+			if ( ! block ) return;
+			const button = document.createElement( 'button' );
+			button.type = 'button';
+			button.className = 'cb-core-design-shell__palette-item';
+			button.dataset.cbReportElement = type;
+			button.setAttribute( 'aria-pressed', type === selectedBlockType ? 'true' : 'false' );
+			button.textContent = blockLabel( type );
+			button.addEventListener( 'click', () => selectBlock( type ) );
+			elementsBody.append( button );
+		} );
+	};
+
+	const renderLayers = () => {
+		if ( ! layerList ) return;
+		layerList.replaceChildren();
+
+		composer.blocks.forEach( ( block, index ) => {
+			const row = document.createElement( 'div' );
+			row.className = 'cb-core-design-shell__layer-row';
+			row.dataset.cbReportLayer = block.type;
+			if ( block.type === selectedBlockType ) row.classList.add( 'is-selected' );
+
+			const select = document.createElement( 'button' );
+			select.type = 'button';
+			select.className = 'cb-core-design-shell__layer-select';
+
+			const label = document.createElement( 'span' );
+			label.className = 'cb-core-design-shell__layer-label';
+			label.textContent = blockLabel( block.type );
+
+			const meta = document.createElement( 'span' );
+			meta.className = 'cb-core-design-shell__layer-meta';
+			meta.textContent = block.enabled !== false
+				? ( composerUi.visible || 'Visible' )
+				: ( composerUi.hidden || 'Hidden' );
+
+			select.append( label, meta );
+			select.addEventListener( 'click', () => selectBlock( block.type ) );
+
+			const actions = document.createElement( 'div' );
+			actions.className = 'cb-core-design-shell__layer-actions';
+			if ( ! isStructuralBlock( block ) ) {
+				actions.append(
+					createLayerMoveButton( block, -1, index <= 1 ),
+					createLayerMoveButton( block, 1, index >= composer.blocks.length - 2 )
+				);
+			}
+
+			row.append( select, actions );
+			layerList.append( row );
+		} );
 	};
 
 	const renderComposerControls = () => {
 		const selected = selectedBlock();
-		if ( blockList ) {
-			blockList.replaceChildren();
-			composer.blocks.forEach( ( block ) => {
-				const button = document.createElement( 'button' );
-				button.type = 'button';
-				button.className = 'cb-core-design-shell__palette-item';
-				button.dataset.cbReportBlock = block.type;
-				button.setAttribute( 'aria-pressed', block.type === selectedBlockType ? 'true' : 'false' );
-				button.textContent = blockLabel( block.type ) + ( block.enabled ? '' : ` · ${ composerUi.hidden || 'Hidden' }` );
-				button.addEventListener( 'click', () => {
-					selectedBlockType = block.type;
-					renderComposerControls();
-				} );
-				blockList.append( button );
-			} );
-		}
+		renderElements();
+		renderLayers();
 
 		if ( ! selected ) return;
 		if ( inspectorTitle ) inspectorTitle.textContent = blockLabel( selected.type );
-		const index = composer.blocks.findIndex( ( block ) => block.type === selected.type );
-		const structural = isStructuralBlock( selected );
 		if ( enabledControl ) {
 			enabledControl.checked = selected.enabled !== false;
-			enabledControl.disabled = structural;
+			enabledControl.disabled = isStructuralBlock( selected );
 		}
-		if ( moveUpBtn ) moveUpBtn.disabled = structural || index <= 1;
-		if ( moveDownBtn ) moveDownBtn.disabled = structural || index < 0 || index >= composer.blocks.length - 2;
 	};
 
 	const applyComposer = ( next ) => {
 		if ( ! next || ! Array.isArray( next.blocks ) ) return;
 		composer = normalizeClientTemplate( next );
-		if ( ! composer.blocks.some( ( block ) => block.type === selectedBlockType ) ) {
-			selectedBlockType = composer.blocks[0]?.type || '';
-		}
+		selectedBlockType = composer.blocks.some( ( block ) => block.type === selectedBlockType )
+			? selectedBlockType
+			: ( composer.blocks[0]?.type || '' );
+
+		session.editorState.selection.clear();
+		session.replace( projectFromComposer( composer ), { source: 'server' } );
+		const index = selectedIndex();
+		if ( index >= 0 ) session.editorState.selection.select( [ index ] );
 		renderComposerControls();
+		designerShell?.syncHistory();
 	};
 
-	const moveSelectedBlock = ( direction ) => {
-		const selected = selectedBlock();
-		if ( ! selected || isStructuralBlock( selected ) ) return;
-		const index = composer.blocks.findIndex( ( block ) => block.type === selected.type );
+	function moveBlock( type, direction ) {
+		const block = composer.blocks.find( ( candidate ) => candidate.type === type );
+		if ( ! block || isStructuralBlock( block ) ) return false;
+
+		const index = composer.blocks.findIndex( ( candidate ) => candidate.type === type );
 		const target = index + direction;
-		if ( target < 1 || target > composer.blocks.length - 2 ) return;
-		[ composer.blocks[ index ], composer.blocks[ target ] ] = [ composer.blocks[ target ], composer.blocks[ index ] ];
-		renderComposerControls();
-		schedulePreview();
-	};
+		if ( target < 1 || target > composer.blocks.length - 2 ) return false;
+
+		selectedBlockType = type;
+		session.editorState.selection.select( [ index ] );
+		session.execute( commands.reorderNode( [], index, target ) );
+		return true;
+	}
 
 	const updateLogoPreview = ( url ) => {
 		if ( ! logoPreview ) return;
@@ -204,11 +330,6 @@ if ( FORM ) {
 			const image = document.createElement( 'img' );
 			image.src = url;
 			image.alt = '';
-			image.style.display = 'block';
-			image.style.maxWidth = '100%';
-			image.style.maxHeight = '96px';
-			image.style.width = 'auto';
-			image.style.height = 'auto';
 			logoPreview.append( image );
 			logoPreview.dataset.hasLogo = 'yes';
 			if ( logoRemove ) logoRemove.hidden = false;
@@ -255,7 +376,7 @@ if ( FORM ) {
 		}
 	};
 
-	const renderPreview = async () => {
+	async function renderPreview() {
 		if ( ! nonce || ! previewFrame ) return;
 
 		const requestSequence = ++previewSequence;
@@ -285,25 +406,18 @@ if ( FORM ) {
 				'error'
 			);
 		}
-	};
-
-	function schedulePreview() {
-		window.clearTimeout( previewTimer );
-		previewTimer = window.setTimeout( renderPreview, 180 );
 	}
 
 	buildComposerControls();
-	renderComposerControls();
+	selectBlock( selectedBlockType, { openInspector: false } );
+	designerShell?.syncHistory();
 
 	enabledControl?.addEventListener( 'change', () => {
 		const selected = selectedBlock();
-		if ( ! selected || isStructuralBlock( selected ) ) return;
-		selected.enabled = enabledControl.checked;
-		renderComposerControls();
-		schedulePreview();
+		const index = selectedIndex();
+		if ( ! selected || index < 0 || isStructuralBlock( selected ) ) return;
+		session.execute( commands.setProperty( [ index ], [ 'enabled' ], enabledControl.checked ) );
 	} );
-	moveUpBtn?.addEventListener( 'click', () => moveSelectedBlock( -1 ) );
-	moveDownBtn?.addEventListener( 'click', () => moveSelectedBlock( 1 ) );
 
 	colorEl?.addEventListener( 'input', ( event ) => {
 		const hex = event.target.value;
@@ -405,14 +519,14 @@ if ( FORM ) {
 		}
 
 		const modal = window.cbCore?.modal;
-		const confirmed = modal
-			? await modal.show( {
-				title: i18n.brandingConfirmResetTitle || 'Reset report settings?',
-				body: i18n.brandingConfirmReset || 'Logo, report provider details, accent colour, and report layout will be reset to defaults.',
-				confirmLabel: i18n.brandingConfirmResetConfirm || 'Reset to defaults',
-				confirmVariant: 'danger',
-			} )
-			: true;
+		if ( typeof modal?.show !== 'function' ) return;
+
+		const confirmed = await modal.show( {
+			title: i18n.brandingConfirmResetTitle || 'Reset report settings?',
+			body: i18n.brandingConfirmReset || 'Logo, report provider details, accent colour, and report layout will be reset to defaults.',
+			confirmLabel: i18n.brandingConfirmResetConfirm || 'Reset to defaults',
+			confirmVariant: 'danger',
+		} );
 
 		if ( ! confirmed ) return;
 
@@ -441,5 +555,6 @@ if ( FORM ) {
 		}
 	} );
 
+	window.addEventListener( 'beforeunload', () => session.dispose(), { once: true } );
 	renderPreview();
 }

@@ -31,7 +31,7 @@ final class HtmlRenderer {
 
 		return '<!doctype html><html lang="' . self::escape( $lang ) . '"><head><meta charset="utf-8"><style>'
 			. '@page{size:' . $page_size . ';margin:' . $margin . ';}'
-			. 'html,body{margin:0;padding:0;}body{font-family:"DejaVu Sans",sans-serif;font-size:10pt;line-height:1.4;color:#111;}'
+			. 'html{padding:0;}body{margin:0;padding:0;}body{font-family:"DejaVu Sans",sans-serif;font-size:10pt;line-height:1.4;color:#111;}'
 			. '.cb-flow-block{box-sizing:border-box;}.cb-flow-image img{display:block;max-width:100%;height:auto;border:0;}'
 			. '.cb-flow-heading h1,.cb-flow-heading h2,.cb-flow-heading h3{margin:0;padding:0;line-height:1.2;}'
 			. '.cb-flow-heading--title{font-size:22pt;font-weight:700;color:' . self::escape( $accent ) . ';}'

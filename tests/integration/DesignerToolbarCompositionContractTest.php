@@ -27,7 +27,7 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertContains( DesignEditorAssets::DESIGNER_COMPOSITION_STYLE, $toolbar_style->deps );
 	}
 
-	public function test_compact_toolbar_is_capability_driven_and_keeps_primary_save_pinned(): void {
+	public function test_compact_toolbar_is_capability_driven_and_keeps_close_and_primary_save_pinned(): void {
 		$runtime = $this->source( 'assets/js/features/designer-toolbar.js' );
 
 		self::assertStringContainsString( 'const COMPACT_WIDTH = 800;', $runtime );
@@ -36,9 +36,45 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'controlsInExtension(shell, \'view\')', $runtime );
 		self::assertStringContainsString( 'controlsInExtension(shell, \'actions\')', $runtime );
 		self::assertStringContainsString( '[data-cb-design-shell-primary-action]', $runtime );
-		self::assertStringContainsString( 'before: save', $runtime );
+		self::assertStringContainsString( "const closeControl = toolbar.querySelector('[data-cb-design-shell-close], [data-cb-design-shell-fullscreen]');", $runtime );
+		self::assertStringContainsString( 'const actionAnchor = closeControl || save;', $runtime );
+		self::assertStringContainsString( 'before: actionAnchor', $runtime );
+		self::assertStringNotContainsString( 'before: save', $runtime );
 		self::assertStringContainsString( 'source.click();', $runtime );
 		self::assertStringContainsString( 'new MutationObserver(() => syncProxy(record))', $runtime );
+	}
+
+	public function test_base_chrome_owns_context_close_and_layer_presentation(): void {
+		$launch      = $this->source( 'assets/js/features/designer-launch.js' );
+		$toolbar_css = $this->source( 'assets/css/design/designer-toolbar.css' );
+		$layers_css  = $this->source( 'assets/css/design/designer-composition.css' );
+		$icons       = $this->source( 'assets/js/design/shell/icons.js' );
+
+		self::assertStringContainsString( "const contextSwitcher = toolbar.querySelector('[data-cb-design-shell-context]');", $launch );
+		self::assertStringContainsString( 'if (contextSwitcher) start.append(contextSwitcher);', $launch );
+		self::assertStringContainsString( "shellApi.icons.decorate(fullscreen, active ? 'x' : 'maximize-2'", $launch );
+		self::assertStringNotContainsString( "active ? 'minimize-2'", $launch );
+		self::assertStringContainsString( "close.dataset.cbDesignShellClose = '';", $launch );
+		self::assertStringContainsString( 'if (save) end.append(save);', $launch );
+		self::assertStringContainsString( '.cb-core-design-shell__toolbar-context', $toolbar_css );
+		self::assertStringContainsString( '.cb-core-design-shell__layer-row.is-selected', $layers_css );
+		self::assertStringContainsString( '.cb-core-design-shell__layer-action.button', $layers_css );
+		self::assertStringContainsString( "'arrow-up': Object.freeze([", $icons );
+		self::assertStringContainsString( "'arrow-down': Object.freeze([", $icons );
+	}
+
+	public function test_designer_history_keeps_one_canonical_command_history_authority(): void {
+		$editor  = $this->source( 'assets/js/design/editor.js' );
+		$core    = $this->source( 'assets/js/design/core/index.js' );
+		$history = $this->source( 'assets/js/design/core/history.js' );
+		$root    = dirname( __DIR__, 2 );
+
+		self::assertStringContainsString( 'CommandHistory', $editor );
+		self::assertStringContainsString( "export { CommandHistory } from './history.js';", $core );
+		self::assertStringContainsString( 'export class CommandHistory', $history );
+		self::assertStringNotContainsString( 'createSnapshotHistory', $editor );
+		self::assertStringNotContainsString( 'createSnapshotHistory', $core );
+		self::assertFileDoesNotExist( $root . '/assets/js/design/core/snapshot-history.js' );
 	}
 
 	public function test_toolbar_extensions_are_declared_outside_internal_toolbar_structure(): void {

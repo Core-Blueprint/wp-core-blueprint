@@ -53,6 +53,9 @@ jobs:
       - name: Mail Design JavaScript contract
         run: node --test tests/js/design-mail-profile.test.mjs
 
+      - name: Data Mapper JavaScript contract
+        run: node --test tests/js/data-mapper-boundary.test.mjs
+
       - name: PHP syntax
         run: bash tests/bin/php-lint.sh
 
