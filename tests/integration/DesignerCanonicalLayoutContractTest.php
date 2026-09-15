@@ -106,6 +106,7 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "'template_id' => \$template_id", $ajax );
 		self::assertStringContainsString( "'project'     => \$project", $ajax );
 		self::assertStringContainsString( "'html'        => \$preview['html']", $ajax );
+		self::assertStringContainsString( "trim( (string) wp_unslash( \$_POST['template_id'] ) )", $ajax );
 		self::assertStringNotContainsString( 'sanitize_key( wp_unslash( $_POST[\'template_id\'] ) )', $ajax );
 	}
 }
