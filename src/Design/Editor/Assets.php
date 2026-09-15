@@ -157,6 +157,10 @@ final class Assets {
 					'collapse' => __( 'Collapse', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
 					'expand'   => __( 'Expand', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
 				],
+				'paletteLabels' => [
+					'elements'     => __( 'Elements', 'core-blueprint' ),
+					'dynamic-data' => __( 'Dynamic data', 'core-blueprint' ),
+				],
 				'sidebarLabels' => [
 					'inspector' => __( 'Inspector', 'core-blueprint' ),
 					// WordPress editor vocabulary intentionally uses the default text domain.
