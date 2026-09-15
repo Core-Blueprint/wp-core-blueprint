@@ -156,7 +156,7 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 									sandbox=""
 									width="100%"
 									height="980"
-									style="display:block;border:0;background:#fff;"
+									style="background:#fff;"
 									hidden
 								></iframe>
 							</div>
@@ -194,7 +194,7 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 										<input type="hidden" name="logo_attachment_id" id="cb-core-logo-id" value="<?php echo (int) $logo_attachment_id; ?>">
 										<div id="cb-core-logo-preview" data-has-logo="<?php echo '' !== $logo_url ? 'yes' : 'no'; ?>">
 											<?php if ( '' !== $logo_url ) : ?>
-												<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $logo_alt ); ?>" style="display:block;max-width:100%;max-height:96px;width:auto;height:auto;">
+												<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $logo_alt ); ?>">
 											<?php else : ?>
 												<span><?php esc_html_e( 'No logo set', 'core-blueprint' ); ?></span>
 											<?php endif; ?>

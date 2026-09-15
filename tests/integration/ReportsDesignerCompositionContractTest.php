@@ -109,6 +109,19 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringNotContainsString( 'cb-core-form-scope', $template );
 	}
 
+	public function test_reports_static_preview_presentation_is_css_owned_while_paper_medium_stays_explicit(): void {
+		$template = $this->source( 'templates/preferences-reports.php' );
+		$runtime  = $this->source( 'assets/js/features/reports-preferences.js' );
+		$style    = $this->source( 'assets/css/pages/reports-designer.css' );
+
+		self::assertStringContainsString( '[data-cb-report-preview]', $style );
+		self::assertStringContainsString( '#cb-core-logo-preview img', $style );
+		self::assertStringContainsString( 'style="background:#fff;"', $template );
+		self::assertStringNotContainsString( 'style="display:block;border:0;background:#fff;"', $template );
+		self::assertStringNotContainsString( 'max-height:96px', $template );
+		self::assertStringNotContainsString( 'image.style.', $runtime );
+	}
+
 	public function test_reports_bootstrap_scopes_designer_mode_to_the_reports_preferences_route(): void {
 		$bootstrap = $this->source( 'src/Reports/Bootstrap.php' );
 
@@ -196,5 +209,20 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "'previewFailed'", $i18n );
 		self::assertStringNotContainsString( 'window.location', $runtime );
 		self::assertStringNotContainsString( 'location.reload', $runtime );
+	}
+
+	public function test_reports_reset_fails_closed_when_modal_contract_is_unavailable(): void {
+		$runtime = $this->source( 'assets/js/features/reports-preferences.js' );
+
+		$guard = "if ( typeof modal?.show !== 'function' ) return;";
+		$reset = "apiPost( 'cb_core_reset_report_branding'";
+		$guard_position = strpos( $runtime, $guard );
+		$reset_position = strpos( $runtime, $reset );
+
+		self::assertNotFalse( $guard_position );
+		self::assertNotFalse( $reset_position );
+		self::assertLessThan( $reset_position, $guard_position );
+		self::assertStringNotContainsString( "\t\t\t: true;", $runtime );
+		self::assertStringNotContainsString( 'window.confirm', $runtime );
 	}
 }

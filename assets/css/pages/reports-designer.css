@@ -3,3 +3,16 @@
  * Reports owns Composer semantics only. Shared Designer chrome, rails, Layers
  * presentation, panel spacing and controls remain owned by Design Foundation.
  */
+
+[data-cb-report-preview] {
+	display: block;
+	border: 0;
+}
+
+#cb-core-logo-preview img {
+	display: block;
+	max-width: 100%;
+	max-height: 96px;
+	width: auto;
+	height: auto;
+}

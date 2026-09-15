@@ -330,11 +330,6 @@ if ( FORM ) {
 			const image = document.createElement( 'img' );
 			image.src = url;
 			image.alt = '';
-			image.style.display = 'block';
-			image.style.maxWidth = '100%';
-			image.style.maxHeight = '96px';
-			image.style.width = 'auto';
-			image.style.height = 'auto';
 			logoPreview.append( image );
 			logoPreview.dataset.hasLogo = 'yes';
 			if ( logoRemove ) logoRemove.hidden = false;
@@ -524,14 +519,14 @@ if ( FORM ) {
 		}
 
 		const modal = window.cbCore?.modal;
-		const confirmed = modal
-			? await modal.show( {
-				title: i18n.brandingConfirmResetTitle || 'Reset report settings?',
-				body: i18n.brandingConfirmReset || 'Logo, report provider details, accent colour, and report layout will be reset to defaults.',
-				confirmLabel: i18n.brandingConfirmResetConfirm || 'Reset to defaults',
-				confirmVariant: 'danger',
-			} )
-			: true;
+		if ( typeof modal?.show !== 'function' ) return;
+
+		const confirmed = await modal.show( {
+			title: i18n.brandingConfirmResetTitle || 'Reset report settings?',
+			body: i18n.brandingConfirmReset || 'Logo, report provider details, accent colour, and report layout will be reset to defaults.',
+			confirmLabel: i18n.brandingConfirmResetConfirm || 'Reset to defaults',
+			confirmVariant: 'danger',
+		} );
 
 		if ( ! confirmed ) return;
 

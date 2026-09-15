@@ -60,6 +60,14 @@ final class CB_Design_Foundation_R4_Flow_Contract_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( '<unsafe>', $html );
 	}
 
+	public function test_flow_page_margins_remain_owned_by_page_root(): void {
+		$html = ( new HtmlRenderer() )->render( $this->layout(), [ RenderBlock::text( 'Margin proof' ) ], 'en_GB' );
+		self::assertStringContainsString( '@page{size:210mm 297mm;margin:12mm 12mm 15mm 12mm;}', $html );
+		self::assertStringContainsString( 'html{padding:0;}body{margin:0;padding:0;}', $html );
+		self::assertStringNotContainsString( 'html,body{margin:0', $html );
+		self::assertStringNotContainsString( 'html{margin:0', $html );
+	}
+
 	public function test_flow_render_boundary_rejects_unknown_layout_keys(): void {
 		$layout = $this->layout();
 		$layout['paper'] = 'A4';
