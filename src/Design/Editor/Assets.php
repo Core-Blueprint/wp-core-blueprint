@@ -72,10 +72,13 @@ final class Assets {
 	 *
 	 * Consumers provide their translated mode title plus declarative
 	 * `data-cb-design-*` shell contracts and domain callbacks. Base owns launch/
-	 * focus chrome, brand, shared labels, canonical composition primitives and
-	 * the private Designer Mode source path. Designer Mode also owns the narrow
-	 * shared Button and Form Control presentation required by the Base chrome and
-	 * panel grammar it composes; consumers do not need the full Core Admin theme.
+	 * focus chrome, brand, shared labels, canonical composition primitives,
+	 * async context-switch lifecycle/transition and the private Designer Mode
+	 * source path. Consumers load/apply their domain context through the public
+	 * context request event; they do not navigate or build product loaders.
+	 * Designer Mode also owns the narrow shared Button and Form Control
+	 * presentation required by the Base chrome and panel grammar it composes;
+	 * consumers do not need the full Core Admin theme.
 	 */
 	public static function enqueue_designer_mode( string $title = '' ): void {
 		self::enqueue();
