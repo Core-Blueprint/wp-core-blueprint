@@ -332,6 +332,10 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 		$ajax_reports = (string) file_get_contents( $root . '/src/Ajax/Handlers/Reports.php' );
 		$compiler = (string) file_get_contents( $root . '/src/Reports/MaintenanceFlowCompiler.php' );
 		$branding = (string) file_get_contents( $root . '/src/Reports/MaintenanceFlowBranding.php' );
+		$designer_preview = (string) file_get_contents( $root . '/src/Reports/DesignerPreview.php' );
+		$designer_template = (string) file_get_contents( $root . '/templates/preferences-reports.php' );
+		$designer_script = (string) file_get_contents( $root . '/assets/js/features/reports-preferences.js' );
+		$designer_css = (string) file_get_contents( $root . '/assets/css/pages/reports-designer.css' );
 
 		self::assertStringNotContainsString( 'CB\\Core\\PDF\\Renderer;', $maintenance_pdf );
 		self::assertStringNotContainsString( 'templates/pdf/maintenance-report.php', $maintenance_pdf );
@@ -343,6 +347,16 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 		self::assertStringNotContainsString( 'PDF\\Renderer', $compiler );
 		self::assertStringNotContainsString( 'http://', $branding );
 		self::assertStringNotContainsString( 'https://', $branding );
+		self::assertStringContainsString( 'Document\\Flow\\Api\\FlowRenderApi', $designer_preview );
+		self::assertStringContainsString( 'FlowRenderApi::preview_html(', $designer_preview );
+		self::assertStringNotContainsString( 'HtmlRenderer', $designer_preview );
+		self::assertStringContainsString( 'sandbox="allow-same-origin"', $designer_template );
+		self::assertStringContainsString( 'scrolling="no"', $designer_template );
+		self::assertStringNotContainsString( 'height="980"', $designer_template );
+		self::assertStringNotContainsString( 'cb-core-design-shell__surface--document', $designer_template );
+		self::assertStringContainsString( 'syncPreviewFrameHeight', $designer_script );
+		self::assertStringContainsString( 'previewFrame.contentDocument', $designer_script );
+		self::assertStringContainsString( 'height: 0;', $designer_css );
 
 		$flow = $root . '/src/Design/Profile/Document/Flow';
 		foreach ( glob( $flow . '/*.php' ) ?: [] as $file ) {
