@@ -24,7 +24,11 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		$styles        = wp_styles();
 		$toolbar_style = $styles->registered[ DesignEditorAssets::DESIGNER_TOOLBAR_STYLE ] ?? null;
 		self::assertInstanceOf( _WP_Dependency::class, $toolbar_style );
-		self::assertContains( DesignEditorAssets::DESIGNER_COMPOSITION_STYLE, $toolbar_style->deps );
+		self::assertContains( DesignEditorAssets::DESIGNER_CONTEXT_STYLE, $toolbar_style->deps );
+		$context_style = $styles->registered[ DesignEditorAssets::DESIGNER_CONTEXT_STYLE ] ?? null;
+		self::assertInstanceOf( _WP_Dependency::class, $context_style );
+		self::assertContains( DesignEditorAssets::DESIGNER_COMPOSITION_STYLE, $context_style->deps );
+		self::assertTrue( wp_style_is( DesignEditorAssets::DESIGNER_COMPOSITION_STYLE, 'enqueued' ) );
 	}
 
 	public function test_compact_toolbar_is_capability_driven_and_keeps_close_and_primary_save_pinned(): void {

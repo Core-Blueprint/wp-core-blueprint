@@ -141,7 +141,9 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( '.cb-core-mail-designer__preview-frame iframe', $mail_css );
 		self::assertStringContainsString( '.cb-core-mail-binding', $mail_css );
 		self::assertStringNotContainsString( '.cb-core-mail-structure', $mail_css );
-		self::assertStringContainsString( '.cb-core-design-shell__toolbar-context.cb-core-mail-designer__template-control', $mail_css );
+		self::assertStringNotContainsString( '.cb-core-design-shell__toolbar-context', $mail_css );
+		self::assertStringContainsString( 'data-cb-design-shell-context', $template );
+		self::assertStringContainsString( '.cb-core-design-shell__toolbar-context', $this->source( 'assets/css/design/designer-toolbar.css' ) );
 	}
 
 	public function test_public_designer_contract_documents_composition_ownership(): void {

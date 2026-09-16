@@ -42,7 +42,7 @@ final class CB_Design_Foundation_Flow_Render_Public_Api_Test extends WP_UnitTest
 		);
 
 		self::assertStringStartsWith( '<!doctype html>', $html );
-		self::assertStringContainsString( '<html lang="en-GB">', $html );
+		self::assertMatchesRegularExpression( '/<html\b[^>]*\blang="en-GB"[^>]*>/', $html );
 		self::assertStringContainsString( 'http-equiv="Content-Security-Policy"', $html );
 		self::assertStringContainsString( 'default-src &#39;none&#39;', $html );
 		self::assertStringContainsString( 'img-src data:', $html );
@@ -56,7 +56,12 @@ final class CB_Design_Foundation_Flow_Render_Public_Api_Test extends WP_UnitTest
 		self::assertStringContainsString( '.cb-flow-page-footer__page{display:none;}', $html );
 		self::assertStringNotContainsString( 'position:fixed', $html );
 		self::assertStringNotContainsString( 'counter(page)', $html );
-		self::assertStringNotContainsString( '<script', strtolower( $html ) );
+		// The canonical preview now includes one static, CSP-hashed sizing bridge.
+		self::assertSame( 1, substr_count( strtolower( $html ), '<script' ) );
+		self::assertSame( 1, preg_match( '/<script data-cb-core-flow-preview-sizing="1">(.*?)<\/script>/s', $html, $bridge ) );
+		$hash = base64_encode( hash( 'sha256', $bridge[1], true ) );
+		self::assertStringContainsString( "script-src &#39;sha256-{$hash}&#39;", $html );
+		self::assertStringNotContainsString( "script-src &#39;unsafe-inline&#39;", $html );
 		self::assertStringNotContainsString( '<form', strtolower( $html ) );
 	}
 

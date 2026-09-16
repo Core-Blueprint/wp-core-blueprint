@@ -2,6 +2,26 @@
 
 Status: **HOLD — native validation and release closure outstanding**.
 
+## Native follow-up (supersedes the earlier unchecked states below)
+
+Chris executed the native checks on candidate
+`bab5e19278f715df07b250220eb59b4211a15e32` with PHP 8.4 and WordPress 7.1:
+
+- PHP syntax and localization: PASS (3382 messages, six locales).
+- SVG/CSV security regression subset: PASS (4 tests, 76 assertions).
+- Full integration: 359 tests, 3241 assertions, 1 error, 9 failures.
+- The PDF error explicitly reports missing PHP GD in the test environment.
+- The nine failures assert superseded Designer/Reports contracts: exact HTML
+  opening tag, Mail-owned context CSS, direct toolbar-to-composition dependency,
+  the old document surface wrapper, direct HtmlRenderer consumption, inline
+  paper styling, JS-created context marker, and direct consumer srcdoc writes.
+
+The test-only reconciliation checks the current public Flow facade, canonical
+preview host, Base-owned context presentation and transitive style dependency.
+The preview safety check now requires exactly one static CSP-hashed bridge,
+instead of forbidding the bridge introduced by the merged Flow host contract.
+No Designer production behavior is changed. Native rerun with GD remains required.
+
 ## Source authority
 
 - Main inspected: `eac35872003402797e71c870c1af96210c27da65`.

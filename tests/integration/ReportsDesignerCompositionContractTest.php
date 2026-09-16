@@ -44,7 +44,8 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 
 		self::assertStringContainsString( 'MaintenanceFlowCompiler', $preview );
 		self::assertStringContainsString( 'MaintenanceFlowBranding::resolve_values', $preview );
-		self::assertStringContainsString( 'HtmlRenderer', $preview );
+		self::assertStringContainsString( 'FlowRenderApi::preview_html(', $preview );
+		self::assertStringNotContainsString( 'new HtmlRenderer', $preview );
 		self::assertStringContainsString( 'Storage::find_recent( 1 )', $preview );
 		self::assertStringContainsString( 'MaintenanceAggregator::SNAPSHOT_VERSION', $preview );
 		self::assertStringNotContainsString( 'ReportBranding::attachment_url', $preview );
@@ -90,7 +91,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			'cb-core-design-shell__panel-body',
 			'cb-core-design-shell__panel-section',
 			'cb-core-design-shell__field',
-			'cb-core-design-shell__surface--document',
+			'cb-core-reports__designer-preview-surface',
 			'data-cb-design-shell-group="palette"',
 			'data-cb-design-shell-tab="elements"',
 			'data-cb-design-shell-panel="elements"',
@@ -116,7 +117,9 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 
 		self::assertStringContainsString( '[data-cb-report-preview]', $style );
 		self::assertStringContainsString( '#cb-core-logo-preview img', $style );
-		self::assertStringContainsString( 'style="background:#fff;"', $template );
+		self::assertStringNotContainsString( 'style="background:#fff;"', $template );
+		self::assertStringContainsString( 'background: transparent;', $style );
+		self::assertStringContainsString( 'background:#fff;', $this->source( 'src/Design/Profile/Document/Flow/HtmlRenderer.php' ) );
 		self::assertStringNotContainsString( 'style="display:block;border:0;background:#fff;"', $template );
 		self::assertStringNotContainsString( 'max-height:96px', $template );
 		self::assertStringNotContainsString( 'image.style.', $runtime );
@@ -151,7 +154,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			self::assertStringNotContainsString( 'cb-core-mail-structure__row', $runtime );
 		}
 
-		self::assertStringContainsString( "templateControl.dataset.cbDesignShellContext = '';", $mail_runtime );
+		self::assertStringContainsString( 'data-cb-design-shell-context', $this->source( 'templates/mail-designer.php' ) );
 		self::assertStringNotContainsString( '.cb-core-reports-structure__row', $reports_style );
 		self::assertStringNotContainsString( '.cb-core-mail-structure__row', $mail_style );
 	}
@@ -197,7 +200,10 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "'@cb-core/design-editor'", $i18n );
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding'", $runtime );
 		self::assertStringContainsString( 'previewSequence', $runtime );
-		self::assertStringContainsString( 'previewFrame.srcdoc = response.data.html', $runtime );
+		self::assertStringContainsString( 'createFlowPreviewHost', $runtime );
+		self::assertStringContainsString( 'host.render( response.data.html )', $runtime );
+		self::assertStringNotContainsString( 'previewFrame.srcdoc', $runtime );
+		self::assertStringNotContainsString( 'allow-same-origin', $runtime );
 		self::assertStringContainsString( 'requestErrorMessage', $runtime );
 		self::assertStringContainsString( 'catch ( error )', $runtime );
 		self::assertStringContainsString( "apiPost( 'cb_core_save_report_branding'", $runtime );
