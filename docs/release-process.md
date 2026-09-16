@@ -1,46 +1,36 @@
 # Core Blueprint Base release process
 
-Base has a stable WordPress plugin identity:
+Base retains the canonical `core-blueprint/` directory and
+`core-blueprint/core-blueprint.php` basename. The launch version remains
+`1.0.0-rc1` in both the plugin header and `CB_CORE_VERSION`.
 
-- directory: `core-blueprint/`;
-- main file and basename: `core-blueprint/core-blueprint.php`.
+## Canonical build
 
-The canonical builder is `tools/build-release`. Run it from the source checkout:
+Prepare the isolated test environment documented in `tests/README.md`, install
+locked development dependencies, and refresh its canonical plugin copy from the
+candidate. Then run:
 
 ```bash
 python3 tools/build-release
 ```
 
-The plugin header and `CB_CORE_VERSION` must agree. The version remains
-`1.0.0-rc1` for this launch candidate. Output is written to
-`dist/core-blueprint-1.0.0-rc1.zip` and its `.sha256` sidecar.
-A GitHub source archive is not an installable customer release archive.
+This command now owns required tool/dependency preflight, PHP syntax/localization,
+JavaScript syntax/regressions, WordPress integration, source/test-copy parity,
+archive integrity and package verification. It refuses to publish a new release
+ZIP or checksum when any required gate fails. See `tools/README.md` for the exact
+requirements and gate order. No alternate builder or skip-gates path exists.
 
-## Current verification boundary
+Output is `dist/core-blueprint-1.0.0-rc1.zip` and its `.sha256` sidecar. A GitHub
+source ZIP is not an installable customer release archive. The source/runtime
+inputs are read-only during packaging.
 
-The builder checks identity, the runtime allowlist and symlink exclusion, then
-writes the deterministic archive and SHA-256. It does not yet execute every gate
-required by the Engineering Handbook Packaging & Release Standard. This is an
-explicit tooling hold, not permission to bypass checks or a claim of compliance.
+## Installation, field proof and approval
 
-Until tooling closure is complete, record the separately executed source and
-runtime evidence for the exact candidate, including PHP syntax, localization,
-JavaScript tests/syntax and WordPress integration. After constructing the ZIP,
-validate integrity and the existing package scenario:
+Run `tests/bin/run-release-install-scenario.sh` against the exact candidate ZIP,
+a deliberately selected previous ZIP, checksum-verified WP-CLI and an isolated
+test database. This checks fresh activation and same-version replacement.
 
-```bash
-unzip -tq dist/core-blueprint-1.0.0-rc1.zip
-bash tests/bin/run-release-package-scenario.sh dist/core-blueprint-1.0.0-rc1.zip 1.0.0-rc1
-```
-
-The scenario checks canonical root, listed development-path exclusions, required
-runtime payload, version consistency and packaged PHP syntax. Fresh installation
-and same-version replacement are checked separately by
-`tests/bin/run-release-install-scenario.sh` against an isolated test database and
-a deliberately selected previous ZIP. See `tests/README.md` for test isolation.
-
-## Release approval
-
-Record source SHA, ZIP checksum and all outstanding field/tooling gates.
-Generating a ZIP or passing package validation alone does not authorize release.
-See `docs/base-launch-closure-2026-09-16.md` for this candidate's execution evidence.
+Media Replace HTTP-upload field checks, source SHA, artifact hash and final
+review remain explicit release evidence. See
+`docs/base-launch-closure-2026-09-16.md` for the current candidate's evidence and
+remaining holds. A successful build alone does not authorize merge or release.

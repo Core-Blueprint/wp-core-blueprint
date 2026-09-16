@@ -1,6 +1,6 @@
 # Base launch closure — 2026-09-16
 
-Status: **Native execution and package checks PASS; field and release-tooling HOLD.**
+Status: **Native/runtime/package and normal Media Replace field checks PASS; strict builder native run pending.**
 
 ## Proven candidate
 
@@ -13,7 +13,8 @@ Status: **Native execution and package checks PASS; field and release-tooling HO
 - SHA-256: `970562d63df7ffdbb74b0bfe2dbc9f421d929e9a6f0f190dc34e6b947a76fe32`.
 
 Chris executed and supplied the native results below. No GitHub Actions were
-used, and no merge or production deployment is implied by these results.
+used, and no merge is implied by these results. Chris subsequently installed the
+verified artifact on coreblueprint.io and used sandbox for the SVG field checks.
 
 ## Evidence
 
@@ -55,17 +56,38 @@ release smoke used checksum-verified WP-CLI 2.12.0.
   assertions. GD was installed, assertions were reconciled, and the full rerun
   passed with zero failures/errors.
 
+## Media Replace field evidence
+
+Chris confirmed normal PNG/JPEG replacement on coreblueprint.io and safe SVG
+replacement on sandbox. An intentionally malformed SVG was rejected on sandbox
+with "The SVG replacement could not be sanitized safely." The original test
+image remained present afterward. These checks are PASS. Hostile script/remote
+reference removal has native sanitizer regression evidence, not a separate
+hostile HTTP-upload field test; do not conflate those evidence scopes.
+
+## Strict release entrypoint follow-up
+
+The builder now runs required preflight, PHP syntax/localization, JavaScript
+syntax/regressions, full WordPress integration and package checks before naming
+an accepted ZIP and checksum. It checks source/test-copy byte parity, rejects
+skipped/incomplete integration tests, validates exact ZIP manifest/bytes/CRC and
+preserves earlier accepted output on gate failure. No bypass flag was added.
+
+- Python syntax: PASS.
+- Builder failure-path/artifact unit tests: PASS, 11 tests (native gates mocked
+  only in those unit fixtures, not in production code).
+- Actual invocation with PHP absent: fails nonzero before any release output.
+- Runtime serialization remains byte-identical to the verified ZIP SHA above.
+- Full native execution of the updated entrypoint is still required.
+
 ## Remaining launch gates
 
-1. Real HTTP-upload Media Replace field proof: normal PNG/JPEG and safe SVG;
-   hostile SVG sanitized; invalid SVG rejected with original attachment intact.
-   The sanitizer tests and source-contract assertions do not prove this full path.
-2. Reconcile `tools/build-release` with the approved fail-closed handbook contract.
-   It currently constructs an allowlisted archive and checksum, while localization,
-   syntax, regressions and package verification were executed separately in this
-   native run. Successful external checks do not make the builder itself compliant.
+1. Execute the strict builder in the prepared native WordPress environment and
+   verify its result against the already field-tested artifact checksum.
+2. Preserve the explicit limitation on hostile HTTP-upload field coverage above;
+   do not report that path as manually tested.
 3. Final review and explicit merge/release GO. This evidence is not a full
    security guarantee or a claim that every launch gate has passed.
 
-The evidence/documentation follow-up does not change packaged runtime inputs;
-retain the exact verified ZIP above for field testing.
+Only developer tooling, tests and documentation change in this follow-up; the
+version and packaged runtime remain unchanged. Retain the exact verified ZIP.
