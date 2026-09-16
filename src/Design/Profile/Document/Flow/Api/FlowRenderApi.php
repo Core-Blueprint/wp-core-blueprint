@@ -31,11 +31,22 @@ final class FlowRenderApi {
 	 * and root layout margins, but does not simulate paged-media pagination or
 	 * page counters. PDF remains the authoritative paged output target.
 	 *
-	 * @param array<string,mixed> $layout
-	 * @param list<RenderBlock>    $blocks
+	 * Optional preview regions map semantic Designer selection IDs to one or more
+	 * top-level Flow block indexes. Region metadata exists only in the screen
+	 * preview target and never changes paged/PDF output.
+	 *
+	 * @param array<string,mixed>       $layout
+	 * @param list<RenderBlock>          $blocks
+	 * @param array<string,list<int>>    $preview_regions
 	 */
-	public static function preview_html( array $layout, array $blocks, string $locale, ?Presentation $presentation = null ): string {
-		return ( new HtmlRenderer() )->render_preview( $layout, $blocks, $locale, $presentation );
+	public static function preview_html(
+		array $layout,
+		array $blocks,
+		string $locale,
+		?Presentation $presentation = null,
+		array $preview_regions = []
+	): string {
+		return ( new HtmlRenderer() )->render_preview( $layout, $blocks, $locale, $presentation, $preview_regions );
 	}
 
 	/**

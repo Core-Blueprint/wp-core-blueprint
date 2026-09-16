@@ -6,7 +6,7 @@ namespace CB\Core\Design\Profile\Document\Flow;
 defined( 'ABSPATH' ) || exit;
 
 final class HtmlRenderer {
-	private const PREVIEW_SIZING_BRIDGE = "(()=>{'use strict';const protocol=document.querySelectorAll('meta[name=\"cb-core-flow-preview-protocol\"]');const roots=document.querySelectorAll('[data-cb-flow-preview-root]');const generation=Number(document.documentElement.getAttribute('data-cb-core-flow-preview-generation'));if(protocol.length!==1||protocol[0].content!=='1'||roots.length!==1||roots[0].getAttribute('data-cb-flow-preview-root')!=='1'||!Number.isSafeInteger(generation)||generation<1||typeof ResizeObserver!=='function')return;const root=roots[0];let lastHeight=0;let frame=0;const report=()=>{const rect=root.getBoundingClientRect();const height=Math.ceil(Math.max(root.scrollHeight,root.offsetHeight,rect.height));if(!Number.isSafeInteger(height)||height<1||height>100000||height===lastHeight)return;lastHeight=height;window.parent.postMessage({type:'cb-core-flow-preview-size',version:1,generation,height},'*');};const schedule=()=>{if(frame!==0)return;frame=requestAnimationFrame(()=>{frame=0;report();});};const isMeasureMessage=(data)=>{if(data===null||typeof data!=='object'||Array.isArray(data))return false;const keys=Object.keys(data).sort();return keys.length===3&&keys.join('|')==='generation|type|version'&&data.type==='cb-core-flow-preview-measure'&&data.version===1&&Number.isSafeInteger(data.generation)&&data.generation>0;};window.addEventListener('message',(event)=>{if(event.source!==window.parent||!isMeasureMessage(event.data)||event.data.generation!==generation)return;report();});const observer=new ResizeObserver(schedule);observer.observe(root);window.addEventListener('load',schedule,{once:true});report();})();";
+	private const PREVIEW_SIZING_BRIDGE = "(()=>{'use strict';const protocol=document.querySelectorAll('meta[name=\"cb-core-flow-preview-protocol\"]');const roots=document.querySelectorAll('[data-cb-flow-preview-root]');const generation=Number(document.documentElement.getAttribute('data-cb-core-flow-preview-generation'));if(protocol.length!==1||protocol[0].content!=='1'||roots.length!==1||roots[0].getAttribute('data-cb-flow-preview-root')!=='1'||!Number.isSafeInteger(generation)||generation<1||typeof ResizeObserver!=='function')return;const root=roots[0];let lastHeight=0;let frame=0;let selected=[];const report=()=>{const rect=root.getBoundingClientRect();const height=Math.ceil(Math.max(root.scrollHeight,root.offsetHeight,rect.height));if(!Number.isSafeInteger(height)||height<1||height>100000||height===lastHeight)return;lastHeight=height;window.parent.postMessage({type:'cb-core-flow-preview-size',version:1,generation,height},'*');};const schedule=()=>{if(frame!==0)return;frame=requestAnimationFrame(()=>{frame=0;report();});};const clearSelection=()=>{selected.forEach((target)=>{target.style.outline='';target.style.outlineOffset='';target.removeAttribute('data-cb-flow-preview-selected');});selected=[];};const applySelection=(region)=>{clearSelection();if(region===null)return;root.querySelectorAll('[data-cb-flow-preview-region]').forEach((target)=>{if(!(target instanceof HTMLElement)||target.getAttribute('data-cb-flow-preview-region')!==region)return;target.style.outline='2px solid #00a8e8';target.style.outlineOffset='3px';target.setAttribute('data-cb-flow-preview-selected','1');selected.push(target);});};const isMeasureMessage=(data)=>{if(data===null||typeof data!=='object'||Array.isArray(data))return false;const keys=Object.keys(data).sort();return keys.length===3&&keys.join('|')==='generation|type|version'&&data.type==='cb-core-flow-preview-measure'&&data.version===1&&Number.isSafeInteger(data.generation)&&data.generation>0;};const isSelectionMessage=(data)=>{if(data===null||typeof data!=='object'||Array.isArray(data))return false;const keys=Object.keys(data).sort();return keys.length===4&&keys.join('|')==='generation|region|type|version'&&data.type==='cb-core-flow-preview-selection'&&data.version===1&&Number.isSafeInteger(data.generation)&&data.generation>0&&(data.region===null||(typeof data.region==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(data.region)));};window.addEventListener('message',(event)=>{if(event.source!==window.parent)return;const data=event.data;if(isMeasureMessage(data)&&data.generation===generation){report();return;}if(isSelectionMessage(data)&&data.generation===generation)applySelection(data.region);});const observer=new ResizeObserver(schedule);observer.observe(root);window.addEventListener('load',schedule,{once:true});report();})();";
 
 	/** @param array<string,mixed> $layout @param list<RenderBlock> $blocks */
 	public function render( array $layout, array $blocks, string $locale, ?Presentation $presentation = null ): string {
@@ -67,10 +67,17 @@ final class HtmlRenderer {
 	 * Consumers must use the public FlowRenderApi rather than this renderer.
 	 *
 	 * @internal
-	 * @param array<string,mixed> $layout
-	 * @param list<RenderBlock>    $blocks
+	 * @param array<string,mixed>    $layout
+	 * @param list<RenderBlock>       $blocks
+	 * @param array<string,list<int>> $preview_regions
 	 */
-	public function render_preview( array $layout, array $blocks, string $locale, ?Presentation $presentation = null ): string {
+	public function render_preview(
+		array $layout,
+		array $blocks,
+		string $locale,
+		?Presentation $presentation = null,
+		array $preview_regions = []
+	): string {
 		if ( ! Layout::matches_contract( $layout ) ) {
 			throw new \InvalidArgumentException( 'Flow rendering requires the exact root-owned Flow layout contract.' );
 		}
@@ -86,8 +93,12 @@ final class HtmlRenderer {
 			if ( ! $block instanceof RenderBlock ) { throw new \InvalidArgumentException( 'Flow rendering accepts typed render blocks only.' ); }
 		}
 
+		$region_by_index = $this->preview_region_index( $preview_regions, count( $blocks ) );
 		$lang = str_replace( '_', '-', $locale );
-		$body = implode( '', array_map( fn ( RenderBlock $block ): string => $this->block( $block ), $blocks ) );
+		$body = '';
+		foreach ( $blocks as $index => $block ) {
+			$body .= $this->block( $block, $region_by_index[ $index ] ?? null );
+		}
 		$width = self::number( $page['width'] );
 		$height = self::number( $page['height'] );
 		$padding = implode( ' ', [ self::number( $margins['top'] ) . 'mm', self::number( $margins['right'] ) . 'mm', self::number( $margins['bottom'] ) . 'mm', self::number( $margins['left'] ) . 'mm' ] );
@@ -128,11 +139,12 @@ final class HtmlRenderer {
 			. '<script data-cb-core-flow-preview-sizing="1">' . self::PREVIEW_SIZING_BRIDGE . '</script></body></html>';
 	}
 
-	private function block( RenderBlock $block ): string {
+	private function block( RenderBlock $block, ?string $preview_region = null ): string {
+		$region_attribute = null === $preview_region ? '' : ' data-cb-flow-preview-region="' . self::escape( $preview_region ) . '"';
 		if ( 'page_footer' === $block->type() ) {
 			/** @var array{left_text:string,page_label:string,show_page_number:bool} $footer */
 			$footer = $block->payload();
-			$html = '<div class="cb-flow-page-footer"><table><tr><td class="cb-flow-page-footer__text">' . self::escape( $footer['left_text'] ) . '</td>';
+			$html = '<div class="cb-flow-page-footer"' . $region_attribute . '><table><tr><td class="cb-flow-page-footer__text">' . self::escape( $footer['left_text'] ) . '</td>';
 			if ( $footer['show_page_number'] ) {
 				$html .= '<td class="cb-flow-page-footer__page">' . self::escape( $footer['page_label'] ) . ' <span class="cb-flow-page-number"></span></td>';
 			}
@@ -140,7 +152,7 @@ final class HtmlRenderer {
 		}
 
 		$style = $this->hints_style( $block->hints() );
-		$open = '<div class="cb-flow-block cb-flow-' . self::escape( $block->type() ) . '" style="' . self::escape( $style ) . '">';
+		$open = '<div class="cb-flow-block cb-flow-' . self::escape( $block->type() ) . '"' . $region_attribute . ' style="' . self::escape( $style ) . '">';
 
 		if ( 'text' === $block->type() ) {
 			return $open . nl2br( self::escape( (string) $block->payload() ), false ) . '</div>';
@@ -256,6 +268,33 @@ final class HtmlRenderer {
 		}
 
 		throw new \InvalidArgumentException( 'Unsupported Flow render block type.' );
+	}
+
+	/** @param array<string,list<int>> $regions @return array<int,string> */
+	private function preview_region_index( array $regions, int $block_count ): array {
+		if ( count( $regions ) > 100 ) {
+			throw new \InvalidArgumentException( 'Flow preview region count exceeds the supported limit.' );
+		}
+
+		$index_to_region = [];
+		foreach ( $regions as $region => $indexes ) {
+			if ( ! is_string( $region ) || 1 !== preg_match( '/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/', $region ) ) {
+				throw new \InvalidArgumentException( 'Flow preview region IDs must be bounded semantic identifiers.' );
+			}
+			if ( ! is_array( $indexes ) || ! array_is_list( $indexes ) || [] === $indexes ) {
+				throw new \InvalidArgumentException( 'Every Flow preview region requires a non-empty ordered block-index list.' );
+			}
+			foreach ( $indexes as $index ) {
+				if ( ! is_int( $index ) || $index < 0 || $index >= $block_count ) {
+					throw new \InvalidArgumentException( 'Flow preview region block index is outside the rendered block range.' );
+				}
+				if ( array_key_exists( $index, $index_to_region ) ) {
+					throw new \InvalidArgumentException( 'A top-level Flow preview block may belong to only one semantic region.' );
+				}
+				$index_to_region[ $index ] = $region;
+			}
+		}
+		return $index_to_region;
 	}
 
 	private function table_cell_style( ?TableColumn $column ): string {
