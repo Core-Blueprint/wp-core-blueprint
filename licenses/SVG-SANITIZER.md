@@ -9,6 +9,12 @@ Core Blueprint includes the upstream `darylldoyle/svg-sanitizer` library, versio
 
 The upstream source is bundled locally so Core Blueprint does not require an external service or another WordPress plugin. For dependency isolation, Core Blueprint prefixes the PHP namespace from `enshrined\\svgSanitize` to `CB\\Core\\MediaFormats\\Vendor\\SvgSanitize`. No sanitizer behavior is intentionally changed by this namespace prefix.
 
+Local security patch (2026-09-16): `isHrefSafeValue()` also honors
+`removeRemoteReferences(true)` for direct HTTP(S), protocol-relative and
+root-relative hrefs. This applies to both `href` and `xlink:href`; local fragment
+references and the existing allowed raster data URIs remain supported. The
+upstream version above identifies the vendored baseline, not an unmodified copy.
+
 The original upstream license is also preserved at:
 
 `src/MediaFormats/lib/svg-sanitizer/LICENSE`

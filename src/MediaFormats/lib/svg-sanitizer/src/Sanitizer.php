@@ -524,18 +524,20 @@ class Sanitizer
             return true;
         }
 
-        // Allow relative URIs.
-        if ('/' === substr($value, 0, 1)) {
+        // Core Blueprint: direct hrefs must honor the remote-reference policy
+        // too; hasRemoteReference() only handles CSS url(...) values.
+        // Fragments and the raster data URIs below remain self-contained.
+        if (!$this->removeRemoteReferences && '/' === substr($value, 0, 1)) {
             return true;
         }
 
         // Allow HTTPS domains.
-        if ('https://' === substr($value, 0, 8)) {
+        if (!$this->removeRemoteReferences && 'https://' === substr($value, 0, 8)) {
             return true;
         }
 
         // Allow HTTP domains.
-        if ('http://' === substr($value, 0, 7)) {
+        if (!$this->removeRemoteReferences && 'http://' === substr($value, 0, 7)) {
             return true;
         }
 

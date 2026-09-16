@@ -6,6 +6,40 @@ use CB\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
 
 final class CB_Base_Media_Replace_Svg_Security_Contract_Test extends WP_UnitTestCase {
 
+	public function test_svg_direct_links_are_removed_while_self_contained_references_survive(): void {
+		if ( ! Environment::svg_supported() ) {
+			self::markTestSkipped( 'SVG runtime is unavailable in this test environment.' );
+		}
+
+		$file = wp_tempnam( 'cb-svg-links.svg' );
+		self::assertIsString( $file );
+		try {
+			foreach ( [ 'href', 'xlink:href' ] as $attribute ) {
+				foreach ( [ 'https://example.com/a.png', 'http://example.com/a.png', '//example.com/a.png', '/a.png' ] as $url ) {
+					$xml = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image ' . $attribute . '="' . $url . '" width="10" height="10" /></svg>';
+					self::assertNotFalse( file_put_contents( $file, $xml ) );
+					self::assertTrue( SvgSanitizer::sanitize_file( $file ) );
+					$doc = new DOMDocument();
+					self::assertTrue( $doc->load( $file, LIBXML_NONET ) );
+					$image = $doc->getElementsByTagName( 'image' )->item( 0 );
+					self::assertInstanceOf( DOMElement::class, $image );
+					self::assertFalse( $image->hasAttribute( $attribute ), $attribute . ': ' . $url );
+				}
+			}
+
+			$xml = '<svg xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="paint"><stop offset="0" stop-color="red" /></linearGradient></defs><rect width="10" height="10" fill="url(#paint)" /><image href="#local" /><image href="data:image/png;base64,iVBORw0KGgo=" /></svg>';
+			self::assertNotFalse( file_put_contents( $file, $xml ) );
+			self::assertTrue( SvgSanitizer::sanitize_file( $file ) );
+			$clean = file_get_contents( $file );
+			self::assertIsString( $clean );
+			self::assertStringContainsString( 'url(#paint)', $clean );
+			self::assertStringContainsString( 'href="#local"', $clean );
+			self::assertStringContainsString( 'data:image/png;base64,iVBORw0KGgo=', $clean );
+		} finally {
+			@unlink( $file );
+		}
+	}
+
 	public function test_replace_service_sanitizes_svg_before_staging_and_revalidates_type(): void {
 		$source = file_get_contents( dirname( __DIR__, 2 ) . '/src/MediaReplace/ReplaceService.php' );
 		self::assertIsString( $source );
