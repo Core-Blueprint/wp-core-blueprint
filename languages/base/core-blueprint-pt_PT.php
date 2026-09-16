@@ -2510,7 +2510,7 @@ Recebemos um pedido para repor a palavra-passe da sua conta. Se foi você, utili
         'Select a role' => 'Selecione um função',
         'Select a supported field type.' => 'Selecione um suportados campo tipo.',
         'Select all %d visible notes' => 'Selecione todos %d visível notas',
-        'Select an element on the canvas or in Structure to edit it.' => 'Selecione um elemento no canvas ou em Estrutura para o editar.',
+        'Select an element on the canvas or in Layers to edit it.' => 'Selecione um elemento no canvas ou em Camadas para o editar.',
         'Select at least one Post Type, Option Page, taxonomy term context or user-profile context for this field group.' => 'Selecione no menos um Conteúdo Tipo, Opções Página, taxonomia termo contexto ou utilizador - perfil contexto para este campo grupo.',
         'Select at least one native WordPress definition to include in the import plan.' => 'Selecione pelo menos uma definição WordPress nativa para incluir no plano de importação.',
         'Select at least one post type for this taxonomy.' => 'Selecione no menos um conteúdo tipo para este taxonomia.',

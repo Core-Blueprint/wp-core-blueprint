@@ -2510,7 +2510,7 @@ We hebben een verzoek ontvangen om het wachtwoord van je account opnieuw in te s
         'Select a role' => 'Selecteer een rol',
         'Select a supported field type.' => 'Selecteer een ondersteund veldtype.',
         'Select all %d visible notes' => 'Selecteer alle %d zichtbare notities',
-        'Select an element on the canvas or in Structure to edit it.' => 'Selecteer een element op het canvas of in Structuur om het te bewerken.',
+        'Select an element on the canvas or in Layers to edit it.' => 'Selecteer een element op het canvas of in Lagen om het te bewerken.',
         'Select at least one Post Type, Option Page, taxonomy term context or user-profile context for this field group.' => 'Selecteer minimaal één berichttype, optiepagina, taxonomietermcontext of gebruikersprofielcontext voor deze veldgroep.',
         'Select at least one native WordPress definition to include in the import plan.' => 'Selecteer ten minste één native WordPress-definitie om in het importplan op te nemen.',
         'Select at least one post type for this taxonomy.' => 'Selecteer minimaal één berichttype voor deze taxonomie.',

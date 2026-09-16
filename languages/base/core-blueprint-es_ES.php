@@ -2510,7 +2510,7 @@ Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Si ha
         'Select a role' => 'Selecciona un rol',
         'Select a supported field type.' => 'Selecciona un compatible campo tipo.',
         'Select all %d visible notes' => 'Selecciona todos %d visible notas',
-        'Select an element on the canvas or in Structure to edit it.' => 'Selecciona un elemento en el canvas o en Estructura para editarlo.',
+        'Select an element on the canvas or in Layers to edit it.' => 'Selecciona un elemento en el canvas o en Capas para editarlo.',
         'Select at least one Post Type, Option Page, taxonomy term context or user-profile context for this field group.' => 'Selecciona al menos una Contenido Tipo, Opciones Página, taxonomía término contexto o usuario - perfil contexto para este campo grupo.',
         'Select at least one native WordPress definition to include in the import plan.' => 'Selecciona al menos una definición nativa de WordPress para incluirla en el plan de importación.',
         'Select at least one post type for this taxonomy.' => 'Selecciona al menos una contenido tipo para este taxonomía.',

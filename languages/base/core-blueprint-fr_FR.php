@@ -2510,7 +2510,7 @@ Nous avons reçu une demande de réinitialisation du mot de passe de votre compt
         'Select a role' => 'Sélectionnez un rôle',
         'Select a supported field type.' => 'Sélectionnez un charge champ type.',
         'Select all %d visible notes' => 'Sélectionnez tous %d visible notes',
-        'Select an element on the canvas or in Structure to edit it.' => 'Sélectionnez un élément sur le canvas ou dans Structure pour le modifier.',
+        'Select an element on the canvas or in Layers to edit it.' => 'Sélectionnez un élément sur le canvas ou dans Calques pour le modifier.',
         'Select at least one Post Type, Option Page, taxonomy term context or user-profile context for this field group.' => 'Sélectionnez au moins un type de publication, une page d’options, un contexte de terme de taxonomie ou un contexte de profil utilisateur pour ce groupe de champs.',
         'Select at least one native WordPress definition to include in the import plan.' => 'Sélectionnez au moins une définition WordPress native à inclure dans le plan d’importation.',
         'Select at least one post type for this taxonomy.' => 'Sélectionnez à moins un publication type pour ce taxonomie.',

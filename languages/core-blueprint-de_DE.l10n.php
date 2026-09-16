@@ -3,10 +3,7 @@ declare(strict_types=1);
 
 /**
  * Composed Core Blueprint PHP translation catalog.
- *
- * The preserved release baseline remains byte-identical in languages/base/.
- * This wrapper layers the current feature strings on top without rewriting
- * the large generated catalog through a lossy transport boundary.
+ * Combines the base catalog with current feature translations.
  */
 $catalog = require __DIR__ . '/base/core-blueprint-de_DE.php';
 
@@ -17,6 +14,12 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        'Design loaded' => 'Design geladen',
+        'Loading design…' => 'Design wird geladen…',
+        'The selected design could not be loaded.' => 'Das ausgewählte Design konnte nicht geladen werden.',
+        'The selected mail template is incomplete.' => 'Die ausgewählte E-Mail-Vorlage ist unvollständig.',
+        'The SVG replacement could not be sanitized safely.' => 'Die SVG-Ersatzdatei konnte nicht sicher bereinigt werden.',
+        'The sanitized SVG replacement no longer matches the expected file type.' => 'Die bereinigte SVG-Ersatzdatei entspricht nicht mehr dem erwarteten Dateityp.',
         'Auto-match' => 'Automatisch zuordnen',
         'Choose a source file to begin mapping.' => 'Wähle eine Quelldatei aus, um mit der Zuordnung zu beginnen.',
         'Choose source file' => 'Quelldatei auswählen',

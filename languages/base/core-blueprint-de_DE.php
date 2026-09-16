@@ -2510,7 +2510,7 @@ wir haben eine Anfrage zum Zurücksetzen des Passworts für Ihr Konto erhalten. 
         'Select a role' => 'Wähle eine rolle',
         'Select a supported field type.' => 'Wähle eine unterstützt metafeld inhaltstyp.',
         'Select all %d visible notes' => 'Wähle alle %d sichtbaren notizen',
-        'Select an element on the canvas or in Structure to edit it.' => 'Wählen Sie ein Element auf dem Canvas oder in Struktur aus, um es zu bearbeiten.',
+        'Select an element on the canvas or in Layers to edit it.' => 'Wählen Sie ein Element auf dem Canvas oder in Ebenen aus, um es zu bearbeiten.',
         'Select at least one Post Type, Option Page, taxonomy term context or user-profile context for this field group.' => 'Wähle am mindestens eine Post Inhaltstyp, Optionsseite Seite, taxonomie zugriffsbegriff kontext oder benutzer - profil kontext für diese metafeld plangruppe.',
         'Select at least one native WordPress definition to include in the import plan.' => 'Wähle mindestens eine native WordPress-Definition für den Importplan aus.',
         'Select at least one post type for this taxonomy.' => 'Wähle am mindestens eine post inhaltstyp für diese taxonomie.',

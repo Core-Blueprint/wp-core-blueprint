@@ -2510,7 +2510,7 @@ Abbiamo ricevuto una richiesta di reimpostazione della password per il tuo accou
         'Select a role' => 'Seleziona un ruolo',
         'Select a supported field type.' => 'Seleziona un supportati campo tipo.',
         'Select all %d visible notes' => 'Seleziona tutti %d visibile note',
-        'Select an element on the canvas or in Structure to edit it.' => 'Seleziona un elemento nel canvas o in Struttura per modificarlo.',
+        'Select an element on the canvas or in Layers to edit it.' => 'Seleziona un elemento nel canvas o in Livelli per modificarlo.',
         'Select at least one Post Type, Option Page, taxonomy term context or user-profile context for this field group.' => 'Seleziona alla almeno un Contenuto Tipo, Opzioni Pagina, tassonomia termine contesto o utente - profilo contesto per questo campo gruppo.',
         'Select at least one native WordPress definition to include in the import plan.' => 'Seleziona almeno una definizione WordPress nativa da includere nel piano di importazione.',
         'Select at least one post type for this taxonomy.' => 'Seleziona alla almeno un contenuto tipo per questo tassonomia.',
