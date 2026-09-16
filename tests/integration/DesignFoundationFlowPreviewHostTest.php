@@ -35,15 +35,20 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 
 		$first_bridge = $this->bridge( $first );
 		$second_bridge = $this->bridge( $second );
-		self::assertSame( $first_bridge, $second_bridge, 'The hashed sizing bridge must remain byte-for-byte static across renders.' );
+		self::assertSame( $first_bridge, $second_bridge, 'The hashed preview bridge must remain byte-for-byte static across renders.' );
 		self::assertStringNotContainsString( 'First render', $first_bridge );
 		self::assertStringNotContainsString( 'Second render', $second_bridge );
 		self::assertStringNotContainsString( 'data-cb-core-flow-preview-generation="1"', $first );
 		self::assertStringContainsString( "window.addEventListener('message'", $first_bridge );
 		self::assertStringContainsString( 'event.source!==window.parent', $first_bridge );
 		self::assertStringContainsString( "data.type==='cb-core-flow-preview-measure'", $first_bridge );
+		self::assertStringContainsString( "data.type==='cb-core-flow-preview-selection'", $first_bridge );
 		self::assertStringContainsString( 'data.version===1', $first_bridge );
-		self::assertStringContainsString( 'event.data.generation!==generation', $first_bridge );
+		self::assertStringContainsString( 'data.generation===generation', $first_bridge );
+		self::assertStringContainsString( 'data.index===null', $first_bridge );
+		self::assertStringContainsString( 'root.children.item(index)', $first_bridge );
+		self::assertStringContainsString( "target.style.outline='2px solid #00a8e8'", $first_bridge );
+		self::assertStringContainsString( "selected.removeAttribute('data-cb-flow-preview-selected')", $first_bridge );
 
 		$hash = base64_encode( hash( 'sha256', $first_bridge, true ) );
 		self::assertStringContainsString( "script-src &#39;sha256-{$hash}&#39;", $first );
@@ -57,6 +62,7 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 		self::assertStringNotContainsString( 'cb-core-flow-preview-protocol', $paged );
 		self::assertStringNotContainsString( 'cb-core-flow-preview-sizing', $paged );
 		self::assertStringNotContainsString( 'cb-flow-preview-root', $paged );
+		self::assertStringNotContainsString( 'cb-core-flow-preview-selection', $paged );
 	}
 
 	public function test_designer_hidden_semantics_override_component_display_modes(): void {
@@ -84,6 +90,11 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( "export { createFlowPreviewHost } from './preview-host.js';", $index );
 		self::assertStringContainsString( "iframe.setAttribute('sandbox', 'allow-scripts');", $host );
 		self::assertStringContainsString( "const MEASURE_MESSAGE_TYPE = 'cb-core-flow-preview-measure';", $host );
+		self::assertStringContainsString( "const SELECTION_MESSAGE_TYPE = 'cb-core-flow-preview-selection';", $host );
+		self::assertStringContainsString( 'const setSelection = (index) => {', $host );
+		self::assertStringContainsString( 'selectedBlockIndex = normalizeSelectionIndex(index);', $host );
+		self::assertStringContainsString( 'postSelection(renderGeneration);', $host );
+		self::assertStringContainsString( 'return { render, setSelection, destroy };', $host );
 		self::assertStringContainsString( "iframe.addEventListener('load', onLoad, { once: true });", $host );
 		self::assertStringContainsString( 'clearPendingLoadHandler();', $host );
 		self::assertStringNotContainsString( 'allow-same-origin', $host );
