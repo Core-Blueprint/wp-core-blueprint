@@ -1,8 +1,22 @@
 # Base launch closure — 2026-09-16
 
-Status: **PDF cache candidate strict build and PDF field check PASS; Gutenberg dark-mode polish awaits native build and field validation.**
+Status: **Final native build PASS; Gutenberg field stability confirmed; merge authorized by Chris.**
 
-## Proven candidate
+## Final accepted artifact
+
+- Tested source: `7e20370eafbe7abe5c404f06db5db61f3e4fca97`.
+- Version: `1.0.0-rc1`; canonical root: `core-blueprint/`.
+- ZIP: `core-blueprint-1.0.0-rc1.zip` (1023 files).
+- SHA-256: `51fd4f34d654fafc29af65e639a1dc3c524418d55e2178437db0d3c001d0b78b`.
+- Strict native build: PASS, 360 integration tests / 3323 assertions, runtime
+  parity, all package gates and 741 packaged PHP syntax checks.
+- Chris subsequently reported “Stabiel!” after the Gutenberg field-test request
+  and explicitly authorized merging. This is an overall field confirmation;
+  no separate per-control or per-browser results were supplied.
+- This closing evidence update changes documentation only, outside the release
+  allowlist. The tested artifact remains the delivery artifact.
+
+## Earlier proven candidate
 
 - Source: `d68601bf3c3850922ba657c47ab87d118292b856`.
 - Branch: `base-golden-security-closure-svg-csv`.
@@ -81,14 +95,14 @@ preserves earlier accepted output on gate failure. No bypass flag was added.
 - The first native run stopped on the PDF cache mutation described below;
   the corrected candidate subsequently passed the complete entrypoint.
 
-## Remaining launch gates
+## Release scope and evidence limits
 
-1. Build the Gutenberg CSS candidate through the strict entrypoint, record its
-   checksum, and verify editor dark/light states and same-version installation.
-2. Preserve the explicit limitation on hostile HTTP-upload field coverage above;
-   do not report that path as manually tested.
-3. Final review and explicit merge/release GO. This evidence is not a full
-   security guarantee or a claim that every launch gate has passed.
+Chris authorized merging the Base release branch after the final build and
+field confirmation. Earlier fresh-install/same-version-update script evidence
+belongs to the earlier candidate, not a fresh scripted rerun on the final ZIP.
+Hostile SVG script/remote-reference removal has automated regression evidence;
+that specific hostile HTTP-upload path was not separately field-tested.
+These results are scoped release evidence, not a comprehensive security guarantee.
 
 ## Native strict-builder failure and PDF cache correction
 
@@ -124,8 +138,9 @@ confirmed in that source. Only `assets/css/admin-theme/gutenberg.css` changes
 runtime behaviour: component surfaces/colours and WPDS neutral tokens are mapped
 to existing Base tokens. Canvas styles, layout and plugin version are unchanged.
 
-Native build and live-editor dark/light, hover, selection and keyboard-focus
-checks remain pending. CSS declaration and selector parsing passed (39 rules),
+The final native build passed and Chris confirmed field stability as recorded
+above. Individual dark/light, hover, selection and keyboard-focus results were
+not separately reported. CSS declaration and selector parsing passed (39 rules),
 and `git diff --check` passed. A local browser check could not execute because Chromium
-was absent and its download timed out. Do not treat source inspection as a live
-editor PASS or reuse the preceding artifact checksum for this CSS candidate.
+was absent and its download timed out. Source inspection alone was not treated as a live-editor PASS. Use the final
+artifact checksum at the top of this document for delivery.
