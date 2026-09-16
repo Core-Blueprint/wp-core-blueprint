@@ -45,15 +45,40 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( "data.type==='cb-core-flow-preview-selection'", $first_bridge );
 		self::assertStringContainsString( 'data.version===1', $first_bridge );
 		self::assertStringContainsString( 'data.generation===generation', $first_bridge );
-		self::assertStringContainsString( 'data.index===null', $first_bridge );
-		self::assertStringContainsString( 'root.children.item(index)', $first_bridge );
+		self::assertStringContainsString( 'data.region===null', $first_bridge );
+		self::assertStringContainsString( "root.querySelectorAll('[data-cb-flow-preview-region]')", $first_bridge );
 		self::assertStringContainsString( "target.style.outline='2px solid #00a8e8'", $first_bridge );
-		self::assertStringContainsString( "selected.removeAttribute('data-cb-flow-preview-selected')", $first_bridge );
+		self::assertStringContainsString( "target.removeAttribute('data-cb-flow-preview-selected')", $first_bridge );
 
 		$hash = base64_encode( hash( 'sha256', $first_bridge, true ) );
 		self::assertStringContainsString( "script-src &#39;sha256-{$hash}&#39;", $first );
 		self::assertStringContainsString( "script-src &#39;sha256-{$hash}&#39;", $second );
 		self::assertStringNotContainsString( 'allow-same-origin', $first );
+	}
+
+	public function test_preview_regions_are_semantic_preview_only_metadata(): void {
+		$blocks = [ RenderBlock::text( 'A' ), RenderBlock::text( 'B' ), RenderBlock::text( 'C' ) ];
+		$preview = FlowRenderApi::preview_html(
+			$this->layout(),
+			$blocks,
+			'en_GB',
+			null,
+			[ 'header' => [ 0 ], 'lines' => [ 1, 2 ] ]
+		);
+		$paged = ( new HtmlRenderer() )->render( $this->layout(), $blocks, 'en_GB' );
+
+		self::assertSame( 1, substr_count( $preview, 'data-cb-flow-preview-region="header"' ) );
+		self::assertSame( 2, substr_count( $preview, 'data-cb-flow-preview-region="lines"' ) );
+		self::assertStringNotContainsString( 'data-cb-flow-preview-region=', $paged );
+
+		$this->expectException( InvalidArgumentException::class );
+		FlowRenderApi::preview_html(
+			$this->layout(),
+			$blocks,
+			'en_GB',
+			null,
+			[ 'header' => [ 0 ], 'duplicate' => [ 0 ] ]
+		);
 	}
 
 	public function test_paged_html_renderer_does_not_gain_preview_protocol_or_bridge(): void {
@@ -63,6 +88,7 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 		self::assertStringNotContainsString( 'cb-core-flow-preview-sizing', $paged );
 		self::assertStringNotContainsString( 'cb-flow-preview-root', $paged );
 		self::assertStringNotContainsString( 'cb-core-flow-preview-selection', $paged );
+		self::assertStringNotContainsString( 'data-cb-flow-preview-region=', $paged );
 	}
 
 	public function test_designer_hidden_semantics_override_component_display_modes(): void {
@@ -91,8 +117,9 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( "iframe.setAttribute('sandbox', 'allow-scripts');", $host );
 		self::assertStringContainsString( "const MEASURE_MESSAGE_TYPE = 'cb-core-flow-preview-measure';", $host );
 		self::assertStringContainsString( "const SELECTION_MESSAGE_TYPE = 'cb-core-flow-preview-selection';", $host );
-		self::assertStringContainsString( 'const setSelection = (index) => {', $host );
-		self::assertStringContainsString( 'selectedBlockIndex = normalizeSelectionIndex(index);', $host );
+		self::assertStringContainsString( 'const setSelection = (regionId) => {', $host );
+		self::assertStringContainsString( 'selectedRegionId = normalizeSelectionId(regionId);', $host );
+		self::assertStringContainsString( 'region: selectedRegionId,', $host );
 		self::assertStringContainsString( 'postSelection(renderGeneration);', $host );
 		self::assertStringContainsString( 'return { render, setSelection, destroy };', $host );
 		self::assertStringContainsString( "iframe.addEventListener('load', onLoad, { once: true });", $host );
