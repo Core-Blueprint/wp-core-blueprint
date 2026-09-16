@@ -1,8 +1,10 @@
 const PROTOCOL_VERSION = 1;
 const MIN_HEIGHT = 1;
 const MAX_HEIGHT = 100000;
+const MAX_SELECTION_INDEX = 100000;
 const FIRST_SIZE_TIMEOUT_MS = 5000;
 const MEASURE_MESSAGE_TYPE = 'cb-core-flow-preview-measure';
+const SELECTION_MESSAGE_TYPE = 'cb-core-flow-preview-selection';
 const PROTOCOL_META = '<meta name="cb-core-flow-preview-protocol" content="1">';
 const DOCUMENT_PROTOCOL_MARKER = 'data-cb-core-flow-preview-protocol="1"';
 const GENERATION_MARKER = 'data-cb-core-flow-preview-generation="0"';
@@ -60,6 +62,14 @@ const isSizingMessage = (data) => {
 		&& data.height <= MAX_HEIGHT;
 };
 
+const normalizeSelectionIndex = (value) => {
+	if (value === null) return null;
+	if (!Number.isSafeInteger(value) || value < 0 || value > MAX_SELECTION_INDEX) {
+		throw new TypeError('Flow preview selection requires a bounded top-level block index or null.');
+	}
+	return value;
+};
+
 const nextGeneration = (current) => current >= Number.MAX_SAFE_INTEGER ? 1 : current + 1;
 
 export const createFlowPreviewHost = (iframe) => {
@@ -94,6 +104,7 @@ export const createFlowPreviewHost = (iframe) => {
 	let generation = 0;
 	let activeGeneration = 0;
 	let lastAppliedHeight = null;
+	let selectedBlockIndex = null;
 	let awaitingFirstSize = false;
 	let firstSizeTimer = null;
 	let pendingLoadHandler = null;
@@ -140,6 +151,18 @@ export const createFlowPreviewHost = (iframe) => {
 		clearFirstSizeTimer();
 		clearPendingLoadHandler();
 		setState('failure');
+	};
+
+	const postSelection = (messageGeneration = activeGeneration) => {
+		if (destroyed || messageGeneration < 1) return;
+		const childWindow = iframe.contentWindow;
+		if (!childWindow || typeof childWindow.postMessage !== 'function') return;
+		childWindow.postMessage({
+			type: SELECTION_MESSAGE_TYPE,
+			version: PROTOCOL_VERSION,
+			generation: messageGeneration,
+			index: selectedBlockIndex,
+		}, '*');
 	};
 
 	const onMessage = (event) => {
@@ -223,12 +246,23 @@ export const createFlowPreviewHost = (iframe) => {
 				version: PROTOCOL_VERSION,
 				generation: renderGeneration,
 			}, '*');
+			postSelection(renderGeneration);
 		};
 
 		pendingLoadHandler = onLoad;
 		iframe.addEventListener('load', onLoad, { once: true });
 		iframe.srcdoc = hydratedHtml;
 		return true;
+	};
+
+	const setSelection = (index) => {
+		if (destroyed) {
+			throw new Error('Flow preview host has been destroyed.');
+		}
+		selectedBlockIndex = normalizeSelectionIndex(index);
+		if (lifecycle === 'loading' || lifecycle === 'ready') {
+			postSelection();
+		}
 	};
 
 	const destroy = () => {
@@ -240,6 +274,7 @@ export const createFlowPreviewHost = (iframe) => {
 		lifecycle = 'destroyed';
 		generation = nextGeneration(generation);
 		activeGeneration = generation;
+		selectedBlockIndex = null;
 		awaitingFirstSize = false;
 		clearFirstSizeTimer();
 		clearPendingLoadHandler();
@@ -255,5 +290,5 @@ export const createFlowPreviewHost = (iframe) => {
 		}
 	};
 
-	return { render, destroy };
+	return { render, setSelection, destroy };
 };
