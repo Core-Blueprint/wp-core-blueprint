@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace CB\Core\MediaReplace;
 
+use CB\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
 use CB\Core\MediaReplace\Strategy\ReplaceStrategyInterface;
 
 defined( 'ABSPATH' ) || exit;
@@ -263,6 +264,35 @@ final class ReplaceService {
 				'mime_mismatch',
 				__( 'For now, the replacement must use the same file type as the existing media item.', 'core-blueprint' )
 			);
+		}
+
+		if ( 'image/svg+xml' === strtolower( $mime ) ) {
+			$sanitized = SvgSanitizer::sanitize_file( $tmp_name );
+			if ( is_wp_error( $sanitized ) ) {
+				throw new ReplaceException(
+					'svg_sanitize_failed',
+					__( 'The SVG replacement could not be sanitized safely.', 'core-blueprint' )
+				);
+			}
+
+			// The sanitizer rewrites the upload in place. Re-run WordPress' type
+			// validation on the exact bytes that will be staged so a sanitizer or
+			// filter can never silently change the replacement contract.
+			$checked = wp_check_filetype_and_ext( $tmp_name, $name, $allowed );
+			$mime    = isset( $checked['type'] ) && is_string( $checked['type'] ) ? $checked['type'] : '';
+			$ext     = isset( $checked['ext'] ) && is_string( $checked['ext'] ) ? $checked['ext'] : '';
+			if ( 'image/svg+xml' !== strtolower( $mime ) || 'svg' !== strtolower( $ext ) ) {
+				throw new ReplaceException(
+					'svg_type_changed',
+					__( 'The sanitized SVG replacement no longer matches the expected file type.', 'core-blueprint' )
+				);
+			}
+
+			$sanitized_size = filesize( $tmp_name );
+			if ( false === $sanitized_size || $sanitized_size <= 0 ) {
+				throw new ReplaceException( 'svg_sanitize_failed', __( 'The SVG replacement could not be sanitized safely.', 'core-blueprint' ) );
+			}
+			$size = (int) $sanitized_size;
 		}
 
 		return [
