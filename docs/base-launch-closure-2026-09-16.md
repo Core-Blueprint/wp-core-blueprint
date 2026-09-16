@@ -1,6 +1,6 @@
 # Base launch closure — 2026-09-16
 
-Status: **Native/runtime/package and normal Media Replace field checks PASS; strict builder native run pending.**
+Status: **Previous candidate native/runtime/package and Media Replace checks PASS; PDF cache correction awaits native validation.**
 
 ## Proven candidate
 
@@ -82,12 +82,28 @@ preserves earlier accepted output on gate failure. No bypass flag was added.
 
 ## Remaining launch gates
 
-1. Execute the strict builder in the prepared native WordPress environment and
-   verify its result against the already field-tested artifact checksum.
+1. Execute the strict builder with the PDF cache correction in a refreshed native
+   WordPress environment. Record its new checksum and repeat PDF field smoke;
+   the previous artifact checksum does not apply to this runtime correction.
 2. Preserve the explicit limitation on hostile HTTP-upload field coverage above;
    do not report that path as manually tested.
 3. Final review and explicit merge/release GO. This evidence is not a full
    security guarantee or a claim that every launch gate has passed.
 
-Only developer tooling, tests and documentation change in this follow-up; the
-version and packaged runtime remain unchanged. Retain the exact verified ZIP.
+## Native strict-builder failure and PDF cache correction
+
+The first native strict-builder run passed all 359 integration tests (3316
+assertions), then correctly stopped at post-test runtime parity. Chris's file
+comparison found exactly one addition in the WordPress test copy:
+`src/PDF/lib/dompdf/vendor/dompdf/dompdf/lib/fonts/Helvetica.afm.json`.
+Dompdf defaults its derived font cache to the bundled font directory; its
+`Cpdf::openFont()` writes this JSON during real rendering.
+
+The Base PDF wrapper now supplies a random per-render temporary cache directory
+with mode 0700 and removes its files/directory in `finally`. The vendor library
+and release parity gate remain unchanged. A real-PDF integration regression
+checks repeated Helvetica rendering, unchanged bundled font bytes and cache
+cleanup. PHP/native execution of this correction remains pending; the local
+environment has no PHP. Version remains `1.0.0-rc1`, but runtime bytes and the
+resulting ZIP checksum change. Earlier field evidence applies to the earlier
+artifact, not automatically to this correction.

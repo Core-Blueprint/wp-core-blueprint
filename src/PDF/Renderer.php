@@ -92,8 +92,18 @@ final class Renderer {
 		[ $paper_size, $orientation ] = $this->paper_contract( $opts );
 		$this->require_engine();
 
+		$font_cache = null;
 		try {
-			$dompdf = new \Dompdf\Dompdf( $this->build_dompdf_options( $opts ) );
+			// Dompdf otherwise writes derived font metrics into its vendor tree.
+			// Keep each render's cache private and outside the installed plugin.
+			$cache_directory = rtrim( get_temp_dir(), "/\\" ) . '/cb-pdf-fonts-' . bin2hex( random_bytes( 16 ) );
+			if ( ! mkdir( $cache_directory, 0700 ) ) {
+				throw new RendererException( 'Could not create the PDF font cache.' );
+			}
+			$font_cache = $cache_directory;
+			$dompdf_options = $this->build_dompdf_options( $opts );
+			$dompdf_options->setFontCache( $font_cache );
+			$dompdf = new \Dompdf\Dompdf( $dompdf_options );
 			$dompdf->setPaper( $paper_size, $orientation );
 			$dompdf->loadHtml( $html );
 			$dompdf->render();
@@ -104,6 +114,14 @@ final class Renderer {
 				(int) $e->getCode(),
 				$e
 			);
+		} finally {
+			if ( null !== $font_cache ) {
+				// Dompdf's derived metric cache contains flat JSON files only.
+				foreach ( glob( $font_cache . '/*' ) ?: [] as $cache_file ) {
+					unlink( $cache_file );
+				}
+				rmdir( $font_cache );
+			}
 		}
 
 		if ( ! is_string( $output ) || '' === $output || ! str_starts_with( $output, '%PDF-' ) ) {
