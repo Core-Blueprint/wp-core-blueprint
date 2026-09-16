@@ -193,7 +193,7 @@ test('iframe load sends exactly one canonical measure request for the active gen
 
 	env.dispatchLoad();
 	assert.equal(env.iframe.eventListenerCount('load'), 0);
-	assert.equal(env.postedMessages().length, 1);
+	assert.equal(env.postedMessages().length, 2);
 	assert.deepEqual(env.postedMessages()[0], {
 		data: {
 			type: 'cb-core-flow-preview-measure',
@@ -202,9 +202,18 @@ test('iframe load sends exactly one canonical measure request for the active gen
 		},
 		targetOrigin: '*',
 	});
+	assert.deepEqual(env.postedMessages()[1], {
+		data: {
+			type: 'cb-core-flow-preview-selection',
+			version: 1,
+			generation: 1,
+			region: null,
+		},
+		targetOrigin: '*',
+	});
 
 	env.dispatchLoad();
-	assert.equal(env.postedMessages().length, 1);
+	assert.equal(env.postedMessages().length, 2);
 });
 
 test('new render replaces pending load handshake and stale generation cannot leak', () => {
@@ -217,8 +226,30 @@ test('new render replaces pending load handshake and stale generation cannot lea
 	assert.equal(env.iframe.eventListenerCount('load'), 1);
 	env.dispatchLoad();
 
-	assert.equal(env.postedMessages().length, 1);
-	assert.equal(env.postedMessages()[0].data.generation, 2);
+	assert.deepEqual(env.postedMessages().map(({ data }) => [data.type, data.generation]), [
+		['cb-core-flow-preview-measure', 2],
+		['cb-core-flow-preview-selection', 2],
+	]);
+});
+
+test('semantic selection survives rerender and can be cleared without another navigation', () => {
+	const env = harness();
+	const host = createFlowPreviewHost(env.iframe);
+	host.setSelection('invoice-summary');
+	assert.equal(env.postedMessages().length, 0);
+	host.render(canonicalHtml());
+	env.dispatchLoad();
+	assert.equal(env.postedMessages().at(-1).data.region, 'invoice-summary');
+	host.render(canonicalHtml());
+	env.dispatchLoad();
+	assert.equal(env.postedMessages().at(-1).data.generation, 2);
+	assert.equal(env.postedMessages().at(-1).data.region, 'invoice-summary');
+	const document = env.iframe.srcdoc;
+	host.setSelection(null);
+	assert.equal(env.postedMessages().at(-1).data.region, null);
+	assert.equal(env.iframe.srcdoc, document);
+	host.destroy();
+	assert.throws(() => host.setSelection('invoice-summary'), /destroyed/);
 });
 
 test('canonical first size reveals current preview and later resize is deduplicated', () => {
