@@ -1,6 +1,6 @@
 # Base launch closure — 2026-09-16
 
-Status: **Previous candidate native/runtime/package and Media Replace checks PASS; PDF cache correction awaits native validation.**
+Status: **PDF cache candidate strict build and PDF field check PASS; Gutenberg dark-mode polish awaits native build and field validation.**
 
 ## Proven candidate
 
@@ -78,13 +78,13 @@ preserves earlier accepted output on gate failure. No bypass flag was added.
   only in those unit fixtures, not in production code).
 - Actual invocation with PHP absent: fails nonzero before any release output.
 - Runtime serialization remains byte-identical to the verified ZIP SHA above.
-- Full native execution of the updated entrypoint is still required.
+- The first native run stopped on the PDF cache mutation described below;
+  the corrected candidate subsequently passed the complete entrypoint.
 
 ## Remaining launch gates
 
-1. Execute the strict builder with the PDF cache correction in a refreshed native
-   WordPress environment. Record its new checksum and repeat PDF field smoke;
-   the previous artifact checksum does not apply to this runtime correction.
+1. Build the Gutenberg CSS candidate through the strict entrypoint, record its
+   checksum, and verify editor dark/light states and same-version installation.
 2. Preserve the explicit limitation on hostile HTTP-upload field coverage above;
    do not report that path as manually tested.
 3. Final review and explicit merge/release GO. This evidence is not a full
@@ -103,7 +103,29 @@ The Base PDF wrapper now supplies a random per-render temporary cache directory
 with mode 0700 and removes its files/directory in `finally`. The vendor library
 and release parity gate remain unchanged. A real-PDF integration regression
 checks repeated Helvetica rendering, unchanged bundled font bytes and cache
-cleanup. PHP/native execution of this correction remains pending; the local
-environment has no PHP. Version remains `1.0.0-rc1`, but runtime bytes and the
-resulting ZIP checksum change. Earlier field evidence applies to the earlier
-artifact, not automatically to this correction.
+cleanup. Chris's native run of candidate
+`66a64ec879481130234bdf35a471d4267b0fb23f` passed 360 tests / 3323 assertions,
+post-test runtime parity and all package gates (1023 files, 741 PHP files).
+The resulting `1.0.0-rc1` ZIP SHA-256 is
+`9b99a802b1479d79e93d6a64974c78b58e5899fde72cb28b0a85b0c552364cb1`.
+Chris downloaded a real Maintenance Report after installation. Review of both
+A4 pages confirmed intact text/tables/pagination and embedded regular/bold
+DejaVu Sans fonts. This sample contains no images; image rendering is outside
+that field evidence. PDF rendering field check: PASS.
+
+## Gutenberg dark-mode polish
+
+Screenshots show light inserter/search/toolbar/breadcrumb surfaces, dark block
+icons/descriptions and a light Advanced-panel hover. The adapter was compared
+against WordPress 7.1 `components`, `block-editor` and `editor` styles plus the
+compiled Components JavaScript from `core.svn.wordpress.org/tags/7.1/`.
+The title wrapper's hardcoded hover and explicit block-card/icon colours were
+confirmed in that source. Only `assets/css/admin-theme/gutenberg.css` changes
+runtime behaviour: component surfaces/colours and WPDS neutral tokens are mapped
+to existing Base tokens. Canvas styles, layout and plugin version are unchanged.
+
+Native build and live-editor dark/light, hover, selection and keyboard-focus
+checks remain pending. CSS declaration and selector parsing passed (39 rules),
+and `git diff --check` passed. A local browser check could not execute because Chromium
+was absent and its download timed out. Do not treat source inspection as a live
+editor PASS or reuse the preceding artifact checksum for this CSS candidate.

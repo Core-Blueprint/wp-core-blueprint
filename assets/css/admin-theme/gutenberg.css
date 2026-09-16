@@ -23,6 +23,12 @@ body.cb-admin-theme {
 	--wp-components-color-gray-600: var(--cb-text-faint);
 	--wp-components-color-gray-700: var(--cb-text-muted);
 	--wp-components-color-gray-800: var(--cb-text);
+	/* WordPress 7.1 UI surfaces also consume WPDS tokens directly. */
+	--wpds-color-background-surface-neutral: var(--cb-surface-2);
+	--wpds-color-background-surface-neutral-strong: var(--cb-surface-1);
+	--wpds-color-foreground-content-neutral: var(--cb-text);
+	--wpds-color-foreground-content-neutral-weak: var(--cb-text-muted);
+	--wpds-color-stroke-surface-neutral: var(--cb-border);
 }
 
 body.cb-admin-theme .interface-interface-skeleton__header,
@@ -50,6 +56,84 @@ body.cb-admin-theme .components-tools-panel,
 body.cb-admin-theme .components-tab-panel__tabs {
 	border-color: var(--cb-border);
 	color: var(--cb-text);
+}
+
+/* The title owns the hardcoded hover surface; styling its button alone leaves
+ * the light parent visible through our translucent interaction colour. */
+body.cb-admin-theme .components-panel__body > .components-panel__body-title:hover {
+	background: var(--cb-surface-2);
+}
+
+body.cb-admin-theme .components-panel__body-toggle.components-button .components-panel__arrow {
+	color: var(--cb-text-muted);
+}
+
+/* Inserter chrome, not the actual block/pattern preview content. */
+body.cb-admin-theme .editor-inserter-sidebar,
+body.cb-admin-theme .block-editor-tabbed-sidebar,
+body.cb-admin-theme .block-editor-tabbed-sidebar__close-button,
+body.cb-admin-theme .block-editor-inserter__search,
+body.cb-admin-theme .block-editor-block-contextual-toolbar,
+body.cb-admin-theme .block-editor-block-toolbar,
+body.cb-admin-theme .interface-interface-skeleton__footer .block-editor-block-breadcrumb {
+	background-color: var(--cb-surface-1);
+	border-color: var(--cb-border);
+	color: var(--cb-text);
+}
+
+body.cb-admin-theme .block-editor-tabbed-sidebar__tablist-and-close-button {
+	border-color: var(--cb-border);
+}
+
+body.cb-admin-theme .block-editor-tabbed-sidebar [role="tab"] {
+	color: var(--cb-text);
+}
+
+body.cb-admin-theme .block-editor-tabbed-sidebar [role="tab"]:is(:hover, :focus-visible, [aria-selected="true"]) {
+	color: var(--cb-text-strong);
+}
+
+body.cb-admin-theme .block-editor-block-card,
+body.cb-admin-theme .block-editor-block-types-list__item-icon,
+body.cb-admin-theme .block-editor-block-breadcrumb__current {
+	color: var(--cb-text);
+}
+
+body.cb-admin-theme .block-editor-inserter__panel-title,
+body.cb-admin-theme .block-editor-inserter__panel-title button {
+	color: var(--cb-text-muted);
+}
+
+body.cb-admin-theme .components-search-control .components-input-control__container,
+body.cb-admin-theme .components-search-control input[type="search"] {
+	background-color: var(--cb-surface-1);
+	color: var(--cb-text);
+}
+
+body.cb-admin-theme .components-search-control input[type="search"]::placeholder {
+	color: var(--cb-text-muted);
+	opacity: 1;
+}
+
+/* Use the public component marker rather than Emotion's generated class name.
+ * Keep Gutenberg's indicator geometry and keyboard focus treatment intact. */
+body.cb-admin-theme [data-wp-component="ToggleGroupControl"] {
+	background: var(--cb-surface-1);
+	border-color: var(--cb-border);
+	color: var(--cb-text);
+}
+
+body.cb-admin-theme [data-wp-component="ToggleGroupControl"]::before {
+	background: var(--cb-surface-2);
+	border-color: var(--cb-text-muted);
+}
+
+body.cb-admin-theme [data-wp-component="ToggleGroupControl"] [role="radio"] {
+	color: var(--cb-text);
+}
+
+body.cb-admin-theme [data-wp-component="ToggleGroupControl"] [role="radio"][aria-checked="true"] {
+	color: var(--cb-text-strong);
 }
 
 /* Gutenberg's current document bar uses a hardcoded gray-100 background and
