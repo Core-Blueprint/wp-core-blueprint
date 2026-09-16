@@ -1,7 +1,7 @@
 const PROTOCOL_VERSION = 1;
 const MIN_HEIGHT = 1;
 const MAX_HEIGHT = 100000;
-const MAX_SELECTION_INDEX = 100000;
+const SELECTION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
 const FIRST_SIZE_TIMEOUT_MS = 5000;
 const MEASURE_MESSAGE_TYPE = 'cb-core-flow-preview-measure';
 const SELECTION_MESSAGE_TYPE = 'cb-core-flow-preview-selection';
@@ -62,10 +62,10 @@ const isSizingMessage = (data) => {
 		&& data.height <= MAX_HEIGHT;
 };
 
-const normalizeSelectionIndex = (value) => {
+const normalizeSelectionId = (value) => {
 	if (value === null) return null;
-	if (!Number.isSafeInteger(value) || value < 0 || value > MAX_SELECTION_INDEX) {
-		throw new TypeError('Flow preview selection requires a bounded top-level block index or null.');
+	if (typeof value !== 'string' || !SELECTION_ID_PATTERN.test(value)) {
+		throw new TypeError('Flow preview selection requires a bounded semantic region id or null.');
 	}
 	return value;
 };
@@ -104,7 +104,7 @@ export const createFlowPreviewHost = (iframe) => {
 	let generation = 0;
 	let activeGeneration = 0;
 	let lastAppliedHeight = null;
-	let selectedBlockIndex = null;
+	let selectedRegionId = null;
 	let awaitingFirstSize = false;
 	let firstSizeTimer = null;
 	let pendingLoadHandler = null;
@@ -161,7 +161,7 @@ export const createFlowPreviewHost = (iframe) => {
 			type: SELECTION_MESSAGE_TYPE,
 			version: PROTOCOL_VERSION,
 			generation: messageGeneration,
-			index: selectedBlockIndex,
+			region: selectedRegionId,
 		}, '*');
 	};
 
@@ -255,11 +255,11 @@ export const createFlowPreviewHost = (iframe) => {
 		return true;
 	};
 
-	const setSelection = (index) => {
+	const setSelection = (regionId) => {
 		if (destroyed) {
 			throw new Error('Flow preview host has been destroyed.');
 		}
-		selectedBlockIndex = normalizeSelectionIndex(index);
+		selectedRegionId = normalizeSelectionId(regionId);
 		if (lifecycle === 'loading' || lifecycle === 'ready') {
 			postSelection();
 		}
@@ -274,7 +274,7 @@ export const createFlowPreviewHost = (iframe) => {
 		lifecycle = 'destroyed';
 		generation = nextGeneration(generation);
 		activeGeneration = generation;
-		selectedBlockIndex = null;
+		selectedRegionId = null;
 		awaitingFirstSize = false;
 		clearFirstSizeTimer();
 		clearPendingLoadHandler();
