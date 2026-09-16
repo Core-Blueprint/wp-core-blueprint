@@ -155,12 +155,27 @@ final class LogExporter {
 				if ( is_array( $value ) || is_object( $value ) ) {
 					$value = wp_json_encode( $value );
 				}
-				$line[] = (string) $value;
+				$line[] = self::protect_csv_cell( (string) $value );
 			}
 			fputcsv( $handle, $line, ',', '"', '\\' );
 			$written++;
 		}
 		return $written;
+	}
+
+	/**
+	 * Neutralize spreadsheet formula prefixes without changing the stored log
+	 * record or JSON export. Prefixing an apostrophe is the same reversible
+	 * transport convention used by the Data Exchange CSV foundation.
+	 */
+	private static function protect_csv_cell( string $value ): string {
+		if ( '' === $value ) {
+			return '';
+		}
+		if ( "'" === $value[0] || 1 === preg_match( '/^[ \t\r\n]*[=+\-@]/D', $value ) ) {
+			return "'" . $value;
+		}
+		return $value;
 	}
 
 	/**
