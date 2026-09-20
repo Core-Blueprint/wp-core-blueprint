@@ -38,7 +38,7 @@ final class PageRegistry {
 		'core-blueprint-notes',
 		'core-blueprint-package-downloads',
 		'core-blueprint-preferences',
-		'core-blueprint-profiles',
+		'core-blueprint-config-profiles',
 		'core-blueprint-reports',
 		'core-blueprint-safeguards',
 		'core-blueprint-settings',
