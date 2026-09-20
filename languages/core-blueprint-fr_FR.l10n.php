@@ -66,6 +66,12 @@ $catalog['messages'] = array_replace(
         'I understand that restoring this quarantined item changes the site\'s active filesystem and that I am responsible for having a recent backup or other recovery option available.' => 'Je comprends que la restauration de cet élément mis en quarantaine modifie le système de fichiers actif du site et qu’il m’incombe de disposer d’une sauvegarde récente ou d’une autre solution de récupération.',
         'The restore is refused if the original path is occupied or the quarantined payload no longer matches its evidence.' => 'La restauration est refusée si le chemin d’origine est occupé ou si le contenu mis en quarantaine ne correspond plus à ses preuves.',
         'Confirm your responsibility for backup and recovery before restoring the quarantined item.' => 'Confirmez votre responsabilité en matière de sauvegarde et de récupération avant de restaurer l’élément mis en quarantaine.',
+        'Media Replace: backup and recovery responsibility acknowledged' => 'Media Replace : responsabilité de sauvegarde et de récupération confirmée',
+        'Content Models: schema import backup and recovery responsibility acknowledged' => 'Content Models : responsabilité de sauvegarde et de récupération confirmée pour l’import du schéma',
+        'Content Models: native import backup and recovery responsibility acknowledged' => 'Content Models : responsabilité de sauvegarde et de récupération confirmée pour l’import natif',
+        'Snippets: restore backup and recovery responsibility acknowledged' => 'Snippets : responsabilité de sauvegarde et de récupération confirmée pour la restauration',
+        'Notes: import overwrite backup and recovery responsibility acknowledged' => 'Notes : responsabilité de sauvegarde et de récupération confirmée pour l’import avec écrasement',
+        'Core Scanner: quarantine restore backup and recovery responsibility acknowledged' => 'Core Scanner : responsabilité de sauvegarde et de récupération confirmée pour la restauration de quarantaine',
     ]
 );
 
