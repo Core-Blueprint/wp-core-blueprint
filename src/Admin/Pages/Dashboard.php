@@ -11,7 +11,7 @@ declare(strict_types=1);
  *                     Core Shield, Core Scanner, Failsafe).
  *                     Each card shows live state + one factual line and
  *                     deeplinks to the relevant Safeguards tab.
- *   2. Operations   - Logs, Notes, Reports.
+ *   2. Operations   - Logs, Notes, Reports, Core Profiles.
  *   3. CMS Tools    - first-party CMS baseline modules such as User Roles,
  *                     Media Replace, and Package Downloads.
  *   4. Preferences  - navigation cards mirroring the available Preferences tabs,
