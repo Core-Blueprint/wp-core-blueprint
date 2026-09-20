@@ -52,6 +52,7 @@ use CB\Core\PackageDownload\Admin\Page as PackageDownloadPage;
 use CB\Core\MediaReplace\State as MediaReplaceState;
 use CB\Core\PackageDownload\State as PackageDownloadState;
 use CB\Core\Permissions\Admin\RolesPage;
+use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\UserRolesState;
 use CB\Core\Modules\Status;
 use CB\Core\Security\AccessMode;
@@ -153,6 +154,20 @@ final class Dashboard extends PageBase {
 				'state'           => $reports_enabled ? 'ok' : 'off',
 			],
 		];
+
+		$dashboard_user = wp_get_current_user();
+		if (
+			current_user_can( 'cb_manage_permissions' )
+			&& $dashboard_user instanceof \WP_User
+			&& PrivilegedAccessGuard::is_trusted_operator( $dashboard_user )
+		) {
+			$operations_cards[] = [
+				'id'    => 'core-profiles',
+				'title' => __( 'Core Profiles', 'core-blueprint' ),
+				'meta'  => __( 'Transfer governed Base configuration between sites', 'core-blueprint' ),
+				'url'   => admin_url( 'admin.php?page=' . Profiles::SLUG ),
+			];
+		}
 
 		// CMS Tools - first-party modules that fill gaps in WordPress' CMS
 		// baseline. Keep these separate from operational records/workflows so
