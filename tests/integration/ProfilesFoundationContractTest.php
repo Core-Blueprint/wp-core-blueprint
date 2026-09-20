@@ -45,7 +45,7 @@ final class CB_Base_Profiles_Foundation_Contract_Test extends WP_UnitTestCase {
 
 	public function test_pf2_unknown_and_future_section_schemas_are_rejected_before_mutation(): void {
 		$document = Engine::export_document( 'Baseline', '', [ 'ai-governance' ] );
-		$document['sections']['unknown-section'] = [ 'schema_version' => 1, 'data' => [] ];
+		$document['sections']['unknown-section'] = [ 'schema_version' => 1, 'data' => [ 'probe' => true ] ];
 		try {
 			Engine::preview( $document );
 			self::fail( 'Unknown Profile section was accepted.' );
