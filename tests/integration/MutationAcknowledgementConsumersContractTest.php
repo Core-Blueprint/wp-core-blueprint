@@ -98,6 +98,52 @@ final class CB_Base_Mutation_Acknowledgement_Consumers_Contract_Test extends WP_
 		self::assertStringNotContainsString( 'MutationAcknowledgement', $delete );
 	}
 
+	public function test_acknowledgement_events_have_technical_and_plain_labels(): void {
+		$registrations = [
+			'src/MediaReplace/Bootstrap.php' => [
+				'media.replace.acknowledged',
+				'Media Replace: backup and recovery responsibility acknowledged',
+			],
+			'src/ContentModels/Bootstrap.php' => [
+				'content.models.schema.import.acknowledged',
+				'Content Models: schema import backup and recovery responsibility acknowledged',
+				'content.models.native.import.acknowledged',
+				'Content Models: native import backup and recovery responsibility acknowledged',
+			],
+			'src/Snippets/Bootstrap.php' => [
+				'snippets.restore.acknowledged',
+				'Snippets: restore backup and recovery responsibility acknowledged',
+			],
+			'src/Notes/Bootstrap.php' => [
+				'notes.import.overwrite.acknowledged',
+				'Notes: import overwrite backup and recovery responsibility acknowledged',
+			],
+			'src/Integrity/Bootstrap.php' => [
+				'integrity.quarantine.restore.acknowledged',
+				'Core Scanner: quarantine restore backup and recovery responsibility acknowledged',
+			],
+		];
+
+		foreach ( $registrations as $path => $needles ) {
+			$source = $this->source( $path );
+			foreach ( $needles as $needle ) {
+				self::assertStringContainsString( $needle, $source, $path );
+			}
+		}
+
+		$plain = $this->source( 'src/Log/Language.php' );
+		foreach ( [
+			'media.replace.acknowledged',
+			'content.models.schema.import.acknowledged',
+			'content.models.native.import.acknowledged',
+			'snippets.restore.acknowledged',
+			'notes.import.overwrite.acknowledged',
+			'integrity.quarantine.restore.acknowledged',
+		] as $event_id ) {
+			self::assertStringContainsString( "'{$event_id}'", $plain );
+		}
+	}
+
 	public function test_acknowledgement_audits_precede_their_mutations(): void {
 		$snippets = $this->source( 'src/Snippets/Admin/Actions.php' );
 		self::assertLessThan(
