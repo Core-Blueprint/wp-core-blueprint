@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class CB_Base_Mutation_Acknowledgement_Consumers_Contract_Test extends WP_UnitTestCase {
+final class MutationAcknowledgementConsumersContractTest extends WP_UnitTestCase {
 
 	private function source( string $path ): string {
 		$source = file_get_contents( CB_CORE_DIR . $path );
