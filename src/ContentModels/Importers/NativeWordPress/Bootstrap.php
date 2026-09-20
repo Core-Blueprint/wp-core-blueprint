@@ -53,7 +53,7 @@ final class Bootstrap {
 			);
 			$plan = PlanStore::plan();
 			if ( is_array( $plan ) && class_exists( AuditLog::class ) ) {
-				AuditLog::log( 'content_models.native_import_acknowledged', 'notice', [
+				AuditLog::log( 'content_models_native_import_acknowledged', 'notice', [
 					'plan_id'                 => (string) ( $plan['plan_id'] ?? '' ),
 					'summary'                 => (array) ( $plan['summary'] ?? [] ),
 					'recovery_responsibility' => true,
