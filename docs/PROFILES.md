@@ -1,6 +1,6 @@
-# Core Blueprint Profiles v1
+# Core Profiles v1
 
-Core Blueprint Profiles provide portable, versioned configuration transfer for Core Blueprint Base.
+Core Profiles is the Core Blueprint Base feature for portable, versioned configuration transfer.
 
 A Profile is not a backup, site clone or raw WordPress options export. It contains only explicitly allowlisted configuration domains that Base can validate and apply through their canonical domain APIs.
 
