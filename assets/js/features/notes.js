@@ -506,6 +506,21 @@ import { qs, qsa } from '../core/dom.js';
         if (preview.length) preview.forEach((item) => list.appendChild(importPreviewRow(item)));
         else { const empty = document.createElement('p'); empty.textContent = config.i18n?.noImportableNotes || 'No importable notes found.'; list.appendChild(empty); }
         body.appendChild(list);
+        const acknowledgementHost = document.createElement('div');
+        acknowledgementHost.dataset.cbNotesImportOverwriteAcknowledgement = '1';
+        body.appendChild(acknowledgementHost);
+        const acknowledgementTemplate = document.getElementById('cb-notes-import-overwrite-acknowledgement-template');
+        const syncOverwriteAcknowledgement = () => {
+            const hasOverwrite = qsa('[data-cb-notes-import-decision]', body).some((select) => select.value === 'overwrite');
+            acknowledgementHost.replaceChildren();
+            if (hasOverwrite && acknowledgementTemplate) {
+                acknowledgementHost.appendChild(acknowledgementTemplate.content.cloneNode(true));
+            }
+        };
+        list.addEventListener('change', (event) => {
+            if (event.target.matches('[data-cb-notes-import-decision]')) syncOverwriteAcknowledgement();
+        });
+        syncOverwriteAcknowledgement();
         await window.cbCore.modal.show({
             title: config.i18n?.importNotes || 'Import Notes',
             body,
@@ -515,10 +530,17 @@ import { qs, qsa } from '../core/dom.js';
             onConfirm: async () => {
                 const decisions = {};
                 qsa('[data-cb-notes-import-decision]', body).forEach((select) => { decisions[select.dataset.cbNotesImportDecision] = select.value; });
+                const hasOverwrite = Object.values(decisions).includes('overwrite');
+                const acknowledgement = body.querySelector('[name="notes_import_overwrite_acknowledgement"]');
+                if (hasOverwrite && !acknowledgement?.checked) {
+                    acknowledgement?.reportValidity();
+                    acknowledgement?.focus();
+                    return false;
+                }
                 try {
                     const json = await request('action', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'import_commit', payload: { notes, decisions }, filters: collectFilters() }),
+                        body: JSON.stringify({ action: 'import_commit', payload: { notes, decisions, notes_import_overwrite_acknowledgement: hasOverwrite ? '1' : '' }, filters: collectFilters() }),
                     });
                     replaceResults(json.html);
                     showToast(json.message || config.i18n?.notesImported || 'Notes imported.');
