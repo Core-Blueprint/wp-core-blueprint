@@ -30,6 +30,7 @@ final class Bootstrap {
 		EventRegistry::register_core_many( [
 			'profiles.exported'        => __( 'Core Profiles: configuration exported', 'core-blueprint' ),
 			'profiles.previewed'       => __( 'Core Profiles: import preview created', 'core-blueprint' ),
+			'profiles.apply_acknowledged' => __( 'Core Profiles: backup and recovery responsibility acknowledged', 'core-blueprint' ),
 			'profiles.applied'         => __( 'Core Profiles: configuration applied', 'core-blueprint' ),
 			'profiles.apply_failed'    => __( 'Core Profiles: apply failed and was rolled back', 'core-blueprint' ),
 			'profiles.rollback_failed' => __( 'Core Profiles: rollback requires attention', 'core-blueprint' ),
