@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace CB\Core\ContentModels\Admin;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\ContentModels\FieldTypes;
 use CB\Core\ContentModels\Repository;
 use CB\Core\ContentModels\Runtime;
@@ -78,6 +79,12 @@ trait ToolsView {
 						<input type="hidden" name="action" value="cb_core_content_models_apply_import" />
 						<?php wp_nonce_field( 'cb_core_content_models_apply_import' ); ?>
 						<?php if ( ! empty( $conflicts ) ) : ?><label class="cb-content-models-import-overwrite"><input type="checkbox" name="overwrite" value="1" /> <?php esc_html_e( 'Replace matching user-managed definitions with the imported definitions', 'core-blueprint' ); ?></label><?php endif; ?>
+						<?php MutationAcknowledgement::render(
+							'content_models_import_acknowledgement',
+							'cb-content-models-import-acknowledgement',
+							__( "I understand that importing this schema changes this site's Content Models configuration and that I am responsible for having a recent backup or other recovery option available.", 'core-blueprint' ),
+							__( 'Imported definitions can affect registered post types, taxonomies, Option Pages and fields. Existing definitions may be replaced when overwrite is selected.', 'core-blueprint' )
+						); ?>
 						<button class="button cb-core-button cb-core-button--primary" type="submit"<?php echo ! empty( $conflicts ) ? ' data-requires-overwrite' : ''; ?>><?php esc_html_e( 'Import Schema', 'core-blueprint' ); ?></button>
 					</form>
 				<?php endif; ?>
