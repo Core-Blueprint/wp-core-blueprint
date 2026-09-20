@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace CB\Core\MediaReplace;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Log\AuditLog;
 use CB\Core\MediaReplace\Admin\Page as MediaReplacePage;
 use CB\Core\MediaReplace\Strategy\PreserveFilenameStrategy;
@@ -20,8 +21,9 @@ defined( 'ABSPATH' ) || exit;
 
 final class AdminIntegration {
 
-	private const FORM_ACTION   = 'cb_core_replace_media';
-	private const NOTICE_PREFIX = 'cb_core_media_replace_notice_';
+	private const FORM_ACTION            = 'cb_core_replace_media';
+	private const ACKNOWLEDGEMENT_FIELD = 'media_replace_acknowledgement';
+	private const NOTICE_PREFIX          = 'cb_core_media_replace_notice_';
 
 	public static function init_screen(): void {
 		add_action( 'admin_notices', [ __CLASS__, 'render_admin_notice' ] );
@@ -245,6 +247,12 @@ final class AdminIntegration {
 								__( 'Current public URL', 'core-blueprint' ),
 							],
 						] );
+						MutationAcknowledgement::render(
+							self::ACKNOWLEDGEMENT_FIELD,
+							'cb-media-replace-acknowledgement',
+							__( "I understand that replacing this media file changes the attachment's stored files and that I am responsible for having a recent backup or other recovery option available.", 'core-blueprint' ),
+							__( 'Generated sizes, caches, themes, plugins and external references may affect the result.', 'core-blueprint' )
+						);
 						?>
 
 						<div class="cb-media-replace-actions">
@@ -279,9 +287,25 @@ final class AdminIntegration {
 		}
 		check_admin_referer( 'cb_core_replace_media_' . $attachment_id );
 
+		try {
+			MutationAcknowledgement::require_confirmed(
+				$_POST[ self::ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above; strict literal confirmation only.
+				__( 'Confirm your responsibility for backup and recovery before replacing the media file.', 'core-blueprint' )
+			);
+		} catch ( \InvalidArgumentException $error ) {
+			self::set_notice( 'error', $error->getMessage() );
+			wp_safe_redirect( self::replace_url( $attachment_id, $return_url ) );
+			exit;
+		}
+
 		$upload = isset( $_FILES['replacement_file'] ) && is_array( $_FILES['replacement_file'] )
 			? $_FILES['replacement_file']
 			: [];
+
+		AuditLog::log( 'media.replace_acknowledged', 'notice', [
+			'attachment_id'          => $attachment_id,
+			'recovery_responsibility' => true,
+		] );
 
 		try {
 			$service = new ReplaceService( new PreserveFilenameStrategy() );
