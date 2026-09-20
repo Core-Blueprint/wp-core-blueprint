@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Profiles\Admin;
 
+use CB\Core\Admin\Pages\Profiles as ProfilesPage;
 use CB\Core\Log\AuditLog;
 use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Profiles\CanonicalJson;
@@ -132,7 +133,7 @@ final class Actions {
 			|| ! PrivilegedAccessGuard::is_trusted_operator( $user )
 		) {
 			wp_die(
-				esc_html__( 'Only an approved Core Blueprint Operator may export or apply Profiles.', 'core-blueprint' ),
+				esc_html__( 'Only an approved Core Blueprint Operator may export or apply Core Profiles.', 'core-blueprint' ),
 				esc_html__( 'Forbidden', 'core-blueprint' ),
 				[ 'response' => 403 ]
 			);
@@ -144,7 +145,7 @@ final class Actions {
 	}
 
 	private static function page_url(): string {
-		return admin_url( 'admin.php?page=core-blueprint-profiles' );
+		return admin_url( 'admin.php?page=' . ProfilesPage::SLUG );
 	}
 
 	private static function redirect_with_notice( string $type, string $message, string $preview_token = '' ): never {
