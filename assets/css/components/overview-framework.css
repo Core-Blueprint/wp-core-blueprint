@@ -72,6 +72,25 @@
 	margin: var(--cb-space-5) 0;
 }
 
+/* Fixed three-column directory variant. Unlike the default auto-fit grid,
+ * incomplete rows keep the same card width instead of stretching one or two
+ * entries across the available space. */
+.cb-core-wrap .cb-core-tab-cards--fixed-three {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1200px) {
+	.cb-core-wrap .cb-core-tab-cards--fixed-three {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 782px) {
+	.cb-core-wrap .cb-core-tab-cards--fixed-three {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
 /* ─── Tab card ─────────────────────────────────────────────────────────── */
 
 .cb-core-wrap .cb-core-tab-card {
