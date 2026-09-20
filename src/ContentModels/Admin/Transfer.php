@@ -86,7 +86,7 @@ final class Transfer {
 			);
 			$overwrite = isset( $_POST['overwrite'] ) && '1' === (string) wp_unslash( $_POST['overwrite'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce.
 			if ( class_exists( AuditLog::class ) ) {
-				AuditLog::log( 'content_models.schema_import_acknowledged', 'notice', [
+				AuditLog::log( 'content_models_schema_import_acknowledged', 'notice', [
 					'overwrite'                => $overwrite,
 					'counts'                   => (array) ( $preview['analysis']['counts'] ?? [] ),
 					'recovery_responsibility' => true,
