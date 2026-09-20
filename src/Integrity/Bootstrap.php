@@ -184,6 +184,7 @@ final class Bootstrap {
 		$labels['integrity.distribution.locale.changed']   = __( 'Core Scanner: distribution locale changed',   'core-blueprint' );
 		$labels['integrity.quarantine.item.quarantined']     = __( 'Core Scanner: item quarantined', 'core-blueprint' );
 		$labels['integrity.quarantine.item.restored']        = __( 'Core Scanner: quarantine item restored', 'core-blueprint' );
+		$labels['integrity.quarantine.restore.acknowledged']   = __( 'Core Scanner: quarantine restore backup and recovery responsibility acknowledged', 'core-blueprint' );
 		$labels['integrity.quarantine.item.deleted']         = __( 'Core Scanner: quarantine payload permanently deleted', 'core-blueprint' );
 		$labels['integrity.quarantine.note.added']           = __( 'Core Scanner: quarantine note added', 'core-blueprint' );
 		$labels['integrity.quarantine.review.state.changed'] = __( 'Core Scanner: quarantine review state changed', 'core-blueprint' );
