@@ -66,6 +66,12 @@ $catalog['messages'] = array_replace(
         'I understand that restoring this quarantined item changes the site\'s active filesystem and that I am responsible for having a recent backup or other recovery option available.' => 'Ik begrijp dat het herstellen van dit in quarantaine geplaatste item het actieve bestandssysteem van de site wijzigt en dat ik verantwoordelijk ben voor een recente back-up of andere herstelmogelijkheid.',
         'The restore is refused if the original path is occupied or the quarantined payload no longer matches its evidence.' => 'Het herstel wordt geweigerd als het oorspronkelijke pad bezet is of de quarantainepayload niet meer overeenkomt met het bewijs.',
         'Confirm your responsibility for backup and recovery before restoring the quarantined item.' => 'Bevestig je verantwoordelijkheid voor back-up en herstel voordat je het in quarantaine geplaatste item herstelt.',
+        'Media Replace: backup and recovery responsibility acknowledged' => 'Media Replace: verantwoordelijkheid voor back-up en herstel bevestigd',
+        'Content Models: schema import backup and recovery responsibility acknowledged' => 'Content Models: verantwoordelijkheid voor back-up en herstel bij schema-import bevestigd',
+        'Content Models: native import backup and recovery responsibility acknowledged' => 'Content Models: verantwoordelijkheid voor back-up en herstel bij native import bevestigd',
+        'Snippets: restore backup and recovery responsibility acknowledged' => 'Snippets: verantwoordelijkheid voor back-up en herstel bij restore bevestigd',
+        'Notes: import overwrite backup and recovery responsibility acknowledged' => 'Notes: verantwoordelijkheid voor back-up en herstel bij overschrijvende import bevestigd',
+        'Core Scanner: quarantine restore backup and recovery responsibility acknowledged' => 'Core Scanner: verantwoordelijkheid voor back-up en herstel bij quarantaineherstel bevestigd',
     ]
 );
 
