@@ -66,6 +66,12 @@ $catalog['messages'] = array_replace(
         'I understand that restoring this quarantined item changes the site\'s active filesystem and that I am responsible for having a recent backup or other recovery option available.' => 'Comprendo che il ripristino di questo elemento in quarantena modifica il file system attivo del sito e che sono responsabile di disporre di un backup recente o di un’altra opzione di ripristino.',
         'The restore is refused if the original path is occupied or the quarantined payload no longer matches its evidence.' => 'Il ripristino viene rifiutato se il percorso originale è occupato o se il payload in quarantena non corrisponde più alle relative evidenze.',
         'Confirm your responsibility for backup and recovery before restoring the quarantined item.' => 'Conferma la tua responsabilità per backup e ripristino prima di ripristinare l’elemento in quarantena.',
+        'Media Replace: backup and recovery responsibility acknowledged' => 'Media Replace: responsabilità per backup e ripristino confermata',
+        'Content Models: schema import backup and recovery responsibility acknowledged' => 'Content Models: responsabilità per backup e ripristino confermata per l’importazione dello schema',
+        'Content Models: native import backup and recovery responsibility acknowledged' => 'Content Models: responsabilità per backup e ripristino confermata per l’importazione nativa',
+        'Snippets: restore backup and recovery responsibility acknowledged' => 'Snippets: responsabilità per backup e ripristino confermata per il ripristino',
+        'Notes: import overwrite backup and recovery responsibility acknowledged' => 'Notes: responsabilità per backup e ripristino confermata per l’importazione con sovrascrittura',
+        'Core Scanner: quarantine restore backup and recovery responsibility acknowledged' => 'Core Scanner: responsabilità per backup e ripristino confermata per il ripristino dalla quarantena',
     ]
 );
 
