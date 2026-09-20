@@ -4,7 +4,7 @@
 
 ## 1.0.0-rc1 — 2026-09-09
 
-### Core Blueprint Profiles v1
+### Core Profiles v1
 
 - Add approved-Operator-only export, preview and transactional apply of portable Base configuration through versioned Core Blueprint Profile JSON documents.
 - Keep secrets, executable Snippets, identities, trust approvals, site mode, access-state IDs, runtime evidence and customer content outside the Profile payload by explicit section allowlists.
