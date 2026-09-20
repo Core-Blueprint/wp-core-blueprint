@@ -66,6 +66,12 @@ $catalog['messages'] = array_replace(
         'I understand that restoring this quarantined item changes the site\'s active filesystem and that I am responsible for having a recent backup or other recovery option available.' => 'Compreendo que restaurar este item em quarentena altera o sistema de ficheiros ativo do site e que sou responsável por ter uma cópia de segurança recente ou outra opção de recuperação disponível.',
         'The restore is refused if the original path is occupied or the quarantined payload no longer matches its evidence.' => 'O restauro é recusado se o caminho original estiver ocupado ou se o conteúdo em quarentena já não corresponder às respetivas evidências.',
         'Confirm your responsibility for backup and recovery before restoring the quarantined item.' => 'Confirme a sua responsabilidade pela cópia de segurança e recuperação antes de restaurar o item em quarentena.',
+        'Media Replace: backup and recovery responsibility acknowledged' => 'Media Replace: responsabilidade pela cópia de segurança e recuperação confirmada',
+        'Content Models: schema import backup and recovery responsibility acknowledged' => 'Content Models: responsabilidade pela cópia de segurança e recuperação confirmada na importação do esquema',
+        'Content Models: native import backup and recovery responsibility acknowledged' => 'Content Models: responsabilidade pela cópia de segurança e recuperação confirmada na importação nativa',
+        'Snippets: restore backup and recovery responsibility acknowledged' => 'Snippets: responsabilidade pela cópia de segurança e recuperação confirmada no restauro',
+        'Notes: import overwrite backup and recovery responsibility acknowledged' => 'Notes: responsabilidade pela cópia de segurança e recuperação confirmada na importação com sobrescrita',
+        'Core Scanner: quarantine restore backup and recovery responsibility acknowledged' => 'Core Scanner: responsabilidade pela cópia de segurança e recuperação confirmada no restauro da quarentena',
     ]
 );
 
