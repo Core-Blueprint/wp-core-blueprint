@@ -66,6 +66,12 @@ $catalog['messages'] = array_replace(
         'I understand that restoring this quarantined item changes the site\'s active filesystem and that I am responsible for having a recent backup or other recovery option available.' => 'Ich verstehe, dass die Wiederherstellung dieses Quarantäne-Elements das aktive Dateisystem der Website ändert und dass ich dafür verantwortlich bin, eine aktuelle Sicherung oder eine andere Wiederherstellungsoption verfügbar zu haben.',
         'The restore is refused if the original path is occupied or the quarantined payload no longer matches its evidence.' => 'Die Wiederherstellung wird verweigert, wenn der ursprüngliche Pfad belegt ist oder die Quarantäne-Nutzlast nicht mehr mit ihren Nachweisen übereinstimmt.',
         'Confirm your responsibility for backup and recovery before restoring the quarantined item.' => 'Bestätige deine Verantwortung für Sicherung und Wiederherstellung, bevor du das Quarantäne-Element wiederherstellst.',
+        'Media Replace: backup and recovery responsibility acknowledged' => 'Media Replace: Verantwortung für Sicherung und Wiederherstellung bestätigt',
+        'Content Models: schema import backup and recovery responsibility acknowledged' => 'Content Models: Verantwortung für Sicherung und Wiederherstellung beim Schemaimport bestätigt',
+        'Content Models: native import backup and recovery responsibility acknowledged' => 'Content Models: Verantwortung für Sicherung und Wiederherstellung beim nativen Import bestätigt',
+        'Snippets: restore backup and recovery responsibility acknowledged' => 'Snippets: Verantwortung für Sicherung und Wiederherstellung bei der Wiederherstellung bestätigt',
+        'Notes: import overwrite backup and recovery responsibility acknowledged' => 'Notes: Verantwortung für Sicherung und Wiederherstellung beim überschreibenden Import bestätigt',
+        'Core Scanner: quarantine restore backup and recovery responsibility acknowledged' => 'Core Scanner: Verantwortung für Sicherung und Wiederherstellung bei Quarantäne-Wiederherstellung bestätigt',
     ]
 );
 
