@@ -193,6 +193,7 @@ final class Language {
 		'integrity_component_baseline_approved'  => "Core Scanner: a {type} baseline was approved for '{slug}' ({entry_count} entries)",
 		'integrity_distribution_locale_changed'  => 'Core Scanner: WordPress distribution locale was set ({mode})',
 		'integrity_distribution_locale_detected' => "Core Scanner detected the WordPress distribution locale: {detected}",
+		'integrity.quarantine.restore.acknowledged' => 'Backup and recovery responsibility was acknowledged before a quarantined item was restored',
 
 		// Notes
 		'note_created'         => 'A note was created',
@@ -204,6 +205,13 @@ final class Language {
 		'notes_bulk_deleted'   => 'All {count} note(s) were deleted in bulk',
 		'notes_exported'       => '{count} note(s) were exported as JSON',
 		'notes_imported'       => 'Notes import completed (created: {created}, overwritten: {overwritten}, copied: {copied}, skipped: {skipped})',
+		'notes.import.overwrite.acknowledged' => 'Backup and recovery responsibility was acknowledged before existing Notes were overwritten',
+
+		// Consequential mutation acknowledgements
+		'media.replace.acknowledged' => 'Backup and recovery responsibility was acknowledged before a media file was replaced',
+		'content.models.schema.import.acknowledged' => 'Backup and recovery responsibility was acknowledged before a Content Models schema was imported',
+		'content.models.native.import.acknowledged' => 'Backup and recovery responsibility was acknowledged before WordPress schema registrations were adopted',
+		'snippets.restore.acknowledged' => 'Backup and recovery responsibility was acknowledged before snippets were restored with preserved IDs',
 	];
 
 	/**
