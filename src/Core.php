@@ -179,6 +179,11 @@ final class Core {
 		// between Logs and Reports), settings as a Preferences tab.
 		\CB\Core\Notes\Bootstrap::boot();
 
+		// Profiles subsystem - portable, versioned Base configuration with a
+		// mandatory preview/diff and transactional apply/rollback boundary.
+		// Profiles deliberately exclude secrets, identities and runtime evidence.
+		\CB\Core\Profiles\Bootstrap::boot();
+
 
 		// HUD subsystem - the floating "front door" launcher. Renders on
 		// admin AND frontend for capable logged-in users; honours the
@@ -401,6 +406,10 @@ final class Core {
 		// Clear Core Scanner cron - unconditional, deactivation should
 		// never leave orphaned scheduled hooks behind.
 		IntegrityCron::clear_schedule();
+
+		// A request cannot legitimately keep owning a Profile apply lease once
+		// Base is deactivated. Preview transients may simply expire naturally.
+		\CB\Core\Profiles\ApplyLock::clear();
 
 		// Base is no longer executing on normal requests; keep its small runtime
 		// state out of WordPress alloptions until reactivation.

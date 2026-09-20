@@ -113,6 +113,7 @@ $foundation_options = [
 	'cb_core_trust_schema_version',
 	'cb_core_role_policy_schema_version',
 	'cb_core_role_policy_drift',
+	'cb_core_profiles_apply_lock',
 ];
 
 foreach ( $foundation_options as $opt ) {
@@ -156,6 +157,7 @@ $cb_base_transient_prefixes = [
 	'cb_core_privileged_guard_sweep',
 	'cb_core_media_replace_notice_',
 	'cb_core_alert_',
+	'cb_core_profile_',
 	'cb_cm_',
 ];
 

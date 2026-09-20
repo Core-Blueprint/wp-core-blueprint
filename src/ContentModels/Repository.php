@@ -821,6 +821,71 @@ final class Repository {
 		return $counts;
 	}
 
+	/**
+	 * Restore only Content Models definitions touched by one failed Profile apply.
+	 *
+	 * Definitions outside the imported target remain untouched. A touched
+	 * definition is restored only when its current raw state still matches either
+	 * the imported target or the pre-apply snapshot. Any third state is treated as
+	 * a concurrent mutation and fails closed instead of being overwritten.
+	 *
+	 * @internal Core Blueprint Profiles rollback boundary only.
+	 */
+	public static function restore_profile_schema( array $snapshot, array $target ): void {
+		$maps = [
+			'post_types'   => 'post_type',
+			'taxonomies'   => 'taxonomy',
+			'option_pages'  => 'option_page',
+			'field_groups' => 'field_group',
+		];
+		$data = self::all();
+		$rewrite_dirty = false;
+
+		foreach ( $maps as $section => $getter ) {
+			if ( ! isset( $snapshot[ $section ], $target[ $section ] ) || ! is_array( $snapshot[ $section ] ) || ! is_array( $target[ $section ] ) ) {
+				throw new \InvalidArgumentException( __( 'The Content Models rollback snapshot is invalid.', 'core-blueprint' ) );
+			}
+
+			foreach ( $target[ $section ] as $key => $target_definition ) {
+				$key = (string) $key;
+				$current_definition = $data[ $section ][ $key ] ?? null;
+				$snapshot_has = array_key_exists( $key, $snapshot[ $section ] );
+				$snapshot_definition = $snapshot_has ? $snapshot[ $section ][ $key ] : null;
+
+				if ( $current_definition !== $target_definition && ( ! $snapshot_has || $current_definition !== $snapshot_definition ) ) {
+					throw new \RuntimeException( __( 'A Content Models definition changed during Profile rollback and was not overwritten.', 'core-blueprint' ) );
+				}
+
+				self::assert_definition_unlocked( self::{$getter}( $key ) );
+				if ( $snapshot_has ) {
+					$data[ $section ][ $key ] = $snapshot_definition;
+				} else {
+					unset( $data[ $section ][ $key ] );
+				}
+
+				if ( 'post_types' === $section || 'taxonomies' === $section ) {
+					$rewrite_dirty = true;
+				}
+			}
+		}
+
+		self::write( $data, $rewrite_dirty );
+		$restored = self::all();
+		foreach ( $maps as $section => $getter ) {
+			unset( $getter );
+			foreach ( $target[ $section ] as $key => $unused ) {
+				$key = (string) $key;
+				if ( array_key_exists( $key, $snapshot[ $section ] ) ) {
+					if ( ! array_key_exists( $key, $restored[ $section ] ) || $restored[ $section ][ $key ] !== $snapshot[ $section ][ $key ] ) {
+						throw new \RuntimeException( __( 'The Content Models rollback snapshot could not be restored.', 'core-blueprint' ) );
+					}
+				} elseif ( array_key_exists( $key, $restored[ $section ] ) ) {
+					throw new \RuntimeException( __( 'The Content Models rollback snapshot could not be restored.', 'core-blueprint' ) );
+				}
+			}
+		}
+	}
+
 
 	private static function assert_definition_unlocked( ?array $definition ): void {
 		if ( is_array( $definition ) && ! empty( $definition['_locked'] ) ) {

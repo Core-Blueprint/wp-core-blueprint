@@ -51,4 +51,10 @@ $catalog['messages'] = array_replace(
     ]
 );
 
+$profiles = require __DIR__ . '/profiles/core-blueprint-fr_FR.php';
+if ( ! is_array( $profiles ) || ! isset( $profiles['messages'] ) || ! is_array( $profiles['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $profiles['messages'] );
+
 return $catalog;

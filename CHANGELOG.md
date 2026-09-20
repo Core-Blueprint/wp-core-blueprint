@@ -4,6 +4,14 @@
 
 ## 1.0.0-rc1 — 2026-09-09
 
+### Core Profiles v1
+
+- Add approved-Operator-only export, preview and transactional apply of portable Base configuration through versioned Core Blueprint Profile JSON documents.
+- Keep secrets, executable Snippets, identities, trust approvals, site mode, access-state IDs, runtime evidence and customer content outside the Profile payload by explicit section allowlists.
+- Add deterministic full preflight, human-readable diffs, stale-preview fingerprints, compare-and-swap apply locking, per-section verification and compensating rollback with concurrent-state protection.
+- Apply portable module activation last, coordinate Core Scanner state changes with the Scanner lock, and keep Content Models rollback targeted to definitions touched by the failed Profile transaction.
+- Add strict schema/type validation, bounded uploads/review size, six-locale Profile catalogs and regression coverage for stale state, partial failure, lock ownership, rollback and portability boundaries.
+
 ### Data Exchange + Data Mapper Foundations v1
 
 - Add the Base-owned `core-blueprint::data-exchange.entity@1` contract on top of Generic Interoperability so extensions can expose versioned import/export entities without moving domain semantics or persistence into Base.
