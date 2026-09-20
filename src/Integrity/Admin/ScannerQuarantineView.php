@@ -6,6 +6,7 @@ declare(strict_types=1);
  */
 namespace CB\Core\Integrity\Admin;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Integrity\Quarantine\Repository as QuarantineRepository;
 use CB\Core\Integrity\Quarantine\Service as QuarantineService;
 use CB\Core\Integrity\State;
@@ -78,6 +79,16 @@ trait ScannerQuarantineView {
 				</div>
 			<?php endif; ?>
 			<p class="cb-core-integrity-muted"><?php echo esc_html__( 'Quarantine is intentionally finding-driven; Core Scanner does not expose a general-purpose web file manager.', 'core-blueprint' ); ?></p>
+			<?php if ( $can_manage_policy ) : ?>
+				<template id="cb-integrity-quarantine-restore-acknowledgement-template">
+					<?php MutationAcknowledgement::render(
+						'quarantine_restore_acknowledgement',
+						'cb-integrity-quarantine-restore-acknowledgement',
+						__( "I understand that restoring this quarantined item changes the site's active filesystem and that I am responsible for having a recent backup or other recovery option available.", 'core-blueprint' ),
+						__( 'The restore is refused if the original path is occupied or the quarantined payload no longer matches its evidence.', 'core-blueprint' )
+					); ?>
+				</template>
+			<?php endif; ?>
 		</section>
 		<?php
 	}
