@@ -84,7 +84,9 @@ final class Bootstrap {
 		$labels['content.models.option.values.updated']  = __( 'Content Models: Option Page values updated', 'core-blueprint' );
 		$labels['content.models.schema.exported'] = __( 'Content Models: schema exported', 'core-blueprint' );
 		$labels['content.models.schema.imported'] = __( 'Content Models: schema imported', 'core-blueprint' );
+		$labels['content.models.schema.import.acknowledged'] = __( 'Content Models: schema import backup and recovery responsibility acknowledged', 'core-blueprint' );
 		$labels['content.models.native.imported'] = __( 'Content Models: native WordPress schema adopted', 'core-blueprint' );
+		$labels['content.models.native.import.acknowledged'] = __( 'Content Models: native import backup and recovery responsibility acknowledged', 'core-blueprint' );
 		$labels['content.models.field.group.created']  = __( 'Content Models: field group created', 'core-blueprint' );
 		$labels['content.models.field.group.duplicated'] = __( 'Content Models: field group duplicated', 'core-blueprint' );
 		$labels['content.models.field.group.updated']  = __( 'Content Models: field group updated', 'core-blueprint' );
