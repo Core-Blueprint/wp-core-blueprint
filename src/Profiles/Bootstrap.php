@@ -22,17 +22,17 @@ final class Bootstrap {
 
 	public static function register_page(): void {
 		PageRegistry::register_base( new ProfilesPage(), [
-			'components' => [ 'cards', 'notices', 'state-badges', 'fields', 'actions', 'panels' ],
+			'components' => [ 'cards', 'notices', 'state-badges', 'fields', 'form-controls' ],
 		] );
 	}
 
 	public static function register_events(): void {
 		EventRegistry::register_core_many( [
-			'profiles.exported'        => __( 'Profiles: configuration exported', 'core-blueprint' ),
-			'profiles.previewed'       => __( 'Profiles: import preview created', 'core-blueprint' ),
-			'profiles.applied'         => __( 'Profiles: configuration applied', 'core-blueprint' ),
-			'profiles.apply_failed'    => __( 'Profiles: apply failed and was rolled back', 'core-blueprint' ),
-			'profiles.rollback_failed' => __( 'Profiles: rollback requires attention', 'core-blueprint' ),
+			'profiles.exported'        => __( 'Core Profiles: configuration exported', 'core-blueprint' ),
+			'profiles.previewed'       => __( 'Core Profiles: import preview created', 'core-blueprint' ),
+			'profiles.applied'         => __( 'Core Profiles: configuration applied', 'core-blueprint' ),
+			'profiles.apply_failed'    => __( 'Core Profiles: apply failed and was rolled back', 'core-blueprint' ),
+			'profiles.rollback_failed' => __( 'Core Profiles: rollback requires attention', 'core-blueprint' ),
 		] );
 	}
 }
