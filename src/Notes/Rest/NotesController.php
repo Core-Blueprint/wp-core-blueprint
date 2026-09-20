@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace CB\Core\Notes\Rest;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Notes\Admin\Renderer;
 use CB\Core\Notes\Repository;
 use CB\Core\Notes\State;
@@ -168,6 +169,22 @@ final class NotesController {
         if ( 'import_commit' === $action ) {
             $notes = isset( $payload['notes'] ) && is_array( $payload['notes'] ) ? $payload['notes'] : [];
             $decisions = isset( $payload['decisions'] ) && is_array( $payload['decisions'] ) ? $payload['decisions'] : [];
+            $overwrite_count = count( array_filter( $decisions, static fn( $decision ): bool => 'overwrite' === sanitize_key( (string) $decision ) ) );
+            if ( $overwrite_count > 0 ) {
+                try {
+                    MutationAcknowledgement::require_confirmed(
+                        $payload['notes_import_overwrite_acknowledgement'] ?? null,
+                        __( 'Confirm your responsibility for backup and recovery before overwriting existing Notes.', 'core-blueprint' )
+                    );
+                } catch ( \InvalidArgumentException $error ) {
+                    return new WP_REST_Response( [ 'success' => false, 'message' => $error->getMessage() ], 400 );
+                }
+                Audit::log( 'notes_import_overwrite_acknowledged', [
+                    'overwrite_count'         => $overwrite_count,
+                    'user_id'                 => get_current_user_id(),
+                    'recovery_responsibility' => true,
+                ] );
+            }
             $summary = Repository::import_commit( $notes, $decisions );
             Audit::log( 'notes_imported', array_merge( $summary, [ 'user_id' => get_current_user_id() ] ) );
             return self::response_with_list( $filters, sprintf( __( 'Import complete. Created: %1$d. Overwritten: %2$d. Copied: %3$d. Skipped: %4$d. Failed: %5$d.', 'core-blueprint' ), $summary['created'], $summary['overwritten'], $summary['copied'], $summary['skipped'], $summary['failed'] ) );
