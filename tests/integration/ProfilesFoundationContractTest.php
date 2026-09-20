@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Admin\Pages\Dashboard as DashboardPage;
+use CB\Core\Admin\Pages\Profiles as ProfilesPage;
+use CB\Core\Permissions\PrivilegedAccessRegistry;
+use CB\Core\Permissions\Roles;
 use CB\Core\Profiles\Document;
 use CB\Core\Profiles\Engine;
 use CB\Core\Profiles\SectionRegistry;
@@ -127,6 +131,32 @@ final class CB_Base_Profiles_Foundation_Contract_Test extends WP_UnitTestCase {
 		$current = $section->snapshot();
 		$section->preflight( $current, $current );
 		self::assertSame( $current, $section->snapshot() );
+	}
+
+	public function test_pf7_core_profiles_uses_unique_admin_route_and_trusted_dashboard_discovery(): void {
+		$page = new ProfilesPage();
+		self::assertSame( 'core-blueprint-config-profiles', $page->slug() );
+		self::assertSame( 'Core Profiles', $page->title() );
+		self::assertSame( 'Core Profiles', $page->menu_title() );
+
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		$user->add_role( Roles::OPERATOR_ROLE );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'profiles_dashboard_fixture' ) );
+		wp_set_current_user( $user_id );
+
+		self::assertTrue( current_user_can( 'manage_options' ) );
+		self::assertTrue( current_user_can( 'cb_manage_permissions' ) );
+
+		ob_start();
+		( new DashboardPage() )->render();
+		$html = (string) ob_get_clean();
+
+		self::assertStringContainsString( '>Core Profiles<', $html );
+		self::assertStringContainsString( 'page=' . ProfilesPage::SLUG, html_entity_decode( $html ) );
 	}
 
 }
