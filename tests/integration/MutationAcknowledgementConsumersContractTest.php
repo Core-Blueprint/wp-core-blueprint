@@ -29,11 +29,12 @@ final class CB_Base_Mutation_Acknowledgement_Consumers_Contract_Test extends WP_
 		);
 
 		$tools = $this->source( 'src/ContentModels/Admin/ToolsView.php' );
-		self::assertStringContainsString( "name=\"content_models_import_acknowledgement\"", $this->rendered_acknowledgement_fixture( $tools, 'content_models_import_acknowledgement' ) );
+		self::assertStringContainsString( 'MutationAcknowledgement::render(', $tools );
+		self::assertStringContainsString( "'content_models_import_acknowledgement'", $tools );
 
 		$transfer = $this->source( 'src/ContentModels/Admin/Transfer.php' );
 		self::assertStringContainsString( "MutationAcknowledgement::require_confirmed(", $transfer );
-		self::assertStringContainsString( "content_models.schema_import_acknowledged", $transfer );
+		self::assertStringContainsString( "content_models_schema_import_acknowledged", $transfer );
 		self::assertLessThan(
 			strpos( $transfer, "SchemaTransfer::import( \$preview['document'], \$overwrite )" ),
 			strpos( $transfer, "content_models.schema_import_acknowledged" )
@@ -42,7 +43,7 @@ final class CB_Base_Mutation_Acknowledgement_Consumers_Contract_Test extends WP_
 		$native = $this->source( 'src/ContentModels/Importers/NativeWordPress/Bootstrap.php' );
 		self::assertStringContainsString( "content_models_native_import_acknowledgement", $native );
 		self::assertStringContainsString( "MutationAcknowledgement::require_confirmed(", $native );
-		self::assertStringContainsString( "content_models.native_import_acknowledged", $native );
+		self::assertStringContainsString( "content_models_native_import_acknowledged", $native );
 		self::assertLessThan(
 			strpos( $native, "Importer::apply_plan();" ),
 			strpos( $native, "content_models.native_import_acknowledged" )
@@ -59,7 +60,7 @@ final class CB_Base_Mutation_Acknowledgement_Consumers_Contract_Test extends WP_
 		self::assertStringContainsString( "if ( \$overwrite ) {", $actions );
 		self::assertStringContainsString( "MutationAcknowledgement::require_confirmed(", $actions );
 		self::assertStringContainsString( "Importer::import_json( \$json, \$overwrite )", $actions );
-		self::assertStringContainsString( "snippets.restore_acknowledged", $actions );
+		self::assertStringContainsString( "snippets_restore_acknowledged", $actions );
 		self::assertStringContainsString( "if ( preserveIds.checked )", $script );
 		self::assertStringContainsString( "restoreAcknowledgementTemplate.content.cloneNode( true )", $script );
 	}
@@ -109,17 +110,5 @@ final class CB_Base_Mutation_Acknowledgement_Consumers_Contract_Test extends WP_
 			strpos( $scanner, "QuarantineService::restore( \$id )" ),
 			strpos( $scanner, "integrity_quarantine_restore_acknowledged" )
 		);
-	}
-
-	/**
-	 * Source-level helper to keep the UI contract assertion independent from
-	 * WordPress admin routing. The shared component is already behavior-tested
-	 * by ProfilesFoundationContractTest; consumers prove they invoke it with the
-	 * expected field.
-	 */
-	private function rendered_acknowledgement_fixture( string $source, string $field ): string {
-		self::assertStringContainsString( "MutationAcknowledgement::render(", $source );
-		self::assertStringContainsString( "'{$field}'", $source );
-		return '<input name="' . $field . '">';
 	}
 }
