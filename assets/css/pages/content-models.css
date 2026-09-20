@@ -285,16 +285,9 @@
 	vertical-align: middle;
 }
 
-/* Shared list-table action alignment. Keep every Content Models action group
- * pinned to the right edge regardless of preceding column widths. */
-.cb-content-models-wrap .widefat th:last-child,
-.cb-content-models-wrap .widefat td:last-child {
-	text-align: right;
-}
-
-.cb-content-models-wrap .widefat td:last-child .cb-content-models-actions {
-	justify-content: flex-end;
-}
+/* Shared list-table action alignment. Only explicit action columns align
+ * right; the final column of arbitrary Content Models tables may contain
+ * reasons, mappings, or other readable content and must keep normal flow. */
 
 .cb-content-models-wrap .cb-content-models-location-title {
 	display: block;
@@ -311,6 +304,7 @@
 }
 
 .cb-content-models-wrap .cb-content-models-col-actions {
+	text-align: right;
 	white-space: nowrap;
 }
 
