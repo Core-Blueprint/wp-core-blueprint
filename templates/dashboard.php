@@ -5,7 +5,7 @@
  * Variables provided by \CB\Core\Admin\Pages\Dashboard::render():
  *   $safeguards          array - canonical Base safeguard status entries (ordered)
  *   $extensions          array - sibling CB plugins detected, enriched with status menus
- *   $operations_cards    array - Operations nav cards (Logs, Notes, Reports)
+ *   $operations_cards    array - Operations nav cards (Logs, Notes, Reports, Core Profiles)
  *   $cms_tools_cards     array - first-party CMS baseline module cards visible to the current user
  *   $preferences_cards   array - five or six preference deeplinks
  *   $about_card          array - full-width footer card
