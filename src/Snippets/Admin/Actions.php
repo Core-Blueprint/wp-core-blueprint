@@ -158,7 +158,7 @@ final class Actions {
 		}
 
 		if ( $overwrite ) {
-			AuditLog::log( 'snippets.restore_acknowledged', 'notice', [
+			AuditLog::log( 'snippets_restore_acknowledged', 'notice', [
 				'preserve_ids'            => true,
 				'recovery_responsibility' => true,
 			] );
