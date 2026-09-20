@@ -104,7 +104,7 @@ final class Settings extends PageBase {
 				<?php $group_providers = array_filter( $providers, static fn( array $provider ): bool => $group === $provider['group'] ); ?>
 				<?php if ( [] === $group_providers ) { continue; } ?>
 				<h3><?php echo esc_html( $group_label ); ?></h3>
-				<div class="cb-core-tab-cards">
+				<div class="cb-core-tab-cards cb-core-tab-cards--fixed-three">
 					<?php foreach ( $group_providers as $provider ) : ?>
 						<?php $this->render_provider_card( $provider ); ?>
 					<?php endforeach; ?>
