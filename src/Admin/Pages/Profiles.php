@@ -136,7 +136,7 @@ final class Profiles extends PageBase {
 			<div class="cb-core-card cb-core-card--spacious">
 				<div class="cb-core-card__header">
 					<h3 class="cb-core-card__title"><?php echo esc_html( (string) ( $section['label'] ?? $id ) ); ?></h3>
-					<span class="cb-core-state-badge"><?php echo esc_html( sprintf( _n( '%d change', '%d changes', (int) ( $section['count'] ?? 0 ), 'core-blueprint' ), (int) ( $section['count'] ?? 0 ) ) ); ?></span>
+					<span class="cb-core-state-badge cb-core-state-badge--compact cb-core-state-badge--neutral"><?php echo esc_html( sprintf( _n( '%d change', '%d changes', (int) ( $section['count'] ?? 0 ), 'core-blueprint' ), (int) ( $section['count'] ?? 0 ) ) ); ?></span>
 				</div>
 				<div class="cb-core-card__body">
 					<?php if ( ! empty( $section['description'] ) ) : ?><p class="description"><?php echo esc_html( (string) $section['description'] ); ?></p><?php endif; ?>
