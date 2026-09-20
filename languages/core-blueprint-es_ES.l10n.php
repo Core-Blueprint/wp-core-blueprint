@@ -66,6 +66,12 @@ $catalog['messages'] = array_replace(
         'I understand that restoring this quarantined item changes the site\'s active filesystem and that I am responsible for having a recent backup or other recovery option available.' => 'Entiendo que restaurar este elemento en cuarentena modifica el sistema de archivos activo del sitio y que soy responsable de disponer de una copia de seguridad reciente u otra opción de recuperación.',
         'The restore is refused if the original path is occupied or the quarantined payload no longer matches its evidence.' => 'La restauración se rechaza si la ruta original está ocupada o si la carga en cuarentena ya no coincide con sus evidencias.',
         'Confirm your responsibility for backup and recovery before restoring the quarantined item.' => 'Confirma tu responsabilidad sobre la copia de seguridad y la recuperación antes de restaurar el elemento en cuarentena.',
+        'Media Replace: backup and recovery responsibility acknowledged' => 'Media Replace: responsabilidad de copia de seguridad y recuperación confirmada',
+        'Content Models: schema import backup and recovery responsibility acknowledged' => 'Content Models: responsabilidad de copia de seguridad y recuperación confirmada para la importación del esquema',
+        'Content Models: native import backup and recovery responsibility acknowledged' => 'Content Models: responsabilidad de copia de seguridad y recuperación confirmada para la importación nativa',
+        'Snippets: restore backup and recovery responsibility acknowledged' => 'Snippets: responsabilidad de copia de seguridad y recuperación confirmada para la restauración',
+        'Notes: import overwrite backup and recovery responsibility acknowledged' => 'Notes: responsabilidad de copia de seguridad y recuperación confirmada para la importación con sobrescritura',
+        'Core Scanner: quarantine restore backup and recovery responsibility acknowledged' => 'Core Scanner: responsabilidad de copia de seguridad y recuperación confirmada para la restauración desde cuarentena',
     ]
 );
 
