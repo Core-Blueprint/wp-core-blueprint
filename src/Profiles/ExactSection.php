@@ -45,6 +45,6 @@ abstract class ExactSection implements SectionInterface {
 	}
 
 	public function verify( array $incoming ): bool {
-		return $this->export() === $incoming;
+		return CanonicalJson::encode( $this->export() ) === CanonicalJson::encode( $incoming );
 	}
 }

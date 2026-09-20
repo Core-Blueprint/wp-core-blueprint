@@ -1,12 +1,14 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Admin\Pages\Dashboard as DashboardPage;
 use CB\Core\Admin\Pages\Profiles as ProfilesPage;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Permissions\Roles;
 use CB\Core\Profiles\Document;
 use CB\Core\Profiles\Engine;
+use CB\Core\Profiles\PreviewStore;
 use CB\Core\Profiles\SectionRegistry;
 use CB\Core\Profiles\Sections\ModuleStatesSection;
 
@@ -157,6 +159,53 @@ final class CB_Base_Profiles_Foundation_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( '>Core Profiles<', $html );
 		self::assertStringContainsString( 'page=' . ProfilesPage::SLUG, html_entity_decode( $html ) );
+	}
+
+	public function test_pf8_review_uses_default_change_badge_and_required_mutation_acknowledgement(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		$user->add_role( Roles::OPERATOR_ROLE );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'profiles_badge_fixture' ) );
+		wp_set_current_user( $user_id );
+
+		$document = Engine::export_document( 'Badge fixture', '', [ 'ai-governance' ] );
+		$preview = Engine::preview( $document );
+		$stored_preview = $preview;
+		unset( $stored_preview['snapshots'], $stored_preview['document'] );
+		$token = PreviewStore::put( $user_id, $preview['document'], $stored_preview );
+
+		$_GET['preview'] = $token;
+		try {
+			ob_start();
+			( new ProfilesPage() )->render();
+			$html = (string) ob_get_clean();
+
+			self::assertStringContainsString(
+				'cb-core-state-badge cb-core-state-badge--default cb-core-state-badge--neutral',
+				$html
+			);
+			self::assertStringContainsString( 'name="profile_apply_acknowledgement"', $html );
+			self::assertStringContainsString( 'id="cb-profile-apply-acknowledgement"', $html );
+			self::assertStringContainsString( 'required', $html );
+			self::assertStringContainsString( 'I understand that applying this Profile changes this site', $html );
+		} finally {
+			PreviewStore::delete( $user_id, $token );
+			$_GET = [];
+		}
+	}
+
+	public function test_pf9_mutation_acknowledgement_requires_explicit_literal_confirmation(): void {
+		self::assertTrue( MutationAcknowledgement::confirmed( '1' ) );
+		self::assertFalse( MutationAcknowledgement::confirmed( 1 ) );
+		self::assertFalse( MutationAcknowledgement::confirmed( true ) );
+		self::assertFalse( MutationAcknowledgement::confirmed( 'true' ) );
+		self::assertFalse( MutationAcknowledgement::confirmed( null ) );
+
+		$this->expectException( InvalidArgumentException::class );
+		MutationAcknowledgement::require_confirmed( null, 'Confirmation required.' );
 	}
 
 }

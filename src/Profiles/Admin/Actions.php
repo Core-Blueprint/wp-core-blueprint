@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Profiles\Admin;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Admin\Pages\Profiles as ProfilesPage;
 use CB\Core\Log\AuditLog;
 use CB\Core\Permissions\PrivilegedAccessGuard;
@@ -18,6 +19,7 @@ final class Actions {
 	public const EXPORT_ACTION = 'cb_core_profile_export';
 	public const PREVIEW_ACTION = 'cb_core_profile_preview';
 	public const APPLY_ACTION = 'cb_core_profile_apply';
+	public const APPLY_ACKNOWLEDGEMENT_FIELD = 'profile_apply_acknowledgement';
 	public const NOTICE_PREFIX = 'cb_core_profile_notice_';
 
 	public static function boot(): void {
@@ -102,6 +104,14 @@ final class Actions {
 		if ( null === $record ) {
 			self::redirect_with_notice( 'error', __( 'The profile preview expired. Upload the profile again.', 'core-blueprint' ) );
 		}
+		try {
+			MutationAcknowledgement::require_confirmed(
+				$_POST[ self::APPLY_ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above; strict literal confirmation only.
+				__( 'Confirm your responsibility for backup and recovery before applying the Profile.', 'core-blueprint' )
+			);
+		} catch ( \InvalidArgumentException $error ) {
+			self::redirect_with_notice( 'error', $error->getMessage(), $token );
+		}
 		$user = wp_get_current_user();
 		if ( '' === $password || ! wp_check_password( $password, $user->user_pass, $user_id ) ) {
 			AuditLog::log( 'security.password_reconfirm_failed', 'warning', [ 'user_login' => $user->user_login ] );
@@ -112,6 +122,12 @@ final class Actions {
 			$document = is_array( $record['document'] ?? null ) ? $record['document'] : [];
 			$stored_preview = is_array( $record['preview'] ?? null ) ? $record['preview'] : [];
 			$fingerprint = (string) ( $stored_preview['fingerprint'] ?? '' );
+			AuditLog::log( 'profiles.apply_acknowledged', 'notice', [
+				'actor'                   => self::actor(),
+				'profile_name'            => (string) ( $document['profile']['name'] ?? '' ),
+				'change_count'            => (int) ( $stored_preview['total_changes'] ?? 0 ),
+				'recovery_responsibility' => true,
+			] );
 			$result = Engine::apply( $document, $fingerprint, self::actor() );
 			PreviewStore::delete( $user_id, $token );
 			self::redirect_with_notice( 'success', sprintf(

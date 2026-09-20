@@ -196,6 +196,19 @@ final class CB_Base_Profiles_Transaction_Contract_Test extends WP_UnitTestCase {
 		Engine::preview( $document );
 	}
 
+	public function test_pt6_noop_security_profile_applies_without_false_verification_failure(): void {
+		$document = Engine::export_document( 'Security no-op', '', [ 'security' ] );
+		$preview = Engine::preview( $document );
+
+		self::assertSame( 0, $preview['total_changes'] );
+
+		$result = Engine::apply( $document, $preview['fingerprint'], 'test' );
+
+		self::assertSame( 'complete', $result['status'] );
+		self::assertSame( [ 'security' ], $result['sections'] );
+		self::assertSame( 0, $result['change_count'] );
+	}
+
 	public function test_pt5_content_models_rollback_is_targeted_and_refuses_concurrent_touched_changes(): void {
 		$before = $this->post_type_definition( 'cb_prof_fixture', 'Before fixture' );
 		ContentModelsRepository::save_post_type( $before );

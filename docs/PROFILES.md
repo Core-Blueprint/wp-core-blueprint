@@ -11,12 +11,14 @@ A Profile is not a backup, site clone or raw WordPress options export. It contai
 3. On another site the operator uploads the document for preview. Uploading does not apply the configuration.
 4. Base validates the complete document, normalizes every included section, runs section preflight checks and calculates a complete diff against one current-state snapshot.
 5. The preview is bound to that document and state through a SHA-256 fingerprint and a short-lived per-user token.
-6. Apply requires the same approved Operator boundary plus nonce validation and current-password confirmation.
+6. Apply requires the same approved Operator boundary plus nonce validation, current-password confirmation and an explicit acknowledgement that backup and recovery remain the operator's responsibility.
 7. Base acquires an exclusive compare-and-swap apply lease, repeats the complete preview and refuses stale plans.
 8. Sections are applied in deterministic order. Portable module activation is last so configuration exists before runtimes are enabled.
 9. Every touched section is verified after apply. On failure, Base attempts compensating rollback in reverse order and records rollback failures as critical audit events.
 
 WordPress does not provide one ACID transaction spanning options, roles, rewrite state and module side effects. Profiles therefore implement an application-level transaction with complete preflight, snapshots, verification, concurrency guards and compensating restore.
+
+Core Profiles cannot guarantee compatibility with every WordPress environment. Third-party plugins, themes, custom code and hosting configuration can affect the result of a configuration change. Core Blueprint attempts compensating rollback when an apply step fails, but the operator remains responsible for maintaining a recent backup or another suitable recovery option.
 
 ## Portable sections in v1
 

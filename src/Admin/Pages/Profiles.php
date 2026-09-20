@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Admin\Pages;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Admin\PageBase;
 use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Profiles\Admin\Actions;
@@ -136,7 +137,7 @@ final class Profiles extends PageBase {
 			<div class="cb-core-card cb-core-card--spacious">
 				<div class="cb-core-card__header">
 					<h3 class="cb-core-card__title"><?php echo esc_html( (string) ( $section['label'] ?? $id ) ); ?></h3>
-					<span class="cb-core-state-badge"><?php echo esc_html( sprintf( _n( '%d change', '%d changes', (int) ( $section['count'] ?? 0 ), 'core-blueprint' ), (int) ( $section['count'] ?? 0 ) ) ); ?></span>
+					<span class="cb-core-state-badge cb-core-state-badge--default cb-core-state-badge--neutral"><?php echo esc_html( sprintf( _n( '%d change', '%d changes', (int) ( $section['count'] ?? 0 ), 'core-blueprint' ), (int) ( $section['count'] ?? 0 ) ) ); ?></span>
 				</div>
 				<div class="cb-core-card__body">
 					<?php if ( ! empty( $section['description'] ) ) : ?><p class="description"><?php echo esc_html( (string) $section['description'] ); ?></p><?php endif; ?>
@@ -170,6 +171,14 @@ final class Profiles extends PageBase {
 							<input id="cb-profile-password" name="password" type="password" autocomplete="current-password" required>
 						</div>
 					</div>
+					<?php
+					MutationAcknowledgement::render(
+						Actions::APPLY_ACKNOWLEDGEMENT_FIELD,
+						'cb-profile-apply-acknowledgement',
+						__( 'I understand that applying this Profile changes this site\'s configuration and that I am responsible for having a recent backup or other recovery option available.', 'core-blueprint' ),
+						__( 'Third-party plugins, themes, custom code and hosting configuration may affect the result.', 'core-blueprint' )
+					);
+					?>
 				</div>
 				<div class="cb-core-card__footer">
 					<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ); ?>"><?php esc_html_e( 'Cancel and return to Core Profiles', 'core-blueprint' ); ?></a>
