@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace CB\Core\ContentModels\Admin;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\ContentModels\Repository;
 use CB\Core\ContentModels\SchemaTransfer;
 use CB\Core\ContentModels\State;
@@ -17,6 +18,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Transfer {
 	private const PREVIEW_TTL = 600;
+	private const ACKNOWLEDGEMENT_FIELD = 'content_models_import_acknowledgement';
 
 	public static function boot(): void {
 		add_action( 'admin_post_cb_core_content_models_export_schema', [ __CLASS__, 'export' ] );
@@ -78,7 +80,18 @@ final class Transfer {
 			self::redirect( [ 'cb_cm_import_error' => rawurlencode( __( 'The import preview expired. Upload the JSON file again.', 'core-blueprint' ) ) ] );
 		}
 		try {
-			$overwrite = ! empty( $_POST['overwrite'] );
+			MutationAcknowledgement::require_confirmed(
+				$_POST[ self::ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
+				__( 'Confirm your responsibility for backup and recovery before importing the Content Models schema.', 'core-blueprint' )
+			);
+			$overwrite = isset( $_POST['overwrite'] ) && '1' === (string) wp_unslash( $_POST['overwrite'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce.
+			if ( class_exists( AuditLog::class ) ) {
+				AuditLog::log( 'content_models.schema_import_acknowledged', 'notice', [
+					'overwrite'                => $overwrite,
+					'counts'                   => (array) ( $preview['analysis']['counts'] ?? [] ),
+					'recovery_responsibility' => true,
+				] );
+			}
 			$counts = SchemaTransfer::import( $preview['document'], $overwrite );
 			delete_transient( self::preview_key() );
 			if ( class_exists( AuditLog::class ) ) {
