@@ -7,6 +7,7 @@ use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Permissions\Roles;
 use CB\Core\Profiles\Document;
 use CB\Core\Profiles\Engine;
+use CB\Core\Profiles\PreviewStore;
 use CB\Core\Profiles\SectionRegistry;
 use CB\Core\Profiles\Sections\ModuleStatesSection;
 
@@ -157,6 +158,38 @@ final class CB_Base_Profiles_Foundation_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( '>Core Profiles<', $html );
 		self::assertStringContainsString( 'page=' . ProfilesPage::SLUG, html_entity_decode( $html ) );
+	}
+
+	public function test_pf8_review_change_badge_uses_compact_state_badge_foundation(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		$user->add_role( Roles::OPERATOR_ROLE );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'profiles_badge_fixture' ) );
+		wp_set_current_user( $user_id );
+
+		$document = Engine::export_document( 'Badge fixture', '', [ 'ai-governance' ] );
+		$preview = Engine::preview( $document );
+		$stored_preview = $preview;
+		unset( $stored_preview['snapshots'], $stored_preview['document'] );
+		$token = PreviewStore::put( $user_id, $preview['document'], $stored_preview );
+
+		$_GET['preview'] = $token;
+		try {
+			ob_start();
+			( new ProfilesPage() )->render();
+			$html = (string) ob_get_clean();
+
+			self::assertStringContainsString(
+				'cb-core-state-badge cb-core-state-badge--compact cb-core-state-badge--neutral',
+				$html
+			);
+		} finally {
+			PreviewStore::delete( $user_id, $token );
+			$_GET = [];
+		}
 	}
 
 }
