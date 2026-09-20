@@ -174,6 +174,14 @@ final class CB_Base_Settings_Hub_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'Developer: Core Blueprint', $html );
 		self::assertStringContainsString( 'Developer: Acme Studio', $html );
 		self::assertStringContainsString( 'Support is provided by the extension developer, not by Core Blueprint.', $html );
+		self::assertStringContainsString( 'cb-core-tab-cards--fixed-three', $html );
+	}
+
+	public function test_extensions_directory_keeps_incomplete_rows_at_the_three_column_card_width(): void {
+		$css = file_get_contents( CB_CORE_DIR . 'assets/css/components/overview-framework.css' );
+		self::assertIsString( $css );
+		self::assertStringContainsString( '.cb-core-tab-cards--fixed-three', $css );
+		self::assertStringContainsString( 'grid-template-columns: repeat(3, minmax(0, 1fr));', $css );
 	}
 
 	public function test_direct_third_party_route_keeps_support_boundary_visible(): void {
