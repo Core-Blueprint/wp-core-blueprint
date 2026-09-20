@@ -8,13 +8,17 @@ declare(strict_types=1);
 
 namespace CB\Core\ContentModels\Importers\NativeWordPress;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\ContentModels\Admin\Page;
 use CB\Core\ContentModels\FieldTypes;
 use CB\Core\ContentModels\State;
+use CB\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 
 final class Bootstrap {
+	private const ACKNOWLEDGEMENT_FIELD = 'content_models_native_import_acknowledgement';
+
 	public static function boot(): void {
 		add_action( 'admin_post_cb_core_content_models_native_discover', [ __CLASS__, 'discover' ] );
 		add_action( 'admin_post_cb_core_content_models_native_create_plan', [ __CLASS__, 'create_plan' ] );
@@ -43,6 +47,18 @@ final class Bootstrap {
 	public static function apply_plan(): void {
 		self::guard( 'cb_core_content_models_native_apply_plan' );
 		try {
+			MutationAcknowledgement::require_confirmed(
+				$_POST[ self::ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
+				__( 'Confirm your responsibility for backup and recovery before applying the WordPress import plan.', 'core-blueprint' )
+			);
+			$plan = PlanStore::plan();
+			if ( is_array( $plan ) && class_exists( AuditLog::class ) ) {
+				AuditLog::log( 'content_models.native_import_acknowledged', 'notice', [
+					'plan_id'                 => (string) ( $plan['plan_id'] ?? '' ),
+					'summary'                 => (array) ( $plan['summary'] ?? [] ),
+					'recovery_responsibility' => true,
+				] );
+			}
 			Importer::apply_plan();
 			self::redirect( [ 'cb_cm_native_imported' => '1' ] );
 		} catch ( \InvalidArgumentException $e ) {
@@ -187,6 +203,12 @@ final class Bootstrap {
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="cb_core_content_models_native_apply_plan" />
 			<?php wp_nonce_field( 'cb_core_content_models_native_apply_plan' ); ?>
+			<?php MutationAcknowledgement::render(
+				self::ACKNOWLEDGEMENT_FIELD,
+				'cb-content-models-native-import-acknowledgement',
+				__( 'I understand that applying this plan transfers the selected WordPress schema registrations to Core Blueprint and that I am responsible for having a recent backup or other recovery option available.', 'core-blueprint' ),
+				__( 'The original registrar must remain disabled after adoption. Plugins, themes and custom code may affect the resulting runtime.', 'core-blueprint' )
+			); ?>
 			<button class="button cb-core-button cb-core-button--primary" type="submit"><?php esc_html_e( 'Apply reviewed import plan', 'core-blueprint' ); ?></button>
 		</form>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px">
