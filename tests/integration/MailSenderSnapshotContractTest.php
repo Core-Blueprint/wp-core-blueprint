@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Mail\Message;
 use CB\Core\Mail\Sender;
 use CB\Core\Mail\SenderContext;
 use CB\Core\Mail\SenderIdentityRegistry;
@@ -26,6 +27,7 @@ final class CB_Mail_Sender_Snapshot_Contract_Test extends WP_UnitTestCase {
 		$filter = static function ( mixed $return, array $atts ) use ( &$observed ): bool {
 			$observed['identity'] = SenderIdentityRegistry::current();
 			$observed['headers'] = $atts['headers'] ?? [];
+			$observed['message'] = Message::from_atts( $atts );
 			return true;
 		};
 		add_filter( 'pre_wp_mail', $filter, 10, 2 );
@@ -48,6 +50,8 @@ final class CB_Mail_Sender_Snapshot_Contract_Test extends WP_UnitTestCase {
 		self::assertSame( 'snapshot@example.com', $observed['identity']['email'] ?? '' );
 		self::assertSame( 'Snapshot Sender', $observed['identity']['name'] ?? '' );
 		self::assertContains( 'From: Snapshot Sender <snapshot@example.com>', (array) ( $observed['headers'] ?? [] ) );
+		self::assertSame( 'snapshot@example.com', $observed['message']['from_email'] ?? '' );
+		self::assertSame( 'Snapshot Sender', $observed['message']['from_name'] ?? '' );
 		self::assertSame( '', SenderContext::current() );
 		self::assertNull( SenderContext::current_resolved() );
 	}
