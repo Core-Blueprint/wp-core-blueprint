@@ -273,10 +273,9 @@ jobs:
       - name: Materialize pinned previous RC
         run: git worktree add --detach "$RUNNER_TEMP/cb-release-previous-source" "$CB_PREVIOUS_RC_SHA"
 
-      - name: Build pinned previous RC with current canonical builder
+      - name: Build pinned previous RC with its canonical builder
         run: >-
-          python3 tools/build-release
-          --source "$RUNNER_TEMP/cb-release-previous-source"
+          python3 "$RUNNER_TEMP/cb-release-previous-source/tools/build-release"
           --output-dir "$RUNNER_TEMP/cb-release-previous"
 
       - name: Resolve previous RC artifact
