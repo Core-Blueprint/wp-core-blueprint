@@ -252,6 +252,9 @@ jobs:
           extensions: dom, mbstring, mysqli, sodium, xml, xmlwriter
           coverage: none
 
+      - name: Install locked development dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
       - name: Build candidate production ZIP
         run: python3 tools/build-release --output-dir "$RUNNER_TEMP/cb-release-candidate"
 
