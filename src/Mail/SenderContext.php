@@ -28,11 +28,30 @@ final class SenderContext {
 	 *
 	 * @param array<string,string> $identity
 	 */
-	public static function push_resolved( string $identity_id, array $identity ): void {
+	public static function push_resolved( string $identity_id, array $identity ): bool {
+		$identity_id = sanitize_key( $identity_id );
+		$current = SenderIdentityRegistry::get( $identity_id );
+		if ( null === $current ) {
+			return false;
+		}
+
+		$current_email = sanitize_email( (string) ( $current['email'] ?? '' ) );
+		$current_name = sanitize_text_field( (string) ( $current['name'] ?? '' ) );
+		$snapshot_email = sanitize_email( (string) ( $identity['email'] ?? '' ) );
+		$snapshot_name = sanitize_text_field( (string) ( $identity['name'] ?? '' ) );
+		if (
+			! is_email( $snapshot_email )
+			|| 0 !== strcasecmp( $current_email, $snapshot_email )
+			|| ! hash_equals( $current_name, $snapshot_name )
+		) {
+			return false;
+		}
+
 		self::$stack[] = [
-			'id'       => sanitize_key( $identity_id ),
-			'identity' => $identity,
+			'id'       => $identity_id,
+			'identity' => $current,
 		];
+		return true;
 	}
 
 	public static function pop(): void {
