@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Mail\Designer;
 
-use CB\Core\Design\Profile\Mail\HtmlRenderer;
+use CB\Core\Mail\ProjectRenderer;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -29,14 +29,15 @@ final class Renderer {
 
 		try {
 			$bindings = BindingRegistry::resolve( $context );
-			$html = ( new HtmlRenderer() )->render( $template['project'], $bindings );
-			$subject = self::interpolate( (string) $template['subject'], $bindings );
+			return ( new ProjectRenderer() )->render(
+				$template['project'],
+				(string) $template['subject'],
+				$bindings
+			);
 		} catch ( \Throwable $exception ) {
 			error_log( sprintf( 'CB Mail Designer [%s]: %s', sanitize_key( str_replace( '.', '-', $template_id ) ), $exception->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- render failure diagnostic, no message body/context.
 			return null;
 		}
-
-		return [ 'subject' => $subject, 'html' => $html ];
 	}
 
 	/** @return array{subject:string,html:string}|null */
@@ -49,8 +50,12 @@ final class Renderer {
 		$subject = null !== $subject ? sanitize_text_field( $subject ) : (string) $template['subject'];
 		try {
 			$bindings = BindingRegistry::preview_values();
-			$html = ( new HtmlRenderer() )->render( $project, $bindings, [ 'editor_markers' => true ] );
-			return [ 'subject' => self::interpolate( $subject, $bindings ), 'html' => $html ];
+			return ( new ProjectRenderer() )->render(
+				$project,
+				$subject,
+				$bindings,
+				[ 'editor_markers' => true ]
+			);
 		} catch ( \Throwable $exception ) {
 			return null;
 		}
@@ -71,20 +76,6 @@ final class Renderer {
 		}
 		$out[] = 'Content-Type: text/html; charset=UTF-8';
 		return $out;
-	}
-
-	/** @param array<string,scalar|null> $bindings */
-	private static function interpolate( string $value, array $bindings ): string {
-		$result = preg_replace_callback(
-			'/\{\{\s*([a-z][a-z0-9]*(?:[._-][a-z0-9]+)*)\s*\}\}/',
-			static function ( array $match ) use ( $bindings ): string {
-				$key = (string) ( $match[1] ?? '' );
-				$resolved = $bindings[ $key ] ?? '';
-				return is_scalar( $resolved ) ? (string) $resolved : '';
-			},
-			$value
-		);
-		return is_string( $result ) ? $result : $value;
 	}
 
 	private function __construct() {}
