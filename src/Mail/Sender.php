@@ -33,9 +33,97 @@ final class Sender {
 		$identity = SenderIdentityRegistry::get( $identity_id );
 		$scoped_id = null !== $identity ? sanitize_key( $identity_id ) : '';
 		$identity = $identity ?? SenderIdentityRegistry::default_identity();
-		$headers  = self::with_from_header( $headers, $identity );
 
-		SenderContext::push( $scoped_id );
+		return self::send_with_identity(
+			$scoped_id,
+			$identity,
+			$to,
+			$subject,
+			$message,
+			$headers,
+			$attachments,
+			false
+		);
+	}
+
+	/**
+	 * Send only when the registered identity still matches a previously resolved snapshot.
+	 *
+	 * This is intended for durable workflows that commit sender values before
+	 * asynchronous delivery. The caller cannot supply an arbitrary From address:
+	 * the snapshot must still match the currently registered effective identity.
+	 *
+	 * @param string|string[] $to
+	 * @param string|string[] $headers
+	 * @param string|string[] $attachments
+	 * @return true|\WP_Error
+	 */
+	public static function send_if_identity_matches(
+		string $identity_id,
+		string $expected_email,
+		string $expected_name,
+		string|array $to,
+		string $subject,
+		string $message,
+		string|array $headers = [],
+		string|array $attachments = []
+	): true|\WP_Error {
+		$identity_id = sanitize_key( $identity_id );
+		$identity = SenderIdentityRegistry::get( $identity_id );
+		$expected_email = sanitize_email( $expected_email );
+		$expected_name = sanitize_text_field( $expected_name );
+
+		if ( null === $identity || ! is_email( $expected_email ) ) {
+			return new \WP_Error( 'cb_core_mail_sender_identity_unavailable' );
+		}
+
+		$current_email = sanitize_email( (string) ( $identity['email'] ?? '' ) );
+		$current_name = sanitize_text_field( (string) ( $identity['name'] ?? '' ) );
+		if (
+			0 !== strcasecmp( $current_email, $expected_email )
+			|| ! hash_equals( $current_name, $expected_name )
+		) {
+			return new \WP_Error( 'cb_core_mail_sender_identity_changed' );
+		}
+
+		$sent = self::send_with_identity(
+			$identity_id,
+			$identity,
+			$to,
+			$subject,
+			$message,
+			$headers,
+			$attachments,
+			true
+		);
+
+		return $sent ? true : new \WP_Error( 'cb_core_mail_send_failed' );
+	}
+
+	/**
+	 * @param array<string,mixed> $identity
+	 * @param string|string[] $to
+	 * @param string|string[] $headers
+	 * @param string|string[] $attachments
+	 */
+	private static function send_with_identity(
+		string $scoped_id,
+		array $identity,
+		string|array $to,
+		string $subject,
+		string $message,
+		string|array $headers,
+		string|array $attachments,
+		bool $resolved_context
+	): bool {
+		$headers = self::with_from_header( $headers, $identity );
+
+		if ( $resolved_context ) {
+			SenderContext::push_resolved( $scoped_id, $identity );
+		} else {
+			SenderContext::push( $scoped_id );
+		}
+
 		try {
 			return wp_mail( $to, $subject, $message, $headers, $attachments );
 		} finally {
