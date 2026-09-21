@@ -127,6 +127,11 @@ final class SenderIdentityRegistry {
 	 * @return null|array{id:string,label:string,description:string,email:string,name:string,default_email:string,default_name:string}
 	 */
 	public static function current(): ?array {
+		$resolved = SenderContext::current_resolved();
+		if ( null !== $resolved ) {
+			return $resolved;
+		}
+
 		$id = SenderContext::current();
 		return '' !== $id ? self::get( $id ) : null;
 	}
