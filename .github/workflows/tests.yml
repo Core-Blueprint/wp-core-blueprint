@@ -234,6 +234,9 @@ jobs:
       CB_PREVIOUS_RC_VERSION: 1.0.0-rc1
       CB_CANDIDATE_VERSION: 1.0.0-rc1
       CB_WP_CLI_PHAR: /tmp/core-blueprint-release-tools/wp-cli-2.12.0.phar
+      WP_CORE_DIR: /tmp/core-blueprint-release-wp
+      WP_TESTS_DIR: /tmp/core-blueprint-release-wp-tests
+      CB_PLUGIN_FILE: /tmp/core-blueprint-release-wp/wp-content/plugins/core-blueprint/core-blueprint.php
       WP_DB_NAME: wordpress_test
       WP_DB_USER: root
       WP_DB_PASSWORD: root
@@ -254,6 +257,9 @@ jobs:
 
       - name: Install locked development dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Install pinned WordPress test environment
+        run: bash tests/bin/install-wp-tests.sh 7.0
 
       - name: Build candidate production ZIP
         run: python3 tools/build-release --output-dir "$RUNNER_TEMP/cb-release-candidate"
