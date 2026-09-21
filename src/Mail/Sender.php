@@ -119,7 +119,9 @@ final class Sender {
 		$headers = self::with_from_header( $headers, $identity );
 
 		if ( $resolved_context ) {
-			SenderContext::push_resolved( $scoped_id, $identity );
+			if ( ! SenderContext::push_resolved( $scoped_id, $identity ) ) {
+				return false;
+			}
 		} else {
 			SenderContext::push( $scoped_id );
 		}
