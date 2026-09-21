@@ -38,7 +38,7 @@ final class HtmlRenderer {
 		$text_color = $this->color( $layout['textColor'] ?? '#1f2937', '#1f2937' );
 		$accent = $this->color( $layout['accentColor'] ?? '#2563eb', '#2563eb' );
 		$font = $this->font_family( $layout['fontFamily'] ?? Contract::FONT_FAMILIES[0] );
-		$preheader = $this->interpolate( (string) ( $properties['preheader'] ?? '' ), $bindings );
+		$preheader = BindingInterpolator::interpolate( (string) ( $properties['preheader'] ?? '' ), $bindings );
 		$editor_markers = true === ( $options['editor_markers'] ?? false );
 		$theme = [
 			'text' => $text_color,
@@ -157,7 +157,7 @@ final class HtmlRenderer {
 
 	/** @param array<string,mixed> $properties @param array<string,scalar|null> $bindings @param array{text:string,accent:string,font:string} $theme */
 	private function render_heading( array $properties, array $bindings, array $theme ): string {
-		$text = $this->interpolate( (string) ( $properties['text'] ?? '' ), $bindings );
+		$text = BindingInterpolator::interpolate( (string) ( $properties['text'] ?? '' ), $bindings );
 		$size = $this->int_range( $properties['fontSize'] ?? 28, 16, 48, 28 );
 		$align = $this->align( $properties['align'] ?? 'left' );
 		$color = $this->color( $properties['color'] ?? $theme['text'], $theme['text'] );
@@ -169,7 +169,7 @@ final class HtmlRenderer {
 
 	/** @param array<string,mixed> $properties @param array<string,scalar|null> $bindings @param array{text:string,accent:string,font:string} $theme */
 	private function render_text( array $properties, array $bindings, array $theme ): string {
-		$text = $this->interpolate( (string) ( $properties['text'] ?? '' ), $bindings );
+		$text = BindingInterpolator::interpolate( (string) ( $properties['text'] ?? '' ), $bindings );
 		$size = $this->int_range( $properties['fontSize'] ?? 16, 12, 28, 16 );
 		$align = $this->align( $properties['align'] ?? 'left' );
 		$color = $this->color( $properties['color'] ?? $theme['text'], $theme['text'] );
@@ -180,8 +180,8 @@ final class HtmlRenderer {
 
 	/** @param array<string,mixed> $properties @param array<string,scalar|null> $bindings @param array{text:string,accent:string,font:string} $theme */
 	private function render_button( array $properties, array $bindings, array $theme ): string {
-		$label = $this->interpolate( (string) ( $properties['label'] ?? __( 'Continue', 'core-blueprint' ) ), $bindings );
-		$url = esc_url( $this->interpolate( (string) ( $properties['url'] ?? '' ), $bindings ), [ 'http', 'https' ] );
+		$label = BindingInterpolator::interpolate( (string) ( $properties['label'] ?? __( 'Continue', 'core-blueprint' ) ), $bindings );
+		$url = esc_url( BindingInterpolator::interpolate( (string) ( $properties['url'] ?? '' ), $bindings ), [ 'http', 'https' ] );
 		$align = $this->align( $properties['align'] ?? 'left' );
 		$background = $this->color( $properties['background'] ?? $theme['accent'], $theme['accent'] );
 		$text_color = $this->color( $properties['color'] ?? '#ffffff', '#ffffff' );
@@ -197,11 +197,11 @@ final class HtmlRenderer {
 
 	/** @param array<string,mixed> $properties @param array<string,scalar|null> $bindings */
 	private function render_image( array $properties, array $bindings ): string {
-		$url = esc_url( $this->interpolate( (string) ( $properties['url'] ?? '' ), $bindings ), [ 'http', 'https' ] );
+		$url = esc_url( BindingInterpolator::interpolate( (string) ( $properties['url'] ?? '' ), $bindings ), [ 'http', 'https' ] );
 		if ( '' === $url ) {
 			return '';
 		}
-		$alt = $this->interpolate( (string) ( $properties['alt'] ?? '' ), $bindings );
+		$alt = BindingInterpolator::interpolate( (string) ( $properties['alt'] ?? '' ), $bindings );
 		$width = $this->int_range( $properties['width'] ?? Contract::WIDTH_DEFAULT, 1, Contract::WIDTH_MAX, Contract::WIDTH_DEFAULT );
 		$align = $this->align( $properties['align'] ?? 'center' );
 		$spacing = $this->int_range( $properties['spacing'] ?? 20, 0, 48, 20 );
@@ -221,20 +221,6 @@ final class HtmlRenderer {
 	private function render_spacer( array $properties ): string {
 		$height = $this->int_range( $properties['height'] ?? 24, 0, 120, 24 );
 		return '<tr><td height="' . esc_attr( (string) $height ) . '" style="height:' . esc_attr( (string) $height ) . 'px;line-height:' . esc_attr( (string) $height ) . 'px;font-size:1px;">&nbsp;</td></tr>';
-	}
-
-	/** @param array<string,scalar|null> $bindings */
-	private function interpolate( string $value, array $bindings ): string {
-		$result = preg_replace_callback(
-			'/\{\{\s*([a-z][a-z0-9]*(?:[._-][a-z0-9]+)*)\s*\}\}/',
-			static function ( array $match ) use ( $bindings ): string {
-				$key = (string) ( $match[1] ?? '' );
-				$value = $bindings[ $key ] ?? '';
-				return is_scalar( $value ) ? (string) $value : '';
-			},
-			$value
-		);
-		return is_string( $result ) ? $result : $value;
 	}
 
 	private function color( mixed $value, string $fallback ): string {
