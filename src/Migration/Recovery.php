@@ -278,6 +278,32 @@ final class Recovery {
 		return true;
 	}
 
+	public static function maybe_reconcile_login_request(): void {
+		if ( ! self::is_login_request() ) {
+			return;
+		}
+		$ticket = self::request_ticket();
+		$state = self::state();
+		if ( '' === $ticket || ! $state || 'pending_reconcile' !== (string) ( $state['status'] ?? '' ) ) {
+			return;
+		}
+
+		try {
+			$payload = self::validate_ticket( $ticket );
+			if ( self::state_matches_ticket( $state, $ticket, $payload ) ) {
+				self::reconcile_destination( $ticket );
+			}
+		} catch ( \Throwable $e ) {
+			$state['status'] = 'failed';
+			$state['error'] = sanitize_text_field( $e->getMessage() );
+			update_option( self::OPTION, $state, false );
+			AuditLog::log( 'migration.recovery.reconcile_failed', 'critical', [
+				'recovery_id' => (string) ( $state['recovery_id'] ?? '' ),
+				'error'       => $e->getMessage(),
+			] );
+		}
+	}
+
 	public static function filter_failsafe_bypass( bool $bypassed ): bool {
 		if ( $bypassed ) {
 			return true;
@@ -298,7 +324,8 @@ final class Recovery {
 			} catch ( \Throwable ) {
 				return false;
 			}
-			return self::state_matches_ticket( $state, $ticket, $payload );
+			return in_array( (string) ( $state['status'] ?? '' ), [ 'pending_reconcile', 'pending_auth', 'authenticated' ], true )
+				&& self::state_matches_ticket( $state, $ticket, $payload );
 		}
 
 		if ( self::is_admin_request() && 'authenticated' === (string) ( $state['status'] ?? '' ) ) {
@@ -337,6 +364,10 @@ final class Recovery {
 		unset( $user_login );
 		$ticket = self::request_ticket();
 		if ( '' === $ticket || ! self::ticket_is_active( $ticket ) || ! self::is_management_identity( $user ) ) {
+			return;
+		}
+		$state = self::state();
+		if ( 'pending_auth' !== (string) ( $state['status'] ?? '' ) ) {
 			return;
 		}
 
@@ -379,7 +410,9 @@ final class Recovery {
 			return false;
 		}
 		$state = self::state();
-		return $state && self::state_matches_ticket( $state, $ticket, $payload );
+		return $state
+			&& in_array( (string) ( $state['status'] ?? '' ), [ 'pending_reconcile', 'pending_auth', 'authenticated' ], true )
+			&& self::state_matches_ticket( $state, $ticket, $payload );
 	}
 
 	/** @return array<string,mixed> */
@@ -458,6 +491,21 @@ final class Recovery {
 	private static function is_admin_request(): bool {
 		$script = isset( $_SERVER['SCRIPT_NAME'] ) ? (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) : '';
 		return false !== strpos( wp_normalize_path( $script ), '/wp-admin/' );
+	}
+
+	private static function database_option( string $name ): string {
+		global $wpdb;
+		$table = (string) $wpdb->options;
+		if ( '' === $table ) {
+			return '';
+		}
+
+		$sql = $wpdb->prepare(
+			'SELECT option_value FROM ' . $table . ' WHERE option_name = %s LIMIT 1',
+			$name
+		);
+		$value = $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return is_scalar( $value ) ? (string) $value : '';
 	}
 
 	private static function normalize_site_url( string $url ): string {
