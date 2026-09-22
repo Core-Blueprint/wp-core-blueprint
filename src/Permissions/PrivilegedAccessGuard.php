@@ -167,6 +167,20 @@ final class PrivilegedAccessGuard {
 		] );
 	}
 
+	/**
+	 * Establish the guard marker for a newly created migration trust domain.
+	 *
+	 * This does not approve users and does not infer trust from imported state.
+	 * Migration Recovery force-reviews privileged identities separately after
+	 * canonical role reconciliation.
+	 */
+	public static function establish_migration_trust_root(): void {
+		update_option( self::BOOTSTRAP_OPTION, time(), false );
+		AuditLog::log( 'permissions.privileged_guard_migration_root_established', 'warning', [
+			'source' => 'site_migration',
+		] );
+	}
+
 	/** Complete first-install trust-root bootstrap. */
 	public static function complete_first_activation(): int {
 		update_option( self::BOOTSTRAP_OPTION, time(), false );
