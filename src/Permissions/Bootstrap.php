@@ -109,8 +109,8 @@ final class Bootstrap {
 		$labels['migration.recovery.identity_approved'] = __( 'Migration recovery: management identity approved', 'core-blueprint' );
 		$labels['migration.recovery.reconcile_failed'] = __( 'Migration recovery: reconciliation failed', 'core-blueprint' );
 		$labels['migration.recovery.completed'] = __( 'Migration recovery: completed', 'core-blueprint' );
-		$labels['permissions.privileged_guard_migration_root_established'] = __( 'Permissions: migration trust root established', 'core-blueprint' );
-		$labels['permissions.trust_schema_domain_reset'] = __( 'Permissions: migration trust schema established', 'core-blueprint' );
+		$labels['permissions.privileged.guard.migration.root.established'] = __( 'Permissions: migration trust root established', 'core-blueprint' );
+		$labels['permissions.trust.schema.domain.reset'] = __( 'Permissions: migration trust schema established', 'core-blueprint' );
 		return $labels;
 	}
 
