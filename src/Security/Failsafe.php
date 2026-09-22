@@ -90,7 +90,11 @@ final class Failsafe {
 			return true;
 		}
 
-		return false;
+		/**
+		 * Allow a Base-owned, request-scoped recovery authority to suspend
+		 * restrictive features without opening a global failsafe window.
+		 */
+		return (bool) apply_filters( 'cb_core_failsafe_is_bypassed', false );
 	}
 
 	/**
