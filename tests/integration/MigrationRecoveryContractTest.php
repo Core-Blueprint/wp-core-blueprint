@@ -73,6 +73,19 @@ final class CB_Base_Migration_Recovery_Contract_Test extends WP_UnitTestCase {
 		update_option( 'cb_core_trust_schema_version', 0, false );
 		delete_option( 'cb_core_privileged_guard_bootstrapped' );
 
+		$activated = Recovery::activate_destination( $ticket );
+		self::assertSame( 'pending_reconcile', $activated['status'] );
+		self::assertFalse(
+			RolePolicySchema::inspect( false, 'test' )['canonical'],
+			'Live-switch activation must not reconcile Base policy through stale request-local caches.'
+		);
+		$imported_before_reconcile = get_userdata( $imported_id );
+		self::assertInstanceOf( WP_User::class, $imported_before_reconcile );
+		self::assertTrue(
+			PrivilegedAccessRegistry::is_approved( $imported_before_reconcile ),
+			'Activation phase unexpectedly mutated imported trust before a fresh runtime was available.'
+		);
+
 		$state = Recovery::reconcile_destination( $ticket );
 		self::assertSame( 'pending_auth', $state['status'] );
 		self::assertTrue( RolePolicySchema::inspect( false, 'test' )['canonical'] );
@@ -156,6 +169,14 @@ final class CB_Base_Migration_Recovery_Contract_Test extends WP_UnitTestCase {
 		update_option( 'cb_core_role_policy_schema_version', RolePolicySchema::current_schema() + 1, false );
 
 		$this->expectException( RuntimeException::class );
-		Recovery::reconcile_destination( $ticket );
+		Recovery::activate_destination( $ticket );
+	}
+
+	public function test_pretty_routing_requirement_follows_destination_runtime(): void {
+		update_option( 'permalink_structure', '', false );
+		self::assertFalse( Recovery::requires_pretty_routing() );
+
+		update_option( 'permalink_structure', '/%postname%/', false );
+		self::assertTrue( Recovery::requires_pretty_routing() );
 	}
 }
