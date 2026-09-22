@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace CB\Core\Migration;
 
 use CB\Core\Log\AuditLog;
+use CB\Core\Settings;
 use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\PrivilegedAccessPolicy;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
@@ -21,6 +22,7 @@ use CB\Core\Permissions\RolePolicySchema;
 use CB\Core\Permissions\Roles;
 use CB\Core\Permissions\TrustSchemaMigrator;
 use CB\Core\Security\Failsafe;
+use CB\Core\Security\LoginShield;
 use RuntimeException;
 use WP_Error;
 use WP_User;
@@ -34,9 +36,9 @@ final class Recovery {
 	private const OPTION = 'cb_core_migration_recovery_state';
 	private const PURPOSE = 'core-blueprint-site-migration';
 	private const TICKET_VERSION = 1;
-	private const DEFAULT_TTL = 14400;
+	private const DEFAULT_TTL = 43200;
 	private const MIN_TTL = 300;
-	private const MAX_TTL = 21600;
+	private const MAX_TTL = 86400;
 
 	private static bool $booted = false;
 
@@ -200,21 +202,33 @@ final class Recovery {
 			throw new RuntimeException( 'Imported Core Blueprint Trust Schema is newer than the destination Base runtime.' );
 		}
 
-		$role_policy = RolePolicySchema::repair();
-		if ( empty( $role_policy['canonical'] ) ) {
-			throw new RuntimeException( 'Core Blueprint Role Policy could not be reconciled for the migration destination.' );
-		}
-
 		PrivilegedAccessGuard::establish_migration_trust_root();
 
-		$reviewed = 0;
+		$reviewed_ids = [];
 		foreach ( get_users() as $user ) {
 			if ( ! ( $user instanceof WP_User ) || ! PrivilegedAccessPolicy::is_privileged( $user ) ) {
 				continue;
 			}
 			PrivilegedAccessRegistry::require_review( $user, 'site_migration', 'migration_recovery' );
-			++$reviewed;
+			$reviewed_ids[ (int) $user->ID ] = true;
 		}
+
+		$role_policy = RolePolicySchema::repair();
+		if ( empty( $role_policy['canonical'] ) ) {
+			throw new RuntimeException( 'Core Blueprint Role Policy could not be reconciled for the migration destination.' );
+		}
+
+		// Role Policy repair can legitimately change the privilege fingerprint.
+		// Re-sign the review state, never the approval, against the canonical
+		// destination policy after the repair is complete.
+		foreach ( get_users() as $user ) {
+			if ( ! ( $user instanceof WP_User ) || ! PrivilegedAccessPolicy::is_privileged( $user ) ) {
+				continue;
+			}
+			PrivilegedAccessRegistry::require_review( $user, 'site_migration', 'migration_recovery' );
+			$reviewed_ids[ (int) $user->ID ] = true;
+		}
+		$reviewed = count( $reviewed_ids );
 
 		TrustSchemaMigrator::reset_for_new_trust_domain( 'site_migration' );
 
@@ -234,6 +248,19 @@ final class Recovery {
 		] );
 
 		return $state;
+	}
+
+	public static function requires_pretty_routing(): bool {
+		if ( '' !== trim( (string) get_option( 'permalink_structure', '' ) ) ) {
+			return true;
+		}
+
+		if ( class_exists( Settings::class ) && class_exists( LoginShield::class ) && Settings::shield_enabled() ) {
+			$config = LoginShield::config();
+			return ! empty( $config['enabled'] ) && '' !== (string) ( $config['slug'] ?? '' );
+		}
+
+		return false;
 	}
 
 	public static function login_url( string $ticket, string $redirect_to = '' ): string {
