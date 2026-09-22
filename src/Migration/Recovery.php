@@ -47,6 +47,7 @@ final class Recovery {
 		self::$booted = true;
 
 		add_filter( 'cb_core_failsafe_is_bypassed', [ self::class, 'filter_failsafe_bypass' ], 10, 1 );
+		add_action( 'init', [ self::class, 'maybe_reconcile_login_request' ], -100 );
 		add_action( 'login_form', [ self::class, 'render_login_ticket_field' ] );
 		add_filter( 'wp_authenticate_user', [ self::class, 'require_management_identity' ], 100, 2 );
 		add_action( 'wp_login', [ self::class, 'complete_authenticated_login' ], 100, 2 );
@@ -116,6 +117,60 @@ final class Recovery {
 	}
 
 	/**
+	 * Activate recovery immediately after the migrated database becomes live.
+	 *
+	 * This phase deliberately avoids WordPress role/option caches because the
+	 * caller can still be running in the pre-migration PHP request.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function activate_destination( string $ticket ): array {
+		$payload = self::validate_ticket( $ticket, false );
+		$existing = self::state();
+		if ( $existing ) {
+			if ( self::state_matches_ticket( $existing, $ticket, $payload ) ) {
+				return $existing;
+			}
+			throw new RuntimeException( 'Another migration recovery context is already active.' );
+		}
+
+		$current = self::normalize_site_url( self::database_option( 'siteurl' ) );
+		if ( '' === $current || ! hash_equals( $current, (string) $payload['target'] ) ) {
+			throw new RuntimeException( 'Migration recovery ticket does not match the restored destination database.' );
+		}
+
+		$role_schema = (int) self::database_option( 'cb_core_role_policy_schema_version' );
+		if ( $role_schema > RolePolicySchema::current_schema() ) {
+			throw new RuntimeException( 'Imported Core Blueprint Role Policy is newer than the destination Base runtime.' );
+		}
+		$trust_schema = (int) self::database_option( 'cb_core_trust_schema_version' );
+		if ( $trust_schema > TrustSchemaMigrator::current_schema() ) {
+			throw new RuntimeException( 'Imported Core Blueprint Trust Schema is newer than the destination Base runtime.' );
+		}
+
+		$state = [
+			'version'          => self::TICKET_VERSION,
+			'recovery_id'      => (string) $payload['recovery'],
+			'ticket_hash'      => hash( 'sha256', $ticket ),
+			'target_site_url'  => (string) $payload['target'],
+			'issued_at'        => (int) $payload['issued_at'],
+			'expires_at'       => (int) $payload['expires_at'],
+			'status'           => 'pending_reconcile',
+			'reviewed_users'   => 0,
+			'approved_user_id' => 0,
+			'authenticated_at' => 0,
+		];
+		update_option( self::OPTION, $state, false );
+
+		AuditLog::log( 'migration.recovery.destination_activated', 'warning', [
+			'recovery_id' => $state['recovery_id'],
+			'target'      => $state['target_site_url'],
+		] );
+
+		return $state;
+	}
+
+	/**
 	 * Establish the destination trust domain after the migrated database is
 	 * live. Imported privileged approvals are never trusted on the destination.
 	 *
@@ -124,11 +179,17 @@ final class Recovery {
 	public static function reconcile_destination( string $ticket ): array {
 		$payload = self::validate_ticket( $ticket );
 		$existing = self::state();
-		if ( $existing ) {
-			if ( hash_equals( (string) ( $existing['ticket_hash'] ?? '' ), hash( 'sha256', $ticket ) ) ) {
-				return $existing;
-			}
+		if ( ! $existing ) {
+			$existing = self::activate_destination( $ticket );
+		}
+		if ( ! self::state_matches_ticket( $existing, $ticket, $payload ) ) {
 			throw new RuntimeException( 'Another migration recovery context is already active.' );
+		}
+		if ( in_array( (string) ( $existing['status'] ?? '' ), [ 'pending_auth', 'authenticated' ], true ) ) {
+			return $existing;
+		}
+		if ( 'pending_reconcile' !== (string) ( $existing['status'] ?? '' ) ) {
+			throw new RuntimeException( 'Migration recovery context is not available for reconciliation.' );
 		}
 
 		$before = RolePolicySchema::inspect( false, 'site_migration_preflight' );
@@ -157,18 +218,10 @@ final class Recovery {
 
 		TrustSchemaMigrator::reset_for_new_trust_domain( 'site_migration' );
 
-		$state = [
-			'version'          => self::TICKET_VERSION,
-			'recovery_id'      => (string) $payload['recovery'],
-			'ticket_hash'      => hash( 'sha256', $ticket ),
-			'target_site_url'  => (string) $payload['target'],
-			'issued_at'        => (int) $payload['issued_at'],
-			'expires_at'       => (int) $payload['expires_at'],
-			'status'           => 'pending_auth',
-			'reviewed_users'   => $reviewed,
-			'approved_user_id' => 0,
-			'authenticated_at' => 0,
-		];
+		$state = $existing;
+		$state['status'] = 'pending_auth';
+		$state['reviewed_users'] = $reviewed;
+		$state['reconciled_at'] = time();
 		update_option( self::OPTION, $state, false );
 
 		AuditLog::log( 'migration.recovery.destination_reconciled', 'warning', [
