@@ -103,6 +103,14 @@ final class Bootstrap {
 		$labels['permissions.operator.recovered'] = __( 'Permissions: operator recovered', 'core-blueprint' );
 		$labels['permissions.role.policy.trust.continuity.restored'] = __( 'Permissions: role policy trust continuity restored', 'core-blueprint' );
 		$labels['permissions.role.policy.trust.continuity.skipped'] = __( 'Permissions: role policy trust continuity not restored', 'core-blueprint' );
+		$labels['migration.recovery.ticket_issued'] = __( 'Migration recovery: ticket issued', 'core-blueprint' );
+		$labels['migration.recovery.destination_activated'] = __( 'Migration recovery: destination activated', 'core-blueprint' );
+		$labels['migration.recovery.destination_reconciled'] = __( 'Migration recovery: destination reconciled', 'core-blueprint' );
+		$labels['migration.recovery.identity_approved'] = __( 'Migration recovery: management identity approved', 'core-blueprint' );
+		$labels['migration.recovery.reconcile_failed'] = __( 'Migration recovery: reconciliation failed', 'core-blueprint' );
+		$labels['migration.recovery.completed'] = __( 'Migration recovery: completed', 'core-blueprint' );
+		$labels['permissions.privileged_guard_migration_root_established'] = __( 'Permissions: migration trust root established', 'core-blueprint' );
+		$labels['permissions.trust_schema_domain_reset'] = __( 'Permissions: migration trust schema established', 'core-blueprint' );
 		return $labels;
 	}
 
