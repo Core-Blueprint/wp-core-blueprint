@@ -132,6 +132,64 @@ final class PrivilegedAccessRegistry {
 		return true;
 	}
 
+	/**
+	 * Force an exact privileged identity into review.
+	 *
+	 * Used when crossing a trust-domain boundary such as a site migration:
+	 * even a cryptographically valid imported approval must not become
+	 * destination authority merely because source and destination secrets
+	 * happen to match.
+	 */
+	public static function require_review( \WP_User $user, string $reason, string $source = 'runtime' ): bool {
+		if ( ! PrivilegedAccessPolicy::is_privileged( $user ) ) {
+			self::clear( $user );
+			return false;
+		}
+
+		$fingerprint = PrivilegedAccessPolicy::fingerprint( $user );
+		$existing    = get_user_meta( (int) $user->ID, self::META_REVIEW, true );
+		$approval    = get_user_meta( (int) $user->ID, self::META_APPROVAL, true );
+		$reason      = sanitize_key( $reason );
+		$source      = sanitize_key( $source );
+		$same_review = is_array( $existing )
+			&& hash_equals( (string) ( $existing['fingerprint'] ?? '' ), $fingerprint )
+			&& $reason === (string) ( $existing['reason'] ?? '' )
+			&& $source === (string) ( $existing['source'] ?? '' );
+
+		delete_user_meta( (int) $user->ID, self::META_APPROVAL );
+		if ( $same_review && empty( $approval ) ) {
+			return false;
+		}
+
+		$state = [
+			'fingerprint'   => $fingerprint,
+			'detected_at'   => time(),
+			'reason'        => $reason,
+			'source'        => $source,
+			'detected_by'   => get_current_user_id(),
+			'roles'         => array_values( (array) $user->roles ),
+			'critical_caps' => PrivilegedAccessPolicy::critical_capabilities_for_user( $user ),
+		];
+		update_user_meta( (int) $user->ID, self::META_REVIEW, $state );
+
+		AuditLog::log( 'permissions.privileged_user_review_required', 'warning', [
+			'user_id'          => (int) $user->ID,
+			'user_login'       => (string) $user->user_login,
+			'user_email'       => (string) $user->user_email,
+			'roles'            => $state['roles'],
+			'critical_caps'    => $state['critical_caps'],
+			'reason'           => $reason,
+			'source'           => $source,
+			'detected_by'      => $state['detected_by'],
+			'fingerprint'      => $fingerprint,
+			'enforcement_mode' => PrivilegedAccessPolicy::enforcement_mode(),
+			'restricted'       => PrivilegedAccessPolicy::enforces_approval(),
+			'review_url'       => admin_url( 'admin.php?page=core-blueprint-safeguards&tab=core-shield#cb-core-privileged-access' ),
+		] );
+
+		return true;
+	}
+
 	/** Clear all guard state when an identity is no longer privileged. */
 	public static function clear( \WP_User $user ): void {
 		delete_user_meta( (int) $user->ID, self::META_APPROVAL );
