@@ -29,6 +29,30 @@ final class TrustSchemaMigrator {
 	private const OPTION         = 'cb_core_trust_schema_version';
 	private const CURRENT_SCHEMA = 1;
 
+	public static function current_schema(): int {
+		return self::CURRENT_SCHEMA;
+	}
+
+	public static function stored_schema(): int {
+		return max( 0, (int) get_option( self::OPTION, 0 ) );
+	}
+
+	/**
+	 * Establish the current trust schema for a newly created trust domain.
+	 *
+	 * Callers must invalidate imported privileged approvals before invoking
+	 * this method. It never approves an identity or modifies role assignments.
+	 */
+	public static function reset_for_new_trust_domain( string $source ): void {
+		$before = self::stored_schema();
+		update_option( self::OPTION, self::CURRENT_SCHEMA, false );
+		AuditLog::log( 'permissions.trust_schema_domain_reset', 'warning', [
+			'from_schema' => $before,
+			'to_schema'   => self::CURRENT_SCHEMA,
+			'source'      => sanitize_key( $source ),
+		] );
+	}
+
 	/**
 	 * Apply explicitly defined public trust-schema migrations.
 	 *
