@@ -108,12 +108,13 @@ async function confirmModal( options = {} ) {
 	}
 	return api.show( {
 		title:        options.title        || ( i18n.confirm || 'Confirm' ),
-		body:         options.message      || '',
+		body:         options.body         || options.message || '',
 		confirmLabel: options.confirmLabel || ( i18n.confirm || 'Confirm' ),
 		cancelLabel:  options.cancelLabel  || ( i18n.cancel  || 'Cancel'  ),
 		typedConfirm: options.typedConfirm || undefined,
 		typedConfirmHint: options.typedConfirmHint || undefined,
 		input:        options.input || undefined,
+		onConfirm:    options.onConfirm || undefined,
 		confirmVariant: options.variant || 'primary',
 		confirmIcon: options.icon || undefined,
 	} );
@@ -928,11 +929,33 @@ async function inspectQuarantine( button ) {
 async function restoreQuarantine( button ) {
 	const id = button?.dataset.cbQuarantineId || '';
 	if ( ! id ) return;
-	const confirmed = await confirmModal( { title: i18n.quarantineRestoreTitle || 'Restore quarantined item', message: i18n.quarantineRestoreBody || 'Restore this item to its exact original location? Restore is refused if anything now exists at that path or if the quarantine payload changed.', confirmLabel: i18n.quarantineRestore || 'Restore', icon: 'restore' } );
+	const body = document.createElement( 'div' );
+	const message = document.createElement( 'p' );
+	message.textContent = i18n.quarantineRestoreBody || 'Restore this item to its exact original location? Restore is refused if anything now exists at that path or if the quarantine payload changed.';
+	body.appendChild( message );
+	const acknowledgementTemplate = document.getElementById( 'cb-integrity-quarantine-restore-acknowledgement-template' );
+	if ( acknowledgementTemplate ) {
+		body.appendChild( acknowledgementTemplate.content.cloneNode( true ) );
+	}
+	const confirmed = await confirmModal( {
+		title: i18n.quarantineRestoreTitle || 'Restore quarantined item',
+		body,
+		confirmLabel: i18n.quarantineRestore || 'Restore',
+		icon: 'restore',
+		onConfirm: () => {
+			const acknowledgement = body.querySelector( '[name="quarantine_restore_acknowledgement"]' );
+			if ( ! acknowledgement?.checked ) {
+				acknowledgement?.reportValidity();
+				acknowledgement?.focus();
+				return false;
+			}
+			return true;
+		},
+	} );
 	if ( ! confirmed ) return;
 	setBusy( button, true, i18n.quarantineRestoring || 'Restoring…' );
 	try {
-		await request( `/quarantine/${ encodeURIComponent( id ) }/restore`, { method: 'POST', body: '{}' } );
+		await request( `/quarantine/${ encodeURIComponent( id ) }/restore`, { method: 'POST', body: JSON.stringify( { quarantine_restore_acknowledgement: '1' } ) } );
 		toast( i18n.quarantineRestored || 'Quarantine item restored.', 'success' ); window.setTimeout( () => window.location.reload(), 500 );
 	} catch ( error ) { toast( error.message, 'error' ); setBusy( button, false ); }
 }

@@ -160,6 +160,7 @@ final class Bootstrap {
 		$labels['notes.bulk.deleted']  = __( 'Notes: bulk deleted',         'core-blueprint' );
 		$labels['notes.exported']      = __( 'Notes: exported',             'core-blueprint' );
 		$labels['notes.imported']      = __( 'Notes: imported',             'core-blueprint' );
+		$labels['notes.import.overwrite.acknowledged'] = __( 'Notes: import overwrite backup and recovery responsibility acknowledged', 'core-blueprint' );
 
 		return $labels;
 	}

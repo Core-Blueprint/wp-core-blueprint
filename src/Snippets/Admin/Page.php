@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Snippets\Admin;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Admin\PageBase;
 use CB\Core\Admin\TabNav;
 use CB\Core\Snippets\ConflictDetector;
@@ -283,7 +284,16 @@ final class Page extends PageBase {
 					<input type="hidden" name="action" value="cb_core_snippets_import" />
 					<?php wp_nonce_field( 'cb_core_snippets_import' ); ?>
 					<div class="cb-core-field"><label class="cb-core-field__label" for="cb-snippets-file"><?php esc_html_e( 'JSON file', 'core-blueprint' ); ?></label><input id="cb-snippets-file" name="snippets_file" type="file" accept="application/json,.json" required /></div>
-					<label class="cb-core-check-row"><input type="checkbox" name="overwrite" value="1" /><span class="cb-core-check-row__body"><strong><?php esc_html_e( 'Preserve Core Blueprint snippet IDs', 'core-blueprint' ); ?></strong><small><?php esc_html_e( 'Use only for a controlled restore. Normal migrations should leave this off so imported snippets receive new IDs.', 'core-blueprint' ); ?></small></span></label>
+					<label class="cb-core-check-row"><input type="checkbox" name="overwrite" value="1" data-cb-snippets-preserve-ids /><span class="cb-core-check-row__body"><strong><?php esc_html_e( 'Preserve Core Blueprint snippet IDs', 'core-blueprint' ); ?></strong><small><?php esc_html_e( 'Use only for a controlled restore. Normal migrations should leave this off so imported snippets receive new IDs.', 'core-blueprint' ); ?></small></span></label>
+					<template id="cb-snippets-restore-acknowledgement-template">
+						<?php MutationAcknowledgement::render(
+							'snippets_restore_acknowledgement',
+							'cb-snippets-restore-acknowledgement',
+							__( 'I understand that preserving snippet IDs can replace existing managed snippet code and metadata and that I am responsible for having a recent backup or other recovery option available.', 'core-blueprint' ),
+							__( 'Imported snippets remain disabled, but existing snippets with matching IDs can be overwritten.', 'core-blueprint' )
+						); ?>
+					</template>
+					<div data-cb-snippets-restore-acknowledgement></div>
 					<button type="submit" class="button button-primary cb-core-button cb-core-button--primary"><?php esc_html_e( 'Import snippets', 'core-blueprint' ); ?></button>
 				</form>
 			</section>

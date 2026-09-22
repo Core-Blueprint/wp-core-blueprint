@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Notes\Admin;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Admin\PageBase;
 use CB\Core\UI\Icon;
 use CB\Core\UI\Notice;
@@ -120,6 +121,14 @@ final class Page extends PageBase {
                     <input type="hidden" name="cb_notes_action" value="create" />
                     <?php Renderer::form_fields( null, $users, true ); ?>
                 </div>
+            </template>
+            <template id="cb-notes-import-overwrite-acknowledgement-template">
+                <?php MutationAcknowledgement::render(
+                    'notes_import_overwrite_acknowledgement',
+                    'cb-notes-import-overwrite-acknowledgement',
+                    __( 'I understand that this import will overwrite existing Notes and that I am responsible for having a recent backup or other recovery option available.', 'core-blueprint' ),
+                    __( 'Only Notes explicitly set to Overwrite existing are replaced.', 'core-blueprint' )
+                ); ?>
             </template>
             <?php $this->render_filters( $filters, $users ); ?>
 

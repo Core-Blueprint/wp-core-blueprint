@@ -8,13 +8,19 @@ declare(strict_types=1);
 
 namespace CB\Core\ContentModels\Importers\NativeWordPress;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\ContentModels\Admin\Page;
 use CB\Core\ContentModels\FieldTypes;
 use CB\Core\ContentModels\State;
+use CB\Core\Log\AuditLog;
+use CB\Core\UI\Field;
+use CB\Core\UI\Status;
 
 defined( 'ABSPATH' ) || exit;
 
 final class Bootstrap {
+	private const ACKNOWLEDGEMENT_FIELD = 'content_models_native_import_acknowledgement';
+
 	public static function boot(): void {
 		add_action( 'admin_post_cb_core_content_models_native_discover', [ __CLASS__, 'discover' ] );
 		add_action( 'admin_post_cb_core_content_models_native_create_plan', [ __CLASS__, 'create_plan' ] );
@@ -43,6 +49,18 @@ final class Bootstrap {
 	public static function apply_plan(): void {
 		self::guard( 'cb_core_content_models_native_apply_plan' );
 		try {
+			MutationAcknowledgement::require_confirmed(
+				$_POST[ self::ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
+				__( 'Confirm your responsibility for backup and recovery before applying the WordPress import plan.', 'core-blueprint' )
+			);
+			$plan = PlanStore::plan();
+			if ( is_array( $plan ) && class_exists( AuditLog::class ) ) {
+				AuditLog::log( 'content_models_native_import_acknowledged', 'notice', [
+					'plan_id'                 => (string) ( $plan['plan_id'] ?? '' ),
+					'summary'                 => (array) ( $plan['summary'] ?? [] ),
+					'recovery_responsibility' => true,
+				] );
+			}
 			Importer::apply_plan();
 			self::redirect( [ 'cb_cm_native_imported' => '1' ] );
 		} catch ( \InvalidArgumentException $e ) {
@@ -93,7 +111,7 @@ final class Bootstrap {
 		?>
 		<div class="cb-core-stack cb-core-stack--loose">
 			<div class="notice notice-info inline"><p><?php esc_html_e( 'Ready means the effective WordPress registration can be represented without known loss. Mapping required means WordPress proves the storage contract but you must supply missing Content Models UI semantics. Existing and Unsupported items cannot be selected.', 'core-blueprint' ); ?></p></div>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<form class="cb-core-stack cb-core-stack--loose" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="cb_core_content_models_native_create_plan" />
 				<?php wp_nonce_field( 'cb_core_content_models_native_create_plan' ); ?>
 				<?php self::render_structure_table( __( 'Post Types', 'core-blueprint' ), $post_types ); ?>
@@ -116,17 +134,19 @@ final class Bootstrap {
 			return;
 		}
 		?>
-		<h3><?php echo esc_html( $title ); ?></h3>
-		<table class="widefat striped"><thead><tr><th class="check-column"></th><th><?php esc_html_e( 'Registration', 'core-blueprint' ); ?></th><th><?php esc_html_e( 'Status', 'core-blueprint' ); ?></th><th><?php esc_html_e( 'Reason', 'core-blueprint' ); ?></th></tr></thead><tbody>
-		<?php foreach ( $entries as $entry ) : if ( ! is_array( $entry ) ) { continue; } $ready = Discovery::READY === (string) ( $entry['status'] ?? '' ); ?>
-			<tr>
-				<td><?php if ( $ready ) : ?><input type="checkbox" name="selected[]" value="<?php echo esc_attr( (string) ( $entry['token'] ?? '' ) ); ?>" /><?php endif; ?></td>
-				<td><strong><?php echo esc_html( (string) ( $entry['label'] ?? $entry['key'] ?? '' ) ); ?></strong><br><code><?php echo esc_html( (string) ( $entry['key'] ?? '' ) ); ?></code></td>
-				<td><?php echo esc_html( self::status_label( (string) ( $entry['status'] ?? '' ) ) ); ?></td>
-				<td><?php echo esc_html( implode( ' ', array_map( 'strval', (array) ( $entry['reasons'] ?? [] ) ) ) ); ?></td>
-			</tr>
-		<?php endforeach; ?>
-		</tbody></table>
+		<div class="cb-core-stack cb-core-stack--compact">
+			<h3><?php echo esc_html( $title ); ?></h3>
+			<table class="widefat striped"><thead><tr><th class="check-column"></th><th><?php esc_html_e( 'Registration', 'core-blueprint' ); ?></th><th><?php esc_html_e( 'Status', 'core-blueprint' ); ?></th><th><?php esc_html_e( 'Reason', 'core-blueprint' ); ?></th></tr></thead><tbody>
+			<?php foreach ( $entries as $entry ) : if ( ! is_array( $entry ) ) { continue; } $ready = Discovery::READY === (string) ( $entry['status'] ?? '' ); ?>
+				<tr>
+					<td><?php if ( $ready ) : ?><input type="checkbox" name="selected[]" value="<?php echo esc_attr( (string) ( $entry['token'] ?? '' ) ); ?>" /><?php endif; ?></td>
+					<td><strong><?php echo esc_html( (string) ( $entry['label'] ?? $entry['key'] ?? '' ) ); ?></strong><br><code><?php echo esc_html( (string) ( $entry['key'] ?? '' ) ); ?></code></td>
+					<td><?php echo self::render_status( (string) ( $entry['status'] ?? '' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Status Foundation escapes its label. ?></td>
+					<td><span class="description"><?php echo esc_html( implode( ' ', array_map( 'strval', (array) ( $entry['reasons'] ?? [] ) ) ) ); ?></span></td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody></table>
+		</div>
 		<?php
 	}
 
@@ -143,18 +163,25 @@ final class Bootstrap {
 		}
 		$labels = FieldTypes::labels();
 		?>
-		<h3><?php esc_html_e( 'Registered Metadata', 'core-blueprint' ); ?></h3>
-		<p class="description"><?php esc_html_e( 'Only explicitly registered metadata is shown. Values are checked for compatibility only after you select a mapping; metadata keys are never discovered by scanning storage tables.', 'core-blueprint' ); ?></p>
-		<?php foreach ( $contexts as $context_id => $items ) : if ( '' === $context_id || [] === $items ) { continue; } $first = $items[0]; $context_token = (string) ( $first['context_token'] ?? '' ); ?>
-			<h4><?php echo esc_html( (string) ( $first['context_label'] ?? $context_id ) ); ?> <code><?php echo esc_html( $context_id ); ?></code></h4>
-			<p><label><strong><?php esc_html_e( 'Field Group title', 'core-blueprint' ); ?></strong><br><input class="regular-text" type="text" name="group_title[<?php echo esc_attr( $context_token ); ?>]" value="" placeholder="<?php esc_attr_e( 'Enter a title when selecting metadata below', 'core-blueprint' ); ?>" /></label></p>
+		<div class="cb-core-stack cb-core-stack--compact">
+			<h3><?php esc_html_e( 'Registered Metadata', 'core-blueprint' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Only explicitly registered metadata is shown. Values are checked for compatibility only after you select a mapping; metadata keys are never discovered by scanning storage tables.', 'core-blueprint' ); ?></p>
+		</div>
+		<?php foreach ( $contexts as $context_id => $items ) : if ( '' === $context_id || [] === $items ) { continue; } $first = $items[0]; $context_token = (string) ( $first['context_token'] ?? '' ); $field_id = 'cb-content-models-native-group-title-' . substr( hash( 'sha256', $context_id . '|' . $context_token ), 0, 12 ); ?>
+			<div class="cb-core-stack cb-core-stack--compact">
+				<h4><?php echo esc_html( (string) ( $first['context_label'] ?? $context_id ) ); ?> <code><?php echo esc_html( $context_id ); ?></code></h4>
+				<?php echo Field::render( [
+					'label'     => __( 'Field Group title', 'core-blueprint' ),
+					'label_for' => $field_id,
+					'control'   => '<input id="' . esc_attr( $field_id ) . '" class="regular-text cb-core-field__control" type="text" name="group_title[' . esc_attr( $context_token ) . ']" value="" placeholder="' . esc_attr__( 'Enter a title when selecting metadata below', 'core-blueprint' ) . '" />',
+				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field Foundation escapes labels; control HTML is escaped above. ?>
 			<table class="widefat striped"><thead><tr><th class="check-column"></th><th><?php esc_html_e( 'Meta key', 'core-blueprint' ); ?></th><th><?php esc_html_e( 'WordPress type', 'core-blueprint' ); ?></th><th><?php esc_html_e( 'Status', 'core-blueprint' ); ?></th><th><?php esc_html_e( 'Content Models mapping', 'core-blueprint' ); ?></th></tr></thead><tbody>
 			<?php foreach ( $items as $entry ) : $mappable = Discovery::MAPPING_REQUIRED === (string) ( $entry['status'] ?? '' ); $token = (string) ( $entry['token'] ?? '' ); ?>
 				<tr>
 					<td><?php if ( $mappable ) : ?><input type="checkbox" name="selected[]" value="<?php echo esc_attr( $token ); ?>" /><?php endif; ?></td>
 					<td><code><?php echo esc_html( (string) ( $entry['key'] ?? '' ) ); ?></code><?php if ( '' !== (string) ( $entry['description'] ?? '' ) ) : ?><br><span class="description"><?php echo esc_html( (string) $entry['description'] ); ?></span><?php endif; ?></td>
 					<td><?php echo esc_html( (string) ( $entry['registered_type'] ?? '' ) ); ?></td>
-					<td><?php echo esc_html( self::status_label( (string) ( $entry['status'] ?? '' ) ) ); ?><?php if ( ! empty( $entry['reasons'] ) ) : ?><br><span class="description"><?php echo esc_html( implode( ' ', array_map( 'strval', (array) $entry['reasons'] ) ) ); ?></span><?php endif; ?></td>
+					<td><?php echo self::render_status( (string) ( $entry['status'] ?? '' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Status Foundation escapes its label. ?><?php if ( ! empty( $entry['reasons'] ) ) : ?><br><span class="description"><?php echo esc_html( implode( ' ', array_map( 'strval', (array) $entry['reasons'] ) ) ); ?></span><?php endif; ?></td>
 					<td>
 					<?php if ( $mappable ) : ?>
 						<label><?php esc_html_e( 'Label', 'core-blueprint' ); ?> <input type="text" name="meta_label[<?php echo esc_attr( $token ); ?>]" value="" /></label>
@@ -166,6 +193,7 @@ final class Bootstrap {
 				</tr>
 			<?php endforeach; ?>
 			</tbody></table>
+			</div>
 		<?php endforeach;
 	}
 
@@ -187,6 +215,12 @@ final class Bootstrap {
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="cb_core_content_models_native_apply_plan" />
 			<?php wp_nonce_field( 'cb_core_content_models_native_apply_plan' ); ?>
+			<?php MutationAcknowledgement::render(
+				self::ACKNOWLEDGEMENT_FIELD,
+				'cb-content-models-native-import-acknowledgement',
+				__( 'I understand that applying this plan transfers the selected WordPress schema registrations to Core Blueprint and that I am responsible for having a recent backup or other recovery option available.', 'core-blueprint' ),
+				__( 'The original registrar must remain disabled after adoption. Plugins, themes and custom code may affect the resulting runtime.', 'core-blueprint' )
+			); ?>
 			<button class="button cb-core-button cb-core-button--primary" type="submit"><?php esc_html_e( 'Apply reviewed import plan', 'core-blueprint' ); ?></button>
 		</form>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px">
@@ -195,6 +229,16 @@ final class Bootstrap {
 			<button class="button cb-core-button cb-core-button--secondary" type="submit"><?php esc_html_e( 'Discard import plan', 'core-blueprint' ); ?></button>
 		</form>
 		<?php
+	}
+
+	private static function render_status( string $status ): string {
+		$variant = match ( $status ) {
+			Discovery::READY            => 'active',
+			Discovery::MAPPING_REQUIRED => 'warning',
+			default                     => 'idle',
+		};
+
+		return Status::render( $variant, self::status_label( $status ) );
 	}
 
 	private static function status_label( string $status ): string {

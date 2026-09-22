@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Integrity\Rest;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Integrity\Api\IntegrityApi;
 use CB\Core\Integrity\Quarantine\Repository as QuarantineRepository;
 use CB\Core\Integrity\Quarantine\Service as QuarantineService;
@@ -747,7 +748,20 @@ final class ScanController {
 
 	public function restore_quarantine( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		try {
-			$item = QuarantineService::restore( sanitize_key( (string) $request['id'] ) );
+			MutationAcknowledgement::require_confirmed(
+				$request->get_param( 'quarantine_restore_acknowledgement' ),
+				__( 'Confirm your responsibility for backup and recovery before restoring the quarantined item.', 'core-blueprint' )
+			);
+		} catch ( \InvalidArgumentException $error ) {
+			return new WP_Error( 'cb_integrity_quarantine_restore_confirmation', $error->getMessage(), [ 'status' => 400 ] );
+		}
+		$id = sanitize_key( (string) $request['id'] );
+		$this->audit( 'integrity_quarantine_restore_acknowledged', 'notice', [
+			'quarantine_id'          => $id,
+			'recovery_responsibility' => true,
+		] );
+		try {
+			$item = QuarantineService::restore( $id );
 			return new WP_REST_Response( [ 'item' => QuarantineService::public_item( $item ), 'open_count' => QuarantineRepository::open_count() ], 200 );
 		} catch ( Throwable $throwable ) {
 			return new WP_Error( 'cb_integrity_quarantine_restore_failed', $throwable->getMessage(), [ 'status' => 409 ] );

@@ -60,6 +60,7 @@ final class Bootstrap {
 		$labels['media.replace.subsystem.enabled'] = __( 'Media Replace: subsystem enabled', 'core-blueprint' );
 		$labels['media.replace.subsystem.disabled'] = __( 'Media Replace: subsystem disabled', 'core-blueprint' );
 		$labels['media.file.replaced']          = __( 'Media: file replaced', 'core-blueprint' );
+		$labels['media.replace.acknowledged']     = __( 'Media Replace: backup and recovery responsibility acknowledged', 'core-blueprint' );
 		$labels['media.replace.failed']          = __( 'Media: replacement failed', 'core-blueprint' );
 		$labels['media.post.replace.hook.failed'] = __( 'Media: post-replace hook failed', 'core-blueprint' );
 		return $labels;

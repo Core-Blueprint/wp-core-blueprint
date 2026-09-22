@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Snippets\Admin;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Log\AuditLog;
 use CB\Core\Snippets\ImportExport\Exporter;
 use CB\Core\Snippets\ImportExport\Importer;
@@ -13,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Actions {
 	private const RESULT_PREFIX = 'cb_core_snippets_result_';
+	private const RESTORE_ACKNOWLEDGEMENT_FIELD = 'snippets_restore_acknowledgement';
 
 	public static function boot(): void {
 		add_action( 'admin_post_cb_core_snippets_save', [ __CLASS__, 'save' ] );
@@ -123,6 +125,17 @@ final class Actions {
 
 	public static function import(): void {
 		self::guard( 'cb_core_snippets_import', true );
+		$overwrite = isset( $_POST['overwrite'] ) && '1' === (string) wp_unslash( $_POST['overwrite'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce.
+		if ( $overwrite ) {
+			try {
+				MutationAcknowledgement::require_confirmed(
+					$_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
+					__( 'Confirm your responsibility for backup and recovery before restoring snippets with preserved IDs.', 'core-blueprint' )
+				);
+			} catch ( \InvalidArgumentException $error ) {
+				self::fail( $error->getMessage(), 'import-export' );
+			}
+		}
 		if ( empty( $_FILES['snippets_file'] ) || ! is_array( $_FILES['snippets_file'] ) ) {
 			self::fail( __( 'Choose a JSON file to import.', 'core-blueprint' ), 'import-export' );
 		}
@@ -144,7 +157,14 @@ final class Actions {
 			self::fail( __( 'The uploaded JSON file could not be read.', 'core-blueprint' ), 'import-export' );
 		}
 
-		$result = Importer::import_json( $json, isset( $_POST['overwrite'] ) );
+		if ( $overwrite ) {
+			AuditLog::log( 'snippets_restore_acknowledged', 'notice', [
+				'preserve_ids'            => true,
+				'recovery_responsibility' => true,
+			] );
+		}
+
+		$result = Importer::import_json( $json, $overwrite );
 		AuditLog::log( 'snippets_imported', 'notice', [
 			'source'  => (string) $result['source'],
 			'created' => (int) $result['created'],

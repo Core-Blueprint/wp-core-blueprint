@@ -14,6 +14,9 @@
 	const shortcodeField = document.querySelector( '.cb-snippets-shortcode-field' );
 	const codeTextarea = document.getElementById( 'cb-snippet-code' );
 	const editorForm = document.querySelector( '.cb-snippets-editor' );
+	const preserveIds = document.querySelector( '[data-cb-snippets-preserve-ids]' );
+	const restoreAcknowledgementTemplate = document.getElementById( 'cb-snippets-restore-acknowledgement-template' );
+	const restoreAcknowledgementHost = document.querySelector( '[data-cb-snippets-restore-acknowledgement]' );
 	const draftKey = 'cb-core-snippets-editor-draft';
 	const draftMaxAge = 5 * 60 * 1000;
 	let editor = null;
@@ -178,6 +181,18 @@
 	typeSelect?.addEventListener( 'change', rebuildLocations );
 	locationSelect?.addEventListener( 'change', updateShortcodeVisibility );
 	updateShortcodeVisibility();
+
+	const syncRestoreAcknowledgement = () => {
+		if ( ! preserveIds || ! restoreAcknowledgementTemplate || ! restoreAcknowledgementHost ) return;
+		restoreAcknowledgementHost.replaceChildren();
+		if ( preserveIds.checked ) {
+			restoreAcknowledgementHost.appendChild( restoreAcknowledgementTemplate.content.cloneNode( true ) );
+		}
+	};
+	if ( preserveIds ) {
+		preserveIds.addEventListener( 'change', syncRestoreAcknowledgement );
+		syncRestoreAcknowledgement();
+	}
 
 	// Destructive row action uses the suite modal when available. The browser
 	// confirm fallback exists only for partial/failed asset loads.
