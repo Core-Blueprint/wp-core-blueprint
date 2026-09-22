@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace CB\Core\Migration;
 
 use CB\Core\Log\AuditLog;
+use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\PrivilegedAccessPolicy;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Permissions\RolePolicySchema;
@@ -142,6 +143,8 @@ final class Recovery {
 		if ( empty( $role_policy['canonical'] ) ) {
 			throw new RuntimeException( 'Core Blueprint Role Policy could not be reconciled for the migration destination.' );
 		}
+
+		PrivilegedAccessGuard::establish_migration_trust_root();
 
 		$reviewed = 0;
 		foreach ( get_users() as $user ) {
