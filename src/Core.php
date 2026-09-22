@@ -24,6 +24,7 @@ use CB\Core\Ajax\SecurityRouter;
 use CB\Core\Log\AuditLog;
 use CB\Core\Log\Retention;
 use CB\Core\Log\SystemLog;
+use CB\Core\Migration\Recovery as MigrationRecovery;
 use CB\Core\Security\AccessMode;
 use CB\Core\Security\Failsafe;
 use CB\Core\Security\LoginShield;
@@ -58,6 +59,10 @@ final class Core {
 	// ─── Hooks ────────────────────────────────────────────────────────────────
 
 	private function init_hooks(): void {
+		// Migration recovery must register its request-scoped failsafe boundary
+		// before Login Shield evaluates enforcement on plugins_loaded.
+		MigrationRecovery::boot();
+
 		// WP 6.7+ requires translations to load on `init` or later.
 		add_action( 'init', [ $this, 'load_textdomain' ], 0 );
 
