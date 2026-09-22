@@ -62,6 +62,26 @@ Sender::send(
 
 Base resolves the registered identity, replaces any caller-supplied `From` header with that approved identity, scopes the sender for the duration of the `wp_mail()` call, and then restores the previous context. Nested sends therefore do not leak sender state across messages.
 
+### Durable sender snapshots
+
+Durable workflows may commit sender values before asynchronous delivery. Use `Sender::send_if_identity_matches()` when the committed sender must not drift:
+
+```php
+$result = Sender::send_if_identity_matches(
+    'core-blueprint-newsletter',
+    $dispatch_sender_email,
+    $dispatch_sender_name,
+    $recipient_email,
+    $subject,
+    $html,
+    [ 'Content-Type: text/html; charset=UTF-8' ]
+);
+```
+
+The method resolves the registered identity once, compares its effective email/name with the committed values, and fails closed with a `WP_Error` when the identity is unavailable or has changed. When it matches, that exact resolved identity is held request-locally for the entire `wp_mail()` call so SMTP filters and provider adapters observe the same sender snapshot.
+
+This contract does not permit arbitrary From addresses. The committed values must still match a currently registered Base sender identity.
+
 ## Force-default policy
 
 The Mail settings `Force default From Email` and `Force default From Name` continue to protect ordinary WordPress/plugin mail from replacing the site default. A sender requested through this public API is an explicit Base-approved exception and remains intact.
