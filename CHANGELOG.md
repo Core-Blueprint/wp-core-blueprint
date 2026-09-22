@@ -4,6 +4,14 @@
 
 ## 1.0.0-rc1 — 2026-09-09
 
+### Migration Recovery Foundation
+
+- Add a Base-owned destination recovery contract for governed cross-site migrations, with short-lived destination-bound HMAC tickets and no global security bypass.
+- Establish a new destination trust domain after database migration, reconcile Base-owned Role Policy on a fresh runtime, and require imported privileged identities to pass explicit `site_migration` review before destination approval.
+- Allow only an Administrator or CB Operator from the migrated site to complete recovery authentication, while keeping Login Shield and other restrictive features bypassed only for the signed recovery request and recovered admin session.
+- Expose whether destination pretty routing must be verified so migration extensions can prove permalink and custom-login routing before declaring completion.
+- Add audit labels, six-locale recovery copy and integration coverage for ticket tampering, destination binding, two-phase reconciliation, trust invalidation and one-identity reapproval.
+
 ### Core Profiles v1
 
 - Add approved-Operator-only export, preview and transactional apply of portable Base configuration through versioned Core Blueprint Profile JSON documents.
