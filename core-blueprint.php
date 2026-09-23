@@ -35,7 +35,7 @@ if ( defined( 'CB_CORE_FILE' ) || defined( 'CB_CORE_VERSION' ) ) {
 // ─── Plugin constants ─────────────────────────────────────────────────────────
 
 define( 'CB_CORE_VERSION',     '1.0.0-rc1' );
-define( 'CB_CORE_API_VERSION', '1.0' );
+define( 'CB_CORE_API_VERSION', '1.1' );
 define( 'CB_CORE_MIN_PHP',         '8.4' );
 define( 'CB_CORE_RECOMMENDED_PHP', '8.5' );
 define( 'CB_CORE_DB_VERSION',  '1.0' );
