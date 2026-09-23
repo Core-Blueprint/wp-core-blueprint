@@ -99,6 +99,8 @@ Any other return value rejects the move before DOM mutation.
 
 This is a user-interface policy only. It is never an authorization boundary.
 
+`canMove` must be synchronous and side-effect free. Base may call it more than once for the same prospective pointer move while evaluating visual drop targets and again before commit.
+
 ### `onMove(move)`
 
 Optional persistence callback. It runs after the optimistic DOM move.
