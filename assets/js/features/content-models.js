@@ -406,7 +406,10 @@ const setupSubfieldBuilder = (root) => {
 		console.warn('[cb-core/content-models] Reorder Foundation unavailable; subfield ordering controls are inactive.');
 	}
 
-	let counter = list.querySelectorAll('[data-cb-cm-subfield]').length;
+	let counter = Array.from(list.querySelectorAll('[data-cb-cm-subfield]')).reduce((next, row) => {
+		const match = String(row.dataset.cbCoreReorderItem || '').match(/^subfield-(\d+)$/);
+		return match ? Math.max(next, Number.parseInt(match[1], 10) + 1) : next;
+	}, 0);
 	list.querySelectorAll('[data-cb-cm-subfield]').forEach((row) => {
 		setupSubfieldRow(row, emptySubfieldLabel, reorderController);
 	});
