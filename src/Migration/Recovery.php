@@ -336,16 +336,29 @@ final class Recovery {
 			return true;
 		}
 
+		// Keep the global Failsafe capability path zero-query unless this request
+		// can actually participate in migration recovery. Recovery never opens
+		// arbitrary frontend requests or a normal wp-login.php request.
+		$is_login = self::is_login_request();
+		$is_admin = self::is_admin_request();
+		if ( ! $is_login && ! $is_admin ) {
+			return false;
+		}
+
+		$ticket = '';
+		if ( $is_login ) {
+			$ticket = self::request_ticket();
+			if ( '' === $ticket ) {
+				return false;
+			}
+		}
+
 		$state = self::state();
 		if ( ! $state || self::state_expired( $state ) ) {
 			return false;
 		}
 
-		if ( self::is_login_request() ) {
-			$ticket = self::request_ticket();
-			if ( '' === $ticket ) {
-				return false;
-			}
+		if ( $is_login ) {
 			try {
 				$payload = self::validate_ticket( $ticket, false );
 			} catch ( \Throwable ) {
