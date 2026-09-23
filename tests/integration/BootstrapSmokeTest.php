@@ -9,7 +9,7 @@ final class CB_Base_Bootstrap_Smoke_Test extends WP_UnitTestCase {
         $data = get_plugin_data( CB_CORE_FILE, false, false );
 
         self::assertSame( CB_CORE_VERSION, $data['Version'] );
-        self::assertSame( '1.0', CB_CORE_API_VERSION );
+        self::assertSame( '1.1', CB_CORE_API_VERSION );
         self::assertSame( '8.4', CB_CORE_MIN_PHP );
         self::assertSame( 'core-blueprint/core-blueprint.php', CB_CORE_BASENAME );
         self::assertTrue( class_exists( \CB\Core\Core::class ) );

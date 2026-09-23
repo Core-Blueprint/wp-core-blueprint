@@ -37,6 +37,8 @@ final class Assets {
 	public const OBJECT_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const SELECT_PICKER_PRESENTATION_CORE = 'core';
 	public const SELECT_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
+	public const REORDER_PRESENTATION_CORE = 'core';
+	public const REORDER_PRESENTATION_WP_NATIVE = 'wp-native';
 
 	private static bool $icon_data_filter_registered = false;
 	private static bool $toast_data_filter_registered = false;
@@ -48,6 +50,7 @@ final class Assets {
 	private static bool $capability_picker_data_filter_registered = false;
 	private static bool $object_picker_data_filter_registered = false;
 	private static bool $select_picker_data_filter_registered = false;
+	private static bool $reorder_data_filter_registered = false;
 	private static string $modal_presentation = self::MODAL_PRESENTATION_WP_NATIVE;
 	private static string $token_input_presentation = self::TOKEN_INPUT_PRESENTATION_WP_NATIVE;
 	private static string $clipboard_presentation = self::CLIPBOARD_PRESENTATION_WP_NATIVE;
@@ -464,6 +467,72 @@ final class Assets {
 	}
 
 
+
+
+	/**
+	 * Enqueue the shared Reorder Foundation for an extension-owned admin screen.
+	 *
+	 * Reorder progressively enhances consumer-owned ordered-list markup. Base
+	 * owns generic pointer/keyboard movement, focus, announcements and rollback
+	 * presentation. Consumers own item meaning, authorization and persistence.
+	 *
+	 * Runtime API: `window.cbCore.reorder`.
+	 * Script-module dependency: `@cb-core/reorder`.
+	 *
+	 * @param string|null $presentation `wp-native`, `core`, or null for auto.
+	 */
+	public static function enqueue_reorder( ?string $presentation = null ): void {
+		if ( null === $presentation ) {
+			$presentation = self::is_core_admin_screen()
+				? self::REORDER_PRESENTATION_CORE
+				: self::REORDER_PRESENTATION_WP_NATIVE;
+		} elseif ( ! in_array( $presentation, [ self::REORDER_PRESENTATION_WP_NATIVE, self::REORDER_PRESENTATION_CORE ], true ) ) {
+			$presentation = self::REORDER_PRESENTATION_WP_NATIVE;
+		}
+
+		if ( self::REORDER_PRESENTATION_CORE === $presentation ) {
+			if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
+			}
+			wp_enqueue_style(
+				'cb-core-css-reorder',
+				CB_CORE_URL . 'assets/css/components/reorder.css',
+				[ 'cb-core-css-tokens' ],
+				CB_CORE_VERSION
+			);
+		} else {
+			wp_enqueue_style(
+				'cb-core-css-reorder-native',
+				CB_CORE_URL . 'assets/css/components/reorder-native.css',
+				[],
+				CB_CORE_VERSION
+			);
+		}
+
+		wp_enqueue_script_module(
+			'@cb-core/reorder',
+			CB_CORE_URL . 'assets/js/core/reorder.js',
+			[],
+			CB_CORE_VERSION
+		);
+
+		if ( ! self::$reorder_data_filter_registered ) {
+			add_filter(
+				'script_module_data_@cb-core/reorder',
+				static function ( array $existing ): array {
+					return array_merge( $existing, [
+						'i18n' => [
+							'movedWithin' => __( '%1$s moved to position %2$d of %3$d.', 'core-blueprint' ),
+							'movedAcross' => __( '%1$s moved to %2$s, position %3$d of %4$d.', 'core-blueprint' ),
+							'rollback'    => __( 'Move could not be completed. The previous position was restored.', 'core-blueprint' ),
+							'cancelled'   => __( 'Move cancelled.', 'core-blueprint' ),
+						],
+					] );
+				}
+			);
+			self::$reorder_data_filter_registered = true;
+		}
+	}
 
 	/** @return array<int,array{value:string,label:string}> */
 	private static function dashicon_choices(): array {

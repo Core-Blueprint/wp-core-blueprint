@@ -394,10 +394,6 @@
 	background: var(--cb-surface-1);
 }
 
-.cb-content-models-subfield.is-dragging {
-	opacity: .6;
-}
-
 .cb-content-models-subfield__header,
 .cb-content-models-condition-group__header {
 	display: flex;
@@ -409,10 +405,6 @@
 .cb-content-models-subfield__header strong,
 .cb-content-models-condition-group__header strong {
 	flex: 1 1 auto;
-}
-
-.cb-content-models-subfield__header [data-cb-cm-subfield-handle] {
-	cursor: grab;
 }
 
 .cb-content-models-subfield__grid {

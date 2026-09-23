@@ -145,7 +145,7 @@ final class AdminModuleDefinitionsConsoleAux {
 				return [
 					'id'   => '@cb-core/content-models',
 					'src'  => 'features/content-models.js',
-					'deps' => [ '@cb-core/modal', '@cb-core/select-picker' ],
+					'deps' => [ '@cb-core/modal', '@cb-core/select-picker', '@cb-core/reorder' ],
 					'data' => [
 						'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 						'i18n' => [
@@ -159,6 +159,7 @@ final class AdminModuleDefinitionsConsoleAux {
 							'requiredLabel' => __( 'required', 'core-blueprint' ),
 							'restEnabled' => __( 'Enabled', 'core-blueprint' ),
 							'restDisabled' => __( 'Disabled', 'core-blueprint' ),
+							'reorderSubfield' => __( 'Reorder', 'core-blueprint' ),
 						],
 					],
 				];

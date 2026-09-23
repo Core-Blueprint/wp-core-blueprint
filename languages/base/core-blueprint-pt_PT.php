@@ -6,6 +6,13 @@ return [
     'content-type' => 'text/plain; charset=UTF-8',
     'x-generator' => 'Core Blueprint Gate 5B localization workflow',
     'messages' => [
+        '%1$s moved to position %2$d of %3$d.' => 'Movimento de %1$s para a posição %2$d de %3$d.',
+        '%1$s moved to %2$s, position %3$d of %4$d.' => 'Movimento de %1$s para %2$s, posição %3$d de %4$d.',
+        'Move could not be completed. The previous position was restored.' => 'Não foi possível concluir o movimento. A posição anterior foi reposta.',
+        'Move cancelled.' => 'Movimento cancelado.',
+        'Reorder' => 'Reordenar',
+        'Reorder %s' => 'Reordenar %s',
+        'Subfields' => 'Subcampos',
         '  1. Change your administrator password.' => '  1. Altere a palavra-passe de administrador.',
         '  2. Rotate the Core Blueprint bypass token.' => '  2. Renove o token de bypass do Core Blueprint.',
         '  3. Review the Core Blueprint audit log for suspicious activity.' => '  3. Reveja o registo de auditoria do Core Blueprint para detetar atividade suspeita.',

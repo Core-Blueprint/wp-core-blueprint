@@ -23,9 +23,12 @@ Status: **public v1 freeze candidate**.
 | Choice Group | `CB\Core\UI\Assets::enqueue_choice_group()` | PHP/CSS primitive; no JavaScript runtime required |
 | Object Picker | `CB\Core\UI\Assets::enqueue_object_picker()` | `@cb-core/object-picker`, `window.cbCore.objectPicker` |
 | Select Picker | `CB\Core\UI\Assets::enqueue_select_picker()` | `@cb-core/select-picker`, `window.cbCore.selectPicker` |
+| Reorder | `CB\Core\UI\Assets::enqueue_reorder()` | `@cb-core/reorder`, `window.cbCore.reorder` (Core API `1.1+`) |
 | Form Composition | `CB\Core\UI\FormComposition::enqueue()` | PHP/CSS primitive; no JavaScript runtime required |
 
 Consumers provide business meaning and exact values. Foundation owns generic behavior, accessibility and presentation adapters.
+
+The Reorder Foundation owns generic ordered-list movement, focus preservation, accessible announcements, pending state and rollback. Consumers own item/list semantics, authorization and persistence. Cross-list movement is opt-in and consumers must provide a non-pointer route for cross-list moves. See `REORDER-FOUNDATION.md`.
 
 The Modal Foundation includes the additive public `confirmCheck: { label }` option. Presence means a required, initially unchecked native acknowledgement checkbox. `confirmCheck` is orthogonal to the existing confirm/typed/input modes, never changes their resolved value, and composes with other gates so Confirm is available only when every active gate is valid. Invalid or empty labels fail closed; see `MODAL-FOUNDATION.md`.
 

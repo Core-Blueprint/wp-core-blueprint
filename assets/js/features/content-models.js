@@ -351,12 +351,13 @@ const setupStructuredSettings = (fieldTypeSelect) => {
 };
 document.querySelectorAll('[data-cb-cm-field-type]').forEach(setupStructuredSettings);
 
-const setupSubfieldRow = (row) => {
+const setupSubfieldRow = (row, emptySubfieldLabel, reorderController = null) => {
 	if (!row || row.dataset.cbCmSubfieldReady === '1') return;
 	row.dataset.cbCmSubfieldReady = '1';
 	const type = row.querySelector('[data-cb-cm-subfield-type]');
 	const label = row.querySelector('[data-cb-cm-subfield-label]');
 	const title = row.querySelector('[data-cb-cm-subfield-title]');
+	const handle = row.querySelector('[data-cb-cm-subfield-handle]');
 	const choice = row.querySelector('[data-cb-cm-subfield-choice-settings]');
 	const number = row.querySelector('[data-cb-cm-subfield-number-settings]');
 	const relation = row.querySelector('[data-cb-cm-subfield-relation-settings]');
@@ -370,12 +371,22 @@ const setupSubfieldRow = (row) => {
 			target.hidden = target.dataset.cbCmSubfieldRelationTarget !== value;
 		});
 	};
+	const syncLabel = () => {
+		const currentLabel = label?.value.trim() || emptySubfieldLabel;
+		if (title) title.textContent = currentLabel;
+		row.dataset.cbCoreReorderLabel = currentLabel;
+		if (handle) {
+			handle.setAttribute('aria-label', `${i18n.reorderSubfield || 'Reorder'} ${currentLabel}`);
+		}
+	};
 	type?.addEventListener('change', sync);
-	label?.addEventListener('input', () => {
-		if (title) title.textContent = label.value.trim() || emptySubfieldLabel;
+	label?.addEventListener('input', syncLabel);
+	row.querySelector('[data-cb-cm-remove-subfield]')?.addEventListener('click', () => {
+		row.remove();
+		reorderController?.refresh();
 	});
-	row.querySelector('[data-cb-cm-remove-subfield]')?.addEventListener('click', () => row.remove());
 	sync();
+	syncLabel();
 };
 
 const setupSubfieldBuilder = (root) => {
@@ -386,33 +397,23 @@ const setupSubfieldBuilder = (root) => {
 	const template = root.querySelector('[data-cb-cm-subfield-template]');
 	const add = root.querySelector('[data-cb-cm-add-subfield]');
 	if (!list || !template || !add) return;
-	let counter = list.querySelectorAll('[data-cb-cm-subfield]').length;
-	let dragging = null;
 
-	const bindDrag = (row) => {
-		row.addEventListener('dragstart', (event) => {
-			if (!event.target.closest?.('[data-cb-cm-subfield-handle]')) {
-				event.preventDefault();
-				return;
-			}
-			dragging = row;
-			row.classList.add('is-dragging');
-		});
-		row.addEventListener('dragend', () => {
-			row.classList.remove('is-dragging');
-			dragging = null;
-		});
-		row.addEventListener('dragover', (event) => {
-			if (!dragging || dragging === row) return;
-			event.preventDefault();
-			const rect = row.getBoundingClientRect();
-			list.insertBefore(dragging, event.clientY - rect.top < rect.height / 2 ? row : row.nextSibling);
-		});
-	};
+	const reorderFoundation = window.cbCore?.reorder;
+	const reorderController = reorderFoundation?.enhance
+		? reorderFoundation.enhance(root, { crossList: false })
+		: null;
+	if (!reorderController) {
+		console.warn('[cb-core/content-models] Reorder Foundation unavailable; subfield ordering controls are inactive.');
+	}
+
+	let counter = Array.from(list.querySelectorAll('[data-cb-cm-subfield]')).reduce((next, row) => {
+		const match = String(row.dataset.cbCoreReorderItem || '').match(/^subfield-(\d+)$/);
+		return match ? Math.max(next, Number.parseInt(match[1], 10) + 1) : next;
+	}, 0);
 	list.querySelectorAll('[data-cb-cm-subfield]').forEach((row) => {
-		setupSubfieldRow(row);
-		bindDrag(row);
+		setupSubfieldRow(row, emptySubfieldLabel, reorderController);
 	});
+
 	add.addEventListener('click', () => {
 		const html = template.innerHTML.replaceAll('__INDEX__', String(counter++));
 		const holder = document.createElement('div');
@@ -420,8 +421,8 @@ const setupSubfieldBuilder = (root) => {
 		const row = holder.firstElementChild;
 		if (!row) return;
 		list.appendChild(row);
-		setupSubfieldRow(row);
-		bindDrag(row);
+		setupSubfieldRow(row, emptySubfieldLabel, reorderController);
+		reorderController?.refresh();
 		row.querySelector('input:not([type="hidden"])')?.focus();
 	});
 

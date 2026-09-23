@@ -1,6 +1,6 @@
 # Core Blueprint Public API — v1
 
-`CB_CORE_API_VERSION` is `1.0`. Only the contracts documented here (and their linked Foundation documents) are considered stable public API throughout Core Blueprint Base 1.x. A PHP method being `public` does **not** by itself make it a supported third-party contract.
+`CB_CORE_API_VERSION` is `1.1`. Only the contracts documented here (and their linked Foundation documents) are considered stable public API throughout Core Blueprint Base 1.x. A PHP method being `public` does **not** by itself make it a supported third-party contract.
 
 ## Lifecycle
 
@@ -217,6 +217,8 @@ Base owns the canonical appearance of every declared Design Foundation primitive
 ## UI Foundation
 
 Public enqueue/runtime primitives are frozen in `foundation-v1-contract.md` and the individual Foundation documents. Extensions should enqueue the narrow primitive they need rather than importing Core Admin presentation wholesale.
+
+Reorder Foundation was added in Core API `1.1` and is the domain-neutral ordered-list movement boundary. Registered Core Admin consumers declare `reorder` as a Foundation requirement; standalone wp-admin consumers use `CB\\Core\\UI\\Assets::enqueue_reorder()`. The public browser API is `window.cbCore.reorder` through script module `@cb-core/reorder`. Base owns pointer/keyboard movement, focus, announcements, pending state and rollback presentation. Consumers retain structure meaning, authorization and persistence. See `REORDER-FOUNDATION.md`.
 
 ## Governance / Audit
 
