@@ -91,6 +91,13 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "'cancelled'   => __(", $assets );
 	}
 
+	public function test_wp_native_reorder_uses_optional_admin_theme_accent_without_token_dependency(): void {
+		$root = dirname( __DIR__, 2 );
+		$css = file_get_contents( $root . '/assets/css/components/reorder-native.css' );
+		self::assertIsString( $css );
+		self::assertStringContainsString( 'var(--cb-accent, #2271b1)', $css );
+	}
+
 	public function test_reorder_source_is_a_domain_neutral_public_runtime(): void {
 		$root = dirname( __DIR__, 2 );
 		$runtime = file_get_contents( $root . '/assets/js/core/reorder.js' );
