@@ -22,14 +22,14 @@ trait StructuredFieldsView {
 		$sub_fields = FieldTypes::sub_fields( $field );
 		$type = (string) ( $field['type'] ?? '' );
 		?>
-		<div class="cb-content-models-structured" data-cb-cm-structured-settings data-empty-subfield-label="<?php echo esc_attr__( 'New subfield', 'core-blueprint' ); ?>">
+		<div class="cb-content-models-structured" data-cb-cm-structured-settings data-cb-core-reorder data-empty-subfield-label="<?php echo esc_attr__( 'New subfield', 'core-blueprint' ); ?>">
 			<p class="description"><?php esc_html_e( 'Group stores one associative array. Repeater stores an ordered array of rows. Subfield names are stable schema keys; existing structured values are never automatically migrated when a subfield type changes.', 'core-blueprint' ); ?></p>
 			<div class="cb-content-models-repeater-limits" data-cb-cm-repeater-limits <?php echo 'repeater' === $type ? '' : 'hidden'; ?>>
 				<label><?php esc_html_e( 'Minimum rows', 'core-blueprint' ); ?> <input type="number" min="0" max="100" name="repeater_min" value="<?php echo esc_attr( (string) ( $field['repeater_min'] ?? 0 ) ); ?>" /></label>
 				<label><?php esc_html_e( 'Maximum rows', 'core-blueprint' ); ?> <input type="number" min="0" max="500" name="repeater_max" value="<?php echo esc_attr( (string) ( $field['repeater_max'] ?? 0 ) ); ?>" /></label>
 				<p class="description"><?php esc_html_e( 'Use 0 for no explicit limit. A non-zero maximum may not be lower than the minimum.', 'core-blueprint' ); ?></p>
 			</div>
-			<div class="cb-content-models-subfields" data-cb-cm-subfields>
+			<div class="cb-content-models-subfields" data-cb-cm-subfields data-cb-core-reorder-list="subfields" data-cb-core-reorder-list-label="<?php echo esc_attr__( 'Subfields', 'core-blueprint' ); ?>">
 				<?php $index = 0; foreach ( $sub_fields as $sub_field ) : $this->render_subfield_row( $sub_field, $index++ ); endforeach; ?>
 			</div>
 			<button type="button" class="button cb-core-button cb-core-button--secondary" data-cb-cm-add-subfield><?php esc_html_e( 'Add Subfield', 'core-blueprint' ); ?></button>
@@ -51,10 +51,11 @@ trait StructuredFieldsView {
 		$atomic_groups = FieldTypes::grouped_labels();
 		unset( $atomic_groups[ __( 'Structured', 'core-blueprint' ) ] );
 		?>
-		<div class="cb-content-models-subfield" data-cb-cm-subfield draggable="true">
+		<?php $reorder_label = '' !== (string) $sub_field['label'] ? (string) $sub_field['label'] : __( 'New subfield', 'core-blueprint' ); ?>
+		<div class="cb-content-models-subfield" data-cb-cm-subfield data-cb-core-reorder-item="subfield-<?php echo esc_attr( (string) $index ); ?>" data-cb-core-reorder-label="<?php echo esc_attr( $reorder_label ); ?>">
 			<div class="cb-content-models-subfield__header">
-				<span class="dashicons dashicons-move" aria-hidden="true" data-cb-cm-subfield-handle></span>
-				<strong data-cb-cm-subfield-title><?php echo esc_html( '' !== (string) $sub_field['label'] ? (string) $sub_field['label'] : __( 'New subfield', 'core-blueprint' ) ); ?></strong>
+				<button type="button" class="button-link cb-content-models-subfield__drag" data-cb-cm-subfield-handle data-cb-core-reorder-handle aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $reorder_label ) ); ?>"><span class="dashicons dashicons-move" aria-hidden="true"></span></button>
+				<strong data-cb-cm-subfield-title><?php echo esc_html( $reorder_label ); ?></strong>
 				<button type="button" class="button-link-delete" data-cb-cm-remove-subfield><?php esc_html_e( 'Remove', 'core-blueprint' ); ?></button>
 			</div>
 			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[id]" value="<?php echo esc_attr( (string) $sub_field['id'] ); ?>" />
