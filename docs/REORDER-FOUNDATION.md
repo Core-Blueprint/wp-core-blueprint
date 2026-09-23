@@ -154,6 +154,7 @@ A pointer movement threshold prevents a click from becoming an accidental drag.
 During an active reorder, Base owns:
 
 - pointer capture;
+- `Escape` cancellation with cleanup and a polite localized announcement;
 - vertical hit testing;
 - before/after insertion feedback;
 - bounded page-edge autoscroll;
