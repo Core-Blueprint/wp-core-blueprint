@@ -6,6 +6,9 @@ return [
     'content-type' => 'text/plain; charset=UTF-8',
     'x-generator' => 'Core Blueprint Gate 5B localization workflow',
     'messages' => [
+        'Reorder' => 'Reordenar',
+        'Reorder %s' => 'Reordenar %s',
+        'Subfields' => 'Subcampos',
         '  1. Change your administrator password.' => '  1. Cambia tu contraseña de administrador.',
         '  2. Rotate the Core Blueprint bypass token.' => '  2. Renueva el token de omisión de Core Blueprint.',
         '  3. Review the Core Blueprint audit log for suspicious activity.' => '  3. Revisa el registro de auditoría de Core Blueprint en busca de actividad sospechosa.',
