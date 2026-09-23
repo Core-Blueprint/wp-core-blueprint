@@ -6,6 +6,10 @@ return [
     'content-type' => 'text/plain; charset=UTF-8',
     'x-generator' => 'Core Blueprint Gate 5B localization workflow',
     'messages' => [
+        '%1$s moved to position %2$d of %3$d.' => 'Movimento de %1$s para a posição %2$d de %3$d.',
+        '%1$s moved to %2$s, position %3$d of %4$d.' => 'Movimento de %1$s para %2$s, posição %3$d de %4$d.',
+        'Move could not be completed. The previous position was restored.' => 'Não foi possível concluir o movimento. A posição anterior foi reposta.',
+        'Move cancelled.' => 'Movimento cancelado.',
         'Reorder' => 'Reordenar',
         'Reorder %s' => 'Reordenar %s',
         'Subfields' => 'Subcampos',
