@@ -80,9 +80,15 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_reorder_enqueue_exposes_localized_accessibility_messages(): void {
-		Assets::enqueue_reorder( Assets::REORDER_PRESENTATION_WP_NATIVE );
+		$root = dirname( __DIR__, 2 );
+		$assets = file_get_contents( $root . '/src/UI/Assets.php' );
+		self::assertIsString( $assets );
 
-		self::assertTrue( has_filter( 'script_module_data_@cb-core/reorder' ) );
+		self::assertStringContainsString( 'script_module_data_@cb-core/reorder', $assets );
+		self::assertStringContainsString( "'movedWithin' => __(", $assets );
+		self::assertStringContainsString( "'movedAcross' => __(", $assets );
+		self::assertStringContainsString( "'rollback'    => __(", $assets );
+		self::assertStringContainsString( "'cancelled'   => __(", $assets );
 	}
 
 	public function test_reorder_source_is_a_domain_neutral_public_runtime(): void {
