@@ -79,6 +79,12 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 		self::assertFalse( wp_style_is( 'cb-core-css-token-inputs', 'enqueued' ) );
 	}
 
+	public function test_reorder_enqueue_exposes_localized_accessibility_messages(): void {
+		Assets::enqueue_reorder( Assets::REORDER_PRESENTATION_WP_NATIVE );
+
+		self::assertTrue( has_filter( 'script_module_data_@cb-core/reorder' ) );
+	}
+
 	public function test_reorder_source_is_a_domain_neutral_public_runtime(): void {
 		$root = dirname( __DIR__, 2 );
 		$runtime = file_get_contents( $root . '/assets/js/core/reorder.js' );
@@ -93,6 +99,8 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'event.altKey', $runtime );
 		self::assertStringContainsString( "event.key !== 'ArrowUp'", $runtime );
 		self::assertStringContainsString( "event.key !== 'ArrowDown'", $runtime );
+		self::assertStringContainsString( "event.key === 'Escape'", $runtime );
+		self::assertStringContainsString( 'wp-script-module-data-@cb-core/reorder', $runtime );
 		self::assertStringNotContainsString( 'jQuery', $runtime );
 		self::assertStringNotContainsString( 'cb_doc', $runtime );
 		self::assertStringNotContainsString( 'menu_order', $runtime );
