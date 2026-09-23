@@ -30,6 +30,8 @@ const formatMessage = (template, values) => template.replace(
 
 const MAX_IDENTIFIER_BYTES = 191;
 const DRAG_THRESHOLD = 6;
+const MOVE_ANIMATION_DURATION_MS = 180;
+const MOVE_ANIMATION_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
 const controllers = new WeakMap();
 
 const byteLength = (value) => new TextEncoder().encode(value).length;
@@ -191,6 +193,38 @@ const applyDomSnapshot = (root, snapshot) => {
 	}
 };
 
+const prefersReducedMotion = () => (
+	typeof window !== 'undefined'
+	&& typeof window.matchMedia === 'function'
+	&& window.matchMedia('(prefers-reduced-motion: reduce)').matches
+);
+
+const canAnimateReorder = () => (
+	!prefersReducedMotion()
+	&& typeof Element !== 'undefined'
+	&& typeof Element.prototype.animate === 'function'
+);
+
+const captureItemRects = (root, listIds) => {
+	const rects = new Map();
+	for (const listId of new Set(listIds)) {
+		const list = listElement(root, listId);
+		if (!list) continue;
+		for (const item of ownedItems(list, root)) {
+			const itemId = normalizeIdentifier(item.dataset.cbCoreReorderItem);
+			if (!itemId) continue;
+			const rect = item.getBoundingClientRect();
+			rects.set(itemId, {
+				left: rect.left,
+				top: rect.top,
+				width: rect.width,
+				height: rect.height,
+			});
+		}
+	}
+	return rects;
+};
+
 const makeMoveDetail = (move, input) => ({
 	itemId: move.itemId,
 	from: { ...move.from },
@@ -240,8 +274,86 @@ const enhance = (root, options = {}) => {
 	let busy = false;
 	let destroyed = false;
 	let pointerState = null;
+	const motionAnimations = new Set();
+	const motionByItem = new WeakMap();
 
 	root.dataset.cbCoreReorderReady = '1';
+
+	const unregisterMotion = (item, animation) => {
+		if (motionByItem.get(item) === animation) {
+			motionByItem.delete(item);
+		}
+		motionAnimations.delete(animation);
+	};
+
+	const cancelItemMotion = (item) => {
+		const animation = motionByItem.get(item);
+		if (animation) animation.cancel();
+	};
+
+	const cancelMotionForLists = (listIds) => {
+		for (const listId of new Set(listIds)) {
+			const list = listElement(root, listId);
+			if (!list) continue;
+			for (const item of ownedItems(list, root)) {
+				cancelItemMotion(item);
+			}
+		}
+	};
+
+	const animateFromRects = (beforeRects, listIds) => {
+		if (!canAnimateReorder()) return;
+
+		for (const listId of new Set(listIds)) {
+			const list = listElement(root, listId);
+			if (!list) continue;
+
+			for (const item of ownedItems(list, root)) {
+				const itemId = normalizeIdentifier(item.dataset.cbCoreReorderItem);
+				const before = itemId ? beforeRects.get(itemId) : null;
+				if (!before) continue;
+
+				const after = item.getBoundingClientRect();
+				if (
+					(before.width <= 0 && before.height <= 0)
+					|| (after.width <= 0 && after.height <= 0)
+				) {
+					continue;
+				}
+
+				const deltaX = before.left - after.left;
+				const deltaY = before.top - after.top;
+				if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) continue;
+
+				const animation = item.animate(
+					[
+						{ translate: `${deltaX}px ${deltaY}px` },
+						{ translate: '0px 0px' },
+					],
+					{
+						duration: MOVE_ANIMATION_DURATION_MS,
+						easing: MOVE_ANIMATION_EASING,
+					}
+				);
+				motionByItem.set(item, animation);
+				motionAnimations.add(animation);
+				animation.addEventListener('finish', () => unregisterMotion(item, animation), { once: true });
+				animation.addEventListener('cancel', () => unregisterMotion(item, animation), { once: true });
+			}
+		}
+	};
+
+	const applyAnimatedDomSnapshot = (snapshot, listIds) => {
+		if (!canAnimateReorder()) {
+			applyDomSnapshot(root, snapshot);
+			return;
+		}
+
+		const beforeRects = captureItemRects(root, listIds);
+		cancelMotionForLists(listIds);
+		applyDomSnapshot(root, snapshot);
+		animateFromRects(beforeRects, listIds);
+	};
 
 	const announce = (message) => {
 		status.textContent = '';
@@ -289,7 +401,8 @@ const enhance = (root, options = {}) => {
 		if (settings.canMove && settings.canMove(detail) !== true) return false;
 
 		const after = applyMove(before, move);
-		applyDomSnapshot(root, after);
+		const affectedListIds = detail.affectedLists.map((list) => list.listId);
+		applyAnimatedDomSnapshot(after, affectedListIds);
 		busy = true;
 		root.dataset.cbCoreReorderPending = 'true';
 		root.setAttribute('aria-busy', 'true');
@@ -301,7 +414,7 @@ const enhance = (root, options = {}) => {
 			dispatch('cb:reorder:change', detail);
 			return true;
 		} catch (error) {
-			applyDomSnapshot(root, before);
+			applyAnimatedDomSnapshot(before, affectedListIds);
 			focusItem(detail.itemId);
 			announce(i18n.rollback || 'Move could not be completed. The previous position was restored.');
 			dispatch('cb:reorder:error', { ...detail, error });
@@ -506,6 +619,8 @@ const enhance = (root, options = {}) => {
 			destroyed = true;
 			abort.abort();
 			clearPointerPresentation();
+			for (const animation of motionAnimations) animation.cancel();
+			motionAnimations.clear();
 			status.remove();
 			delete root.dataset.cbCoreReorderReady;
 			delete root.dataset.cbCoreReorderPending;

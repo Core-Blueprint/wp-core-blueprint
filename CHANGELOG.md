@@ -4,6 +4,11 @@
 
 ## 1.0.0-rc1 — 2026-09-09
 
+### Reorder Foundation motion polish
+
+- Add Base-owned reduced-motion-aware FLIP settling for pointer, keyboard and programmatic reorder moves, including animated rollback after persistence failure.
+- Keep consumer markup and transforms independent by animating positional `translate` only, with an instant fallback when reduced motion is requested or Web Animations are unavailable.
+
 ### Migration Recovery Foundation
 
 - Add a Base-owned destination recovery contract for governed cross-site migrations, with short-lived destination-bound HMAC tickets and no global security bypass.

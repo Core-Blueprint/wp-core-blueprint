@@ -189,6 +189,30 @@ HTML appropriate to their own content.
 During async persistence the root receives `aria-busy="true"` and rejects
 additional reorder mutations until the current move settles.
 
+## Motion
+
+Base owns generic reorder settling motion as presentation behavior. Consumers do
+not opt in, configure durations or implement their own move animation.
+
+Successful pointer, keyboard and programmatic moves use a short FLIP-style
+settle animation. Base measures the affected rows before the canonical DOM move,
+applies the new snapshot immediately and visually settles only the positional
+difference. The animation uses the individual CSS `translate` property so
+consumer-owned `transform` composition is not replaced.
+
+The default settle duration is 180 ms. No opacity effect, jQuery dependency or
+consumer-specific CSS is involved.
+
+When `prefers-reduced-motion: reduce` is active, or the browser does not expose
+the Web Animations API needed by the Foundation, the canonical DOM move remains
+instant with no animation. Reduced motion never changes move semantics,
+authorization, persistence or announcements.
+
+The same motion path is used for rollback. If persistence fails while a settle
+animation is still active, Base captures the current visual position, cancels
+only its own motion for the affected lists, restores the previous canonical DOM
+snapshot and settles back from the visible position.
+
 ## Rollback
 
 The previous DOM order is captured before mutation.
@@ -276,6 +300,7 @@ Included:
 - pointer/touch/stylus interaction;
 - keyboard same-list movement;
 - programmatic moves;
+- reduced-motion-aware FLIP settling for moves and rollback;
 - focus preservation;
 - announcements;
 - async pending state;
