@@ -6,6 +6,21 @@ use CB\Core\UI\Assets;
 
 final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 
+	public function set_up(): void {
+		parent::set_up();
+
+		foreach ( [
+			'cb-core-css-reorder',
+			'cb-core-css-reorder-native',
+			'cb-core-css-tokens',
+			'cb-core-css-modals',
+			'cb-core-css-token-inputs',
+		] as $handle ) {
+			wp_dequeue_style( $handle );
+		}
+	}
+
+
 	public function test_reorder_is_a_public_semantic_foundation_requirement(): void {
 		$normalized = PageRegistry::normalize_semantic_requirements(
 			[ 'foundations' => [ 'reorder' ] ],
@@ -19,6 +34,8 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_unknown_foundation_requirements_still_fail_closed(): void {
+		$this->setExpectedIncorrectUsage( PageRegistry::class . '::diagnostic' );
+
 		self::assertNull(
 			PageRegistry::normalize_semantic_requirements(
 				[ 'foundations' => [ 'reorder-does-not-exist' ] ],
@@ -63,7 +80,9 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'pointerup', $runtime );
 		self::assertStringContainsString( 'window.scrollBy', $runtime );
 		self::assertStringContainsString( 'applyDomSnapshot(root, before)', $runtime );
-		self::assertStringContainsString( 'Alt', $runtime );
+		self::assertStringContainsString( 'event.altKey', $runtime );
+		self::assertStringContainsString( "event.key !== 'ArrowUp'", $runtime );
+		self::assertStringContainsString( "event.key !== 'ArrowDown'", $runtime );
 		self::assertStringNotContainsString( 'jQuery', $runtime );
 		self::assertStringNotContainsString( 'cb_doc', $runtime );
 		self::assertStringNotContainsString( 'menu_order', $runtime );
