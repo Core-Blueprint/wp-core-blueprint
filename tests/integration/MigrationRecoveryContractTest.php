@@ -36,6 +36,24 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 		parent::tear_down();
 	}
 
+	public function test_unrelated_request_keeps_recovery_failsafe_filter_zero_query(): void {
+		global $wpdb;
+
+		self::assertInstanceOf( wpdb::class, $wpdb );
+		$_SERVER['SCRIPT_NAME'] = '/index.php';
+		$_SERVER['REQUEST_URI'] = '/shop/';
+		$_REQUEST = [];
+
+		wp_cache_delete( 'cb_core_migration_recovery_state', 'options' );
+		$before = (int) $wpdb->num_queries;
+		self::assertFalse( Recovery::filter_failsafe_bypass( false ) );
+		self::assertSame(
+			$before,
+			(int) $wpdb->num_queries,
+			'Unrelated requests must not read migration recovery state through the global Failsafe capability path.'
+		);
+	}
+
 	public function test_cross_site_recovery_creates_new_trust_domain_and_reapproves_only_authenticated_identity(): void {
 		$actor_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		$actor = get_userdata( $actor_id );
