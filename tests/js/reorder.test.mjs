@@ -115,3 +115,16 @@ test('invalid targets and no-op moves fail safely', () => {
 	assert.equal(planMove(before, 'a', 'alpha', -1, { crossList: false }), null);
 	assert.equal(planMove(before, 'a', 'alpha', 99, { crossList: false }), null);
 });
+
+
+test('Reorder runtime owns reduced-motion-aware FLIP settling without expanding the public controller API', () => {
+	assert.match(source, /MOVE_ANIMATION_DURATION_MS = 180/);
+	assert.match(source, /prefers-reduced-motion: reduce/);
+	assert.match(source, /getBoundingClientRect\(\)/);
+	assert.match(source, /item\.animate\(/);
+	assert.match(source, /\{ translate: `\$\{deltaX\}px \$\{deltaY\}px` \}/);
+	assert.match(source, /applyAnimatedDomSnapshot\(after, affectedListIds\)/);
+	assert.match(source, /applyAnimatedDomSnapshot\(before, affectedListIds\)/);
+	assert.match(source, /for \(const animation of motionAnimations\) animation\.cancel\(\)/);
+	assert.doesNotMatch(source, /animate:\s*options\./);
+});
