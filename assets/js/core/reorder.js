@@ -401,12 +401,14 @@ const enhance = (root, options = {}) => {
 		const edge = 48;
 		const maxStep = 18;
 		if (clientY < edge) {
-			window.scrollBy({ top: -Math.ceil(maxStep * (1 - clientY / edge)), behavior: 'auto' });
+			const strength = Math.max(0, Math.min(1, (edge - clientY) / edge));
+			window.scrollBy({ top: -Math.ceil(maxStep * strength), behavior: 'auto' });
 			return;
 		}
 		const lowerEdge = window.innerHeight - edge;
 		if (clientY > lowerEdge) {
-			window.scrollBy({ top: Math.ceil(maxStep * ((clientY - lowerEdge) / edge)), behavior: 'auto' });
+			const strength = Math.max(0, Math.min(1, (clientY - lowerEdge) / edge));
+			window.scrollBy({ top: Math.ceil(maxStep * strength), behavior: 'auto' });
 		}
 	};
 
