@@ -6,6 +6,10 @@ return [
     'content-type' => 'text/plain; charset=UTF-8',
     'x-generator' => 'Core Blueprint Gate 5B localization workflow',
     'messages' => [
+        '%1$s moved to position %2$d of %3$d.' => '%1$s verplaatst naar positie %2$d van %3$d.',
+        '%1$s moved to %2$s, position %3$d of %4$d.' => '%1$s verplaatst naar %2$s, positie %3$d van %4$d.',
+        'Move could not be completed. The previous position was restored.' => 'Verplaatsen kon niet worden voltooid. De vorige positie is hersteld.',
+        'Move cancelled.' => 'Verplaatsen geannuleerd.',
         'Reorder' => 'Volgorde wijzigen',
         'Reorder %s' => 'Volgorde van %s wijzigen',
         'Subfields' => 'Subvelden',
