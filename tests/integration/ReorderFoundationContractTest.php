@@ -119,6 +119,21 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( 'menu_order', $runtime );
 		self::assertStringNotContainsString( 'taxonomy', $runtime );
 	}
+	public function test_reorder_foundation_owns_motion_and_reduced_motion_fallback(): void {
+		$root = dirname( __DIR__, 2 );
+		$runtime = file_get_contents( $root . '/assets/js/core/reorder.js' );
+		self::assertIsString( $runtime );
+
+		self::assertStringContainsString( 'MOVE_ANIMATION_DURATION_MS = 180', $runtime );
+		self::assertStringContainsString( "prefers-reduced-motion: reduce", $runtime );
+		self::assertStringContainsString( 'getBoundingClientRect()', $runtime );
+		self::assertStringContainsString( 'item.animate(', $runtime );
+		self::assertStringContainsString( 'translate:', $runtime );
+		self::assertStringContainsString( 'applyAnimatedDomSnapshot(after, affectedListIds)', $runtime );
+		self::assertStringContainsString( 'applyAnimatedDomSnapshot(before, affectedListIds)', $runtime );
+		self::assertStringNotContainsString( 'jQuery', $runtime );
+	}
+
 	public function test_structured_subfields_consume_reorder_without_private_drag_engine(): void {
 		$root = dirname( __DIR__, 2 );
 		$view = file_get_contents( $root . '/src/ContentModels/Admin/StructuredFieldsView.php' );
