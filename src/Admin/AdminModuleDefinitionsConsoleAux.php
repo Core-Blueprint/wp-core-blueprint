@@ -159,6 +159,7 @@ final class AdminModuleDefinitionsConsoleAux {
 							'requiredLabel' => __( 'required', 'core-blueprint' ),
 							'restEnabled' => __( 'Enabled', 'core-blueprint' ),
 							'restDisabled' => __( 'Disabled', 'core-blueprint' ),
+							'reorderSubfield' => __( 'Reorder', 'core-blueprint' ),
 						],
 					],
 				];
