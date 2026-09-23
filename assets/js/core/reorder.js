@@ -380,6 +380,19 @@ const enhance = (root, options = {}) => {
 		handle.setPointerCapture?.(event.pointerId);
 	};
 
+	const autoScroll = (clientY) => {
+		const edge = 48;
+		const maxStep = 18;
+		if (clientY < edge) {
+			window.scrollBy({ top: -Math.ceil(maxStep * (1 - clientY / edge)), behavior: 'auto' });
+			return;
+		}
+		const lowerEdge = window.innerHeight - edge;
+		if (clientY > lowerEdge) {
+			window.scrollBy({ top: Math.ceil(maxStep * ((clientY - lowerEdge) / edge)), behavior: 'auto' });
+		}
+	};
+
 	const onPointerMove = (event) => {
 		if (!pointerState || pointerState.pointerId !== event.pointerId || busy) return;
 		const distance = Math.hypot(event.clientX - pointerState.startX, event.clientY - pointerState.startY);
@@ -392,6 +405,7 @@ const enhance = (root, options = {}) => {
 		}
 
 		event.preventDefault();
+		autoScroll(event.clientY);
 		pointerState.candidate = pointerCandidate(event);
 	};
 
