@@ -10,6 +10,24 @@
  * @package CB\Core
  */
 
+const hasDocument = typeof document !== 'undefined';
+const dataEl = hasDocument ? document.getElementById('wp-script-module-data-@cb-core/reorder') : null;
+let data = {};
+try {
+	data = dataEl ? JSON.parse(dataEl.textContent) : {};
+} catch {
+	data = {};
+}
+const i18n = data.i18n || {};
+
+const formatMessage = (template, values) => template.replace(
+	/%(\d+)\$[sd]/g,
+	(match, index) => {
+		const value = values[Number(index) - 1];
+		return value === undefined || value === null ? match : String(value);
+	}
+);
+
 const MAX_IDENTIFIER_BYTES = 191;
 const DRAG_THRESHOLD = 6;
 const controllers = new WeakMap();
@@ -245,10 +263,10 @@ const enhance = (root, options = {}) => {
 		const total = target?.itemIds.length ?? 0;
 		const label = itemLabel(root, detail.itemId);
 		if (detail.from.listId === detail.to.listId) {
-			announce(`${label} moved to position ${position} of ${total}.`);
+			announce(formatMessage(i18n.movedWithin || '%1$s moved to position %2$d of %3$d.', [label, position, total]));
 			return;
 		}
-		announce(`${label} moved to ${listLabel(root, detail.to.listId)}, position ${position} of ${total}.`);
+		announce(formatMessage(i18n.movedAcross || '%1$s moved to %2$s, position %3$d of %4$d.', [label, listLabel(root, detail.to.listId), position, total]));
 	};
 
 	const dispatch = (name, detail) => {
@@ -285,7 +303,7 @@ const enhance = (root, options = {}) => {
 		} catch (error) {
 			applyDomSnapshot(root, before);
 			focusItem(detail.itemId);
-			announce('Move could not be completed. The previous position was restored.');
+			announce(i18n.rollback || 'Move could not be completed. The previous position was restored.');
 			dispatch('cb:reorder:error', { ...detail, error });
 			return false;
 		} finally {
@@ -317,6 +335,12 @@ const enhance = (root, options = {}) => {
 	const clearPointerPresentation = () => {
 		marker.remove();
 		if (pointerState?.item instanceof Element) pointerState.item.classList.remove('is-dragging');
+		if (
+			pointerState?.handle instanceof Element
+			&& pointerState.handle.hasPointerCapture?.(pointerState.pointerId)
+		) {
+			pointerState.handle.releasePointerCapture?.(pointerState.pointerId);
+		}
 		root.classList.remove('is-reordering');
 		pointerState = null;
 	};
@@ -445,6 +469,12 @@ const enhance = (root, options = {}) => {
 	};
 
 	const onKeyDown = (event) => {
+		if (pointerState && event.key === 'Escape') {
+			event.preventDefault();
+			clearPointerPresentation();
+			announce(i18n.cancelled || 'Move cancelled.');
+			return;
+		}
 		if (busy || !event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
 		const handle = event.target.closest?.('[data-cb-core-reorder-handle]');
 		if (!(handle instanceof Element) || closestOwnedRoot(handle) !== root) return;
