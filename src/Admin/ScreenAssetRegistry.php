@@ -305,7 +305,7 @@ final class ScreenAssetRegistry {
 		}
 		if ( 'field-groups' === $tab && in_array( $view, [ 'edit', 'field' ], true ) ) {
 			$items = array_merge( $items, [
-				'foundation.modal', 'foundation.select-picker', 'foundation.choice-group', 'module.content-models',
+				'foundation.modal', 'foundation.select-picker', 'foundation.choice-group', 'foundation.reorder', 'module.content-models',
 			] );
 		}
 
