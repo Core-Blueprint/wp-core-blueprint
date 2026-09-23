@@ -67,4 +67,25 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( 'menu_order', $runtime );
 		self::assertStringNotContainsString( 'taxonomy', $runtime );
 	}
+	public function test_structured_subfields_consume_reorder_without_private_drag_engine(): void {
+		$root = dirname( __DIR__, 2 );
+		$view = file_get_contents( $root . '/src/ContentModels/Admin/StructuredFieldsView.php' );
+		$runtime = file_get_contents( $root . '/assets/js/features/content-models.js' );
+		$registry = file_get_contents( $root . '/src/Admin/ScreenAssetRegistry.php' );
+		self::assertIsString( $view );
+		self::assertIsString( $runtime );
+		self::assertIsString( $registry );
+
+		self::assertStringContainsString( 'data-cb-core-reorder', $view );
+		self::assertStringContainsString( 'data-cb-core-reorder-list="subfields"', $view );
+		self::assertStringContainsString( 'data-cb-core-reorder-item=', $view );
+		self::assertStringContainsString( 'data-cb-core-reorder-handle', $view );
+		self::assertStringNotContainsString( 'draggable="true"', $view );
+
+		self::assertStringContainsString( 'window.cbCore?.reorder', $runtime );
+		self::assertStringContainsString( 'reorderFoundation.enhance', $runtime );
+		self::assertStringNotContainsString( 'const bindDrag =', $runtime );
+		self::assertStringContainsString( "'foundation.reorder'", $registry );
+	}
+
 }
