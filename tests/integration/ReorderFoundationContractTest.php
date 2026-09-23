@@ -108,7 +108,7 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'pointermove', $runtime );
 		self::assertStringContainsString( 'pointerup', $runtime );
 		self::assertStringContainsString( 'window.scrollBy', $runtime );
-		self::assertStringContainsString( 'applyDomSnapshot(root, before)', $runtime );
+		self::assertStringContainsString( 'applyAnimatedDomSnapshot(before, affectedListIds)', $runtime );
 		self::assertStringContainsString( 'event.altKey', $runtime );
 		self::assertStringContainsString( "event.key !== 'ArrowUp'", $runtime );
 		self::assertStringContainsString( "event.key !== 'ArrowDown'", $runtime );
