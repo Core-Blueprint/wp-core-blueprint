@@ -41,6 +41,9 @@ jobs:
       - name: ObjectPicker JavaScript contract
         run: node --test tests/js/object-picker-identifiers.test.mjs
 
+      - name: Reorder JavaScript contract
+        run: node --test tests/js/reorder.test.mjs
+
       - name: Design Editor JavaScript contract
         run: node --test tests/js/design-editor-core.test.mjs tests/js/design-editor-boundary.test.mjs tests/js/design-shell-fullscreen.test.mjs tests/js/design-shell-profile-proof.test.mjs
 
