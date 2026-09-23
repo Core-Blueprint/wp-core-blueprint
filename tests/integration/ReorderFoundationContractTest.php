@@ -53,11 +53,17 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_wp_native_reorder_enqueue_is_narrow(): void {
+		$tokens_before = wp_style_is( 'cb-core-css-tokens', 'enqueued' );
+
 		Assets::enqueue_reorder( Assets::REORDER_PRESENTATION_WP_NATIVE );
 
 		self::assertTrue( wp_style_is( 'cb-core-css-reorder-native', 'enqueued' ) );
 		self::assertFalse( wp_style_is( 'cb-core-css-reorder', 'enqueued' ) );
-		self::assertFalse( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+		self::assertSame( $tokens_before, wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+
+		$styles = wp_styles();
+		self::assertArrayHasKey( 'cb-core-css-reorder-native', $styles->registered );
+		self::assertSame( [], $styles->registered['cb-core-css-reorder-native']->deps );
 	}
 
 	public function test_core_reorder_enqueue_uses_tokens_without_loading_unrelated_foundations(): void {
