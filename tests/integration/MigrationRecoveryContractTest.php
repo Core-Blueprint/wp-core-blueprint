@@ -7,7 +7,7 @@ use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Permissions\RolePolicySchema;
 use CB\Core\Permissions\TrustSchemaMigrator;
 
-final class CB_Base_Migration_Recovery_Contract_Test extends WP_UnitTestCase {
+final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 
 	public function set_up(): void {
 		parent::set_up();
