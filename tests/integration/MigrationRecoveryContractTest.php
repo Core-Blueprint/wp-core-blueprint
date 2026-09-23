@@ -54,6 +54,56 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_activation_ignores_pre_switch_cached_recovery_state_after_database_swap(): void {
+		global $wpdb;
+
+		$actor_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$actor = get_userdata( $actor_id );
+		self::assertInstanceOf( WP_User::class, $actor );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $actor, 0, 'destination_preflight' ) );
+		wp_set_current_user( $actor_id );
+
+		$ticket = (string) Recovery::issue_ticket( 'migration-cache-boundary', 'https://destination.test' )['ticket'];
+
+		$stale = [
+			'version'          => 1,
+			'recovery_id'      => 'previous-migration',
+			'ticket_hash'      => str_repeat( 'a', 64 ),
+			'target_site_url'  => 'https://destination.test',
+			'issued_at'        => time() - 60,
+			'expires_at'       => time() + HOUR_IN_SECONDS,
+			'status'           => 'pending_auth',
+			'reviewed_users'   => 1,
+			'approved_user_id' => 0,
+			'authenticated_at' => 0,
+		];
+		update_option( 'cb_core_migration_recovery_state', $stale, false );
+		self::assertSame( $stale, get_option( 'cb_core_migration_recovery_state' ) );
+
+		// Simulate the atomic table swap: the new live database has no recovery
+		// row, while this PHP request still carries the pre-switch cached value.
+		$wpdb->delete(
+			$wpdb->options,
+			[ 'option_name' => 'cb_core_migration_recovery_state' ],
+			[ '%s' ]
+		);
+		self::assertSame(
+			$stale,
+			get_option( 'cb_core_migration_recovery_state' ),
+			'Fixture must retain the pre-switch cached state after the direct database replacement.'
+		);
+
+		$activated = Recovery::activate_destination( $ticket );
+		self::assertSame( 'migration-cache-boundary', $activated['recovery_id'] ?? '' );
+		self::assertSame( 'pending_reconcile', $activated['status'] ?? '' );
+
+		wp_cache_delete( 'cb_core_migration_recovery_state', 'options' );
+		$persisted = get_option( 'cb_core_migration_recovery_state', [] );
+		self::assertIsArray( $persisted );
+		self::assertSame( 'migration-cache-boundary', $persisted['recovery_id'] ?? '' );
+		self::assertSame( 'pending_reconcile', $persisted['status'] ?? '' );
+	}
+
 	public function test_cross_site_recovery_creates_new_trust_domain_and_reapproves_only_authenticated_identity(): void {
 		$actor_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		$actor = get_userdata( $actor_id );
