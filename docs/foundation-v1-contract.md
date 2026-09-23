@@ -23,7 +23,7 @@ Status: **public v1 freeze candidate**.
 | Choice Group | `CB\Core\UI\Assets::enqueue_choice_group()` | PHP/CSS primitive; no JavaScript runtime required |
 | Object Picker | `CB\Core\UI\Assets::enqueue_object_picker()` | `@cb-core/object-picker`, `window.cbCore.objectPicker` |
 | Select Picker | `CB\Core\UI\Assets::enqueue_select_picker()` | `@cb-core/select-picker`, `window.cbCore.selectPicker` |
-| Reorder | `CB\Core\UI\Assets::enqueue_reorder()` | `@cb-core/reorder`, `window.cbCore.reorder` |
+| Reorder | `CB\Core\UI\Assets::enqueue_reorder()` | `@cb-core/reorder`, `window.cbCore.reorder` (Core API `1.1+`) |
 | Form Composition | `CB\Core\UI\FormComposition::enqueue()` | PHP/CSS primitive; no JavaScript runtime required |
 
 Consumers provide business meaning and exact values. Foundation owns generic behavior, accessibility and presentation adapters.
