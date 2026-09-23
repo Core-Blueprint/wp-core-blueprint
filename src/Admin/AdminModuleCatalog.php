@@ -22,6 +22,7 @@ final class AdminModuleCatalog {
 		'@cb-core/toast',
 		'@cb-core/clipboard',
 		'@cb-core/select-picker',
+		'@cb-core/reorder',
 	];
 
 	/** @var array<string,bool> */
