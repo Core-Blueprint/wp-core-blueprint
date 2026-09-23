@@ -351,6 +351,23 @@ const enhance = (root, options = {}) => {
 			}
 		}
 		if (!inserted) list.appendChild(marker);
+
+		const preview = planMove(
+			snapshotFromDom(root),
+			draggingId,
+			listId,
+			targetIndex,
+			{ crossList: settings.crossList }
+		);
+		if (!preview) {
+			marker.remove();
+			return null;
+		}
+		if (settings.canMove && settings.canMove(makeMoveDetail(preview, 'pointer')) !== true) {
+			marker.remove();
+			return null;
+		}
+
 		return { listId, index: targetIndex };
 	};
 
