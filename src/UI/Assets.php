@@ -37,6 +37,8 @@ final class Assets {
 	public const OBJECT_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const SELECT_PICKER_PRESENTATION_CORE = 'core';
 	public const SELECT_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
+	public const REORDER_PRESENTATION_CORE = 'core';
+	public const REORDER_PRESENTATION_WP_NATIVE = 'wp-native';
 
 	private static bool $icon_data_filter_registered = false;
 	private static bool $toast_data_filter_registered = false;
@@ -464,6 +466,55 @@ final class Assets {
 	}
 
 
+
+
+	/**
+	 * Enqueue the shared Reorder Foundation for an extension-owned admin screen.
+	 *
+	 * Reorder progressively enhances consumer-owned ordered-list markup. Base
+	 * owns generic pointer/keyboard movement, focus, announcements and rollback
+	 * presentation. Consumers own item meaning, authorization and persistence.
+	 *
+	 * Runtime API: `window.cbCore.reorder`.
+	 * Script-module dependency: `@cb-core/reorder`.
+	 *
+	 * @param string|null $presentation `wp-native`, `core`, or null for auto.
+	 */
+	public static function enqueue_reorder( ?string $presentation = null ): void {
+		if ( null === $presentation ) {
+			$presentation = self::is_core_admin_screen()
+				? self::REORDER_PRESENTATION_CORE
+				: self::REORDER_PRESENTATION_WP_NATIVE;
+		} elseif ( ! in_array( $presentation, [ self::REORDER_PRESENTATION_WP_NATIVE, self::REORDER_PRESENTATION_CORE ], true ) ) {
+			$presentation = self::REORDER_PRESENTATION_WP_NATIVE;
+		}
+
+		if ( self::REORDER_PRESENTATION_CORE === $presentation ) {
+			if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
+			}
+			wp_enqueue_style(
+				'cb-core-css-reorder',
+				CB_CORE_URL . 'assets/css/components/reorder.css',
+				[ 'cb-core-css-tokens' ],
+				CB_CORE_VERSION
+			);
+		} else {
+			wp_enqueue_style(
+				'cb-core-css-reorder-native',
+				CB_CORE_URL . 'assets/css/components/reorder-native.css',
+				[],
+				CB_CORE_VERSION
+			);
+		}
+
+		wp_enqueue_script_module(
+			'@cb-core/reorder',
+			CB_CORE_URL . 'assets/js/core/reorder.js',
+			[],
+			CB_CORE_VERSION
+		);
+	}
 
 	/** @return array<int,array{value:string,label:string}> */
 	private static function dashicon_choices(): array {
