@@ -21,6 +21,10 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 	}
 
 
+	public function test_reorder_foundation_is_published_in_core_api_1_1(): void {
+		self::assertSame( '1.1', CB_CORE_API_VERSION );
+	}
+
 	public function test_reorder_is_a_public_semantic_foundation_requirement(): void {
 		$normalized = PageRegistry::normalize_semantic_requirements(
 			[ 'foundations' => [ 'reorder' ] ],
