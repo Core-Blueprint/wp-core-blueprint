@@ -45,12 +45,19 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 		$_REQUEST = [];
 
 		wp_cache_delete( 'cb_core_migration_recovery_state', 'options' );
+		$captured_queries = [];
+		$query_filter = static function ( string $query ) use ( &$captured_queries ): string {
+			$captured_queries[] = $query;
+			return $query;
+		};
+		add_filter( 'query', $query_filter, PHP_INT_MAX );
 		$before = (int) $wpdb->num_queries;
 		self::assertFalse( Recovery::filter_failsafe_bypass( false ) );
+		remove_filter( 'query', $query_filter, PHP_INT_MAX );
 		self::assertSame(
 			$before,
 			(int) $wpdb->num_queries,
-			'Unrelated requests must not read migration recovery state through the global Failsafe capability path.'
+			'Unrelated requests must not read migration recovery state through the global Failsafe capability path. Queries: ' . implode( ' || ', $captured_queries )
 		);
 	}
 
