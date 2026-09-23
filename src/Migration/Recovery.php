@@ -128,7 +128,10 @@ final class Recovery {
 	 */
 	public static function activate_destination( string $ticket ): array {
 		$payload = self::validate_ticket( $ticket, false );
-		$existing = self::state();
+
+		// The database may already have been atomically replaced in this request.
+		// Never trust pre-switch WordPress option/object caches at this boundary.
+		$existing = self::database_state();
 		if ( $existing ) {
 			if ( self::state_matches_ticket( $existing, $ticket, $payload ) ) {
 				return $existing;
@@ -162,6 +165,7 @@ final class Recovery {
 			'approved_user_id' => 0,
 			'authenticated_at' => 0,
 		];
+		self::clear_state_option_cache();
 		update_option( self::OPTION, $state, false );
 
 		AuditLog::log( 'migration.recovery.destination_activated', 'warning', [
@@ -489,6 +493,32 @@ final class Recovery {
 	}
 
 	/** @return array<string,mixed> */
+	/**
+	 * Read recovery state directly from the live options table.
+	 *
+	 * Used only at the atomic migration switch where the request can still
+	 * carry option/object-cache values from the database that was just replaced.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function database_state(): array {
+		$raw = self::database_option( self::OPTION );
+		if ( '' === $raw ) {
+			return [];
+		}
+		$state = maybe_unserialize( $raw );
+		if ( ! is_array( $state ) || self::state_expired( $state ) ) {
+			return [];
+		}
+		return $state;
+	}
+
+	private static function clear_state_option_cache(): void {
+		wp_cache_delete( self::OPTION, 'options' );
+		wp_cache_delete( 'alloptions', 'options' );
+		wp_cache_delete( 'notoptions', 'options' );
+	}
+
 	private static function state(): array {
 		$state = get_option( self::OPTION, [] );
 		if ( ! is_array( $state ) ) {
