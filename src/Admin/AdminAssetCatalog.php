@@ -118,6 +118,7 @@ final class AdminAssetCatalog {
 			'foundation.icon-picker',
 			'foundation.capability-picker',
 			'foundation.select-picker',
+			'foundation.reorder',
 			'foundation.choice-group',
 			'foundation.token-input',
 			'shell.scrollbar',
@@ -254,6 +255,7 @@ final class AdminAssetCatalog {
 			'foundation.icon-picker'       => 'icon-picker',
 			'foundation.capability-picker' => 'capability-picker',
 			'foundation.select-picker'     => 'select-picker',
+			'foundation.reorder'           => 'reorder',
 			'foundation.choice-group'      => 'choice-group',
 			'foundation.token-input'       => 'token-input',
 		];
@@ -288,6 +290,9 @@ final class AdminAssetCatalog {
 				break;
 			case 'select-picker':
 				UiAssets::enqueue_select_picker( UiAssets::SELECT_PICKER_PRESENTATION_CORE );
+				break;
+			case 'reorder':
+				UiAssets::enqueue_reorder( UiAssets::REORDER_PRESENTATION_CORE );
 				break;
 			case 'choice-group':
 				UiAssets::enqueue_choice_group( UiAssets::CHOICE_GROUP_PRESENTATION_CORE );
