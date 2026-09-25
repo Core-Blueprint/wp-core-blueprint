@@ -10,13 +10,14 @@ use CB\Core\Profiles\SectionRegistry;
 final class CB_Profiles_Test_Extension_Section extends ExactSection {
 	public function __construct(
 		private readonly string $section_id,
-		private readonly string $option_name
+		private readonly string $option_name,
+		private readonly int $current_schema_version = 1
 	) {}
 
 	public function id(): string { return $this->section_id; }
 	public function label(): string { return 'Extension fixture'; }
 	public function description(): string { return 'First-party Profile extension fixture.'; }
-	public function schema_version(): int { return 1; }
+	public function schema_version(): int { return $this->current_schema_version; }
 
 	public function export(): array {
 		return [ 'enabled' => (bool) get_option( $this->option_name, false ) ];
@@ -66,6 +67,7 @@ final class CB_Base_Profiles_Extension_Registry_Contract_Test extends WP_UnitTes
 		delete_option( 'cb_profiles_extension_zeta' );
 		delete_option( 'cb_profiles_extension_third' );
 		delete_option( 'cb_profiles_extension_unowned' );
+		delete_option( 'cb_profiles_extension_invalid_schema' );
 		delete_option( 'cb_profiles_extension_late' );
 	}
 
@@ -82,6 +84,7 @@ final class CB_Base_Profiles_Extension_Registry_Contract_Test extends WP_UnitTes
 			'cb_profiles_extension_zeta',
 			'cb_profiles_extension_third',
 			'cb_profiles_extension_unowned',
+			'cb_profiles_extension_invalid_schema',
 			'cb_profiles_extension_late',
 		] as $option ) {
 			delete_option( $option );
@@ -108,6 +111,7 @@ final class CB_Base_Profiles_Extension_Registry_Contract_Test extends WP_UnitTes
 		self::assertTrue( $this->profile_results['zeta'] ?? false );
 		self::assertFalse( $this->profile_results['third_party'] ?? true );
 		self::assertFalse( $this->profile_results['unowned'] ?? true );
+		self::assertFalse( $this->profile_results['invalid_schema'] ?? true );
 
 		$ids = array_keys( SectionRegistry::all() );
 		self::assertContains( self::FIRST_PARTY . '-alpha', $ids );
@@ -214,6 +218,14 @@ final class CB_Base_Profiles_Extension_Registry_Contract_Test extends WP_UnitTes
 			new CB_Profiles_Test_Extension_Section(
 				'unowned-policy',
 				'cb_profiles_extension_unowned'
+			)
+		);
+		$this->profile_results['invalid_schema'] = SectionRegistry::register(
+			self::FIRST_PARTY,
+			new CB_Profiles_Test_Extension_Section(
+				self::FIRST_PARTY . '-invalid-schema',
+				'cb_profiles_extension_invalid_schema',
+				0
 			)
 		);
 	}
