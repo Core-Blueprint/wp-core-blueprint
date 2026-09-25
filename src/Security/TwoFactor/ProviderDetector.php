@@ -3,20 +3,17 @@ declare(strict_types=1);
 
 namespace CB\Core\Security\TwoFactor;
 
-use CB\Core\Detector;
 use Throwable;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Resolve external ownership of second-factor enforcement.
+ * Resolve external ownership of second-factor enforcement per WordPress user.
  *
- * Wordfence and the official WordPress Two-Factor plugin expose user-level
- * state that Core Blueprint can verify directly. WP 2FA does not currently
- * expose a stable public per-user contract that Base can safely depend on, so
- * active WP 2FA remains a conservative plugin-level delegation through the
- * canonical Detector until such a contract is available.
+ * Plugin activation alone never counts as protection. Base stands down only
+ * when a known provider reports active or mandatory second-factor state for
+ * this exact user.
  */
 final class ProviderDetector {
 
@@ -38,7 +35,7 @@ final class ProviderDetector {
 		if ( self::two_factor_active_for_user( $user ) ) {
 			$providers[] = self::TWO_FACTOR;
 		}
-		if ( self::wp_2fa_plugin_owns_feature() ) {
+		if ( self::wp_2fa_active_for_user( $user ) ) {
 			$providers[] = self::WP_2FA;
 		}
 
@@ -90,10 +87,17 @@ final class ProviderDetector {
 		}
 	}
 
-	private static function wp_2fa_plugin_owns_feature(): bool {
-		$detected = Detector::detect_active_plugins();
-		$features = $detected['wp-2fa/wp-2fa.php'] ?? [];
+	private static function wp_2fa_active_for_user( WP_User $user ): bool {
+		$class = '\\WP2FA\\Admin\\Helpers\\User_Helper';
+		if ( ! class_exists( $class ) || ! method_exists( $class, 'get_enabled_method_for_user' ) ) {
+			return false;
+		}
 
-		return is_array( $features ) && in_array( 'two_factor_auth', $features, true );
+		try {
+			$method = $class::get_enabled_method_for_user( $user );
+			return is_scalar( $method ) && '' !== trim( (string) $method );
+		} catch ( Throwable ) {
+			return false;
+		}
 	}
 }
