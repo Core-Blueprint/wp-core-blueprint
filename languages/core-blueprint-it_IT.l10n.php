@@ -48,6 +48,19 @@ $catalog['messages'] = array_replace(
         'Target field' => 'Campo di destinazione',
         'Transform' => 'Trasformazione',
         'Validate mapping' => 'Convalida mappatura',
+        'This account requires an interactive two-factor sign-in.' => 'Questo account richiede un accesso interattivo con autenticazione a due fattori.',
+        'Two-factor authentication' => 'Autenticazione a due fattori',
+        'The verification code was not accepted. Try again.' => 'Il codice di verifica non è stato accettato. Riprova.',
+        'Add this account to your authenticator app, then enter the six-digit code to finish enrollment.' => 'Aggiungi questo account alla tua app di autenticazione, quindi inserisci il codice a sei cifre per completare la configurazione.',
+        'Setup key' => 'Chiave di configurazione',
+        'Open in an authenticator app' => 'Apri in un’app di autenticazione',
+        'Enter your authenticator code or a recovery code.' => 'Inserisci il codice dell’app di autenticazione o un codice di recupero.',
+        'Verification code' => 'Codice di verifica',
+        'Verify' => 'Verifica',
+        'Save your recovery codes' => 'Salva i codici di recupero',
+        'Two-factor authentication is active. Save these recovery codes now. Each code can be used once.' => 'L’autenticazione a due fattori è attiva. Salva ora questi codici di recupero. Ogni codice può essere utilizzato una sola volta.',
+        'This two-factor sign-in can no longer be used. Start a new sign-in attempt.' => 'Questo accesso con autenticazione a due fattori non può più essere utilizzato. Avvia un nuovo tentativo di accesso.',
+        'Back to sign in' => 'Torna all’accesso',
     ]
 );
 
