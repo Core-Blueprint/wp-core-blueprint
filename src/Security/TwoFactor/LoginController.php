@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Security\TwoFactor;
 
+use CB\Core\Security\Failsafe;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;
@@ -64,6 +65,15 @@ final class LoginController {
 		$user = get_userdata( (int) $state['user_id'] );
 		if ( ! ( $user instanceof WP_User ) ) {
 			return [ 'status' => 'invalid' ];
+		}
+
+		if ( Failsafe::is_bypassed() ) {
+			return [
+				'status' => 'success',
+				'state'  => $state,
+				'user'   => $user,
+				'method' => 'failsafe',
+			];
 		}
 
 		if ( ProviderDetector::external_provider_owns_user( $user ) ) {

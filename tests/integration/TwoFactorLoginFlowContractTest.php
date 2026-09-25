@@ -18,12 +18,16 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 
 	private string $original_pagenow = '';
 
+	private mixed $original_bypass = false;
+
 	public function set_up(): void {
 		parent::set_up();
 		$this->original_policy = is_array( Settings::get()[ Policy::SETTINGS_KEY ] ?? null )
 			? Settings::get()[ Policy::SETTINGS_KEY ]
 			: Policy::default_config();
 		$this->original_pagenow = isset( $GLOBALS['pagenow'] ) ? (string) $GLOBALS['pagenow'] : '';
+		$this->original_bypass = get_option( CB_CORE_BYPASS_OPT, false );
+		delete_option( CB_CORE_BYPASS_OPT );
 		$GLOBALS['pagenow'] = 'wp-login.php';
 		LoginFlow::reset_request_state();
 		Settings::set_key( Policy::SETTINGS_KEY, Policy::default_config(), 'two-factor-login-test' );
@@ -33,6 +37,11 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 		LoginFlow::reset_request_state();
 		Settings::set_key( Policy::SETTINGS_KEY, $this->original_policy, 'two-factor-login-test-restore' );
 		$GLOBALS['pagenow'] = $this->original_pagenow;
+		if ( false === $this->original_bypass ) {
+			delete_option( CB_CORE_BYPASS_OPT );
+		} else {
+			update_option( CB_CORE_BYPASS_OPT, $this->original_bypass, false );
+		}
 		parent::tear_down();
 	}
 
@@ -141,7 +150,31 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 		self::assertNull( EnrollmentStore::pending_secret( $user_id ) );
 	}
 
-	public function test_lf8_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
+	public function test_lf8_failsafe_bypasses_base_owned_factor_before_challenge(): void {
+		$user = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
+		self::assertInstanceOf( WP_User::class, $user );
+		CredentialStore::store_totp_secret( (int) $user->ID, 'JBSWY3DPEHPK3PXP' );
+		update_option( CB_CORE_BYPASS_OPT, 'emergency', false );
+
+		self::assertSame( LoginFlow::DECISION_NONE, LoginFlow::decision_for( $user ) );
+		self::assertSame( $user, LoginFlow::filter_authenticate( $user ) );
+		self::assertFalse( LoginFlow::is_password_stage_pending( (int) $user->ID ) );
+	}
+
+	public function test_lf9_existing_challenge_stands_down_when_failsafe_becomes_active(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		CredentialStore::store_totp_secret( $user_id, 'JBSWY3DPEHPK3PXP' );
+		$token = ChallengeStore::create( $user_id, false, admin_url(), ChallengeStore::FLOW_VERIFY );
+
+		update_option( CB_CORE_BYPASS_OPT, 'emergency', false );
+		$result = LoginController::process( $token, '' );
+
+		self::assertSame( 'success', $result['status'] ?? null );
+		self::assertSame( 'failsafe', $result['method'] ?? null );
+		self::assertNull( ChallengeStore::inspect( $token ) );
+	}
+
+	public function test_lf10_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
 		$user = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
 		self::assertInstanceOf( WP_User::class, $user );
 		CredentialStore::store_totp_secret( (int) $user->ID, 'JBSWY3DPEHPK3PXP' );

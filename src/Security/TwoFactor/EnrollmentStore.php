@@ -109,6 +109,7 @@ final class EnrollmentStore {
 			}
 
 			self::clear( $user_id );
+			Audit::enrollment_completed( $user_id );
 			return $codes;
 		} catch ( Throwable $error ) {
 			CredentialStore::clear( $user_id );

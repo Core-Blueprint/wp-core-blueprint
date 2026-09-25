@@ -74,6 +74,14 @@ final class LoginFlow {
 			return $user;
 		}
 
+		if (
+			Failsafe::is_bypassed()
+			&& self::would_require_base_two_factor_without_failsafe( $user )
+		) {
+			Audit::bypass_used( (int) $user->ID );
+			return $user;
+		}
+
 		$decision = self::decision_for( $user );
 		if ( self::DECISION_NONE === $decision ) {
 			return $user;
@@ -190,6 +198,11 @@ final class LoginFlow {
 		string $method
 	): string {
 		wp_set_auth_cookie( (int) $user->ID, $remember );
+		if ( 'failsafe' === $method ) {
+			Audit::bypass_used( (int) $user->ID );
+		} else {
+			Audit::authenticated( (int) $user->ID, $method );
+		}
 		do_action( 'cb_core_two_factor_authenticated', $user, $method );
 
 		$safe = wp_validate_redirect( $redirect_to, admin_url() );
@@ -205,6 +218,20 @@ final class LoginFlow {
 	public static function reset_request_state(): void {
 		self::$pending = [];
 		self::$password_tokens = [];
+		Audit::reset_request_state();
+	}
+
+	private static function would_require_base_two_factor_without_failsafe( WP_User $user ): bool {
+		if (
+			$user->ID <= 0
+			|| ! Policy::is_in_scope( $user )
+			|| ProviderDetector::external_provider_owns_user( $user )
+		) {
+			return false;
+		}
+
+		return CredentialStore::is_enrolled( (int) $user->ID )
+			|| Policy::requires_enrollment( $user );
 	}
 
 	private static function destroy_password_stage_tokens( int $user_id ): void {

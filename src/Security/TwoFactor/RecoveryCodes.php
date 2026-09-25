@@ -51,6 +51,7 @@ final class RecoveryCodes {
 
 			unset( $hashes[ $index ] );
 			CredentialStore::store_recovery_hashes( $user_id, array_values( $hashes ) );
+			Audit::recovery_code_used( $user_id, count( $hashes ) );
 			return true;
 		}
 

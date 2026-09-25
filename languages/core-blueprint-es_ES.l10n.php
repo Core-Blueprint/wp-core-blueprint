@@ -61,6 +61,10 @@ $catalog['messages'] = array_replace(
         'Two-factor authentication is active. Save these recovery codes now. Each code can be used once.' => 'La autenticación de dos factores está activa. Guarda estos códigos de recuperación ahora. Cada código se puede usar una sola vez.',
         'This two-factor sign-in can no longer be used. Start a new sign-in attempt.' => 'Este inicio de sesión con dos factores ya no se puede usar. Inicia un nuevo intento de acceso.',
         'Back to sign in' => 'Volver al inicio de sesión',
+        'Two-factor: enrollment completed' => 'Autenticación de dos factores: configuración completada',
+        'Two-factor: recovery code used' => 'Autenticación de dos factores: código de recuperación utilizado',
+        'Two-factor: authentication completed' => 'Autenticación de dos factores: autenticación completada',
+        'Two-factor: Failsafe bypass used' => 'Autenticación de dos factores: omisión de Failsafe utilizada',
     ]
 );
 
