@@ -48,6 +48,23 @@ $catalog['messages'] = array_replace(
         'Target field' => 'Campo de destino',
         'Transform' => 'Transformação',
         'Validate mapping' => 'Validar mapeamento',
+        'This account requires an interactive two-factor sign-in.' => 'Esta conta requer um início de sessão interativo com autenticação de dois fatores.',
+        'Two-factor authentication' => 'Autenticação de dois fatores',
+        'The verification code was not accepted. Try again.' => 'O código de verificação não foi aceite. Tente novamente.',
+        'Add this account to your authenticator app, then enter the six-digit code to finish enrollment.' => 'Adicione esta conta à sua aplicação de autenticação e, em seguida, introduza o código de seis dígitos para concluir a configuração.',
+        'Setup key' => 'Chave de configuração',
+        'Open in an authenticator app' => 'Abrir numa aplicação de autenticação',
+        'Enter your authenticator code or a recovery code.' => 'Introduza o código da sua aplicação de autenticação ou um código de recuperação.',
+        'Verification code' => 'Código de verificação',
+        'Verify' => 'Verificar',
+        'Save your recovery codes' => 'Guarde os seus códigos de recuperação',
+        'Two-factor authentication is active. Save these recovery codes now. Each code can be used once.' => 'A autenticação de dois fatores está ativa. Guarde estes códigos de recuperação agora. Cada código pode ser utilizado uma única vez.',
+        'This two-factor sign-in can no longer be used. Start a new sign-in attempt.' => 'Este início de sessão com autenticação de dois fatores já não pode ser utilizado. Inicie uma nova tentativa de início de sessão.',
+        'Back to sign in' => 'Voltar ao início de sessão',
+        'Two-factor: enrollment completed' => 'Autenticação de dois fatores: configuração concluída',
+        'Two-factor: recovery code used' => 'Autenticação de dois fatores: código de recuperação utilizado',
+        'Two-factor: authentication completed' => 'Autenticação de dois fatores: autenticação concluída',
+        'Two-factor: Failsafe bypass used' => 'Autenticação de dois fatores: bypass Failsafe utilizado',
     ]
 );
 

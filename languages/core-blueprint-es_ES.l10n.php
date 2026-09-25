@@ -48,6 +48,23 @@ $catalog['messages'] = array_replace(
         'Target field' => 'Campo de destino',
         'Transform' => 'Transformación',
         'Validate mapping' => 'Validar mapeo',
+        'This account requires an interactive two-factor sign-in.' => 'Esta cuenta requiere un inicio de sesión interactivo con autenticación de dos factores.',
+        'Two-factor authentication' => 'Autenticación de dos factores',
+        'The verification code was not accepted. Try again.' => 'No se aceptó el código de verificación. Inténtalo de nuevo.',
+        'Add this account to your authenticator app, then enter the six-digit code to finish enrollment.' => 'Añade esta cuenta a tu aplicación de autenticación y, a continuación, introduce el código de seis dígitos para completar la configuración.',
+        'Setup key' => 'Clave de configuración',
+        'Open in an authenticator app' => 'Abrir en una aplicación de autenticación',
+        'Enter your authenticator code or a recovery code.' => 'Introduce el código de tu aplicación de autenticación o un código de recuperación.',
+        'Verification code' => 'Código de verificación',
+        'Verify' => 'Verificar',
+        'Save your recovery codes' => 'Guarda tus códigos de recuperación',
+        'Two-factor authentication is active. Save these recovery codes now. Each code can be used once.' => 'La autenticación de dos factores está activa. Guarda estos códigos de recuperación ahora. Cada código se puede usar una sola vez.',
+        'This two-factor sign-in can no longer be used. Start a new sign-in attempt.' => 'Este inicio de sesión con dos factores ya no se puede usar. Inicia un nuevo intento de acceso.',
+        'Back to sign in' => 'Volver al inicio de sesión',
+        'Two-factor: enrollment completed' => 'Autenticación de dos factores: configuración completada',
+        'Two-factor: recovery code used' => 'Autenticación de dos factores: código de recuperación utilizado',
+        'Two-factor: authentication completed' => 'Autenticación de dos factores: autenticación completada',
+        'Two-factor: Failsafe bypass used' => 'Autenticación de dos factores: omisión de Failsafe utilizada',
     ]
 );
 

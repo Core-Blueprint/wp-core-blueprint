@@ -6,6 +6,9 @@ use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Permissions\RolePolicySchema;
 use CB\Core\Permissions\TrustSchemaMigrator;
+use CB\Core\Security\TwoFactor\CredentialStore;
+use CB\Core\Security\TwoFactor\EnrollmentStore;
+use CB\Core\Security\TwoFactor\Policy as TwoFactorPolicy;
 
 final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 
@@ -210,6 +213,93 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 		$_SERVER['SCRIPT_NAME'] = '/wp-login.php';
 		$_REQUEST = [ Recovery::PARAM => $ticket ];
 		self::assertFalse( Recovery::filter_failsafe_bypass( false ), 'Consumed migration recovery ticket remained an active bypass.' );
+	}
+
+	public function test_reconcile_invalidates_imported_privileged_two_factor_state(): void {
+		$actor_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$actor = get_userdata( $actor_id );
+		self::assertInstanceOf( WP_User::class, $actor );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $actor, 0, 'destination_preflight' ) );
+		wp_set_current_user( $actor_id );
+
+		$ticket = (string) Recovery::issue_ticket( 'migration-two-factor-boundary', 'https://destination.test' )['ticket'];
+		CredentialStore::store_totp_secret( $actor_id, 'JBSWY3DPEHPK3PXP' );
+		CredentialStore::store_recovery_hashes( $actor_id, [ wp_hash_password( 'source-recovery-code' ) ] );
+		update_user_meta( $actor_id, EnrollmentStore::META_PENDING, [ 'source' => 'imported' ] );
+
+		self::assertTrue( CredentialStore::is_enrolled( $actor_id ) );
+		self::assertNotSame( [], CredentialStore::recovery_hashes( $actor_id ) );
+		self::assertTrue( metadata_exists( 'user', $actor_id, EnrollmentStore::META_PENDING ) );
+
+		Recovery::activate_destination( $ticket );
+		Recovery::reconcile_destination( $ticket );
+
+		self::assertFalse( CredentialStore::is_enrolled( $actor_id ) );
+		self::assertSame( [], CredentialStore::recovery_hashes( $actor_id ) );
+		self::assertFalse( metadata_exists( 'user', $actor_id, CredentialStore::META_SECRET ) );
+		self::assertFalse( metadata_exists( 'user', $actor_id, CredentialStore::META_ENROLLED_AT ) );
+		self::assertFalse( metadata_exists( 'user', $actor_id, CredentialStore::META_LAST_TIMESTEP ) );
+		self::assertFalse( metadata_exists( 'user', $actor_id, EnrollmentStore::META_PENDING ) );
+	}
+
+	public function test_enforced_recovery_requires_fresh_destination_two_factor_before_finalize(): void {
+		$actor_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$actor = get_userdata( $actor_id );
+		self::assertInstanceOf( WP_User::class, $actor );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $actor, 0, 'destination_preflight' ) );
+		wp_set_current_user( $actor_id );
+
+		$settings = CB\Core\Settings::get();
+		$settings['two_factor'] = [ 'mode' => TwoFactorPolicy::MODE_ENFORCE, 'scope' => TwoFactorPolicy::SCOPE_PRIVILEGED ];
+		CB\Core\Settings::set_key( 'two_factor', $settings['two_factor'], 'migration_recovery_test' );
+
+		$ticket = (string) Recovery::issue_ticket( 'migration-two-factor-enforce', 'https://destination.test' )['ticket'];
+		CredentialStore::store_totp_secret( $actor_id, 'JBSWY3DPEHPK3PXP' );
+		Recovery::activate_destination( $ticket );
+		Recovery::reconcile_destination( $ticket );
+
+		$_SERVER['SCRIPT_NAME'] = '/wp-login.php';
+		$_SERVER['REQUEST_URI'] = '/wp-login.php';
+		$_REQUEST = [ Recovery::PARAM => $ticket ];
+		Recovery::complete_authenticated_login( (string) $actor->user_login, $actor );
+
+		$status = Recovery::status( $ticket );
+		self::assertSame( 'pending_two_factor', $status['status'] ?? '' );
+		self::assertSame( $actor_id, (int) ( $status['approved_user_id'] ?? 0 ) );
+		self::assertFalse( PrivilegedAccessRegistry::is_approved( $actor ) );
+		self::assertFalse( Recovery::finalize( $ticket ), 'Password authentication alone finalized enforced migration recovery.' );
+
+		CredentialStore::store_totp_secret( $actor_id, 'JBSWY3DPEHPK3PXP' );
+		self::assertTrue( CredentialStore::is_enrolled( $actor_id ) );
+		self::assertTrue( Recovery::finalize( $ticket ) );
+		self::assertTrue( PrivilegedAccessRegistry::is_approved( get_userdata( $actor_id ) ) );
+		self::assertSame( [], Recovery::status( $ticket ) );
+	}
+
+	public function test_optional_recovery_does_not_force_fresh_two_factor_enrollment(): void {
+		$actor_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$actor = get_userdata( $actor_id );
+		self::assertInstanceOf( WP_User::class, $actor );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $actor, 0, 'destination_preflight' ) );
+		wp_set_current_user( $actor_id );
+
+		$settings = CB\Core\Settings::get();
+		$settings['two_factor'] = [ 'mode' => TwoFactorPolicy::MODE_OPTIONAL, 'scope' => TwoFactorPolicy::SCOPE_PRIVILEGED ];
+		CB\Core\Settings::set_key( 'two_factor', $settings['two_factor'], 'migration_recovery_test' );
+
+		$ticket = (string) Recovery::issue_ticket( 'migration-two-factor-optional', 'https://destination.test' )['ticket'];
+		CredentialStore::store_totp_secret( $actor_id, 'JBSWY3DPEHPK3PXP' );
+		Recovery::activate_destination( $ticket );
+		Recovery::reconcile_destination( $ticket );
+		self::assertFalse( CredentialStore::is_enrolled( $actor_id ) );
+
+		$_SERVER['SCRIPT_NAME'] = '/wp-login.php';
+		$_SERVER['REQUEST_URI'] = '/wp-login.php';
+		$_REQUEST = [ Recovery::PARAM => $ticket ];
+		Recovery::complete_authenticated_login( (string) $actor->user_login, $actor );
+
+		self::assertSame( 'authenticated', Recovery::status( $ticket )['status'] ?? '' );
+		self::assertTrue( Recovery::finalize( $ticket ) );
 	}
 
 	public function test_ticket_is_destination_bound_and_tamper_evident(): void {
