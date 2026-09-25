@@ -33,6 +33,7 @@ final class Bootstrap {
 		$labels[ Audit::EVENT_RECOVERY_CODE_USED ]   = __( 'Two-factor: recovery code used', 'core-blueprint' );
 		$labels[ Audit::EVENT_AUTHENTICATED ]        = __( 'Two-factor: authentication completed', 'core-blueprint' );
 		$labels[ Audit::EVENT_BYPASS_USED ]          = __( 'Two-factor: Failsafe bypass used', 'core-blueprint' );
+		$labels[ Audit::EVENT_MIGRATION_RESET ]      = __( 'Two-factor: imported authentication reset', 'core-blueprint' );
 		return $labels;
 	}
 }

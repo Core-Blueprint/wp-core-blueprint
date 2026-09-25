@@ -14,6 +14,7 @@ final class Audit {
 	public const EVENT_RECOVERY_CODE_USED   = 'security.twofactor.recovery.used';
 	public const EVENT_AUTHENTICATED        = 'security.twofactor.authenticated';
 	public const EVENT_BYPASS_USED          = 'security.twofactor.bypass.used';
+	public const EVENT_MIGRATION_RESET      = 'security.twofactor.migration.reset';
 
 	/** @var array<string,bool> */
 	private static array $bypass_logged = [];
@@ -60,6 +61,15 @@ final class Audit {
 		AuditLog::log( self::EVENT_BYPASS_USED, 'critical', [
 			'user_id' => $user_id,
 			'source'  => $source,
+		] );
+	}
+
+	/** @param array{users:int,meta_records:int,challenge_records:int} $stats */
+	public static function migration_reset( array $stats ): void {
+		AuditLog::log( self::EVENT_MIGRATION_RESET, 'warning', [
+			'users'             => max( 0, (int) ( $stats['users'] ?? 0 ) ),
+			'meta_records'      => max( 0, (int) ( $stats['meta_records'] ?? 0 ) ),
+			'challenge_records' => max( 0, (int) ( $stats['challenge_records'] ?? 0 ) ),
 		] );
 	}
 

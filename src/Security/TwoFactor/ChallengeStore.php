@@ -127,6 +127,58 @@ final class ChallengeStore {
 		return self::persist_state( $state );
 	}
 
+	/**
+	 * Remove challenge state that may have arrived with a restored database.
+	 *
+	 * External object-cache transients are destination-local and therefore do
+	 * not cross a database migration. Persisted option-backed transient state
+	 * and lock options are removed explicitly and verified.
+	 */
+	public static function clear_all_persisted(): int {
+		global $wpdb;
+
+		$prefixes = [
+			'_transient_' . self::TRANSIENT_PREFIX,
+			'_transient_timeout_' . self::TRANSIENT_PREFIX,
+			self::LOCK_PREFIX,
+		];
+		$names = [];
+
+		foreach ( $prefixes as $prefix ) {
+			$pattern = $wpdb->esc_like( $prefix ) . '%';
+			$found = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+					$pattern
+				)
+			);
+			foreach ( $found as $name ) {
+				if ( is_string( $name ) && '' !== $name ) {
+					$names[ $name ] = true;
+				}
+			}
+		}
+
+		foreach ( array_keys( $names ) as $name ) {
+			delete_option( $name );
+		}
+
+		foreach ( $prefixes as $prefix ) {
+			$pattern = $wpdb->esc_like( $prefix ) . '%';
+			$remaining = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",
+					$pattern
+				)
+			);
+			if ( $remaining > 0 ) {
+				throw new RuntimeException( 'Could not clear imported two-factor challenge state.' );
+			}
+		}
+
+		return count( $names );
+	}
+
 	public static function remaining_attempts( array $state ): int {
 		$state = self::normalize_state( $state );
 		if ( null === $state ) {
