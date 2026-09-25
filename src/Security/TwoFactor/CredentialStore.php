@@ -61,7 +61,11 @@ final class CredentialStore {
 	}
 
 	public static function last_timestep( int $user_id ): int {
-		return max( -1, (int) get_user_meta( $user_id, self::META_LAST_TIMESTEP, true ) );
+		$stored = get_user_meta( $user_id, self::META_LAST_TIMESTEP, true );
+		if ( '' === $stored || null === $stored ) {
+			return -1;
+		}
+		return max( -1, (int) $stored );
 	}
 
 	public static function set_last_timestep( int $user_id, int $timestep ): void {
