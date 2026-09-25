@@ -24,6 +24,8 @@
 - Add deterministic full preflight, human-readable diffs, stale-preview fingerprints, compare-and-swap apply locking, per-section verification and compensating rollback with concurrent-state protection.
 - Apply portable module activation last, coordinate Core Scanner state changes with the Scanner lock, and keep Content Models rollback targeted to definitions touched by the failed Profile transaction.
 - Add strict schema/type validation, bounded uploads/review size, six-locale Profile catalogs and regression coverage for stale state, partial failure, lock ownership, rollback and portability boundaries.
+- Freeze the v1 ownership contract so official first-party extensions can register namespaced portable sections through a controlled, one-shot lifecycle without moving extension settings into Base.
+- Add portable severity-based audit notification policy while keeping recipient addresses explicitly site-local.
 
 ### Data Exchange + Data Mapper Foundations v1
 
