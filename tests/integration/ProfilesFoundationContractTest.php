@@ -71,6 +71,7 @@ final class CB_Base_Profiles_Foundation_Contract_Test extends WP_UnitTestCase {
 		self::assertNotContains( 'mail', $ids );
 		self::assertNotContains( 'snippets', $ids );
 		self::assertNotContains( 'access-mode', $ids );
+		self::assertContains( 'audit-notifications', $ids );
 		self::assertSame( 'module-states', end( $ids ) );
 	}
 
@@ -206,6 +207,22 @@ final class CB_Base_Profiles_Foundation_Contract_Test extends WP_UnitTestCase {
 
 		$this->expectException( InvalidArgumentException::class );
 		MutationAcknowledgement::require_confirmed( null, 'Confirmation required.' );
+	}
+
+
+	public function test_pf10_audit_notification_policy_is_portable_without_recipient_state(): void {
+		$section = SectionRegistry::get( 'audit-notifications' );
+		self::assertNotNull( $section );
+
+		$export = $section->export();
+		self::assertSame( [ 'email_alerts' ], array_keys( $export ) );
+		self::assertSame( [ 'critical', 'warning', 'notice', 'info' ], array_keys( $export['email_alerts'] ) );
+
+		$invalid = $export;
+		$invalid['email_recipient'] = 'operator@example.test';
+
+		$this->expectException( InvalidArgumentException::class );
+		$section->normalize( $invalid );
 	}
 
 }
