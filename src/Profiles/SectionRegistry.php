@@ -63,13 +63,22 @@ final class SectionRegistry {
 			return false;
 		}
 
-		$id = $section->id();
+		try {
+			$id = $section->id();
+			$schema_version = $section->schema_version();
+			$supports_current_schema = $schema_version >= 1 && $section->supports_schema_version( $schema_version );
+		} catch ( \Throwable $error ) {
+			self::diagnostic( 'Profile section metadata could not be resolved: ' . $error->getMessage() );
+			return false;
+		}
+
 		if (
 			! self::is_valid_id( $id )
 			|| ! str_starts_with( $id, $extension_id . '-' )
 			|| 'module-states' === $id
+			|| ! $supports_current_schema
 		) {
-			self::diagnostic( sprintf( 'Invalid or unowned Profile section id refused: %s.', $id ) );
+			self::diagnostic( sprintf( 'Invalid or unowned Profile section contract refused: %s.', $id ) );
 			return false;
 		}
 
