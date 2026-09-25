@@ -23,6 +23,7 @@ final class SettingsDefaults {
 			'shield_enabled' => true,
 			'modules'        => [],
 			'login_shield'   => \CB\Core\Security\LoginShield::default_config(),
+			'two_factor'     => \CB\Core\Security\TwoFactor\Policy::default_config(),
 			'audit'          => [
 				'email_recipient' => '',
 				'email_alerts'    => [
