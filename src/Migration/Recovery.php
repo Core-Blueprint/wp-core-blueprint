@@ -23,6 +23,9 @@ use CB\Core\Permissions\Roles;
 use CB\Core\Permissions\TrustSchemaMigrator;
 use CB\Core\Security\Failsafe;
 use CB\Core\Security\LoginShield;
+use CB\Core\Security\TwoFactor\CredentialStore;
+use CB\Core\Security\TwoFactor\EnrollmentStore;
+use CB\Core\Security\TwoFactor\Policy as TwoFactorPolicy;
 use RuntimeException;
 use WP_Error;
 use WP_User;
@@ -214,6 +217,8 @@ final class Recovery {
 				continue;
 			}
 			PrivilegedAccessRegistry::require_review( $user, 'site_migration', 'migration_recovery' );
+			CredentialStore::clear( (int) $user->ID );
+			EnrollmentStore::clear( (int) $user->ID );
 			$reviewed_ids[ (int) $user->ID ] = true;
 		}
 
@@ -293,6 +298,18 @@ final class Recovery {
 		if ( ! $state || ! self::state_matches_ticket( $state, $ticket, $payload ) ) {
 			return false;
 		}
+		if ( 'pending_two_factor' === (string) ( $state['status'] ?? '' ) ) {
+			$user_id = get_current_user_id();
+			$user = $user_id > 0 ? get_userdata( $user_id ) : false;
+			if ( ! ( $user instanceof WP_User ) || $user_id !== (int) ( $state['approved_user_id'] ?? 0 ) || ! CredentialStore::is_enrolled( $user_id ) ) {
+				return false;
+			}
+			if ( ! PrivilegedAccessRegistry::approve( $user, 0, 'migration_recovery' ) ) {
+				return false;
+			}
+			$state['status'] = 'authenticated';
+			update_option( self::OPTION, $state, false );
+		}
 		if ( 'authenticated' !== (string) ( $state['status'] ?? '' ) ) {
 			return false;
 		}
@@ -368,7 +385,7 @@ final class Recovery {
 			} catch ( \Throwable ) {
 				return false;
 			}
-			return in_array( (string) ( $state['status'] ?? '' ), [ 'pending_reconcile', 'pending_auth', 'authenticated' ], true )
+			return in_array( (string) ( $state['status'] ?? '' ), [ 'pending_reconcile', 'pending_auth', 'pending_two_factor', 'authenticated' ], true )
 				&& self::state_matches_ticket( $state, $ticket, $payload );
 		}
 
@@ -412,6 +429,14 @@ final class Recovery {
 		}
 		$state = self::state();
 		if ( 'pending_auth' !== (string) ( $state['status'] ?? '' ) ) {
+			return;
+		}
+
+		if ( TwoFactorPolicy::requires_enrollment( $user ) && ! CredentialStore::is_enrolled( (int) $user->ID ) ) {
+			$state['status'] = 'pending_two_factor';
+			$state['approved_user_id'] = (int) $user->ID;
+			$state['authenticated_at'] = time();
+			update_option( self::OPTION, $state, false );
 			return;
 		}
 
