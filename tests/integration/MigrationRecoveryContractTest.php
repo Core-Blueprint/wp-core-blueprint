@@ -251,7 +251,7 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 
 		$settings = CB\Core\Settings::get();
 		$settings['two_factor'] = [ 'mode' => TwoFactorPolicy::MODE_ENFORCE, 'scope' => TwoFactorPolicy::SCOPE_PRIVILEGED ];
-		CB\Core\Settings::update( $settings );
+		CB\Core\Settings::set_key( 'two_factor', $settings['two_factor'], 'migration_recovery_test' );
 
 		$ticket = (string) Recovery::issue_ticket( 'migration-two-factor-enforce', 'https://destination.test' )['ticket'];
 		CredentialStore::store_totp_secret( $actor_id, 'JBSWY3DPEHPK3PXP' );
