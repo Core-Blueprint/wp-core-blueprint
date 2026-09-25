@@ -119,11 +119,13 @@ final class CB_Base_Two_Factor_Policy_Storage_Contract_Test extends WP_UnitTestC
 		}
 	}
 
-	public function test_tf6_clear_removes_all_user_bound_authentication_material(): void {
+	public function test_tf6_clear_removes_all_user_bound_authentication_material_through_canonical_replay_authority(): void {
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		CredentialStore::store_totp_secret( $user_id, 'JBSWY3DPEHPK3PXP' );
 		RecoveryCodes::generate_for_user( $user_id );
-		CredentialStore::set_last_timestep( $user_id, 123 );
+
+		self::assertFalse( method_exists( CredentialStore::class, 'set_last_timestep' ) );
+		self::assertTrue( CredentialStore::claim_timestep( $user_id, 123 ) );
 
 		CredentialStore::clear( $user_id );
 

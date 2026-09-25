@@ -80,13 +80,6 @@ final class CredentialStore {
 		return max( -1, (int) $stored );
 	}
 
-	public static function set_last_timestep( int $user_id, int $timestep ): void {
-		if ( $user_id <= 0 || $timestep < -1 ) {
-			throw new InvalidArgumentException( 'Invalid two-factor timestep.' );
-		}
-		self::persist_meta( $user_id, self::META_LAST_TIMESTEP, $timestep );
-	}
-
 	/**
 	 * Atomically claim a newer TOTP timestep.
 	 *
