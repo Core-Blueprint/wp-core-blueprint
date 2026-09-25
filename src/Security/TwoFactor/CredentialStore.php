@@ -22,18 +22,30 @@ final class CredentialStore {
 	public const META_LAST_TIMESTEP = '_cb_core_two_factor_last_timestep';
 
 	public static function store_totp_secret( int $user_id, string $secret ): void {
+		if ( $user_id <= 0 ) {
+			throw new InvalidArgumentException( 'Invalid two-factor user.' );
+		}
+
 		$secret = self::normalize_secret( $secret );
 		$stored = CredentialCipher::encrypt( $secret, $user_id );
 
-		if ( ! update_user_meta( $user_id, self::META_SECRET, $stored ) ) {
-			$current = get_user_meta( $user_id, self::META_SECRET, true );
-			if ( $current !== $stored ) {
-				throw new RuntimeException( 'Could not persist the two-factor credential.' );
-			}
+		$previous = [];
+		foreach ( [ self::META_SECRET, self::META_ENROLLED_AT, self::META_LAST_TIMESTEP ] as $key ) {
+			$previous[ $key ] = [
+				'exists' => metadata_exists( 'user', $user_id, $key ),
+				'value'  => get_user_meta( $user_id, $key, true ),
+			];
 		}
 
-		if ( (int) get_user_meta( $user_id, self::META_ENROLLED_AT, true ) <= 0 ) {
-			update_user_meta( $user_id, self::META_ENROLLED_AT, time() );
+		try {
+			self::persist_meta( $user_id, self::META_SECRET, $stored );
+			self::persist_meta( $user_id, self::META_ENROLLED_AT, time() );
+			self::persist_meta( $user_id, self::META_LAST_TIMESTEP, -1 );
+		} catch ( RuntimeException $error ) {
+			foreach ( $previous as $key => $state ) {
+				self::restore_meta( $user_id, (string) $key, (bool) $state['exists'], $state['value'] );
+			}
+			throw $error;
 		}
 	}
 
@@ -69,10 +81,41 @@ final class CredentialStore {
 	}
 
 	public static function set_last_timestep( int $user_id, int $timestep ): void {
-		if ( $user_id <= 0 || $timestep < 0 ) {
+		if ( $user_id <= 0 || $timestep < -1 ) {
 			throw new InvalidArgumentException( 'Invalid two-factor timestep.' );
 		}
-		update_user_meta( $user_id, self::META_LAST_TIMESTEP, $timestep );
+		self::persist_meta( $user_id, self::META_LAST_TIMESTEP, $timestep );
+	}
+
+	/**
+	 * Atomically claim a newer TOTP timestep.
+	 *
+	 * update_user_meta() receives the exact previous value, giving concurrent
+	 * requests compare-and-swap semantics. A second request using the same code
+	 * cannot overwrite the already-advanced timestep.
+	 */
+	public static function claim_timestep( int $user_id, int $timestep ): bool {
+		if ( $user_id <= 0 || $timestep < 0 || ! metadata_exists( 'user', $user_id, self::META_LAST_TIMESTEP ) ) {
+			return false;
+		}
+
+		$previous_raw = get_user_meta( $user_id, self::META_LAST_TIMESTEP, true );
+		$previous     = (int) $previous_raw;
+		if ( $timestep <= $previous ) {
+			return false;
+		}
+
+		$updated = update_user_meta(
+			$user_id,
+			self::META_LAST_TIMESTEP,
+			$timestep,
+			$previous_raw
+		);
+		if ( false === $updated ) {
+			return false;
+		}
+
+		return $timestep === self::last_timestep( $user_id );
 	}
 
 	/** @return string[] */
@@ -89,11 +132,14 @@ final class CredentialStore {
 
 	/** @param string[] $hashes */
 	public static function store_recovery_hashes( int $user_id, array $hashes ): void {
+		if ( $user_id <= 0 ) {
+			throw new InvalidArgumentException( 'Invalid two-factor user.' );
+		}
 		$hashes = array_values( array_filter(
 			array_map( 'strval', $hashes ),
 			static fn( string $hash ): bool => '' !== $hash
 		) );
-		update_user_meta( $user_id, self::META_RECOVERY, $hashes );
+		self::persist_meta( $user_id, self::META_RECOVERY, $hashes );
 	}
 
 	public static function clear( int $user_id ): void {
@@ -117,5 +163,28 @@ final class CredentialStore {
 			throw new InvalidArgumentException( 'Invalid TOTP secret.' );
 		}
 		return $secret;
+	}
+
+	private static function persist_meta( int $user_id, string $key, mixed $value ): void {
+		$result = update_user_meta( $user_id, $key, $value );
+		if ( false !== $result ) {
+			return;
+		}
+
+		$current = get_user_meta( $user_id, $key, true );
+		$same = is_array( $value )
+			? $current === $value
+			: (string) $current === (string) $value;
+		if ( ! $same ) {
+			throw new RuntimeException( 'Could not persist two-factor credential state.' );
+		}
+	}
+
+	private static function restore_meta( int $user_id, string $key, bool $existed, mixed $value ): void {
+		if ( ! $existed ) {
+			delete_user_meta( $user_id, $key );
+			return;
+		}
+		update_user_meta( $user_id, $key, $value );
 	}
 }
