@@ -56,6 +56,23 @@ final class ChallengeStore {
 	}
 
 	/**
+	 * Inspect valid challenge state without consuming the one-time token.
+	 *
+	 * Rendering may read a challenge more than once, but factor submission
+	 * must always use take() so the bearer token is consumed atomically.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	public static function inspect( string $token ): ?array {
+		if ( ! self::valid_token( $token ) ) {
+			return null;
+		}
+
+		$state = get_transient( self::TRANSIENT_PREFIX . hash( 'sha256', $token ) );
+		return is_array( $state ) ? self::normalize_state( $state ) : null;
+	}
+
+	/**
 	 * Atomically consume and return challenge state.
 	 *
 	 * A taken token can never be used again, regardless of verification result.

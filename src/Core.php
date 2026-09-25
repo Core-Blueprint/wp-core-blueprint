@@ -63,6 +63,11 @@ final class Core {
 		// before Login Shield evaluates enforcement on plugins_loaded.
 		MigrationRecovery::boot();
 
+		// Privileged two-factor authentication registers its login boundaries
+		// after Migration Recovery so the destination recovery flow can establish
+		// its request-scoped Failsafe authority before 2FA makes a decision.
+		\CB\Core\Security\TwoFactor\LoginFlow::boot();
+
 		// WP 6.7+ requires translations to load on `init` or later.
 		add_action( 'init', [ $this, 'load_textdomain' ], 0 );
 
