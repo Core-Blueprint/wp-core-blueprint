@@ -216,7 +216,7 @@ final class CB_Base_Profiles_Foundation_Contract_Test extends WP_UnitTestCase {
 
 		$export = $section->export();
 		self::assertSame( [ 'email_alerts' ], array_keys( $export ) );
-		self::assertSame( [ 'critical', 'warning', 'notice', 'info' ], array_keys( $export['email_alerts'] ) );
+		self::assertSame( [ 'info', 'notice', 'warning', 'critical' ], array_keys( $export['email_alerts'] ) );
 
 		$invalid = $export;
 		$invalid['email_recipient'] = 'operator@example.test';
