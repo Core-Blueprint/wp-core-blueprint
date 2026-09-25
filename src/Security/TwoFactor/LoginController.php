@@ -211,7 +211,7 @@ final class LoginController {
 
 		echo '<form name="cb-two-factor" method="post" action="' . esc_url( $action ) . '">';
 		echo '<p><label for="cb_two_factor_code">' . esc_html__( 'Verification code', 'core-blueprint' ) . '</label>';
-		echo '<input type="text" name="cb_two_factor_code" id="cb_two_factor_code" class="input" value="" size="24" autocomplete="one-time-code" inputmode="numeric" autofocus></p>';
+		echo '<input type="text" name="cb_two_factor_code" id="cb_two_factor_code" class="input" value="" size="24" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" autofocus></p>';
 		echo '<p class="submit"><input type="submit" class="button button-primary button-large" value="' . esc_attr__( 'Verify', 'core-blueprint' ) . '"></p>';
 		echo '</form>';
 
