@@ -24,6 +24,7 @@ Core Profiles cannot guarantee compatibility with every WordPress environment. T
 
 - Security baseline: Core Shield hardening modules/features and portable Login Shield configuration.
 - Privacy & logging: IP policy, audit verbosity and audit-log retention.
+- Audit notifications: severity-based notification policy without recipient addresses.
 - Core Scanner policy: schedule, scan coverage, visible-finding limit and scanner alerts.
 - Content Models schema: user-managed post types, taxonomies, Option Pages and field schemas, without content values.
 - Media Formats: image-format policy without site content.
@@ -54,7 +55,18 @@ These exclusions are part of the v1 portability and trust boundary. Adding a dom
 
 The document has its own `format_version`. Every section has an independent `schema_version` and section contract methods for supported-version checks and migrations. A future section schema can therefore migrate an older supported Profile without changing unrelated sections or the outer document format.
 
-Unknown sections, unsupported versions, unknown keys and invalid scalar types fail closed. Base v1 intentionally has no public third-party Profile-section registration hook so Base can guarantee the payload boundary for every exported section.
+Unknown sections, unsupported versions, unknown keys and invalid scalar types fail closed.
+
+## Ownership and extension contract
+
+Core Profiles owns the transport, validation plan, deterministic section ordering, concurrency guard and application transaction. It does not own the canonical settings represented by a section. Every section must read and mutate its domain through that domain's supported state APIs or repositories, and must provide its own normalization, preflight, verification and recovery behavior. Core Setup and other consumers use this same Profile document and Engine contract; they do not write a second copy of module state.
+
+Base sections are registered directly by Base. Official first-party extensions may add portable sections during the controlled `cb_core_register_profile_sections` lifecycle by calling `SectionRegistry::register( $extension_id, $section )`. The extension must already be registered through the canonical Extension Registry and recognized there as first-party Core Blueprint software. Extension section IDs must be namespaced below that extension ID. The extension section registry is collected once, sorted deterministically and then frozen for the request.
+
+The first-party extension boundary is intentionally narrower than a general third-party plugin API. Third-party plugins cannot register arbitrary Profile payloads in v1. This lets Base keep the secrets and portability trust boundary reviewable. A Profile containing a section whose owning extension is unavailable fails closed before mutation. An installed extension may expose portable configuration even while its optional runtime/module is disabled; runtime activation remains a separate concern and Base module activation remains the final built-in apply section.
+
+Portable configuration is policy or reproducible configuration, not runtime identity. Secrets, credentials, recovery material, temporary tokens, user/Operator assignments, approval fingerprints, machine-detected environment state, jobs, evidence/history records, recipient addresses, attachment/assignee IDs and executable code remain outside reusable Profiles.
+
 
 ## Concurrency and rollback
 

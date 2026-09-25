@@ -144,5 +144,8 @@ return [
         'This profile section schema version is not supported.' => 'Esta versión de esquema de la sección del perfil no es compatible.',
         'Transfer governed Base configuration between sites' => 'Transferir configuración gobernada de Base entre sitios',
         'Uploading a profile does not apply its configuration. Core Blueprint first validates the complete document and creates a diff against the current configuration.' => 'Subir un perfil no aplica su configuración. Core Blueprint valida primero el documento completo y crea una comparación con la configuración actual.',
+        'Audit notifications' => 'Notificaciones de auditoría',
+        'Severity-based audit notification policy. Recipient addresses remain site-local and are not included.' => 'Política de notificaciones de auditoría basada en la gravedad. Las direcciones de los destinatarios permanecen locales al sitio y no se incluyen.',
+        'Could not apply the audit notification policy.' => 'No se pudo aplicar la política de notificaciones de auditoría.',
     ],
 ];
