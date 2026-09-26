@@ -4,7 +4,7 @@ declare(strict_types=1);
 final class CB_Base_Two_Factor_Enrollment_QR_Contract_Test extends WP_UnitTestCase {
 
 	public function test_tq1_qr_encoder_is_local_pinned_and_licensed(): void {
-		$vendor = file_get_contents( CB_CORE_DIR . 'assets/js/vendor/qrcode-generator-2.0.4.mjs' );
+		$vendor = file_get_contents( CB_CORE_DIR . 'assets/js/vendor/qrcode-generator-2.0.4.js' );
 		$notice = file_get_contents( CB_CORE_DIR . 'licenses/QRCODE-GENERATOR.md' );
 
 		self::assertIsString( $vendor );
@@ -20,7 +20,7 @@ final class CB_Base_Two_Factor_Enrollment_QR_Contract_Test extends WP_UnitTestCa
 		$runtime = file_get_contents( CB_CORE_DIR . 'assets/js/features/two-factor-enrollment.js' );
 
 		self::assertIsString( $runtime );
-		self::assertStringContainsString( "../vendor/qrcode-generator-2.0.4.mjs", $runtime );
+		self::assertStringContainsString( "../vendor/qrcode-generator-2.0.4.js", $runtime );
 		self::assertStringContainsString( "qrcode( 0, 'M' )", $runtime );
 		self::assertStringContainsString( 'target.replaceChildren( svg );', $runtime );
 		self::assertStringContainsString( 'clipboard.enhance( copyButton', $runtime );
