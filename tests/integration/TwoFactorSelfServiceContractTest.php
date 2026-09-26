@@ -166,7 +166,7 @@ final class CB_Base_Two_Factor_Self_Service_Contract_Test extends WP_UnitTestCas
 			Totp::code( $secret, time() )
 		);
 	}
-	public function test_ts5_cancel_pending_enrollment_requires_current_password(): void {
+	public function test_ts5_cancel_pending_enrollment_requires_only_own_privileged_identity(): void {
 		$user_id = self::factory()->user->create( [
 			'role'      => 'administrator',
 			'user_pass' => 'correct-password',
@@ -178,15 +178,27 @@ final class CB_Base_Two_Factor_Self_Service_Contract_Test extends WP_UnitTestCas
 		AccountManager::start_enrollment( $user, 'correct-password' );
 		self::assertTrue( EnrollmentStore::has_pending( $user_id ) );
 
+		$other_id = self::factory()->user->create( [
+			'role'      => 'administrator',
+			'user_pass' => 'other-password',
+		] );
+		$other = get_userdata( $other_id );
+		self::assertInstanceOf( WP_User::class, $other );
+		wp_set_current_user( $other_id );
+		AccountManager::start_enrollment( $other, 'other-password' );
+		self::assertTrue( EnrollmentStore::has_pending( $other_id ) );
+
+		wp_set_current_user( $user_id );
 		try {
-			AccountManager::cancel_enrollment( $user, 'wrong-password' );
-			self::fail( 'Wrong password cancelled pending Base 2FA enrollment.' );
+			AccountManager::cancel_enrollment( $other );
+			self::fail( 'User was allowed to cancel another privileged identity pending setup.' );
 		} catch ( RuntimeException ) {
-			self::assertTrue( EnrollmentStore::has_pending( $user_id ) );
+			self::assertTrue( EnrollmentStore::has_pending( $other_id ) );
 		}
 
-		AccountManager::cancel_enrollment( $user, 'correct-password' );
+		AccountManager::cancel_enrollment( $user );
 		self::assertFalse( EnrollmentStore::has_pending( $user_id ) );
+		self::assertTrue( EnrollmentStore::has_pending( $other_id ) );
 	}
 
 	public function test_ts6_recovery_regeneration_requires_password_and_current_factor_and_replaces_old_codes(): void {
