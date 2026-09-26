@@ -1,0 +1,76 @@
+/**
+ * components/interactive-grid.css - Core Blueprint Interactive Grid Foundation
+ *
+ * Core Admin presentation for consumer-owned interactive grids.
+ *
+ * @package CB\Core
+ * @since   1.0.0
+ */
+
+.cb-core-interactive-grid {
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.cb-core-interactive-grid > thead > tr > *,
+.cb-core-interactive-grid > tbody > tr > * {
+	border-inline-end: 1px solid var(--cb-border);
+	border-block-end: 1px solid var(--cb-border);
+}
+
+.cb-core-interactive-grid tr > :last-child {
+	border-inline-end: 0;
+}
+
+.cb-core-interactive-grid tbody tr:last-child > * {
+	border-block-end: 0;
+}
+
+.cb-core-interactive-grid__cell {
+	position: relative;
+	isolation: isolate;
+}
+
+.cb-core-interactive-grid__action {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	display: block;
+	color: inherit;
+	text-decoration: none;
+	transition: background-color var(--cb-interactive-transition);
+}
+
+.cb-core-interactive-grid__action:hover {
+	background: var(--cb-interactive-hover);
+}
+
+.cb-core-interactive-grid__action:focus-visible {
+	background: var(--cb-interactive-hover);
+	outline: 2px solid var(--cb-interactive-focus);
+	outline-offset: -2px;
+}
+
+.cb-core-interactive-grid__content {
+	position: relative;
+	z-index: 1;
+	pointer-events: none;
+}
+
+.cb-core-interactive-grid__content :is(a, button, input, select, textarea, summary, [tabindex]) {
+	pointer-events: auto;
+}
+
+.cb-core-interactive-grid__cell--disabled {
+	background: var(--cb-surface-1);
+}
+
+.cb-core-interactive-grid__cell.is-current {
+	box-shadow: inset 0 0 0 2px var(--cb-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cb-core-interactive-grid__action {
+		transition: none;
+	}
+}

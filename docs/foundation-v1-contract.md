@@ -23,10 +23,13 @@ Status: **public v1 freeze candidate**.
 | Choice Group | `CB\Core\UI\Assets::enqueue_choice_group()` | PHP/CSS primitive; no JavaScript runtime required |
 | Object Picker | `CB\Core\UI\Assets::enqueue_object_picker()` | `@cb-core/object-picker`, `window.cbCore.objectPicker` |
 | Select Picker | `CB\Core\UI\Assets::enqueue_select_picker()` | `@cb-core/select-picker`, `window.cbCore.selectPicker` |
+| Interactive Grid | `CB\Core\UI\Assets::enqueue_interactive_grid()` | PHP/CSS primitive; no JavaScript runtime required |
 | Reorder | `CB\Core\UI\Assets::enqueue_reorder()` | `@cb-core/reorder`, `window.cbCore.reorder` (Core API `1.1+`) |
 | Form Composition | `CB\Core\UI\FormComposition::enqueue()` | PHP/CSS primitive; no JavaScript runtime required |
 
 Consumers provide business meaning and exact values. Foundation owns generic behavior, accessibility and presentation adapters.
+
+The Interactive Grid Foundation owns generic cell dividers, stretched-cell action hover/focus treatment and neutral current/disabled states. Consumers own grid semantics, cell labels, URLs and nested business controls. See `INTERACTIVE-GRID-FOUNDATION.md`.
 
 The Reorder Foundation owns generic ordered-list movement, focus preservation, accessible announcements, pending state and rollback. Consumers own item/list semantics, authorization and persistence. Cross-list movement is opt-in and consumers must provide a non-pointer route for cross-list moves. See `REORDER-FOUNDATION.md`.
 

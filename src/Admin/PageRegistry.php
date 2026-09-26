@@ -56,6 +56,7 @@ final class PageRegistry {
 		'icons',
 		'modal',
 		'object-picker',
+		'interactive-grid',
 		'reorder',
 		'select-picker',
 		'time-picker',
@@ -389,6 +390,9 @@ final class PageRegistry {
 				break;
 			case 'select-picker':
 				UiAssets::enqueue_select_picker( UiAssets::SELECT_PICKER_PRESENTATION_CORE );
+				break;
+			case 'interactive-grid':
+				UiAssets::enqueue_interactive_grid( UiAssets::INTERACTIVE_GRID_PRESENTATION_CORE );
 				break;
 			case 'reorder':
 				UiAssets::enqueue_reorder( UiAssets::REORDER_PRESENTATION_CORE );

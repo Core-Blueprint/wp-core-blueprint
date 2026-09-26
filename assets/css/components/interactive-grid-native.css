@@ -1,0 +1,83 @@
+/**
+ * components/interactive-grid-native.css
+ *
+ * WordPress-native adapter for the Interactive Grid Foundation.
+ * Optional Core Blueprint variables are consumed when another admin layer
+ * already exposes them; neutral WordPress fallbacks keep this adapter narrow.
+ *
+ * @package CB\Core
+ * @since   1.0.0
+ */
+
+.cb-core-interactive-grid {
+	--cb-interactive-grid-border: var(--cb-border, #c3c4c7);
+	--cb-interactive-grid-hover: var(--cb-interactive-hover, rgba(34, 113, 177, 0.08));
+	--cb-interactive-grid-focus: var(--cb-interactive-focus, var(--cb-accent, #2271b1));
+	--cb-interactive-grid-muted: var(--cb-surface-1, #f6f7f7);
+	--cb-interactive-grid-current: var(--cb-accent, #2271b1);
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.cb-core-interactive-grid > thead > tr > *,
+.cb-core-interactive-grid > tbody > tr > * {
+	border-inline-end: 1px solid var(--cb-interactive-grid-border);
+	border-block-end: 1px solid var(--cb-interactive-grid-border);
+}
+
+.cb-core-interactive-grid tr > :last-child {
+	border-inline-end: 0;
+}
+
+.cb-core-interactive-grid tbody tr:last-child > * {
+	border-block-end: 0;
+}
+
+.cb-core-interactive-grid__cell {
+	position: relative;
+	isolation: isolate;
+}
+
+.cb-core-interactive-grid__action {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	display: block;
+	color: inherit;
+	text-decoration: none;
+	transition: background-color 120ms ease;
+}
+
+.cb-core-interactive-grid__action:hover {
+	background: var(--cb-interactive-grid-hover);
+}
+
+.cb-core-interactive-grid__action:focus-visible {
+	background: var(--cb-interactive-grid-hover);
+	outline: 2px solid var(--cb-interactive-grid-focus);
+	outline-offset: -2px;
+}
+
+.cb-core-interactive-grid__content {
+	position: relative;
+	z-index: 1;
+	pointer-events: none;
+}
+
+.cb-core-interactive-grid__content :is(a, button, input, select, textarea, summary, [tabindex]) {
+	pointer-events: auto;
+}
+
+.cb-core-interactive-grid__cell--disabled {
+	background: var(--cb-interactive-grid-muted);
+}
+
+.cb-core-interactive-grid__cell.is-current {
+	box-shadow: inset 0 0 0 2px var(--cb-interactive-grid-current);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cb-core-interactive-grid__action {
+		transition: none;
+	}
+}

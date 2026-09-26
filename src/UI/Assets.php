@@ -39,6 +39,8 @@ final class Assets {
 	public const SELECT_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const REORDER_PRESENTATION_CORE = 'core';
 	public const REORDER_PRESENTATION_WP_NATIVE = 'wp-native';
+	public const INTERACTIVE_GRID_PRESENTATION_CORE = 'core';
+	public const INTERACTIVE_GRID_PRESENTATION_WP_NATIVE = 'wp-native';
 
 	private static bool $icon_data_filter_registered = false;
 	private static bool $toast_data_filter_registered = false;
@@ -468,6 +470,47 @@ final class Assets {
 
 
 
+
+
+	/**
+	 * Enqueue the shared Interactive Grid Foundation.
+	 *
+	 * Interactive Grid provides presentation for consumer-owned tabular/grid
+	 * markup with a stretched primary action per cell. Base owns dividers,
+	 * hover/focus treatment and generic current/disabled states. Consumers own
+	 * cell meaning, URLs, nested controls and business behavior.
+	 *
+	 * @param string|null $presentation `wp-native`, `core`, or null for auto.
+	 */
+	public static function enqueue_interactive_grid( ?string $presentation = null ): void {
+		if ( null === $presentation ) {
+			$presentation = self::is_core_admin_screen()
+				? self::INTERACTIVE_GRID_PRESENTATION_CORE
+				: self::INTERACTIVE_GRID_PRESENTATION_WP_NATIVE;
+		} elseif ( ! in_array( $presentation, [ self::INTERACTIVE_GRID_PRESENTATION_WP_NATIVE, self::INTERACTIVE_GRID_PRESENTATION_CORE ], true ) ) {
+			$presentation = self::INTERACTIVE_GRID_PRESENTATION_WP_NATIVE;
+		}
+
+		if ( self::INTERACTIVE_GRID_PRESENTATION_CORE === $presentation ) {
+			if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
+			}
+			wp_enqueue_style(
+				'cb-core-css-interactive-grid',
+				CB_CORE_URL . 'assets/css/components/interactive-grid.css',
+				[ 'cb-core-css-tokens' ],
+				CB_CORE_VERSION
+			);
+			return;
+		}
+
+		wp_enqueue_style(
+			'cb-core-css-interactive-grid-native',
+			CB_CORE_URL . 'assets/css/components/interactive-grid-native.css',
+			[],
+			CB_CORE_VERSION
+		);
+	}
 
 	/**
 	 * Enqueue the shared Reorder Foundation for an extension-owned admin screen.
