@@ -63,6 +63,10 @@ body.wp-admin #wpfooter {
 	line-height: var(--cb-lh-relaxed);
 }
 
+.cb-core-secure-action__intro + .cb-core-secure-action__steps {
+	margin-top: var(--cb-space-4);
+}
+
 .cb-core-secure-action__steps {
 	display: flex;
 	flex-direction: column;
