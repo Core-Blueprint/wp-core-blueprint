@@ -1,0 +1,173 @@
+/**
+ * Internal secure-action screen composition.
+ *
+ * This page-specific layer owns only the geometry of the non-navigational
+ * security workflow. Surfaces, typography, controls, states and actions remain
+ * owned by the existing Core Blueprint Design Foundation.
+ *
+ * @package CB\Core
+ * @since   1.0.0
+ */
+
+.cb-core-secure-action {
+	width: min(100%, 780px);
+	margin-inline: auto;
+	padding-top: var(--cb-space-6);
+}
+
+.cb-core-secure-action__header {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--cb-space-3);
+	margin-bottom: var(--cb-space-5);
+}
+
+.cb-core-secure-action__brand {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--cb-space-2);
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-medium);
+}
+
+.cb-core-secure-action__mark {
+	display: block;
+	width: 28px;
+	height: 28px;
+}
+
+.cb-core-secure-action .cb-core-title {
+	margin-bottom: 0;
+}
+
+.cb-core-secure-action__intro {
+	max-width: 64ch;
+	margin: 0;
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-md);
+	line-height: var(--cb-lh-relaxed);
+}
+
+.cb-core-secure-action__steps {
+	display: flex;
+	flex-direction: column;
+	gap: var(--cb-space-6);
+}
+
+.cb-core-secure-action__step {
+	display: grid;
+	grid-template-columns: 32px minmax(0, 1fr);
+	gap: var(--cb-space-3);
+	align-items: start;
+}
+
+.cb-core-secure-action__step-number {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-pill);
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-semibold);
+	line-height: 1;
+}
+
+.cb-core-secure-action__step-content {
+	min-width: 0;
+}
+
+.cb-core-secure-action__step-title {
+	margin: 2px 0 var(--cb-space-2);
+	color: var(--cb-text-strong);
+	font-size: var(--cb-fs-lg);
+	font-weight: var(--cb-fw-semibold);
+	line-height: var(--cb-lh-normal);
+}
+
+.cb-core-secure-action__step-copy {
+	max-width: 62ch;
+	margin: 0 0 var(--cb-space-3);
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-md);
+	line-height: var(--cb-lh-relaxed);
+}
+
+.cb-core-secure-action__key {
+	display: flex;
+	align-items: center;
+	min-height: var(--cb-control-height);
+	max-width: 100%;
+	padding: var(--cb-space-3) var(--cb-space-4);
+	overflow-wrap: anywhere;
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-sm);
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+	font-family: var(--cb-ff-mono);
+	font-size: var(--cb-fs-md);
+	letter-spacing: 0.04em;
+}
+
+.cb-core-secure-action__form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--cb-space-5);
+	margin: 0;
+}
+
+.cb-core-secure-action__form .cb-core-field {
+	max-width: 520px;
+	margin-bottom: 0;
+}
+
+.cb-core-secure-action__form .cb-core-form-actions {
+	margin-top: var(--cb-space-1);
+}
+
+.cb-core-secure-action__recovery-list {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--cb-space-2);
+	margin: var(--cb-space-5) 0;
+	padding: 0;
+	list-style: none;
+}
+
+.cb-core-secure-action__recovery-list code {
+	display: block;
+	padding: var(--cb-space-3);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-sm);
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+	font-family: var(--cb-ff-mono);
+	font-size: var(--cb-fs-md);
+	text-align: center;
+}
+
+.cb-core-secure-action__recovery-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--cb-space-3);
+}
+
+@media (max-width: 782px) {
+	.cb-core-secure-action {
+		padding-top: var(--cb-space-4);
+	}
+
+	.cb-core-secure-action__step {
+		grid-template-columns: 28px minmax(0, 1fr);
+	}
+
+	.cb-core-secure-action__recovery-list {
+		grid-template-columns: 1fr;
+	}
+}
