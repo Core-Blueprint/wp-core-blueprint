@@ -69,6 +69,7 @@ final class SecureActionScreen {
 			'shell.tokens',
 			'foundation.icons',
 			'foundation.modal',
+			'foundation.clipboard',
 			'shell.layout',
 			'component.cards',
 			'component.notices',
