@@ -134,7 +134,7 @@ final class ProfileController {
 
 		try {
 			$secret = AccountManager::start_enrollment( $user, self::posted_password() );
-			self::render_setup_secret( $secret );
+			self::render_setup_secret( $user, $secret );
 		} catch ( \Throwable $error ) {
 			self::set_notice( (int) $user->ID, 'error', $error->getMessage() );
 			self::redirect_profile();
@@ -333,10 +333,13 @@ final class ProfileController {
 		echo '</div>';
 	}
 
-	private static function render_setup_secret( string $secret ): never {
+	private static function render_setup_secret( WP_User $user, string $secret ): never {
 		self::enqueue_cancel_script();
+		self::enqueue_enrollment_script();
+		$provisioning_uri = Provisioning::uri( $user, $secret );
 
 		ob_start();
+		echo '<div data-cb-two-factor-enrollment>';
 		echo '<p class="cb-core-secure-action__intro">' . esc_html__( 'Complete these steps to protect this account with an authenticator app.', 'core-blueprint' ) . '</p>';
 		echo '<div class="cb-core-secure-action__steps">';
 
@@ -344,8 +347,15 @@ final class ProfileController {
 		echo '<span class="cb-core-secure-action__step-number" aria-hidden="true">1</span>';
 		echo '<div class="cb-core-secure-action__step-content">';
 		echo '<h2 class="cb-core-secure-action__step-title">' . esc_html__( 'Add Core Blueprint to your authenticator app', 'core-blueprint' ) . '</h2>';
-		echo '<p class="cb-core-secure-action__step-copy">' . esc_html__( 'Open your authenticator app, add a new account and enter the setup key below.', 'core-blueprint' ) . '</p>';
+		echo '<p class="cb-core-secure-action__step-copy">' . esc_html__( 'Scan this QR code with your authenticator app.', 'core-blueprint' ) . '</p>';
+		echo '<div class="cb-core-secure-action__qr" data-cb-two-factor-qr data-cb-two-factor-provisioning-uri="' . esc_attr( $provisioning_uri ) . '" data-cb-two-factor-qr-label="' . esc_attr__( 'Authenticator setup QR code', 'core-blueprint' ) . '" hidden></div>';
+		echo '<div class="cb-core-secure-action__manual">';
+		echo '<p class="cb-core-secure-action__manual-copy"><strong>' . esc_html__( "Can't scan the QR code?", 'core-blueprint' ) . '</strong><br>' . esc_html__( 'Enter this setup key manually.', 'core-blueprint' ) . '</p>';
+		echo '<div class="cb-core-secure-action__key-row">';
 		echo '<div class="cb-core-secure-action__key" role="group" aria-label="' . esc_attr__( 'Setup key', 'core-blueprint' ) . '"><code>' . esc_html( $secret ) . '</code></div>';
+		echo '<button type="button" class="button cb-core-button cb-core-button--secondary" data-cb-two-factor-copy-secret="' . esc_attr( $secret ) . '" aria-label="' . esc_attr__( 'Copy setup key', 'core-blueprint' ) . '">' . esc_html__( 'Copy setup key', 'core-blueprint' ) . '</button>';
+		echo '</div>';
+		echo '</div>';
 		echo '</div></section>';
 
 		echo '<form class="cb-core-secure-action__form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
@@ -375,11 +385,12 @@ final class ProfileController {
 		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field owns label escaping; control is static markup.
 		echo '</div></section>';
 
-		echo '<div class="cb-core-form-actions">';
+		echo '<div class="cb-core-form-actions cb-core-secure-action__form-actions">';
 		echo '<button type="submit" class="button button-primary cb-core-button cb-core-button--primary">' . esc_html__( 'Enable two-factor authentication', 'core-blueprint' ) . '</button>';
 		echo self::cancel_button_html( self::FORM_CANCEL, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes every attribute and label.
 		echo '</div>';
 		echo '</form>';
+		echo '</div>';
 		echo '</div>';
 
 		self::render_hidden_cancel_form();
@@ -450,6 +461,15 @@ final class ProfileController {
 			[],
 			CB_CORE_VERSION,
 			true
+		);
+	}
+
+	private static function enqueue_enrollment_script(): void {
+		wp_enqueue_script_module(
+			'@cb-core/two-factor-enrollment',
+			CB_CORE_URL . 'assets/js/features/two-factor-enrollment.js',
+			[],
+			CB_CORE_VERSION
 		);
 	}
 
