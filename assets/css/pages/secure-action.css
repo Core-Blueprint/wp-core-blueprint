@@ -9,6 +9,19 @@
  * @since   1.0.0
  */
 
+/* This endpoint deliberately uses WordPress admin chrome for auth/session
+ * context, but it is not a navigational admin page. Remove the menu rail while
+ * keeping the admin bar and reset WordPress' reserved content offset. */
+body.wp-admin #adminmenumain {
+	display: none;
+}
+
+body.wp-admin #wpcontent,
+body.wp-admin #wpfooter {
+	margin-left: 0;
+	margin-right: 0;
+}
+
 .cb-core-secure-action {
 	width: min(100%, 780px);
 	margin-inline: auto;
