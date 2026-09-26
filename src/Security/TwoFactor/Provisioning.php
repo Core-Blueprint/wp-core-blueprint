@@ -47,7 +47,7 @@ final class Provisioning {
 	}
 
 	private static function account_label( WP_User $user ): string {
-		$site_name = wp_strip_all_tags( (string) get_bloginfo( 'name' ) );
+		$site_name = wp_strip_all_tags( wp_specialchars_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES ) );
 		$site_name = preg_replace( '/\s+/u', ' ', trim( $site_name ) ) ?? '';
 		if ( '' === $site_name ) {
 			$host      = (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST );
