@@ -20,6 +20,12 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 
 	private mixed $original_bypass = false;
 
+	private mixed $original_request_method = null;
+
+	private mixed $original_script_name = null;
+
+	private mixed $original_http_referer = null;
+
 	public function set_up(): void {
 		parent::set_up();
 		$this->original_policy = is_array( Settings::get()[ Policy::SETTINGS_KEY ] ?? null )
@@ -27,6 +33,9 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 			: Policy::default_config();
 		$this->original_pagenow = isset( $GLOBALS['pagenow'] ) ? (string) $GLOBALS['pagenow'] : '';
 		$this->original_bypass = get_option( CB_CORE_BYPASS_OPT, false );
+		$this->original_request_method = $_SERVER['REQUEST_METHOD'] ?? null;
+		$this->original_script_name = $_SERVER['SCRIPT_NAME'] ?? null;
+		$this->original_http_referer = $_SERVER['HTTP_REFERER'] ?? null;
 		delete_option( CB_CORE_BYPASS_OPT );
 		$GLOBALS['pagenow'] = 'wp-login.php';
 		LoginFlow::reset_request_state();
@@ -41,6 +50,17 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 			delete_option( CB_CORE_BYPASS_OPT );
 		} else {
 			update_option( CB_CORE_BYPASS_OPT, $this->original_bypass, false );
+		}
+		foreach ( [
+			'REQUEST_METHOD' => $this->original_request_method,
+			'SCRIPT_NAME'    => $this->original_script_name,
+			'HTTP_REFERER'   => $this->original_http_referer,
+		] as $key => $value ) {
+			if ( null === $value ) {
+				unset( $_SERVER[ $key ] );
+			} else {
+				$_SERVER[ $key ] = $value;
+			}
 		}
 		parent::tear_down();
 	}
@@ -219,7 +239,45 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 		self::assertSame( 'cb_core_two_factor_interactive_required', $blocked_again->get_error_code() );
 	}
 
-	public function test_lf12_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
+	public function test_lf12_frontend_browser_post_is_interactive_and_uses_same_site_referrer_as_default_redirect(): void {
+		$user = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
+		self::assertInstanceOf( WP_User::class, $user );
+		CredentialStore::store_totp_secret( (int) $user->ID, 'JBSWY3DPEHPK3PXP' );
+
+		$GLOBALS['pagenow'] = 'index.php';
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['SCRIPT_NAME'] = '/index.php';
+		$_SERVER['HTTP_REFERER'] = home_url( '/my-account/' );
+
+		self::assertSame( $user, LoginFlow::filter_authenticate( $user ) );
+		self::assertTrue( LoginFlow::is_password_stage_pending( (int) $user->ID ) );
+		self::assertSame( home_url( '/my-account/' ), LoginFlow::request_redirect_target() );
+	}
+
+	public function test_lf13_ajax_login_is_fail_closed_by_default_but_can_be_opted_in_by_a_dedicated_adapter(): void {
+		$user = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
+		self::assertInstanceOf( WP_User::class, $user );
+		CredentialStore::store_totp_secret( (int) $user->ID, 'JBSWY3DPEHPK3PXP' );
+
+		$GLOBALS['pagenow'] = 'admin-ajax.php';
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['SCRIPT_NAME'] = '/wp-admin/admin-ajax.php';
+
+		$blocked = LoginFlow::filter_authenticate( $user );
+		self::assertInstanceOf( WP_Error::class, $blocked );
+		self::assertSame( 'cb_core_two_factor_interactive_required', $blocked->get_error_code() );
+
+		$adapter = static fn ( bool $interactive ): bool => true;
+		add_filter( 'cb_core_two_factor_interactive_login_request', $adapter, 10, 1 );
+		try {
+			self::assertSame( $user, LoginFlow::filter_authenticate( $user ) );
+			self::assertTrue( LoginFlow::is_password_stage_pending( (int) $user->ID ) );
+		} finally {
+			remove_filter( 'cb_core_two_factor_interactive_login_request', $adapter, 10 );
+		}
+	}
+
+	public function test_lf14_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
 		$user = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
 		self::assertInstanceOf( WP_User::class, $user );
 		CredentialStore::store_totp_secret( (int) $user->ID, 'JBSWY3DPEHPK3PXP' );

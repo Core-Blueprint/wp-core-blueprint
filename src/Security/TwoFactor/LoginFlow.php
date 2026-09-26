@@ -146,9 +146,7 @@ final class LoginFlow {
 		}
 
 		$remember = ! empty( $_POST['rememberme'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Password authentication is the authority for this transition.
-		$redirect = isset( $_REQUEST['redirect_to'] ) && is_scalar( $_REQUEST['redirect_to'] )
-			? wp_unslash( (string) $_REQUEST['redirect_to'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Stored only after wp_validate_redirect().
-			: admin_url();
+		$redirect = self::request_redirect_target();
 
 		$challenge = self::finalize_password_stage( $user, $remember, $redirect );
 
@@ -187,6 +185,33 @@ final class LoginFlow {
 			'url'   => self::challenge_url( $token ),
 			'flow'  => $challenge_flow,
 		];
+	}
+
+	/**
+	 * Resolve the post-2FA destination before a frontend wp_signon() caller can
+	 * run its own redirect logic.
+	 *
+	 * wp-login.php keeps WordPress' admin fallback. Frontend browser logins use
+	 * a same-site validated raw referrer so WooCommerce-style same-page login
+	 * forms return to the page that initiated authentication.
+	 *
+	 * @internal
+	 */
+	public static function request_redirect_target(): string {
+		$fallback = self::is_wp_login_request() ? admin_url() : home_url( '/' );
+
+		if ( ! self::is_wp_login_request() ) {
+			$raw_referrer = wp_get_raw_referer();
+			if ( is_string( $raw_referrer ) && '' !== $raw_referrer ) {
+				$fallback = wp_validate_redirect( $raw_referrer, $fallback );
+			}
+		}
+
+		$requested = isset( $_REQUEST['redirect_to'] ) && is_scalar( $_REQUEST['redirect_to'] )
+			? wp_unslash( (string) $_REQUEST['redirect_to'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only redirect hint, validated below.
+			: $fallback;
+
+		return wp_validate_redirect( $requested, $fallback );
 	}
 
 	public static function challenge_url( string $token ): string {
@@ -272,11 +297,73 @@ final class LoginFlow {
 	}
 
 	private static function is_interactive_login_request(): bool {
+		if ( self::is_wp_login_request() ) {
+			return true;
+		}
+
+		if ( self::is_hard_noninteractive_context() ) {
+			return false;
+		}
+
+		$method = isset( $_SERVER['REQUEST_METHOD'] )
+			? strtoupper( (string) wp_unslash( $_SERVER['REQUEST_METHOD'] ) )
+			: '';
+		$script = isset( $_SERVER['SCRIPT_NAME'] )
+			? basename( (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) )
+			: '';
+
+		$is_ajax = wp_doing_ajax() || 'admin-ajax.php' === $script;
+		$interactive = 'POST' === $method && ! $is_ajax;
+
+		/**
+		 * Allow a dedicated frontend adapter to opt a known browser-AJAX login
+		 * into the interactive challenge handoff.
+		 *
+		 * Programmatic REST, XML-RPC, CLI and cron contexts are rejected before
+		 * this filter and cannot be promoted to interactive through it.
+		 *
+		 * @param bool $interactive Default browser-interactive classification.
+		 * @param array{method:string,script:string,doing_ajax:bool} $context
+		 */
+		return (bool) apply_filters(
+			'cb_core_two_factor_interactive_login_request',
+			$interactive,
+			[
+				'method'     => $method,
+				'script'     => $script,
+				'doing_ajax' => $is_ajax,
+			]
+		);
+	}
+
+	private static function is_wp_login_request(): bool {
 		if ( isset( $GLOBALS['pagenow'] ) && 'wp-login.php' === (string) $GLOBALS['pagenow'] ) {
 			return true;
 		}
 
-		$script = isset( $_SERVER['SCRIPT_NAME'] ) ? basename( (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) ) : '';
+		$script = isset( $_SERVER['SCRIPT_NAME'] )
+			? basename( (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) )
+			: '';
+
 		return 'wp-login.php' === $script;
+	}
+
+	private static function is_hard_noninteractive_context(): bool {
+		if (
+			( defined( 'REST_REQUEST' ) && REST_REQUEST )
+			|| ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST )
+			|| ( defined( 'WP_CLI' ) && WP_CLI )
+			|| ( defined( 'DOING_CRON' ) && DOING_CRON )
+		) {
+			return true;
+		}
+
+		$pagenow = isset( $GLOBALS['pagenow'] ) ? basename( (string) $GLOBALS['pagenow'] ) : '';
+		$script = isset( $_SERVER['SCRIPT_NAME'] )
+			? basename( (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) )
+			: '';
+
+		return in_array( $pagenow, [ 'xmlrpc.php', 'wp-cron.php' ], true )
+			|| in_array( $script, [ 'xmlrpc.php', 'wp-cron.php' ], true );
 	}
 }
