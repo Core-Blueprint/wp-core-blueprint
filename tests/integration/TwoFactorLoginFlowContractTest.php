@@ -198,7 +198,28 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 		);
 	}
 
-	public function test_lf11_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
+	public function test_lf11_application_password_authentication_stands_down_without_weakening_normal_noninteractive_auth(): void {
+		$user = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
+		self::assertInstanceOf( WP_User::class, $user );
+		CredentialStore::store_totp_secret( (int) $user->ID, 'JBSWY3DPEHPK3PXP' );
+
+		$GLOBALS['pagenow'] = 'xmlrpc.php';
+
+		$blocked = LoginFlow::filter_authenticate( $user );
+		self::assertInstanceOf( WP_Error::class, $blocked );
+		self::assertSame( 'cb_core_two_factor_interactive_required', $blocked->get_error_code() );
+
+		LoginFlow::mark_application_password_authentication( $user, [ 'uuid' => 'fixture-only' ] );
+		self::assertSame( $user, LoginFlow::filter_authenticate( $user ) );
+		self::assertFalse( LoginFlow::is_password_stage_pending( (int) $user->ID ) );
+
+		LoginFlow::reset_request_state();
+		$blocked_again = LoginFlow::filter_authenticate( $user );
+		self::assertInstanceOf( WP_Error::class, $blocked_again );
+		self::assertSame( 'cb_core_two_factor_interactive_required', $blocked_again->get_error_code() );
+	}
+
+	public function test_lf12_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
 		$user = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
 		self::assertInstanceOf( WP_User::class, $user );
 		CredentialStore::store_totp_secret( (int) $user->ID, 'JBSWY3DPEHPK3PXP' );

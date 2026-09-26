@@ -33,6 +33,9 @@ final class LoginFlow {
 	/** @var array<int,array<string,bool>> */
 	private static array $password_tokens = [];
 
+	/** @var array<int,bool> */
+	private static array $application_password_users = [];
+
 	private static bool $booted = false;
 
 	public static function boot(): void {
@@ -41,6 +44,7 @@ final class LoginFlow {
 		}
 		self::$booted = true;
 
+		add_action( 'application_password_did_authenticate', [ self::class, 'mark_application_password_authentication' ], PHP_INT_MAX, 2 );
 		add_filter( 'authenticate', [ self::class, 'filter_authenticate' ], 31, 3 );
 		add_filter( 'send_auth_cookies', [ self::class, 'filter_send_auth_cookies' ], PHP_INT_MAX, 6 );
 		add_action( 'set_auth_cookie', [ self::class, 'capture_auth_token' ], PHP_INT_MAX, 6 );
@@ -71,6 +75,10 @@ final class LoginFlow {
 		unset( $username, $password );
 
 		if ( ! ( $user instanceof WP_User ) ) {
+			return $user;
+		}
+
+		if ( isset( self::$application_password_users[ (int) $user->ID ] ) ) {
 			return $user;
 		}
 
@@ -218,7 +226,25 @@ final class LoginFlow {
 	public static function reset_request_state(): void {
 		self::$pending = [];
 		self::$password_tokens = [];
+		self::$application_password_users = [];
 		Audit::reset_request_state();
+	}
+
+	/**
+	 * Mark the exact user that WordPress authenticated through an Application Password.
+	 *
+	 * The Application Password hook fires inside WordPress authentication before
+	 * the later Base authenticate filter. Only the user ID is retained for this
+	 * request; application-password material and metadata are deliberately ignored.
+	 *
+	 * @param array<string,mixed> $item
+	 */
+	public static function mark_application_password_authentication( WP_User $user, array $item ): void {
+		unset( $item );
+
+		if ( $user->ID > 0 ) {
+			self::$application_password_users[ (int) $user->ID ] = true;
+		}
 	}
 
 	private static function would_require_base_two_factor_without_failsafe( WP_User $user ): bool {
