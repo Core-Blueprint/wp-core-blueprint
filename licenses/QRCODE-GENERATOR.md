@@ -2,7 +2,8 @@
 
 - Version: 2.0.4
 - Upstream: https://github.com/kazuhikoarase/qrcode-generator
-- Vendored source: `js/dist/qrcode.mjs` from tag `js2.0.4`
+- Upstream source: `js/dist/qrcode.mjs` from tag `js2.0.4`
+- Runtime file: `assets/js/vendor/qrcode-generator-2.0.4.js` for standard WordPress/web-server JavaScript MIME handling
 - Author: Kazuhiko Arase
 - License: MIT
 - Purpose in Core Blueprint Base: local browser-side QR matrix generation for authenticated setup flows.
