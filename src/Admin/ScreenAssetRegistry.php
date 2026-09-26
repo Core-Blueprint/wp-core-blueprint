@@ -224,6 +224,11 @@ final class ScreenAssetRegistry {
 					'page.safeguards-login-shield', 'component.panels', 'component.radio-card', 'component.form-status',
 					'foundation.modal', 'module.login-shield',
 				] );
+			case 'two-factor':
+				return array_merge( $items, [
+					'component.panels', 'component.radio-card',
+					'foundation.modal', 'foundation.toast', 'module.two-factor-policy',
+				] );
 			case 'core-shield':
 				return array_merge( $items, [
 					'page.safeguards-modules', 'page.safeguards-core-shield', 'component.rack-modules', 'component.radio-card',
