@@ -10,6 +10,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Audit {
 
+	public const EVENT_ENROLLMENT_STARTED   = 'security.twofactor.enrollment.started';
 	public const EVENT_ENROLLMENT_COMPLETED = 'security.twofactor.enrollment.completed';
 	public const EVENT_RECOVERY_CODE_USED   = 'security.twofactor.recovery.used';
 	public const EVENT_AUTHENTICATED        = 'security.twofactor.authenticated';
@@ -17,9 +18,17 @@ final class Audit {
 	public const EVENT_MIGRATION_RESET      = 'security.twofactor.migration.reset';
 	public const EVENT_POLICY_CHANGED       = 'security.twofactor.policy.changed';
 	public const EVENT_AUTHENTICATION_RESET = 'security.twofactor.reset';
+	public const EVENT_REMOVED              = 'security.twofactor.removed';
 
 	/** @var array<string,bool> */
 	private static array $bypass_logged = [];
+
+	public static function enrollment_started( int $user_id ): void {
+		if ( $user_id <= 0 ) {
+			return;
+		}
+		AuditLog::log( self::EVENT_ENROLLMENT_STARTED, 'notice', [ 'user_id' => $user_id ] );
+	}
 
 	public static function enrollment_completed( int $user_id ): void {
 		if ( $user_id <= 0 ) {
@@ -117,6 +126,16 @@ final class Audit {
 			'recovery_codes'     => max( 0, (int) ( $stats['recovery_codes'] ?? 0 ) ),
 			'pending_enrollment' => ! empty( $stats['pending_enrollment'] ),
 			'challenges_revoked' => ! empty( $stats['challenges_revoked'] ),
+		] );
+	}
+
+	public static function removed( int $user_id, string $method ): void {
+		if ( $user_id <= 0 || ! in_array( $method, [ 'totp', 'recovery' ], true ) ) {
+			return;
+		}
+		AuditLog::log( self::EVENT_REMOVED, 'warning', [
+			'user_id' => $user_id,
+			'method'  => $method,
 		] );
 	}
 

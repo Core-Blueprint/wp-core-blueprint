@@ -53,6 +53,7 @@ final class EnrollmentStore {
 		];
 
 		self::persist( $user_id, $state );
+		Audit::enrollment_started( $user_id );
 		return $secret;
 	}
 

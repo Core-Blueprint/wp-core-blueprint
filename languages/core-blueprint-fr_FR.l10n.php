@@ -79,6 +79,15 @@ $catalog['messages'] = array_replace(
         'Base two-factor authentication reset completed.' => 'L’authentification à deux facteurs de Base a été réinitialisée.',
         'No Base two-factor authentication state required a reset.' => 'Aucun état d’authentification à deux facteurs de Base ne nécessitait de réinitialisation.',
         'Two-factor: authentication reset' => 'Authentification à deux facteurs : authentification réinitialisée',
+        'An external two-factor provider already manages this account.' => 'Un fournisseur externe d’authentification à deux facteurs gère déjà ce compte.',
+        'Base two-factor authentication is already active for this account.' => 'L’authentification à deux facteurs de Base est déjà active pour ce compte.',
+        'Base two-factor authentication is not active for this account.' => 'L’authentification à deux facteurs de Base n’est pas active pour ce compte.',
+        'Base two-factor authentication cannot be removed while enforcement is required for this account.' => 'L’authentification à deux facteurs de Base ne peut pas être supprimée tant qu’elle est obligatoire pour ce compte.',
+        'Password confirmation failed. Two-factor authentication was not removed.' => 'La confirmation du mot de passe a échoué. L’authentification à deux facteurs n’a pas été supprimée.',
+        'Two-factor verification failed. Two-factor authentication was not removed.' => 'La vérification à deux facteurs a échoué. L’authentification à deux facteurs n’a pas été supprimée.',
+        'Base two-factor self-service is available only for your own privileged account.' => 'La gestion autonome de l’authentification à deux facteurs de Base est disponible uniquement pour votre propre compte privilégié.',
+        'Two-factor: enrollment started' => 'Authentification à deux facteurs : configuration démarrée',
+        'Two-factor: authentication removed' => 'Authentification à deux facteurs : authentification supprimée',
     ]
 );
 

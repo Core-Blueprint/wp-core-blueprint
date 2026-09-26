@@ -29,6 +29,7 @@ final class Bootstrap {
 	 *  @return array<string,string>
 	 */
 	public static function register_event_labels( array $labels ): array {
+		$labels[ Audit::EVENT_ENROLLMENT_STARTED ]   = __( 'Two-factor: enrollment started', 'core-blueprint' );
 		$labels[ Audit::EVENT_ENROLLMENT_COMPLETED ] = __( 'Two-factor: enrollment completed', 'core-blueprint' );
 		$labels[ Audit::EVENT_RECOVERY_CODE_USED ]   = __( 'Two-factor: recovery code used', 'core-blueprint' );
 		$labels[ Audit::EVENT_AUTHENTICATED ]        = __( 'Two-factor: authentication completed', 'core-blueprint' );
@@ -36,6 +37,7 @@ final class Bootstrap {
 		$labels[ Audit::EVENT_MIGRATION_RESET ]      = __( 'Two-factor: imported authentication reset', 'core-blueprint' );
 		$labels[ Audit::EVENT_POLICY_CHANGED ]       = __( 'Two-factor: policy changed', 'core-blueprint' );
 		$labels[ Audit::EVENT_AUTHENTICATION_RESET ] = __( 'Two-factor: authentication reset', 'core-blueprint' );
+		$labels[ Audit::EVENT_REMOVED ]              = __( 'Two-factor: authentication removed', 'core-blueprint' );
 		return $labels;
 	}
 }

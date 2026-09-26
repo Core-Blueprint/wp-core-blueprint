@@ -79,6 +79,15 @@ $catalog['messages'] = array_replace(
         'Base two-factor authentication reset completed.' => 'L’autenticazione a due fattori di Base è stata ripristinata.',
         'No Base two-factor authentication state required a reset.' => 'Nessuno stato di autenticazione a due fattori di Base richiedeva un ripristino.',
         'Two-factor: authentication reset' => 'Autenticazione a due fattori: autenticazione ripristinata',
+        'An external two-factor provider already manages this account.' => 'Un provider esterno di autenticazione a due fattori gestisce già questo account.',
+        'Base two-factor authentication is already active for this account.' => 'L’autenticazione a due fattori di Base è già attiva per questo account.',
+        'Base two-factor authentication is not active for this account.' => 'L’autenticazione a due fattori di Base non è attiva per questo account.',
+        'Base two-factor authentication cannot be removed while enforcement is required for this account.' => 'L’autenticazione a due fattori di Base non può essere rimossa finché è obbligatoria per questo account.',
+        'Password confirmation failed. Two-factor authentication was not removed.' => 'La conferma della password non è riuscita. L’autenticazione a due fattori non è stata rimossa.',
+        'Two-factor verification failed. Two-factor authentication was not removed.' => 'La verifica a due fattori non è riuscita. L’autenticazione a due fattori non è stata rimossa.',
+        'Base two-factor self-service is available only for your own privileged account.' => 'La gestione autonoma dell’autenticazione a due fattori di Base è disponibile solo per il proprio account privilegiato.',
+        'Two-factor: enrollment started' => 'Autenticazione a due fattori: configurazione avviata',
+        'Two-factor: authentication removed' => 'Autenticazione a due fattori: autenticazione rimossa',
     ]
 );
 

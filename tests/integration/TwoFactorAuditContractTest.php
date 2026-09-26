@@ -12,6 +12,7 @@ final class CB_Base_Two_Factor_Audit_Contract_Test extends WP_UnitTestCase {
 
 		self::assertSame(
 			[
+				Audit::EVENT_ENROLLMENT_STARTED,
 				Audit::EVENT_ENROLLMENT_COMPLETED,
 				Audit::EVENT_RECOVERY_CODE_USED,
 				Audit::EVENT_AUTHENTICATED,
@@ -19,6 +20,7 @@ final class CB_Base_Two_Factor_Audit_Contract_Test extends WP_UnitTestCase {
 				Audit::EVENT_MIGRATION_RESET,
 				Audit::EVENT_POLICY_CHANGED,
 				Audit::EVENT_AUTHENTICATION_RESET,
+				Audit::EVENT_REMOVED,
 			],
 			array_keys( $labels )
 		);
@@ -31,6 +33,7 @@ final class CB_Base_Two_Factor_Audit_Contract_Test extends WP_UnitTestCase {
 
 	public function test_ta2_security_event_storage_keys_fit_the_governance_boundary(): void {
 		foreach ( [
+			Audit::EVENT_ENROLLMENT_STARTED,
 			Audit::EVENT_ENROLLMENT_COMPLETED,
 			Audit::EVENT_RECOVERY_CODE_USED,
 			Audit::EVENT_AUTHENTICATED,
@@ -38,6 +41,7 @@ final class CB_Base_Two_Factor_Audit_Contract_Test extends WP_UnitTestCase {
 			Audit::EVENT_MIGRATION_RESET,
 			Audit::EVENT_POLICY_CHANGED,
 			Audit::EVENT_AUTHENTICATION_RESET,
+			Audit::EVENT_REMOVED,
 		] as $id ) {
 			$key = EventRegistry::storage_key( $id );
 			self::assertIsString( $key );

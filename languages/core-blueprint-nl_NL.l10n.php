@@ -79,6 +79,15 @@ $catalog['messages'] = array_replace(
         'Base two-factor authentication reset completed.' => 'Base-tweefactorauthenticatie is gereset.',
         'No Base two-factor authentication state required a reset.' => 'Er was geen Base-tweefactorauthenticatiestatus die moest worden gereset.',
         'Two-factor: authentication reset' => 'Tweefactorauthenticatie: authenticatie gereset',
+        'An external two-factor provider already manages this account.' => 'Een externe provider voor tweefactorauthenticatie beheert dit account al.',
+        'Base two-factor authentication is already active for this account.' => 'Base-tweefactorauthenticatie is al actief voor dit account.',
+        'Base two-factor authentication is not active for this account.' => 'Base-tweefactorauthenticatie is niet actief voor dit account.',
+        'Base two-factor authentication cannot be removed while enforcement is required for this account.' => 'Base-tweefactorauthenticatie kan niet worden verwijderd zolang deze voor dit account verplicht is.',
+        'Password confirmation failed. Two-factor authentication was not removed.' => 'De wachtwoordbevestiging is mislukt. Tweefactorauthenticatie is niet verwijderd.',
+        'Two-factor verification failed. Two-factor authentication was not removed.' => 'De tweefactorverificatie is mislukt. Tweefactorauthenticatie is niet verwijderd.',
+        'Base two-factor self-service is available only for your own privileged account.' => 'Base-tweefactorzelfservice is alleen beschikbaar voor je eigen geprivilegieerde account.',
+        'Two-factor: enrollment started' => 'Tweefactorauthenticatie: configuratie gestart',
+        'Two-factor: authentication removed' => 'Tweefactorauthenticatie: authenticatie verwijderd',
     ]
 );
 
