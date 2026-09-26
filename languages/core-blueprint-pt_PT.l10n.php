@@ -67,6 +67,12 @@ $catalog['messages'] = array_replace(
         'Two-factor: Failsafe bypass used' => 'Autenticação de dois fatores: bypass Failsafe utilizado',
         'Two-factor: imported authentication reset' => 'Autenticação de dois fatores: autenticação importada reposta',
         'Two-factor: policy changed' => 'Autenticação de dois fatores: política alterada',
+        'Invalid two-factor policy mode.' => 'Modo de política de autenticação de dois fatores inválido.',
+        'Two-factor policy changes require a trusted CB Operator.' => 'As alterações à política de autenticação de dois fatores requerem um CB Operator de confiança.',
+        'Two-factor enforcement cannot be enabled while Failsafe bypass is active.' => 'A autenticação de dois fatores obrigatória não pode ser ativada enquanto o bypass Failsafe estiver ativo.',
+        'Two-factor enforcement requires the acting CB Operator to be enrolled in Base two-factor authentication.' => 'A autenticação de dois fatores obrigatória requer que o CB Operator que efetua a alteração esteja inscrito na autenticação de dois fatores do Base.',
+        'Could not persist the two-factor policy.' => 'Não foi possível guardar a política de autenticação de dois fatores.',
+        'Two-factor policy changed during rollback and was not overwritten.' => 'A política de autenticação de dois fatores foi alterada durante o rollback e não foi substituída.',
     ]
 );
 
