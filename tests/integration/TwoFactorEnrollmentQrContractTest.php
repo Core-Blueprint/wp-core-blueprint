@@ -56,6 +56,8 @@ final class CB_Base_Two_Factor_Enrollment_QR_Contract_Test extends WP_UnitTestCa
 		self::assertStringContainsString( 'data-cb-two-factor-provisioning-uri=', $controller );
 		self::assertStringContainsString( 'data-cb-two-factor-copy-secret=', $controller );
 		self::assertStringContainsString( '@cb-core/two-factor-enrollment', $controller );
+		self::assertStringContainsString( 'self::enrollment_asset_version()', $controller );
+		self::assertStringContainsString( "hash_file( 'sha256', $path )", $controller );
 		self::assertStringContainsString( "'foundation.clipboard'", $screen );
 		self::assertStringContainsString( 'background: #fff;', $css );
 		self::assertStringContainsString( 'margin-left: var(--cb-secure-action-step-offset);', $css );
