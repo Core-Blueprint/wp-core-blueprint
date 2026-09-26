@@ -105,7 +105,25 @@ final class CB_Base_Two_Factor_Policy_Storage_Contract_Test extends WP_UnitTestC
 		self::assertSame( RecoveryCodes::CODE_COUNT - 1, RecoveryCodes::remaining( $user_id ) );
 	}
 
-	public function test_tf5_authentication_material_never_enters_base_settings(): void {
+	public function test_tf5_stale_recovery_snapshot_cannot_restore_or_double_consume_a_code(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$codes = RecoveryCodes::generate_for_user( $user_id );
+		$stale = CredentialStore::recovery_hashes( $user_id );
+
+		self::assertCount( RecoveryCodes::CODE_COUNT, $stale );
+		self::assertTrue( RecoveryCodes::consume( $user_id, $codes[0] ) );
+		$current = CredentialStore::recovery_hashes( $user_id );
+		self::assertCount( RecoveryCodes::CODE_COUNT - 1, $current );
+
+		self::assertFalse(
+			CredentialStore::claim_recovery_hashes( $user_id, $stale, array_slice( $stale, 1 ) ),
+			'A stale recovery snapshot was able to overwrite newer one-time-code state.'
+		);
+		self::assertSame( $current, CredentialStore::recovery_hashes( $user_id ) );
+		self::assertFalse( RecoveryCodes::consume( $user_id, $codes[0] ) );
+	}
+
+	public function test_tf6_authentication_material_never_enters_base_settings(): void {
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		$secret = 'JBSWY3DPEHPK3PXP';
 
@@ -119,7 +137,7 @@ final class CB_Base_Two_Factor_Policy_Storage_Contract_Test extends WP_UnitTestC
 		}
 	}
 
-	public function test_tf6_clear_removes_all_user_bound_authentication_material_through_canonical_replay_authority(): void {
+	public function test_tf7_clear_removes_all_user_bound_authentication_material_through_canonical_replay_authority(): void {
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		CredentialStore::store_totp_secret( $user_id, 'JBSWY3DPEHPK3PXP' );
 		RecoveryCodes::generate_for_user( $user_id );

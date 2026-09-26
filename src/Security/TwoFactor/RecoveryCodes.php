@@ -43,16 +43,26 @@ final class RecoveryCodes {
 			return false;
 		}
 
-		$hashes = CredentialStore::recovery_hashes( $user_id );
-		foreach ( $hashes as $index => $hash ) {
-			if ( ! wp_check_password( $candidate, $hash ) ) {
-				continue;
+		for ( $attempt = 0; $attempt < 3; $attempt++ ) {
+			$hashes = CredentialStore::recovery_hashes( $user_id );
+			foreach ( $hashes as $index => $hash ) {
+				if ( ! wp_check_password( $candidate, $hash ) ) {
+					continue;
+				}
+
+				$next = $hashes;
+				unset( $next[ $index ] );
+				$next = array_values( $next );
+
+				if ( ! CredentialStore::claim_recovery_hashes( $user_id, $hashes, $next ) ) {
+					continue 2;
+				}
+
+				Audit::recovery_code_used( $user_id, count( $next ) );
+				return true;
 			}
 
-			unset( $hashes[ $index ] );
-			CredentialStore::store_recovery_hashes( $user_id, array_values( $hashes ) );
-			Audit::recovery_code_used( $user_id, count( $hashes ) );
-			return true;
+			return false;
 		}
 
 		return false;

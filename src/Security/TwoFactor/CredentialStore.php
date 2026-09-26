@@ -128,11 +128,42 @@ final class CredentialStore {
 		if ( $user_id <= 0 ) {
 			throw new InvalidArgumentException( 'Invalid two-factor user.' );
 		}
-		$hashes = array_values( array_filter(
-			array_map( 'strval', $hashes ),
-			static fn( string $hash ): bool => '' !== $hash
-		) );
+		$hashes = self::normalize_recovery_hashes( $hashes );
 		self::persist_meta( $user_id, self::META_RECOVERY, $hashes );
+	}
+
+	/**
+	 * Atomically replace the exact recovery-hash snapshot previously read.
+	 *
+	 * This is the one-time recovery-code replay boundary: concurrent requests
+	 * may both verify a candidate against the same snapshot, but only one may
+	 * replace that exact stored value.
+	 *
+	 * @param string[] $previous
+	 * @param string[] $next
+	 */
+	public static function claim_recovery_hashes( int $user_id, array $previous, array $next ): bool {
+		if ( $user_id <= 0 || ! metadata_exists( 'user', $user_id, self::META_RECOVERY ) ) {
+			return false;
+		}
+
+		$previous = self::normalize_recovery_hashes( $previous );
+		$next     = self::normalize_recovery_hashes( $next );
+		if ( $previous === $next || self::recovery_hashes( $user_id ) !== $previous ) {
+			return false;
+		}
+
+		$updated = update_user_meta(
+			$user_id,
+			self::META_RECOVERY,
+			$next,
+			$previous
+		);
+		if ( false === $updated ) {
+			return false;
+		}
+
+		return self::recovery_hashes( $user_id ) === $next;
 	}
 
 	public static function clear( int $user_id ): void {
@@ -144,6 +175,16 @@ final class CredentialStore {
 		] as $key ) {
 			delete_user_meta( $user_id, $key );
 		}
+	}
+
+	/** @param string[] $hashes
+	 *  @return string[]
+	 */
+	private static function normalize_recovery_hashes( array $hashes ): array {
+		return array_values( array_filter(
+			array_map( 'strval', $hashes ),
+			static fn( string $hash ): bool => '' !== $hash
+		) );
 	}
 
 	private static function normalize_secret( string $secret ): string {
