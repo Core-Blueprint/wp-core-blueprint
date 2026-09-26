@@ -9,7 +9,7 @@
  * @package CB\Core
  */
 
-import qrcode from '../vendor/qrcode-generator-2.0.4.mjs';
+import qrcode from '../vendor/qrcode-generator-2.0.4.js';
 import clipboard from '../core/clipboard.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
