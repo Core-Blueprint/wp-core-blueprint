@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use CB\Core\Security\TwoFactor\Provisioning;
-use InvalidArgumentException;
 
 final class CB_Base_Two_Factor_Provisioning_Contract_Test extends WP_UnitTestCase {
 
@@ -45,7 +44,7 @@ final class CB_Base_Two_Factor_Provisioning_Contract_Test extends WP_UnitTestCas
 		$user = get_userdata( $user_id );
 		self::assertInstanceOf( WP_User::class, $user );
 
-		$this->expectException( InvalidArgumentException::class );
+		$this->expectException( \InvalidArgumentException::class );
 		Provisioning::uri( $user, 'not a base32 secret!' );
 	}
 
