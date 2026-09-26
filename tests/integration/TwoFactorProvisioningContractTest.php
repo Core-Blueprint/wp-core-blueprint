@@ -37,6 +37,7 @@ final class CB_Base_Two_Factor_Provisioning_Contract_Test extends WP_UnitTestCas
 			. '&period=30',
 			$uri
 		);
+		self::assertStringNotContainsString( '%26amp%3B', $uri );
 	}
 
 	public function test_tp2_uri_rejects_invalid_secret_material(): void {
