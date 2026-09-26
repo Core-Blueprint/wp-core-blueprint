@@ -469,8 +469,26 @@ final class ProfileController {
 			'@cb-core/two-factor-enrollment',
 			CB_CORE_URL . 'assets/js/features/two-factor-enrollment.js',
 			[],
-			CB_CORE_VERSION
+			self::enrollment_asset_version()
 		);
+	}
+
+	/**
+	 * Bust stale browser/CDN copies while release candidates intentionally keep
+	 * the same public plugin version during iterative runtime validation.
+	 */
+	private static function enrollment_asset_version(): string {
+		$path = CB_CORE_DIR . 'assets/js/features/two-factor-enrollment.js';
+		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
+			return CB_CORE_VERSION;
+		}
+
+		$hash = hash_file( 'sha256', $path );
+		if ( ! is_string( $hash ) || '' === $hash ) {
+			return CB_CORE_VERSION;
+		}
+
+		return CB_CORE_VERSION . '-' . substr( $hash, 0, 12 );
 	}
 
 	private static function hidden_action( string $action ): void {
