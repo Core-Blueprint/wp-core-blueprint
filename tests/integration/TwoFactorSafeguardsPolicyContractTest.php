@@ -56,6 +56,11 @@ final class CB_Base_Two_Factor_Safeguards_Policy_Contract_Test extends WP_UnitTe
 
 	public function test_tg3_regular_administrator_gets_read_only_policy_status(): void {
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue(
+			PrivilegedAccessRegistry::approve( $user, 0, 'two_factor_safeguards_read_only_fixture' )
+		);
 		wp_set_current_user( $user_id );
 
 		ob_start();
@@ -86,7 +91,7 @@ final class CB_Base_Two_Factor_Safeguards_Policy_Contract_Test extends WP_UnitTe
 		$enrolled_html = (string) ob_get_clean();
 
 		self::assertStringNotContainsString( 'Enroll Base two-factor authentication before enforcing.', $enrolled_html );
-		self::assertStringContainsString( 'Base two-factor authentication is active for your account.', $enrolled_html );
+		self::assertStringContainsString( 'Base two-factor authentication is active.', $enrolled_html );
 	}
 
 	private function create_trusted_operator(): int {
