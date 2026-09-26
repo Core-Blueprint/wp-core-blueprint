@@ -204,6 +204,16 @@ final class Registry {
 				'description' => 'Trusted server-side recovery for an Operator approval state.',
 			],
 			[
+				'name'        => 'two-factor status',
+				'class'       => Commands\TwoFactor\Status::class,
+				'description' => 'Inspect Base-owned two-factor state for one user.',
+			],
+			[
+				'name'        => 'two-factor reset',
+				'class'       => Commands\TwoFactor\Reset::class,
+				'description' => 'Trusted server-side reset of Base-owned two-factor state.',
+			],
+			[
 				'name'        => 'permissions status',
 				'class'       => Commands\Permissions\Status::class,
 				'description' => 'Print permissions configuration.',

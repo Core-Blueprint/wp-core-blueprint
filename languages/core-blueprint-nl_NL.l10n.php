@@ -73,6 +73,12 @@ $catalog['messages'] = array_replace(
         'Two-factor enforcement requires the acting CB Operator to be enrolled in Base two-factor authentication.' => 'Voor verplichte tweefactorauthenticatie moet de uitvoerende CB Operator zijn aangemeld voor tweefactorauthenticatie van Base.',
         'Could not persist the two-factor policy.' => 'Het beleid voor tweefactorauthenticatie kon niet worden opgeslagen.',
         'Two-factor policy changed during rollback and was not overwritten.' => 'Het beleid voor tweefactorauthenticatie is tijdens de rollback gewijzigd en is niet overschreven.',
+        'Base two-factor enrollment is required for this user.' => 'Base-tweefactorauthenticatie is vereist voor deze gebruiker.',
+        'Two-factor reset is available only through trusted server-side WP-CLI.' => 'Het resetten van tweefactorauthenticatie is alleen beschikbaar via vertrouwde WP-CLI aan de serverzijde.',
+        'Base two-factor authentication reset failed.' => 'Het resetten van Base-tweefactorauthenticatie is mislukt.',
+        'Base two-factor authentication reset completed.' => 'Base-tweefactorauthenticatie is gereset.',
+        'No Base two-factor authentication state required a reset.' => 'Er was geen Base-tweefactorauthenticatiestatus die moest worden gereset.',
+        'Two-factor: authentication reset' => 'Tweefactorauthenticatie: authenticatie gereset',
     ]
 );
 

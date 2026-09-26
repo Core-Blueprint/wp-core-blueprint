@@ -73,6 +73,12 @@ $catalog['messages'] = array_replace(
         'Two-factor enforcement requires the acting CB Operator to be enrolled in Base two-factor authentication.' => 'Für die verpflichtende Zwei-Faktor-Authentifizierung muss der ausführende CB Operator für die Base-Zwei-Faktor-Authentifizierung registriert sein.',
         'Could not persist the two-factor policy.' => 'Die Zwei-Faktor-Richtlinie konnte nicht gespeichert werden.',
         'Two-factor policy changed during rollback and was not overwritten.' => 'Die Zwei-Faktor-Richtlinie wurde während des Rollbacks geändert und nicht überschrieben.',
+        'Base two-factor enrollment is required for this user.' => 'Für diesen Benutzer ist die Base-Zwei-Faktor-Registrierung erforderlich.',
+        'Two-factor reset is available only through trusted server-side WP-CLI.' => 'Das Zurücksetzen der Zwei-Faktor-Authentifizierung ist nur über vertrauenswürdiges serverseitiges WP-CLI verfügbar.',
+        'Base two-factor authentication reset failed.' => 'Das Zurücksetzen der Base-Zwei-Faktor-Authentifizierung ist fehlgeschlagen.',
+        'Base two-factor authentication reset completed.' => 'Die Base-Zwei-Faktor-Authentifizierung wurde zurückgesetzt.',
+        'No Base two-factor authentication state required a reset.' => 'Es war kein Base-Zwei-Faktor-Authentifizierungsstatus vorhanden, der zurückgesetzt werden musste.',
+        'Two-factor: authentication reset' => 'Zwei-Faktor-Authentifizierung: Authentifizierung zurückgesetzt',
     ]
 );
 

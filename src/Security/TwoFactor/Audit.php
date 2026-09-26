@@ -16,6 +16,7 @@ final class Audit {
 	public const EVENT_BYPASS_USED          = 'security.twofactor.bypass.used';
 	public const EVENT_MIGRATION_RESET      = 'security.twofactor.migration.reset';
 	public const EVENT_POLICY_CHANGED       = 'security.twofactor.policy.changed';
+	public const EVENT_AUTHENTICATION_RESET = 'security.twofactor.reset';
 
 	/** @var array<string,bool> */
 	private static array $bypass_logged = [];
@@ -89,6 +90,33 @@ final class Audit {
 			'before'  => $before,
 			'after'   => $after,
 			'source'  => sanitize_key( $source ),
+		] );
+	}
+
+	/**
+	 * @param array{
+	 *   changed:bool,
+	 *   was_enrolled:bool,
+	 *   credential_records:int,
+	 *   recovery_codes:int,
+	 *   pending_enrollment:bool,
+	 *   challenges_revoked:bool
+	 * } $stats
+	 */
+	public static function authentication_reset( int $user_id, string $source, array $stats ): void {
+		if ( $user_id <= 0 ) {
+			return;
+		}
+
+		AuditLog::log( self::EVENT_AUTHENTICATION_RESET, 'critical', [
+			'user_id'            => $user_id,
+			'source'             => sanitize_key( $source ),
+			'changed'            => ! empty( $stats['changed'] ),
+			'was_enrolled'       => ! empty( $stats['was_enrolled'] ),
+			'credential_records' => max( 0, (int) ( $stats['credential_records'] ?? 0 ) ),
+			'recovery_codes'     => max( 0, (int) ( $stats['recovery_codes'] ?? 0 ) ),
+			'pending_enrollment' => ! empty( $stats['pending_enrollment'] ),
+			'challenges_revoked' => ! empty( $stats['challenges_revoked'] ),
 		] );
 	}
 
