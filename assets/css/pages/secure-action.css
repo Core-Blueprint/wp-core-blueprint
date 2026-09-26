@@ -23,6 +23,7 @@ body.wp-admin #wpfooter {
 }
 
 .cb-core-secure-action {
+	--cb-secure-action-step-offset: calc(32px + var(--cb-space-3));
 	width: min(100%, 780px);
 	margin-inline: auto;
 	padding-top: var(--cb-space-6);
@@ -115,6 +116,51 @@ body.wp-admin #wpfooter {
 	line-height: var(--cb-lh-relaxed);
 }
 
+.cb-core-secure-action__qr {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 100%;
+	margin: 0 0 var(--cb-space-4);
+	padding: var(--cb-space-3);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-sm);
+	background: #fff;
+}
+
+.cb-core-secure-action__qr[hidden] {
+	display: none;
+}
+
+.cb-core-secure-action__qr-svg {
+	display: block;
+	width: min(220px, 100%);
+	height: auto;
+}
+
+.cb-core-secure-action__manual {
+	max-width: 620px;
+}
+
+.cb-core-secure-action__manual-copy {
+	margin: 0 0 var(--cb-space-2);
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-md);
+	line-height: var(--cb-lh-relaxed);
+}
+
+.cb-core-secure-action__manual-copy strong {
+	color: var(--cb-text-strong);
+	font-weight: var(--cb-fw-semibold);
+}
+
+.cb-core-secure-action__key-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: var(--cb-space-2);
+	align-items: stretch;
+}
+
 .cb-core-secure-action__key {
 	display: flex;
 	align-items: center;
@@ -147,6 +193,10 @@ body.wp-admin #wpfooter {
 	margin-top: var(--cb-space-1);
 }
 
+.cb-core-secure-action__form-actions {
+	margin-left: var(--cb-secure-action-step-offset);
+}
+
 .cb-core-secure-action__recovery-list {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -177,11 +227,20 @@ body.wp-admin #wpfooter {
 
 @media (max-width: 782px) {
 	.cb-core-secure-action {
+		--cb-secure-action-step-offset: calc(28px + var(--cb-space-3));
 		padding-top: var(--cb-space-4);
 	}
 
 	.cb-core-secure-action__step {
 		grid-template-columns: 28px minmax(0, 1fr);
+	}
+
+	.cb-core-secure-action__key-row {
+		grid-template-columns: 1fr;
+	}
+
+	.cb-core-secure-action__key-row .cb-core-button {
+		justify-self: start;
 	}
 
 	.cb-core-secure-action__recovery-list {
