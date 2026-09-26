@@ -95,9 +95,12 @@ final class CB_Base_User_Profile_Section_Registry_Contract_Test extends WP_UnitT
 		}
 	}
 
-	public function test_ups3_profile_screen_loads_only_wp_native_form_composition(): void {
+	public function test_ups3_profile_screen_loads_wp_native_form_composition_without_adding_core_tokens(): void {
+		$tokens_before = wp_style_is( 'cb-core-css-tokens', 'enqueued' );
+
 		UserProfileSectionRegistry::enqueue_assets( 'profile.php' );
+
 		self::assertTrue( wp_style_is( 'cb-core-css-form-composition-native', 'enqueued' ) );
-		self::assertFalse( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+		self::assertSame( $tokens_before, wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
 	}
 }
