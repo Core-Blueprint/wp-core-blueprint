@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class AccountManager {
 
-	public static function start_enrollment( WP_User $user ): string {
+	public static function start_enrollment( WP_User $user, string $password ): string {
 		self::assert_self_privileged_user( $user );
 		if ( ProviderDetector::external_provider_owns_user( $user ) ) {
 			throw new RuntimeException( __( 'An external two-factor provider already manages this account.', 'core-blueprint' ) );
@@ -24,15 +24,26 @@ final class AccountManager {
 		if ( CredentialStore::is_enrolled( (int) $user->ID ) ) {
 			throw new RuntimeException( __( 'Base two-factor authentication is already active for this account.', 'core-blueprint' ) );
 		}
+		self::assert_current_password(
+			$user,
+			$password,
+			__( 'Password confirmation failed. Two-factor setup was not changed.', 'core-blueprint' )
+		);
 		return EnrollmentStore::start( (int) $user->ID );
 	}
 
 	/** @return string[] */
-	public static function confirm_enrollment( WP_User $user, string $code ): array {
+	public static function confirm_enrollment( WP_User $user, string $password, string $code ): array {
 		self::assert_self_privileged_user( $user );
 		if ( ProviderDetector::external_provider_owns_user( $user ) ) {
 			throw new RuntimeException( __( 'An external two-factor provider already manages this account.', 'core-blueprint' ) );
 		}
+
+		self::assert_current_password(
+			$user,
+			$password,
+			__( 'Password confirmation failed. Two-factor setup was not changed.', 'core-blueprint' )
+		);
 
 		$codes = EnrollmentStore::confirm( (int) $user->ID, $code );
 		if ( ! is_array( $codes ) ) {
@@ -59,12 +70,11 @@ final class AccountManager {
 			throw new RuntimeException( __( 'Base two-factor authentication cannot be removed while enforcement is required for this account.', 'core-blueprint' ) );
 		}
 
-		if ( '' === $password || ! wp_check_password( $password, (string) $user->user_pass, $user_id ) ) {
-			AuditLog::log( 'security.password_reconfirm_failed', 'warning', [
-				'user_login' => (string) $user->user_login,
-			] );
-			throw new RuntimeException( __( 'Password confirmation failed. Two-factor authentication was not removed.', 'core-blueprint' ) );
-		}
+		self::assert_current_password(
+			$user,
+			$password,
+			__( 'Password confirmation failed. Two-factor authentication was not removed.', 'core-blueprint' )
+		);
 
 		$method = '';
 		if ( Authenticator::verify_totp( $user_id, $factor ) ) {
@@ -79,6 +89,17 @@ final class AccountManager {
 		$stats = RecoveryManager::reset_user( $user, 'profile_remove' );
 		Audit::removed( $user_id, $method );
 		return $stats;
+	}
+
+	private static function assert_current_password( WP_User $user, string $password, string $error_message ): void {
+		if ( '' !== $password && wp_check_password( $password, (string) $user->user_pass, (int) $user->ID ) ) {
+			return;
+		}
+
+		AuditLog::log( 'security.password_reconfirm_failed', 'warning', [
+			'user_login' => (string) $user->user_login,
+		] );
+		throw new RuntimeException( $error_message );
 	}
 
 	private static function assert_self_privileged_user( WP_User $user ): void {

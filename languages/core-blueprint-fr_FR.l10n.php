@@ -88,6 +88,7 @@ $catalog['messages'] = array_replace(
         'Base two-factor self-service is available only for your own privileged account.' => 'La gestion autonome de l’authentification à deux facteurs de Base est disponible uniquement pour votre propre compte privilégié.',
         'Two-factor: enrollment started' => 'Authentification à deux facteurs : configuration démarrée',
         'Two-factor: authentication removed' => 'Authentification à deux facteurs : authentification supprimée',
+        'Password confirmation failed. Two-factor setup was not changed.' => 'La confirmation du mot de passe a échoué. La configuration de l’authentification à deux facteurs n’a pas été modifiée.',
     ]
 );
 

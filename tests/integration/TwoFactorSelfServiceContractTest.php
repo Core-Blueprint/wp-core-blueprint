@@ -43,11 +43,11 @@ final class CB_Base_Two_Factor_Self_Service_Contract_Test extends WP_UnitTestCas
 		self::assertInstanceOf( WP_User::class, $other );
 
 		wp_set_current_user( $admin_id );
-		$secret = AccountManager::start_enrollment( $admin );
+		$secret = AccountManager::start_enrollment( $admin, 'correct-password' );
 		self::assertMatchesRegularExpression( '/^[A-Z2-7]{32}$/', $secret );
 
 		try {
-			AccountManager::start_enrollment( $other );
+			AccountManager::start_enrollment( $other, 'irrelevant' );
 			self::fail( 'User was allowed to start enrollment for another privileged identity.' );
 		} catch ( RuntimeException ) {
 			self::assertNull( EnrollmentStore::pending_secret( $other_id ) );
@@ -59,17 +59,44 @@ final class CB_Base_Two_Factor_Self_Service_Contract_Test extends WP_UnitTestCas
 		wp_set_current_user( $subscriber_id );
 
 		$this->expectException( RuntimeException::class );
-		AccountManager::start_enrollment( $subscriber );
+		AccountManager::start_enrollment( $subscriber, 'irrelevant' );
 	}
 
 	public function test_ts2_self_service_confirm_returns_recovery_codes_once(): void {
-		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$user_id = self::factory()->user->create( [
+			'role'      => 'administrator',
+			'user_pass' => 'correct-password',
+		] );
 		$user = get_userdata( $user_id );
 		self::assertInstanceOf( WP_User::class, $user );
 		wp_set_current_user( $user_id );
 
-		$secret = AccountManager::start_enrollment( $user );
-		$codes = AccountManager::confirm_enrollment( $user, Totp::code( $secret, time() ) );
+		try {
+			AccountManager::start_enrollment( $user, 'wrong-password' );
+			self::fail( 'Wrong password started Base 2FA enrollment.' );
+		} catch ( RuntimeException ) {
+			self::assertNull( EnrollmentStore::pending_secret( $user_id ) );
+		}
+
+		$secret = AccountManager::start_enrollment( $user, 'correct-password' );
+
+		try {
+			AccountManager::confirm_enrollment(
+				$user,
+				'wrong-password',
+				Totp::code( $secret, time() )
+			);
+			self::fail( 'Wrong password confirmed Base 2FA enrollment.' );
+		} catch ( RuntimeException ) {
+			self::assertFalse( CredentialStore::is_enrolled( $user_id ) );
+			self::assertNotNull( EnrollmentStore::pending_secret( $user_id ) );
+		}
+
+		$codes = AccountManager::confirm_enrollment(
+			$user,
+			'correct-password',
+			Totp::code( $secret, time() )
+		);
 
 		self::assertCount( RecoveryCodes::CODE_COUNT, $codes );
 		self::assertTrue( CredentialStore::is_enrolled( $user_id ) );
