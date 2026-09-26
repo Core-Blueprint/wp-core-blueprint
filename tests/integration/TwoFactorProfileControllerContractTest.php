@@ -36,6 +36,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 
 	public function test_tu1_controller_registers_only_profile_registry_and_admin_post_surfaces(): void {
 		self::assertNotFalse( has_action( 'cb_core_register_user_profile_sections', [ ProfileController::class, 'register_profile_section' ] ) );
+		self::assertNotFalse( has_action( 'admin_enqueue_scripts', [ ProfileController::class, 'enqueue_profile_assets' ] ) );
 		self::assertFalse( has_action( 'show_user_profile', [ ProfileController::class, 'render' ] ) );
 		self::assertFalse( has_action( 'edit_user_profile', [ ProfileController::class, 'render' ] ) );
 		self::assertNotFalse( has_action( 'admin_post_' . ProfileController::START_ACTION, [ ProfileController::class, 'start' ] ) );
@@ -80,7 +81,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		self::assertSame( '', (string) ob_get_clean() );
 	}
 
-	public function test_tu3_pending_profile_never_reveals_setup_secret_and_requires_password_to_confirm_or_cancel(): void {
+	public function test_tu3_pending_profile_never_reveals_setup_secret_and_cancel_needs_no_password(): void {
 		$user_id = self::factory()->user->create( [
 			'role'      => 'administrator',
 			'user_pass' => 'correct-password',
@@ -102,11 +103,18 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		self::assertStringNotContainsString( $secret, $html );
 		self::assertStringContainsString( 'form="cb-core-two-factor-confirm-form"', $html );
 		self::assertGreaterThanOrEqual( 2, substr_count( $html, 'cb-core-form-actions' ) );
-		self::assertStringContainsString( 'form="cb-core-two-factor-cancel-form"', $html );
+		self::assertStringContainsString( 'data-cb-two-factor-cancel', $html );
+		self::assertStringContainsString( 'data-cb-two-factor-cancel-form="cb-core-two-factor-cancel-form"', $html );
+		self::assertStringNotContainsString( 'cb-core-two-factor-cancel-password', $html );
 		self::assertStringContainsString( ProfileController::CONFIRM_ACTION, $action_forms );
 		self::assertStringContainsString( ProfileController::CANCEL_ACTION, $action_forms );
 		self::assertStringNotContainsString( '<form', $html );
-		self::assertGreaterThanOrEqual( 2, substr_count( $html, 'autocomplete="current-password"' ) );
+		self::assertSame( 1, substr_count( $html, 'autocomplete="current-password"' ) );
+		self::assertLessThan(
+			strpos( $html, 'cb-core-two-factor-confirm-password' ),
+			strpos( $html, 'cb-core-two-factor-profile-code' )
+		);
+		self::assertStringContainsString( 'Enable two-factor authentication', $html );
 		self::assertSame( [], CredentialStore::recovery_hashes( $user_id ) );
 	}
 
@@ -160,4 +168,15 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $action_forms );
 		self::assertStringContainsString( 'cannot be removed', $html );
 	}
+	public function test_tu6_profile_redirect_uses_canonical_registry_anchor(): void {
+		$method = new ReflectionMethod( ProfileController::class, 'profile_url' );
+		$method->setAccessible( true );
+		$url = (string) $method->invoke( null );
+
+		self::assertStringEndsWith(
+			'profile.php#cb-core-user-profile-core-blueprint-two-factor',
+			$url
+		);
+	}
+
 }
