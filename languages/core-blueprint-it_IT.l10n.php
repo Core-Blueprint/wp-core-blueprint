@@ -154,6 +154,10 @@ $catalog['messages'] = array_replace(
         'Two-factor authentication is active' => 'L’autenticazione a due fattori è attiva',
         'Two-factor authentication is now enabled for this account.' => 'L’autenticazione a due fattori è ora attiva per questo account.',
         'Use a recovery code if you lose access to your authenticator app. Each code can be used once, and these codes will not be shown again.' => 'Usa un codice di recupero se perdi l’accesso alla tua app di autenticazione. Ogni codice può essere usato una sola volta e questi codici non verranno mostrati di nuovo.',
+        'Add this account to your authenticator app, then enter the six-digit code to finish enrollment.' => 'Aggiungi questo account alla tua app di autenticazione, quindi inserisci il codice a sei cifre per completare la configurazione.',
+        'Verify' => 'Verifica',
+        'Save your recovery codes' => 'Salva i codici di recupero',
+        'Two-factor authentication is active. Save these recovery codes now. Each code can be used once.' => 'L’autenticazione a due fattori è attiva. Salva ora questi codici di recupero. Ogni codice può essere utilizzato una sola volta.',
     ]
 );
 
