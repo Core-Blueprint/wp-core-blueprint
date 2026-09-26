@@ -28,6 +28,8 @@ Status: **public v1 freeze candidate**.
 
 Consumers provide business meaning and exact values. Foundation owns generic behavior, accessibility and presentation adapters.
 
+The User Profile Surface Foundation is the public declarative boundary for Core Blueprint-owned sections contributed to WordPress Profile/Edit User screens. Base owns registration, deterministic ordering, context dispatch and WP-native Form Composition loading; consumers own product semantics, authorization, field/action behavior and persistence. The registry never turns `profile.php` or `user-edit.php` into Core Admin surfaces. See `USER-PROFILE-SURFACE-FOUNDATION.md`.
+
 The Reorder Foundation owns generic ordered-list movement, focus preservation, accessible announcements, pending state and rollback. Consumers own item/list semantics, authorization and persistence. Cross-list movement is opt-in and consumers must provide a non-pointer route for cross-list moves. See `REORDER-FOUNDATION.md`.
 
 The Modal Foundation includes the additive public `confirmCheck: { label }` option. Presence means a required, initially unchecked native acknowledgement checkbox. `confirmCheck` is orthogonal to the existing confirm/typed/input modes, never changes their resolved value, and composes with other gates so Confirm is available only when every active gate is valid. Invalid or empty labels fail closed; see `MODAL-FOUNDATION.md`.

@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace CB\Core\Security\TwoFactor;
 
+use CB\Core\Admin\ProfileActionForms;
+use CB\Core\Admin\UserProfileSectionRegistry;
+use CB\Core\UI\Field;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;
@@ -22,6 +25,13 @@ final class ProfileController {
 	public const REMOVE_ACTION     = 'cb_core_two_factor_profile_remove';
 	public const REGENERATE_ACTION = 'cb_core_two_factor_profile_regenerate_recovery';
 
+	private const SECTION_ID = 'core-blueprint-two-factor';
+	private const FORM_START = 'cb-core-two-factor-start-form';
+	private const FORM_CONFIRM = 'cb-core-two-factor-confirm-form';
+	private const FORM_CANCEL = 'cb-core-two-factor-cancel-form';
+	private const FORM_REMOVE = 'cb-core-two-factor-remove-form';
+	private const FORM_REGENERATE = 'cb-core-two-factor-regenerate-form';
+
 	private const NOTICE_PREFIX = 'cb_core_two_factor_profile_notice_';
 
 	private static bool $booted = false;
@@ -32,7 +42,7 @@ final class ProfileController {
 		}
 		self::$booted = true;
 
-		add_action( 'show_user_profile', [ self::class, 'render' ] );
+		add_action( 'cb_core_register_user_profile_sections', [ self::class, 'register_profile_section' ] );
 		add_action( 'admin_post_' . self::START_ACTION, [ self::class, 'start' ] );
 		add_action( 'admin_post_' . self::CONFIRM_ACTION, [ self::class, 'confirm' ] );
 		add_action( 'admin_post_' . self::CANCEL_ACTION, [ self::class, 'cancel' ] );
@@ -40,12 +50,28 @@ final class ProfileController {
 		add_action( 'admin_post_' . self::REGENERATE_ACTION, [ self::class, 'regenerate_recovery_codes' ] );
 	}
 
-	public static function render( WP_User $profile_user ): void {
-		if (
-			$profile_user->ID <= 0
-			|| get_current_user_id() !== (int) $profile_user->ID
-			|| ! Policy::is_in_scope( $profile_user )
-		) {
+	public static function register_profile_section(): void {
+		UserProfileSectionRegistry::register(
+			self::SECTION_ID,
+			[
+				'title'    => __( 'Two-factor authentication', 'core-blueprint' ),
+				'order'    => 200,
+				'contexts' => [ UserProfileSectionRegistry::CONTEXT_SELF ],
+				'visible'  => [ self::class, 'section_visible' ],
+				'renderer' => [ self::class, 'render' ],
+			]
+		);
+	}
+
+	public static function section_visible( WP_User $profile_user, string $context ): bool {
+		return UserProfileSectionRegistry::CONTEXT_SELF === $context
+			&& $profile_user->ID > 0
+			&& get_current_user_id() === (int) $profile_user->ID
+			&& Policy::is_in_scope( $profile_user );
+	}
+
+	public static function render( WP_User $profile_user, string $context = UserProfileSectionRegistry::CONTEXT_SELF ): void {
+		if ( ! self::section_visible( $profile_user, $context ) ) {
 			return;
 		}
 
@@ -55,7 +81,6 @@ final class ProfileController {
 		$pending   = ! $enrolled && EnrollmentStore::has_pending( $user_id );
 		$notice    = self::take_notice( $user_id );
 
-		echo '<h2 id="cb-core-two-factor">' . esc_html__( 'Two-factor authentication', 'core-blueprint' ) . '</h2>';
 
 		if ( null !== $notice ) {
 			$class = 'error' === $notice['type'] ? 'notice notice-error inline' : 'notice notice-success inline';
@@ -166,13 +191,21 @@ final class ProfileController {
 
 		if ( [] === $providers ) {
 			echo '<p>' . esc_html__( 'Generate a new set of recovery codes by confirming your current password and a current authenticator or recovery code.', 'core-blueprint' ) . '</p>';
-			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-			self::hidden_action( self::REGENERATE_ACTION );
-			self::render_password_field();
-			echo '<p><label>' . esc_html__( 'Authenticator or recovery code', 'core-blueprint' ) . '<br>';
-			echo '<input type="text" class="regular-text" name="cb_two_factor_code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required></label></p>';
-			submit_button( __( 'Generate new recovery codes', 'core-blueprint' ), 'secondary', 'submit', false );
-			echo '</form>';
+			ProfileActionForms::register( self::FORM_REGENERATE, self::REGENERATE_ACTION );
+			echo '<div class="cb-core-stack cb-core-stack--form">';
+			self::render_profile_password_field( self::FORM_REGENERATE, 'cb-core-two-factor-regenerate-password' );
+			self::render_profile_code_field(
+				self::FORM_REGENERATE,
+				'cb-core-two-factor-regenerate-code',
+				__( 'Authenticator or recovery code', 'core-blueprint' ),
+				false
+			);
+			self::render_profile_submit_button(
+				self::FORM_REGENERATE,
+				__( 'Generate new recovery codes', 'core-blueprint' ),
+				'secondary'
+			);
+			echo '</div>';
 		}
 
 		if ( Policy::requires_enrollment( $user ) && [] === $providers ) {
@@ -181,55 +214,109 @@ final class ProfileController {
 		}
 
 		echo '<p>' . esc_html__( 'To remove Base two-factor authentication, confirm your current password and a current authenticator or recovery code.', 'core-blueprint' ) . '</p>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		self::hidden_action( self::REMOVE_ACTION );
-		self::render_password_field();
-		echo '<p><label for="cb_two_factor_remove_code">' . esc_html__( 'Authenticator or recovery code', 'core-blueprint' ) . '</label><br>';
-		echo '<input type="text" class="regular-text" name="cb_two_factor_code" id="cb_two_factor_remove_code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required></p>';
-		submit_button( __( 'Remove Base two-factor authentication', 'core-blueprint' ), 'delete', 'submit', false );
-		echo '</form>';
+		ProfileActionForms::register( self::FORM_REMOVE, self::REMOVE_ACTION );
+		echo '<div class="cb-core-stack cb-core-stack--form">';
+		self::render_profile_password_field( self::FORM_REMOVE, 'cb-core-two-factor-remove-password' );
+		self::render_profile_code_field(
+			self::FORM_REMOVE,
+			'cb-core-two-factor-remove-code',
+			__( 'Authenticator or recovery code', 'core-blueprint' ),
+			false
+		);
+		self::render_profile_submit_button(
+			self::FORM_REMOVE,
+			__( 'Remove Base two-factor authentication', 'core-blueprint' ),
+			'delete'
+		);
+		echo '</div>';
 	}
 
 	private static function render_pending( bool $external_provider ): void {
 		echo '<p><strong>' . esc_html__( 'Two-factor setup is waiting for confirmation.', 'core-blueprint' ) . '</strong></p>';
 		if ( $external_provider ) {
 			echo '<p>' . esc_html__( 'An external provider is now active. Cancel the pending Base setup if you no longer need it.', 'core-blueprint' ) . '</p>';
-			self::render_cancel_form();
+			self::render_profile_cancel_controls();
 			return;
 		}
 
 		echo '<p>' . esc_html__( 'If you already added the account to your authenticator app, confirm the setup below.', 'core-blueprint' ) . '</p>';
 		echo '<p>' . esc_html__( 'If you did not save the setup key, cancel this setup and start again to display a new key after password confirmation.', 'core-blueprint' ) . '</p>';
 
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		self::hidden_action( self::CONFIRM_ACTION );
-		self::render_password_field();
-		echo '<p><label for="cb_two_factor_profile_code">' . esc_html__( 'Verification code', 'core-blueprint' ) . '</label><br>';
-		echo '<input type="text" class="regular-text" name="cb_two_factor_code" id="cb_two_factor_profile_code" autocomplete="one-time-code" inputmode="numeric" required></p>';
-		submit_button( __( 'Verify', 'core-blueprint' ), 'primary', 'submit', false );
-		echo '</form>';
+		ProfileActionForms::register( self::FORM_CONFIRM, self::CONFIRM_ACTION );
+		echo '<div class="cb-core-stack cb-core-stack--loose">';
+		echo '<div class="cb-core-stack cb-core-stack--form">';
+		self::render_profile_password_field( self::FORM_CONFIRM, 'cb-core-two-factor-confirm-password' );
+		self::render_profile_code_field(
+			self::FORM_CONFIRM,
+			'cb-core-two-factor-profile-code',
+			__( 'Verification code', 'core-blueprint' ),
+			true
+		);
+		self::render_profile_submit_button( self::FORM_CONFIRM, __( 'Verify', 'core-blueprint' ), 'primary' );
+		echo '</div>';
 
-		self::render_cancel_form();
+		echo '<div class="cb-core-stack cb-core-stack--form">';
+		self::render_profile_cancel_controls();
+		echo '</div>';
+		echo '</div>';
 	}
 
 	private static function render_start_form(): void {
 		echo '<p>' . esc_html__( 'Add an authenticator app as a second factor for this privileged account.', 'core-blueprint' ) . '</p>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		self::hidden_action( self::START_ACTION );
-		self::render_password_field();
-		submit_button( __( 'Start two-factor setup', 'core-blueprint' ), 'secondary', 'submit', false );
-		echo '</form>';
+		ProfileActionForms::register( self::FORM_START, self::START_ACTION );
+		echo '<div class="cb-core-stack cb-core-stack--form">';
+		self::render_profile_password_field( self::FORM_START, 'cb-core-two-factor-start-password' );
+		self::render_profile_submit_button( self::FORM_START, __( 'Start two-factor setup', 'core-blueprint' ), 'primary' );
+		echo '</div>';
 	}
 
-	private static function render_cancel_form(): void {
+	private static function render_profile_cancel_controls(): void {
+		ProfileActionForms::register( self::FORM_CANCEL, self::CANCEL_ACTION );
+		self::render_profile_password_field( self::FORM_CANCEL, 'cb-core-two-factor-cancel-password' );
+		self::render_profile_submit_button( self::FORM_CANCEL, __( 'Cancel two-factor setup', 'core-blueprint' ), 'secondary' );
+	}
+
+	private static function render_profile_password_field( string $form_id, string $input_id ): void {
+		$control = '<input type="password" id="' . esc_attr( $input_id ) . '" class="regular-text" name="cb_two_factor_password" form="' . esc_attr( $form_id ) . '" autocomplete="current-password" required>';
+		echo Field::render( [
+			'label'     => __( 'Current password', 'core-blueprint' ),
+			'label_for' => $input_id,
+			'control'   => $control,
+		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field escapes labels; control is assembled from escaped static values.
+	}
+
+	private static function render_profile_code_field( string $form_id, string $input_id, string $label, bool $numeric ): void {
+		$control = '<input type="text" id="' . esc_attr( $input_id ) . '" class="regular-text" name="cb_two_factor_code" form="' . esc_attr( $form_id ) . '" autocomplete="one-time-code"';
+		$control .= $numeric ? ' inputmode="numeric"' : ' autocapitalize="characters" spellcheck="false"';
+		$control .= ' required>';
+
+		echo Field::render( [
+			'label'     => $label,
+			'label_for' => $input_id,
+			'control'   => $control,
+		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field escapes labels; control is assembled from escaped static values.
+	}
+
+	private static function render_profile_submit_button( string $form_id, string $label, string $variant ): void {
+		$classes = 'button';
+		if ( 'primary' === $variant ) {
+			$classes .= ' button-primary';
+		} elseif ( 'delete' === $variant ) {
+			$classes .= ' button-secondary button-link-delete';
+		}
+
+		echo '<button type="submit" class="' . esc_attr( $classes ) . '" form="' . esc_attr( $form_id ) . '">' . esc_html( $label ) . '</button>';
+	}
+
+	private static function render_standalone_cancel_form(): void {
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		self::hidden_action( self::CANCEL_ACTION );
-		self::render_password_field();
+		self::render_standalone_password_field();
 		submit_button( __( 'Cancel two-factor setup', 'core-blueprint' ), 'secondary', 'submit', false );
 		echo '</form>';
 	}
 
-	private static function render_password_field(): void {
+	private static function render_standalone_password_field(): void {
 		echo '<p><label>' . esc_html__( 'Current password', 'core-blueprint' ) . '<br>';
 		echo '<input type="password" class="regular-text" name="cb_two_factor_password" autocomplete="current-password" required></label></p>';
 	}
@@ -242,12 +329,12 @@ final class ProfileController {
 		echo '<p><strong>' . esc_html__( 'Setup key', 'core-blueprint' ) . '</strong><br><code>' . esc_html( $secret ) . '</code></p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		self::hidden_action( self::CONFIRM_ACTION );
-		self::render_password_field();
+		self::render_standalone_password_field();
 		echo '<p><label>' . esc_html__( 'Verification code', 'core-blueprint' ) . '<br>';
 		echo '<input type="text" class="regular-text" name="cb_two_factor_code" autocomplete="one-time-code" inputmode="numeric" required></label></p>';
 		submit_button( __( 'Verify', 'core-blueprint' ), 'primary', 'submit', false );
 		echo '</form>';
-		self::render_cancel_form();
+		self::render_standalone_cancel_form();
 		$html = (string) ob_get_clean();
 
 		wp_die(

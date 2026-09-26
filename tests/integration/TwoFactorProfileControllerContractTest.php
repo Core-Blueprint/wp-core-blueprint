@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Admin\ProfileActionForms;
+use CB\Core\Admin\UserProfileSectionRegistry;
 use CB\Core\Security\TwoFactor\AccountManager;
 use CB\Core\Security\TwoFactor\CredentialStore;
 use CB\Core\Security\TwoFactor\EnrollmentStore;
@@ -21,6 +23,8 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 			: Policy::default_config();
 		Settings::set_key( Policy::SETTINGS_KEY, Policy::default_config(), 'two-factor-profile-ui-test' );
 		wp_set_current_user( 0 );
+		ProfileActionForms::_reset_for_testing();
+		UserProfileSectionRegistry::_reset_for_testing();
 		ProfileController::boot();
 	}
 
@@ -30,8 +34,9 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		parent::tear_down();
 	}
 
-	public function test_tu1_controller_registers_only_self_profile_and_admin_post_surfaces(): void {
-		self::assertNotFalse( has_action( 'show_user_profile', [ ProfileController::class, 'render' ] ) );
+	public function test_tu1_controller_registers_only_profile_registry_and_admin_post_surfaces(): void {
+		self::assertNotFalse( has_action( 'cb_core_register_user_profile_sections', [ ProfileController::class, 'register_profile_section' ] ) );
+		self::assertFalse( has_action( 'show_user_profile', [ ProfileController::class, 'render' ] ) );
 		self::assertFalse( has_action( 'edit_user_profile', [ ProfileController::class, 'render' ] ) );
 		self::assertNotFalse( has_action( 'admin_post_' . ProfileController::START_ACTION, [ ProfileController::class, 'start' ] ) );
 		self::assertNotFalse( has_action( 'admin_post_' . ProfileController::CONFIRM_ACTION, [ ProfileController::class, 'confirm' ] ) );
@@ -52,10 +57,17 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		ob_start();
 		ProfileController::render( $user );
 		$html = (string) ob_get_clean();
+		ob_start();
+		ProfileActionForms::render();
+		$action_forms = (string) ob_get_clean();
 
-		self::assertStringContainsString( ProfileController::START_ACTION, $html );
-		self::assertStringContainsString( '_wpnonce', $html );
+		self::assertStringContainsString( 'form="cb-core-two-factor-start-form"', $html );
+		self::assertStringContainsString( 'button button-primary', $html );
+		self::assertStringContainsString( 'cb-core-stack cb-core-stack--form', $html );
 		self::assertStringContainsString( 'autocomplete="current-password"', $html );
+		self::assertStringNotContainsString( '<form', $html );
+		self::assertStringContainsString( ProfileController::START_ACTION, $action_forms );
+		self::assertStringContainsString( '_wpnonce', $action_forms );
 		self::assertStringNotContainsString( ProfileController::REMOVE_ACTION, $html );
 
 		$other_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
@@ -84,8 +96,11 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		$html = (string) ob_get_clean();
 
 		self::assertStringNotContainsString( $secret, $html );
-		self::assertStringContainsString( ProfileController::CONFIRM_ACTION, $html );
-		self::assertStringContainsString( ProfileController::CANCEL_ACTION, $html );
+		self::assertStringContainsString( 'form="cb-core-two-factor-confirm-form"', $html );
+		self::assertStringContainsString( 'form="cb-core-two-factor-cancel-form"', $html );
+		self::assertStringContainsString( ProfileController::CONFIRM_ACTION, $action_forms );
+		self::assertStringContainsString( ProfileController::CANCEL_ACTION, $action_forms );
+		self::assertStringNotContainsString( '<form', $html );
 		self::assertGreaterThanOrEqual( 2, substr_count( $html, 'autocomplete="current-password"' ) );
 		self::assertSame( [], CredentialStore::recovery_hashes( $user_id ) );
 	}
@@ -103,8 +118,11 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		ProfileController::render( $user );
 		$html = (string) ob_get_clean();
 
-		self::assertStringContainsString( ProfileController::REMOVE_ACTION, $html );
-		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $html );
+		self::assertStringContainsString( ProfileController::REMOVE_ACTION, $action_forms );
+		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $action_forms );
+		self::assertStringContainsString( 'form="cb-core-two-factor-regenerate-form"', $html );
+		self::assertStringContainsString( 'form="cb-core-two-factor-remove-form"', $html );
+		self::assertStringNotContainsString( '<form', $html );
 		self::assertStringContainsString( 'autocomplete="current-password"', $html );
 		self::assertStringContainsString( (string) RecoveryCodes::CODE_COUNT, $html );
 		self::assertStringNotContainsString( 'JBSWY3DPEHPK3PXP', $html );
@@ -126,8 +144,8 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		ProfileController::render( $user );
 		$html = (string) ob_get_clean();
 
-		self::assertStringNotContainsString( ProfileController::REMOVE_ACTION, $html );
-		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $html );
+		self::assertStringNotContainsString( ProfileController::REMOVE_ACTION, $action_forms );
+		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $action_forms );
 		self::assertStringContainsString( 'cannot be removed', $html );
 	}
 }

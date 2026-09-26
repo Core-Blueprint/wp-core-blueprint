@@ -113,6 +113,7 @@ final class Core {
 		// and their visual shell. admin-ajax.php and admin-post.php are request
 		// endpoints, not screens, and must not boot browser presentation.
 		if ( RequestContext::is_admin_screen() ) {
+			\CB\Core\Admin\UserProfileSectionRegistry::init();
 			PageRegistry::init();
 			Admin::init();
 			Extensions::init();
