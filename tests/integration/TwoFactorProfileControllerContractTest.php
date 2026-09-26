@@ -102,7 +102,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 
 		self::assertStringNotContainsString( $secret, $html );
 		self::assertStringContainsString( 'form="cb-core-two-factor-confirm-form"', $html );
-		self::assertGreaterThanOrEqual( 2, substr_count( $html, 'cb-core-form-actions' ) );
+		self::assertSame( 1, substr_count( $html, 'cb-core-form-actions' ) );
 		self::assertStringContainsString( 'data-cb-two-factor-cancel', $html );
 		self::assertStringContainsString( 'data-cb-two-factor-cancel-form="cb-core-two-factor-cancel-form"', $html );
 		self::assertStringNotContainsString( 'cb-core-two-factor-cancel-password', $html );
@@ -177,6 +177,24 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 			'profile.php#cb-core-user-profile-core-blueprint-two-factor',
 			$url
 		);
+	}
+
+
+	public function test_tu7_secure_action_shell_keeps_admin_context_without_rendering_the_navigation_rail(): void {
+		$screen = file_get_contents( CB_CORE_DIR . 'src/Admin/SecureActionScreen.php' );
+		$css = file_get_contents( CB_CORE_DIR . 'assets/css/pages/secure-action.css' );
+
+		self::assertIsString( $screen );
+		self::assertIsString( $css );
+		self::assertStringContainsString( "admin-header.php", $screen );
+		self::assertStringContainsString( "admin-footer.php", $screen );
+		self::assertStringNotContainsString( 'add_menu_page', $screen );
+		self::assertStringNotContainsString( 'PageRegistry::', $screen );
+		self::assertStringContainsString( 'body.wp-admin #adminmenumain', $css );
+		self::assertStringContainsString( 'display: none;', $css );
+		self::assertStringContainsString( 'body.wp-admin #wpcontent', $css );
+		self::assertStringContainsString( 'margin-left: 0;', $css );
+		self::assertStringContainsString( 'margin-right: 0;', $css );
 	}
 
 }
