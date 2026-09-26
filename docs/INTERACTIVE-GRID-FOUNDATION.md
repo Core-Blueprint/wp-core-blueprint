@@ -3,8 +3,12 @@
 Status: **public v1 freeze candidate**.
 
 Core Blueprint Interactive Grid Foundation provides one generic presentation
-contract for tabular or grid-like admin interfaces where a cell has one primary
-action while still allowing nested business controls above that action.
+contract for tabular admin interfaces where a table cell has one primary action
+while still allowing independent nested business controls above that action.
+
+The v1 contract is intentionally **tabular**. It applies to native table cells
+using the documented `table` / `tr` / `td` markup. It does not promise a generic
+CSS Grid, card-grid or arbitrary container interaction model.
 
 Base owns cell dividers, stretched-action hover/focus presentation and neutral
 current/disabled states. Consumers own dates, times, records, URLs, labels,
@@ -88,8 +92,9 @@ name of an otherwise empty stretched link.
 Keyboard focus uses the same full-cell geometry as pointer hover. Nested
 business controls remain independently focusable.
 
-No ARIA grid roles are imposed. Consumers should keep native table semantics
-when the data is tabular and choose other native structures when it is not.
+No ARIA grid roles are imposed. Consumers keep native table semantics. If a
+consumer does not have tabular data, this v1 Foundation is not the appropriate
+contract and another native structure or Foundation should be used.
 
 ## Ownership boundary
 
@@ -103,4 +108,4 @@ Interactive Grid Foundation never:
 - imposes calendar semantics.
 
 The consumer owns all business behavior. Foundation owns only the reusable
-interactive-cell presentation layer.
+tabular interactive-cell presentation layer.

@@ -65,10 +65,12 @@ final class CB_Base_Interactive_Grid_Foundation_Contract_Test extends WP_UnitTes
 		$core_css = file_get_contents( $root . '/assets/css/components/interactive-grid.css' );
 		$native_css = file_get_contents( $root . '/assets/css/components/interactive-grid-native.css' );
 		$doc = file_get_contents( $root . '/docs/INTERACTIVE-GRID-FOUNDATION.md' );
+		$public_api = file_get_contents( $root . '/docs/PUBLIC-API.md' );
 
 		self::assertIsString( $core_css );
 		self::assertIsString( $native_css );
 		self::assertIsString( $doc );
+		self::assertIsString( $public_api );
 
 		foreach ( [ $core_css, $native_css ] as $css ) {
 			self::assertStringContainsString( '.cb-core-interactive-grid__action', $css );
@@ -81,5 +83,8 @@ final class CB_Base_Interactive_Grid_Foundation_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'stretched action and nested controls are siblings', $doc );
 		self::assertStringContainsString( 'must never nest', $doc );
 		self::assertStringContainsString( 'real focusable control', $doc );
+		self::assertStringContainsString( 'The v1 contract is intentionally **tabular**', $doc );
+		self::assertStringContainsString( '`interactive-grid` and `icons`', $public_api );
+		self::assertStringContainsString( 'tabular interactive-cell presentation boundary', $public_api );
 	}
 }
