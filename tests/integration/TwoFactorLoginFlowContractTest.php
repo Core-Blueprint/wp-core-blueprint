@@ -277,7 +277,50 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 		}
 	}
 
-	public function test_lf14_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
+	public function test_lf14_stale_enrollment_challenge_is_revoked_when_policy_no_longer_requires_enrollment(): void {
+		Settings::set_key( Policy::SETTINGS_KEY, [
+			'mode'  => Policy::MODE_ENFORCE,
+			'scope' => Policy::SCOPE_PRIVILEGED,
+		], 'two-factor-login-test' );
+
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$token = ChallengeStore::create(
+			$user_id,
+			false,
+			admin_url(),
+			ChallengeStore::FLOW_ENROLL
+		);
+
+		Settings::set_key( Policy::SETTINGS_KEY, Policy::default_config(), 'two-factor-login-test' );
+		$result = LoginController::prepare( $token );
+
+		self::assertSame( 'restart', $result['status'] ?? null );
+		self::assertNull( ChallengeStore::inspect( $token ) );
+	}
+
+	public function test_lf15_stale_verify_challenge_is_revoked_when_current_requirement_becomes_enrollment(): void {
+		Settings::set_key( Policy::SETTINGS_KEY, [
+			'mode'  => Policy::MODE_ENFORCE,
+			'scope' => Policy::SCOPE_PRIVILEGED,
+		], 'two-factor-login-test' );
+
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		CredentialStore::store_totp_secret( $user_id, 'JBSWY3DPEHPK3PXP' );
+		$token = ChallengeStore::create(
+			$user_id,
+			false,
+			admin_url(),
+			ChallengeStore::FLOW_VERIFY
+		);
+
+		CredentialStore::clear( $user_id );
+		$result = LoginController::prepare( $token );
+
+		self::assertSame( 'restart', $result['status'] ?? null );
+		self::assertNull( ChallengeStore::inspect( $token ) );
+	}
+
+	public function test_lf16_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
 		$user = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
 		self::assertInstanceOf( WP_User::class, $user );
 		CredentialStore::store_totp_secret( (int) $user->ID, 'JBSWY3DPEHPK3PXP' );

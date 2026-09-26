@@ -45,6 +45,12 @@ final class LoginController {
 		}
 
 		if ( ProviderDetector::external_provider_owns_user( $user ) ) {
+			ChallengeStore::take( $token );
+			return [ 'status' => 'restart' ];
+		}
+
+		if ( ! self::challenge_matches_current_requirement( $user, $state ) ) {
+			ChallengeStore::take( $token );
 			return [ 'status' => 'restart' ];
 		}
 
@@ -90,6 +96,10 @@ final class LoginController {
 		}
 
 		if ( ProviderDetector::external_provider_owns_user( $user ) ) {
+			return [ 'status' => 'restart' ];
+		}
+
+		if ( ! self::challenge_matches_current_requirement( $user, $state ) ) {
 			return [ 'status' => 'restart' ];
 		}
 
@@ -201,6 +211,15 @@ final class LoginController {
 			isset( $result['provisioning_uri'] ) ? (string) $result['provisioning_uri'] : ''
 		);
 		exit;
+	}
+
+	/** @param array<string,mixed> $state */
+	private static function challenge_matches_current_requirement( WP_User $user, array $state ): bool {
+		$expected = ChallengeStore::FLOW_ENROLL === (string) ( $state['flow'] ?? '' )
+			? LoginFlow::DECISION_ENROLL
+			: LoginFlow::DECISION_VERIFY;
+
+		return $expected === LoginFlow::decision_for( $user );
 	}
 
 	/** @param array<string,mixed> $state */
