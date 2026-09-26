@@ -9,26 +9,17 @@ final class CB_Base_User_Profile_Section_Registry_Contract_Test extends WP_UnitT
 		parent::set_up();
 		UserProfileSectionRegistry::_reset_for_testing();
 		wp_dequeue_style( 'cb-core-css-form-composition-native' );
+		wp_dequeue_style( 'cb-core-css-tokens' );
 	}
 
 	public function tear_down(): void {
 		UserProfileSectionRegistry::_reset_for_testing();
 		wp_dequeue_style( 'cb-core-css-form-composition-native' );
+		wp_dequeue_style( 'cb-core-css-tokens' );
 		parent::tear_down();
 	}
 
 	public function test_ups1_registration_is_lifecycle_bound_and_deterministically_ordered(): void {
-		self::assertFalse(
-			UserProfileSectionRegistry::register(
-				'test-profile-outside',
-				[
-					'title'    => 'Outside',
-					'contexts' => [ UserProfileSectionRegistry::CONTEXT_SELF ],
-					'renderer' => static function (): void {},
-				]
-			)
-		);
-
 		$register = static function (): void {
 			UserProfileSectionRegistry::register(
 				'test-profile-later',

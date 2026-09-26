@@ -94,6 +94,9 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		ob_start();
 		ProfileController::render( $user );
 		$html = (string) ob_get_clean();
+		ob_start();
+		ProfileActionForms::render();
+		$action_forms = (string) ob_get_clean();
 
 		self::assertStringNotContainsString( $secret, $html );
 		self::assertStringContainsString( 'form="cb-core-two-factor-confirm-form"', $html );
@@ -117,6 +120,9 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		ob_start();
 		ProfileController::render( $user );
 		$html = (string) ob_get_clean();
+		ob_start();
+		ProfileActionForms::render();
+		$action_forms = (string) ob_get_clean();
 
 		self::assertStringContainsString( ProfileController::REMOVE_ACTION, $action_forms );
 		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $action_forms );
@@ -143,6 +149,9 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		ob_start();
 		ProfileController::render( $user );
 		$html = (string) ob_get_clean();
+		ob_start();
+		ProfileActionForms::render();
+		$action_forms = (string) ob_get_clean();
 
 		self::assertStringNotContainsString( ProfileController::REMOVE_ACTION, $action_forms );
 		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $action_forms );

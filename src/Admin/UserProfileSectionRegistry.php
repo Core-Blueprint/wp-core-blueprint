@@ -94,19 +94,20 @@ final class UserProfileSectionRegistry {
 			return false;
 		}
 
-		$contexts = is_array( $definition['contexts'] ?? null )
-			? array_values( array_unique( $definition['contexts'] ) )
-			: [];
-		if ( [] === $contexts ) {
+		$raw_contexts = is_array( $definition['contexts'] ?? null ) ? $definition['contexts'] : [];
+		if ( [] === $raw_contexts ) {
 			self::diagnostic( sprintf( 'User profile section %s requires at least one context.', $id ) );
 			return false;
 		}
-		foreach ( $contexts as $context ) {
+		$contexts = [];
+		foreach ( $raw_contexts as $context ) {
 			if ( ! is_string( $context ) || ! in_array( $context, self::CONTEXTS, true ) ) {
 				self::diagnostic( sprintf( 'User profile section %s requested an unsupported context.', $id ) );
 				return false;
 			}
+			$contexts[ $context ] = $context;
 		}
+		$contexts = array_values( $contexts );
 
 		$visible = $definition['visible'] ?? null;
 		if ( null !== $visible && ! is_callable( $visible ) ) {
