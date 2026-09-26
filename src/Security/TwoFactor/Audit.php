@@ -15,6 +15,7 @@ final class Audit {
 	public const EVENT_AUTHENTICATED        = 'security.twofactor.authenticated';
 	public const EVENT_BYPASS_USED          = 'security.twofactor.bypass.used';
 	public const EVENT_MIGRATION_RESET      = 'security.twofactor.migration.reset';
+	public const EVENT_POLICY_CHANGED       = 'security.twofactor.policy.changed';
 
 	/** @var array<string,bool> */
 	private static array $bypass_logged = [];
@@ -70,6 +71,24 @@ final class Audit {
 			'users'             => max( 0, (int) ( $stats['users'] ?? 0 ) ),
 			'meta_records'      => max( 0, (int) ( $stats['meta_records'] ?? 0 ) ),
 			'challenge_records' => max( 0, (int) ( $stats['challenge_records'] ?? 0 ) ),
+		] );
+	}
+
+	public static function policy_changed( int $user_id, string $before, string $after, string $source ): void {
+		if (
+			$user_id <= 0
+			|| ! Policy::is_valid_mode( $before )
+			|| ! Policy::is_valid_mode( $after )
+			|| $before === $after
+		) {
+			return;
+		}
+
+		AuditLog::log( self::EVENT_POLICY_CHANGED, 'warning', [
+			'user_id' => $user_id,
+			'before'  => $before,
+			'after'   => $after,
+			'source'  => sanitize_key( $source ),
 		] );
 	}
 

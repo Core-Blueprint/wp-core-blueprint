@@ -17,6 +17,7 @@ final class CB_Base_Two_Factor_Audit_Contract_Test extends WP_UnitTestCase {
 				Audit::EVENT_AUTHENTICATED,
 				Audit::EVENT_BYPASS_USED,
 				Audit::EVENT_MIGRATION_RESET,
+				Audit::EVENT_POLICY_CHANGED,
 			],
 			array_keys( $labels )
 		);
@@ -34,6 +35,7 @@ final class CB_Base_Two_Factor_Audit_Contract_Test extends WP_UnitTestCase {
 			Audit::EVENT_AUTHENTICATED,
 			Audit::EVENT_BYPASS_USED,
 			Audit::EVENT_MIGRATION_RESET,
+			Audit::EVENT_POLICY_CHANGED,
 		] as $id ) {
 			$key = EventRegistry::storage_key( $id );
 			self::assertIsString( $key );

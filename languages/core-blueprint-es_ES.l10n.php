@@ -66,6 +66,7 @@ $catalog['messages'] = array_replace(
         'Two-factor: authentication completed' => 'Autenticación de dos factores: autenticación completada',
         'Two-factor: Failsafe bypass used' => 'Autenticación de dos factores: omisión de Failsafe utilizada',
         'Two-factor: imported authentication reset' => 'Autenticación de dos factores: autenticación importada restablecida',
+        'Two-factor: policy changed' => 'Autenticación de dos factores: política modificada',
     ]
 );
 

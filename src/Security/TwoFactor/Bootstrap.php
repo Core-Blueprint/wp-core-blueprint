@@ -34,6 +34,7 @@ final class Bootstrap {
 		$labels[ Audit::EVENT_AUTHENTICATED ]        = __( 'Two-factor: authentication completed', 'core-blueprint' );
 		$labels[ Audit::EVENT_BYPASS_USED ]          = __( 'Two-factor: Failsafe bypass used', 'core-blueprint' );
 		$labels[ Audit::EVENT_MIGRATION_RESET ]      = __( 'Two-factor: imported authentication reset', 'core-blueprint' );
+		$labels[ Audit::EVENT_POLICY_CHANGED ]       = __( 'Two-factor: policy changed', 'core-blueprint' );
 		return $labels;
 	}
 }
