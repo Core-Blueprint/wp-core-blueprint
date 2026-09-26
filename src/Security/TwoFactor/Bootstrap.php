@@ -16,6 +16,7 @@ final class Bootstrap {
 		self::$booted = true;
 
 		LoginFlow::boot();
+		ProfileController::boot();
 		add_action( 'init', [ self::class, 'register_i18n_filters' ], 1 );
 	}
 

@@ -166,4 +166,27 @@ final class CB_Base_Two_Factor_Self_Service_Contract_Test extends WP_UnitTestCas
 			Totp::code( $secret, time() )
 		);
 	}
+	public function test_ts5_cancel_pending_enrollment_requires_current_password(): void {
+		$user_id = self::factory()->user->create( [
+			'role'      => 'administrator',
+			'user_pass' => 'correct-password',
+		] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		wp_set_current_user( $user_id );
+
+		AccountManager::start_enrollment( $user, 'correct-password' );
+		self::assertTrue( EnrollmentStore::has_pending( $user_id ) );
+
+		try {
+			AccountManager::cancel_enrollment( $user, 'wrong-password' );
+			self::fail( 'Wrong password cancelled pending Base 2FA enrollment.' );
+		} catch ( RuntimeException ) {
+			self::assertTrue( EnrollmentStore::has_pending( $user_id ) );
+		}
+
+		AccountManager::cancel_enrollment( $user, 'correct-password' );
+		self::assertFalse( EnrollmentStore::has_pending( $user_id ) );
+	}
+
 }

@@ -32,6 +32,16 @@ final class AccountManager {
 		return EnrollmentStore::start( (int) $user->ID );
 	}
 
+	public static function cancel_enrollment( WP_User $user, string $password ): void {
+		self::assert_self_privileged_user( $user );
+		self::assert_current_password(
+			$user,
+			$password,
+			__( 'Password confirmation failed. Two-factor setup was not changed.', 'core-blueprint' )
+		);
+		EnrollmentStore::clear( (int) $user->ID );
+	}
+
 	/** @return string[] */
 	public static function confirm_enrollment( WP_User $user, string $password, string $code ): array {
 		self::assert_self_privileged_user( $user );

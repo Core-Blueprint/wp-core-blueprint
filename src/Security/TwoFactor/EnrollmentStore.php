@@ -57,6 +57,20 @@ final class EnrollmentStore {
 		return $secret;
 	}
 
+	public static function has_pending( int $user_id ): bool {
+		$state = get_user_meta( $user_id, self::META_PENDING, true );
+		if ( ! is_array( $state ) || [] === $state ) {
+			return false;
+		}
+
+		if ( null === self::normalize_state( $state ) ) {
+			self::delete_pending( $user_id );
+			return false;
+		}
+
+		return true;
+	}
+
 	public static function pending_secret( int $user_id ): ?string {
 		$state = get_user_meta( $user_id, self::META_PENDING, true );
 		if ( ! is_array( $state ) || [] === $state ) {
