@@ -267,7 +267,7 @@ final class ProfileController {
 		echo '<p>' . esc_html__( 'If you did not save the setup key, cancel this setup and start again to display a new key after password confirmation.', 'core-blueprint' ) . '</p>';
 
 		ProfileActionForms::register( self::FORM_CONFIRM, self::CONFIRM_ACTION );
-		echo '<div class="cb-core-stack cb-core-stack--loose">';
+		ProfileActionForms::register( self::FORM_CANCEL, self::CANCEL_ACTION );
 		echo '<div class="cb-core-stack cb-core-stack--form">';
 		self::render_profile_code_field(
 			self::FORM_CONFIRM,
@@ -276,11 +276,9 @@ final class ProfileController {
 			true
 		);
 		self::render_profile_password_field( self::FORM_CONFIRM, 'cb-core-two-factor-confirm-password' );
-		self::render_profile_submit_button( self::FORM_CONFIRM, __( 'Enable two-factor authentication', 'core-blueprint' ), 'primary' );
-		echo '</div>';
-
-		echo '<div class="cb-core-stack cb-core-stack--form">';
-		self::render_profile_cancel_controls();
+		echo '<div class="cb-core-form-actions">';
+		echo '<button type="submit" class="button button-primary" form="' . esc_attr( self::FORM_CONFIRM ) . '">' . esc_html__( 'Enable two-factor authentication', 'core-blueprint' ) . '</button>';
+		echo self::cancel_button_html( self::FORM_CANCEL, false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes every attribute and label.
 		echo '</div>';
 		echo '</div>';
 	}
