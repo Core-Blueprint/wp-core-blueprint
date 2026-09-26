@@ -37,6 +37,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		self::assertNotFalse( has_action( 'admin_post_' . ProfileController::CONFIRM_ACTION, [ ProfileController::class, 'confirm' ] ) );
 		self::assertNotFalse( has_action( 'admin_post_' . ProfileController::CANCEL_ACTION, [ ProfileController::class, 'cancel' ] ) );
 		self::assertNotFalse( has_action( 'admin_post_' . ProfileController::REMOVE_ACTION, [ ProfileController::class, 'remove' ] ) );
+		self::assertNotFalse( has_action( 'admin_post_' . ProfileController::REGENERATE_ACTION, [ ProfileController::class, 'regenerate_recovery_codes' ] ) );
 	}
 
 	public function test_tu2_unenrolled_privileged_profile_requires_password_to_start_and_renders_only_for_self(): void {
@@ -103,6 +104,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		$html = (string) ob_get_clean();
 
 		self::assertStringContainsString( ProfileController::REMOVE_ACTION, $html );
+		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $html );
 		self::assertStringContainsString( 'autocomplete="current-password"', $html );
 		self::assertStringContainsString( (string) RecoveryCodes::CODE_COUNT, $html );
 		self::assertStringNotContainsString( 'JBSWY3DPEHPK3PXP', $html );
@@ -125,6 +127,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		$html = (string) ob_get_clean();
 
 		self::assertStringNotContainsString( ProfileController::REMOVE_ACTION, $html );
+		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $html );
 		self::assertStringContainsString( 'cannot be removed', $html );
 	}
 }

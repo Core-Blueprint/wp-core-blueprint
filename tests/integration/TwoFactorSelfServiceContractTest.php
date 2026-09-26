@@ -189,4 +189,44 @@ final class CB_Base_Two_Factor_Self_Service_Contract_Test extends WP_UnitTestCas
 		self::assertFalse( EnrollmentStore::has_pending( $user_id ) );
 	}
 
+	public function test_ts6_recovery_regeneration_requires_password_and_current_factor_and_replaces_old_codes(): void {
+		$user_id = self::factory()->user->create( [
+			'role'      => 'administrator',
+			'user_pass' => 'correct-password',
+		] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		wp_set_current_user( $user_id );
+
+		$secret = 'JBSWY3DPEHPK3PXP';
+		CredentialStore::store_totp_secret( $user_id, $secret );
+		$old_codes = RecoveryCodes::generate_for_user( $user_id );
+		$old_hashes = CredentialStore::recovery_hashes( $user_id );
+
+		try {
+			AccountManager::regenerate_recovery_codes( $user, 'wrong-password', Totp::code( $secret, time() ) );
+			self::fail( 'Wrong password regenerated Base recovery codes.' );
+		} catch ( RuntimeException ) {
+			self::assertSame( $old_hashes, CredentialStore::recovery_hashes( $user_id ) );
+		}
+
+		try {
+			AccountManager::regenerate_recovery_codes( $user, 'correct-password', 'invalid-factor' );
+			self::fail( 'Wrong factor regenerated Base recovery codes.' );
+		} catch ( RuntimeException ) {
+			self::assertSame( $old_hashes, CredentialStore::recovery_hashes( $user_id ) );
+		}
+
+		$new_codes = AccountManager::regenerate_recovery_codes(
+			$user,
+			'correct-password',
+			Totp::code( $secret, time() )
+		);
+
+		self::assertCount( RecoveryCodes::CODE_COUNT, $new_codes );
+		self::assertNotSame( $old_hashes, CredentialStore::recovery_hashes( $user_id ) );
+		self::assertSame( RecoveryCodes::CODE_COUNT, RecoveryCodes::remaining( $user_id ) );
+		self::assertFalse( RecoveryCodes::consume( $user_id, $old_codes[0] ) );
+	}
+
 }

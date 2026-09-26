@@ -132,6 +132,12 @@ $catalog['messages'] = array_replace(
         'Two-factor' => 'Tweefactor',
         'Two-factor enforcement is temporarily bypassed. A new enforce policy cannot be enabled until Failsafe is closed.' => 'De verplichting voor tweefactorauthenticatie wordt tijdelijk omzeild. Een nieuw verplicht beleid kan niet worden ingeschakeld totdat Failsafe is gesloten.',
         'Your authentication state' => 'Jouw authenticatiestatus',
+        'Generate a new set of recovery codes by confirming your current password and a current authenticator or recovery code.' => 'Genereer een nieuwe set herstelcodes door je huidige wachtwoord en een actuele authenticator- of herstelcode te bevestigen.',
+        'Generate new recovery codes' => 'Nieuwe herstelcodes genereren',
+        'Password confirmation failed. Recovery codes were not changed.' => 'De wachtwoordbevestiging is mislukt. De herstelcodes zijn niet gewijzigd.',
+        'Recovery codes could not be regenerated. Try again.' => 'De herstelcodes konden niet opnieuw worden gegenereerd. Probeer het opnieuw.',
+        'Two-factor verification failed. Recovery codes were not changed.' => 'De tweefactorverificatie is mislukt. De herstelcodes zijn niet gewijzigd.',
+        'Two-factor: recovery codes regenerated' => 'Tweefactor: herstelcodes opnieuw gegenereerd',
     ]
 );
 

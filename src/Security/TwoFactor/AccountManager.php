@@ -63,6 +63,47 @@ final class AccountManager {
 	}
 
 	/**
+	 * Replace every recovery code after re-verifying password and the active factor.
+	 *
+	 * @return string[] Plaintext replacement codes shown once to the user.
+	 */
+	public static function regenerate_recovery_codes( WP_User $user, string $password, string $factor ): array {
+		self::assert_self_privileged_user( $user );
+		$user_id = (int) $user->ID;
+
+		if ( ! CredentialStore::is_enrolled( $user_id ) ) {
+			throw new RuntimeException( __( 'Base two-factor authentication is not active for this account.', 'core-blueprint' ) );
+		}
+		if ( ProviderDetector::external_provider_owns_user( $user ) ) {
+			throw new RuntimeException( __( 'An external two-factor provider already manages this account.', 'core-blueprint' ) );
+		}
+
+		self::assert_current_password(
+			$user,
+			$password,
+			__( 'Password confirmation failed. Recovery codes were not changed.', 'core-blueprint' )
+		);
+
+		$method = '';
+		if ( Authenticator::verify_totp( $user_id, $factor ) ) {
+			$method = 'totp';
+		} elseif ( Authenticator::verify_recovery_code( $user_id, $factor ) ) {
+			$method = 'recovery';
+		}
+		if ( '' === $method ) {
+			throw new RuntimeException( __( 'Two-factor verification failed. Recovery codes were not changed.', 'core-blueprint' ) );
+		}
+
+		$codes = RecoveryCodes::regenerate_for_user( $user_id );
+		if ( [] === $codes ) {
+			throw new RuntimeException( __( 'Recovery codes could not be regenerated. Try again.', 'core-blueprint' ) );
+		}
+
+		Audit::recovery_codes_regenerated( $user_id, $method );
+		return $codes;
+	}
+
+	/**
 	 * Remove Base 2FA after re-verifying both password and the active factor.
 	 *
 	 * @return array<string,mixed>

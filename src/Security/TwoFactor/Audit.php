@@ -13,6 +13,7 @@ final class Audit {
 	public const EVENT_ENROLLMENT_STARTED   = 'security.twofactor.enrollment.started';
 	public const EVENT_ENROLLMENT_COMPLETED = 'security.twofactor.enrollment.completed';
 	public const EVENT_RECOVERY_CODE_USED   = 'security.twofactor.recovery.used';
+	public const EVENT_RECOVERY_REGENERATED = 'security.twofactor.recovery.regenerated';
 	public const EVENT_AUTHENTICATED        = 'security.twofactor.authenticated';
 	public const EVENT_BYPASS_USED          = 'security.twofactor.bypass.used';
 	public const EVENT_MIGRATION_RESET      = 'security.twofactor.migration.reset';
@@ -44,6 +45,16 @@ final class Audit {
 		AuditLog::log( self::EVENT_RECOVERY_CODE_USED, 'warning', [
 			'user_id'   => $user_id,
 			'remaining' => max( 0, $remaining ),
+		] );
+	}
+
+	public static function recovery_codes_regenerated( int $user_id, string $method ): void {
+		if ( $user_id <= 0 || ! in_array( $method, [ 'totp', 'recovery' ], true ) ) {
+			return;
+		}
+		AuditLog::log( self::EVENT_RECOVERY_REGENERATED, 'warning', [
+			'user_id' => $user_id,
+			'method'  => $method,
 		] );
 	}
 

@@ -19,7 +19,8 @@ final class ProfileController {
 	public const START_ACTION   = 'cb_core_two_factor_profile_start';
 	public const CONFIRM_ACTION = 'cb_core_two_factor_profile_confirm';
 	public const CANCEL_ACTION  = 'cb_core_two_factor_profile_cancel';
-	public const REMOVE_ACTION  = 'cb_core_two_factor_profile_remove';
+	public const REMOVE_ACTION     = 'cb_core_two_factor_profile_remove';
+	public const REGENERATE_ACTION = 'cb_core_two_factor_profile_regenerate_recovery';
 
 	private const NOTICE_PREFIX = 'cb_core_two_factor_profile_notice_';
 
@@ -36,6 +37,7 @@ final class ProfileController {
 		add_action( 'admin_post_' . self::CONFIRM_ACTION, [ self::class, 'confirm' ] );
 		add_action( 'admin_post_' . self::CANCEL_ACTION, [ self::class, 'cancel' ] );
 		add_action( 'admin_post_' . self::REMOVE_ACTION, [ self::class, 'remove' ] );
+		add_action( 'admin_post_' . self::REGENERATE_ACTION, [ self::class, 'regenerate_recovery_codes' ] );
 	}
 
 	public static function render( WP_User $profile_user ): void {
@@ -121,6 +123,22 @@ final class ProfileController {
 		self::redirect_profile();
 	}
 
+	public static function regenerate_recovery_codes(): void {
+		$user = self::require_action_user( self::REGENERATE_ACTION );
+
+		try {
+			$codes = AccountManager::regenerate_recovery_codes(
+				$user,
+				self::posted_password(),
+				self::posted_code()
+			);
+			self::render_recovery_codes( $codes );
+		} catch ( \Throwable $error ) {
+			self::set_notice( (int) $user->ID, 'error', $error->getMessage() );
+			self::redirect_profile();
+		}
+	}
+
 	public static function remove(): void {
 		$user = self::require_action_user( self::REMOVE_ACTION );
 
@@ -145,6 +163,17 @@ final class ProfileController {
 			__( 'Unused recovery codes: %d', 'core-blueprint' ),
 			RecoveryCodes::remaining( (int) $user->ID )
 		) ) . '</p>';
+
+		if ( [] === $providers ) {
+			echo '<p>' . esc_html__( 'Generate a new set of recovery codes by confirming your current password and a current authenticator or recovery code.', 'core-blueprint' ) . '</p>';
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+			self::hidden_action( self::REGENERATE_ACTION );
+			self::render_password_field();
+			echo '<p><label>' . esc_html__( 'Authenticator or recovery code', 'core-blueprint' ) . '<br>';
+			echo '<input type="text" class="regular-text" name="cb_two_factor_code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required></label></p>';
+			submit_button( __( 'Generate new recovery codes', 'core-blueprint' ), 'secondary', 'submit', false );
+			echo '</form>';
+		}
 
 		if ( Policy::requires_enrollment( $user ) && [] === $providers ) {
 			echo '<p>' . esc_html__( 'Site policy requires two-factor authentication for this account, so Base two-factor authentication cannot be removed here.', 'core-blueprint' ) . '</p>';

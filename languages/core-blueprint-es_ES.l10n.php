@@ -132,6 +132,12 @@ $catalog['messages'] = array_replace(
         'Two-factor' => 'Dos factores',
         'Two-factor enforcement is temporarily bypassed. A new enforce policy cannot be enabled until Failsafe is closed.' => 'La obligación de autenticación de dos factores está temporalmente omitida. No se puede activar una nueva política obligatoria hasta que se cierre Failsafe.',
         'Your authentication state' => 'Tu estado de autenticación',
+        'Generate a new set of recovery codes by confirming your current password and a current authenticator or recovery code.' => 'Genera un nuevo conjunto de códigos de recuperación confirmando tu contraseña actual y un código actual de autenticación o recuperación.',
+        'Generate new recovery codes' => 'Generar nuevos códigos de recuperación',
+        'Password confirmation failed. Recovery codes were not changed.' => 'La confirmación de la contraseña ha fallado. Los códigos de recuperación no se han modificado.',
+        'Recovery codes could not be regenerated. Try again.' => 'No se pudieron regenerar los códigos de recuperación. Inténtalo de nuevo.',
+        'Two-factor verification failed. Recovery codes were not changed.' => 'La verificación de dos factores ha fallado. Los códigos de recuperación no se han modificado.',
+        'Two-factor: recovery codes regenerated' => 'Dos factores: códigos de recuperación regenerados',
     ]
 );
 
