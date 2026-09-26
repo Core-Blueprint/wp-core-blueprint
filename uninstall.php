@@ -127,6 +127,7 @@ $cb_base_option_prefixes = [
 	'cb_core_integrity_',
 	'cb_core_quarantine_mutation_lock_',
 	'cb_core_schema_lock_',
+	'cb_core_2fa_ch_lock_',
 ];
 foreach ( $cb_base_option_prefixes as $prefix ) {
 	$wpdb->query(
@@ -158,6 +159,8 @@ $cb_base_transient_prefixes = [
 	'cb_core_media_replace_notice_',
 	'cb_core_alert_',
 	'cb_core_profile_',
+	'cb_core_2fa_ch_',
+	'cb_core_two_factor_profile_notice_',
 	'cb_cm_',
 ];
 
@@ -181,6 +184,12 @@ $cb_base_user_meta = [
 	'cb_core_base_role',
 	'_cb_core_privileged_approval',
 	'_cb_core_privileged_review',
+	'_cb_core_two_factor_totp_secret',
+	'_cb_core_two_factor_recovery_hashes',
+	'_cb_core_two_factor_enrolled_at',
+	'_cb_core_two_factor_last_timestep',
+	'_cb_core_two_factor_challenge_generation',
+	'_cb_core_two_factor_pending_enrollment',
 	'cb_core_hud_position',
 	'cb_core_hud_ghost',
 	'cb_core_active_brand',
