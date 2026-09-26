@@ -4,8 +4,11 @@ declare(strict_types=1);
 namespace CB\Core\Security\TwoFactor;
 
 use CB\Core\Admin\ProfileActionForms;
+use CB\Core\Admin\SecureActionScreen;
 use CB\Core\Admin\UserProfileSectionRegistry;
+use CB\Core\UI\Assets as UiAssets;
 use CB\Core\UI\Field;
+use CB\Core\UI\Notice;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;
@@ -43,6 +46,7 @@ final class ProfileController {
 		self::$booted = true;
 
 		add_action( 'cb_core_register_user_profile_sections', [ self::class, 'register_profile_section' ] );
+		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_profile_assets' ] );
 		add_action( 'admin_post_' . self::START_ACTION, [ self::class, 'start' ] );
 		add_action( 'admin_post_' . self::CONFIRM_ACTION, [ self::class, 'confirm' ] );
 		add_action( 'admin_post_' . self::CANCEL_ACTION, [ self::class, 'cancel' ] );
@@ -70,6 +74,25 @@ final class ProfileController {
 			&& Policy::is_in_scope( $profile_user );
 	}
 
+	public static function enqueue_profile_assets( string $hook_suffix ): void {
+		if ( 'profile.php' !== $hook_suffix ) {
+			return;
+		}
+
+		$user = wp_get_current_user();
+		if (
+			! ( $user instanceof WP_User )
+			|| $user->ID <= 0
+			|| ! Policy::is_in_scope( $user )
+			|| ! EnrollmentStore::has_pending( (int) $user->ID )
+		) {
+			return;
+		}
+
+		UiAssets::enqueue_modals( UiAssets::MODAL_PRESENTATION_WP_NATIVE );
+		self::enqueue_cancel_script();
+	}
+
 	public static function render( WP_User $profile_user, string $context = UserProfileSectionRegistry::CONTEXT_SELF ): void {
 		if ( ! self::section_visible( $profile_user, $context ) ) {
 			return;
@@ -80,7 +103,6 @@ final class ProfileController {
 		$enrolled  = CredentialStore::is_enrolled( $user_id );
 		$pending   = ! $enrolled && EnrollmentStore::has_pending( $user_id );
 		$notice    = self::take_notice( $user_id );
-
 
 		if ( null !== $notice ) {
 			$class = 'error' === $notice['type'] ? 'notice notice-error inline' : 'notice notice-success inline';
@@ -139,7 +161,7 @@ final class ProfileController {
 		$user = self::require_action_user( self::CANCEL_ACTION );
 
 		try {
-			AccountManager::cancel_enrollment( $user, self::posted_password() );
+			AccountManager::cancel_enrollment( $user );
 			self::set_notice( (int) $user->ID, 'success', __( 'Pending two-factor setup was cancelled.', 'core-blueprint' ) );
 		} catch ( \Throwable $error ) {
 			self::set_notice( (int) $user->ID, 'error', $error->getMessage() );
@@ -247,14 +269,14 @@ final class ProfileController {
 		ProfileActionForms::register( self::FORM_CONFIRM, self::CONFIRM_ACTION );
 		echo '<div class="cb-core-stack cb-core-stack--loose">';
 		echo '<div class="cb-core-stack cb-core-stack--form">';
-		self::render_profile_password_field( self::FORM_CONFIRM, 'cb-core-two-factor-confirm-password' );
 		self::render_profile_code_field(
 			self::FORM_CONFIRM,
 			'cb-core-two-factor-profile-code',
 			__( 'Verification code', 'core-blueprint' ),
 			true
 		);
-		self::render_profile_submit_button( self::FORM_CONFIRM, __( 'Verify', 'core-blueprint' ), 'primary' );
+		self::render_profile_password_field( self::FORM_CONFIRM, 'cb-core-two-factor-confirm-password' );
+		self::render_profile_submit_button( self::FORM_CONFIRM, __( 'Enable two-factor authentication', 'core-blueprint' ), 'primary' );
 		echo '</div>';
 
 		echo '<div class="cb-core-stack cb-core-stack--form">';
@@ -274,8 +296,9 @@ final class ProfileController {
 
 	private static function render_profile_cancel_controls(): void {
 		ProfileActionForms::register( self::FORM_CANCEL, self::CANCEL_ACTION );
-		self::render_profile_password_field( self::FORM_CANCEL, 'cb-core-two-factor-cancel-password' );
-		self::render_profile_submit_button( self::FORM_CANCEL, __( 'Cancel two-factor setup', 'core-blueprint' ), 'secondary' );
+		echo '<div class="cb-core-form-actions">';
+		echo self::cancel_button_html( self::FORM_CANCEL, false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes every attribute and label.
+		echo '</div>';
 	}
 
 	private static function render_profile_password_field( string $form_id, string $input_id ): void {
@@ -312,56 +335,123 @@ final class ProfileController {
 		echo '</div>';
 	}
 
-	private static function render_standalone_cancel_form(): void {
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		self::hidden_action( self::CANCEL_ACTION );
-		self::render_standalone_password_field();
-		submit_button( __( 'Cancel two-factor setup', 'core-blueprint' ), 'secondary', 'submit', false );
-		echo '</form>';
-	}
-
-	private static function render_standalone_password_field(): void {
-		echo '<p><label>' . esc_html__( 'Current password', 'core-blueprint' ) . '<br>';
-		echo '<input type="password" class="regular-text" name="cb_two_factor_password" autocomplete="current-password" required></label></p>';
-	}
-
 	private static function render_setup_secret( string $secret ): never {
-		nocache_headers();
+		self::enqueue_cancel_script();
 
 		ob_start();
-		echo '<p>' . esc_html__( 'Add this account to your authenticator app, then enter the six-digit code to finish enrollment.', 'core-blueprint' ) . '</p>';
-		echo '<p><strong>' . esc_html__( 'Setup key', 'core-blueprint' ) . '</strong><br><code>' . esc_html( $secret ) . '</code></p>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		self::hidden_action( self::CONFIRM_ACTION );
-		self::render_standalone_password_field();
-		echo '<p><label>' . esc_html__( 'Verification code', 'core-blueprint' ) . '<br>';
-		echo '<input type="text" class="regular-text" name="cb_two_factor_code" autocomplete="one-time-code" inputmode="numeric" required></label></p>';
-		submit_button( __( 'Verify', 'core-blueprint' ), 'primary', 'submit', false );
-		echo '</form>';
-		self::render_standalone_cancel_form();
-		$html = (string) ob_get_clean();
+		echo '<p class="cb-core-secure-action__intro">' . esc_html__( 'Complete these steps to protect this account with an authenticator app.', 'core-blueprint' ) . '</p>';
+		echo '<div class="cb-core-secure-action__steps">';
 
-		wp_die(
-			$html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built exclusively from escaped values and nonce helpers.
-			esc_html__( 'Two-factor authentication', 'core-blueprint' ),
-			[ 'response' => 200 ]
-		);
+		echo '<section class="cb-core-secure-action__step">';
+		echo '<span class="cb-core-secure-action__step-number" aria-hidden="true">1</span>';
+		echo '<div class="cb-core-secure-action__step-content">';
+		echo '<h2 class="cb-core-secure-action__step-title">' . esc_html__( 'Add Core Blueprint to your authenticator app', 'core-blueprint' ) . '</h2>';
+		echo '<p class="cb-core-secure-action__step-copy">' . esc_html__( 'Open your authenticator app, add a new account and enter the setup key below.', 'core-blueprint' ) . '</p>';
+		echo '<div class="cb-core-secure-action__key" role="group" aria-label="' . esc_attr__( 'Setup key', 'core-blueprint' ) . '"><code>' . esc_html( $secret ) . '</code></div>';
+		echo '</div></section>';
+
+		echo '<form class="cb-core-secure-action__form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		self::hidden_action( self::CONFIRM_ACTION );
+
+		echo '<section class="cb-core-secure-action__step">';
+		echo '<span class="cb-core-secure-action__step-number" aria-hidden="true">2</span>';
+		echo '<div class="cb-core-secure-action__step-content">';
+		echo '<h2 class="cb-core-secure-action__step-title">' . esc_html__( 'Enter the six-digit verification code', 'core-blueprint' ) . '</h2>';
+		echo '<p class="cb-core-secure-action__step-copy">' . esc_html__( 'Enter the current code shown for this account in your authenticator app.', 'core-blueprint' ) . '</p>';
+		echo Field::render( [
+			'label'     => __( 'Verification code', 'core-blueprint' ),
+			'label_for' => 'cb-core-two-factor-setup-code',
+			'control'   => '<input type="text" id="cb-core-two-factor-setup-code" class="regular-text" name="cb_two_factor_code" autocomplete="one-time-code" inputmode="numeric" required>',
+		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field owns label escaping; control is static markup.
+		echo '</div></section>';
+
+		echo '<section class="cb-core-secure-action__step">';
+		echo '<span class="cb-core-secure-action__step-number" aria-hidden="true">3</span>';
+		echo '<div class="cb-core-secure-action__step-content">';
+		echo '<h2 class="cb-core-secure-action__step-title">' . esc_html__( 'Confirm with your current WordPress password', 'core-blueprint' ) . '</h2>';
+		echo '<p class="cb-core-secure-action__step-copy">' . esc_html__( 'Enter your current password to confirm this security change.', 'core-blueprint' ) . '</p>';
+		echo Field::render( [
+			'label'     => __( 'Current password', 'core-blueprint' ),
+			'label_for' => 'cb-core-two-factor-setup-password',
+			'control'   => '<input type="password" id="cb-core-two-factor-setup-password" class="regular-text" name="cb_two_factor_password" autocomplete="current-password" required>',
+		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field owns label escaping; control is static markup.
+		echo '</div></section>';
+
+		echo '<div class="cb-core-form-actions">';
+		echo '<button type="submit" class="button button-primary cb-core-button cb-core-button--primary">' . esc_html__( 'Enable two-factor authentication', 'core-blueprint' ) . '</button>';
+		echo self::cancel_button_html( self::FORM_CANCEL, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes every attribute and label.
+		echo '</div>';
+		echo '</form>';
+		echo '</div>';
+
+		self::render_hidden_cancel_form();
+		$body = (string) ob_get_clean();
+
+		SecureActionScreen::render( [
+			'title'          => __( 'Set up two-factor authentication', 'core-blueprint' ),
+			'status_variant' => 'ready',
+			'status_label'   => __( 'Not active yet', 'core-blueprint' ),
+			'body'           => $body,
+		] );
 	}
 
 	/** @param string[] $codes */
 	private static function render_recovery_codes( array $codes ): never {
-		nocache_headers();
+		ob_start();
+		echo '<p class="cb-core-secure-action__intro">' . esc_html__( 'Two-factor authentication is now enabled for this account.', 'core-blueprint' ) . '</p>';
+		echo Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice owns escaping.
+			'variant' => Notice::WARNING,
+			'title'   => __( 'Save your recovery codes now', 'core-blueprint' ),
+			'message' => __( 'Use a recovery code if you lose access to your authenticator app. Each code can be used once, and these codes will not be shown again.', 'core-blueprint' ),
+		] );
 
-		$html = '<p>' . esc_html__( 'Two-factor authentication is active. Save these recovery codes now. Each code can be used once.', 'core-blueprint' ) . '</p><ul>';
+		echo '<ul class="cb-core-secure-action__recovery-list" aria-label="' . esc_attr__( 'Recovery codes', 'core-blueprint' ) . '">';
 		foreach ( $codes as $code ) {
-			$html .= '<li><code>' . esc_html( $code ) . '</code></li>';
+			echo '<li><code>' . esc_html( $code ) . '</code></li>';
 		}
-		$html .= '</ul><p><a href="' . esc_url( self::profile_url() ) . '">' . esc_html__( 'Return to your profile', 'core-blueprint' ) . '</a></p>';
+		echo '</ul>';
+		echo '<div class="cb-core-secure-action__recovery-actions">';
+		echo '<a class="button button-primary cb-core-button cb-core-button--primary" href="' . esc_url( self::profile_url() ) . '">' . esc_html__( 'I have saved my recovery codes', 'core-blueprint' ) . '</a>';
+		echo '</div>';
+		$body = (string) ob_get_clean();
 
-		wp_die(
-			$html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- constructed exclusively from escaped static text and generated recovery codes.
-			esc_html__( 'Save your recovery codes', 'core-blueprint' ),
-			[ 'response' => 200 ]
+		SecureActionScreen::render( [
+			'title'          => __( 'Two-factor authentication is active', 'core-blueprint' ),
+			'status_variant' => 'active',
+			'status_label'   => __( 'Active', 'core-blueprint' ),
+			'body'           => $body,
+		] );
+	}
+
+	private static function render_hidden_cancel_form(): void {
+		echo '<form id="' . esc_attr( self::FORM_CANCEL ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" hidden aria-hidden="true">';
+		self::hidden_action( self::CANCEL_ACTION );
+		echo '</form>';
+	}
+
+	private static function cancel_button_html( string $form_id, bool $core_presentation ): string {
+		$classes = $core_presentation
+			? 'button cb-core-button cb-core-button--secondary'
+			: 'button button-secondary';
+
+		return '<button type="button" class="' . esc_attr( $classes ) . '"'
+			. ' data-cb-two-factor-cancel'
+			. ' data-cb-two-factor-cancel-form="' . esc_attr( $form_id ) . '"'
+			. ' data-cb-two-factor-cancel-title="' . esc_attr__( 'Cancel two-factor setup?', 'core-blueprint' ) . '"'
+			. ' data-cb-two-factor-cancel-body="' . esc_attr__( 'This will discard the unfinished setup and its setup key. Two-factor authentication will not be enabled.', 'core-blueprint' ) . '"'
+			. ' data-cb-two-factor-cancel-confirm="' . esc_attr__( 'Cancel setup', 'core-blueprint' ) . '"'
+			. ' data-cb-two-factor-cancel-dismiss="' . esc_attr__( 'Keep setting up', 'core-blueprint' ) . '">'
+			. esc_html__( 'Cancel setup', 'core-blueprint' )
+			. '</button>';
+	}
+
+	private static function enqueue_cancel_script(): void {
+		wp_enqueue_script(
+			'cb-core-two-factor-profile',
+			CB_CORE_URL . 'assets/js/features/two-factor-profile.js',
+			[],
+			CB_CORE_VERSION,
+			true
 		);
 	}
 
@@ -434,6 +524,6 @@ final class ProfileController {
 	}
 
 	private static function profile_url(): string {
-		return admin_url( 'profile.php#cb-core-two-factor' );
+		return admin_url( 'profile.php#cb-core-user-profile-' . self::SECTION_ID );
 	}
 }
