@@ -28,6 +28,7 @@ final class MigrationBoundary {
 			CredentialStore::META_RECOVERY,
 			CredentialStore::META_ENROLLED_AT,
 			CredentialStore::META_LAST_TIMESTEP,
+			CredentialStore::META_CHALLENGE_GENERATION,
 			EnrollmentStore::META_PENDING,
 		];
 

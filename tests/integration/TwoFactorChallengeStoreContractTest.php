@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use CB\Core\Security\TwoFactor\ChallengeStore;
+use CB\Core\Security\TwoFactor\CredentialStore;
 
 final class CB_Base_Two_Factor_Challenge_Store_Contract_Test extends WP_UnitTestCase {
 
@@ -97,4 +98,24 @@ final class CB_Base_Two_Factor_Challenge_Store_Contract_Test extends WP_UnitTest
 		self::assertNull( ChallengeStore::take( str_repeat( 'g', 64 ) ) );
 		self::assertNull( ChallengeStore::take( str_repeat( 'a', 63 ) ) );
 	}
+	public function test_tc5_generation_rotation_revokes_existing_challenges(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$token = ChallengeStore::create(
+			$user_id,
+			false,
+			admin_url(),
+			ChallengeStore::FLOW_VERIFY
+		);
+
+		$before = CredentialStore::challenge_generation( $user_id );
+		self::assertMatchesRegularExpression( '/^[a-f0-9]{64}$/', $before );
+		self::assertIsArray( ChallengeStore::inspect( $token ) );
+
+		$after = CredentialStore::rotate_challenge_generation( $user_id );
+		self::assertMatchesRegularExpression( '/^[a-f0-9]{64}$/', $after );
+		self::assertNotSame( $before, $after );
+		self::assertNull( ChallengeStore::inspect( $token ) );
+		self::assertNull( ChallengeStore::take( $token ) );
+	}
+
 }

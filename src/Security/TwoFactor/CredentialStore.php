@@ -20,6 +20,7 @@ final class CredentialStore {
 	public const META_RECOVERY      = '_cb_core_two_factor_recovery_hashes';
 	public const META_ENROLLED_AT   = '_cb_core_two_factor_enrolled_at';
 	public const META_LAST_TIMESTEP = '_cb_core_two_factor_last_timestep';
+	public const META_CHALLENGE_GENERATION = '_cb_core_two_factor_challenge_generation';
 
 	public static function store_totp_secret( int $user_id, string $secret ): void {
 		if ( $user_id <= 0 ) {
@@ -111,6 +112,86 @@ final class CredentialStore {
 		return $timestep === self::last_timestep( $user_id );
 	}
 
+	public static function stored_challenge_generation( int $user_id ): ?string {
+		if ( $user_id <= 0 ) {
+			return null;
+		}
+		$stored = get_user_meta( $user_id, self::META_CHALLENGE_GENERATION, true );
+		return self::valid_challenge_generation( $stored ) ? (string) $stored : null;
+	}
+
+	public static function challenge_generation( int $user_id ): string {
+		if ( $user_id <= 0 ) {
+			throw new InvalidArgumentException( 'Invalid two-factor user.' );
+		}
+
+		$stored = self::stored_challenge_generation( $user_id );
+		if ( null !== $stored ) {
+			return $stored;
+		}
+
+		for ( $attempt = 0; $attempt < 3; $attempt++ ) {
+			$next = bin2hex( random_bytes( 32 ) );
+
+			if ( ! metadata_exists( 'user', $user_id, self::META_CHALLENGE_GENERATION ) ) {
+				if ( add_user_meta( $user_id, self::META_CHALLENGE_GENERATION, $next, true ) ) {
+					return $next;
+				}
+			} else {
+				$previous = get_user_meta( $user_id, self::META_CHALLENGE_GENERATION, true );
+				if ( self::valid_challenge_generation( $previous ) ) {
+					return (string) $previous;
+				}
+				$updated = update_user_meta(
+					$user_id,
+					self::META_CHALLENGE_GENERATION,
+					$next,
+					$previous
+				);
+				if (
+					false !== $updated
+					&& hash_equals( $next, (string) get_user_meta( $user_id, self::META_CHALLENGE_GENERATION, true ) )
+				) {
+					return $next;
+				}
+			}
+
+			$stored = self::stored_challenge_generation( $user_id );
+			if ( null !== $stored ) {
+				return $stored;
+			}
+		}
+
+		throw new RuntimeException( 'Could not establish two-factor challenge generation.' );
+	}
+
+	public static function rotate_challenge_generation( int $user_id ): string {
+		$current = self::challenge_generation( $user_id );
+
+		for ( $attempt = 0; $attempt < 3; $attempt++ ) {
+			$next = bin2hex( random_bytes( 32 ) );
+			$updated = update_user_meta(
+				$user_id,
+				self::META_CHALLENGE_GENERATION,
+				$next,
+				$current
+			);
+			if (
+				false !== $updated
+				&& hash_equals( $next, (string) get_user_meta( $user_id, self::META_CHALLENGE_GENERATION, true ) )
+			) {
+				return $next;
+			}
+
+			$latest = self::stored_challenge_generation( $user_id );
+			if ( null !== $latest && ! hash_equals( $current, $latest ) ) {
+				$current = $latest;
+			}
+		}
+
+		throw new RuntimeException( 'Could not rotate two-factor challenge generation.' );
+	}
+
 	/** @return string[] */
 	public static function recovery_hashes( int $user_id ): array {
 		$stored = get_user_meta( $user_id, self::META_RECOVERY, true );
@@ -175,6 +256,12 @@ final class CredentialStore {
 		] as $key ) {
 			delete_user_meta( $user_id, $key );
 		}
+	}
+
+	private static function valid_challenge_generation( mixed $generation ): bool {
+		return is_string( $generation )
+			&& 64 === strlen( $generation )
+			&& 1 === preg_match( '/^[a-f0-9]{64}$/', $generation );
 	}
 
 	/** @param string[] $hashes

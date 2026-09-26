@@ -24,7 +24,7 @@ final class ChallengeStore {
 	public const TTL_SECONDS  = 300;
 	public const MAX_ATTEMPTS = 5;
 
-	private const VERSION          = 1;
+	private const VERSION          = 2;
 	private const TRANSIENT_PREFIX = 'cb_core_2fa_ch_';
 	private const LOCK_PREFIX      = 'cb_core_2fa_ch_lock_';
 	private const LOCK_STALE_AFTER = 30;
@@ -46,6 +46,7 @@ final class ChallengeStore {
 		return self::persist_state( [
 			'version'    => self::VERSION,
 			'user_id'    => $user_id,
+			'generation' => CredentialStore::challenge_generation( $user_id ),
 			'remember'   => $remember,
 			'redirect_to'=> wp_validate_redirect( $redirect_to, admin_url() ),
 			'flow'       => $flow,
@@ -223,9 +224,21 @@ final class ChallengeStore {
 			return null;
 		}
 
-		$attempts   = (int) ( $state['attempts'] ?? -1 );
-		$created_at = (int) ( $state['created_at'] ?? 0 );
-		$expires_at = (int) ( $state['expires_at'] ?? 0 );
+		$user_id     = (int) $state['user_id'];
+		$generation  = (string) ( $state['generation'] ?? '' );
+		$attempts    = (int) ( $state['attempts'] ?? -1 );
+		$created_at  = (int) ( $state['created_at'] ?? 0 );
+		$expires_at  = (int) ( $state['expires_at'] ?? 0 );
+
+		$current_generation = CredentialStore::stored_challenge_generation( $user_id );
+		if (
+			64 !== strlen( $generation )
+			|| 1 !== preg_match( '/^[a-f0-9]{64}$/', $generation )
+			|| null === $current_generation
+			|| ! hash_equals( $current_generation, $generation )
+		) {
+			return null;
+		}
 		if (
 			$attempts < 0
 			|| $attempts >= self::MAX_ATTEMPTS
@@ -238,7 +251,8 @@ final class ChallengeStore {
 
 		return [
 			'version'     => self::VERSION,
-			'user_id'     => (int) $state['user_id'],
+			'user_id'     => $user_id,
+			'generation'  => $generation,
 			'remember'    => ! empty( $state['remember'] ),
 			'redirect_to' => wp_validate_redirect( (string) ( $state['redirect_to'] ?? '' ), admin_url() ),
 			'flow'        => (string) $state['flow'],

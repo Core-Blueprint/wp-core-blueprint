@@ -149,6 +149,11 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 			admin_url(),
 			ChallengeStore::FLOW_VERIFY
 		);
+		$imported_generation = CredentialStore::challenge_generation( $imported_id );
+		self::assertSame(
+			$imported_generation,
+			get_user_meta( $imported_id, CredentialStore::META_CHALLENGE_GENERATION, true )
+		);
 		self::assertTrue( CredentialStore::is_enrolled( $imported_id ) );
 		self::assertTrue( CredentialStore::is_enrolled( $subscriber_with_2fa_id ) );
 		self::assertNotNull( EnrollmentStore::pending_secret( $pending_user_id ) );
@@ -191,6 +196,10 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 		self::assertSame( [], CredentialStore::recovery_hashes( $imported_id ) );
 		self::assertNull( EnrollmentStore::pending_secret( $pending_user_id ) );
 		self::assertNull( ChallengeStore::inspect( $imported_challenge ) );
+		self::assertFalse(
+			metadata_exists( 'user', $imported_id, CredentialStore::META_CHALLENGE_GENERATION ),
+			'Imported 2FA challenge generation crossed the destination trust boundary.'
+		);
 		self::assertSame( 'preserve-me', get_user_meta( $subscriber_with_2fa_id, '_cb_unrelated_meta', true ) );
 
 		foreach ( [ $actor_id, $imported_id, $other_id ] as $id ) {
