@@ -31,6 +31,19 @@ final class LoginController {
 			return [ 'status' => 'invalid' ];
 		}
 
+		if ( Failsafe::is_bypassed() ) {
+			$consumed = ChallengeStore::take( $token );
+			if ( ! is_array( $consumed ) ) {
+				return [ 'status' => 'invalid' ];
+			}
+			return [
+				'status' => 'success',
+				'state'  => $consumed,
+				'user'   => $user,
+				'method' => 'failsafe',
+			];
+		}
+
 		if ( ProviderDetector::external_provider_owns_user( $user ) ) {
 			return [ 'status' => 'restart' ];
 		}
@@ -162,6 +175,19 @@ final class LoginController {
 		}
 
 		$result = self::prepare( $token );
+		if ( 'success' === (string) ( $result['status'] ?? '' ) ) {
+			$user  = $result['user'];
+			$state = $result['state'];
+			$url = LoginFlow::establish_authenticated_session(
+				$user,
+				! empty( $state['remember'] ),
+				(string) $state['redirect_to'],
+				(string) $result['method']
+			);
+			wp_safe_redirect( $url );
+			exit;
+		}
+
 		if ( 'ready' !== (string) ( $result['status'] ?? '' ) ) {
 			self::render_terminal_error();
 			exit;

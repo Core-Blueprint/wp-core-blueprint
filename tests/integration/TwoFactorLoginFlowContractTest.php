@@ -174,7 +174,31 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 		self::assertNull( ChallengeStore::inspect( $token ) );
 	}
 
-	public function test_lf10_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
+	public function test_lf10_existing_challenge_get_stands_down_immediately_when_failsafe_becomes_active(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		CredentialStore::store_totp_secret( $user_id, 'JBSWY3DPEHPK3PXP' );
+		$token = ChallengeStore::create(
+			$user_id,
+			true,
+			admin_url( 'plugins.php' ),
+			ChallengeStore::FLOW_VERIFY
+		);
+
+		update_option( CB_CORE_BYPASS_OPT, 'emergency', false );
+		$result = LoginController::prepare( $token );
+
+		self::assertSame( 'success', $result['status'] ?? null );
+		self::assertSame( 'failsafe', $result['method'] ?? null );
+		self::assertSame( $user_id, (int) ( $result['user']->ID ?? 0 ) );
+		self::assertTrue( ! empty( $result['state']['remember'] ) );
+		self::assertSame( admin_url( 'plugins.php' ), $result['state']['redirect_to'] ?? null );
+		self::assertNull(
+			ChallengeStore::inspect( $token ),
+			'Failsafe GET bypass left the old one-time challenge reusable.'
+		);
+	}
+
+	public function test_lf11_noninteractive_password_auth_fails_closed_for_base_owned_2fa(): void {
 		$user = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
 		self::assertInstanceOf( WP_User::class, $user );
 		CredentialStore::store_totp_secret( (int) $user->ID, 'JBSWY3DPEHPK3PXP' );
