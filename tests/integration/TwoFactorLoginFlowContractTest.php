@@ -155,6 +155,11 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 	}
 
 	public function test_lf7_enrollment_challenge_promotes_secret_and_returns_recovery_codes_once(): void {
+		Settings::set_key( Policy::SETTINGS_KEY, [
+			'mode'  => Policy::MODE_ENFORCE,
+			'scope' => Policy::SCOPE_PRIVILEGED,
+		], 'two-factor-login-test' );
+
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		$token = ChallengeStore::create( $user_id, false, admin_url(), ChallengeStore::FLOW_ENROLL );
 
