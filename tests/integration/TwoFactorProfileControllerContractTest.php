@@ -63,6 +63,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 
 		self::assertStringContainsString( 'form="cb-core-two-factor-start-form"', $html );
 		self::assertStringContainsString( 'button button-primary', $html );
+		self::assertStringContainsString( 'cb-core-form-actions', $html );
 		self::assertStringContainsString( 'cb-core-stack cb-core-stack--form', $html );
 		self::assertStringContainsString( 'autocomplete="current-password"', $html );
 		self::assertStringNotContainsString( '<form', $html );
@@ -100,6 +101,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 
 		self::assertStringNotContainsString( $secret, $html );
 		self::assertStringContainsString( 'form="cb-core-two-factor-confirm-form"', $html );
+		self::assertGreaterThanOrEqual( 2, substr_count( $html, 'cb-core-form-actions' ) );
 		self::assertStringContainsString( 'form="cb-core-two-factor-cancel-form"', $html );
 		self::assertStringContainsString( ProfileController::CONFIRM_ACTION, $action_forms );
 		self::assertStringContainsString( ProfileController::CANCEL_ACTION, $action_forms );
@@ -127,6 +129,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 		self::assertStringContainsString( ProfileController::REMOVE_ACTION, $action_forms );
 		self::assertStringContainsString( ProfileController::REGENERATE_ACTION, $action_forms );
 		self::assertStringContainsString( 'form="cb-core-two-factor-regenerate-form"', $html );
+		self::assertGreaterThanOrEqual( 2, substr_count( $html, 'cb-core-form-actions' ) );
 		self::assertStringContainsString( 'form="cb-core-two-factor-remove-form"', $html );
 		self::assertStringNotContainsString( '<form', $html );
 		self::assertStringContainsString( 'autocomplete="current-password"', $html );

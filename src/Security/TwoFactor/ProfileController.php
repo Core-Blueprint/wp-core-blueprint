@@ -235,7 +235,9 @@ final class ProfileController {
 		echo '<p><strong>' . esc_html__( 'Two-factor setup is waiting for confirmation.', 'core-blueprint' ) . '</strong></p>';
 		if ( $external_provider ) {
 			echo '<p>' . esc_html__( 'An external provider is now active. Cancel the pending Base setup if you no longer need it.', 'core-blueprint' ) . '</p>';
+			echo '<div class="cb-core-stack cb-core-stack--form">';
 			self::render_profile_cancel_controls();
+			echo '</div>';
 			return;
 		}
 
@@ -305,7 +307,9 @@ final class ProfileController {
 			$classes .= ' button-secondary button-link-delete';
 		}
 
+		echo '<div class="cb-core-form-actions">';
 		echo '<button type="submit" class="' . esc_attr( $classes ) . '" form="' . esc_attr( $form_id ) . '">' . esc_html( $label ) . '</button>';
+		echo '</div>';
 	}
 
 	private static function render_standalone_cancel_form(): void {
