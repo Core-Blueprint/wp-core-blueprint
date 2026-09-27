@@ -33,6 +33,7 @@ namespace CB\Core\Admin\Pages;
 
 use CB\Core\Admin\Admin;
 use CB\Core\Admin\PageBase;
+use CB\Core\Compliance\Admin\Page as CompliancePage;
 use CB\Core\ContentModels\Admin\Page as ContentModelsPage;
 use CB\Core\ContentModels\State as ContentModelsState;
 use CB\Core\Dashboard\CardRegistry as DashboardCardRegistry;
@@ -101,6 +102,7 @@ final class Dashboard extends PageBase {
 		$preferences_slug = Admin::PREFERENCES_SLUG;
 		$notes_slug       = 'core-blueprint-notes';
 		$reports_slug     = 'core-blueprint-reports';
+		$compliance_slug  = CompliancePage::SLUG;
 		$user_roles_slug     = RolesPage::SLUG;
 		$media_replace_slug    = MediaReplacePage::SLUG;
 		$media_formats_slug    = MediaFormatsPage::SLUG;
@@ -152,6 +154,16 @@ final class Dashboard extends PageBase {
 				'preferences_url' => add_query_arg( 'tab', 'reports', admin_url( 'admin.php?page=' . $preferences_slug ) ),
 				'enabled'         => $reports_enabled,
 				'state'           => $reports_enabled ? 'ok' : 'off',
+			],
+			[
+				'id'    => 'compliance',
+				'title' => __( 'Compliance', 'core-blueprint' ),
+				'meta'  => implode( ' · ', [
+					__( 'Privacy Policy', 'core-blueprint' ),
+					__( 'Disclaimer', 'core-blueprint' ),
+					__( 'Terms & Conditions', 'core-blueprint' ),
+				] ),
+				'url'   => admin_url( 'admin.php?page=' . $compliance_slug ),
 			],
 		];
 
