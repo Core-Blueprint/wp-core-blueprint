@@ -109,8 +109,9 @@ final class CB_Base_Two_Factor_Safeguards_Policy_Contract_Test extends WP_UnitTe
 		$html = (string) ob_get_clean();
 
 		self::assertStringContainsString( 'data-cb-core-two-factor-mode', $html );
-		self::assertStringContainsString( 'class="cb-core-field"', $html );
+		self::assertSame( 2, substr_count( $html, 'class="cb-core-field"' ) );
 		self::assertStringContainsString( 'class="cb-core-radio-card', $html );
+		self::assertStringContainsString( 'Your authentication state', $html );
 		self::assertStringContainsString( 'Enroll Base two-factor authentication before enforcing.', $html );
 		self::assertStringContainsString( 'profile.php#cb-core-two-factor', $html );
 
