@@ -2,7 +2,6 @@
 	'use strict';
 
 	const config = window.cbCoreDesignerLaunch || {};
-	const IDENTITY_CONDENSED_WIDTH = 1700;
 	const COMPACT_WIDTH = 800;
 	const READY_RETRY_DELAY_MS = 50;
 	const READY_RETRY_LIMIT = 200;
@@ -36,6 +35,16 @@
 			host.setAttribute('aria-hidden', 'true');
 			return Array.from(host.querySelectorAll('button'));
 		}));
+	};
+
+	const needsIdentityCondensation = (toolbar, start) => {
+		if (!(toolbar instanceof Element) || !(start instanceof Element)) return false;
+		toolbar.classList.remove('is-identity-condensed');
+		toolbar.classList.add('is-measuring-identity');
+		const requiredWidth = start.scrollWidth;
+		const availableWidth = start.clientWidth;
+		toolbar.classList.remove('is-measuring-identity');
+		return requiredWidth > availableWidth + 1;
 	};
 
 	const composeCompactToolbar = (shell, shellApi) => {
@@ -210,10 +219,10 @@
 
 		const applyCompactState = () => {
 			const width = toolbar.getBoundingClientRect().width;
-			const condensedIdentity = width <= IDENTITY_CONDENSED_WIDTH;
 			const compact = width <= COMPACT_WIDTH;
-			toolbar.classList.toggle('is-identity-condensed', condensedIdentity);
 			toolbar.classList.toggle('is-compact', compact);
+			const condensedIdentity = compact || needsIdentityCondensation(toolbar, start);
+			toolbar.classList.toggle('is-identity-condensed', condensedIdentity);
 			if (!compact) closeAll();
 		};
 		if (typeof ResizeObserver === 'function') {
