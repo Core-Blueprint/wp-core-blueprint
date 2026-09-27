@@ -383,12 +383,11 @@ final class ProfileController {
 			'label_for' => 'cb-core-two-factor-setup-password',
 			'control'   => '<input type="password" id="cb-core-two-factor-setup-password" class="regular-text" name="cb_two_factor_password" autocomplete="current-password" required>',
 		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field owns label escaping; control is static markup.
-		echo '</div></section>';
-
-		echo '<div class="cb-core-form-actions cb-core-secure-action__form-actions">';
+		echo '<div class="cb-core-form-actions">';
 		echo '<button type="submit" class="button button-primary cb-core-button cb-core-button--primary">' . esc_html__( 'Enable two-factor authentication', 'core-blueprint' ) . '</button>';
 		echo self::cancel_button_html( self::FORM_CANCEL, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes every attribute and label.
 		echo '</div>';
+		echo '</div></section>';
 		echo '</form>';
 		echo '</div>';
 		echo '</div>';
