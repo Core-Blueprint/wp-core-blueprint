@@ -400,7 +400,7 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "'Privacy Policy'", $dashboard );
 		self::assertStringContainsString( "'Disclaimer'", $dashboard );
 		self::assertStringContainsString( "'Terms & Conditions'", $dashboard );
-		self::assertStringContainsString( "admin.php?page=' . $compliance_slug", $dashboard );
+		self::assertStringContainsString( "admin.php?page=' . \$compliance_slug", $dashboard );
 	}
 
 	private function create_fixture(): void {
