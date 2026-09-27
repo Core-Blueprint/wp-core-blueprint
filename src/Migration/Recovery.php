@@ -23,6 +23,7 @@ use CB\Core\Permissions\Roles;
 use CB\Core\Permissions\TrustSchemaMigrator;
 use CB\Core\Security\Failsafe;
 use CB\Core\Security\LoginShield;
+use CB\Core\Security\TwoFactor\LoginFlow;
 use CB\Core\Security\TwoFactor\MigrationBoundary;
 use RuntimeException;
 use WP_Error;
@@ -54,6 +55,7 @@ final class Recovery {
 		add_action( 'login_form', [ self::class, 'render_login_ticket_field' ] );
 		add_filter( 'wp_authenticate_user', [ self::class, 'require_management_identity' ], 100, 2 );
 		add_action( 'wp_login', [ self::class, 'complete_authenticated_login' ], 100, 2 );
+		add_action( 'cb_core_two_factor_authenticated', [ self::class, 'complete_two_factor_login' ], 10, 2 );
 		add_filter( 'login_message', [ self::class, 'login_message' ] );
 	}
 
@@ -372,7 +374,7 @@ final class Recovery {
 			} catch ( \Throwable ) {
 				return false;
 			}
-			return in_array( (string) ( $state['status'] ?? '' ), [ 'pending_reconcile', 'pending_auth', 'authenticated' ], true )
+			return in_array( (string) ( $state['status'] ?? '' ), [ 'pending_reconcile', 'pending_auth', 'pending_two_factor', 'authenticated' ], true )
 				&& self::state_matches_ticket( $state, $ticket, $payload );
 		}
 
@@ -419,24 +421,30 @@ final class Recovery {
 			return;
 		}
 
-		if ( ! PrivilegedAccessRegistry::approve( $user, 0, 'migration_recovery' ) ) {
+		if ( LoginFlow::is_password_stage_pending( (int) $user->ID ) ) {
+			$state['status'] = 'pending_two_factor';
+			$state['pending_user_id'] = (int) $user->ID;
+			update_option( self::OPTION, $state, false );
 			return;
 		}
+
+		self::approve_authenticated_identity( $user );
+	}
+
+	public static function complete_two_factor_login( WP_User $user, string $method ): void {
+		unset( $method );
 
 		$state = self::state();
-		if ( ! $state ) {
+		if (
+			! $state
+			|| 'pending_two_factor' !== (string) ( $state['status'] ?? '' )
+			|| (int) $user->ID !== (int) ( $state['pending_user_id'] ?? 0 )
+			|| ! self::is_management_identity( $user )
+		) {
 			return;
 		}
-		$state['status'] = 'authenticated';
-		$state['approved_user_id'] = (int) $user->ID;
-		$state['authenticated_at'] = time();
-		update_option( self::OPTION, $state, false );
 
-		AuditLog::log( 'migration.recovery.identity_approved', 'warning', [
-			'recovery_id' => (string) $state['recovery_id'],
-			'user_id'     => (int) $user->ID,
-			'user_login'  => (string) $user->user_login,
-		] );
+		self::approve_authenticated_identity( $user );
 	}
 
 	public static function login_message( string $message ): string {
@@ -449,6 +457,31 @@ final class Recovery {
 			'core-blueprint'
 		) . '</p>';
 		return $notice . $message;
+	}
+
+	private static function approve_authenticated_identity( WP_User $user ): bool {
+		if ( ! PrivilegedAccessRegistry::approve( $user, 0, 'migration_recovery' ) ) {
+			return false;
+		}
+
+		$state = self::state();
+		if ( ! $state ) {
+			return false;
+		}
+
+		$state['status'] = 'authenticated';
+		$state['approved_user_id'] = (int) $user->ID;
+		$state['authenticated_at'] = time();
+		unset( $state['pending_user_id'] );
+		update_option( self::OPTION, $state, false );
+
+		AuditLog::log( 'migration.recovery.identity_approved', 'warning', [
+			'recovery_id' => (string) $state['recovery_id'],
+			'user_id'     => (int) $user->ID,
+			'user_login'  => (string) $user->user_login,
+		] );
+
+		return true;
 	}
 
 	private static function ticket_is_active( string $ticket ): bool {
