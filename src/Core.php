@@ -119,6 +119,10 @@ final class Core {
 			Extensions::init();
 		}
 
+		// Native WordPress Admin Navigation presentation governance. Sidebar
+		// runtime is site wp-admin only; Toolbar rules may also apply on frontend.
+		\CB\Core\AdminNavigation\Bootstrap::boot();
+
 		// AJAX routers exist only for actual admin-ajax.php requests. Their
 		// handlers are still registered before WordPress dispatches the action.
 		if ( RequestContext::is_ajax() ) {
