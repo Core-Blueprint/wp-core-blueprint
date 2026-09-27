@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 use CB\Core\Admin\AdminModuleCatalog;
 use CB\Core\Admin\Pages\Safeguards;
+use CB\Core\Admin\ScreenAssetRegistry;
+use CB\Core\Admin\ScreenContext;
 use CB\Core\Ajax\Handlers\TwoFactorPolicy;
 use CB\Core\Ajax\SecurityRouter;
 use CB\Core\Permissions\PrivilegedAccessGuard;
@@ -30,6 +32,23 @@ final class CB_Base_Two_Factor_Safeguards_Policy_Contract_Test extends WP_UnitTe
 		$_GET = $this->original_get;
 		wp_set_current_user( 0 );
 		parent::tear_down();
+	}
+
+	public function test_two_factor_tab_preserves_screen_context_and_loads_shared_radio_card_assets(): void {
+		$_GET['page'] = Safeguards::SLUG;
+		$_GET['tab'] = 'two-factor';
+
+		$context = ScreenContext::from_request( 'core-blueprint_page_' . Safeguards::SLUG );
+
+		self::assertSame( Safeguards::SLUG, $context->page() );
+		self::assertSame( 'two-factor', $context->tab() );
+
+		$requirements = ScreenAssetRegistry::requirements( $context );
+		self::assertContains( 'component.panels', $requirements );
+		self::assertContains( 'component.radio-card', $requirements );
+		self::assertContains( 'foundation.modal', $requirements );
+		self::assertContains( 'foundation.toast', $requirements );
+		self::assertContains( 'module.two-factor-policy', $requirements );
 	}
 
 	public function test_tg1_security_router_registers_password_reconfirmed_policy_endpoint(): void {
