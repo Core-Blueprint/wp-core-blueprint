@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CB\Core\Profiles;
 
 use CB\Core\ExtensionRegistry;
+use CB\Core\Profiles\Sections\AdminNavigationSection;
 use CB\Core\Profiles\Sections\AIGovernanceSection;
 use CB\Core\Profiles\Sections\AuditNotificationsSection;
 use CB\Core\Profiles\Sections\ContentModelsSection;
@@ -170,6 +171,7 @@ final class SectionRegistry {
 		$sections = [];
 		foreach ( [
 			new SecuritySection(),
+			new AdminNavigationSection(),
 			new PrivacySection(),
 			new AuditNotificationsSection(),
 			new IntegritySection(),

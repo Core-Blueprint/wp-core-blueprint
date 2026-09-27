@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace CB\Core\AdminNavigation;
 
+use CB\Core\Log\AuditLog;
+
 defined( 'ABSPATH' ) || exit;
 
 final class Policy {
@@ -55,25 +57,48 @@ final class Policy {
 		}
 	}
 
-	/** Replace the complete policy with one validated canonical document. */
-	public static function replace( array $candidate ): bool {
+	/** Replace the complete policy through the canonical mutation boundary. */
+	public static function replace( array $candidate, string $actor = 'runtime' ): bool {
 		$normalized = self::normalize( $candidate );
-		if ( self::defaults() === $normalized ) {
-			if ( null === get_option( self::OPTION, null ) ) {
-				return true;
-			}
-			return delete_option( self::OPTION );
-		}
+		$before     = self::get();
+		$stored     = get_option( self::OPTION, null );
 
-		if ( $normalized === self::get() && null !== get_option( self::OPTION, null ) ) {
+		// Semantic no-op: do not manufacture an audit event. A corrupt/foreign
+		// stored value may still be physically cleared when the effective policy
+		// is already the empty default.
+		if ( $before === $normalized ) {
+			if ( self::defaults() === $normalized && null !== $stored ) {
+				return delete_option( self::OPTION );
+			}
 			return true;
 		}
 
-		return update_option( self::OPTION, $normalized, false );
+		$changed = self::defaults() === $normalized
+			? ( null === $stored || delete_option( self::OPTION ) )
+			: update_option( self::OPTION, $normalized, false );
+
+		if ( ! $changed ) {
+			return false;
+		}
+
+		self::audit_mutation( 'ui.admin.navigation.changed', $actor, $before, $normalized );
+		return true;
 	}
 
-	public static function reset(): bool {
-		return null === get_option( self::OPTION, null ) || delete_option( self::OPTION );
+	/** Reset all Admin Navigation presentation overrides. */
+	public static function reset( string $actor = 'runtime' ): bool {
+		$before = self::get();
+		$stored = get_option( self::OPTION, null );
+		if ( self::defaults() === $before ) {
+			return null === $stored || delete_option( self::OPTION );
+		}
+
+		if ( null !== $stored && ! delete_option( self::OPTION ) ) {
+			return false;
+		}
+
+		self::audit_mutation( 'ui.admin.navigation.reset', $actor, $before, self::defaults() );
+		return true;
 	}
 
 	/** @return array{version:int,menu:array{order:list<string>,hidden:list<array>},toolbar:array{hidden:list<array>,renamed:list<array>}} */
@@ -157,6 +182,7 @@ final class Policy {
 		}
 
 		$normalized = [];
+		$seen       = [];
 		foreach ( $rules as $rule ) {
 			if ( ! is_array( $rule ) || array_is_list( $rule ) ) {
 				throw new \InvalidArgumentException( 'Admin Navigation rule is invalid.' );
@@ -164,6 +190,10 @@ final class Policy {
 			$keys = $rename ? [ 'id', 'label', 'audience' ] : [ 'id', 'audience' ];
 			self::assert_exact_keys( $rule, $keys, 'rule' );
 			$id = self::identity( $rule['id'] ?? null );
+			if ( isset( $seen[ $id ] ) ) {
+				throw new \InvalidArgumentException( 'Admin Navigation rule identities must be unique within each rule list.' );
+			}
+			$seen[ $id ] = true;
 			$entry = [
 				'id'       => $id,
 				'audience' => Audience::normalize( self::object( $rule['audience'] ?? null, 'audience' ) ),
@@ -213,6 +243,30 @@ final class Policy {
 		if ( $actual !== $expected ) {
 			throw new \InvalidArgumentException( sprintf( 'Admin Navigation %s has an invalid schema.', $name ) );
 		}
+	}
+
+	/** Write one bounded governance event after a real state change. */
+	private static function audit_mutation( string $event, string $actor, array $before, array $after ): void {
+		if ( ! class_exists( AuditLog::class ) ) {
+			return;
+		}
+
+		$actor = substr( sanitize_text_field( $actor ), 0, 120 );
+		AuditLog::log( $event, 'notice', [
+			'actor'  => $actor,
+			'before' => self::audit_counts( $before ),
+			'after'  => self::audit_counts( $after ),
+		] );
+	}
+
+	/** @return array{menu_order:int,menu_hidden:int,toolbar_hidden:int,toolbar_renamed:int} */
+	private static function audit_counts( array $policy ): array {
+		return [
+			'menu_order'      => count( (array) ( $policy['menu']['order'] ?? [] ) ),
+			'menu_hidden'     => count( (array) ( $policy['menu']['hidden'] ?? [] ) ),
+			'toolbar_hidden'  => count( (array) ( $policy['toolbar']['hidden'] ?? [] ) ),
+			'toolbar_renamed' => count( (array) ( $policy['toolbar']['renamed'] ?? [] ) ),
+		];
 	}
 
 	/** @return list<string> */

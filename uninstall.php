@@ -100,6 +100,7 @@ $foundation_options = [
 	'cb_core_compliance_custom_resources',
 	'cb_core_hud_disabled',
 	'cb_core_hud_menu_preferences',
+	'cb_core_admin_navigation_policy',
 	'cb_core_integrity_latest',
 	'cb_core_integrity_baseline',
 	'cb_core_integrity_history',
