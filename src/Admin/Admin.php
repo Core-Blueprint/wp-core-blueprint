@@ -96,7 +96,7 @@ final class Admin {
 		PageRegistry::register_base(
 			new CompliancePage(),
 			[
-				'foundations' => [ 'object-picker' ],
+				'foundations' => [ 'object-picker', 'toast' ],
 				'components'  => [ 'fields', 'form-controls', 'disclosure', 'badges', 'state-badges', 'notices' ],
 			]
 		);
