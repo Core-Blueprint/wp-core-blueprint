@@ -7,6 +7,7 @@
 
 .cb-core-design-shell__toolbar--designer {
 	--cb-design-toolbar-control-size: calc(var(--cb-control-height) + var(--cb-space-1));
+	--cb-brand-lockup-size: 1.3rem;
 }
 
 .cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-zone,
@@ -117,7 +118,11 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 	display: none !important;
 }
 
-/* Canonical active design target. Consumers supply the select/options; Base owns placement and geometry. */
+/*
+ * Canonical active design target. Consumers supply the select/options; Base owns
+ * placement and geometry. The context selector always follows the branded
+ * Designer identity in the start zone; the center zone remains canvas-owned.
+ */
 .cb-core-design-shell__toolbar-context {
 	display: flex;
 	align-items: center;
@@ -126,7 +131,7 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 	flex: 0 1 auto;
 	width: auto;
 	min-width: 0;
-	max-width: min(420px, 42vw);
+	max-width: min(16rem, 36vw);
 	block-size: var(--cb-design-toolbar-control-size);
 	min-block-size: var(--cb-design-toolbar-control-size);
 	margin-block: 0 !important;
@@ -134,6 +139,19 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 
 .cb-core-design-shell__toolbar-zone--start > .cb-core-design-shell__toolbar-context {
 	align-self: center;
+}
+
+/*
+ * Runtime measurement state for content-driven identity condensation. Base
+ * temporarily measures the preferred inline size of START without allowing the
+ * identity/context children to shrink, then removes this class before paint.
+ */
+.cb-core-design-shell__toolbar--designer.is-measuring-identity .cb-core-design-shell__toolbar-zone--start {
+	justify-self: stretch;
+}
+
+.cb-core-design-shell__toolbar--designer.is-measuring-identity .cb-core-design-shell__toolbar-zone--start > * {
+	flex-shrink: 0;
 }
 
 .cb-core-design-shell__toolbar-context > .cb-core-field__label,
@@ -162,12 +180,20 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 	white-space: nowrap;
 }
 
-.cb-core-design-shell__brand--contextual .cb-core-design-shell__brand-mark {
-	margin-inline-end: 0;
+.cb-core-design-shell__toolbar--designer.is-identity-condensed .cb-core-design-shell__brand-wordmark {
+	display: none !important;
+}
+
+.cb-core-design-shell__toolbar--designer.is-identity-condensed .cb-core-design-shell__toolbar-context {
+	max-width: min(14rem, 32vw);
+}
+
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-context {
+	max-width: min(14rem, 34vw);
 }
 
 @media (max-width: 900px) {
 	.cb-core-design-shell__toolbar-context {
-		max-width: min(260px, 48vw);
+		max-width: min(16rem, 48vw);
 	}
 }

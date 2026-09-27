@@ -92,6 +92,7 @@ final class Admin {
 	public static function register_foundation_pages(): void {
 		PageRegistry::register_base( new Logs() );
 		PageRegistry::register_base( new Safeguards() );
+
 		PageRegistry::register_base(
 			new CompliancePage(),
 			[

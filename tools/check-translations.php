@@ -189,8 +189,8 @@ foreach ( $files as $file ) {
     }
 }
 
-if ( 3578 !== count( $source ) ) {
-    fail_translation_check( 'Expected 3578 canonical source keys, found ' . count( $source ) . '.' );
+if ( 3644 !== count( $source ) ) {
+    fail_translation_check( 'Expected 3644 canonical source keys, found ' . count( $source ) . '.' );
 }
 
 if ( in_array( '--export-source', $argv ?? [], true ) ) {

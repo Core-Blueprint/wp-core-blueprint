@@ -6,6 +6,9 @@ use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Permissions\RolePolicySchema;
 use CB\Core\Permissions\TrustSchemaMigrator;
+use CB\Core\Security\TwoFactor\ChallengeStore;
+use CB\Core\Security\TwoFactor\CredentialStore;
+use CB\Core\Security\TwoFactor\EnrollmentStore;
 
 final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 
@@ -129,6 +132,33 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 		self::assertInstanceOf( WP_User::class, $other );
 		self::assertTrue( PrivilegedAccessRegistry::approve( $other, 0, 'simulated_source_approval' ) );
 
+		CredentialStore::store_totp_secret( $imported_id, 'JBSWY3DPEHPK3PXP' );
+		CredentialStore::store_recovery_hashes( $imported_id, [ wp_hash_password( 'ABCDE12345ABCDE12345' ) ] );
+		CredentialStore::store_totp_secret( $other_id, 'JBSWY3DPEHPK3PXP' );
+
+		$subscriber_with_2fa_id = self::factory()->user->create( [ 'role' => 'subscriber' ] );
+		CredentialStore::store_totp_secret( $subscriber_with_2fa_id, 'JBSWY3DPEHPK3PXP' );
+		update_user_meta( $subscriber_with_2fa_id, '_cb_unrelated_meta', 'preserve-me' );
+
+		$pending_user_id = self::factory()->user->create( [ 'role' => 'subscriber' ] );
+		EnrollmentStore::start( $pending_user_id );
+
+		$imported_challenge = ChallengeStore::create(
+			$imported_id,
+			false,
+			admin_url(),
+			ChallengeStore::FLOW_VERIFY
+		);
+		$imported_generation = CredentialStore::challenge_generation( $imported_id );
+		self::assertSame(
+			$imported_generation,
+			get_user_meta( $imported_id, CredentialStore::META_CHALLENGE_GENERATION, true )
+		);
+		self::assertTrue( CredentialStore::is_enrolled( $imported_id ) );
+		self::assertTrue( CredentialStore::is_enrolled( $subscriber_with_2fa_id ) );
+		self::assertNotNull( EnrollmentStore::pending_secret( $pending_user_id ) );
+		self::assertIsArray( ChallengeStore::inspect( $imported_challenge ) );
+
 		// Simulate older imported Base policy state against the preserved current runtime.
 		delete_option( 'cb_core_role_policy_schema_version' );
 		$administrator = get_role( 'administrator' );
@@ -159,6 +189,18 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 		self::assertTrue( RolePolicySchema::inspect( false, 'test' )['canonical'] );
 		self::assertSame( TrustSchemaMigrator::current_schema(), TrustSchemaMigrator::stored_schema() );
 		self::assertNotFalse( get_option( 'cb_core_privileged_guard_bootstrapped', false ) );
+
+		self::assertFalse( CredentialStore::is_enrolled( $imported_id ), 'Imported privileged Base 2FA crossed the destination trust boundary.' );
+		self::assertFalse( CredentialStore::is_enrolled( $other_id ), 'Imported secondary privileged Base 2FA crossed the destination trust boundary.' );
+		self::assertFalse( CredentialStore::is_enrolled( $subscriber_with_2fa_id ), 'Imported non-privileged Base 2FA remained available for future privilege elevation.' );
+		self::assertSame( [], CredentialStore::recovery_hashes( $imported_id ) );
+		self::assertNull( EnrollmentStore::pending_secret( $pending_user_id ) );
+		self::assertNull( ChallengeStore::inspect( $imported_challenge ) );
+		self::assertFalse(
+			metadata_exists( 'user', $imported_id, CredentialStore::META_CHALLENGE_GENERATION ),
+			'Imported 2FA challenge generation crossed the destination trust boundary.'
+		);
+		self::assertSame( 'preserve-me', get_user_meta( $subscriber_with_2fa_id, '_cb_unrelated_meta', true ) );
 
 		foreach ( [ $actor_id, $imported_id, $other_id ] as $id ) {
 			$user = get_userdata( $id );

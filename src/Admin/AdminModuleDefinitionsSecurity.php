@@ -67,6 +67,26 @@ final class AdminModuleDefinitionsSecurity {
 					],
 				];
 			},
+			'@cb-core/two-factor-policy' => static function () use ( $admin_nonce, $ajax_url, $save_status ): array {
+				return [
+					'id'   => '@cb-core/two-factor-policy',
+					'src'  => 'features/two-factor-policy.js',
+					'deps' => [ '@cb-core/dom', '@cb-core/modal', '@cb-core/toast' ],
+					'data' => [
+						'nonce'       => $admin_nonce,
+						'currentMode' => \CB\Core\Security\TwoFactor\Policy::mode(),
+						'i18n'        => [
+							'networkError'       => $save_status['networkError'],
+							'passwordPlaceholder'=> __( 'WordPress password', 'core-blueprint' ),
+							'changeTitle'        => __( 'Change two-factor policy?', 'core-blueprint' ),
+							'enforceBody'        => __( 'Enforce requires a second factor for privileged accounts unless a supported external provider already owns that user. The acting CB Operator must have Base two-factor authentication enrolled. Re-enter your WordPress password to continue.', 'core-blueprint' ),
+							'optionalBody'       => __( 'Optional stops requiring new privileged accounts to enroll. Existing Base enrollments remain active and continue to protect those accounts. Re-enter your WordPress password to continue.', 'core-blueprint' ),
+							'changeConfirm'      => __( 'Change policy', 'core-blueprint' ),
+							'saveFailed'         => __( 'Could not update the two-factor policy.', 'core-blueprint' ),
+						],
+					],
+				];
+			},
 			'@cb-core/login-shield' => static function () use ( $admin_nonce, $ajax_url, $save_status ): array {
 				return [
 					'id'   => '@cb-core/login-shield',

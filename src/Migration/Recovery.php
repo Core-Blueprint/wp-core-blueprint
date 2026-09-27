@@ -23,6 +23,7 @@ use CB\Core\Permissions\Roles;
 use CB\Core\Permissions\TrustSchemaMigrator;
 use CB\Core\Security\Failsafe;
 use CB\Core\Security\LoginShield;
+use CB\Core\Security\TwoFactor\MigrationBoundary;
 use RuntimeException;
 use WP_Error;
 use WP_User;
@@ -206,6 +207,8 @@ final class Recovery {
 			throw new RuntimeException( 'Imported Core Blueprint Trust Schema is newer than the destination Base runtime.' );
 		}
 
+		$two_factor_reset = MigrationBoundary::reset_imported_authentication_state();
+
 		PrivilegedAccessGuard::establish_migration_trust_root();
 
 		$reviewed_ids = [];
@@ -249,6 +252,7 @@ final class Recovery {
 				'changed'   => ! empty( $role_policy['changed'] ),
 				'canonical' => ! empty( $role_policy['canonical'] ),
 			],
+			'two_factor'     => $two_factor_reset,
 		] );
 
 		return $state;

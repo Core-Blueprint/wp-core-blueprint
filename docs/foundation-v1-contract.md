@@ -23,16 +23,21 @@ Status: **public v1 freeze candidate**.
 | Choice Group | `CB\Core\UI\Assets::enqueue_choice_group()` | PHP/CSS primitive; no JavaScript runtime required |
 | Object Picker | `CB\Core\UI\Assets::enqueue_object_picker()` | `@cb-core/object-picker`, `window.cbCore.objectPicker` |
 | Select Picker | `CB\Core\UI\Assets::enqueue_select_picker()` | `@cb-core/select-picker`, `window.cbCore.selectPicker` |
+| Interactive Grid | `CB\Core\UI\Assets::enqueue_interactive_grid()` | PHP/CSS primitive; no JavaScript runtime required |
 | Reorder | `CB\Core\UI\Assets::enqueue_reorder()` | `@cb-core/reorder`, `window.cbCore.reorder` (Core API `1.1+`) |
 | Form Composition | `CB\Core\UI\FormComposition::enqueue()` | PHP/CSS primitive; no JavaScript runtime required |
 
 Consumers provide business meaning and exact values. Foundation owns generic behavior, accessibility and presentation adapters.
 
+The Interactive Grid Foundation owns generic cell dividers, stretched-cell action hover/focus treatment and neutral current/disabled states. Consumers own grid semantics, cell labels, URLs and nested business controls. See `INTERACTIVE-GRID-FOUNDATION.md`.
+
+The User Profile Surface Foundation is the public declarative boundary for Core Blueprint-owned sections contributed to WordPress Profile/Edit User screens. Base owns registration, deterministic ordering, context dispatch and WP-native Form Composition loading; consumers own product semantics, authorization, field/action behavior and persistence. The registry never turns `profile.php` or `user-edit.php` into Core Admin surfaces. See `USER-PROFILE-SURFACE-FOUNDATION.md`.
+
 The Reorder Foundation owns generic ordered-list movement, focus preservation, accessible announcements, pending state and rollback. Consumers own item/list semantics, authorization and persistence. Cross-list movement is opt-in and consumers must provide a non-pointer route for cross-list moves. See `REORDER-FOUNDATION.md`.
 
 The Modal Foundation includes the additive public `confirmCheck: { label }` option. Presence means a required, initially unchecked native acknowledgement checkbox. `confirmCheck` is orthogonal to the existing confirm/typed/input modes, never changes their resolved value, and composes with other gates so Confirm is available only when every active gate is valid. Invalid or empty labels fail closed; see `MODAL-FOUNDATION.md`.
 
-`Stack` is the shared vertical composition primitive (`.cb-core-stack`, plus compact/loose spacing variants). `Field` and Stack share one semantic markup contract across Core Admin and standalone WordPress admin screens. Standalone consumers use the narrow WordPress-native Form Composition adapter so WordPress keeps ownership of native controls, colours and chrome while Base owns only field grouping and vertical rhythm; see `FORM-COMPOSITION-FOUNDATION.md`. Child components keep ownership of their internal geometry. `Form Controls` owns the Core-scoped native file-input and `::file-selector-button` presentation, so modules must not redraw upload controls locally.
+`Stack` is the shared vertical composition primitive (`.cb-core-stack`, plus compact/loose spacing variants). `Form Actions` (`.cb-core-form-actions`) is the shared horizontal peer-action composition primitive and deliberately owns no vertical margins or button presentation. `Field`, Stack and Form Actions share one semantic markup contract across Core Admin and standalone WordPress admin screens. Standalone consumers use the narrow WordPress-native Form Composition adapter so WordPress keeps ownership of native controls, colours and chrome while Base owns only field grouping and vertical rhythm; see `FORM-COMPOSITION-FOUNDATION.md`. Child components keep ownership of their internal geometry. `Form Controls` owns the Core-scoped native file-input and `::file-selector-button` presentation, so modules must not redraw upload controls locally.
 
 ## Design Editor and Designer Mode
 
@@ -61,7 +66,7 @@ Screen preview deliberately does not simulate PDF pagination/page counters. PDF 
 
 ## Core Admin component contracts
 
-The frozen component layer includes Button, Badge, StateBadge, Status, Notice, Busy, Field, Form Controls, Stack, CheckRow, ChoiceGroup, ObjectPicker, SelectPicker, Toolbar, Disclosure, MasterSwitch, ChoiceCard/RadioCard, Empty State, Overview cards, metric tiles, Integration Grid, Detail Rows, KV Table and Scrollbar.
+The frozen component layer includes Button, Badge, StateBadge, Status, Notice, Busy, Field, Form Controls, Stack, Form Actions, CheckRow, ChoiceGroup, ObjectPicker, SelectPicker, Toolbar, Disclosure, MasterSwitch, ChoiceCard/RadioCard, Empty State, Overview cards, metric tiles, Integration Grid, Detail Rows, KV Table and Scrollbar.
 
 `IntegrationGrid` is the Base-owned presentation primitive for integration/readiness cards on registered Core Admin pages. Consumers own detection/readiness semantics, labels and action destinations; Base owns card/grid presentation and maps the public `ready|needs-setup|optional|unavailable` states to the existing Status primitive. The normative contract is `INTEGRATION-GRID-FOUNDATION.md`.
 

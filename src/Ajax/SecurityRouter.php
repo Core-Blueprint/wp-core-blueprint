@@ -15,6 +15,7 @@ declare(strict_types=1);
  *   - ExtensionLifecycle - native plugin activation/deactivation for extensions
  *   - Reports            - maintenance-report generation + PDF download streaming
  *   - Permissions        - operator-assignment + hide-toggle + admin-can-generate
+ *   - TwoFactorPolicy    - site-wide privileged-account 2FA policy mutation
  *   - Branding           - reports-tab branding save + reset
  *
  * Class loading is handled by the PSR-4 autoloader - no includes here.
@@ -35,6 +36,7 @@ use CB\Core\Ajax\Handlers\Preferences;
 use CB\Core\Ajax\Handlers\Privacy;
 use CB\Core\Ajax\Handlers\Reports;
 use CB\Core\Ajax\Handlers\Settings;
+use CB\Core\Ajax\Handlers\TwoFactorPolicy;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -51,6 +53,7 @@ final class SecurityRouter {
 		ExtensionLifecycle::init();
 		Reports::init();
 		Permissions::init();
+		TwoFactorPolicy::init();
 		Branding::init();
 	}
 }

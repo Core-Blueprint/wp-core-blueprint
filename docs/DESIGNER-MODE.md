@@ -101,7 +101,17 @@ Consumers must not redefine the Designer Shell column/drawer model, reorder thes
 
 The canonical Designer toolbar is capability-driven. Consumers declare controls and actions; Base decides whether those controls remain explicit or are compressed into compact disclosures when horizontal space becomes constrained.
 
-Base measures the **actual toolbar width** rather than relying on a product-specific viewport breakpoint. The internal compact threshold is not part of the public consumer API and may evolve without requiring consumer changes.
+Base measures the **actual toolbar composition** rather than relying on a product-specific viewport breakpoint. Responsive Designer identity compression is content-driven and separate from full toolbar compaction: Base measures the preferred inline size of the START-zone identity + context without allowing those children to shrink. The textual Designer wordmark is hidden only when that preferred content no longer fits the available START-zone width, while the Core Blueprint mark, context selector and explicit toolbar controls remain visible. Full compact toolbar behavior remains a later state with its own Base-owned threshold. Consumers do not configure either behavior.
+
+### Toolbar zone ownership
+
+The canonical toolbar uses three stable semantic zones. Their ownership does not change per consumer:
+
+- **Start:** Base-owned branded Designer identity, followed immediately by the optional active context/file/document selector declared with `data-cb-design-shell-context`.
+- **Center:** canvas/view controls, including the canonical responsive viewport switcher when the consumer exposes `data-cb-design-shell-viewport` controls.
+- **End:** status, history/actions, close/fullscreen and the canonical primary action.
+
+A context selector must not replace or hide the Designer identity. Consumers supply the selector and its options, while Base owns its placement, compact geometry and overflow behavior. Consumers must not move the selector to the center zone merely because a particular Designer does not currently expose viewport controls; the center zone stays reserved for canvas/view capabilities so toolbar position remains predictable across Designer modes.
 
 Wide toolbar behavior:
 
@@ -307,6 +317,43 @@ Consumers own:
 - supplying the same-origin exit URL for direct mode;
 - domain-specific preview behavior and product-specific controls inside the shared slots.
 
+## Designer brand identity
+
+Designer Mode owns its brand identity in Base. A Designer identity names the **workspace/mode**, not the currently selected file, template, workflow or document.
+
+The canonical naming pattern is:
+
+```text
+domain.mode
+```
+
+Consumers pass a normal translated mode title to `Assets::enqueue_designer_mode()`. Base owns the visual transformation into the canonical Core Blueprint lockup: lowercase Miriam Libre, spaces rendered as Core Blueprint blue dots, and the shared mark/geometry.
+
+Canonical examples:
+
+```text
+Automation Builder  → automation.builder
+Mail Designer       → mail.designer
+Reports Designer    → reports.designer
+Evaluator Designer  → evaluator.designer
+```
+
+The currently edited artifact belongs in the adjacent `data-cb-design-shell-context` selector instead of the branded identity. For example:
+
+```text
+reports.designer   [ Maintenance Report ▾ ]
+mail.designer      [ Password reset ▾ ]
+automation.builder [ Customer onboarding ▾ ]
+```
+
+Do not encode the selected artifact into the Designer identity when the context selector owns that information. For example, `maintenance.report [ Maintenance Report ▾ ]` is not a canonical Designer identity; `reports.designer [ Maintenance Report ▾ ]` is.
+
+The canonical Designer identity therefore consists of the Core Blueprint mark plus the branded mode name. Consumers must not pre-format titles with dots or lowercase them themselves, copy the Miriam Libre font or brand colours, inject a product-local logo, or override lockup geometry. Changes to Designer branding or naming belong in the Base Designer Foundation so every Designer consumer receives the same identity.
+
+The identity markup is persistent Base-owned DOM. Layout normalization may position the adjacent context selector, but it must never remove or rebuild the Core Blueprint mark or Designer wordmark. Responsive presentation belongs to Base CSS instead of DOM mutation.
+
+In wide mode, the mark and textual `domain.mode` wordmark are visible before the optional context selector. Base keeps that full identity visible for as long as the preferred START-zone identity + context content fits. Only when that content would overflow the available START-zone width does Base enter the identity-condensed state: the textual wordmark is hidden while the Core Blueprint mark, shorter context selector and explicit toolbar controls remain visible. This decision is measured by Base at runtime and is never configured by the consumer. Full compact mode is a later state. The context selector stays adjacent to the identity in every state. Layout normalization must never remove either identity node from the DOM.
+
 ## Consumer restrictions
 
 A Designer Mode consumer must not:
@@ -314,6 +361,7 @@ A Designer Mode consumer must not:
 - require or add `.cb-core-wrap` or `.cb-core-form-scope` as a presentation workaround;
 - enqueue private `cb-core-css-*` handles or Base CSS filenames directly;
 - reproduce the launch control or Base toolbar locally;
+- duplicate, replace or locally restyle the Base-owned Designer brand lockup;
 - inject product markup into Base-generated toolbar zones instead of using the public toolbar-extension source contract;
 - implement a product-specific compact toolbar, overflow dropdown, responsive toolbar breakpoint or duplicate action proxy layer;
 - implement its own fullscreen/focus overlay, fixed viewport shell or Escape lifecycle;

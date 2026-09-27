@@ -7,6 +7,7 @@ final class CB_Reports_Designer_Chrome_Contract_Test extends WP_UnitTestCase {
 		$template = (string) file_get_contents( dirname( __DIR__, 2 ) . '/templates/preferences-reports.php' );
 
 		self::assertStringContainsString( 'data-cb-design-shell-context', $template );
+		self::assertStringContainsString( 'data-cb-design-title="<?php esc_attr_e( \'Reports Designer\', \'core-blueprint\' ); ?>"', $template );
 		self::assertStringContainsString( '<option value="maintenance" selected><?php esc_html_e( \'Maintenance Report\', \'core-blueprint\' ); ?></option>', $template );
 		self::assertStringContainsString( 'cb-core-design-shell__canvas cb-core-design-shell__canvas--composed', $template );
 		self::assertStringContainsString( 'cb-core-design-shell__canvas-workarea', $template );

@@ -37,6 +37,16 @@
 		}));
 	};
 
+	const needsIdentityCondensation = (toolbar, start) => {
+		if (!(toolbar instanceof Element) || !(start instanceof Element)) return false;
+		toolbar.classList.remove('is-identity-condensed');
+		toolbar.classList.add('is-measuring-identity');
+		const requiredWidth = start.scrollWidth;
+		const availableWidth = start.clientWidth;
+		toolbar.classList.remove('is-measuring-identity');
+		return requiredWidth > availableWidth + 1;
+	};
+
 	const composeCompactToolbar = (shell, shellApi) => {
 		if (!(shell instanceof Element) || initialized.has(shell)) return false;
 		const toolbar = shell.querySelector('.cb-core-design-shell__toolbar--designer[data-cb-design-shell-header="true"]');
@@ -208,8 +218,11 @@
 		syncViewTrigger();
 
 		const applyCompactState = () => {
-			const compact = toolbar.getBoundingClientRect().width <= COMPACT_WIDTH;
+			const width = toolbar.getBoundingClientRect().width;
+			const compact = width <= COMPACT_WIDTH;
 			toolbar.classList.toggle('is-compact', compact);
+			const condensedIdentity = compact || needsIdentityCondensation(toolbar, start);
+			toolbar.classList.toggle('is-identity-condensed', condensedIdentity);
 			if (!compact) closeAll();
 		};
 		if (typeof ResizeObserver === 'function') {

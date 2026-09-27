@@ -11,6 +11,7 @@ declare(strict_types=1);
  *
  * Tabs:
  *   overview      - read-only status strip + bypass banner + quick actions
+ *   two-factor    - privileged-account second-factor policy
  *   core-shield   - master switch, modules, header test + audit retention
  *   access-mode   - public / coming-soon / maintenance / admin-only state
  *   failsafe      - lockout bypass mechanisms + emergency controls
@@ -37,6 +38,9 @@ use CB\Core\Security\AccessMode as SecurityAccessMode;
 use CB\Core\Security\Failsafe;
 use CB\Core\Security\LoginShield;
 use CB\Core\Security\ModuleRegistry;
+use CB\Core\Security\TwoFactor\CredentialStore;
+use CB\Core\Security\TwoFactor\Policy as TwoFactorPolicy;
+use CB\Core\Security\TwoFactor\ProviderDetector;
 use CB\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
@@ -76,11 +80,12 @@ final class Safeguards extends PageBase {
 		//   1. Overview      - read-only status
 		//   2. Access Mode   - site-level gate (is the site even reachable?)
 		//   3. Login Shield  - login-endpoint hardening (narrow, specific)
-		//   4. Core Shield   - baseline hardening (master switch + modules + headers)
-		//   5. Core Scanner  - file integrity verification (read-only checks)
-		//   6. Failsafe      - emergency escape hatch (last resort)
+		//   4. Two-factor    - privileged-account authentication policy
+		//   5. Core Shield   - baseline hardening (master switch + modules + headers)
+		//   6. Core Scanner  - file integrity verification (read-only checks)
+		//   7. Failsafe      - emergency escape hatch (last resort)
 		//
-		// Threat-model flow: access → login → configuration → files →
+		// Threat-model flow: access → login endpoint → authentication → configuration → files →
 		// recovery. Login Shield sits before Core Shield
 		// because protecting the login endpoint is the more specific,
 		// outer-perimeter concern; Core Shield is the broader baseline
@@ -88,11 +93,12 @@ final class Safeguards extends PageBase {
 		//
 		// Permissions (meta - who may configure CB) lives under Preferences,
 		// not here. Safeguards is hardening-config; Permissions is governance.
-		$available_tabs = [ 'overview', 'access-mode', 'login-shield', 'core-shield', 'core-scanner', 'failsafe' ];
+		$available_tabs = [ 'overview', 'access-mode', 'login-shield', 'two-factor', 'core-shield', 'core-scanner', 'failsafe' ];
 		$tab_labels     = [
 			'overview'     => __( 'Overview',      'core-blueprint' ),
 			'access-mode'  => __( 'Access Mode',   'core-blueprint' ),
 			'login-shield' => __( 'Login Shield',  'core-blueprint' ),
+			'two-factor'   => __( 'Two-factor',    'core-blueprint' ),
 			'core-shield'  => __( 'Core Shield',   'core-blueprint' ),
 			'core-scanner' => __( 'Core Scanner',  'core-blueprint' ),
 			'failsafe'     => __( 'Failsafe',      'core-blueprint' ),
@@ -105,6 +111,7 @@ final class Safeguards extends PageBase {
 			case 'core-shield':  $this->render_core_shield_tab( $tab, $tab_labels );  return;
 			case 'core-scanner': $this->render_core_scanner_tab( $tab, $tab_labels ); return;
 			case 'login-shield': $this->render_login_shield_tab( $tab, $tab_labels ); return;
+			case 'two-factor':   $this->render_two_factor_tab( $tab, $tab_labels );   return;
 			case 'failsafe':     $this->render_failsafe_tab( $tab, $tab_labels );     return;
 			default:             $this->render_overview_tab( $tab, $tab_labels );     return;
 		}
@@ -162,6 +169,7 @@ final class Safeguards extends PageBase {
 		$access_mode_url   = admin_url( 'admin.php?page=' . self::SLUG . '&tab=access-mode' );
 		$failsafe_url      = admin_url( 'admin.php?page=' . self::SLUG . '&tab=failsafe' );
 		$login_shield_url  = admin_url( 'admin.php?page=' . self::SLUG . '&tab=login-shield' );
+		$two_factor_url    = admin_url( 'admin.php?page=' . self::SLUG . '&tab=two-factor' );
 		$core_scanner_url  = admin_url( 'admin.php?page=' . self::SLUG . '&tab=core-scanner' );
 
 		ob_start();
@@ -224,6 +232,13 @@ final class Safeguards extends PageBase {
 					'label' => __( 'Login Shield', 'core-blueprint' ),
 					'desc'  => __( 'Hide /wp-login.php behind a custom URL so blind brute-force scans get a 404 instead of reaching your login form.', 'core-blueprint' ),
 					'icon'  => 'admin-network',
+				],
+				[
+					'slug'  => 'two-factor',
+					'url'   => $two_factor_url,
+					'label' => __( 'Two-factor', 'core-blueprint' ),
+					'desc'  => __( 'Require a second factor for privileged WordPress accounts, with Base TOTP, recovery codes and supported external-provider coexistence.', 'core-blueprint' ),
+					'icon'  => 'lock',
 				],
 				[
 					'slug'  => 'core-shield',
@@ -354,6 +369,27 @@ final class Safeguards extends PageBase {
 	 * tabnav) is handled here so the renderer stays focused on the
 	 * scanner panel itself.
 	 */
+	private function render_two_factor_tab( string $tab, array $tab_labels ): void {
+		$current_user = wp_get_current_user();
+		$can_manage = current_user_can( 'cb_manage_permissions' )
+			&& $current_user instanceof \WP_User
+			&& \CB\Core\Permissions\PrivilegedAccessGuard::is_trusted_operator( $current_user );
+		$base_enrolled = $current_user instanceof \WP_User
+			&& $current_user->ID > 0
+			&& CredentialStore::is_enrolled( (int) $current_user->ID );
+		$providers = $current_user instanceof \WP_User
+			? ProviderDetector::providers_for_user( $current_user )
+			: [];
+		$policy = TwoFactorPolicy::config();
+		$bypassed = class_exists( Failsafe::class ) && Failsafe::is_bypassed();
+		$profile_url = admin_url( 'profile.php#cb-core-two-factor' );
+
+		ob_start();
+		include CB_CORE_DIR . 'templates/two-factor-policy.php';
+		$html = ob_get_clean();
+		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
+	}
+
 	private function render_core_scanner_tab( string $tab, array $tab_labels ): void {
 		if ( ! class_exists( '\\CB\\Core\\Integrity\\Admin\\Page' ) ) {
 			$this->render_subsystem_missing( __( 'Core Scanner subsystem not loaded.', 'core-blueprint' ) );

@@ -49,6 +49,7 @@ foreach ( (array) $templates as $definition ) {
 			class="cb-core-mail-designer"
 			data-cb-mail-designer
 			data-cb-design-launch-root
+			data-cb-design-title="<?php esc_attr_e( 'Mail Designer', 'core-blueprint' ); ?>"
 			data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
 			data-preview-nonce="<?php echo esc_attr( wp_create_nonce( 'cb_core_mail_designer_preview' ) ); ?>"
 			data-template-id="<?php echo esc_attr( $template_id ); ?>"
