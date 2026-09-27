@@ -12,8 +12,9 @@ declare(strict_types=1);
  *   Layer 3 - Secret bypass URL with rotating single-use token
  *   Layer 4 - Admin panic button (handled in Admin)
  *
- * Every restrictive feature in Core Blueprint MUST call ::is_bypassed() before
- * enforcing. If ::is_bypassed() returns true, the feature must become a no-op.
+ * Restrictive features normally call ::is_bypassed() before enforcing. Security
+ * boundaries that must distinguish explicit emergency authority from a bounded
+ * request-scoped recovery authority use ::is_operator_bypass_active() instead.
  *
  * The failsafe is loaded before any other subsystem so that a broken module
  * cannot prevent bypass mechanisms from functioning.
@@ -75,6 +76,25 @@ final class Failsafe {
 	 * lock the user out are affected.
 	 */
 	public static function is_bypassed(): bool {
+		if ( self::is_operator_bypass_active() ) {
+			return true;
+		}
+
+		/**
+		 * Allow a Base-owned, request-scoped recovery authority to suspend
+		 * restrictive features without opening a global failsafe window.
+		 */
+		return (bool) apply_filters( 'cb_core_failsafe_is_bypassed', false );
+	}
+
+	/**
+	 * Whether an explicit emergency/operator-controlled bypass layer is active.
+	 *
+	 * Request-scoped recovery authorities are deliberately excluded. Security
+	 * subsystems such as Base-owned 2FA can honor genuine lockout recovery
+	 * without treating a migration workflow as a global authentication bypass.
+	 */
+	public static function is_operator_bypass_active(): bool {
 		// Layer 1 - wp-config.php constant (fastest check).
 		if ( defined( 'CB_CORE_BYPASS' ) && CB_CORE_BYPASS === true ) {
 			return true;
@@ -86,15 +106,7 @@ final class Failsafe {
 		}
 
 		// Layer 3 - Transient window (set by secret bypass URL).
-		if ( get_transient( self::BYPASS_TRANSIENT ) === 'active' ) {
-			return true;
-		}
-
-		/**
-		 * Allow a Base-owned, request-scoped recovery authority to suspend
-		 * restrictive features without opening a global failsafe window.
-		 */
-		return (bool) apply_filters( 'cb_core_failsafe_is_bypassed', false );
+		return get_transient( self::BYPASS_TRANSIENT ) === 'active';
 	}
 
 	/**

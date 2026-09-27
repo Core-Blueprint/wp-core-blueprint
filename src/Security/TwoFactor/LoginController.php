@@ -31,7 +31,7 @@ final class LoginController {
 			return [ 'status' => 'invalid' ];
 		}
 
-		if ( Failsafe::is_bypassed() ) {
+		if ( Failsafe::is_operator_bypass_active() ) {
 			$consumed = ChallengeStore::take( $token );
 			if ( ! is_array( $consumed ) ) {
 				return [ 'status' => 'invalid' ];
@@ -86,7 +86,7 @@ final class LoginController {
 			return [ 'status' => 'invalid' ];
 		}
 
-		if ( Failsafe::is_bypassed() ) {
+		if ( Failsafe::is_operator_bypass_active() ) {
 			return [
 				'status' => 'success',
 				'state'  => $state,

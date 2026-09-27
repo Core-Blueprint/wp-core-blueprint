@@ -48,16 +48,16 @@ $current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy
 	}
 	?>
 
-	<section class="cb-core-panel">
+	<section>
 		<h2><?php esc_html_e( 'Privileged account policy', 'core-blueprint' ); ?></h2>
 		<p>
 			<?php esc_html_e( 'Scope is fixed to privileged accounts for v1. Existing Base enrollments remain active in either policy mode.', 'core-blueprint' ); ?>
 		</p>
 
 		<?php if ( $can_manage ) : ?>
-			<div data-cb-core-two-factor-policy-control>
-				<?php
-				echo \CB\Core\UI\RadioGroup::render( [
+			<?php
+			$policy_control = '<div data-cb-core-two-factor-policy-control>'
+				. \CB\Core\UI\RadioGroup::render( [
 					'name'    => 'cb_core_two_factor_mode',
 					'value'   => $current_mode,
 					'options' => [
@@ -74,16 +74,25 @@ $current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy
 							'input_data' => [ 'data-cb-core-two-factor-mode' => '' ],
 						],
 					],
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				?>
-			</div>
+				] )
+				. '</div>';
+
+			echo \CB\Core\UI\Field::render( [
+				'control' => $policy_control,
+			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			?>
 		<?php else : ?>
-			<p>
-				<strong><?php echo esc_html( \CB\Core\Security\TwoFactor\Policy::MODE_ENFORCE === $current_mode ? __( 'Enforce', 'core-blueprint' ) : __( 'Optional', 'core-blueprint' ) ); ?></strong>
-			</p>
+			<?php
+			echo \CB\Core\UI\Field::render( [
+				'control' => '<strong>' . esc_html( \CB\Core\Security\TwoFactor\Policy::MODE_ENFORCE === $current_mode ? __( 'Enforce', 'core-blueprint' ) : __( 'Optional', 'core-blueprint' ) ) . '</strong>',
+			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			?>
 		<?php endif; ?>
 	</section>
 
+	<?php
+	ob_start();
+	?>
 	<section class="cb-core-panel">
 		<h2><?php esc_html_e( 'Your authentication state', 'core-blueprint' ); ?></h2>
 		<p>
@@ -110,4 +119,11 @@ $current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy
 			</a>
 		</p>
 	</section>
+	<?php
+	$authentication_state = (string) ob_get_clean();
+
+	echo \CB\Core\UI\Field::render( [
+		'control' => $authentication_state,
+	] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	?>
 </div>

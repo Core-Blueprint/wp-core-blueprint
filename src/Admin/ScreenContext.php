@@ -82,7 +82,7 @@ final class ScreenContext {
 			],
 			'core-blueprint-safeguards' => [
 				'default' => 'overview',
-				'allowed' => [ 'overview', 'access-mode', 'login-shield', 'core-shield', 'core-scanner', 'failsafe' ],
+				'allowed' => [ 'overview', 'access-mode', 'login-shield', 'two-factor', 'core-shield', 'core-scanner', 'failsafe' ],
 			],
 			'core-blueprint-mail' => [
 				'default' => 'settings',

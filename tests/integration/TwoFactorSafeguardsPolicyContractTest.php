@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 use CB\Core\Admin\AdminModuleCatalog;
 use CB\Core\Admin\Pages\Safeguards;
+use CB\Core\Admin\ScreenAssetRegistry;
+use CB\Core\Admin\ScreenContext;
 use CB\Core\Ajax\Handlers\TwoFactorPolicy;
 use CB\Core\Ajax\SecurityRouter;
 use CB\Core\Permissions\PrivilegedAccessGuard;
@@ -30,6 +32,32 @@ final class CB_Base_Two_Factor_Safeguards_Policy_Contract_Test extends WP_UnitTe
 		$_GET = $this->original_get;
 		wp_set_current_user( 0 );
 		parent::tear_down();
+	}
+
+	public function test_two_factor_tab_preserves_screen_context_and_shared_radio_card_manifest(): void {
+		$_GET['page'] = Safeguards::SLUG;
+		$_GET['tab'] = 'two-factor';
+
+		$context = ScreenContext::from_request( 'cb-core-test-hook' );
+
+		self::assertSame( Safeguards::SLUG, $context->page() );
+		self::assertSame( 'two-factor', $context->tab() );
+
+		$registry_file = ( new ReflectionClass( ScreenAssetRegistry::class ) )->getFileName();
+		self::assertIsString( $registry_file );
+		$registry_source = (string) file_get_contents( $registry_file );
+
+		$start = strpos( $registry_source, "case 'two-factor':" );
+		$end = false !== $start ? strpos( $registry_source, "case 'core-shield':", $start ) : false;
+		self::assertNotFalse( $start );
+		self::assertNotFalse( $end );
+
+		$two_factor_manifest = substr( $registry_source, (int) $start, (int) $end - (int) $start );
+		self::assertStringContainsString( "'component.panels'", $two_factor_manifest );
+		self::assertStringContainsString( "'component.radio-card'", $two_factor_manifest );
+		self::assertStringContainsString( "'foundation.modal'", $two_factor_manifest );
+		self::assertStringContainsString( "'foundation.toast'", $two_factor_manifest );
+		self::assertStringContainsString( "'module.two-factor-policy'", $two_factor_manifest );
 	}
 
 	public function test_tg1_security_router_registers_password_reconfirmed_policy_endpoint(): void {
@@ -81,6 +109,9 @@ final class CB_Base_Two_Factor_Safeguards_Policy_Contract_Test extends WP_UnitTe
 		$html = (string) ob_get_clean();
 
 		self::assertStringContainsString( 'data-cb-core-two-factor-mode', $html );
+		self::assertSame( 2, substr_count( $html, 'class="cb-core-field"' ) );
+		self::assertStringContainsString( 'class="cb-core-radio-card', $html );
+		self::assertStringContainsString( 'Your authentication state', $html );
 		self::assertStringContainsString( 'Enroll Base two-factor authentication before enforcing.', $html );
 		self::assertStringContainsString( 'profile.php#cb-core-two-factor', $html );
 
