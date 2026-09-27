@@ -55,7 +55,7 @@ final class LoginFlow {
 	public static function decision_for( WP_User $user ): string {
 		if (
 			$user->ID <= 0
-			|| Failsafe::is_bypassed()
+			|| Failsafe::is_operator_bypass_active()
 			|| ! Policy::is_in_scope( $user )
 			|| ProviderDetector::external_provider_owns_user( $user )
 		) {
@@ -83,7 +83,7 @@ final class LoginFlow {
 		}
 
 		if (
-			Failsafe::is_bypassed()
+			Failsafe::is_operator_bypass_active()
 			&& self::would_require_base_two_factor_without_failsafe( $user )
 		) {
 			Audit::bypass_used( (int) $user->ID );
