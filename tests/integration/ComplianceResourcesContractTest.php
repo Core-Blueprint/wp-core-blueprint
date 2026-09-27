@@ -390,6 +390,19 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 		self::assertSame( 40, $page->position() );
 	}
 
+	public function test_compliance_has_a_dashboard_operations_tile(): void {
+		$dashboard = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Admin/Pages/Dashboard.php' );
+
+		self::assertStringContainsString( 'use CB\\Core\\Compliance\\Admin\\Page as CompliancePage;', $dashboard );
+		self::assertStringContainsString( 'CompliancePage::SLUG', $dashboard );
+		self::assertStringContainsString( "'id'    => 'compliance'", $dashboard );
+		self::assertStringContainsString( "'title' => __( 'Compliance', 'core-blueprint' )", $dashboard );
+		self::assertStringContainsString( "'Privacy Policy'", $dashboard );
+		self::assertStringContainsString( "'Disclaimer'", $dashboard );
+		self::assertStringContainsString( "'Terms & Conditions'", $dashboard );
+		self::assertStringContainsString( "admin.php?page=' . $compliance_slug", $dashboard );
+	}
+
 	private function create_fixture(): void {
 		$directory = WP_PLUGIN_DIR . '/' . self::EXTENSION_ID;
 		self::assertTrue( wp_mkdir_p( $directory ) );
