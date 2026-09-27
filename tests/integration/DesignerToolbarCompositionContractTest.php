@@ -87,7 +87,7 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertLessThan( $center_position, $context_position );
 		self::assertLessThan( $viewport_position, $center_position );
 
-		self::assertStringContainsString( 'max-width: min(20rem, 42vw);', $toolbar_css );
+		self::assertStringContainsString( 'max-width: min(16rem, 36vw);', $toolbar_css );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-context', $toolbar_css );
 		self::assertStringContainsString( 'max-width: min(14rem, 34vw);', $toolbar_css );
 		self::assertStringNotContainsString( '.cb-core-design-shell__brand--contextual .cb-core-design-shell__brand-mark', $toolbar_css );
