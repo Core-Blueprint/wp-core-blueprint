@@ -34,8 +34,13 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 	public function test_compact_toolbar_is_capability_driven_and_keeps_close_and_primary_save_pinned(): void {
 		$runtime = $this->source( 'assets/js/features/designer-toolbar.js' );
 
-		self::assertStringContainsString( 'const IDENTITY_CONDENSED_WIDTH = 1700;', $runtime );
+		self::assertStringNotContainsString( 'IDENTITY_CONDENSED_WIDTH', $runtime );
 		self::assertStringContainsString( 'const COMPACT_WIDTH = 800;', $runtime );
+		self::assertStringContainsString( 'const needsIdentityCondensation = (toolbar, start) => {', $runtime );
+		self::assertStringContainsString( "toolbar.classList.add('is-measuring-identity');", $runtime );
+		self::assertStringContainsString( 'const requiredWidth = start.scrollWidth;', $runtime );
+		self::assertStringContainsString( 'const availableWidth = start.clientWidth;', $runtime );
+		self::assertStringContainsString( 'const condensedIdentity = compact || needsIdentityCondensation(toolbar, start);', $runtime );
 		self::assertStringContainsString( "toolbar.classList.toggle('is-identity-condensed', condensedIdentity);", $runtime );
 		self::assertStringContainsString( 'new ResizeObserver(applyCompactState).observe(toolbar)', $runtime );
 		self::assertStringContainsString( '[data-cb-design-shell-viewport]', $runtime );
@@ -88,6 +93,8 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertLessThan( $viewport_position, $center_position );
 
 		self::assertStringContainsString( 'max-width: min(16rem, 36vw);', $toolbar_css );
+		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-measuring-identity .cb-core-design-shell__toolbar-zone--start > *', $toolbar_css );
+		self::assertStringContainsString( 'flex-shrink: 0;', $toolbar_css );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-context', $toolbar_css );
 		self::assertStringContainsString( 'max-width: min(14rem, 34vw);', $toolbar_css );
 		self::assertStringNotContainsString( '.cb-core-design-shell__brand--contextual .cb-core-design-shell__brand-mark', $toolbar_css );
