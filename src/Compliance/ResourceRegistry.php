@@ -112,7 +112,14 @@ final class ResourceRegistry {
 	 */
 	public static function all(): array {
 		self::ensure_collected();
-		$all = array_merge( self::$definitions, Repository::custom_definitions() );
+		$all = self::$definitions;
+		foreach ( Repository::custom_definitions() as $key => $definition ) {
+			if ( isset( $all[ $key ] ) ) {
+				self::diagnostic( sprintf( 'Custom compliance resource collision refused: %s.', $key ) );
+				continue;
+			}
+			$all[ $key ] = $definition;
+		}
 		uasort(
 			$all,
 			static function ( array $a, array $b ): int {
@@ -192,6 +199,10 @@ final class ResourceRegistry {
 		}
 		if ( 1 !== preg_match( '/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/', $id ) ) {
 			self::diagnostic( sprintf( 'Invalid compliance resource id refused: %s.', $id ) );
+			return false;
+		}
+		if ( str_starts_with( $id, 'custom-' ) ) {
+			self::diagnostic( sprintf( 'Reserved compliance resource id refused: %s.', $id ) );
 			return false;
 		}
 

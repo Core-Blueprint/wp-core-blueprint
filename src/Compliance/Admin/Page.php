@@ -14,6 +14,7 @@ use CB\Core\Compliance\Repository;
 use CB\Core\Compliance\Resolver;
 use CB\Core\Compliance\ResourceRegistry;
 use CB\Core\UI\Notice;
+use CB\Core\UI\ObjectPicker;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -151,9 +152,10 @@ final class Page extends PageBase {
 					<input type="hidden" name="resource_key" value="<?php echo esc_attr( $key ); ?>">
 					<?php wp_nonce_field( 'cb_core_compliance_save:' . $key ); ?>
 
+					<?php $default_picker_id = 'cb-compliance-' . sanitize_html_class( $key . '-default' ); ?>
 					<div class="cb-core-field">
-						<label class="cb-core-field__label"><?php esc_html_e( 'Default page or document', 'core-blueprint' ); ?></label>
-						<?php $this->render_object_picker( 'resource', $default, $search_nonce ); ?>
+						<label class="cb-core-field__label" for="<?php echo esc_attr( $default_picker_id ); ?>"><?php esc_html_e( 'Default page or document', 'core-blueprint' ); ?></label>
+						<?php $this->render_object_picker( $default_picker_id, 'resource', $default, $search_nonce ); ?>
 						<p class="cb-core-field__hint"><?php esc_html_e( 'Search published Pages or supported documents in the Media Library. This is also the fallback when no locale-specific resource is configured.', 'core-blueprint' ); ?></p>
 					</div>
 
@@ -167,10 +169,11 @@ final class Page extends PageBase {
 							<?php foreach ( $assignment['locales'] as $locale => $reference ) : ?>
 								<?php if ( ! is_array( $reference ) ) { continue; } ?>
 								<div class="cb-core-field">
-									<label class="cb-core-field__label" for="cb-compliance-<?php echo esc_attr( sanitize_html_class( $key . '-' . (string) $locale ) ); ?>">
+									<?php $locale_picker_id = 'cb-compliance-' . sanitize_html_class( $key . '-' . (string) $locale ); ?>
+									<label class="cb-core-field__label" for="<?php echo esc_attr( $locale_picker_id ); ?>">
 										<?php echo esc_html( (string) $locale ); ?>
 									</label>
-									<?php $this->render_object_picker( 'locale_resource[' . (string) $locale . ']', $reference, $search_nonce ); ?>
+									<?php $this->render_object_picker( $locale_picker_id, 'locale_resource[' . (string) $locale . ']', $reference, $search_nonce ); ?>
 									<label>
 										<input type="checkbox" name="remove_locale[<?php echo esc_attr( (string) $locale ); ?>]" value="1">
 										<?php esc_html_e( 'Remove this locale override', 'core-blueprint' ); ?>
@@ -181,7 +184,7 @@ final class Page extends PageBase {
 							<div class="cb-core-field">
 								<label class="cb-core-field__label" for="cb-compliance-new-locale-<?php echo esc_attr( sanitize_html_class( $key ) ); ?>"><?php esc_html_e( 'Add locale override', 'core-blueprint' ); ?></label>
 								<input id="cb-compliance-new-locale-<?php echo esc_attr( sanitize_html_class( $key ) ); ?>" type="text" name="new_locale" value="" placeholder="nl_NL" pattern="[A-Za-z]{2,3}([_-][A-Za-z0-9]{2,8})*">
-								<?php $this->render_object_picker( 'new_locale_resource', null, $search_nonce ); ?>
+								<?php $this->render_object_picker( 'cb-compliance-new-resource-' . sanitize_html_class( $key ), 'new_locale_resource', null, $search_nonce ); ?>
 							</div>
 						</div>
 					</details>
@@ -206,6 +209,28 @@ final class Page extends PageBase {
 				</div>
 
 				<?php if ( true === $definition['custom'] ) : ?>
+					<details class="cb-core-disclosure cb-core-disclosure--section cb-core-disclosure--subtle">
+						<summary class="cb-core-disclosure__summary">
+							<span class="cb-core-disclosure__title"><?php esc_html_e( 'Edit custom item', 'core-blueprint' ); ?></span>
+						</summary>
+						<div class="cb-core-disclosure__body">
+							<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+								<input type="hidden" name="action" value="<?php echo esc_attr( Actions::UPDATE_ACTION ); ?>">
+								<input type="hidden" name="resource_key" value="<?php echo esc_attr( $key ); ?>">
+								<?php wp_nonce_field( 'cb_core_compliance_update:' . $key ); ?>
+								<div class="cb-core-field">
+									<label class="cb-core-field__label" for="cb-compliance-edit-label-<?php echo esc_attr( sanitize_html_class( $key ) ); ?>"><?php esc_html_e( 'Name', 'core-blueprint' ); ?></label>
+									<input id="cb-compliance-edit-label-<?php echo esc_attr( sanitize_html_class( $key ) ); ?>" class="regular-text" type="text" name="label" maxlength="120" value="<?php echo esc_attr( (string) $definition['label'] ); ?>" required>
+								</div>
+								<div class="cb-core-field">
+									<label class="cb-core-field__label" for="cb-compliance-edit-description-<?php echo esc_attr( sanitize_html_class( $key ) ); ?>"><?php esc_html_e( 'Description', 'core-blueprint' ); ?></label>
+									<textarea id="cb-compliance-edit-description-<?php echo esc_attr( sanitize_html_class( $key ) ); ?>" class="large-text" name="description" rows="2" maxlength="500"><?php echo esc_textarea( (string) $definition['description'] ); ?></textarea>
+								</div>
+								<p><button type="submit" class="button button-secondary cb-core-button"><?php esc_html_e( 'Save changes', 'core-blueprint' ); ?></button></p>
+							</form>
+						</div>
+					</details>
+
 					<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 						<input type="hidden" name="action" value="<?php echo esc_attr( Actions::DELETE_ACTION ); ?>">
 						<input type="hidden" name="resource_key" value="<?php echo esc_attr( $key ); ?>">
@@ -246,29 +271,21 @@ final class Page extends PageBase {
 	}
 
 	/** @param array{type:string,object_id:int}|null $reference */
-	private function render_object_picker( string $name, ?array $reference, string $search_nonce ): void {
+	private function render_object_picker( string $id, string $name, ?array $reference, string $search_nonce ): void {
 		$item     = Resolver::picker_item( $reference );
 		$selected = null === $item ? [] : [ $item ];
-		$value    = Resolver::reference_value( $reference );
-		?>
-		<div
-			class="cb-core-object-picker"
-			data-cb-core-object-picker
-			data-multiple="0"
-			data-search-action="<?php echo esc_attr( ObjectSearch::ACTION ); ?>"
-			data-search-nonce="<?php echo esc_attr( $search_nonce ); ?>"
-			data-search-context="{}"
-			data-selected="<?php echo esc_attr( (string) wp_json_encode( $selected ) ); ?>"
-			data-empty-message="<?php echo esc_attr__( 'No matching published pages or documents found.', 'core-blueprint' ); ?>"
-		>
-			<input type="text" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" data-cb-core-object-picker-input>
-			<div class="cb-core-object-picker__enhanced" data-cb-core-object-picker-enhanced hidden>
-				<div class="cb-core-object-picker__selected" data-cb-core-object-picker-selected></div>
-				<input class="cb-core-object-picker__search" type="search" data-cb-core-object-picker-search placeholder="<?php echo esc_attr__( 'Search pages or documents…', 'core-blueprint' ); ?>" autocomplete="off">
-				<div class="cb-core-object-picker__results" data-cb-core-object-picker-results hidden></div>
-			</div>
-		</div>
-		<?php
+
+		echo ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- shared renderer escapes structured content.
+			'id'            => $id,
+			'name'          => $name,
+			'multiple'      => false,
+			'action'        => ObjectSearch::ACTION,
+			'nonce'         => $search_nonce,
+			'context'       => [],
+			'selected'      => $selected,
+			'placeholder'   => __( 'Search pages or documents…', 'core-blueprint' ),
+			'empty_message' => __( 'No matching published pages or documents found.', 'core-blueprint' ),
+		] );
 	}
 
 	private function render_notice(): void {
@@ -276,6 +293,7 @@ final class Page extends PageBase {
 		$map = [
 			'saved'                   => [ Notice::SUCCESS, __( 'Compliance resource saved.', 'core-blueprint' ) ],
 			'added'                   => [ Notice::SUCCESS, __( 'Custom compliance item added.', 'core-blueprint' ) ],
+			'updated'                 => [ Notice::SUCCESS, __( 'Custom compliance item updated.', 'core-blueprint' ) ],
 			'deleted'                 => [ Notice::SUCCESS, __( 'Custom compliance item deleted.', 'core-blueprint' ) ],
 			'invalid-resource'        => [ Notice::ERROR, __( 'The selected page or document is not available.', 'core-blueprint' ) ],
 			'invalid-locale'          => [ Notice::ERROR, __( 'One of the locale codes is invalid.', 'core-blueprint' ) ],
@@ -283,6 +301,7 @@ final class Page extends PageBase {
 			'unknown-resource'        => [ Notice::ERROR, __( 'That compliance resource is not registered.', 'core-blueprint' ) ],
 			'save-failed'             => [ Notice::ERROR, __( 'The compliance resource could not be saved.', 'core-blueprint' ) ],
 			'add-failed'              => [ Notice::ERROR, __( 'The custom compliance item could not be added.', 'core-blueprint' ) ],
+			'update-failed'           => [ Notice::ERROR, __( 'The custom compliance item could not be updated.', 'core-blueprint' ) ],
 			'delete-failed'           => [ Notice::ERROR, __( 'Only user-created compliance items can be deleted.', 'core-blueprint' ) ],
 		];
 		if ( ! isset( $map[ $notice ] ) ) {

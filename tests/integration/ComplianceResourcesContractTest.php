@@ -189,6 +189,140 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_registration_lifecycle_owner_and_reserved_custom_namespace_are_fail_closed(): void {
+		self::assertFalse( ResourceRegistry::register(
+			self::EXTENSION_ID,
+			'outside-lifecycle',
+			[ 'label' => 'Outside lifecycle' ]
+		) );
+
+		$results = [];
+		$probe = static function () use ( &$results ): void {
+			$results['unknown_owner'] = ResourceRegistry::register(
+				'unknown-extension',
+				'policy',
+				[ 'label' => 'Unknown owner policy' ]
+			);
+			$results['duplicate'] = ResourceRegistry::register(
+				self::EXTENSION_ID,
+				'cancellation-policy',
+				[ 'label' => 'Duplicate policy' ]
+			);
+			$results['reserved_custom'] = ResourceRegistry::register(
+				self::EXTENSION_ID,
+				'custom-reserved',
+				[ 'label' => 'Reserved custom namespace' ]
+			);
+		};
+		add_action( 'cb_core_register_compliance_resources', $probe, 20 );
+		do_action( 'cb_core_register_compliance_resources' );
+		remove_action( 'cb_core_register_compliance_resources', $probe, 20 );
+
+		self::assertFalse( $results['unknown_owner'] );
+		self::assertFalse( $results['duplicate'] );
+		self::assertFalse( $results['reserved_custom'] );
+	}
+
+	public function test_custom_resource_metadata_can_be_updated_without_changing_assignment(): void {
+		$key = Repository::add_custom( ResourceRegistry::BASE_OWNER, 'Accessibility Statement', 'Original description.' );
+		self::assertNotSame( '', $key );
+
+		$page_id = self::factory()->post->create( [
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_title'  => 'Accessibility',
+		] );
+		self::assertTrue( Repository::set_assignment( $key, [ 'type' => 'page', 'object_id' => $page_id ], [] ) );
+
+		self::assertTrue( Repository::update_custom( $key, 'Accessibility Policy', 'Updated description.' ) );
+		$updated = ResourceRegistry::get( $key );
+		self::assertNotNull( $updated );
+		self::assertSame( 'Accessibility Policy', $updated['label'] );
+		self::assertSame( 'Updated description.', $updated['description'] );
+		self::assertSame( $page_id, Repository::assignment( $key )['default']['object_id'] );
+		self::assertFalse( Repository::update_custom( 'core-blueprint:privacy-policy', 'Changed', '' ) );
+	}
+
+	public function test_language_only_variant_is_used_before_default_assignment(): void {
+		$default_page = self::factory()->post->create( [
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_title'  => 'Default privacy',
+		] );
+		$english_page = self::factory()->post->create( [
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_title'  => 'English privacy',
+		] );
+
+		$key = 'core-blueprint:privacy-policy';
+		self::assertTrue( Repository::set_assignment(
+			$key,
+			[ 'type' => 'page', 'object_id' => $default_page ],
+			[ 'en' => [ 'type' => 'page', 'object_id' => $english_page ] ]
+		) );
+
+		$resolved = Resolver::resolve( $key, 'en_GB' );
+		self::assertNotNull( $resolved );
+		self::assertSame( 'en', $resolved['used_locale'] );
+		self::assertSame( $english_page, $resolved['reference']['object_id'] );
+	}
+
+	public function test_unpublished_deleted_and_disallowed_resources_fail_closed(): void {
+		$key = 'core-blueprint:disclaimer';
+		$page_id = self::factory()->post->create( [
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_title'  => 'Disclaimer',
+		] );
+		self::assertTrue( Repository::set_assignment( $key, [ 'type' => 'page', 'object_id' => $page_id ], [] ) );
+		self::assertNotNull( Resolver::resolve( $key, 'nl_NL' ) );
+
+		wp_update_post( [ 'ID' => $page_id, 'post_status' => 'draft' ] );
+		self::assertNull( Resolver::resolve( $key, 'nl_NL' ) );
+
+		$document = self::factory()->post->create( [
+			'post_type'      => 'attachment',
+			'post_status'    => 'inherit',
+			'post_title'     => 'Disclaimer PDF',
+			'post_mime_type' => 'application/pdf',
+			'guid'           => 'https://example.org/disclaimer.pdf',
+		] );
+		self::assertTrue( Repository::set_assignment( $key, [ 'type' => 'document', 'object_id' => $document ], [] ) );
+		self::assertNotNull( Resolver::resolve( $key, 'nl_NL' ) );
+
+		$deny_pdf = static fn( array $mimes ): array => [ 'text/plain' ];
+		add_filter( 'cb_core_compliance_document_mime_types', $deny_pdf );
+		self::assertNull( Resolver::resolve( $key, 'nl_NL' ) );
+		remove_filter( 'cb_core_compliance_document_mime_types', $deny_pdf );
+
+		wp_delete_attachment( $document, true );
+		self::assertNull( Resolver::resolve( $key, 'nl_NL' ) );
+	}
+
+	public function test_compliance_admin_uses_canonical_object_picker_and_audited_mutations(): void {
+		$root    = dirname( __DIR__, 2 );
+		$page    = (string) file_get_contents( $root . '/src/Compliance/Admin/Page.php' );
+		$actions = (string) file_get_contents( $root . '/src/Compliance/Admin/Actions.php' );
+
+		self::assertStringContainsString( 'use CB\\Core\\UI\\ObjectPicker;', $page );
+		self::assertStringContainsString( 'ObjectPicker::render(', $page );
+		self::assertStringNotContainsString( 'data-cb-core-object-picker', $page );
+		self::assertStringContainsString( 'compliance.resource.assignment_changed', $actions );
+		self::assertStringContainsString( 'compliance.resource.custom_added', $actions );
+		self::assertStringContainsString( 'compliance.resource.custom_updated', $actions );
+		self::assertStringContainsString( 'compliance.resource.custom_deleted', $actions );
+	}
+
+	public function test_uninstall_owns_only_compliance_configuration_not_referenced_content(): void {
+		$uninstall = (string) file_get_contents( dirname( __DIR__, 2 ) . '/uninstall.php' );
+
+		self::assertStringContainsString( "'cb_core_compliance_resource_assignments'", $uninstall );
+		self::assertStringContainsString( "'cb_core_compliance_custom_resources'", $uninstall );
+		self::assertStringNotContainsString( 'wp_delete_post(', $uninstall );
+		self::assertStringNotContainsString( 'wp_delete_attachment(', $uninstall );
+	}
+
 	public function test_compliance_is_a_base_owned_central_surface_before_preferences(): void {
 		$page = new CompliancePage();
 		self::assertSame( 'core-blueprint-compliance', $page->slug() );

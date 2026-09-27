@@ -18,7 +18,9 @@ core-blueprint-bookings:cancellation-policy
 There are two ownership classes:
 
 - **Software-defined roles** are registered by Base or an active Core Blueprint extension. Users may assign or change the backing resource, but cannot delete the role itself.
-- **Custom roles** are created by the site administrator under Base or an extension. The administrator owns the role and may edit its assignment or delete that custom role. Deleting a custom role never deletes the referenced WordPress Page or Media Library document.
+- **Custom roles** are created by the site administrator under Base or an extension. The administrator owns the role and may edit its name, description and assignment or delete that custom role. Deleting a custom role never deletes the referenced WordPress Page or Media Library document.
+
+The `custom-*` owner-local ID namespace is reserved for site-owned roles. Software-defined resources cannot register IDs in that namespace, and a stored custom role can never override a software-defined role with the same owner-qualified key.
 
 Base registers these roles in v1:
 

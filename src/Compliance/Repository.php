@@ -69,11 +69,12 @@ final class Repository {
 		$description = self::limit_text( $description, 500 );
 		$stored      = get_option( self::OPTION_CUSTOM, [] );
 		$stored      = is_array( $stored ) ? $stored : [];
+		$software    = ResourceRegistry::software_definitions();
 
 		do {
 			$id  = 'custom-' . substr( hash( 'sha256', wp_generate_uuid4() ), 0, 16 );
 			$key = ResourceRegistry::key( $owner, $id );
-		} while ( isset( $stored[ $key ] ) );
+		} while ( isset( $stored[ $key ] ) || isset( $software[ $key ] ) );
 
 		$stored[ $key ] = [
 			'owner'       => $owner,
@@ -84,6 +85,31 @@ final class Repository {
 		];
 		update_option( self::OPTION_CUSTOM, $stored, false );
 		return $key;
+	}
+
+	/** Update a site-owned resource role without changing its stable key or assignment. */
+	public static function update_custom( string $key, string $label, string $description = '' ): bool {
+		$definitions = self::custom_definitions();
+		if ( ! isset( $definitions[ $key ] ) ) {
+			return false;
+		}
+
+		$label       = self::limit_text( trim( sanitize_text_field( $label ) ), 120 );
+		$description = self::limit_text( trim( sanitize_textarea_field( $description ) ), 500 );
+		if ( '' === $label ) {
+			return false;
+		}
+
+		$stored = get_option( self::OPTION_CUSTOM, [] );
+		if ( ! is_array( $stored ) || ! isset( $stored[ $key ] ) || ! is_array( $stored[ $key ] ) ) {
+			return false;
+		}
+
+		$stored[ $key ]['label']       = $label;
+		$stored[ $key ]['description'] = $description;
+		$stored[ $key ]['updated_at']  = gmdate( 'c' );
+		update_option( self::OPTION_CUSTOM, $stored, false );
+		return true;
 	}
 
 	/** Limit sanitized text without requiring the optional mbstring extension. */

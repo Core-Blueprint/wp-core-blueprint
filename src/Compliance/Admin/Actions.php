@@ -20,11 +20,13 @@ final class Actions {
 
 	public const SAVE_ACTION   = 'cb_core_compliance_save_resource';
 	public const ADD_ACTION    = 'cb_core_compliance_add_custom';
+	public const UPDATE_ACTION = 'cb_core_compliance_update_custom';
 	public const DELETE_ACTION = 'cb_core_compliance_delete_custom';
 
 	public static function init(): void {
 		add_action( 'admin_post_' . self::SAVE_ACTION, [ self::class, 'save_resource' ] );
 		add_action( 'admin_post_' . self::ADD_ACTION, [ self::class, 'add_custom' ] );
+		add_action( 'admin_post_' . self::UPDATE_ACTION, [ self::class, 'update_custom' ] );
 		add_action( 'admin_post_' . self::DELETE_ACTION, [ self::class, 'delete_custom' ] );
 	}
 
@@ -109,6 +111,29 @@ final class Actions {
 			'owner'        => $owner,
 		] );
 		self::redirect( 'added', $key );
+	}
+
+	public static function update_custom(): void {
+		self::guard();
+		$key = isset( $_POST['resource_key'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['resource_key'] ) ) : '';
+		check_admin_referer( 'cb_core_compliance_update:' . $key );
+
+		$definition = ResourceRegistry::get( $key );
+		if ( null === $definition || true !== $definition['custom'] ) {
+			self::redirect( 'update-failed', $key );
+		}
+
+		$label       = isset( $_POST['label'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['label'] ) ) : '';
+		$description = isset( $_POST['description'] ) ? sanitize_textarea_field( (string) wp_unslash( $_POST['description'] ) ) : '';
+		if ( ! Repository::update_custom( $key, $label, $description ) ) {
+			self::redirect( 'update-failed', $key );
+		}
+
+		AuditLog::log( 'compliance.resource.custom_updated', 'notice', [
+			'resource_key' => $key,
+			'owner'        => $definition['owner'],
+		] );
+		self::redirect( 'updated', $key );
 	}
 
 	public static function delete_custom(): void {
