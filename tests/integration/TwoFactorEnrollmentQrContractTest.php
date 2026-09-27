@@ -23,6 +23,9 @@ final class CB_Base_Two_Factor_Enrollment_QR_Contract_Test extends WP_UnitTestCa
 		self::assertStringContainsString( "../vendor/qrcode-generator-2.0.4.js", $runtime );
 		self::assertStringContainsString( "qrcode( 0, 'M' )", $runtime );
 		self::assertStringContainsString( 'target.replaceChildren( svg );', $runtime );
+		self::assertStringContainsString( "svg.setAttribute( 'width', String( total ) );", $runtime );
+		self::assertStringContainsString( "svg.setAttribute( 'height', String( total ) );", $runtime );
+		self::assertStringContainsString( "svg.setAttribute( 'preserveAspectRatio', 'xMidYMid meet' );", $runtime );
 		self::assertStringContainsString( 'clipboard.enhance( copyButton', $runtime );
 
 		foreach ( [ 'fetch(', 'XMLHttpRequest', 'sendBeacon', 'localStorage', 'sessionStorage', 'document.cookie', 'console.' ] as $forbidden ) {
@@ -60,6 +63,8 @@ final class CB_Base_Two_Factor_Enrollment_QR_Contract_Test extends WP_UnitTestCa
 		self::assertStringContainsString( "hash_file( 'sha256', \$path )", $controller );
 		self::assertStringContainsString( "'foundation.clipboard'", $screen );
 		self::assertStringContainsString( 'background: #fff;', $css );
+		self::assertStringContainsString( 'width: fit-content;', $css );
+		self::assertStringContainsString( 'aspect-ratio: 1 / 1;', $css );
 		self::assertStringContainsString( 'margin-left: var(--cb-secure-action-step-offset);', $css );
 	}
 }
