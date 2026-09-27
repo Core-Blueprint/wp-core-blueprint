@@ -492,7 +492,7 @@ final class Recovery {
 		}
 		$state = self::state();
 		return $state
-			&& in_array( (string) ( $state['status'] ?? '' ), [ 'pending_reconcile', 'pending_auth', 'authenticated' ], true )
+			&& in_array( (string) ( $state['status'] ?? '' ), [ 'pending_reconcile', 'pending_auth', 'pending_two_factor', 'authenticated' ], true )
 			&& self::state_matches_ticket( $state, $ticket, $payload );
 	}
 
