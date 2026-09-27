@@ -106,6 +106,7 @@ perform_replace(){
 		-F 'action=cb_core_replace_media' \
 		-F "attachment_id=$attachment_id" \
 		-F "_wpnonce=$nonce" \
+		-F 'media_replace_acknowledgement=1' \
 		-F "return=$site/wp-admin/upload.php" \
 		-F "replacement_file=@$fixture;type=audio/wav" \
 		"$site/wp-admin/admin-post.php"
