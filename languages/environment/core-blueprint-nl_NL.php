@@ -1,0 +1,35 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'project-id-version' => 'Core Blueprint 1.0.0-rc1',
+    'language' => 'nl_NL',
+    'plural-forms' => 'nplurals=2; plural=(n != 1);',
+    'content-type' => 'text/plain; charset=UTF-8',
+    'x-generator' => 'Core Blueprint Environment Governance localization layer',
+    'messages' => [
+        'Environment' => 'Omgeving',
+        'Review the WordPress environment and govern non-production search indexing without changing site access.' => 'Controleer de WordPress-omgeving en beheer zoekindexering voor niet-productieomgevingen zonder de sitetoegang te wijzigen.',
+        'You do not have permission to change Environment Governance.' => 'Je hebt geen toestemming om Environment Governance te wijzigen.',
+        'Environment: %s' => 'Omgeving: %s',
+        'WordPress environment. Click to review Environment Governance.' => 'WordPress-omgeving. Klik om Environment Governance te bekijken.',
+        'Development' => 'Ontwikkeling',
+        'Staging' => 'Staging',
+        'Production' => 'Productie',
+        'Environment Governance' => 'Omgevingsgovernance',
+        'Portable non-production search-indexing policy. WordPress environment identity remains local to each site.' => 'Draagbaar beleid voor zoekindexering in niet-productieomgevingen. De WordPress-omgevingsidentiteit blijft lokaal voor iedere site.',
+        'This Profile disables the non-production noindex safeguard. Local, development, and staging environments will no longer receive Core Blueprint search-indexing protection from this policy.' => 'Dit Profile schakelt de noindex-beveiliging voor niet-productieomgevingen uit. Lokale, ontwikkel- en stagingomgevingen krijgen vanuit dit beleid niet langer Core Blueprint-bescherming tegen zoekindexering.',
+        'Could not apply the Environment Governance policy.' => 'Het Environment Governance-beleid kon niet worden toegepast.',
+        'WordPress determines this site’s environment. Core Blueprint only applies a portable governance policy for non-production search indexing.' => 'WordPress bepaalt de omgeving van deze site. Core Blueprint past alleen een draagbaar governancebeleid toe voor zoekindexering in niet-productieomgevingen.',
+        'Environment Governance saved.' => 'Environment Governance opgeslagen.',
+        'Environment Governance could not be saved.' => 'Environment Governance kon niet worden opgeslagen.',
+        'WordPress Environment' => 'WordPress-omgeving',
+        'Read-only. This value comes directly from wp_get_environment_type(). Core Blueprint does not detect, infer, or store the environment identity.' => 'Alleen-lezen. Deze waarde komt rechtstreeks uit wp_get_environment_type(). Core Blueprint detecteert, leidt af of bewaart de omgevingsidentiteit niet.',
+        'Environment and Access Mode are separate. A staging environment can still use Public Access Mode.' => 'Environment en Access Mode staan los van elkaar. Een stagingomgeving kan nog steeds de openbare Access Mode gebruiken.',
+        'Noindex asks search engines not to index a response. It is not access protection.' => 'Noindex vraagt zoekmachines een reactie niet te indexeren. Het is geen toegangsbeveiliging.',
+        'On production this policy is stored for portability but has no search-indexing runtime effect.' => 'Op productie wordt dit beleid opgeslagen voor overdraagbaarheid, maar heeft het geen runtime-effect op zoekindexering.',
+        'Protect search indexing on non-production environments' => 'Zoekindexering beschermen in niet-productieomgevingen',
+        'When enabled, local, development, and staging responses receive noindex through WordPress robots APIs while existing directives are preserved.' => 'Wanneer ingeschakeld krijgen lokale, ontwikkel- en stagingreacties noindex via de WordPress robots-API’s, terwijl bestaande directives behouden blijven.',
+        'Save Environment Governance' => 'Environment Governance opslaan',
+    ],
+];

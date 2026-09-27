@@ -11,9 +11,10 @@ declare(strict_types=1);
  *
  * Tabs:
  *   overview      - read-only status strip + bypass banner + quick actions
+ *   environment   - WordPress environment identity + portable indexing policy
+ *   access-mode   - public / coming-soon / maintenance / admin-only state
  *   two-factor    - privileged-account second-factor policy
  *   core-shield   - master switch, modules, header test + audit retention
- *   access-mode   - public / coming-soon / maintenance / admin-only state
  *   failsafe      - lockout bypass mechanisms + emergency controls
  *   login-shield  - custom login URL + /wp-admin guest-handling policy
  *
@@ -34,6 +35,7 @@ use CB\Core\Admin\Overview;
 use CB\Core\Admin\PageBase;
 use CB\Core\Admin\Tabbed;
 use CB\Core\Detector;
+use CB\Core\Environment\Governance as EnvironmentGovernance;
 use CB\Core\Security\AccessMode as SecurityAccessMode;
 use CB\Core\Security\Failsafe;
 use CB\Core\Security\LoginShield;
@@ -78,12 +80,13 @@ final class Safeguards extends PageBase {
 
 		// Tab order: core security first, optional features second, emergency last.
 		//   1. Overview      - read-only status
-		//   2. Access Mode   - site-level gate (is the site even reachable?)
-		//   3. Login Shield  - login-endpoint hardening (narrow, specific)
-		//   4. Two-factor    - privileged-account authentication policy
-		//   5. Core Shield   - baseline hardening (master switch + modules + headers)
-		//   6. Core Scanner  - file integrity verification (read-only checks)
-		//   7. Failsafe      - emergency escape hatch (last resort)
+		//   2. Environment   - canonical WordPress identity + portable indexing policy
+		//   3. Access Mode   - site-level gate (is the site even reachable?)
+		//   4. Login Shield  - login-endpoint hardening (narrow, specific)
+		//   5. Two-factor    - privileged-account authentication policy
+		//   6. Core Shield   - baseline hardening (master switch + modules + headers)
+		//   7. Core Scanner  - file integrity verification (read-only checks)
+		//   8. Failsafe      - emergency escape hatch (last resort)
 		//
 		// Threat-model flow: access → login endpoint → authentication → configuration → files →
 		// recovery. Login Shield sits before Core Shield
@@ -93,9 +96,10 @@ final class Safeguards extends PageBase {
 		//
 		// Permissions (meta - who may configure CB) lives under Preferences,
 		// not here. Safeguards is hardening-config; Permissions is governance.
-		$available_tabs = [ 'overview', 'access-mode', 'login-shield', 'two-factor', 'core-shield', 'core-scanner', 'failsafe' ];
+		$available_tabs = [ 'overview', 'environment', 'access-mode', 'login-shield', 'two-factor', 'core-shield', 'core-scanner', 'failsafe' ];
 		$tab_labels     = [
 			'overview'     => __( 'Overview',      'core-blueprint' ),
+			'environment'  => __( 'Environment',   'core-blueprint' ),
 			'access-mode'  => __( 'Access Mode',   'core-blueprint' ),
 			'login-shield' => __( 'Login Shield',  'core-blueprint' ),
 			'two-factor'   => __( 'Two-factor',    'core-blueprint' ),
@@ -107,6 +111,7 @@ final class Safeguards extends PageBase {
 		$tab = $this->active_tab( $available_tabs, 'overview' );
 
 		switch ( $tab ) {
+			case 'environment':  $this->render_environment_tab( $tab, $tab_labels );  return;
 			case 'access-mode':  $this->render_access_mode_tab( $tab, $tab_labels );  return;
 			case 'core-shield':  $this->render_core_shield_tab( $tab, $tab_labels );  return;
 			case 'core-scanner': $this->render_core_scanner_tab( $tab, $tab_labels ); return;
@@ -166,6 +171,7 @@ final class Safeguards extends PageBase {
 		}
 
 		$core_shield_url   = admin_url( 'admin.php?page=' . self::SLUG . '&tab=core-shield' );
+		$environment_url   = admin_url( 'admin.php?page=' . self::SLUG . '&tab=environment' );
 		$access_mode_url   = admin_url( 'admin.php?page=' . self::SLUG . '&tab=access-mode' );
 		$failsafe_url      = admin_url( 'admin.php?page=' . self::SLUG . '&tab=failsafe' );
 		$login_shield_url  = admin_url( 'admin.php?page=' . self::SLUG . '&tab=login-shield' );
@@ -219,6 +225,13 @@ final class Safeguards extends PageBase {
 			],
 
 			'tab_cards' => [
+				[
+					'slug'  => 'environment',
+					'url'   => $environment_url,
+					'label' => __( 'Environment', 'core-blueprint' ),
+					'desc'  => __( 'Review the WordPress environment and govern non-production search indexing without changing site access.', 'core-blueprint' ),
+					'icon'  => 'settings',
+				],
 				[
 					'slug'  => 'access-mode',
 					'url'   => $access_mode_url,
@@ -309,6 +322,19 @@ final class Safeguards extends PageBase {
 
 		ob_start();
 		include CB_CORE_DIR . 'templates/core-shield.php';
+		$html = ob_get_clean();
+		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
+	}
+
+	private function render_environment_tab( string $tab, array $tab_labels ): void {
+		$environment_type = EnvironmentGovernance::current_type();
+		$policy           = EnvironmentGovernance::policy();
+		$save_state       = isset( $_GET['environment_saved'] )
+			? sanitize_key( wp_unslash( (string) $_GET['environment_saved'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- presentation-only status from the canonical admin-post redirect.
+			: '';
+
+		ob_start();
+		include CB_CORE_DIR . 'templates/environment-governance.php';
 		$html = ob_get_clean();
 		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}

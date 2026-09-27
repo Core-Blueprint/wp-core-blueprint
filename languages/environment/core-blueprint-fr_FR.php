@@ -1,0 +1,35 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'project-id-version' => 'Core Blueprint 1.0.0-rc1',
+    'language' => 'fr_FR',
+    'plural-forms' => 'nplurals=2; plural=(n > 1);',
+    'content-type' => 'text/plain; charset=UTF-8',
+    'x-generator' => 'Core Blueprint Environment Governance localization layer',
+    'messages' => [
+        'Environment' => 'Environnement',
+        'Review the WordPress environment and govern non-production search indexing without changing site access.' => 'Examinez l’environnement WordPress et gérez l’indexation par les moteurs de recherche des environnements hors production sans modifier l’accès au site.',
+        'You do not have permission to change Environment Governance.' => 'Vous n’avez pas l’autorisation de modifier Environment Governance.',
+        'Environment: %s' => 'Environnement : %s',
+        'WordPress environment. Click to review Environment Governance.' => 'Environnement WordPress. Cliquez pour examiner Environment Governance.',
+        'Development' => 'Développement',
+        'Staging' => 'Préproduction',
+        'Production' => 'Production',
+        'Environment Governance' => 'Gouvernance de l’environnement',
+        'Portable non-production search-indexing policy. WordPress environment identity remains local to each site.' => 'Politique portable d’indexation hors production. L’identité de l’environnement WordPress reste locale à chaque site.',
+        'This Profile disables the non-production noindex safeguard. Local, development, and staging environments will no longer receive Core Blueprint search-indexing protection from this policy.' => 'Ce Profile désactive la protection noindex hors production. Les environnements locaux, de développement et de préproduction ne recevront plus la protection Core Blueprint contre l’indexation par les moteurs de recherche via cette politique.',
+        'Could not apply the Environment Governance policy.' => 'Impossible d’appliquer la politique Environment Governance.',
+        'WordPress determines this site’s environment. Core Blueprint only applies a portable governance policy for non-production search indexing.' => 'WordPress détermine l’environnement de ce site. Core Blueprint applique uniquement une politique de gouvernance portable pour l’indexation des environnements hors production.',
+        'Environment Governance saved.' => 'Environment Governance enregistré.',
+        'Environment Governance could not be saved.' => 'Environment Governance n’a pas pu être enregistré.',
+        'WordPress Environment' => 'Environnement WordPress',
+        'Read-only. This value comes directly from wp_get_environment_type(). Core Blueprint does not detect, infer, or store the environment identity.' => 'Lecture seule. Cette valeur provient directement de wp_get_environment_type(). Core Blueprint ne détecte, ne déduit ni ne stocke l’identité de l’environnement.',
+        'Environment and Access Mode are separate. A staging environment can still use Public Access Mode.' => 'Environment et Access Mode sont distincts. Un environnement de préproduction peut toujours utiliser le mode d’accès Public.',
+        'Noindex asks search engines not to index a response. It is not access protection.' => 'Noindex demande aux moteurs de recherche de ne pas indexer une réponse. Il ne protège pas l’accès.',
+        'On production this policy is stored for portability but has no search-indexing runtime effect.' => 'En production, cette politique est stockée pour rester portable, mais n’a aucun effet d’exécution sur l’indexation.',
+        'Protect search indexing on non-production environments' => 'Protéger l’indexation dans les environnements hors production',
+        'When enabled, local, development, and staging responses receive noindex through WordPress robots APIs while existing directives are preserved.' => 'Lorsqu’elle est activée, les réponses des environnements locaux, de développement et de préproduction reçoivent noindex via les API robots de WordPress, tandis que les directives existantes sont préservées.',
+        'Save Environment Governance' => 'Enregistrer Environment Governance',
+    ],
+];

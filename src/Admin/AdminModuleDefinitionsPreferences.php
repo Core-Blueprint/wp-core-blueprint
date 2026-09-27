@@ -134,6 +134,13 @@ final class AdminModuleDefinitionsPreferences {
 					],
 				];
 			},
+			'@cb-core/admin-navigation' => static function (): array {
+				return [
+					'id'   => '@cb-core/admin-navigation',
+					'src'  => 'features/admin-navigation.js',
+					'deps' => [ '@cb-core/reorder' ],
+				];
+			},
 			'@cb-core/permissions' => static function () use ( $admin_nonce, $ajax_url, $save_status ): array {
 				return [
 					'id'   => '@cb-core/permissions',

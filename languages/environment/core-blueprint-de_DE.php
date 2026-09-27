@@ -1,0 +1,35 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'project-id-version' => 'Core Blueprint 1.0.0-rc1',
+    'language' => 'de_DE',
+    'plural-forms' => 'nplurals=2; plural=(n != 1);',
+    'content-type' => 'text/plain; charset=UTF-8',
+    'x-generator' => 'Core Blueprint Environment Governance localization layer',
+    'messages' => [
+        'Environment' => 'Umgebung',
+        'Review the WordPress environment and govern non-production search indexing without changing site access.' => 'Prüfen Sie die WordPress-Umgebung und steuern Sie die Suchindexierung für Nicht-Produktionsumgebungen, ohne den Websitezugriff zu ändern.',
+        'You do not have permission to change Environment Governance.' => 'Sie haben keine Berechtigung, Environment Governance zu ändern.',
+        'Environment: %s' => 'Umgebung: %s',
+        'WordPress environment. Click to review Environment Governance.' => 'WordPress-Umgebung. Klicken Sie, um Environment Governance zu prüfen.',
+        'Development' => 'Entwicklung',
+        'Staging' => 'Staging',
+        'Production' => 'Produktion',
+        'Environment Governance' => 'Umgebungs-Governance',
+        'Portable non-production search-indexing policy. WordPress environment identity remains local to each site.' => 'Portable Richtlinie zur Suchindexierung für Nicht-Produktionsumgebungen. Die WordPress-Umgebungsidentität bleibt lokal auf jeder Website.',
+        'This Profile disables the non-production noindex safeguard. Local, development, and staging environments will no longer receive Core Blueprint search-indexing protection from this policy.' => 'Dieses Profile deaktiviert den Noindex-Schutz für Nicht-Produktionsumgebungen. Lokale, Entwicklungs- und Stagingumgebungen erhalten durch diese Richtlinie keinen Core Blueprint-Schutz vor Suchindexierung mehr.',
+        'Could not apply the Environment Governance policy.' => 'Die Environment-Governance-Richtlinie konnte nicht angewendet werden.',
+        'WordPress determines this site’s environment. Core Blueprint only applies a portable governance policy for non-production search indexing.' => 'WordPress bestimmt die Umgebung dieser Website. Core Blueprint wendet lediglich eine portable Governance-Richtlinie für die Suchindexierung in Nicht-Produktionsumgebungen an.',
+        'Environment Governance saved.' => 'Environment Governance gespeichert.',
+        'Environment Governance could not be saved.' => 'Environment Governance konnte nicht gespeichert werden.',
+        'WordPress Environment' => 'WordPress-Umgebung',
+        'Read-only. This value comes directly from wp_get_environment_type(). Core Blueprint does not detect, infer, or store the environment identity.' => 'Schreibgeschützt. Dieser Wert stammt direkt aus wp_get_environment_type(). Core Blueprint erkennt, leitet oder speichert die Umgebungsidentität nicht.',
+        'Environment and Access Mode are separate. A staging environment can still use Public Access Mode.' => 'Environment und Access Mode sind getrennt. Eine Stagingumgebung kann weiterhin den öffentlichen Access Mode verwenden.',
+        'Noindex asks search engines not to index a response. It is not access protection.' => 'Noindex fordert Suchmaschinen auf, eine Antwort nicht zu indexieren. Es ist kein Zugriffsschutz.',
+        'On production this policy is stored for portability but has no search-indexing runtime effect.' => 'In der Produktion wird diese Richtlinie für die Portabilität gespeichert, hat aber keine Laufzeitwirkung auf die Suchindexierung.',
+        'Protect search indexing on non-production environments' => 'Suchindexierung in Nicht-Produktionsumgebungen schützen',
+        'When enabled, local, development, and staging responses receive noindex through WordPress robots APIs while existing directives are preserved.' => 'Wenn aktiviert, erhalten Antworten in lokalen, Entwicklungs- und Stagingumgebungen noindex über die WordPress-Robots-APIs, während bestehende Direktiven erhalten bleiben.',
+        'Save Environment Governance' => 'Environment Governance speichern',
+    ],
+];

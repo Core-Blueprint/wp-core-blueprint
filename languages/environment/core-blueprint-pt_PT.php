@@ -1,0 +1,35 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'project-id-version' => 'Core Blueprint 1.0.0-rc1',
+    'language' => 'pt_PT',
+    'plural-forms' => 'nplurals=2; plural=(n != 1);',
+    'content-type' => 'text/plain; charset=UTF-8',
+    'x-generator' => 'Core Blueprint Environment Governance localization layer',
+    'messages' => [
+        'Environment' => 'Ambiente',
+        'Review the WordPress environment and govern non-production search indexing without changing site access.' => 'Reveja o ambiente WordPress e controle a indexação de pesquisa em ambientes que não sejam de produção sem alterar o acesso ao site.',
+        'You do not have permission to change Environment Governance.' => 'Não tem permissão para alterar Environment Governance.',
+        'Environment: %s' => 'Ambiente: %s',
+        'WordPress environment. Click to review Environment Governance.' => 'Ambiente WordPress. Clique para rever Environment Governance.',
+        'Development' => 'Desenvolvimento',
+        'Staging' => 'Staging',
+        'Production' => 'Produção',
+        'Environment Governance' => 'Governança do ambiente',
+        'Portable non-production search-indexing policy. WordPress environment identity remains local to each site.' => 'Política portátil de indexação de pesquisa para ambientes que não sejam de produção. A identidade do ambiente WordPress permanece local em cada site.',
+        'This Profile disables the non-production noindex safeguard. Local, development, and staging environments will no longer receive Core Blueprint search-indexing protection from this policy.' => 'Este Profile desativa a proteção noindex em ambientes que não sejam de produção. Os ambientes locais, de desenvolvimento e de staging deixarão de receber desta política a proteção do Core Blueprint contra indexação de pesquisa.',
+        'Could not apply the Environment Governance policy.' => 'Não foi possível aplicar a política Environment Governance.',
+        'WordPress determines this site’s environment. Core Blueprint only applies a portable governance policy for non-production search indexing.' => 'O WordPress determina o ambiente deste site. O Core Blueprint aplica apenas uma política de governança portátil para indexação de pesquisa em ambientes que não sejam de produção.',
+        'Environment Governance saved.' => 'Environment Governance guardado.',
+        'Environment Governance could not be saved.' => 'Não foi possível guardar Environment Governance.',
+        'WordPress Environment' => 'Ambiente WordPress',
+        'Read-only. This value comes directly from wp_get_environment_type(). Core Blueprint does not detect, infer, or store the environment identity.' => 'Só de leitura. Este valor vem diretamente de wp_get_environment_type(). O Core Blueprint não deteta, infere nem armazena a identidade do ambiente.',
+        'Environment and Access Mode are separate. A staging environment can still use Public Access Mode.' => 'Environment e Access Mode são separados. Um ambiente de staging pode continuar a usar Access Mode Público.',
+        'Noindex asks search engines not to index a response. It is not access protection.' => 'Noindex pede aos motores de pesquisa para não indexarem uma resposta. Não é proteção de acesso.',
+        'On production this policy is stored for portability but has no search-indexing runtime effect.' => 'Em produção, esta política é armazenada para portabilidade, mas não tem efeito em tempo de execução sobre a indexação de pesquisa.',
+        'Protect search indexing on non-production environments' => 'Proteger a indexação de pesquisa em ambientes que não sejam de produção',
+        'When enabled, local, development, and staging responses receive noindex through WordPress robots APIs while existing directives are preserved.' => 'Quando ativado, as respostas de ambientes locais, de desenvolvimento e de staging recebem noindex através das APIs robots do WordPress, preservando as diretivas existentes.',
+        'Save Environment Governance' => 'Guardar Environment Governance',
+    ],
+];
