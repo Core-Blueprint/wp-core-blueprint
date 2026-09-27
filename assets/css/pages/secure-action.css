@@ -119,7 +119,8 @@ body.wp-admin #wpfooter {
 .cb-core-secure-action__qr {
 	display: inline-flex;
 	width: fit-content;
-	max-width: 100%;
+	max-width: 14rem;
+	aspect-ratio: 1;
 	align-items: center;
 	justify-content: center;
 	margin: 0 0 var(--cb-space-4);
