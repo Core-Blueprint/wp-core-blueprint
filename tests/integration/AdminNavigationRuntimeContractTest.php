@@ -162,7 +162,7 @@ final class CB_Base_Admin_Navigation_Runtime_Contract_Test extends WP_UnitTestCa
 
 		$bar = $this->toolbar_fixture();
 		ToolbarRuntime::apply( $bar );
-		self::assertFalse( $bar->get_node( 'site-name' ) );
+		self::assertNull( $bar->get_node( 'site-name' ) );
 		self::assertIsObject( $bar->get_node( 'unrelated-node' ) );
 	}
 

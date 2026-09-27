@@ -75,7 +75,7 @@ final class CB_Base_Admin_Navigation_Profile_Contract_Test extends WP_UnitTestCa
 		ToolbarRuntime::apply( $bar );
 
 		self::assertSame( 'Workspace', $bar->get_node( 'site-name' )->title );
-		self::assertFalse( $bar->get_node( 'updates' ) );
+		self::assertNull( $bar->get_node( 'updates' ) );
 		self::assertIsObject( $bar->get_node( 'child-node' ) );
 	}
 
