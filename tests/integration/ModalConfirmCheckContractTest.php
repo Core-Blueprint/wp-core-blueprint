@@ -77,4 +77,34 @@ final class CB_Base_Modal_Confirm_Check_Contract_Test extends WP_UnitTestCase {
         self::assertStringContainsString( '.cb-core-modal__confirm-check', $core_css );
         self::assertStringContainsString( '.cb-core-modal__confirm-check', $native_css );
     }
+
+    public function test_wp_native_modal_consumes_optional_semantic_theme_tokens_with_wordpress_fallbacks(): void {
+        $css = file_get_contents( CB_CORE_DIR . 'assets/css/components/modals-native.css' );
+
+        self::assertIsString( $css );
+
+        foreach ( [
+            '--cb-modal-native-surface: var(--cb-surface-1, #fff);',
+            '--cb-modal-native-code-surface: var(--cb-surface-2, #f0f0f1);',
+            '--cb-modal-native-border: var(--cb-border, #c3c4c7);',
+            '--cb-modal-native-text-strong: var(--cb-text-strong, #1d2327);',
+            '--cb-modal-native-text: var(--cb-text, #2c3338);',
+            '--cb-modal-native-text-muted: var(--cb-text-muted, #50575e);',
+            '--cb-modal-native-status: var(--cb-text-muted, #646970);',
+            '--cb-modal-native-error: var(--cb-error, #d63638);',
+            '--cb-modal-native-danger: var(--cb-danger, #b32d2e);',
+            '--cb-modal-native-on-danger: var(--cb-on-danger, #fff);',
+            '--cb-modal-native-remediation: var(--cb-warning, #996800);',
+        ] as $contract ) {
+            self::assertStringContainsString( $contract, $css );
+        }
+
+        self::assertStringContainsString( 'background: var(--cb-modal-native-surface);', $css );
+        self::assertStringContainsString( 'border: 1px solid var(--cb-modal-native-border);', $css );
+        self::assertStringContainsString( 'background: var(--cb-modal-native-code-surface);', $css );
+        self::assertStringContainsString( 'color: var(--cb-modal-native-error);', $css );
+        self::assertStringContainsString( 'color: var(--cb-modal-native-danger);', $css );
+        self::assertStringContainsString( 'border-color: var(--cb-modal-native-remediation);', $css );
+    }
+
 }

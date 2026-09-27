@@ -21,6 +21,13 @@
 	gap: 24px;
 }
 
+.cb-core-form-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
 .cb-core-field {
 	display: flex;
 	flex-direction: column;

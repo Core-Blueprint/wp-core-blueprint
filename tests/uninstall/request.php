@@ -220,15 +220,24 @@ try {
         update_option('cb_core_integrity_a3_generation', 'delete-me', false);
         update_option('cb_core_schema_lock_a3', ['owner' => 'base'], false);
         update_option('cb_core_quarantine_mutation_lock_a3', ['owner' => 'base'], false);
+        update_option('cb_core_2fa_ch_lock_a3', time(), false);
         update_option('cb_core_quarantine_workspace', ['evidence' => 'preserve-me'], false);
         update_option('vendor_extension_state', ['owner' => 'vendor', 'value' => 'preserve-me'], false);
         update_option('cb_core_beacon_a3_sentinel', 'preserve-me', false);
 
         set_transient('cb_core_alert_a3', 'delete-me', DAY_IN_SECONDS);
+        set_transient('cb_core_2fa_ch_a3', ['user_id' => (int) $admin->ID], DAY_IN_SECONDS);
+        set_transient('cb_core_two_factor_profile_notice_' . (int) $admin->ID, ['message' => 'delete-me'], DAY_IN_SECONDS);
         set_transient('vendor_keep_transient', 'preserve-me', DAY_IN_SECONDS);
 
         update_user_meta((int) $admin->ID, 'cb_core_theme', 'dark');
         update_user_meta((int) $admin->ID, '_cb_core_privileged_review', 'delete-me');
+        update_user_meta((int) $admin->ID, '_cb_core_two_factor_totp_secret', ['v' => 1, 'ciphertext' => 'delete-me']);
+        update_user_meta((int) $admin->ID, '_cb_core_two_factor_recovery_hashes', ['delete-me']);
+        update_user_meta((int) $admin->ID, '_cb_core_two_factor_enrolled_at', time());
+        update_user_meta((int) $admin->ID, '_cb_core_two_factor_last_timestep', 123456);
+        update_user_meta((int) $admin->ID, '_cb_core_two_factor_challenge_generation', str_repeat('a', 64));
+        update_user_meta((int) $admin->ID, '_cb_core_two_factor_pending_enrollment', ['delete' => 'me']);
         update_user_meta((int) $admin->ID, 'vendor_keep_user_meta', 'preserve-me');
 
         $admin_role = get_role('administrator');
@@ -369,7 +378,7 @@ try {
         cb_a3_uninstall_expect(!$vendor_role->has_cap('cb_manage_notes'), 'Base-owned capability survived on a third-party role.');
         cb_a3_uninstall_expect($vendor_role->has_cap('vendor_keep_cap'), 'Third-party capability was deleted from a third-party role.');
 
-        foreach (['cb_core_settings', 'cb_core_bypass_token', 'cb_core_mail_enabled', 'cb_core_integrity_a3_generation', 'cb_core_schema_lock_a3', 'cb_core_quarantine_mutation_lock_a3'] as $option) {
+        foreach (['cb_core_settings', 'cb_core_bypass_token', 'cb_core_mail_enabled', 'cb_core_integrity_a3_generation', 'cb_core_schema_lock_a3', 'cb_core_quarantine_mutation_lock_a3', 'cb_core_2fa_ch_lock_a3'] as $option) {
             cb_a3_uninstall_expect(false === get_option($option, false), 'Base-owned option survived uninstall: ' . $option);
         }
         cb_a3_uninstall_expect(['evidence' => 'preserve-me'] === get_option('cb_core_quarantine_workspace', null), 'Quarantine evidence index was deleted by Base uninstall.');
@@ -377,10 +386,25 @@ try {
         cb_a3_uninstall_expect('preserve-me' === get_option('cb_core_beacon_a3_sentinel', false), 'Sibling-style Core Blueprint option was deleted by Base uninstall.');
 
         cb_a3_uninstall_expect(false === get_transient('cb_core_alert_a3'), 'Base-owned transient survived uninstall.');
+        cb_a3_uninstall_expect(false === get_transient('cb_core_2fa_ch_a3'), 'Base-owned 2FA challenge transient survived uninstall.');
+        cb_a3_uninstall_expect(false === get_transient('cb_core_two_factor_profile_notice_' . (int) $admin->ID), 'Base-owned 2FA profile notice transient survived uninstall.');
         cb_a3_uninstall_expect('preserve-me' === get_transient('vendor_keep_transient'), 'Third-party transient was deleted by Base uninstall.');
 
         cb_a3_uninstall_expect('' === (string) get_user_meta((int) $admin->ID, 'cb_core_theme', true), 'Base-owned user theme metadata survived uninstall.');
         cb_a3_uninstall_expect('' === (string) get_user_meta((int) $admin->ID, '_cb_core_privileged_review', true), 'Base privileged-review metadata survived uninstall.');
+        foreach ([
+            '_cb_core_two_factor_totp_secret',
+            '_cb_core_two_factor_recovery_hashes',
+            '_cb_core_two_factor_enrolled_at',
+            '_cb_core_two_factor_last_timestep',
+            '_cb_core_two_factor_challenge_generation',
+            '_cb_core_two_factor_pending_enrollment',
+        ] as $meta_key) {
+            cb_a3_uninstall_expect(
+                '' === (string) get_user_meta((int) $admin->ID, $meta_key, true),
+                'Base-owned 2FA user metadata survived uninstall: ' . $meta_key
+            );
+        }
         cb_a3_uninstall_expect('preserve-me' === get_user_meta((int) $admin->ID, 'vendor_keep_user_meta', true), 'Third-party user metadata was deleted by Base uninstall.');
 
         $post_id = (int) get_option('vendor_a3_post_id', 0);

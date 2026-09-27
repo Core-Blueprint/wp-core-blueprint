@@ -1,0 +1,58 @@
+/**
+ * Canonical Core Blueprint mark + wordmark lockup.
+ *
+ * Brand contract:
+ * - Miriam Libre is bundled locally; no remote font request.
+ * - visible wordmark is always lowercase.
+ * - word boundaries use a Core Blueprint blue dot instead of a space.
+ * - dark-mode text is white; light-mode text is Core Blueprint navy.
+ *
+ * @package CB\Core
+ * @since   1.0.0
+ */
+
+@font-face {
+	font-family: "Miriam Libre";
+	font-style: normal;
+	font-weight: 400 700;
+	font-display: swap;
+	src: url("../../fonts/miriam-libre/MiriamLibre-Variable.ttf") format("truetype");
+}
+
+.cb-core-brand-lockup {
+	--cb-brand-lockup-size: 1.5rem;
+
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25em;
+	font-size: var(--cb-brand-lockup-size);
+}
+
+.cb-core-brand-lockup__mark {
+	display: block;
+	width: 1.3em;
+	height: 1.3em;
+	flex: 0 0 1.3em;
+}
+
+.cb-core-brand-lockup__wordmark {
+	color: #131648;
+	font-family: "Miriam Libre", sans-serif;
+	font-size: inherit;
+	font-style: normal;
+	font-weight: 400;
+	line-height: 1;
+	text-transform: lowercase;
+}
+
+html[data-cb-mode="dark"] .cb-core-brand-lockup__wordmark {
+	color: #fff;
+}
+
+html[data-cb-mode="light"] .cb-core-brand-lockup__wordmark {
+	color: #131648;
+}
+
+.cb-core-brand-lockup__dot {
+	color: #00b3ea;
+}
