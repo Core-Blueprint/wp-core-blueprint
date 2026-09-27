@@ -118,14 +118,17 @@ body.wp-admin #wpfooter {
 
 .cb-core-secure-action__qr {
 	display: inline-flex;
+	width: fit-content;
+	max-width: 100%;
 	align-items: center;
 	justify-content: center;
-	max-width: 100%;
 	margin: 0 0 var(--cb-space-4);
 	padding: var(--cb-space-3);
 	border: 1px solid var(--cb-border);
 	border-radius: var(--cb-radius-sm);
 	background: #fff;
+	box-sizing: border-box;
+	line-height: 0;
 }
 
 .cb-core-secure-action__qr[hidden] {
@@ -136,6 +139,8 @@ body.wp-admin #wpfooter {
 	display: block;
 	width: min(220px, 100%);
 	height: auto;
+	aspect-ratio: 1 / 1;
+	flex: 0 0 auto;
 }
 
 .cb-core-secure-action__manual {
