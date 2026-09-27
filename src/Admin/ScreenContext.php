@@ -78,7 +78,7 @@ final class ScreenContext {
 		$closed = [
 			'core-blueprint-preferences' => [
 				'default' => 'overview',
-				'allowed' => [ 'overview', 'privacy', 'notifications', 'language', 'appearance', 'floating-menu', 'reports', 'permissions', 'notes', 'cli', 'about' ],
+				'allowed' => [ 'overview', 'privacy', 'notifications', 'language', 'appearance', 'floating-menu', 'admin-navigation', 'reports', 'permissions', 'notes', 'cli', 'about' ],
 			],
 			'core-blueprint-safeguards' => [
 				'default' => 'overview',

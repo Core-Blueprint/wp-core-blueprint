@@ -17,6 +17,7 @@ use CB\Core\Admin\Admin;
 use CB\Core\Admin\Overview;
 use CB\Core\Admin\PageBase;
 use CB\Core\Admin\Tabbed;
+use CB\Core\AdminNavigation\Admin as AdminNavigationAdmin;
 use CB\Core\Themes;
 use CB\Core\UI;
 use CB\Core\HUD\MenuPreferences;
@@ -51,7 +52,7 @@ final class Preferences extends PageBase {
 		// Personal/site-wide preferences come first, followed by module-specific
 		// configuration that remains meaningful independently from activation, then
 		// meta-governance and reference tabs. Module on/off state lives on Dashboard.
-		$available_tabs = [ 'overview', 'privacy', 'notifications', 'language', 'appearance', 'floating-menu', 'reports', 'notes', 'permissions', 'cli', 'about' ];
+		$available_tabs = [ 'overview', 'privacy', 'notifications', 'language', 'appearance', 'floating-menu', 'admin-navigation', 'reports', 'notes', 'permissions', 'cli', 'about' ];
 		$tab_labels     = [
 			'overview'        => __( 'Overview',        'core-blueprint' ),
 			'privacy'         => __( 'Privacy',         'core-blueprint' ),
@@ -59,6 +60,7 @@ final class Preferences extends PageBase {
 			'language'        => __( 'Language',        'core-blueprint' ),
 			'appearance'      => __( 'Appearance',      'core-blueprint' ),
 			'floating-menu'   => __( 'Floating Menu',   'core-blueprint' ),
+			'admin-navigation'=> __( 'Admin Navigation','core-blueprint' ),
 			'reports'           => __( 'Reports',           'core-blueprint' ),
 			'notes'           => __( 'Notes',           'core-blueprint' ),
 			'permissions'     => __( 'Permissions',     'core-blueprint' ),
@@ -117,6 +119,7 @@ final class Preferences extends PageBase {
 			case 'language':        $this->render_language_tab( $tab, $tab_labels );        return;
 			case 'appearance':      $this->render_appearance_tab( $tab, $tab_labels );      return;
 			case 'floating-menu':   $this->render_floating_menu_tab( $tab, $tab_labels );   return;
+			case 'admin-navigation':$this->render_admin_navigation_tab( $tab, $tab_labels ); return;
 			case 'reports':           $this->render_reports_tab( $tab, $tab_labels );                            return;
 			case 'permissions':     $this->render_permissions_tab( $tab, $tab_labels );     return;
 			case 'notes':           $this->render_notes_tab( $tab, $tab_labels );           return;
@@ -194,6 +197,13 @@ final class Preferences extends PageBase {
 				'url'   => add_query_arg( 'tab', 'floating-menu', $base_url ),
 				'label' => __( 'Floating Menu', 'core-blueprint' ),
 				'desc'  => __( 'Choose which HUD sections and shortcuts are shown, change their order, and add site-specific custom links.', 'core-blueprint' ),
+				'icon'  => 'menu',
+			],
+			[
+				'slug'  => 'admin-navigation',
+				'url'   => add_query_arg( 'tab', 'admin-navigation', $base_url ),
+				'label' => __( 'Admin Navigation', 'core-blueprint' ),
+				'desc'  => __( 'Manage presentation of the native WordPress admin menu and Toolbar without changing page access or capabilities.', 'core-blueprint' ),
 				'icon'  => 'menu',
 			],
 		];
@@ -401,6 +411,24 @@ final class Preferences extends PageBase {
 		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 
+
+	/** Render site-wide native WordPress Admin Navigation presentation policy. */
+	private function render_admin_navigation_tab( string $tab, array $tab_labels ): void {
+		if ( ! AdminNavigationAdmin::can_manage() ) {
+			$this->render_subsystem_missing( __( 'You do not have permission to manage Admin Navigation.', 'core-blueprint' ) );
+			return;
+		}
+
+		$state  = AdminNavigationAdmin::editor_state();
+		$notice = isset( $_GET['admin_navigation_notice'] )
+			? sanitize_key( wp_unslash( $_GET['admin_navigation_notice'] ) )
+			: ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- redirect notice only.
+
+		ob_start();
+		include CB_CORE_DIR . 'templates/preferences-admin-navigation.php';
+		$html = ob_get_clean();
+		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
+	}
 
 	/**
 	 * Render the Notes tab - Notes preferences (modal defaults: type,
