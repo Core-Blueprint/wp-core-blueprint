@@ -16,6 +16,7 @@ use CB\Core\Admin\Pages\Logs;
 use CB\Core\Admin\Pages\Preferences;
 use CB\Core\Admin\Pages\Safeguards;
 use CB\Core\Admin\Pages\Settings as SettingsPage;
+use CB\Core\Compliance\Admin\Page as CompliancePage;
 use CB\Core\UI\AdminTheme;
 use CB\Core\UI\AdminThemeAdapters;
 
@@ -91,6 +92,14 @@ final class Admin {
 	public static function register_foundation_pages(): void {
 		PageRegistry::register_base( new Logs() );
 		PageRegistry::register_base( new Safeguards() );
+
+		PageRegistry::register_base(
+			new CompliancePage(),
+			[
+				'foundations' => [ 'object-picker', 'toast' ],
+				'components'  => [ 'fields', 'form-controls', 'disclosure', 'badges', 'state-badges', 'notices' ],
+			]
+		);
 
 		$provider_requirements = SettingsRegistry::selected_requirements();
 		PageRegistry::register_base(

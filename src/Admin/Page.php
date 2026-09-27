@@ -53,6 +53,7 @@ interface Page {
 	 *   22  Notes
 	 *   25  Reports
 	 *   30  Safeguards
+	 *   40  Compliance
 	 *   90  Preferences
 	 *   99  Extensions
 	 */

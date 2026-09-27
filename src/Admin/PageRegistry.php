@@ -30,6 +30,7 @@ final class PageRegistry {
 	private const BASE_RESERVED_SLUGS = [
 		'core-blueprint',
 		'core-blueprint-console',
+		'core-blueprint-compliance',
 		'core-blueprint-content-models',
 		'core-blueprint-logs',
 		'core-blueprint-mail',

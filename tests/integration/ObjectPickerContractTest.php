@@ -53,6 +53,25 @@ final class CB_Base_Object_Picker_Contract_Test extends WP_UnitTestCase {
 		self::assertSame( [ 'crm:contact:42' ], array_column( $this->selected_state( $html ), 'id' ) );
 	}
 
+
+	public function test_generic_helper_hint_can_be_suppressed_without_changing_selection_transport(): void {
+		$html = ObjectPicker::render( [
+			'id'        => 'object-picker-hint-contract',
+			'name'      => 'object_picker_hint_contract',
+			'multiple'  => false,
+			'action'    => 'cb_test_object_picker_search',
+			'nonce'     => 'object-picker-contract-nonce',
+			'show_hint' => false,
+			'selected'  => [
+				[ 'id' => 'page:13', 'label' => 'Disclaimer', 'meta' => 'Published page' ],
+			],
+		] );
+
+		self::assertSame( 'page:13', $this->attribute( $html, 'value' ) );
+		self::assertStringNotContainsString( 'Search and select one item.', $html );
+		self::assertStringContainsString( 'data-multiple="0"', $html );
+	}
+
 	public function test_invalid_identifiers_are_rejected_safely(): void {
 		$html = $this->render_picker(
 			[

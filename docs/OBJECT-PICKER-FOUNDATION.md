@@ -8,7 +8,7 @@ Foundation owns:
 - single and multiple selection presentation;
 - ordered selected-item state;
 - debounced async search transport;
-- removable selected-item chips;
+- a full-width selected-object card for single selection and removable chips for multiple selection;
 - opaque identifier transport and exact-string deduplication;
 - Core Admin and WordPress-native presentation adapters;
 - the public runtime `window.cbCore.objectPicker.init()`.
@@ -59,13 +59,16 @@ echo ObjectPicker::render( [
     'multiple' => true,
     'action'   => 'my_plugin_search_objects',
     'nonce'    => wp_create_nonce( 'my_plugin_search_objects' ),
-    'context'  => [ 'scope' => 'example' ],
-    'selected' => [
+    'context'   => [ 'scope' => 'example' ],
+    'show_hint'  => true,
+    'selected'   => [
         [ 'id' => 42, 'label' => 'Example', 'meta' => 'Post · #42' ],
         [ 'id' => 'vendor:object:42', 'label' => 'Extension object', 'meta' => 'Example provider' ],
     ],
 ] );
 ```
+
+The optional `show_hint` argument defaults to `true`. Consumers that already provide domain-specific guidance directly below the picker may set it to `false` to avoid duplicate helper copy.
 
 The submitted fallback value is one normalized opaque identifier for single selection or a comma-separated ordered identifier list for multiple selection. Consumers normalize that transport representation into their own domain-specific storage contract.
 

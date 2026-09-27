@@ -129,6 +129,9 @@ final class AdminModuleDefinitionsConsoleAux {
 					],
 				];
 			},
+			'@cb-core/compliance-feedback' => static function () use ( $admin_nonce, $ajax_url, $save_status ): array {
+				return [ 'id' => '@cb-core/compliance-feedback', 'src' => 'features/compliance-feedback.js', 'deps' => [ '@cb-core/toast' ], 'data' => null ];
+			},
 			'@cb-core/mail-settings' => static function () use ( $admin_nonce, $ajax_url, $save_status ): array {
 				return [ 'id' => '@cb-core/mail-settings', 'src' => 'features/mail-settings.js', 'deps' => [], 'data' => null ];
 			},

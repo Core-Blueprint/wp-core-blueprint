@@ -181,6 +181,10 @@ if ( \CB\Core\RequestContext::is_admin_screen() ) {
 
 \CB\Core\Core::instance();
 
+// Compliance Resources is a Base foundation: software registers stable roles,
+// while each site owns the Page/document assignments and custom entries.
+\CB\Core\Compliance\Bootstrap::boot();
+
 // AI Governance is a Base foundation concern rather than an extension module.
 // Boot after the canonical Core hook owner so it can register its schema before
 // the priority-5 reconciliation sweep and contribute its Base-owned admin page.

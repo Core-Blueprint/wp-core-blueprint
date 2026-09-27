@@ -25,6 +25,7 @@ final class ScreenAssetRegistry {
 		'core-blueprint-media-replace',
 		'core-blueprint-package-downloads',
 		'core-blueprint-mail',
+		'core-blueprint-compliance',
 		'core-blueprint-safeguards',
 		'core-blueprint-preferences',
 		'core-blueprint-console',
@@ -175,6 +176,9 @@ final class ScreenAssetRegistry {
 
 			case 'core-blueprint-mail':
 				return self::mail_requirements( $tab );
+
+			case 'core-blueprint-compliance':
+				return [ 'module.compliance-feedback' ];
 
 			case 'core-blueprint-safeguards':
 				return self::safeguards_requirements( $tab );
