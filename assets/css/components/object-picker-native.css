@@ -61,10 +61,32 @@
 }
 
 .cb-core-object-picker__remove {
-	font-size: 18px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 3px;
+	color: var(--cb-text-muted, #646970);
+	font-size: 22px;
 	line-height: 1;
 	text-decoration: none;
-	color: var(--cb-accent, #2271b1);
+	cursor: pointer;
+}
+
+.cb-core-object-picker__remove:hover {
+	background: var(--cb-interactive-hover, #f0f0f1);
+	border-color: var(--cb-interactive-border-hover, #8c8f94);
+	color: var(--cb-text-strong, #1d2327);
+}
+
+.cb-core-object-picker__remove:focus-visible {
+	outline: 2px solid var(--cb-interactive-focus, #2271b1);
+	outline-offset: 2px;
 }
 
 .cb-core-object-picker__search {
@@ -126,4 +148,52 @@
 
 .cb-core-object-picker__hint {
 	margin: 0;
+}
+
+
+/* Single selection uses a full resource card; multiple selection keeps compact chips. */
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__selected {
+	min-height: 0;
+	padding: 0;
+	background: transparent;
+	border: 0;
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__selected.is-empty {
+	min-height: 36px;
+	padding: 6px 9px;
+	background: var(--cb-surface-1, #fff);
+	border: 1px solid var(--cb-border, #8c8f94);
+	border-radius: 4px;
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__chip {
+	width: 100%;
+	min-height: 64px;
+	box-sizing: border-box;
+	padding: 10px 12px;
+	background: var(--cb-surface-1, #fff);
+	border: 1px solid var(--cb-border, #c3c4c7);
+	border-radius: 4px;
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__chip-copy {
+	flex: 1 1 auto;
+	justify-content: center;
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__chip-label {
+	font-size: 14px;
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__chip-meta {
+	margin-top: 2px;
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__remove {
+	width: 36px;
+	height: 36px;
+	margin-left: auto;
+	background: var(--cb-surface-2, #f6f7f7);
+	border-color: var(--cb-border, #c3c4c7);
 }

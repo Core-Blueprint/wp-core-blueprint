@@ -102,6 +102,7 @@ const initPicker = (root) => {
 
 	const renderSelected = () => {
 		selectedEl.textContent = '';
+		selectedEl.classList.toggle('is-empty', !selected.length);
 		if (!selected.length) {
 			const empty = document.createElement('span');
 			empty.className = 'cb-core-object-picker__selected-empty';
@@ -126,8 +127,10 @@ const initPicker = (root) => {
 			}
 			const remove = document.createElement('button');
 			remove.type = 'button';
-			remove.className = 'button-link cb-core-object-picker__remove';
-			remove.setAttribute('aria-label', `${i18n.remove || 'Remove'} ${item.label}`);
+			remove.className = 'cb-core-object-picker__remove';
+			const removeLabel = `${i18n.remove || 'Remove'} ${item.label}`;
+			remove.setAttribute('aria-label', removeLabel);
+			remove.setAttribute('title', removeLabel);
 			remove.textContent = '×';
 			remove.addEventListener('click', () => {
 				selected = removeSelection(selected, item.id);

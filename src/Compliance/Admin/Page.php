@@ -342,6 +342,7 @@ final class Page extends PageBase {
 			'selected'      => $selected,
 			'placeholder'   => __( 'Search pages or documents…', 'core-blueprint' ),
 			'empty_message' => __( 'No matching published pages or documents found.', 'core-blueprint' ),
+			'show_hint'     => false,
 		] );
 	}
 

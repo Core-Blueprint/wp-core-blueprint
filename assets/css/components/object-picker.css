@@ -57,10 +57,36 @@
 }
 
 .cb-core-object-picker__remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	flex: 0 0 auto;
-	font-size: 18px;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: var(--cb-radius-sm);
+	color: var(--cb-text-muted);
+	font-size: 22px;
 	line-height: 1;
 	text-decoration: none;
+	cursor: pointer;
+	transition:
+		background-color var(--cb-interactive-transition),
+		border-color var(--cb-interactive-transition),
+		color var(--cb-interactive-transition);
+}
+
+.cb-core-object-picker__remove:hover {
+	background: var(--cb-interactive-hover);
+	border-color: var(--cb-interactive-border-hover);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-object-picker__remove:focus-visible {
+	outline: 2px solid var(--cb-interactive-focus);
+	outline-offset: 2px;
 }
 
 .cb-core-object-picker__search {
@@ -120,4 +146,53 @@
 
 .cb-core-object-picker__hint {
 	margin: 0;
+}
+
+
+/* Single selection is one selected object, so present it as a full resource card rather than a tag chip. */
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__selected {
+	min-height: 0;
+	padding: 0;
+	background: transparent;
+	border: 0;
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__selected.is-empty {
+	min-height: var(--cb-control-height);
+	padding: var(--cb-space-2) var(--cb-space-3);
+	background: var(--cb-surface-1);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__chip {
+	width: 100%;
+	min-height: 68px;
+	box-sizing: border-box;
+	padding: var(--cb-space-3) var(--cb-space-4);
+	background: var(--cb-surface-1);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__chip-copy {
+	flex: 1 1 auto;
+	justify-content: center;
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__chip-label {
+	font-size: var(--cb-fs-md);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__chip-meta {
+	margin-top: 2px;
+}
+
+.cb-core-object-picker[data-multiple="0"] .cb-core-object-picker__remove {
+	width: 36px;
+	height: 36px;
+	margin-left: auto;
+	background: var(--cb-surface-0);
+	border-color: var(--cb-border);
 }
