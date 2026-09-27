@@ -96,6 +96,8 @@ $foundation_options = [
 	'cb_core_content_models_enabled',
 	'cb_core_content_models_schema',
 	'cb_core_content_models_rewrite_dirty',
+	'cb_core_compliance_resource_assignments',
+	'cb_core_compliance_custom_resources',
 	'cb_core_hud_disabled',
 	'cb_core_hud_menu_preferences',
 	'cb_core_integrity_latest',
