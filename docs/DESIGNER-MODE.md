@@ -101,7 +101,7 @@ Consumers must not redefine the Designer Shell column/drawer model, reorder thes
 
 The canonical Designer toolbar is capability-driven. Consumers declare controls and actions; Base decides whether those controls remain explicit or are compressed into compact disclosures when horizontal space becomes constrained.
 
-Base measures the **actual toolbar width** rather than relying on a product-specific viewport breakpoint. The internal compact threshold is not part of the public consumer API and may evolve without requiring consumer changes.
+Base measures the **actual toolbar width** rather than relying on a product-specific viewport breakpoint. Responsive Designer identity compression is separate from full toolbar compaction: Base may hide only the textual Designer wordmark at an earlier width while keeping the Core Blueprint mark, context selector and explicit toolbar controls visible. Full compact toolbar behavior remains a later state. Internal thresholds are Base-owned and are not part of the public consumer API.
 
 ### Toolbar zone ownership
 
@@ -352,7 +352,7 @@ The canonical Designer identity therefore consists of the Core Blueprint mark pl
 
 The identity markup is persistent Base-owned DOM. Layout normalization may position the adjacent context selector, but it must never remove or rebuild the Core Blueprint mark or Designer wordmark. Responsive presentation belongs to Base CSS instead of DOM mutation.
 
-In wide mode, the mark and textual `domain.mode` wordmark are visible before the optional context selector. Compact mode hides only the textual wordmark; the Core Blueprint mark remains visible. The context selector stays adjacent to that identity in both modes. Layout normalization must never remove either identity node from the DOM.
+In wide mode, the mark and textual `domain.mode` wordmark are visible before the optional context selector. When toolbar space becomes constrained, Base enters an identity-condensed state first: only the textual wordmark is hidden while the Core Blueprint mark, shorter context selector and explicit toolbar controls remain visible. Full compact mode is a later state. The context selector stays adjacent to the identity in every state. Layout normalization must never remove either identity node from the DOM.
 
 ## Consumer restrictions
 

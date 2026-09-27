@@ -87,7 +87,7 @@ html.cb-core-design-shell-focus-mode body {
 .cb-core-design-shell__toolbar-zone {
 	display: flex;
 	align-items: center;
-	gap: var(--cb-space-2);
+	gap: var(--cb-space-3);
 	min-width: 0;
 }
 

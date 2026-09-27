@@ -34,7 +34,9 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 	public function test_compact_toolbar_is_capability_driven_and_keeps_close_and_primary_save_pinned(): void {
 		$runtime = $this->source( 'assets/js/features/designer-toolbar.js' );
 
+		self::assertStringContainsString( 'const IDENTITY_CONDENSED_WIDTH = 1700;', $runtime );
 		self::assertStringContainsString( 'const COMPACT_WIDTH = 800;', $runtime );
+		self::assertStringContainsString( "toolbar.classList.toggle('is-identity-condensed', condensedIdentity);", $runtime );
 		self::assertStringContainsString( 'new ResizeObserver(applyCompactState).observe(toolbar)', $runtime );
 		self::assertStringContainsString( '[data-cb-design-shell-viewport]', $runtime );
 		self::assertStringContainsString( 'controlsInExtension(shell, \'view\')', $runtime );
@@ -104,7 +106,8 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "brand.classList.add('cb-core-design-shell__brand--contextual');", $layout );
 		self::assertStringNotContainsString( "brand.querySelector('.cb-core-design-shell__brand-wordmark')?.remove();", $layout );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__brand-wordmark,', $designer_css );
-		self::assertStringContainsString( 'Compact mode hides only the textual wordmark; the Core Blueprint mark remains visible.', $docs );
+		self::assertStringContainsString( 'Base enters an identity-condensed state first', $docs );
+		self::assertStringContainsString( 'the Core Blueprint mark, shorter context selector and explicit toolbar controls remain visible', $docs );
 		self::assertStringContainsString( 'Layout normalization must never remove either identity node from the DOM.', $docs );
 	}
 
@@ -148,6 +151,9 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		$toolbar_css = $this->source( 'assets/css/design/designer-toolbar.css' );
 
 		self::assertStringContainsString( '--cb-design-toolbar-control-size: calc(var(--cb-control-height) + var(--cb-space-1));', $toolbar_css );
+		self::assertStringContainsString( '--cb-brand-lockup-size: 1.3rem;', $toolbar_css );
+		self::assertStringContainsString( 'max-width: min(16rem, 36vw);', $toolbar_css );
+		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-identity-condensed .cb-core-design-shell__brand-wordmark', $toolbar_css );
 		self::assertStringContainsString( 'inline-size: var(--cb-design-toolbar-control-size) !important;', $toolbar_css );
 		self::assertStringContainsString( 'block-size: var(--cb-design-toolbar-control-size) !important;', $toolbar_css );
 		self::assertStringContainsString( 'align-self: center;', $toolbar_css );
@@ -195,6 +201,12 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer', $toolbar_css );
 		self::assertStringContainsString( 'ellipsis: Object.freeze([', $icons );
 		self::assertStringNotContainsString( 'cb-core-design-shell__compact-menu', $mail_css );
+	}
+
+	public function test_designer_toolbar_zone_spacing_uses_the_roomier_canonical_gap(): void {
+		$shell_css = $this->source( 'assets/css/design/editor-shell.css' );
+
+		self::assertStringContainsString( ".cb-core-design-shell__toolbar-zone {\n\tdisplay: flex;\n\talign-items: center;\n\tgap: var(--cb-space-3);", $shell_css );
 	}
 
 	public function test_public_docs_define_the_extendable_toolbar_ownership_boundary(): void {

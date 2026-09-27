@@ -2,6 +2,7 @@
 	'use strict';
 
 	const config = window.cbCoreDesignerLaunch || {};
+	const IDENTITY_CONDENSED_WIDTH = 1700;
 	const COMPACT_WIDTH = 800;
 	const READY_RETRY_DELAY_MS = 50;
 	const READY_RETRY_LIMIT = 200;
@@ -208,7 +209,10 @@
 		syncViewTrigger();
 
 		const applyCompactState = () => {
-			const compact = toolbar.getBoundingClientRect().width <= COMPACT_WIDTH;
+			const width = toolbar.getBoundingClientRect().width;
+			const condensedIdentity = width <= IDENTITY_CONDENSED_WIDTH;
+			const compact = width <= COMPACT_WIDTH;
+			toolbar.classList.toggle('is-identity-condensed', condensedIdentity);
 			toolbar.classList.toggle('is-compact', compact);
 			if (!compact) closeAll();
 		};
