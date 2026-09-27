@@ -24,6 +24,7 @@ use CB\Core\Ajax\SecurityRouter;
 use CB\Core\Log\AuditLog;
 use CB\Core\Log\Retention;
 use CB\Core\Log\SystemLog;
+use CB\Core\Environment\Governance as EnvironmentGovernance;
 use CB\Core\Migration\Recovery as MigrationRecovery;
 use CB\Core\Security\AccessMode;
 use CB\Core\Security\Failsafe;
@@ -77,6 +78,7 @@ final class Core {
 		add_action( 'plugins_loaded', [ SettingsMigrator::class, 'maybe_migrate' ], 6 );
 		add_action( 'plugins_loaded', [ Retention::class,        'init' ],          7 );
 		add_action( 'plugins_loaded', [ EmailAlerts::class,      'init' ],          8 );
+		add_action( 'plugins_loaded', [ EnvironmentGovernance::class, 'boot' ],     9 );
 		add_action( 'plugins_loaded', [ AccessMode::class,       'boot' ],          9 );
 		add_action( 'plugins_loaded', [ LoginShield::class,      'boot' ],          9 );
 		add_action( 'plugins_loaded', [ SystemLog::class,        'boot' ],          9 );
@@ -116,14 +118,20 @@ final class Core {
 			\CB\Core\Admin\UserProfileSectionRegistry::init();
 			PageRegistry::init();
 			Admin::init();
+			\CB\Core\AdminColumns\Bootstrap::boot();
 			Extensions::init();
 		}
+
+		// Native WordPress Admin Navigation presentation governance. Sidebar
+		// runtime is site wp-admin only; Toolbar rules may also apply on frontend.
+		\CB\Core\AdminNavigation\Bootstrap::boot();
 
 		// AJAX routers exist only for actual admin-ajax.php requests. Their
 		// handlers are still registered before WordPress dispatches the action.
 		if ( RequestContext::is_ajax() ) {
 			Router::init();
 			SecurityRouter::init();
+			\CB\Core\AdminColumns\Bootstrap::boot();
 		}
 
 		// Theme-attribute pre-paint injection belongs to normal admin HTML only.

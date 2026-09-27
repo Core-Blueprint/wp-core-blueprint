@@ -5,8 +5,11 @@ namespace CB\Core\Profiles;
 
 use CB\Core\ExtensionRegistry;
 use CB\Core\Profiles\Sections\AIGovernanceSection;
+use CB\Core\Profiles\Sections\AdminColumnsSection;
+use CB\Core\Profiles\Sections\AdminNavigationSection;
 use CB\Core\Profiles\Sections\AuditNotificationsSection;
 use CB\Core\Profiles\Sections\ContentModelsSection;
+use CB\Core\Profiles\Sections\EnvironmentGovernanceSection;
 use CB\Core\Profiles\Sections\IntegritySection;
 use CB\Core\Profiles\Sections\MediaFormatsSection;
 use CB\Core\Profiles\Sections\ModuleStatesSection;
@@ -170,7 +173,10 @@ final class SectionRegistry {
 		$sections = [];
 		foreach ( [
 			new SecuritySection(),
+			new AdminNavigationSection(),
+			new AdminColumnsSection(),
 			new PrivacySection(),
+			new EnvironmentGovernanceSection(),
 			new AuditNotificationsSection(),
 			new IntegritySection(),
 			new ContentModelsSection(),

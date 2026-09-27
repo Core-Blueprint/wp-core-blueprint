@@ -218,6 +218,8 @@ final class ScreenAssetRegistry {
 	private static function safeguards_requirements( string $tab ): array {
 		$items = [ 'page.security', 'component.nav-tabs', 'component.badges' ];
 		switch ( $tab ) {
+			case 'environment':
+				return array_merge( $items, [ 'component.panels' ] );
 			case 'access-mode':
 				return array_merge( $items, [
 					'page.safeguards-site-mode', 'component.panels', 'component.form-status',
@@ -274,6 +276,10 @@ final class ScreenAssetRegistry {
 				return array_merge( $items, [ 'page.appearance', 'component.cards', 'component.interactive-surfaces', 'module.appearance' ] );
 			case 'floating-menu':
 				return array_merge( $items, [ 'page.preferences-floating-menu', 'module.preferences-floating-menu' ] );
+			case 'admin-navigation':
+				return array_merge( $items, [
+					'component.panels', 'component.badges', 'foundation.reorder', 'module.admin-navigation',
+				] );
 			case 'reports':
 				return array_merge( $items, [
 					'page.reports', 'component.panels', 'foundation.modal',
