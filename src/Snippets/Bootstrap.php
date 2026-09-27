@@ -107,6 +107,7 @@ final class Bootstrap {
 		$labels['snippet.auto.disabled'] = __( 'Snippets: snippet auto-disabled after runtime error', 'core-blueprint' );
 		$labels['snippets.exported']     = __( 'Snippets: snippets exported', 'core-blueprint' );
 		$labels['snippets.imported']     = __( 'Snippets: snippets imported', 'core-blueprint' );
+		$labels['snippets.restore.acknowledged'] = __( 'Snippets: restore backup and recovery responsibility acknowledged', 'core-blueprint' );
 		return $labels;
 	}
 
