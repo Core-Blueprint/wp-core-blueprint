@@ -51,6 +51,12 @@ $catalog['messages'] = array_replace(
     ]
 );
 
+$compliance = require __DIR__ . '/compliance/core-blueprint-it_IT.php';
+if ( ! is_array( $compliance ) || ! isset( $compliance['messages'] ) || ! is_array( $compliance['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $compliance['messages'] );
+
 $profiles = require __DIR__ . '/profiles/core-blueprint-it_IT.php';
 if ( ! is_array( $profiles ) || ! isset( $profiles['messages'] ) || ! is_array( $profiles['messages'] ) ) {
     return [];
