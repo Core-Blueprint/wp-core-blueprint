@@ -146,6 +146,10 @@ html.cb-core-design-shell-focus-mode .cb-hud {
  * temporarily measures the preferred inline size of START without allowing the
  * identity/context children to shrink, then removes this class before paint.
  */
+.cb-core-design-shell__toolbar--designer.is-measuring-identity .cb-core-design-shell__toolbar-zone--start {
+	justify-self: stretch;
+}
+
 .cb-core-design-shell__toolbar--designer.is-measuring-identity .cb-core-design-shell__toolbar-zone--start > * {
 	flex-shrink: 0;
 }
