@@ -115,7 +115,7 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "brand.classList.add('cb-core-design-shell__brand--contextual');", $layout );
 		self::assertStringNotContainsString( "brand.querySelector('.cb-core-design-shell__brand-wordmark')?.remove();", $layout );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__brand-wordmark,', $designer_css );
-		self::assertStringContainsString( 'Base enters an identity-condensed state first', $docs );
+		self::assertStringContainsString( 'Base keeps that full identity visible for as long as the preferred START-zone identity + context content fits.', $docs );
 		self::assertStringContainsString( 'the Core Blueprint mark, shorter context selector and explicit toolbar controls remain visible', $docs );
 		self::assertStringContainsString( 'Layout normalization must never remove either identity node from the DOM.', $docs );
 	}
@@ -225,7 +225,7 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'data-cb-design-shell-toolbar-extension="view"', $docs );
 		self::assertStringContainsString( 'data-cb-design-shell-toolbar-extension="actions"', $docs );
 		self::assertStringContainsString( 'data-cb-design-shell-primary-action', $docs );
-		self::assertStringContainsString( 'actual toolbar width', $docs );
+		self::assertStringContainsString( 'actual toolbar composition', $docs );
 		self::assertStringContainsString( 'Consumers must not implement their own mobile toolbar', $docs );
 	}
 }
