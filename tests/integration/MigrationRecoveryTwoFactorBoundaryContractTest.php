@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use CB\Core\Migration\Recovery;
-use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Permissions\RolePolicySchema;
 use CB\Core\Permissions\TrustSchemaMigrator;
