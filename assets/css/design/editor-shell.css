@@ -106,32 +106,12 @@ html.cb-core-design-shell-focus-mode body {
 }
 
 .cb-core-design-shell__brand {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--cb-space-2);
 	min-width: 0;
-	color: var(--cb-text-strong);
-	font-size: var(--cb-fs-sm);
-	font-weight: var(--cb-fw-semibold);
 	white-space: nowrap;
 }
 
-.cb-core-design-shell__brand-mark {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex: 0 0 30px;
-	width: 30px;
-	height: 30px;
-	border-radius: 50%;
-	overflow: hidden;
-}
-
-.cb-core-design-shell__brand-mark img {
-	display: block;
-	width: 30px;
-	height: 30px;
-	object-fit: contain;
+.cb-core-design-shell__brand-wordmark {
+	min-width: 0;
 }
 
 .cb-core-design-shell__icon-button {
@@ -460,7 +440,6 @@ html.cb-core-design-shell-focus-mode body {
 		flex-wrap: wrap;
 	}
 
-	.cb-core-design-shell__brand-wordmark,
 	.cb-core-design-shell__toolbar-status {
 		display: none;
 	}
@@ -498,11 +477,6 @@ html.cb-core-design-shell-focus-mode body {
 		min-height: 32px !important;
 	}
 
-	.cb-core-design-shell__brand-mark {
-		flex-basis: 28px;
-		width: 28px;
-		height: 28px;
-	}
 }
 
 @media (max-width: 600px) {

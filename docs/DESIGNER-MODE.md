@@ -307,6 +307,12 @@ Consumers own:
 - supplying the same-origin exit URL for direct mode;
 - domain-specific preview behavior and product-specific controls inside the shared slots.
 
+## Designer brand identity
+
+Designer Mode owns its brand identity in Base. Consumers pass a normal translated mode title to `Assets::enqueue_designer_mode()`, for example `Automation Builder`. Base renders that title inside the canonical Core Blueprint lockup as a lowercase Miriam Libre wordmark, replacing spaces visually with the Core Blueprint blue dot, for example `automation.builder`.
+
+The canonical Designer identity therefore consists of the Core Blueprint mark plus the branded mode name. Consumers must not pre-format the title with dots, copy the Miriam Libre font or brand colours, inject a product-local logo, or override the lockup geometry. Changes to Designer branding belong in the Base Designer Foundation so every Designer consumer receives the same identity.
+
 ## Consumer restrictions
 
 A Designer Mode consumer must not:
@@ -314,6 +320,7 @@ A Designer Mode consumer must not:
 - require or add `.cb-core-wrap` or `.cb-core-form-scope` as a presentation workaround;
 - enqueue private `cb-core-css-*` handles or Base CSS filenames directly;
 - reproduce the launch control or Base toolbar locally;
+- duplicate, replace or locally restyle the Base-owned Designer brand lockup;
 - inject product markup into Base-generated toolbar zones instead of using the public toolbar-extension source contract;
 - implement a product-specific compact toolbar, overflow dropdown, responsive toolbar breakpoint or duplicate action proxy layer;
 - implement its own fullscreen/focus overlay, fixed viewport shell or Escape lifecycle;
