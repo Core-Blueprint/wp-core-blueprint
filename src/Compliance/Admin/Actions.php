@@ -163,13 +163,14 @@ final class Actions {
 	}
 
 	private static function redirect( string $notice, string $resource_key = '' ): never {
-		$url = add_query_arg(
-			[
-				'page'      => Page::SLUG,
-				'cb_notice' => sanitize_key( $notice ),
-			],
-			admin_url( 'admin.php' )
-		);
+		$args = [
+			'page'      => Page::SLUG,
+			'cb_notice' => sanitize_key( $notice ),
+		];
+		if ( '' !== $resource_key ) {
+			$args['cb_resource'] = sanitize_text_field( $resource_key );
+		}
+		$url = add_query_arg( $args, admin_url( 'admin.php' ) );
 		if ( '' !== $resource_key ) {
 			$url .= '#resource-' . rawurlencode( $resource_key );
 		}

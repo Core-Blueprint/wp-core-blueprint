@@ -127,6 +127,78 @@ final class Resolver {
 		return '' !== trim( (string) $title ) ? (string) $title : sprintf( __( 'Document #%d', 'core-blueprint' ), $post->ID );
 	}
 
+
+	/**
+	 * Presentation item for a stored assignment, including unavailable objects.
+	 *
+	 * This never changes resolution validity. It exists only so the admin UI can
+	 * explain which object remains assigned after a Page becomes draft/private or
+	 * a document becomes unavailable.
+	 *
+	 * @param array{type:string,object_id:int}|null $reference
+	 * @return array{id:string,label:string,meta:string}|null
+	 */
+	public static function assignment_item( ?array $reference ): ?array {
+		if ( null === $reference ) {
+			return null;
+		}
+		$type      = isset( $reference['type'] ) && is_string( $reference['type'] ) ? $reference['type'] : '';
+		$object_id = isset( $reference['object_id'] ) ? absint( $reference['object_id'] ) : 0;
+		if ( 0 === $object_id || ! in_array( $type, [ 'page', 'document' ], true ) ) {
+			return null;
+		}
+
+		$post = get_post( $object_id );
+		if ( 'page' === $type ) {
+			$label = sprintf( __( 'Page #%d', 'core-blueprint' ), $object_id );
+			$meta  = __( 'Unavailable page', 'core-blueprint' );
+			if ( $post instanceof \WP_Post && 'page' === $post->post_type ) {
+				$title = get_the_title( $post );
+				if ( '' !== trim( (string) $title ) ) {
+					$label = (string) $title;
+				}
+				if ( 'publish' === $post->post_status ) {
+					$meta = __( 'Published page', 'core-blueprint' );
+				} else {
+					$status = get_post_status_object( $post->post_status );
+					$status_label = is_object( $status ) && isset( $status->label )
+						? trim( (string) $status->label )
+						: '';
+					$meta = '' !== $status_label
+						? sprintf( __( '%s page', 'core-blueprint' ), $status_label )
+						: __( 'Unavailable page', 'core-blueprint' );
+				}
+			}
+			return [
+				'id'    => 'page:' . $object_id,
+				'label' => $label,
+				'meta'  => $meta,
+			];
+		}
+
+		$label = sprintf( __( 'Document #%d', 'core-blueprint' ), $object_id );
+		$meta  = __( 'Unavailable document', 'core-blueprint' );
+		if ( $post instanceof \WP_Post && 'attachment' === $post->post_type ) {
+			$path = get_attached_file( $post->ID );
+			if ( is_string( $path ) && '' !== $path ) {
+				$label = wp_basename( $path );
+			} else {
+				$title = get_the_title( $post );
+				if ( '' !== trim( (string) $title ) ) {
+					$label = (string) $title;
+				}
+			}
+			if ( self::is_valid_reference( $reference ) ) {
+				$meta = __( 'Document', 'core-blueprint' );
+			}
+		}
+		return [
+			'id'    => 'document:' . $object_id,
+			'label' => $label,
+			'meta'  => $meta,
+		];
+	}
+
 	/**
 	 * Object Picker representation for a valid reference.
 	 *
@@ -137,12 +209,7 @@ final class Resolver {
 		if ( null === $reference || ! self::is_valid_reference( $reference ) ) {
 			return null;
 		}
-		$type = $reference['type'];
-		return [
-			'id'    => self::reference_value( $reference ),
-			'label' => self::label_for_reference( $reference ),
-			'meta'  => 'page' === $type ? __( 'Published page', 'core-blueprint' ) : __( 'Document', 'core-blueprint' ),
-		];
+		return self::assignment_item( $reference );
 	}
 
 	/**

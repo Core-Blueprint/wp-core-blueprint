@@ -8,6 +8,13 @@ return [
     'content-type' => 'text/plain; charset=UTF-8',
     'x-generator' => 'Core Blueprint Compliance Resources localization layer',
     'messages' => [
+        '%s page' => '%s-pagina',
+        'Current assignment' => 'Huidige toewijzing',
+        'This saved assignment is unavailable. Select a replacement below, or save with no selection to clear it.' => 'Deze opgeslagen toewijzing is niet beschikbaar. Selecteer hieronder een vervanging of sla zonder selectie op om de toewijzing te wissen.',
+        'Unavailable document' => 'Niet-beschikbaar document',
+        'Unavailable page' => 'Niet-beschikbare pagina',
+        'Usage' => 'Gebruik',
+        'WordPress Privacy Policy fallback' => 'WordPress-privacybeleid als fallback',
         '%s contributes its own compliance roles. You can assign resources and add your own organisation-specific items in this section.' => '%s levert eigen compliancerollen. Je kunt resources toewijzen en in deze sectie eigen organisatiespecifieke items toevoegen.',
         'Add both a valid locale code and a valid page or document.' => 'Voeg zowel een geldige locale-code als een geldige pagina of een geldig document toe.',
         'Add item' => 'Item toevoegen',

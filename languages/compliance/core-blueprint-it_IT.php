@@ -8,6 +8,13 @@ return [
     'content-type' => 'text/plain; charset=UTF-8',
     'x-generator' => 'Core Blueprint Compliance Resources localization layer',
     'messages' => [
+        '%s page' => 'Pagina %s',
+        'Current assignment' => 'Assegnazione attuale',
+        'This saved assignment is unavailable. Select a replacement below, or save with no selection to clear it.' => 'Questa assegnazione salvata non è disponibile. Seleziona una sostituzione qui sotto oppure salva senza selezione per cancellare l’assegnazione.',
+        'Unavailable document' => 'Documento non disponibile',
+        'Unavailable page' => 'Pagina non disponibile',
+        'Usage' => 'Utilizzo',
+        'WordPress Privacy Policy fallback' => 'Informativa sulla privacy di WordPress come fallback',
         '%s contributes its own compliance roles. You can assign resources and add your own organisation-specific items in this section.' => '%s fornisce i propri ruoli di conformità. Puoi assegnare risorse e aggiungere in questa sezione elementi specifici della tua organizzazione.',
         'Add both a valid locale code and a valid page or document.' => 'Aggiungi sia un codice locale valido sia una pagina o un documento valido.',
         'Add item' => 'Aggiungi elemento',

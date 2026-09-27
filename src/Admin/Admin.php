@@ -97,7 +97,7 @@ final class Admin {
 			new CompliancePage(),
 			[
 				'foundations' => [ 'object-picker' ],
-				'components'  => [ 'panels', 'cards', 'fields', 'form-controls', 'disclosure', 'badges', 'state-badges', 'notices' ],
+				'components'  => [ 'fields', 'form-controls', 'disclosure', 'badges', 'state-badges', 'notices' ],
 			]
 		);
 

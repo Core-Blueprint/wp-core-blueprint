@@ -13,8 +13,10 @@ use CB\Core\Admin\PageBase;
 use CB\Core\Compliance\Repository;
 use CB\Core\Compliance\Resolver;
 use CB\Core\Compliance\ResourceRegistry;
+use CB\Core\UI\Icon;
 use CB\Core\UI\Notice;
 use CB\Core\UI\ObjectPicker;
+use CB\Core\UI\StateBadge;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -92,8 +94,8 @@ final class Page extends PageBase {
 	private function render_owner( string $owner, array $resources, string $search_nonce ): void {
 		$owner_label = ResourceRegistry::owner_label( $owner );
 		?>
-		<section class="cb-core-panel" aria-labelledby="cb-compliance-owner-<?php echo esc_attr( sanitize_html_class( $owner ) ); ?>">
-			<h2 id="cb-compliance-owner-<?php echo esc_attr( sanitize_html_class( $owner ) ); ?>"><?php echo esc_html( $owner_label ); ?></h2>
+		<section class="cb-core-section" aria-labelledby="cb-compliance-owner-<?php echo esc_attr( sanitize_html_class( $owner ) ); ?>">
+			<h2 class="cb-core-section-title" id="cb-compliance-owner-<?php echo esc_attr( sanitize_html_class( $owner ) ); ?>"><?php echo esc_html( $owner_label ); ?></h2>
 			<p class="description">
 				<?php if ( ResourceRegistry::BASE_OWNER === $owner ) : ?>
 					<?php esc_html_e( 'Base provides the standard roles below. You can assign or change their resources, but software-defined roles cannot be removed.', 'core-blueprint' ); ?>
@@ -102,13 +104,15 @@ final class Page extends PageBase {
 				<?php endif; ?>
 			</p>
 
-			<?php foreach ( $resources as $definition ) : ?>
-				<?php $this->render_resource( $definition, $search_nonce ); ?>
-			<?php endforeach; ?>
+			<div class="cb-core-stack cb-core-stack--compact">
+				<?php foreach ( $resources as $definition ) : ?>
+					<?php $this->render_resource( $definition, $search_nonce ); ?>
+				<?php endforeach; ?>
 
-			<?php if ( ResourceRegistry::owner_exists( $owner ) ) : ?>
-				<?php $this->render_add_custom( $owner ); ?>
-			<?php endif; ?>
+				<?php if ( ResourceRegistry::owner_exists( $owner ) ) : ?>
+					<?php $this->render_add_custom( $owner ); ?>
+				<?php endif; ?>
+			</div>
 		</section>
 		<?php
 	}
@@ -119,48 +123,75 @@ final class Page extends PageBase {
 		$assignment = Repository::assignment( $key );
 		$resolved   = Resolver::resolve( $key );
 		$default    = is_array( $assignment['default'] ) ? $assignment['default'] : null;
+		$wp_fallback = false;
 
 		// Present an existing WordPress Privacy Policy as the initial default
 		// selection until the operator explicitly saves a Core Blueprint choice.
 		if ( null === $default && null !== $resolved && 'wordpress' === $resolved['used_locale'] ) {
-			$default = $resolved['reference'];
+			$default     = $resolved['reference'];
+			$wp_fallback = true;
+		}
+
+		$unavailable_default = null;
+		if ( is_array( $assignment['default'] ) && null === Resolver::picker_item( $assignment['default'] ) ) {
+			$unavailable_default = Resolver::assignment_item( $assignment['default'] );
+			$default             = null;
 		}
 
 		$has_saved_assignment = null !== $assignment['default'] || [] !== $assignment['locales'];
 		$status_label = null !== $resolved ? __( 'Available', 'core-blueprint' ) : ( $has_saved_assignment ? __( 'Unavailable', 'core-blueprint' ) : __( 'Not configured', 'core-blueprint' ) );
-		$status_class = null !== $resolved ? 'success' : ( $has_saved_assignment ? 'danger' : 'warning' );
+		$status_variant = null !== $resolved ? StateBadge::SUCCESS : ( $has_saved_assignment ? StateBadge::DANGER : StateBadge::WARNING );
+		$row_state = null !== $resolved ? 'ok' : ( $has_saved_assignment ? 'critical' : 'warning' );
+		$is_open = $this->requested_resource_key() === $key;
 		?>
-		<article id="resource-<?php echo esc_attr( $key ); ?>" class="cb-core-card cb-core-card--spacious">
-			<header class="cb-core-card__header">
-				<div>
-					<h3 class="cb-core-card__title"><?php echo esc_html( (string) $definition['label'] ); ?></h3>
+		<details id="resource-<?php echo esc_attr( $key ); ?>" class="cb-core-interactive-row cb-core-interactive-row--<?php echo esc_attr( $row_state ); ?>"<?php echo $is_open ? ' open' : ''; ?>>
+			<summary class="cb-core-interactive-row__summary">
+				<span class="cb-core-interactive-row__icon">
+					<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted icon registry. ?>
+				</span>
+				<span class="cb-core-stack cb-core-stack--compact">
+					<strong><?php echo esc_html( (string) $definition['label'] ); ?></strong>
 					<?php if ( '' !== (string) $definition['description'] ) : ?>
-						<p class="description"><?php echo esc_html( (string) $definition['description'] ); ?></p>
+						<span class="description"><?php echo esc_html( (string) $definition['description'] ); ?></span>
 					<?php endif; ?>
-				</div>
-				<p>
-					<span class="cb-core-state-badge cb-core-state-badge--<?php echo esc_attr( $status_class ); ?> cb-core-state-badge--compact"><?php echo esc_html( $status_label ); ?></span>
+				</span>
+				<span class="cb-core-disclosure__meta">
+					<?php echo StateBadge::render( $status_label, [ 'variant' => $status_variant, 'density' => StateBadge::DENSITY_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- StateBadge escapes structured content. ?>
 					<span class="cb-core-badge <?php echo true === $definition['custom'] ? 'cb-core-badge-standard' : 'cb-core-badge-identity'; ?>">
 						<?php echo esc_html( true === $definition['custom'] ? __( 'Custom', 'core-blueprint' ) : __( 'Software-defined', 'core-blueprint' ) ); ?>
 					</span>
-				</p>
-			</header>
+				</span>
+			</summary>
 
-			<div class="cb-core-card__body">
-				<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+			<div class="cb-core-interactive-row__body cb-core-stack">
+				<form class="cb-core-stack" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 					<input type="hidden" name="action" value="<?php echo esc_attr( Actions::SAVE_ACTION ); ?>">
 					<input type="hidden" name="resource_key" value="<?php echo esc_attr( $key ); ?>">
 					<?php wp_nonce_field( 'cb_core_compliance_save:' . $key ); ?>
 
+					<?php if ( null !== $unavailable_default ) : ?>
+						<div class="cb-core-field">
+							<span class="cb-core-field__label"><?php esc_html_e( 'Current assignment', 'core-blueprint' ); ?></span>
+							<p>
+								<strong><?php echo esc_html( $unavailable_default['label'] ); ?></strong>
+								<span class="description"> · <?php echo esc_html( $unavailable_default['meta'] ); ?></span>
+							</p>
+							<p class="cb-core-field__hint"><?php esc_html_e( 'This saved assignment is unavailable. Select a replacement below, or save with no selection to clear it.', 'core-blueprint' ); ?></p>
+						</div>
+					<?php endif; ?>
+
 					<?php $default_picker_id = 'cb-compliance-' . sanitize_html_class( $key . '-default' ); ?>
 					<div class="cb-core-field">
 						<label class="cb-core-field__label" for="<?php echo esc_attr( $default_picker_id ); ?>"><?php esc_html_e( 'Default page or document', 'core-blueprint' ); ?></label>
-						<?php $this->render_object_picker( $default_picker_id, 'resource', $default, $search_nonce ); ?>
+						<?php $this->render_object_picker( $default_picker_id, 'resource', $default, $search_nonce, $wp_fallback ? __( 'WordPress Privacy Policy fallback', 'core-blueprint' ) : '' ); ?>
 						<p class="cb-core-field__hint"><?php esc_html_e( 'Search published Pages or supported documents in the Media Library. This is also the fallback when no locale-specific resource is configured.', 'core-blueprint' ); ?></p>
 					</div>
 
-					<details class="cb-core-disclosure cb-core-disclosure--section cb-core-disclosure--subtle">
+					<details class="cb-core-disclosure cb-core-disclosure--compact">
 						<summary class="cb-core-disclosure__summary">
+							<span class="cb-core-disclosure__icon">
+								<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted icon registry. ?>
+							</span>
 							<span class="cb-core-disclosure__title"><?php esc_html_e( 'Language / locale overrides', 'core-blueprint' ); ?></span>
 						</summary>
 						<div class="cb-core-disclosure__body">
@@ -189,32 +220,46 @@ final class Page extends PageBase {
 						</div>
 					</details>
 
-					<p><button type="submit" class="button button-primary cb-core-button cb-core-button--primary"><?php esc_html_e( 'Save resource', 'core-blueprint' ); ?></button></p>
+					<div class="cb-core-form-actions">
+						<button type="submit" class="button button-primary cb-core-button cb-core-button--primary"><?php esc_html_e( 'Save resource', 'core-blueprint' ); ?></button>
+					</div>
 				</form>
 
-				<?php if ( null !== $resolved ) : ?>
-					<div class="cb-core-field">
-						<label class="cb-core-field__label"><?php esc_html_e( 'Resolved URL', 'core-blueprint' ); ?></label>
-						<input class="large-text code" type="text" readonly value="<?php echo esc_attr( $resolved['url'] ); ?>">
+				<details class="cb-core-disclosure cb-core-disclosure--compact">
+					<summary class="cb-core-disclosure__summary">
+						<span class="cb-core-disclosure__icon">
+							<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted icon registry. ?>
+						</span>
+						<span class="cb-core-disclosure__title"><?php esc_html_e( 'Usage', 'core-blueprint' ); ?></span>
+					</summary>
+					<div class="cb-core-disclosure__body">
+						<?php if ( null !== $resolved ) : ?>
+							<div class="cb-core-field">
+								<label class="cb-core-field__label"><?php esc_html_e( 'Resolved URL', 'core-blueprint' ); ?></label>
+								<input class="large-text code" type="text" readonly value="<?php echo esc_attr( $resolved['url'] ); ?>">
+							</div>
+						<?php endif; ?>
+						<div class="cb-core-field">
+							<label class="cb-core-field__label"><?php esc_html_e( 'Link shortcode', 'core-blueprint' ); ?></label>
+							<input class="large-text code" type="text" readonly value="<?php echo esc_attr( sprintf( '[cb_compliance_resource id="%s"]', $key ) ); ?>">
+						</div>
+						<div class="cb-core-field">
+							<label class="cb-core-field__label"><?php esc_html_e( 'URL shortcode', 'core-blueprint' ); ?></label>
+							<input class="large-text code" type="text" readonly value="<?php echo esc_attr( sprintf( '[cb_compliance_resource id="%s" format="url"]', $key ) ); ?>">
+						</div>
 					</div>
-				<?php endif; ?>
-
-				<div class="cb-core-field">
-					<label class="cb-core-field__label"><?php esc_html_e( 'Link shortcode', 'core-blueprint' ); ?></label>
-					<input class="large-text code" type="text" readonly value="<?php echo esc_attr( sprintf( '[cb_compliance_resource id="%s"]', $key ) ); ?>">
-				</div>
-				<div class="cb-core-field">
-					<label class="cb-core-field__label"><?php esc_html_e( 'URL shortcode', 'core-blueprint' ); ?></label>
-					<input class="large-text code" type="text" readonly value="<?php echo esc_attr( sprintf( '[cb_compliance_resource id="%s" format="url"]', $key ) ); ?>">
-				</div>
+				</details>
 
 				<?php if ( true === $definition['custom'] ) : ?>
-					<details class="cb-core-disclosure cb-core-disclosure--section cb-core-disclosure--subtle">
+					<details class="cb-core-disclosure cb-core-disclosure--compact">
 						<summary class="cb-core-disclosure__summary">
+							<span class="cb-core-disclosure__icon">
+								<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted icon registry. ?>
+							</span>
 							<span class="cb-core-disclosure__title"><?php esc_html_e( 'Edit custom item', 'core-blueprint' ); ?></span>
 						</summary>
 						<div class="cb-core-disclosure__body">
-							<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+							<form class="cb-core-stack" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 								<input type="hidden" name="action" value="<?php echo esc_attr( Actions::UPDATE_ACTION ); ?>">
 								<input type="hidden" name="resource_key" value="<?php echo esc_attr( $key ); ?>">
 								<?php wp_nonce_field( 'cb_core_compliance_update:' . $key ); ?>
@@ -226,32 +271,39 @@ final class Page extends PageBase {
 									<label class="cb-core-field__label" for="cb-compliance-edit-description-<?php echo esc_attr( sanitize_html_class( $key ) ); ?>"><?php esc_html_e( 'Description', 'core-blueprint' ); ?></label>
 									<textarea id="cb-compliance-edit-description-<?php echo esc_attr( sanitize_html_class( $key ) ); ?>" class="large-text" name="description" rows="2" maxlength="500"><?php echo esc_textarea( (string) $definition['description'] ); ?></textarea>
 								</div>
-								<p><button type="submit" class="button button-secondary cb-core-button"><?php esc_html_e( 'Save changes', 'core-blueprint' ); ?></button></p>
+								<div class="cb-core-form-actions">
+									<button type="submit" class="button button-secondary cb-core-button"><?php esc_html_e( 'Save changes', 'core-blueprint' ); ?></button>
+								</div>
+							</form>
+
+							<form class="cb-core-stack cb-core-stack--compact" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+								<input type="hidden" name="action" value="<?php echo esc_attr( Actions::DELETE_ACTION ); ?>">
+								<input type="hidden" name="resource_key" value="<?php echo esc_attr( $key ); ?>">
+								<?php wp_nonce_field( 'cb_core_compliance_delete:' . $key ); ?>
+								<div class="cb-core-form-actions">
+									<button type="submit" class="button button-secondary cb-core-button"><?php esc_html_e( 'Delete custom item', 'core-blueprint' ); ?></button>
+								</div>
+								<p class="description"><?php esc_html_e( 'This removes only the custom registry item and its assignment. The selected WordPress page or document is not deleted.', 'core-blueprint' ); ?></p>
 							</form>
 						</div>
 					</details>
-
-					<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
-						<input type="hidden" name="action" value="<?php echo esc_attr( Actions::DELETE_ACTION ); ?>">
-						<input type="hidden" name="resource_key" value="<?php echo esc_attr( $key ); ?>">
-						<?php wp_nonce_field( 'cb_core_compliance_delete:' . $key ); ?>
-						<button type="submit" class="button button-secondary cb-core-button"><?php esc_html_e( 'Delete custom item', 'core-blueprint' ); ?></button>
-						<p class="description"><?php esc_html_e( 'This removes only the custom registry item and its assignment. The selected WordPress page or document is not deleted.', 'core-blueprint' ); ?></p>
-					</form>
 				<?php endif; ?>
 			</div>
-		</article>
+		</details>
 		<?php
 	}
 
 	private function render_add_custom( string $owner ): void {
 		?>
-		<details class="cb-core-disclosure cb-core-disclosure--section cb-core-disclosure--subtle">
+		<details class="cb-core-disclosure cb-core-disclosure--compact">
 			<summary class="cb-core-disclosure__summary">
+				<span class="cb-core-disclosure__icon">
+					<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted icon registry. ?>
+				</span>
 				<span class="cb-core-disclosure__title"><?php esc_html_e( 'Add organisation-specific item', 'core-blueprint' ); ?></span>
 			</summary>
 			<div class="cb-core-disclosure__body">
-				<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+				<form class="cb-core-stack" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 					<input type="hidden" name="action" value="<?php echo esc_attr( Actions::ADD_ACTION ); ?>">
 					<input type="hidden" name="owner" value="<?php echo esc_attr( $owner ); ?>">
 					<?php wp_nonce_field( 'cb_core_compliance_add:' . $owner ); ?>
@@ -263,7 +315,9 @@ final class Page extends PageBase {
 						<label class="cb-core-field__label" for="cb-compliance-description-<?php echo esc_attr( sanitize_html_class( $owner ) ); ?>"><?php esc_html_e( 'Description', 'core-blueprint' ); ?></label>
 						<textarea id="cb-compliance-description-<?php echo esc_attr( sanitize_html_class( $owner ) ); ?>" class="large-text" name="description" rows="2" maxlength="500"></textarea>
 					</div>
-					<p><button type="submit" class="button button-secondary cb-core-button"><?php esc_html_e( 'Add item', 'core-blueprint' ); ?></button></p>
+					<div class="cb-core-form-actions">
+						<button type="submit" class="button button-secondary cb-core-button"><?php esc_html_e( 'Add item', 'core-blueprint' ); ?></button>
+					</div>
 				</form>
 			</div>
 		</details>
@@ -271,8 +325,11 @@ final class Page extends PageBase {
 	}
 
 	/** @param array{type:string,object_id:int}|null $reference */
-	private function render_object_picker( string $id, string $name, ?array $reference, string $search_nonce ): void {
-		$item     = Resolver::picker_item( $reference );
+	private function render_object_picker( string $id, string $name, ?array $reference, string $search_nonce, string $meta_suffix = '' ): void {
+		$item = Resolver::picker_item( $reference );
+		if ( null !== $item && '' !== $meta_suffix ) {
+			$item['meta'] .= ' · ' . $meta_suffix;
+		}
 		$selected = null === $item ? [] : [ $item ];
 
 		echo ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- shared renderer escapes structured content.
@@ -286,6 +343,12 @@ final class Page extends PageBase {
 			'placeholder'   => __( 'Search pages or documents…', 'core-blueprint' ),
 			'empty_message' => __( 'No matching published pages or documents found.', 'core-blueprint' ),
 		] );
+	}
+
+	private function requested_resource_key(): string {
+		return isset( $_GET['cb_resource'] )
+			? sanitize_text_field( (string) wp_unslash( $_GET['cb_resource'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only presentation state.
+			: '';
 	}
 
 	private function render_notice(): void {

@@ -143,6 +143,12 @@
 	margin-bottom: 0;
 }
 
+.cb-core-interactive-row > .cb-core-interactive-row__body {
+	min-width: 0;
+	padding: var(--cb-space-4);
+}
+
+
 /* ─── Choice card state layer ───────────────────────────────────────── */
 
 .cb-core-wrap .cb-core-choice-card {

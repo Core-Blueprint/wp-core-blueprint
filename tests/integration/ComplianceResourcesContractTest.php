@@ -300,6 +300,27 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 		self::assertNull( Resolver::resolve( $key, 'nl_NL' ) );
 	}
 
+
+	public function test_unavailable_assignment_keeps_human_readable_admin_context_without_becoming_resolvable(): void {
+		$key = 'core-blueprint:disclaimer';
+		$page_id = self::factory()->post->create( [
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_title'  => 'Disclaimer',
+		] );
+		self::assertTrue( Repository::set_assignment( $key, [ 'type' => 'page', 'object_id' => $page_id ], [] ) );
+
+		wp_update_post( [ 'ID' => $page_id, 'post_status' => 'draft' ] );
+
+		$item = Resolver::assignment_item( Repository::assignment( $key )['default'] );
+		self::assertNotNull( $item );
+		self::assertSame( 'page:' . $page_id, $item['id'] );
+		self::assertSame( 'Disclaimer', $item['label'] );
+		self::assertSame( 'Draft page', $item['meta'] );
+		self::assertNull( Resolver::picker_item( Repository::assignment( $key )['default'] ) );
+		self::assertNull( Resolver::resolve( $key, 'nl_NL' ) );
+	}
+
 	public function test_compliance_admin_uses_canonical_object_picker_and_audited_mutations(): void {
 		$root    = dirname( __DIR__, 2 );
 		$page    = (string) file_get_contents( $root . '/src/Compliance/Admin/Page.php' );
@@ -307,6 +328,12 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( 'use CB\\Core\\UI\\ObjectPicker;', $page );
 		self::assertStringContainsString( 'ObjectPicker::render(', $page );
+		self::assertStringContainsString( 'cb-core-interactive-row', $page );
+		self::assertStringContainsString( 'cb-core-disclosure--compact', $page );
+		self::assertStringContainsString( "Icon::render( 'expand'", $page );
+		self::assertStringContainsString( 'StateBadge::render(', $page );
+		self::assertStringContainsString( "'cb_resource'", $actions );
+		self::assertStringNotContainsString( 'cb-core-card cb-core-card--spacious', $page );
 		self::assertStringNotContainsString( 'data-cb-core-object-picker', $page );
 		self::assertStringContainsString( 'compliance.resource.assignment_changed', $actions );
 		self::assertStringContainsString( 'compliance.resource.custom_added', $actions );
