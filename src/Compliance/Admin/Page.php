@@ -72,7 +72,7 @@ final class Page extends PageBase {
 				<?php esc_html_e( 'Keep the privacy, legal, security and governance resources used by your site and extensions in one central place. A resource can point to a published WordPress page or a public document in the Media Library.', 'core-blueprint' ); ?>
 			</p>
 
-			<?php $this->render_notice(); ?>
+			<?php $this->render_feedback(); ?>
 
 			<?php
 			echo Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() escapes structured content.
@@ -352,28 +352,39 @@ final class Page extends PageBase {
 			: '';
 	}
 
-	private function render_notice(): void {
-		$notice = isset( $_GET['cb_notice'] ) ? sanitize_key( (string) wp_unslash( $_GET['cb_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only feedback route.
-		$map = [
-			'saved'                   => [ Notice::SUCCESS, __( 'Compliance resource saved.', 'core-blueprint' ) ],
-			'added'                   => [ Notice::SUCCESS, __( 'Custom compliance item added.', 'core-blueprint' ) ],
-			'updated'                 => [ Notice::SUCCESS, __( 'Custom compliance item updated.', 'core-blueprint' ) ],
-			'deleted'                 => [ Notice::SUCCESS, __( 'Custom compliance item deleted.', 'core-blueprint' ) ],
-			'invalid-resource'        => [ Notice::ERROR, __( 'The selected page or document is not available.', 'core-blueprint' ) ],
-			'invalid-locale'          => [ Notice::ERROR, __( 'One of the locale codes is invalid.', 'core-blueprint' ) ],
-			'invalid-locale-resource' => [ Notice::ERROR, __( 'Add both a valid locale code and a valid page or document.', 'core-blueprint' ) ],
-			'unknown-resource'        => [ Notice::ERROR, __( 'That compliance resource is not registered.', 'core-blueprint' ) ],
-			'save-failed'             => [ Notice::ERROR, __( 'The compliance resource could not be saved.', 'core-blueprint' ) ],
-			'add-failed'              => [ Notice::ERROR, __( 'The custom compliance item could not be added.', 'core-blueprint' ) ],
-			'update-failed'           => [ Notice::ERROR, __( 'The custom compliance item could not be updated.', 'core-blueprint' ) ],
-			'delete-failed'           => [ Notice::ERROR, __( 'Only user-created compliance items can be deleted.', 'core-blueprint' ) ],
+	private function render_feedback(): void {
+		$result = Actions::pull_result();
+		$status = is_array( $result ) ? sanitize_key( (string) ( $result['status'] ?? '' ) ) : '';
+
+		$success = [
+			'saved'   => __( 'Compliance resource saved.', 'core-blueprint' ),
+			'added'   => __( 'Custom compliance item added.', 'core-blueprint' ),
+			'updated' => __( 'Custom compliance item updated.', 'core-blueprint' ),
+			'deleted' => __( 'Custom compliance item deleted.', 'core-blueprint' ),
 		];
-		if ( ! isset( $map[ $notice ] ) ) {
+		if ( isset( $success[ $status ] ) ) {
+			?>
+			<div data-cb-core-compliance-success="<?php echo esc_attr( $success[ $status ] ); ?>" hidden></div>
+			<?php
+			return;
+		}
+
+		$errors = [
+			'invalid-resource'        => __( 'The selected page or document is not available.', 'core-blueprint' ),
+			'invalid-locale'          => __( 'One of the locale codes is invalid.', 'core-blueprint' ),
+			'invalid-locale-resource' => __( 'Add both a valid locale code and a valid page or document.', 'core-blueprint' ),
+			'unknown-resource'        => __( 'That compliance resource is not registered.', 'core-blueprint' ),
+			'save-failed'             => __( 'The compliance resource could not be saved.', 'core-blueprint' ),
+			'add-failed'              => __( 'The custom compliance item could not be added.', 'core-blueprint' ),
+			'update-failed'           => __( 'The custom compliance item could not be updated.', 'core-blueprint' ),
+			'delete-failed'           => __( 'Only user-created compliance items can be deleted.', 'core-blueprint' ),
+		];
+		if ( ! isset( $errors[ $status ] ) ) {
 			return;
 		}
 		echo Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() escapes structured content.
-			'variant' => $map[ $notice ][0],
-			'message' => $map[ $notice ][1],
+			'variant' => Notice::ERROR,
+			'message' => $errors[ $status ],
 		] );
 	}
 }
