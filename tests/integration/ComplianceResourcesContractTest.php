@@ -163,6 +163,32 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 		self::assertNull( Resolver::parse_reference( 'document:' . $image ) );
 	}
 
+	public function test_repository_rejects_invalid_direct_assignments(): void {
+		$key = 'core-blueprint:privacy-policy';
+
+		self::assertFalse( Repository::set_assignment(
+			$key,
+			[ 'type' => 'page', 'object_id' => 999999 ],
+			[]
+		) );
+
+		$page_id = self::factory()->post->create( [
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_title'  => 'Valid privacy page',
+		] );
+		self::assertFalse( Repository::set_assignment(
+			$key,
+			[ 'type' => 'page', 'object_id' => $page_id ],
+			[ 'not a locale' => [ 'type' => 'page', 'object_id' => $page_id ] ]
+		) );
+
+		self::assertSame(
+			[ 'default' => null, 'locales' => [] ],
+			Repository::assignment( $key )
+		);
+	}
+
 	public function test_compliance_is_a_base_owned_central_surface_before_preferences(): void {
 		$page = new CompliancePage();
 		self::assertSame( 'core-blueprint-compliance', $page->slug() );
