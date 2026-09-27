@@ -37,21 +37,6 @@ body.wp-admin #wpfooter {
 	margin-bottom: var(--cb-space-5);
 }
 
-.cb-core-secure-action__brand {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--cb-space-2);
-	color: var(--cb-text-muted);
-	font-size: var(--cb-fs-sm);
-	font-weight: var(--cb-fw-medium);
-}
-
-.cb-core-secure-action__mark {
-	display: block;
-	width: 28px;
-	height: 28px;
-}
-
 .cb-core-secure-action .cb-core-title {
 	margin-bottom: 0;
 }

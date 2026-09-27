@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Admin;
 
-use CB\Core\Brand\CoreBlueprintMark;
+use CB\Core\Brand\CoreBlueprintLockup;
 use CB\Core\UI\AdminTheme;
 use CB\Core\UI\AdminThemeAdapters;
 use CB\Core\UI\Card;
@@ -82,6 +82,8 @@ final class SecureActionScreen {
 			AdminAssetCatalog::enqueue( $asset_id, $context );
 		}
 
+		CoreBlueprintLockup::enqueue_assets();
+
 		wp_enqueue_style(
 			'cb-core-css-page-secure-action',
 			CB_CORE_URL . 'assets/css/pages/secure-action.css',
@@ -101,10 +103,7 @@ final class SecureActionScreen {
 
 		echo '<div class="wrap cb-core-wrap cb-core-wrap--narrow cb-core-secure-action">';
 		echo '<header class="cb-core-secure-action__header">';
-		echo '<div class="cb-core-secure-action__brand">';
-		echo '<img class="cb-core-secure-action__mark" src="' . esc_attr( CoreBlueprintMark::data_uri() ) . '" alt="" aria-hidden="true">';
-		echo '<span class="cb-core-secure-action__brand-name">Core Blueprint</span>';
-		echo '</div>';
+		echo CoreBlueprintLockup::html( 'cb-core-secure-action__brand' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper owns escaping.
 		echo '<h1 class="cb-core-title">' . esc_html( $title ) . '</h1>';
 		if ( '' !== $status_label ) {
 			echo Status::render( $status_variant, $status_label ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Status owns escaping.
