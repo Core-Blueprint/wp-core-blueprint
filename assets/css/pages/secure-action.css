@@ -181,7 +181,7 @@ body.wp-admin #wpfooter {
 }
 
 .cb-core-secure-action__form .cb-core-form-actions {
-	margin-top: var(--cb-space-1);
+	margin-top: var(--cb-space-3);
 }
 
 .cb-core-secure-action__form-actions {
