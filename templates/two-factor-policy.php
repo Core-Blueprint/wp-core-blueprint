@@ -90,6 +90,9 @@ $current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy
 		<?php endif; ?>
 	</section>
 
+	<?php
+	ob_start();
+	?>
 	<section class="cb-core-panel">
 		<h2><?php esc_html_e( 'Your authentication state', 'core-blueprint' ); ?></h2>
 		<p>
@@ -116,4 +119,11 @@ $current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy
 			</a>
 		</p>
 	</section>
+	<?php
+	$authentication_state = (string) ob_get_clean();
+
+	echo \CB\Core\UI\Field::render( [
+		'control' => $authentication_state,
+	] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	?>
 </div>
