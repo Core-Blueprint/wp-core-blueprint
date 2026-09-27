@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Compliance\Admin\Actions as ComplianceActions;
 use CB\Core\Compliance\Admin\Page as CompliancePage;
 use CB\Core\Compliance\Repository;
 use CB\Core\Compliance\Resolver;
@@ -321,10 +322,32 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 		self::assertNull( Resolver::resolve( $key, 'nl_NL' ) );
 	}
 
+	public function test_action_feedback_is_one_shot_and_user_scoped(): void {
+		$first_user  = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$second_user = self::factory()->user->create( [ 'role' => 'administrator' ] );
+
+		set_transient( 'cb_core_compliance_result_' . $first_user, [ 'status' => 'saved' ], MINUTE_IN_SECONDS );
+		set_transient( 'cb_core_compliance_result_' . $second_user, [ 'status' => 'deleted' ], MINUTE_IN_SECONDS );
+
+		wp_set_current_user( $first_user );
+		self::assertSame( [ 'status' => 'saved' ], ComplianceActions::pull_result() );
+		self::assertNull( ComplianceActions::pull_result() );
+
+		wp_set_current_user( $second_user );
+		self::assertSame( [ 'status' => 'deleted' ], ComplianceActions::pull_result() );
+		self::assertNull( ComplianceActions::pull_result() );
+
+		wp_set_current_user( 0 );
+	}
+
 	public function test_compliance_admin_uses_canonical_object_picker_and_audited_mutations(): void {
-		$root    = dirname( __DIR__, 2 );
-		$page    = (string) file_get_contents( $root . '/src/Compliance/Admin/Page.php' );
-		$actions = (string) file_get_contents( $root . '/src/Compliance/Admin/Actions.php' );
+		$root     = dirname( __DIR__, 2 );
+		$page     = (string) file_get_contents( $root . '/src/Compliance/Admin/Page.php' );
+		$actions  = (string) file_get_contents( $root . '/src/Compliance/Admin/Actions.php' );
+		$admin    = (string) file_get_contents( $root . '/src/Admin/Admin.php' );
+		$screens  = (string) file_get_contents( $root . '/src/Admin/ScreenAssetRegistry.php' );
+		$modules  = (string) file_get_contents( $root . '/src/Admin/AdminModuleDefinitionsConsoleAux.php' );
+		$feedback = (string) file_get_contents( $root . '/assets/js/features/compliance-feedback.js' );
 
 		self::assertStringContainsString( 'use CB\\Core\\UI\\ObjectPicker;', $page );
 		self::assertStringContainsString( 'ObjectPicker::render(', $page );
@@ -333,6 +356,16 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "Icon::render( 'expand'", $page );
 		self::assertStringContainsString( 'StateBadge::render(', $page );
 		self::assertStringContainsString( "'cb_resource'", $actions );
+		self::assertStringNotContainsString( "'cb_notice'", $actions );
+		self::assertStringContainsString( 'set_transient(', $actions );
+		self::assertStringContainsString( 'delete_transient(', $actions );
+		self::assertStringContainsString( 'data-cb-core-compliance-success', $page );
+		self::assertStringContainsString( "'foundations' => [ 'object-picker', 'toast' ]", $admin );
+		self::assertStringContainsString( "'core-blueprint-compliance'", $screens );
+		self::assertStringContainsString( "'module.compliance-feedback'", $screens );
+		self::assertStringContainsString( "'@cb-core/compliance-feedback'", $modules );
+		self::assertStringContainsString( "'deps' => [ '@cb-core/toast' ]", $modules );
+		self::assertStringContainsString( 'window.cbCore?.toast?.success', $feedback );
 		self::assertStringNotContainsString( 'cb-core-card cb-core-card--spacious', $page );
 		self::assertStringNotContainsString( 'data-cb-core-object-picker', $page );
 		self::assertStringContainsString( 'compliance.resource.assignment_changed', $actions );
