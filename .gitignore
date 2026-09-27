@@ -1,2 +1,9 @@
 /vendor/
 .phpunit.result.cache
+
+# Generated release/build artifacts.
+/dist/
+
+# Python cache artifacts created by release tooling/tests.
+__pycache__/
+*.py[cod]
