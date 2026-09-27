@@ -78,14 +78,15 @@
 		color var(--cb-interactive-transition);
 }
 
-.cb-core-object-picker__remove:hover {
-	background: var(--cb-interactive-hover);
-	border-color: var(--cb-interactive-border-hover);
-	color: var(--cb-text-strong);
+.cb-core-object-picker__remove:hover,
+.cb-core-object-picker__remove:focus-visible {
+	background: color-mix(in srgb, var(--cb-danger) 8%, transparent);
+	border-color: var(--cb-danger);
+	color: var(--cb-danger);
 }
 
 .cb-core-object-picker__remove:focus-visible {
-	outline: 2px solid var(--cb-interactive-focus);
+	outline: 2px solid var(--cb-danger);
 	outline-offset: 2px;
 }
 

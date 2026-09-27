@@ -78,14 +78,15 @@
 	cursor: pointer;
 }
 
-.cb-core-object-picker__remove:hover {
-	background: var(--cb-interactive-hover, #f0f0f1);
-	border-color: var(--cb-interactive-border-hover, #8c8f94);
-	color: var(--cb-text-strong, #1d2327);
+.cb-core-object-picker__remove:hover,
+.cb-core-object-picker__remove:focus-visible {
+	background: color-mix(in srgb, var(--cb-danger, #b32d2e) 8%, transparent);
+	border-color: var(--cb-danger, #b32d2e);
+	color: var(--cb-danger, #b32d2e);
 }
 
 .cb-core-object-picker__remove:focus-visible {
-	outline: 2px solid var(--cb-interactive-focus, #2271b1);
+	outline: 2px solid var(--cb-danger, #b32d2e);
 	outline-offset: 2px;
 }
 
