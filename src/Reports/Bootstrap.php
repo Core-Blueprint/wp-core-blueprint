@@ -80,7 +80,7 @@ final class Bootstrap {
 			return;
 		}
 
-		DesignEditorAssets::enqueue_designer_mode( __( 'Reports', 'core-blueprint' ) );
+		DesignEditorAssets::enqueue_designer_mode( __( 'Reports Designer', 'core-blueprint' ) );
 		wp_enqueue_style(
 			'cb-core-reports-designer',
 			CB_CORE_URL . 'assets/css/pages/reports-designer.css',

@@ -319,9 +319,36 @@ Consumers own:
 
 ## Designer brand identity
 
-Designer Mode owns its brand identity in Base. Consumers pass a normal translated mode title to `Assets::enqueue_designer_mode()`, for example `Automation Builder`. Base renders that title inside the canonical Core Blueprint lockup as a lowercase Miriam Libre wordmark, replacing spaces visually with the Core Blueprint blue dot, for example `automation.builder`.
+Designer Mode owns its brand identity in Base. A Designer identity names the **workspace/mode**, not the currently selected file, template, workflow or document.
 
-The canonical Designer identity therefore consists of the Core Blueprint mark plus the branded mode name. Consumers must not pre-format the title with dots, copy the Miriam Libre font or brand colours, inject a product-local logo, or override the lockup geometry. Changes to Designer branding belong in the Base Designer Foundation so every Designer consumer receives the same identity.
+The canonical naming pattern is:
+
+```text
+domain.mode
+```
+
+Consumers pass a normal translated mode title to `Assets::enqueue_designer_mode()`. Base owns the visual transformation into the canonical Core Blueprint lockup: lowercase Miriam Libre, spaces rendered as Core Blueprint blue dots, and the shared mark/geometry.
+
+Canonical examples:
+
+```text
+Automation Builder  → automation.builder
+Mail Designer       → mail.designer
+Reports Designer    → reports.designer
+Evaluator Designer  → evaluator.designer
+```
+
+The currently edited artifact belongs in the adjacent `data-cb-design-shell-context` selector instead of the branded identity. For example:
+
+```text
+reports.designer   [ Maintenance Report ▾ ]
+mail.designer      [ Password reset ▾ ]
+automation.builder [ Customer onboarding ▾ ]
+```
+
+Do not encode the selected artifact into the Designer identity when the context selector owns that information. For example, `maintenance.report [ Maintenance Report ▾ ]` is not a canonical Designer identity; `reports.designer [ Maintenance Report ▾ ]` is.
+
+The canonical Designer identity therefore consists of the Core Blueprint mark plus the branded mode name. Consumers must not pre-format titles with dots or lowercase them themselves, copy the Miriam Libre font or brand colours, inject a product-local logo, or override lockup geometry. Changes to Designer branding or naming belong in the Base Designer Foundation so every Designer consumer receives the same identity.
 
 ## Consumer restrictions
 
