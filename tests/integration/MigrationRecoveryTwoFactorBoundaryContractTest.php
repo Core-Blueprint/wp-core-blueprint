@@ -167,7 +167,7 @@ final class MigrationRecoveryTwoFactorBoundaryContractTest extends WP_UnitTestCa
 		Recovery::complete_authenticated_login( (string) $actor->user_login, $actor );
 
 		self::assertSame( 'authenticated', Recovery::status( $ticket )['status'] ?? '' );
-		self::assertTrue( PrivilegedAccessRegistry::is_approved( get_userdata( (int) $actor->ID ) );
+		self::assertTrue( PrivilegedAccessRegistry::is_approved( get_userdata( (int) $actor->ID ) ) );
 
 		wp_set_current_user( (int) $actor->ID );
 		self::assertTrue( Recovery::finalize( $ticket ) );
