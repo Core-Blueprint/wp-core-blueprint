@@ -23,10 +23,13 @@ Status: **public v1 freeze candidate**.
 | Choice Group | `CB\Core\UI\Assets::enqueue_choice_group()` | PHP/CSS primitive; no JavaScript runtime required |
 | Object Picker | `CB\Core\UI\Assets::enqueue_object_picker()` | `@cb-core/object-picker`, `window.cbCore.objectPicker` |
 | Select Picker | `CB\Core\UI\Assets::enqueue_select_picker()` | `@cb-core/select-picker`, `window.cbCore.selectPicker` |
+| Interactive Grid | `CB\Core\UI\Assets::enqueue_interactive_grid()` | PHP/CSS primitive; no JavaScript runtime required |
 | Reorder | `CB\Core\UI\Assets::enqueue_reorder()` | `@cb-core/reorder`, `window.cbCore.reorder` (Core API `1.1+`) |
 | Form Composition | `CB\Core\UI\FormComposition::enqueue()` | PHP/CSS primitive; no JavaScript runtime required |
 
 Consumers provide business meaning and exact values. Foundation owns generic behavior, accessibility and presentation adapters.
+
+The Interactive Grid Foundation owns generic cell dividers, stretched-cell action hover/focus treatment and neutral current/disabled states. Consumers own grid semantics, cell labels, URLs and nested business controls. See `INTERACTIVE-GRID-FOUNDATION.md`.
 
 The User Profile Surface Foundation is the public declarative boundary for Core Blueprint-owned sections contributed to WordPress Profile/Edit User screens. Base owns registration, deterministic ordering, context dispatch and WP-native Form Composition loading; consumers own product semantics, authorization, field/action behavior and persistence. The registry never turns `profile.php` or `user-edit.php` into Core Admin surfaces. See `USER-PROFILE-SURFACE-FOUNDATION.md`.
 
