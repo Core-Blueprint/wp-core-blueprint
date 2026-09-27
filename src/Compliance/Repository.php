@@ -135,7 +135,7 @@ final class Repository {
 	}
 
 	/**
-	 * Persist one role assignment after the caller has validated references.
+	 * Persist one role assignment through the canonical validation boundary.
 	 *
 	 * @param array{type:string,object_id:int}|null          $default
 	 * @param array<string,array{type:string,object_id:int}> $locales
@@ -144,15 +144,30 @@ final class Repository {
 		if ( null === ResourceRegistry::get( $key ) ) {
 			return false;
 		}
+		if ( null !== $default && ! Resolver::is_valid_reference( $default ) ) {
+			return false;
+		}
+
+		$normalized_locales = [];
+		foreach ( $locales as $locale => $reference ) {
+			if ( ! is_string( $locale ) || ! is_array( $reference ) ) {
+				return false;
+			}
+			$normalized_locale = Resolver::normalize_locale( $locale );
+			if ( '' === $normalized_locale || ! Resolver::is_valid_reference( $reference ) ) {
+				return false;
+			}
+			$normalized_locales[ $normalized_locale ] = $reference;
+		}
 
 		$all = self::assignments();
-		if ( null === $default && [] === $locales ) {
+		if ( null === $default && [] === $normalized_locales ) {
 			unset( $all[ $key ] );
 		} else {
-			ksort( $locales );
+			ksort( $normalized_locales );
 			$all[ $key ] = [
 				'default' => $default,
-				'locales' => $locales,
+				'locales' => $normalized_locales,
 			];
 		}
 		update_option( self::OPTION_ASSIGNMENTS, $all, false );
