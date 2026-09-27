@@ -25,6 +25,9 @@ function renderQr( target, uri, label ) {
 	const total = ( modules + QUIET_ZONE * 2 ) * MODULE_SIZE;
 	const svg = document.createElementNS( SVG_NS, 'svg' );
 	svg.setAttribute( 'viewBox', `0 0 ${ total } ${ total }` );
+	svg.setAttribute( 'width', String( total ) );
+	svg.setAttribute( 'height', String( total ) );
+	svg.setAttribute( 'preserveAspectRatio', 'xMidYMid meet' );
 	svg.setAttribute( 'role', 'img' );
 	svg.setAttribute( 'aria-label', label );
 	svg.setAttribute( 'shape-rendering', 'crispEdges' );
