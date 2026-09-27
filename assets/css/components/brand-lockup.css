@@ -24,7 +24,7 @@
 
 	display: inline-flex;
 	align-items: center;
-	gap: 0.333em;
+	gap: 0.25em;
 	font-size: var(--cb-brand-lockup-size);
 }
 
