@@ -178,4 +178,10 @@ if ( ! is_array( $profiles ) || ! isset( $profiles['messages'] ) || ! is_array( 
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $profiles['messages'] );
 
+$admin_navigation = require __DIR__ . '/admin-navigation/core-blueprint-pt_PT.php';
+if ( ! is_array( $admin_navigation ) || ! isset( $admin_navigation['messages'] ) || ! is_array( $admin_navigation['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $admin_navigation['messages'] );
+
 return $catalog;
