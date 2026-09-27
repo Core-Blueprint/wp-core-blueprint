@@ -117,7 +117,11 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 	display: none !important;
 }
 
-/* Canonical active design target. Consumers supply the select/options; Base owns placement and geometry. */
+/*
+ * Canonical active design target. Consumers supply the select/options; Base owns
+ * placement and geometry. The context selector always follows the branded
+ * Designer identity in the start zone; the center zone remains canvas-owned.
+ */
 .cb-core-design-shell__toolbar-context {
 	display: flex;
 	align-items: center;
@@ -126,7 +130,7 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 	flex: 0 1 auto;
 	width: auto;
 	min-width: 0;
-	max-width: min(420px, 42vw);
+	max-width: min(20rem, 42vw);
 	block-size: var(--cb-design-toolbar-control-size);
 	min-block-size: var(--cb-design-toolbar-control-size);
 	margin-block: 0 !important;
@@ -162,12 +166,12 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 	white-space: nowrap;
 }
 
-.cb-core-design-shell__brand--contextual .cb-core-design-shell__brand-mark {
-	margin-inline-end: 0;
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-context {
+	max-width: min(14rem, 34vw);
 }
 
 @media (max-width: 900px) {
 	.cb-core-design-shell__toolbar-context {
-		max-width: min(260px, 48vw);
+		max-width: min(16rem, 48vw);
 	}
 }

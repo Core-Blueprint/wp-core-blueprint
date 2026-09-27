@@ -103,6 +103,16 @@ The canonical Designer toolbar is capability-driven. Consumers declare controls 
 
 Base measures the **actual toolbar width** rather than relying on a product-specific viewport breakpoint. The internal compact threshold is not part of the public consumer API and may evolve without requiring consumer changes.
 
+### Toolbar zone ownership
+
+The canonical toolbar uses three stable semantic zones. Their ownership does not change per consumer:
+
+- **Start:** Base-owned branded Designer identity, followed immediately by the optional active context/file/document selector declared with `data-cb-design-shell-context`.
+- **Center:** canvas/view controls, including the canonical responsive viewport switcher when the consumer exposes `data-cb-design-shell-viewport` controls.
+- **End:** status, history/actions, close/fullscreen and the canonical primary action.
+
+A context selector must not replace or hide the Designer identity. Consumers supply the selector and its options, while Base owns its placement, compact geometry and overflow behavior. Consumers must not move the selector to the center zone merely because a particular Designer does not currently expose viewport controls; the center zone stays reserved for canvas/view capabilities so toolbar position remains predictable across Designer modes.
+
 Wide toolbar behavior:
 
 - viewport controls remain explicit when the consumer exposes `data-cb-design-shell-viewport` controls;
