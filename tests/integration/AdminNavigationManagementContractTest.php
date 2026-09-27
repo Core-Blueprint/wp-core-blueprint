@@ -5,6 +5,10 @@ use CB\Core\AdminNavigation\Admin as AdminNavigationAdmin;
 use CB\Core\AdminNavigation\Discovery;
 use CB\Core\AdminNavigation\Policy;
 
+if ( ! class_exists( 'WP_Admin_Bar' ) ) {
+	require_once ABSPATH . WPINC . '/class-wp-admin-bar.php';
+}
+
 final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTestCase {
 
 	private mixed $saved_policy;

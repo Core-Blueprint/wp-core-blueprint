@@ -7,6 +7,10 @@ use CB\Core\Profiles\Engine;
 use CB\Core\Profiles\SectionRegistry;
 use CB\Core\Profiles\Sections\AdminNavigationSection;
 
+if ( ! class_exists( 'WP_Admin_Bar' ) ) {
+	require_once ABSPATH . WPINC . '/class-wp-admin-bar.php';
+}
+
 final class CB_Base_Admin_Navigation_Profile_Contract_Test extends WP_UnitTestCase {
 
 	private mixed $saved_policy;
