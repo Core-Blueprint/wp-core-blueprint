@@ -178,4 +178,22 @@ if ( ! is_array( $profiles ) || ! isset( $profiles['messages'] ) || ! is_array( 
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $profiles['messages'] );
 
+$environment = require __DIR__ . '/environment/core-blueprint-pt_PT.php';
+if ( ! is_array( $environment ) || ! isset( $environment['messages'] ) || ! is_array( $environment['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $environment['messages'] );
+
+$admin_navigation = require __DIR__ . '/admin-navigation/core-blueprint-pt_PT.php';
+if ( ! is_array( $admin_navigation ) || ! isset( $admin_navigation['messages'] ) || ! is_array( $admin_navigation['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $admin_navigation['messages'] );
+
+$admin_columns = require __DIR__ . '/admin-columns/core-blueprint-pt_PT.php';
+if ( ! is_array( $admin_columns ) || ! isset( $admin_columns['messages'] ) || ! is_array( $admin_columns['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $admin_columns['messages'] );
+
 return $catalog;
