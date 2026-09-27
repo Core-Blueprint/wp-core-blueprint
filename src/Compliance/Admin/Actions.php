@@ -18,6 +18,8 @@ defined( 'ABSPATH' ) || exit;
 
 final class Actions {
 
+	private const RESULT_PREFIX = 'cb_core_compliance_result_';
+
 	public const SAVE_ACTION   = 'cb_core_compliance_save_resource';
 	public const ADD_ACTION    = 'cb_core_compliance_add_custom';
 	public const UPDATE_ACTION = 'cb_core_compliance_update_custom';
@@ -153,6 +155,13 @@ final class Actions {
 		self::redirect( 'deleted' );
 	}
 
+	public static function pull_result(): ?array {
+		$key = self::RESULT_PREFIX . get_current_user_id();
+		$result = get_transient( $key );
+		delete_transient( $key );
+		return is_array( $result ) ? $result : null;
+	}
+
 	private static function guard(): void {
 		if ( 'POST' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) {
 			wp_die( esc_html__( 'Invalid request method.', 'core-blueprint' ), '', [ 'response' => 405 ] );
@@ -163,9 +172,14 @@ final class Actions {
 	}
 
 	private static function redirect( string $notice, string $resource_key = '' ): never {
+		set_transient(
+			self::RESULT_PREFIX . get_current_user_id(),
+			[ 'status' => sanitize_key( $notice ) ],
+			MINUTE_IN_SECONDS
+		);
+
 		$args = [
-			'page'      => Page::SLUG,
-			'cb_notice' => sanitize_key( $notice ),
+			'page' => Page::SLUG,
 		];
 		if ( '' !== $resource_key ) {
 			$args['cb_resource'] = sanitize_text_field( $resource_key );
