@@ -12,8 +12,9 @@ declare(strict_types=1);
  *   Layer 3 - Secret bypass URL with rotating single-use token
  *   Layer 4 - Admin panic button (handled in Admin)
  *
- * Every restrictive feature in Core Blueprint MUST call ::is_bypassed() before
- * enforcing. If ::is_bypassed() returns true, the feature must become a no-op.
+ * Restrictive features normally call ::is_bypassed() before enforcing. Security
+ * boundaries that must distinguish explicit emergency authority from a bounded
+ * request-scoped recovery authority use ::is_operator_bypass_active() instead.
  *
  * The failsafe is loaded before any other subsystem so that a broken module
  * cannot prevent bypass mechanisms from functioning.
