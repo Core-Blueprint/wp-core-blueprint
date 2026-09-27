@@ -93,6 +93,21 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'A context selector must not replace or hide the Designer identity.', $docs );
 	}
 
+	public function test_designer_identity_persists_in_dom_and_compact_mode_hides_only_the_wordmark(): void {
+		$launch       = $this->source( 'assets/js/features/designer-launch.js' );
+		$layout       = $this->source( 'assets/js/features/designer-layout.js' );
+		$designer_css = $this->source( 'assets/css/design/designer-mode.css' );
+		$docs         = $this->source( 'docs/DESIGNER-MODE.md' );
+
+		self::assertStringContainsString( "wordmark.className = 'cb-core-brand-lockup__wordmark cb-core-design-shell__brand-wordmark'", $launch );
+		self::assertStringContainsString( 'appendBrandedModeTitle(wordmark, title)', $launch );
+		self::assertStringContainsString( "brand.classList.add('cb-core-design-shell__brand--contextual');", $layout );
+		self::assertStringNotContainsString( "brand.querySelector('.cb-core-design-shell__brand-wordmark')?.remove();", $layout );
+		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__brand-wordmark,', $designer_css );
+		self::assertStringContainsString( 'Compact mode hides only the textual wordmark; the Core Blueprint mark remains visible.', $docs );
+		self::assertStringContainsString( 'Layout normalization must never remove either identity node from the DOM.', $docs );
+	}
+
 	public function test_designer_history_keeps_one_canonical_command_history_authority(): void {
 		$editor  = $this->source( 'assets/js/design/editor.js' );
 		$core    = $this->source( 'assets/js/design/core/index.js' );

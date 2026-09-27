@@ -350,6 +350,10 @@ Do not encode the selected artifact into the Designer identity when the context 
 
 The canonical Designer identity therefore consists of the Core Blueprint mark plus the branded mode name. Consumers must not pre-format titles with dots or lowercase them themselves, copy the Miriam Libre font or brand colours, inject a product-local logo, or override lockup geometry. Changes to Designer branding or naming belong in the Base Designer Foundation so every Designer consumer receives the same identity.
 
+The identity markup is persistent Base-owned DOM. Layout normalization may position the adjacent context selector, but it must never remove or rebuild the Core Blueprint mark or Designer wordmark. Responsive presentation belongs to Base CSS instead of DOM mutation.
+
+In wide mode, the mark and textual `domain.mode` wordmark are visible before the optional context selector. Compact mode hides only the textual wordmark; the Core Blueprint mark remains visible. The context selector stays adjacent to that identity in both modes. Layout normalization must never remove either identity node from the DOM.
+
 ## Consumer restrictions
 
 A Designer Mode consumer must not:

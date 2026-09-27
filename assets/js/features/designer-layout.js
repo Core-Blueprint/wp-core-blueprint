@@ -96,7 +96,6 @@
 		if (!context) return;
 
 		brand.classList.add('cb-core-design-shell__brand--contextual');
-		brand.querySelector('.cb-core-design-shell__brand-wordmark')?.remove();
 		context.classList.add('cb-core-design-shell__toolbar-context');
 		context.hidden = false;
 		context.removeAttribute('aria-hidden');
