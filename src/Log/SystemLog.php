@@ -266,6 +266,7 @@ class SystemLog {
 		// ─── Login events (new in m4.12.2) ────────────────────────────────
 		// Successful logins - queued, non-critical, high-volume.
 		add_action( 'wp_login',                    [ __CLASS__, 'on_login' ],              10, 2 );
+		add_action( 'cb_core_two_factor_authenticated', [ __CLASS__, 'on_two_factor_authenticated' ], 10, 2 );
 		// Failed logins - logged directly, security-relevant. warning severity
 		// so they bypass dedup and always reach the audit log.
 		add_action( 'wp_login_failed',             [ __CLASS__, 'on_login_failed' ],       10, 1 );
@@ -600,6 +601,26 @@ class SystemLog {
 	 * event, OK to lose on PHP fatal (not security-critical).
 	 */
 	public static function on_login( string $user_login, $user ): void {
+		if (
+			$user instanceof \WP_User
+			&& \CB\Core\Security\TwoFactor\LoginFlow::is_password_stage_pending( (int) $user->ID )
+		) {
+			return;
+		}
+
+		self::queue_login_success( $user_login, $user );
+	}
+
+	/**
+	 * A Base-owned 2FA login becomes a successful login only after the second
+	 * factor has issued the final WordPress authentication session.
+	 */
+	public static function on_two_factor_authenticated( \WP_User $user, string $method ): void {
+		unset( $method );
+		self::queue_login_success( (string) $user->user_login, $user );
+	}
+
+	private static function queue_login_success( string $user_login, $user ): void {
 		$role = '';
 		if ( is_object( $user ) && isset( $user->roles ) && is_array( $user->roles ) && ! empty( $user->roles ) ) {
 			$role = (string) $user->roles[0];

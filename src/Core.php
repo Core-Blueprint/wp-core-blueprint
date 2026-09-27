@@ -63,6 +63,11 @@ final class Core {
 		// before Login Shield evaluates enforcement on plugins_loaded.
 		MigrationRecovery::boot();
 
+		// Privileged two-factor authentication registers its login boundaries
+		// after Migration Recovery so the destination recovery flow can establish
+		// its request-scoped Failsafe authority before 2FA makes a decision.
+		\CB\Core\Security\TwoFactor\Bootstrap::boot();
+
 		// WP 6.7+ requires translations to load on `init` or later.
 		add_action( 'init', [ $this, 'load_textdomain' ], 0 );
 
@@ -108,6 +113,7 @@ final class Core {
 		// and their visual shell. admin-ajax.php and admin-post.php are request
 		// endpoints, not screens, and must not boot browser presentation.
 		if ( RequestContext::is_admin_screen() ) {
+			\CB\Core\Admin\UserProfileSectionRegistry::init();
 			PageRegistry::init();
 			Admin::init();
 			Extensions::init();

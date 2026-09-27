@@ -162,6 +162,17 @@
 	gap: var(--cb-space-5);
 }
 
+/* Form Actions is the horizontal action-row primitive used inside Stack/Form
+ * compositions. It owns only peer-action alignment/wrapping. Stack remains
+ * the vertical spacing authority and buttons keep their own presentation. */
+.cb-core-wrap .cb-core-form-actions,
+.cb-core-form-scope .cb-core-form-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--cb-space-3);
+}
+
 /* When a section participates directly in a Stack, the Stack owns the
  * inter-section spacing. Reset the section's legacy flow margin to avoid
  * double spacing. */
