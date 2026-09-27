@@ -24,19 +24,24 @@ final class CB_Designer_External_Consumer_Contract_Test extends WP_UnitTestCase 
 		self::assertTrue( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
 		self::assertTrue( wp_style_is( DesignEditorAssets::SHELL_STYLE, 'enqueued' ) );
 		self::assertTrue( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) );
+		self::assertTrue( wp_style_is( 'cb-core-css-brand-lockup', 'enqueued' ) );
 		self::assertTrue( wp_style_is( DesignEditorAssets::DESIGNER_MODE_STYLE, 'enqueued' ) );
 
 		$styles   = wp_styles();
 		$shell    = $styles->registered[ DesignEditorAssets::SHELL_STYLE ] ?? null;
 		$buttons  = $styles->registered['cb-core-css-buttons'] ?? null;
+		$brand    = $styles->registered['cb-core-css-brand-lockup'] ?? null;
 		$designer = $styles->registered[ DesignEditorAssets::DESIGNER_MODE_STYLE ] ?? null;
 
 		self::assertInstanceOf( _WP_Dependency::class, $shell );
 		self::assertInstanceOf( _WP_Dependency::class, $buttons );
+		self::assertInstanceOf( _WP_Dependency::class, $brand );
 		self::assertInstanceOf( _WP_Dependency::class, $designer );
 		self::assertContains( 'cb-core-css-tokens', $shell->deps );
 		self::assertContains( 'cb-core-css-tokens', $buttons->deps );
+		self::assertContains( 'cb-core-css-tokens', $brand->deps );
 		self::assertContains( DesignEditorAssets::SHELL_STYLE, $designer->deps );
+		self::assertContains( 'cb-core-css-brand-lockup', $designer->deps );
 		self::assertContains( 'cb-core-css-buttons', $designer->deps );
 	}
 

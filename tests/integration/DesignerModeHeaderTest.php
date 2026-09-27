@@ -100,10 +100,29 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "public static function enqueue_designer_mode( string \$title = '' ): void", $assets );
 		self::assertStringContainsString( "CB_CORE_URL . 'assets/js/features/designer-launch.js'", $assets );
 		self::assertStringContainsString( "'cbCoreDesignerLaunch'", $assets );
+		self::assertStringContainsString( 'CoreBlueprintLockup::enqueue_assets()', $assets );
 		self::assertStringContainsString( 'CoreBlueprintMark::data_uri()', $assets );
 		self::assertStringContainsString( "DesignEditorAssets::enqueue_designer_mode( __( 'Mail Designer', 'core-blueprint' ) );", $page );
 		self::assertStringNotContainsString( "assets/js/features/designer-launch.js", $page );
 		self::assertStringNotContainsString( 'wp_localize_script(', $page );
+	}
+
+	public function test_designer_mode_branding_uses_the_canonical_lockup_and_branded_mode_title(): void {
+		$root      = dirname( __DIR__, 2 );
+		$launch    = (string) file_get_contents( $root . '/assets/js/features/designer-launch.js' );
+		$shell_css = (string) file_get_contents( $root . '/assets/css/design/editor-shell.css' );
+		$brand_css = (string) file_get_contents( $root . '/assets/css/components/brand-lockup.css' );
+
+		self::assertStringContainsString( "brand.className = 'cb-core-design-shell__brand cb-core-brand-lockup'", $launch );
+		self::assertStringContainsString( "mark.className = 'cb-core-brand-lockup__mark'", $launch );
+		self::assertStringContainsString( "wordmark.className = 'cb-core-brand-lockup__wordmark cb-core-design-shell__brand-wordmark'", $launch );
+		self::assertStringContainsString( 'appendBrandedModeTitle(wordmark, title)', $launch );
+		self::assertStringContainsString( "dot.className = 'cb-core-brand-lockup__dot'", $launch );
+		self::assertStringContainsString( 'word.toLocaleLowerCase()', $launch );
+		self::assertStringNotContainsString( '.cb-core-design-shell__brand-mark {', $shell_css );
+		self::assertStringContainsString( 'font-family: "Miriam Libre", sans-serif;', $brand_css );
+		self::assertStringContainsString( 'font-weight: 400;', $brand_css );
+		self::assertStringContainsString( 'color: #00b3ea;', $brand_css );
 	}
 
 	public function test_mail_declares_its_panels_against_canonical_inspector_layers_settings_roles(): void {

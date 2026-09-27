@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Design\Editor;
 
+use CB\Core\Brand\CoreBlueprintLockup;
 use CB\Core\Brand\CoreBlueprintMark;
 
 defined( 'ABSPATH' ) || exit;
@@ -31,6 +32,7 @@ final class Assets {
 	private const TOKEN_STYLE = 'cb-core-css-tokens';
 	private const BUTTON_STYLE = 'cb-core-css-buttons';
 	private const FORM_CONTROL_STYLE = 'cb-core-css-form-controls';
+	private const BRAND_LOCKUP_STYLE = 'cb-core-css-brand-lockup';
 	private const MOTION_MODULE_ID = '@cb-core/design-motion';
 
 	public static function enqueue(): void {
@@ -82,6 +84,7 @@ final class Assets {
 	 */
 	public static function enqueue_designer_mode( string $title = '' ): void {
 		self::enqueue();
+		CoreBlueprintLockup::enqueue_assets();
 
 		$title = sanitize_text_field( trim( $title ) );
 		if ( '' === $title ) {
@@ -105,7 +108,7 @@ final class Assets {
 		wp_enqueue_style(
 			self::DESIGNER_MODE_STYLE,
 			CB_CORE_URL . 'assets/css/design/designer-mode.css',
-			[ self::SHELL_STYLE, self::BUTTON_STYLE ],
+			[ self::SHELL_STYLE, self::BUTTON_STYLE, self::BRAND_LOCKUP_STYLE ],
 			self::asset_version( 'assets/css/design/designer-mode.css' )
 		);
 

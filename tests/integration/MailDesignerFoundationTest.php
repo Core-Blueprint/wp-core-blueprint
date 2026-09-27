@@ -134,6 +134,18 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'test-key', $rendered['message'] );
 	}
 
+	public function test_mail_designer_declares_workspace_identity_separately_from_template_context(): void {
+		$root     = dirname( __DIR__, 2 );
+		$template = (string) file_get_contents( $root . '/templates/mail-designer.php' );
+
+		self::assertStringContainsString( 'data-cb-design-title="<?php esc_attr_e( \'Mail Designer\', \'core-blueprint\' ); ?>"', $template );
+		self::assertStringContainsString( 'data-cb-design-shell-context', $template );
+		self::assertStringContainsString( 'data-cb-mail-template-select', $template );
+		self::assertStringContainsString( 'data-cb-design-shell-viewport="desktop"', $template );
+		self::assertStringContainsString( 'data-cb-design-shell-viewport="tablet"', $template );
+		self::assertStringContainsString( 'data-cb-design-shell-viewport="mobile"', $template );
+	}
+
 	public function test_mail_designer_opts_into_shared_fullscreen_without_owning_fullscreen_runtime(): void {
 		$root = dirname( __DIR__, 2 );
 		$template = (string) file_get_contents( $root . '/templates/mail-designer.php' );

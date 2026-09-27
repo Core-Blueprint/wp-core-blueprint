@@ -14,6 +14,7 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        'Reports Designer' => 'Reports Designer',
         'Design loaded' => 'Diseño cargado',
         'Loading design…' => 'Cargando diseño…',
         'The selected design could not be loaded.' => 'No se pudo cargar el diseño seleccionado.',

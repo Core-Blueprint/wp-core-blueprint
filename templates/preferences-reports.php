@@ -29,7 +29,7 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 	class="wrap cb-core-wrap cb-core-reports-preferences"
 	<?php if ( $can_manage_branding ) : ?>
 		data-cb-design-launch-root
-		data-cb-design-title="<?php esc_attr_e( 'Reports', 'core-blueprint' ); ?>"
+		data-cb-design-title="<?php esc_attr_e( 'Reports Designer', 'core-blueprint' ); ?>"
 	<?php endif; ?>
 >
 	<div <?php echo $can_manage_branding ? 'data-cb-design-launch-context' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static attribute. ?>>

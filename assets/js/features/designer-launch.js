@@ -233,6 +233,22 @@
 		return Object.freeze({ leftLauncher, rightLauncher });
 	};
 
+	const appendBrandedModeTitle = (container, title) => {
+		const words = String(title || '').trim().split(/\s+/).filter(Boolean);
+		words.forEach((word, index) => {
+			if (index > 0) {
+				const dot = document.createElement('span');
+				dot.className = 'cb-core-brand-lockup__dot';
+				dot.textContent = '.';
+				container.append(dot);
+			}
+			const label = document.createElement('span');
+			label.className = 'cb-core-design-shell__brand-word';
+			label.textContent = word.toLocaleLowerCase();
+			container.append(label);
+		});
+	};
+
 	const composeHeader = (root, shell, shellApi, { direct = false, exitUrl = '' } = {}) => {
 		const toolbar = shell.querySelector('.cb-core-design-shell__toolbar');
 		if (!toolbar || toolbar.dataset.cbDesignShellHeader === 'true') return;
@@ -289,26 +305,24 @@
 		const start = document.createElement('div');
 		start.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--start';
 		const brand = document.createElement('div');
-		brand.className = 'cb-core-design-shell__brand';
+		brand.className = 'cb-core-design-shell__brand cb-core-brand-lockup';
 		const title = String(root.dataset.cbDesignTitle || config.title || 'Designer').trim() || 'Designer';
-		brand.setAttribute('aria-label', `${title} — Core Blueprint`);
+		brand.setAttribute('aria-label', `${title}, Core Blueprint`);
 		const iconUrl = String(config.iconUrl || '').trim();
 		if (iconUrl) {
-			const markWrap = document.createElement('span');
-			markWrap.className = 'cb-core-design-shell__brand-mark';
 			const mark = document.createElement('img');
+			mark.className = 'cb-core-brand-lockup__mark';
 			mark.src = iconUrl;
 			mark.alt = '';
 			mark.setAttribute('aria-hidden', 'true');
-			markWrap.append(mark);
-			brand.append(markWrap);
+			brand.append(mark);
 		}
-		if (!contextSwitcher) {
-			const wordmark = document.createElement('span');
-			wordmark.className = 'cb-core-design-shell__brand-wordmark';
-			wordmark.textContent = title;
-			brand.append(wordmark);
-		} else {
+		const wordmark = document.createElement('span');
+		wordmark.className = 'cb-core-brand-lockup__wordmark cb-core-design-shell__brand-wordmark';
+		wordmark.setAttribute('aria-hidden', 'true');
+		appendBrandedModeTitle(wordmark, title);
+		brand.append(wordmark);
+		if (contextSwitcher) {
 			brand.classList.add('cb-core-design-shell__brand--contextual');
 			contextSwitcher.classList.add('cb-core-design-shell__toolbar-context');
 			contextSwitcher.hidden = false;
