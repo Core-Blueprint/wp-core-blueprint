@@ -94,7 +94,7 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "root.addEventListener('cb:design-shell:contextrequest'", $mail );
 		self::assertStringContainsString( 'event.detail.respondWith(loadTemplateContext', $mail );
 		self::assertStringContainsString( "action: 'cb_core_mail_designer_context'", $mail );
-		self::assertStringContainsString( "session.replace(data.project, { source: 'context-switch' });", $mail );
+		self::assertStringContainsString( "session.replace(data.project, { source: 'context-switch', resetSelection: true });", $mail );
 		self::assertStringContainsString( 'window.history.replaceState', $mail );
 		self::assertStringNotContainsString( 'window.location.assign(url)', $mail );
 		self::assertStringNotContainsString( 'shellToolbar.prepend', $mail );
