@@ -138,7 +138,7 @@ final class Admin {
 
 	/** @param list<string> $capabilities @return list<array{id:string,label:string,meta:string}> */
 	public static function capability_picker_items( array $capabilities ): array {
-		$catalog = CapabilityCatalog::all();
+		$catalog = self::capability_catalog();
 		$items = [];
 		foreach ( $capabilities as $capability ) {
 			if ( ! is_string( $capability ) || '' === $capability ) {
@@ -190,7 +190,7 @@ final class Admin {
 		}
 
 		$items = [];
-		foreach ( CapabilityCatalog::all() as $capability => $entry ) {
+		foreach ( self::capability_catalog() as $capability => $entry ) {
 			if ( ! is_string( $capability ) || ! is_array( $entry ) ) {
 				continue;
 			}
@@ -222,6 +222,15 @@ final class Admin {
 		Request::nonce( self::PICKER_NONCE_ACTION, '_ajax_nonce' );
 		Request::cap( 'manage_options' );
 		wp_send_json_success( [ 'items' => self::search_capabilities( Request::text( 'search' ) ) ] );
+	}
+
+	/** @return array<string,array<string,mixed>> */
+	private static function capability_catalog(): array {
+		static $catalog = null;
+		if ( null === $catalog ) {
+			$catalog = CapabilityCatalog::all();
+		}
+		return $catalog;
 	}
 
 	/** @param list<string> $catalog @param list<string> $preferred @return list<string> */

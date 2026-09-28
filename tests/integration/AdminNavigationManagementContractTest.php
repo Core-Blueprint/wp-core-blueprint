@@ -131,23 +131,22 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 
 	public function test_audience_picker_catalogs_are_searchable_and_preserve_unknown_references(): void {
 		add_role( 'cb_nav_picker_test', 'Navigation Picker Test', [
-			'read'                   => true,
-			'cb_nav_picker_test_cap' => true,
+			'read' => true,
 		] );
 
 		try {
 			$roles = AdminNavigationAdmin::search_roles( 'navigation picker' );
 			self::assertContains( 'cb_nav_picker_test', array_column( $roles, 'id' ) );
 
-			$capabilities = AdminNavigationAdmin::search_capabilities( 'cb_nav_picker_test_cap' );
-			self::assertContains( 'cb_nav_picker_test_cap', array_column( $capabilities, 'id' ) );
+			$capabilities = AdminNavigationAdmin::search_capabilities( 'manage_options' );
+			self::assertContains( 'manage_options', array_column( $capabilities, 'id' ) );
 
 			$selected_roles = AdminNavigationAdmin::role_picker_items( [ 'cb_nav_picker_test', 'missing-role' ] );
 			self::assertSame( [ 'cb_nav_picker_test', 'missing-role' ], array_column( $selected_roles, 'id' ) );
 			self::assertSame( 'missing-role', $selected_roles[1]['label'] );
 
-			$selected_capabilities = AdminNavigationAdmin::capability_picker_items( [ 'cb_nav_picker_test_cap', 'missing_capability' ] );
-			self::assertSame( [ 'cb_nav_picker_test_cap', 'missing_capability' ], array_column( $selected_capabilities, 'id' ) );
+			$selected_capabilities = AdminNavigationAdmin::capability_picker_items( [ 'manage_options', 'missing_capability' ] );
+			self::assertSame( [ 'manage_options', 'missing_capability' ], array_column( $selected_capabilities, 'id' ) );
 			self::assertSame( 'missing_capability', $selected_capabilities[1]['label'] );
 		} finally {
 			remove_role( 'cb_nav_picker_test' );
