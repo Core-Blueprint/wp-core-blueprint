@@ -81,6 +81,63 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 		);
 	}
 
+	public function test_preview_regions_support_nested_container_and_column_paths(): void {
+		$blocks = [
+			RenderBlock::container( [
+				RenderBlock::text( 'Container child' ),
+				RenderBlock::container( [ RenderBlock::heading( 'Deep heading', 'section' ) ] ),
+			] ),
+			RenderBlock::columns( [
+				[ RenderBlock::text( 'Left column' ) ],
+				[ RenderBlock::container( [ RenderBlock::text( 'Right nested' ) ] ) ],
+			] ),
+		];
+
+		$preview = FlowRenderApi::preview_html(
+			$this->layout(),
+			$blocks,
+			'en_GB',
+			null,
+			[
+				'container'    => [ 0 ],
+				'child'        => [ [ 0, 0 ] ],
+				'deep-heading' => [ [ 0, 1, 0 ] ],
+				'left-column'  => [ [ 1, 0, 0 ] ],
+				'right-nested' => [ [ 1, 1, 0, 0 ] ],
+			]
+		);
+
+		foreach ( [ 'container', 'child', 'deep-heading', 'left-column', 'right-nested' ] as $region ) {
+			self::assertSame( 1, substr_count( $preview, 'data-cb-flow-preview-region="' . $region . '"' ) );
+		}
+	}
+
+	public function test_preview_regions_reject_duplicate_and_invalid_nested_paths(): void {
+		$blocks = [ RenderBlock::container( [ RenderBlock::text( 'Child' ) ] ) ];
+
+		try {
+			FlowRenderApi::preview_html(
+				$this->layout(),
+				$blocks,
+				'en_GB',
+				null,
+				[ 'first' => [ [ 0, 0 ] ], 'duplicate' => [ [ 0, 0 ] ] ]
+			);
+			self::fail( 'Duplicate nested Flow preview paths must fail closed.' );
+		} catch ( InvalidArgumentException $exception ) {
+			self::assertStringContainsString( 'only one semantic region', $exception->getMessage() );
+		}
+
+		$this->expectException( InvalidArgumentException::class );
+		FlowRenderApi::preview_html(
+			$this->layout(),
+			$blocks,
+			'en_GB',
+			null,
+			[ 'invalid' => [ [ 0, 4 ] ] ]
+		);
+	}
+
 	public function test_paged_html_renderer_does_not_gain_preview_protocol_or_bridge(): void {
 		$paged = ( new HtmlRenderer() )->render( $this->layout(), [ RenderBlock::text( 'Paged' ) ], 'en_GB' );
 

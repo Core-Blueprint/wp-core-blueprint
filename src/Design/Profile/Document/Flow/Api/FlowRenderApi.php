@@ -32,12 +32,14 @@ final class FlowRenderApi {
 	 * page counters. PDF remains the authoritative paged output target.
 	 *
 	 * Optional preview regions map semantic Designer selection IDs to one or more
-	 * top-level Flow block indexes. Region metadata exists only in the screen
-	 * preview target and never changes paged/PDF output.
+	 * Flow render paths. Integer entries keep the original top-level block-index
+	 * shorthand; nested paths use ordered integer lists that traverse containers
+	 * and column compositions. Region metadata exists only in the screen preview
+	 * target and never changes paged/PDF output.
 	 *
-	 * @param array<string,mixed>       $layout
-	 * @param list<RenderBlock>          $blocks
-	 * @param array<string,list<int>>    $preview_regions
+	 * @param array<string,mixed>                 $layout
+	 * @param list<RenderBlock>                    $blocks
+	 * @param array<string,list<int|list<int>>>    $preview_regions
 	 */
 	public static function preview_html(
 		array $layout,

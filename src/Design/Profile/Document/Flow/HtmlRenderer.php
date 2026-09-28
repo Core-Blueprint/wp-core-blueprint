@@ -67,9 +67,9 @@ final class HtmlRenderer {
 	 * Consumers must use the public FlowRenderApi rather than this renderer.
 	 *
 	 * @internal
-	 * @param array<string,mixed>    $layout
-	 * @param list<RenderBlock>       $blocks
-	 * @param array<string,list<int>> $preview_regions
+	 * @param array<string,mixed>              $layout
+	 * @param list<RenderBlock>                 $blocks
+	 * @param array<string,list<int|list<int>>> $preview_regions
 	 */
 	public function render_preview(
 		array $layout,
@@ -93,11 +93,11 @@ final class HtmlRenderer {
 			if ( ! $block instanceof RenderBlock ) { throw new \InvalidArgumentException( 'Flow rendering accepts typed render blocks only.' ); }
 		}
 
-		$region_by_index = $this->preview_region_index( $preview_regions, count( $blocks ) );
+		$region_by_path = $this->preview_region_paths( $preview_regions, $blocks );
 		$lang = str_replace( '_', '-', $locale );
 		$body = '';
 		foreach ( $blocks as $index => $block ) {
-			$body .= $this->block( $block, $region_by_index[ $index ] ?? null );
+			$body .= $this->block( $block, $region_by_path, [ $index ] );
 		}
 		$width = self::number( $page['width'] );
 		$height = self::number( $page['height'] );
@@ -139,7 +139,9 @@ final class HtmlRenderer {
 			. '<script data-cb-core-flow-preview-sizing="1">' . self::PREVIEW_SIZING_BRIDGE . '</script></body></html>';
 	}
 
-	private function block( RenderBlock $block, ?string $preview_region = null ): string {
+	/** @param array<string,string> $preview_regions @param list<int> $preview_path */
+	private function block( RenderBlock $block, array $preview_regions = [], array $preview_path = [] ): string {
+		$preview_region = [] === $preview_path ? null : ( $preview_regions[ self::preview_path_key( $preview_path ) ] ?? null );
 		$region_attribute = null === $preview_region ? '' : ' data-cb-flow-preview-region="' . self::escape( $preview_region ) . '"';
 		if ( 'page_footer' === $block->type() ) {
 			/** @var array{left_text:string,page_label:string,show_page_number:bool} $footer */
@@ -215,7 +217,11 @@ final class HtmlRenderer {
 		if ( 'container' === $block->type() ) {
 			/** @var list<RenderBlock> $children */
 			$children = $block->payload();
-			return $open . implode( '', array_map( fn ( RenderBlock $child ): string => $this->block( $child ), $children ) ) . '</div>';
+			$html = $open;
+			foreach ( $children as $child_index => $child ) {
+				$html .= $this->block( $child, $preview_regions, [ ...$preview_path, $child_index ] );
+			}
+			return $html . '</div>';
 		}
 
 		if ( 'columns' === $block->type() ) {
@@ -227,8 +233,12 @@ final class HtmlRenderer {
 				$html .= '<col style="width:' . self::number( $width ) . '%">';
 			}
 			$html .= '</colgroup><tbody><tr>';
-			foreach ( $composition['columns'] as $column ) {
-				$html .= '<td>' . implode( '', array_map( fn ( RenderBlock $child ): string => $this->block( $child ), $column ) ) . '</td>';
+			foreach ( $composition['columns'] as $column_index => $column ) {
+				$html .= '<td>';
+				foreach ( $column as $child_index => $child ) {
+					$html .= $this->block( $child, $preview_regions, [ ...$preview_path, $column_index, $child_index ] );
+				}
+				$html .= '</td>';
 			}
 			return $html . '</tr></tbody></table></div>';
 		}
@@ -270,31 +280,94 @@ final class HtmlRenderer {
 		throw new \InvalidArgumentException( 'Unsupported Flow render block type.' );
 	}
 
-	/** @param array<string,list<int>> $regions @return array<int,string> */
-	private function preview_region_index( array $regions, int $block_count ): array {
+	/**
+	 * @param array<string,list<int|list<int>>> $regions
+	 * @param list<RenderBlock> $blocks
+	 * @return array<string,string>
+	 */
+	private function preview_region_paths( array $regions, array $blocks ): array {
 		if ( count( $regions ) > 100 ) {
 			throw new \InvalidArgumentException( 'Flow preview region count exceeds the supported limit.' );
 		}
 
-		$index_to_region = [];
-		foreach ( $regions as $region => $indexes ) {
+		$path_to_region = [];
+		foreach ( $regions as $region => $entries ) {
 			if ( ! is_string( $region ) || 1 !== preg_match( '/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/', $region ) ) {
 				throw new \InvalidArgumentException( 'Flow preview region IDs must be bounded semantic identifiers.' );
 			}
-			if ( ! is_array( $indexes ) || ! array_is_list( $indexes ) || [] === $indexes ) {
-				throw new \InvalidArgumentException( 'Every Flow preview region requires a non-empty ordered block-index list.' );
+			if ( ! is_array( $entries ) || ! array_is_list( $entries ) || [] === $entries ) {
+				throw new \InvalidArgumentException( 'Every Flow preview region requires one or more ordered render paths.' );
 			}
-			foreach ( $indexes as $index ) {
-				if ( ! is_int( $index ) || $index < 0 || $index >= $block_count ) {
-					throw new \InvalidArgumentException( 'Flow preview region block index is outside the rendered block range.' );
+
+			foreach ( $entries as $entry ) {
+				$path = is_int( $entry ) ? [ $entry ] : $entry;
+				if ( ! is_array( $path ) || ! array_is_list( $path ) || [] === $path || count( $path ) > 64 ) {
+					throw new \InvalidArgumentException( 'Flow preview paths must be bounded non-empty integer lists.' );
 				}
-				if ( array_key_exists( $index, $index_to_region ) ) {
-					throw new \InvalidArgumentException( 'A top-level Flow preview block may belong to only one semantic region.' );
+				foreach ( $path as $index ) {
+					if ( ! is_int( $index ) || $index < 0 ) {
+						throw new \InvalidArgumentException( 'Flow preview paths accept non-negative integer indexes only.' );
+					}
 				}
-				$index_to_region[ $index ] = $region;
+				if ( ! $this->preview_path_exists( $blocks, $path ) ) {
+					throw new \InvalidArgumentException( 'Flow preview path is outside the rendered block tree.' );
+				}
+
+				$key = self::preview_path_key( $path );
+				if ( array_key_exists( $key, $path_to_region ) ) {
+					throw new \InvalidArgumentException( 'A Flow preview render path may belong to only one semantic region.' );
+				}
+				$path_to_region[ $key ] = $region;
 			}
 		}
-		return $index_to_region;
+		return $path_to_region;
+	}
+
+	/** @param list<RenderBlock> $blocks @param list<int> $path */
+	private function preview_path_exists( array $blocks, array $path ): bool {
+		$top_index = $path[0] ?? null;
+		if ( ! is_int( $top_index ) || ! isset( $blocks[ $top_index ] ) ) {
+			return false;
+		}
+
+		$block = $blocks[ $top_index ];
+		$offset = 1;
+		$length = count( $path );
+		while ( $offset < $length ) {
+			if ( 'container' === $block->type() ) {
+				/** @var list<RenderBlock> $children */
+				$children = $block->payload();
+				$child_index = $path[ $offset++ ];
+				if ( ! isset( $children[ $child_index ] ) ) {
+					return false;
+				}
+				$block = $children[ $child_index ];
+				continue;
+			}
+
+			if ( 'columns' === $block->type() ) {
+				if ( $offset + 1 >= $length ) {
+					return false;
+				}
+				/** @var array{columns:list<list<RenderBlock>>,weights:list<float>} $composition */
+				$composition = $block->payload();
+				$column_index = $path[ $offset++ ];
+				$child_index = $path[ $offset++ ];
+				if ( ! isset( $composition['columns'][ $column_index ][ $child_index ] ) ) {
+					return false;
+				}
+				$block = $composition['columns'][ $column_index ][ $child_index ];
+				continue;
+			}
+
+			return false;
+		}
+		return true;
+	}
+
+	/** @param list<int> $path */
+	private static function preview_path_key( array $path ): string {
+		return implode( '.', array_map( static fn ( int $index ): string => (string) $index, $path ) );
 	}
 
 	private function table_cell_style( ?TableColumn $column ): string {

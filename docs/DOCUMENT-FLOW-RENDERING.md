@@ -15,7 +15,7 @@ CB\Core\Design\Profile\Document\Flow\Api\FlowRenderApi
 Supported v1 methods:
 
 ```text
-FlowRenderApi::preview_html( $layout, $blocks, $locale, $presentation = null )
+FlowRenderApi::preview_html( $layout, $blocks, $locale, $presentation = null, $preview_regions = [] )
 FlowRenderApi::pdf( $layout, $blocks, $locale, $presentation = null )
 FlowRenderApi::is_pdf_available()
 ```
@@ -70,6 +70,18 @@ The screen target:
 - includes a restrictive Content Security Policy that permits only inline styles and validated data-URI images.
 
 The preview is a design representation, not paged-output authority. Consumers must not infer exact PDF page breaks, page counts or fixed-footer placement from `preview_html()`.
+
+The optional `$preview_regions` map is preview-only Designer metadata. Each semantic region maps to one or more Flow render paths. Existing integer entries remain top-level shorthand, while nested paths are ordered integer lists. A container consumes one child index; a columns block consumes a column index followed by a child index. For example:
+
+```php
+[
+    'title' => [ 0 ],
+    'nested-paragraph' => [ [ 1, 0 ] ],
+    'right-column-heading' => [ [ 2, 1, 0 ] ],
+]
+```
+
+Every referenced path must resolve to an existing typed `RenderBlock`, and one render path may belong to only one semantic region. Invalid or duplicate paths fail closed. Region metadata is never emitted by paged HTML/PDF rendering.
 
 For browser embedding, consumers should place the returned complete document in an isolated `iframe` using `srcdoc` and a bare `sandbox` attribute. Consumers should not add `allow-scripts`, `allow-same-origin`, remote-resource permissions or other capabilities that the Flow preview does not require.
 
