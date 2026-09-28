@@ -146,6 +146,24 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'data-cb-design-shell-viewport="mobile"', $template );
 	}
 
+	public function test_mail_designer_uses_canonical_layers_and_selection_lifecycle(): void {
+		$root = dirname( __DIR__, 2 );
+		$feature = (string) file_get_contents( $root . '/assets/js/features/mail-designer.js' );
+
+		self::assertStringContainsString( 'createDesignerLayerRow', $feature );
+		self::assertStringContainsString( 'createDesignerSelectionController', $feature );
+		self::assertStringContainsString( 'renderLayers: renderStructure', $feature );
+		self::assertStringContainsString( 'renderInspector,', $feature );
+		self::assertStringContainsString( 'syncCanvas: syncPreviewSelection', $feature );
+		self::assertStringContainsString( 'resetSelection: true', $feature );
+		self::assertStringContainsString( "remove: node.type !== 'mail.section'", $feature );
+		self::assertStringNotContainsString( 'renderSelectionViews', $feature );
+		self::assertStringNotContainsString( 'session.editorState.selection.select', $feature );
+		self::assertStringNotContainsString( 'session.editorState.selection.clear', $feature );
+		self::assertStringNotContainsString( 'decorateDesignerControl', $feature );
+		self::assertStringNotContainsString( "remove.textContent = 'Remove element';", $feature );
+	}
+
 	public function test_mail_designer_opts_into_shared_fullscreen_without_owning_fullscreen_runtime(): void {
 		$root = dirname( __DIR__, 2 );
 		$template = (string) file_get_contents( $root . '/templates/mail-designer.php' );

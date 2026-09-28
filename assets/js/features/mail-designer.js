@@ -1,4 +1,11 @@
-import { createDesignerShell, createSession, commands, profiles, decorateDesignerControl } from '@cb-core/design-editor';
+import {
+	commands,
+	createDesignerLayerRow,
+	createDesignerSelectionController,
+	createDesignerShell,
+	createSession,
+	profiles,
+} from '@cb-core/design-editor';
 
 const root = document.querySelector('[data-cb-mail-designer]');
 
@@ -52,6 +59,7 @@ if (root) {
 	let previewController = null;
 	let dragPath = null;
 	let shell = null;
+	let selectionController = null;
 	let contextHydrating = false;
 
 	const pathKey = (path) => JSON.stringify(Array.isArray(path) ? path : []);
@@ -119,26 +127,12 @@ if (root) {
 	const syncPreviewSelection = () => {
 		const doc = preview.contentDocument;
 		if (!doc) return;
-		const selected = session.editorState.selection.primary();
+		const selected = session.selection().primary;
 		doc.querySelectorAll('[data-cb-mail-editor-node]').forEach((marker) => {
 			const path = markerPath(marker);
 			if (selected && path && samePath(path, selected)) marker.dataset.cbMailSelected = 'true';
 			else delete marker.dataset.cbMailSelected;
 		});
-	};
-
-	const renderSelectionViews = ({ openInspector = false } = {}) => {
-		renderStructure();
-		renderInspector();
-		syncPreviewSelection();
-		if (openInspector) shell?.activatePanel('inspector');
-	};
-
-	const selectPath = (path, { openInspector = true } = {}) => {
-		if (!Array.isArray(path) || !nodeAt(session.project(), path)) return false;
-		session.editorState.selection.select(path);
-		renderSelectionViews({ openInspector });
-		return true;
 	};
 
 	const bindPreviewInteractions = () => {
@@ -153,7 +147,7 @@ if (root) {
 			if (!path) return;
 			event.preventDefault();
 			event.stopPropagation();
-			selectPath(path);
+			selectionController?.select(path);
 		}, true);
 
 		doc.addEventListener('pointermove', (event) => {
@@ -319,14 +313,14 @@ if (root) {
 
 	const renderInspector = () => {
 		inspector.replaceChildren();
-		const selectedPath = session.editorState.selection.primary();
+		const selectedPath = session.selection().primary;
 		if (!selectedPath) {
 			const heading = document.createElement('h3');
 			heading.className = 'cb-core-design-shell__panel-section-title';
 			heading.textContent = 'Element inspector';
 			const description = document.createElement('p');
 			description.className = 'cb-core-design-shell__panel-section-description';
-			description.textContent = 'Select an element on the canvas or in Structure to edit it.';
+			description.textContent = 'Select an element on the canvas or in Layers to edit it.';
 			inspector.append(heading, description);
 			return;
 		}
@@ -351,21 +345,6 @@ if (root) {
 			inspector.append(description);
 		}
 
-		if (node.type !== 'mail.section') {
-			const remove = document.createElement('button');
-			remove.type = 'button';
-			remove.className = 'button cb-core-button';
-			remove.textContent = 'Remove element';
-			remove.addEventListener('click', () => {
-				session.execute(commands.removeNode(selectedPath));
-				session.editorState.selection.clear();
-				renderSelectionViews();
-			});
-			const actions = document.createElement('div');
-			actions.className = 'cb-core-design-shell__panel-actions';
-			actions.append(remove);
-			inspector.append(actions);
-		}
 	};
 
 	const nodeSummary = (node, definition) => {
@@ -385,42 +364,32 @@ if (root) {
 	};
 
 	const createStructureRow = (node, path, depth, siblingCount) => {
-		const row = document.createElement('div');
-		row.className = 'cb-core-design-shell__layer-row';
-		row.style.setProperty('--cb-design-layer-depth', String(depth));
-		row.draggable = path.length > 0;
-		if (samePath(path, session.editorState.selection.primary())) row.classList.add('is-selected');
-
-		const select = document.createElement('button');
-		select.type = 'button';
-		select.className = 'cb-core-design-shell__layer-select';
 		const definition = definitionForNode(node);
-		const label = document.createElement('span');
-		label.className = 'cb-core-design-shell__layer-label';
-		label.textContent = definition?.label || (node.type === 'mail.section' ? 'Section' : node.type || 'Element');
-		const meta = document.createElement('span');
-		meta.className = 'cb-core-design-shell__layer-meta';
-		meta.textContent = nodeSummary(node, definition);
-		select.append(label, meta);
-		select.addEventListener('click', () => selectPath(path));
-
-		const actions = document.createElement('div');
-		actions.className = 'cb-core-design-shell__layer-actions';
 		const index = path.at(-1);
-		const addMoveButton = (icon, targetIndex, disabled, ariaLabel) => {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.className = 'button cb-core-button cb-core-design-shell__layer-action';
-			button.textContent = ariaLabel;
-			button.disabled = disabled;
-			decorateDesignerControl(button, icon, { iconOnly: true, label: ariaLabel });
-			button.addEventListener('click', () => moveNode(path, targetIndex));
-			actions.append(button);
-		};
-		if (path.length > 0 && Number.isInteger(index)) {
-			addMoveButton('arrow-up', Math.max(0, index - 1), index === 0, 'Move element up');
-			addMoveButton('arrow-down', Math.min(siblingCount - 1, index + 1), index === siblingCount - 1, 'Move element down');
-		}
+		const canMove = path.length > 0 && Number.isInteger(index);
+		const layer = createDesignerLayerRow({
+			documentRef: document,
+			label: definition?.label || (node.type === 'mail.section' ? 'Section' : node.type || 'Element'),
+			meta: nodeSummary(node, definition),
+			depth,
+			selected: samePath(path, session.selection().primary),
+			onSelect: () => selectionController?.select(path),
+			actions: {
+				moveUp: canMove ? {
+					disabled: index === 0,
+					onActivate: () => moveNode(path, Math.max(0, index - 1)),
+				} : false,
+				moveDown: canMove ? {
+					disabled: index === siblingCount - 1,
+					onActivate: () => moveNode(path, Math.min(siblingCount - 1, index + 1)),
+				} : false,
+				remove: node.type !== 'mail.section'
+					? () => session.execute(commands.removeNode(path))
+					: false,
+			},
+		});
+		const row = layer.row;
+		row.draggable = path.length > 0;
 
 		row.addEventListener('dragstart', (event) => {
 			dragPath = [...path];
@@ -446,7 +415,6 @@ if (root) {
 		});
 		row.addEventListener('dragend', () => { dragPath = null; });
 
-		row.append(select, actions);
 		return row;
 	};
 
@@ -493,6 +461,13 @@ if (root) {
 	shell = createDesignerShell(shellRoot, {
 		session,
 		defaultPanel: 'email',
+	});
+	selectionController = createDesignerSelectionController({
+		session,
+		shell,
+		renderLayers: renderStructure,
+		renderInspector,
+		syncCanvas: syncPreviewSelection,
 	});
 
 	const templateIdFields = Array.from(root.querySelectorAll('input[name="template_id"]'));
@@ -549,11 +524,9 @@ if (root) {
 		templateIdFields.forEach((field) => { field.value = templateId; });
 		subjectField.value = data.subject;
 		projectField.value = JSON.stringify(data.project);
-		session.editorState.selection.clear();
-
 		contextHydrating = true;
 		try {
-			session.replace(data.project, { source: 'context-switch' });
+			session.replace(data.project, { source: 'context-switch', resetSelection: true });
 		} finally {
 			contextHydrating = false;
 		}
@@ -579,8 +552,6 @@ if (root) {
 			if (!definition || !section) return;
 			const newIndex = section.node.children.length;
 			session.execute(commands.insertNode([section.index], newIndex, makeNode(definition)));
-			session.editorState.selection.select([section.index, newIndex]);
-			renderSelectionViews({ openInspector: true });
 		});
 	});
 
@@ -618,12 +589,11 @@ if (root) {
 
 	window.addEventListener('beforeunload', () => {
 		previewController?.abort();
+		selectionController?.destroy();
 		session.dispose();
 	}, { once: true });
 
 	renderEmailInspector();
-	renderStructure();
-	renderInspector();
 	updateSerializedProject();
 	shell.syncHistory();
 	if (preview.contentDocument?.readyState === 'complete') bindPreviewInteractions();
