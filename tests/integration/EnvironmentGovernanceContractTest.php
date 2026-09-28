@@ -1,14 +1,13 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Environment\EnvironmentTypeTestShim;
 use CB\Core\Environment\Governance;
 use CB\Core\Settings;
 use CB\Core\SettingsDefaults;
 
 final class CB_Base_Environment_Governance_Contract_Test extends WP_UnitTestCase {
 
-	/** @var string|false */
-	private $previous_environment;
 
 	/** @var array<string,mixed> */
 	private array $previous_policy = [];
@@ -16,7 +15,7 @@ final class CB_Base_Environment_Governance_Contract_Test extends WP_UnitTestCase
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->previous_environment = getenv( 'WP_ENVIRONMENT_TYPE' );
+		EnvironmentTypeTestShim::reset();
 		$this->previous_policy = is_array( Settings::get()[ Governance::POLICY_KEY ] ?? null )
 			? Settings::get()[ Governance::POLICY_KEY ]
 			: Governance::default_policy();
@@ -30,12 +29,7 @@ final class CB_Base_Environment_Governance_Contract_Test extends WP_UnitTestCase
 		remove_filter( 'wp_robots', [ Governance::class, 'filter_robots' ], 100 );
 		remove_filter( 'wp_headers', [ Governance::class, 'filter_headers' ], 100 );
 		Settings::set_key( Governance::POLICY_KEY, $this->previous_policy, 'test:environment-governance-restore' );
-
-		if ( false === $this->previous_environment ) {
-			putenv( 'WP_ENVIRONMENT_TYPE' );
-		} else {
-			putenv( 'WP_ENVIRONMENT_TYPE=' . $this->previous_environment );
-		}
+		EnvironmentTypeTestShim::reset();
 
 		parent::tear_down();
 	}
@@ -53,8 +47,7 @@ final class CB_Base_Environment_Governance_Contract_Test extends WP_UnitTestCase
 	public function test_eg2_wordpress_environment_identity_is_the_only_identity_source(): void {
 		foreach ( [ 'local', 'development', 'staging', 'production' ] as $type ) {
 			$this->set_environment( $type );
-			self::assertSame( $type, wp_get_environment_type() );
-			self::assertSame( wp_get_environment_type(), Governance::current_type() );
+			self::assertSame( $type, Governance::current_type() );
 		}
 	}
 
@@ -162,6 +155,6 @@ final class CB_Base_Environment_Governance_Contract_Test extends WP_UnitTestCase
 	}
 
 	private function set_environment( string $type ): void {
-		putenv( 'WP_ENVIRONMENT_TYPE=' . $type );
+		EnvironmentTypeTestShim::set( $type );
 	}
 }

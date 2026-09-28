@@ -18,6 +18,7 @@ if ( ! is_file( $plugin_file ) ) {
 }
 
 require_once $root . '/vendor/autoload.php';
+require_once $root . '/tests/fixtures/EnvironmentTypeTestShim.php';
 
 if ( ! defined( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' ) ) {
     define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', $root . '/vendor/yoast/phpunit-polyfills' );

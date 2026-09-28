@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Environment\EnvironmentTypeTestShim;
 use CB\Core\Environment\Governance;
 use CB\Core\Profiles\ApplyLock;
 use CB\Core\Profiles\Diff;
@@ -49,8 +50,6 @@ final class CB_Profiles_Environment_Governance_Failing_Section implements Sectio
 
 final class CB_Base_Environment_Governance_Profiles_Contract_Test extends WP_UnitTestCase {
 
-	/** @var string|false */
-	private $previous_environment;
 
 	/** @var array{protect_search_indexing:bool} */
 	private array $previous_policy = [];
@@ -60,7 +59,7 @@ final class CB_Base_Environment_Governance_Profiles_Contract_Test extends WP_Uni
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->previous_environment = getenv( 'WP_ENVIRONMENT_TYPE' );
+		EnvironmentTypeTestShim::reset();
 		$this->previous_policy = Governance::policy();
 		$this->previous_access_mode = AccessMode::current();
 
@@ -79,12 +78,7 @@ final class CB_Base_Environment_Governance_Profiles_Contract_Test extends WP_Uni
 		AccessModeState::persist_mode( $this->previous_access_mode );
 		remove_filter( 'wp_robots', [ Governance::class, 'filter_robots' ], 100 );
 		remove_filter( 'wp_headers', [ Governance::class, 'filter_headers' ], 100 );
-
-		if ( false === $this->previous_environment ) {
-			putenv( 'WP_ENVIRONMENT_TYPE' );
-		} else {
-			putenv( 'WP_ENVIRONMENT_TYPE=' . $this->previous_environment );
-		}
+		EnvironmentTypeTestShim::reset();
 
 		parent::tear_down();
 	}
@@ -290,6 +284,6 @@ final class CB_Base_Environment_Governance_Profiles_Contract_Test extends WP_Uni
 	}
 
 	private function set_environment( string $type ): void {
-		putenv( 'WP_ENVIRONMENT_TYPE=' . $type );
+		EnvironmentTypeTestShim::set( $type );
 	}
 }

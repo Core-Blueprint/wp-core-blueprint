@@ -5,7 +5,9 @@ use CB\Core\Admin\Pages\Safeguards;
 use CB\Core\Admin\ScreenAssetRegistry;
 use CB\Core\Admin\ScreenContext;
 use CB\Core\Environment\Admin as EnvironmentAdmin;
+use CB\Core\Environment\EnvironmentTypeTestShim;
 use CB\Core\Environment\Governance;
+use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Settings;
 
 final class CB_Base_Environment_Governance_Admin_Contract_Test extends WP_UnitTestCase {
@@ -13,8 +15,6 @@ final class CB_Base_Environment_Governance_Admin_Contract_Test extends WP_UnitTe
 	/** @var array<string,mixed> */
 	private array $original_get = [];
 
-	/** @var string|false */
-	private $previous_environment;
 
 	/** @var array<string,mixed> */
 	private array $previous_policy = [];
@@ -23,13 +23,17 @@ final class CB_Base_Environment_Governance_Admin_Contract_Test extends WP_UnitTe
 		parent::set_up();
 
 		$this->original_get = $_GET;
-		$this->previous_environment = getenv( 'WP_ENVIRONMENT_TYPE' );
+		EnvironmentTypeTestShim::reset();
 		$this->previous_policy = is_array( Settings::get()[ Governance::POLICY_KEY ] ?? null )
 			? Settings::get()[ Governance::POLICY_KEY ]
 			: Governance::default_policy();
 
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'environment-governance-admin-fixture' ) );
 		wp_set_current_user( $user_id );
+		self::assertTrue( current_user_can( 'manage_options' ) );
 	}
 
 	public function tear_down(): void {
@@ -38,12 +42,7 @@ final class CB_Base_Environment_Governance_Admin_Contract_Test extends WP_UnitTe
 		Settings::set_key( Governance::POLICY_KEY, $this->previous_policy, 'test:environment-governance-admin-restore' );
 		$_GET = $this->original_get;
 		wp_set_current_user( 0 );
-
-		if ( false === $this->previous_environment ) {
-			putenv( 'WP_ENVIRONMENT_TYPE' );
-		} else {
-			putenv( 'WP_ENVIRONMENT_TYPE=' . $this->previous_environment );
-		}
+		EnvironmentTypeTestShim::reset();
 
 		$GLOBALS['current_screen'] = null;
 		parent::tear_down();
@@ -140,6 +139,6 @@ final class CB_Base_Environment_Governance_Admin_Contract_Test extends WP_UnitTe
 	}
 
 	private function set_environment( string $type ): void {
-		putenv( 'WP_ENVIRONMENT_TYPE=' . $type );
+		EnvironmentTypeTestShim::set( $type );
 	}
 }
