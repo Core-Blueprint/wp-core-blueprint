@@ -108,7 +108,9 @@ test('shared Designer Shell owns reusable viewport controls independently of Mai
 test('mail designer uses the canonical live preview as its editable canvas', async () => {
 	const source = await readFile(new URL('../../assets/js/features/mail-designer.js', import.meta.url), 'utf8');
 	assert.match(source, /\[data-cb-mail-editor-node\]/);
-	assert.match(source, /session\.editorState\.selection\.select/);
+	assert.match(source, /createDesignerSelectionController/);
+	assert.match(source, /selectionController\?\.select\(path\)/);
+	assert.doesNotMatch(source, /session\.editorState\.selection\./);
 	assert.match(source, /data-cb-mail-structure/);
 	assert.match(source, /bindPreviewInteractions/);
 	assert.doesNotMatch(source, /\[data-cb-mail-canvas\]/);
@@ -132,8 +134,10 @@ test('mail designer consumes the shared Designer Shell instead of owning shell c
 	const source = await readFile(new URL('../../assets/js/features/mail-designer.js', import.meta.url), 'utf8');
 	assert.match(source, /createDesignerShell/);
 	assert.match(source, /shell\s*=\s*createDesignerShell/);
-	assert.match(source, /shell\?\.activatePanel\(['"]inspector['"]\)/);
+	assert.match(source, /createDesignerSelectionController/);
+	assert.match(source, /selectionController\s*=\s*createDesignerSelectionController/);
 	assert.match(source, /shell\?\.syncHistory\(\)/);
+	assert.doesNotMatch(source, /shell\?\.activatePanel\(['"]inspector['"]\)/);
 	assert.doesNotMatch(source, /data-cb-mail-side-tab/);
 	assert.doesNotMatch(source, /updateHistoryButtons/);
 });

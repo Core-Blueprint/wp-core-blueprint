@@ -7,6 +7,8 @@ import { after, before, test } from 'node:test';
 
 const shellSource = new URL('../../assets/js/design/shell/index.js', import.meta.url);
 const iconsSource = new URL('../../assets/js/design/shell/icons.js', import.meta.url);
+const layersSource = new URL('../../assets/js/design/shell/layers.js', import.meta.url);
+const selectionControllerSource = new URL('../../assets/js/design/shell/selection-controller.js', import.meta.url);
 const launchSource = new URL('../../assets/js/features/designer-launch.js', import.meta.url);
 const shellCss = new URL('../../assets/css/design/editor-shell.css', import.meta.url);
 let tempDirectory;
@@ -183,9 +185,13 @@ before(async () => {
 	tempDirectory = await mkdtemp(join(tmpdir(), 'cb-design-shell-fullscreen-'));
 	const source = await readFile(shellSource, 'utf8');
 	const iconSource = await readFile(iconsSource, 'utf8');
+	const layerSource = await readFile(layersSource, 'utf8');
+	const selectionSource = await readFile(selectionControllerSource, 'utf8');
 	const modulePath = join(tempDirectory, 'shell.mjs');
 	await writeFile(join(tempDirectory, 'package.json'), '{"type":"module"}\n');
 	await writeFile(join(tempDirectory, 'icons.js'), iconSource);
+	await writeFile(join(tempDirectory, 'layers.js'), layerSource);
+	await writeFile(join(tempDirectory, 'selection-controller.js'), selectionSource);
 	await writeFile(modulePath, source);
 
 	globalThis.document = new FakeDocument();
