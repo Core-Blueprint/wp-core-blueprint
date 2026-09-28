@@ -188,6 +188,15 @@ body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-to
 	gap: var(--cb-space-3);
 }
 
+/* Object Picker results stay in flow inside compact disclosures so the
+ * disclosure's intentional overflow clipping can never cut off search results. */
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__audience .cb-core-object-picker__results,
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-toolbar-item .cb-core-object-picker__results {
+	position: static;
+	width: 100%;
+	margin-top: 0;
+}
+
 @media (max-width: 782px) {
 	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row {
 		grid-template-columns: 30px minmax(0, 1fr);
