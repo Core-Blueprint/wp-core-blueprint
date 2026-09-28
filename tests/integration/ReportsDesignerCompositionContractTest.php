@@ -45,6 +45,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'MaintenanceFlowCompiler', $preview );
 		self::assertStringContainsString( 'MaintenanceFlowBranding::resolve_values', $preview );
 		self::assertStringContainsString( 'FlowRenderApi::preview_html(', $preview );
+		self::assertStringContainsString( "\$document['preview_regions']", $preview );
 		self::assertStringNotContainsString( 'new HtmlRenderer', $preview );
 		self::assertStringContainsString( 'Storage::find_recent( 1 )', $preview );
 		self::assertStringContainsString( 'MaintenanceAggregator::SNAPSHOT_VERSION', $preview );
@@ -70,6 +71,8 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringStartsWith( '<!doctype html>', $html );
 		self::assertStringContainsString( 'Maintenance Report', $html );
 		self::assertStringContainsString( 'cb-flow-block', $html );
+		self::assertStringContainsString( 'data-cb-flow-preview-region="header"', $html );
+		self::assertStringContainsString( 'data-cb-flow-preview-region="footer"', $html );
 	}
 
 	public function test_reports_template_is_a_thin_golden_designer_consumer(): void {

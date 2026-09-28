@@ -72,6 +72,16 @@ final class CB_Reports_Composer_Compiler_Test extends WP_UnitTestCase {
 			$types
 		);
 
+		self::assertSame(
+			[
+				BlockCatalog::HEADER => [ 0, 1 ],
+				BlockCatalog::NOTES  => [ 2, 3 ],
+				BlockCatalog::STATUS => [ 4 ],
+				BlockCatalog::FOOTER => [ 5 ],
+			],
+			$document['preview_regions']
+		);
+
 		/** @var array{columns:list<list<RenderBlock>>,weights:list<float>} $header */
 		$header = $document['blocks'][0]->payload();
 		self::assertSame( 'Brand marker', $header['columns'][0][0]->payload() );

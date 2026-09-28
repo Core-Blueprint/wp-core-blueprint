@@ -30,7 +30,7 @@ final class MaintenanceFlowCompiler {
 	 * @param array<string,mixed> $snapshot
 	 * @param array<string,mixed> $branding
 	 * @param array<string,mixed>|null $template Unsaved Designer template; null resolves persisted state.
-	 * @return array{layout:array<string,mixed>,blocks:list<RenderBlock>,locale:string,presentation:Presentation}
+	 * @return array{layout:array<string,mixed>,blocks:list<RenderBlock>,locale:string,presentation:Presentation,preview_regions:array<string,list<int>>}
 	 */
 	public function compile( array $report, array $snapshot, array $branding, string $locale, ?array $template = null ): array {
 		$this->assert_input( $report, $snapshot, $locale );
@@ -38,23 +38,31 @@ final class MaintenanceFlowCompiler {
 		$template = null === $template
 			? MaintenanceTemplate::current()
 			: MaintenanceTemplate::normalize( $template );
-		$blocks = [];
+		$blocks          = [];
+		$preview_regions = [];
 
 		foreach ( $template['blocks'] as $definition ) {
 			if ( empty( $definition['enabled'] ) ) {
 				continue;
 			}
-			$type = (string) ( $definition['type'] ?? '' );
-			foreach ( $this->compile_block( $type, $report, $snapshot, $branding ) as $block ) {
-				$blocks[] = $block;
+			$type     = (string) ( $definition['type'] ?? '' );
+			$compiled = $this->compile_block( $type, $report, $snapshot, $branding );
+			$indexes  = [];
+			foreach ( $compiled as $block ) {
+				$indexes[] = count( $blocks );
+				$blocks[]  = $block;
+			}
+			if ( [] !== $indexes ) {
+				$preview_regions[ $type ] = $indexes;
 			}
 		}
 
 		return [
-			'layout'       => self::layout(),
-			'blocks'       => $blocks,
-			'locale'       => $locale,
-			'presentation' => Presentation::from_accent( (string) ( $branding['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ) ),
+			'layout'          => self::layout(),
+			'blocks'          => $blocks,
+			'locale'          => $locale,
+			'presentation'    => Presentation::from_accent( (string) ( $branding['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ) ),
+			'preview_regions' => $preview_regions,
 		];
 	}
 

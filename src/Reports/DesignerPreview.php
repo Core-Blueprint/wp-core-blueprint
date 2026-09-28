@@ -47,7 +47,8 @@ final class DesignerPreview {
 			$document['layout'],
 			$document['blocks'],
 			$document['locale'],
-			$document['presentation']
+			$document['presentation'],
+			$document['preview_regions']
 		);
 	}
 
