@@ -149,6 +149,9 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'window.cbCore?.reorder', $script );
 		self::assertStringContainsString( 'reorderFoundation.enhance', $script );
 		self::assertStringContainsString( 'data-cb-admin-navigation-payload', $template );
+		self::assertStringContainsString( 'class="cb-core-admin-navigation-row"', $template );
+		self::assertStringContainsString( 'cb-core-disclosure--compact', $template );
+		self::assertStringNotContainsString( 'class="cb-core-panel"', $template );
 		self::assertStringContainsString( 'JSON.stringify(buildPolicy())', $script );
 		self::assertStringNotContainsString( 'jQuery', $script );
 		self::assertStringNotContainsString( '#adminmenu', $script );

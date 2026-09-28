@@ -35,6 +35,70 @@ body.core-blueprint_page_core-blueprint-preferences .cb-core-preferences-section
 }
 
 
+/* Preferences → Admin Navigation: the Reorder Foundation owns movement,
+ * while this feature owns compact row composition. Menu and Toolbar identities
+ * are settings rows, not standalone content panels. */
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--cb-space-3) var(--cb-space-4);
+	max-width: 920px;
+	padding: var(--cb-space-3) 0;
+	border-top: 1px solid var(--cb-border);
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row:last-child {
+	border-bottom: 1px solid var(--cb-border);
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > p,
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > details {
+	grid-column: 1 / -1;
+	margin: 0;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > p:first-child {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--cb-space-2);
+	color: var(--cb-text-strong);
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > p:first-child .button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	min-height: 34px;
+	padding: 0;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > p:first-child code {
+	font-size: var(--cb-fs-xs);
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > .cb-core-field {
+	max-width: none;
+	margin: 0;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row .cb-core-disclosure--compact {
+	max-width: 760px;
+	margin-top: 0;
+}
+
+@media (max-width: 782px) {
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > .cb-core-field {
+		grid-column: 1;
+	}
+}
+
+
 /* Shared Preferences scope control. Used by Language and Appearance when a
  * setting can be viewed/edited at personal or site-default scope. Geometry
  * lives here so individual tabs do not recreate the same segmented control. */

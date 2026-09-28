@@ -9,6 +9,7 @@ use CB\Core\AdminColumns\Runtime;
 use CB\Core\AdminColumns\SupportedScreen;
 use CB\Core\AdminColumns\TaxonomyColumns;
 use CB\Core\UI\Assets;
+use CB\Core\UI\FormComposition;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -29,6 +30,7 @@ final class ScreenSettings {
 		if ( ! current_user_can( 'manage_options' ) || ! SupportedScreen::is_supported( $screen ) ) {
 			return;
 		}
+		FormComposition::enqueue( FormComposition::PRESENTATION_WP_NATIVE );
 		Assets::enqueue_reorder( Assets::REORDER_PRESENTATION_WP_NATIVE );
 		wp_enqueue_style(
 			'cb-core-admin-columns',
@@ -103,6 +105,7 @@ final class ScreenSettings {
 			<h5><?php esc_html_e( 'Site-wide Admin Columns Governance', 'core-blueprint' ); ?></h5>
 			<p class="description"><?php esc_html_e( 'This Core Blueprint policy applies to this list screen site-wide. WordPress personal Screen Options remain independent for each user.', 'core-blueprint' ); ?></p>
 
+			<div class="cb-admin-columns-governance__content cb-core-stack">
 			<div class="cb-admin-columns-governance__editor" data-cb-core-reorder>
 				<div class="cb-admin-columns-governance__list" data-cb-core-reorder-list="columns" data-cb-core-reorder-list-label="<?php echo esc_attr__( 'Governed columns', 'core-blueprint' ); ?>">
 					<?php foreach ( $column_ids as $column_id ) :
@@ -126,7 +129,9 @@ final class ScreenSettings {
 								<input type="checkbox" data-column-visible <?php checked( ! $hidden ); ?> <?php disabled( $protected ); ?> />
 								<span><?php echo esc_html( $label ); ?></span>
 							</label>
-							<code><?php echo esc_html( $column_id ); ?></code>
+							<?php if ( $label !== $column_id ) : ?>
+								<code><?php echo esc_html( $column_id ); ?></code>
+							<?php endif; ?>
 						</div>
 					<?php endforeach; ?>
 				</div>
@@ -146,17 +151,19 @@ final class ScreenSettings {
 					<?php if ( [] === $meta_catalog ) : ?>
 						<p class="description"><?php esc_html_e( 'No supported registered scalar post meta is available for this post type.', 'core-blueprint' ); ?></p>
 					<?php else : foreach ( $meta_catalog as $meta_key => $entry ) : ?>
-						<label><input type="checkbox" data-source-toggle="meta" value="<?php echo esc_attr( $meta_key ); ?>" <?php checked( in_array( $meta_key, $policy['meta'], true ) ); ?> /> <?php echo esc_html( (string) $entry['label'] ); ?> <code><?php echo esc_html( $meta_key ); ?></code></label>
+						<?php $meta_label = (string) $entry['label']; ?>
+						<label><input type="checkbox" data-source-toggle="meta" value="<?php echo esc_attr( $meta_key ); ?>" <?php checked( in_array( $meta_key, $policy['meta'], true ) ); ?> /> <?php echo esc_html( $meta_label ); ?><?php if ( $meta_label !== (string) $meta_key ) : ?> <code><?php echo esc_html( $meta_key ); ?></code><?php endif; ?></label>
 					<?php endforeach; endif; ?>
 				</div>
 			</div>
 
 			<p class="description"><?php esc_html_e( 'Newly enabled additional columns appear after saving and reloading. Reopen Screen Options to position them.', 'core-blueprint' ); ?></p>
-			<div class="cb-admin-columns-governance__actions">
+			<div class="cb-admin-columns-governance__actions cb-core-form-actions">
 				<button type="button" class="button button-primary" data-admin-columns-save><?php esc_html_e( 'Save site-wide policy', 'core-blueprint' ); ?></button>
 				<button type="button" class="button" data-admin-columns-reset><?php esc_html_e( 'Reset this screen', 'core-blueprint' ); ?></button>
 				<span class="spinner" data-admin-columns-spinner></span>
 				<span class="cb-admin-columns-governance__status" role="status" aria-live="polite" data-admin-columns-status></span>
+			</div>
 			</div>
 		</div>
 		<?php

@@ -130,8 +130,15 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( 'data-cb-core-reorder', $html );
 		self::assertFalse( get_option( PolicyRepository::OPTION, false ), 'Presentation labels/discovery must not persist policy state.' );
 		ScreenSettings::enqueue();
+		self::assertTrue( wp_style_is( 'cb-core-css-form-composition-native', 'enqueued' ) );
 		self::assertTrue( wp_style_is( 'cb-core-css-reorder-native', 'enqueued' ) );
 		self::assertTrue( wp_style_is( 'cb-core-admin-columns', 'enqueued' ) );
+
+		$css = file_get_contents( CB_CORE_DIR . 'assets/css/features/admin-columns.css' );
+		self::assertIsString( $css );
+		self::assertStringContainsString( 'var(--cb-surface-1, #fff)', $css );
+		self::assertStringContainsString( 'var(--cb-border, #dcdcde)', $css );
+		self::assertStringNotContainsString( 'background: #fff;', $css );
 
 		$GLOBALS['pagenow'] = 'users.php';
 		set_current_screen( 'users' );

@@ -80,7 +80,7 @@ $audience_value = static function ( ?array $rule, string $key ): string {
 						$hidden  = is_array( $item['hidden'] ?? null ) ? $item['hidden'] : null;
 						?>
 						<article
-							class="cb-core-panel"
+							class="cb-core-admin-navigation-row"
 							data-cb-core-reorder-item="<?php echo esc_attr( $id ); ?>"
 							data-cb-core-reorder-label="<?php echo esc_attr( $label ); ?>"
 							data-cb-admin-navigation-menu-row
@@ -91,7 +91,9 @@ $audience_value = static function ( ?array $rule, string $key ): string {
 									<span class="dashicons dashicons-menu" aria-hidden="true"></span>
 								</button>
 								<strong><?php echo esc_html( $label ); ?></strong>
-								<code><?php echo esc_html( $id ); ?></code>
+								<?php if ( $label !== $id ) : ?>
+									<code><?php echo esc_html( $id ); ?></code>
+								<?php endif; ?>
 								<?php if ( ! $present ) : ?>
 									<span class="cb-core-state-badge cb-core-state-badge--neutral"><?php esc_html_e( 'Not present in this request', 'core-blueprint' ); ?></span>
 								<?php endif; ?>
@@ -102,17 +104,22 @@ $audience_value = static function ( ?array $rule, string $key ): string {
 									<?php esc_html_e( 'Hide this menu item when the audience matches', 'core-blueprint' ); ?>
 								</label>
 							</p>
-							<details>
-								<summary><?php esc_html_e( 'Audience', 'core-blueprint' ); ?></summary>
-								<div class="cb-core-field">
-									<label><?php esc_html_e( 'Role slugs', 'core-blueprint' ); ?></label>
-									<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $hidden, 'roles' ) ); ?>" data-cb-admin-navigation-hide-roles />
-									<p class="description"><?php esc_html_e( 'Comma-separated. Empty means every role.', 'core-blueprint' ); ?></p>
-								</div>
-								<div class="cb-core-field">
-									<label><?php esc_html_e( 'Capabilities', 'core-blueprint' ); ?></label>
-									<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $hidden, 'capabilities' ) ); ?>" data-cb-admin-navigation-hide-capabilities />
-									<p class="description"><?php esc_html_e( 'Comma-separated. Every listed capability must pass current_user_can().', 'core-blueprint' ); ?></p>
+							<details class="cb-core-disclosure cb-core-disclosure--compact">
+								<summary class="cb-core-disclosure__summary">
+									<span class="cb-core-disclosure__icon dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
+									<span class="cb-core-disclosure__title"><?php esc_html_e( 'Audience', 'core-blueprint' ); ?></span>
+								</summary>
+								<div class="cb-core-disclosure__body">
+									<div class="cb-core-field">
+										<label><?php esc_html_e( 'Role slugs', 'core-blueprint' ); ?></label>
+										<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $hidden, 'roles' ) ); ?>" data-cb-admin-navigation-hide-roles />
+										<p class="description"><?php esc_html_e( 'Comma-separated. Empty means every role.', 'core-blueprint' ); ?></p>
+									</div>
+									<div class="cb-core-field">
+										<label><?php esc_html_e( 'Capabilities', 'core-blueprint' ); ?></label>
+										<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $hidden, 'capabilities' ) ); ?>" data-cb-admin-navigation-hide-capabilities />
+										<p class="description"><?php esc_html_e( 'Comma-separated. Every listed capability must pass current_user_can().', 'core-blueprint' ); ?></p>
+									</div>
 								</div>
 							</details>
 						</article>
@@ -135,10 +142,12 @@ $audience_value = static function ( ?array $rule, string $key ): string {
 				$hidden  = is_array( $item['hidden'] ?? null ) ? $item['hidden'] : null;
 				$renamed = is_array( $item['renamed'] ?? null ) ? $item['renamed'] : null;
 				?>
-				<article class="cb-core-panel" data-cb-admin-navigation-toolbar-row data-navigation-id="<?php echo esc_attr( $id ); ?>">
+				<article class="cb-core-admin-navigation-row" data-cb-admin-navigation-toolbar-row data-navigation-id="<?php echo esc_attr( $id ); ?>">
 					<p>
 						<strong><?php echo esc_html( $label ); ?></strong>
-						<code><?php echo esc_html( $id ); ?></code>
+						<?php if ( $label !== $id ) : ?>
+							<code><?php echo esc_html( $id ); ?></code>
+						<?php endif; ?>
 						<?php if ( ! $present ) : ?>
 							<span class="cb-core-state-badge cb-core-state-badge--neutral"><?php esc_html_e( 'Not present in this request', 'core-blueprint' ); ?></span>
 						<?php endif; ?>

@@ -13,7 +13,7 @@ final class CB_Base_Admin_Navigation_Boundary_Contract_Test extends WP_UnitTestC
 
 		self::assertStringContainsString( "'floating-menu', 'admin-navigation', 'reports'", $screen_context );
 		self::assertSame( 1, substr_count( $asset_registry, "case 'admin-navigation':" ) );
-		self::assertStringContainsString( "'foundation.reorder', 'module.admin-navigation'", $asset_registry );
+		self::assertStringContainsString( "'component.interactive-surfaces', 'foundation.reorder', 'module.admin-navigation'", $asset_registry );
 		self::assertStringContainsString( "'@cb-core/admin-navigation' => static function", $modules );
 		self::assertStringContainsString( "'src'  => 'features/admin-navigation.js'", $modules );
 		self::assertStringContainsString( "'deps' => [ '@cb-core/reorder' ]", $modules );
