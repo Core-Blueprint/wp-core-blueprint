@@ -555,18 +555,16 @@ if (root) {
 		});
 	});
 
+	const clipboard = window.cbCore?.clipboard;
+	if (!clipboard || typeof clipboard.enhance !== 'function') {
+		throw new Error('Mail Designer could not initialize because the Clipboard Foundation is unavailable.');
+	}
 	root.querySelectorAll('[data-cb-mail-binding]').forEach((button) => {
-		button.addEventListener('click', async () => {
-			const token = button.dataset.cbMailBinding || '';
-			if (!token) return;
-			try {
-				await navigator.clipboard.writeText(token);
-				const previous = button.textContent;
-				button.textContent = 'Copied';
-				window.setTimeout(() => { button.textContent = previous; }, 900);
-			} catch (error) {
-				button.focus();
-			}
+		const token = button.dataset.cbMailBinding || '';
+		if (!token) return;
+		clipboard.enhance(button, {
+			text: token,
+			icon: false,
 		});
 	});
 

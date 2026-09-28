@@ -164,6 +164,23 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( "remove.textContent = 'Remove element';", $feature );
 	}
 
+	public function test_mail_designer_uses_shared_clipboard_feedback_without_mutating_token_labels(): void {
+		$root = dirname( __DIR__, 2 );
+		$feature = (string) file_get_contents( $root . '/assets/js/features/mail-designer.js' );
+		$assets = (string) file_get_contents( $root . '/src/Mail/Admin/DesignerAssets.php' );
+		$manifest = (string) file_get_contents( $root . '/src/Admin/ScreenAssetRegistry.php' );
+
+		self::assertStringContainsString( "window.cbCore?.clipboard", $feature );
+		self::assertStringContainsString( 'clipboard.enhance(button, {', $feature );
+		self::assertStringContainsString( 'text: token,', $feature );
+		self::assertStringContainsString( 'icon: false,', $feature );
+		self::assertStringNotContainsString( 'navigator.clipboard.writeText', $feature );
+		self::assertStringNotContainsString( "button.textContent = 'Copied';", $feature );
+		self::assertStringContainsString( "[ DesignEditorAssets::MODULE_ID, '@cb-core/clipboard' ]", $assets );
+		self::assertStringContainsString( "'templates' === \$tab", $manifest );
+		self::assertStringContainsString( "'foundation.clipboard'", $manifest );
+	}
+
 	public function test_mail_designer_opts_into_shared_fullscreen_without_owning_fullscreen_runtime(): void {
 		$root = dirname( __DIR__, 2 );
 		$template = (string) file_get_contents( $root . '/templates/mail-designer.php' );

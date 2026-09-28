@@ -211,6 +211,9 @@ final class ScreenAssetRegistry {
 		if ( 'logs' === $tab ) {
 			return array_merge( $items, [ 'component.meta', 'component.table-cols', 'foundation.modal', 'module.mail-log' ] );
 		}
+		if ( 'templates' === $tab ) {
+			return array_merge( $items, [ 'component.panels', 'foundation.clipboard', 'module.mail-settings' ] );
+		}
 		return array_merge( $items, [ 'component.panels', 'module.mail-settings' ] );
 	}
 
