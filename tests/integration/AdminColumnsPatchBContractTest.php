@@ -134,7 +134,9 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 		ScreenSettings::enqueue();
 		self::assertTrue( wp_style_is( 'cb-core-css-form-composition-native', 'enqueued' ) );
 		self::assertTrue( wp_style_is( 'cb-core-css-reorder-native', 'enqueued' ) );
+		self::assertTrue( wp_style_is( 'cb-core-css-icon-controls-native', 'enqueued' ) );
 		self::assertTrue( wp_style_is( 'cb-core-admin-columns', 'enqueued' ) );
+		self::assertStringContainsString( 'cb-core-icon-control cb-core-reorder-handle cb-admin-columns-governance__handle', $html );
 
 		$css = file_get_contents( CB_CORE_DIR . 'assets/css/features/admin-columns.css' );
 		self::assertIsString( $css );
@@ -142,7 +144,7 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( 'var(--cb-border, #dcdcde)', $css );
 		self::assertStringNotContainsString( 'background: #fff;', $css );
 		self::assertStringNotContainsString( 'cursor: move;', $css );
-		self::assertStringContainsString( '.cb-admin-columns-governance__handle .dashicons', $css );
+		self::assertStringNotContainsString( '.cb-admin-columns-governance__handle .dashicons', $css );
 
 		$GLOBALS['pagenow'] = 'users.php';
 		set_current_screen( 'users' );

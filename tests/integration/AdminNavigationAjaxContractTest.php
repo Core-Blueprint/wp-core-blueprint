@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use CB\Core\AdminNavigation\Admin as AdminNavigationAdmin;
+use CB\Core\AdminNavigation\Bootstrap as AdminNavigationBootstrap;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
 
 /**
@@ -11,6 +12,14 @@ use CB\Core\Permissions\PrivilegedAccessRegistry;
  */
 final class AdminNavigationAjaxContractTest extends WP_Ajax_UnitTestCase {
 
+	public function set_up(): void {
+		parent::set_up();
+
+		// WP_Ajax_UnitTestCase establishes WordPress' canonical Ajax context.
+		// Re-enter the product bootstrap boundary rather than registering Admin
+		// callbacks directly inside the test.
+		AdminNavigationBootstrap::boot();
+	}
 
 	public function tear_down(): void {
 		remove_role( 'cb_nav_picker_ajax' );

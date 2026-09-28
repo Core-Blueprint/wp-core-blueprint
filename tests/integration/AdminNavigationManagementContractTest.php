@@ -178,7 +178,7 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'reorderFoundation.enhance', $script );
 		self::assertStringContainsString( 'data-cb-admin-navigation-payload', $template );
 		self::assertStringContainsString( 'cb-core-admin-navigation-row--menu', $template );
-		self::assertStringContainsString( 'button-link cb-core-admin-navigation-row__drag', $template );
+		self::assertStringContainsString( 'button-link cb-core-icon-control cb-core-reorder-handle cb-core-admin-navigation-row__drag', $template );
 		self::assertStringContainsString( 'dashicons dashicons-move', $template );
 		self::assertStringNotContainsString( 'dashicons dashicons-menu', $template );
 		self::assertStringContainsString( 'data-cb-admin-navigation-hide-audience', $template );
