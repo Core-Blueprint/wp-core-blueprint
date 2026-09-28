@@ -20,7 +20,7 @@ const eventMeta = (metadata, fallbackAction) => {
 	const action = typeof metadata?.action === 'string' && metadata.action.trim()
 		? metadata.action.trim()
 		: fallbackAction;
-	return { source, action };
+	return { source, action, force: metadata?.force === true };
 };
 
 export class SelectionState {
@@ -73,18 +73,18 @@ export class SelectionState {
 		return this.#publishIfChanged(before, eventMeta(metadata, 'set'));
 	}
 
-	select(path, { additive = false, source = 'editor', action = 'select' } = {}) {
+	select(path, { additive = false, source = 'editor', action = 'select', force = false } = {}) {
 		const before = this.snapshot();
 		const normalized = normalizePath(path);
 		if (!additive) {
 			this.#paths = [normalized];
 			this.#primary = clonePath(normalized);
-			return this.#publishIfChanged(before, { source, action });
+			return this.#publishIfChanged(before, { source, action, force });
 		}
 		const key = pathKey(normalized);
 		if (!this.#paths.some((candidate) => pathKey(candidate) === key)) this.#paths.push(normalized);
 		this.#primary = clonePath(normalized);
-		return this.#publishIfChanged(before, { source, action });
+		return this.#publishIfChanged(before, { source, action, force });
 	}
 
 	remap(mapper, metadata = {}) {
@@ -166,11 +166,11 @@ export class SelectionState {
 
 	#publishIfChanged(before, metadata) {
 		const after = this.snapshot();
-		if (sameSnapshot(before, after)) return false;
+		const meta = eventMeta(metadata, 'change');
+		if (sameSnapshot(before, after) && !meta.force) return false;
 		if (this.#batchDepth > 0) return true;
 
 		this.#revision += 1;
-		const meta = eventMeta(metadata, 'change');
 		const event = Object.freeze({
 			revision: this.#revision,
 			source: meta.source,

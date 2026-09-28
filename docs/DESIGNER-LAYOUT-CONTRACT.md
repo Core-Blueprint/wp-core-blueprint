@@ -139,8 +139,8 @@ Standard row actions are ordered as move up, move down, remove. Move/remove cont
 
 ## Canonical selection lifecycle
 
-Selection is Base-owned session state. Every real selection mutation publishes one canonical change event with a revision, source and action. Command-driven remaps are batched so insert, remove and reorder expose only their final coherent selection state; undo and redo restore selection through the same lifecycle.
+Selection is Base-owned session state. Every real selection mutation publishes one canonical change event with a revision, source and action. Structural operations may also publish when the final path is unchanged but now identifies a different semantic node. Command-driven remaps are batched so insert, remove and reorder expose only their final coherent selection state; undo and redo restore selection through the same lifecycle.
 
 Consumers must not manually coordinate separate Layers, Inspector and canvas selection paths. They bind domain render adapters through the public Designer selection controller. Base invokes those adapters in deterministic order: Layers, Inspector, canvas. Explicit UI selection opens the canonical Inspector panel, and insertion of a newly selected element may do the same automatically.
 
-The session public boundary provides selection snapshots, validated `select()`, `clearSelection()` and `subscribeSelection()`. Project replacement reconciles selection against the new tree by default; a context switch may request `resetSelection: true` when selection must not carry across documents.
+The session public boundary provides selection snapshots, validated `select()`, `clearSelection()` and `subscribeSelection()`. Structural project changes are published only after their canonical selection has been remapped, so project and selection consumers observe one coherent editor state. Project replacement reconciles selection against the new tree by default; a context switch may request `resetSelection: true` when selection must not carry across documents.

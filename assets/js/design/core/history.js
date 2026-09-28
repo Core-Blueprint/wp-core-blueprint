@@ -55,16 +55,21 @@ export class CommandHistory {
 		}
 
 		const commandLabel = String(editorCommand.label || 'command');
+		const structuralSelection = typeof effect.remapSelection === 'function' || Array.isArray(effect.selectPath);
 		try {
-			this.#projectState.replace(effect.project, { source: 'command' });
-			this.#editorState.selection.batch({ source: 'command', action: commandLabel }, () => {
+			this.#editorState.selection.batch({
+				source: 'command',
+				action: commandLabel,
+				force: structuralSelection,
+			}, () => {
 				if (typeof effect.remapSelection === 'function') {
 					this.#editorState.selection.remap(effect.remapSelection);
 				}
 				if (Array.isArray(effect.selectPath)) {
 					this.#editorState.selection.select(effect.selectPath);
 				}
-				this.#editorState.reconcile(this.#projectState.current().root);
+				this.#editorState.reconcile(effect.project.root);
+				this.#projectState.replace(effect.project, { source: 'command' });
 			});
 		} catch (error) {
 			this.#projectState.replace(beforeProject, { source: 'history' });
@@ -88,8 +93,19 @@ export class CommandHistory {
 	undo() {
 		const entry = this.#undo.pop();
 		if (!entry) return false;
-		this.#projectState.replace(entry.beforeProject, { source: 'history' });
-		this.#editorState.restore(entry.beforeEditor, { source: 'history', action: 'undo' });
+		const currentProject = this.#projectState.snapshot();
+		const currentEditor = this.#editorState.snapshot();
+		try {
+			this.#editorState.selection.batch({ source: 'history', action: 'undo', force: true }, () => {
+				this.#editorState.restore(entry.beforeEditor, { source: 'history', action: 'undo' });
+				this.#projectState.replace(entry.beforeProject, { source: 'history' });
+			});
+		} catch (error) {
+			this.#projectState.replace(currentProject, { source: 'history' });
+			this.#editorState.restore(currentEditor, { source: 'history', action: 'rollback' });
+			this.#undo.push(entry);
+			throw error;
+		}
 		this.#redo.push(entry);
 		return true;
 	}
@@ -97,8 +113,19 @@ export class CommandHistory {
 	redo() {
 		const entry = this.#redo.pop();
 		if (!entry) return false;
-		this.#projectState.replace(entry.afterProject, { source: 'history' });
-		this.#editorState.restore(entry.afterEditor, { source: 'history', action: 'redo' });
+		const currentProject = this.#projectState.snapshot();
+		const currentEditor = this.#editorState.snapshot();
+		try {
+			this.#editorState.selection.batch({ source: 'history', action: 'redo', force: true }, () => {
+				this.#editorState.restore(entry.afterEditor, { source: 'history', action: 'redo' });
+				this.#projectState.replace(entry.afterProject, { source: 'history' });
+			});
+		} catch (error) {
+			this.#projectState.replace(currentProject, { source: 'history' });
+			this.#editorState.restore(currentEditor, { source: 'history', action: 'rollback' });
+			this.#redo.push(entry);
+			throw error;
+		}
 		this.#undo.push(entry);
 		return true;
 	}

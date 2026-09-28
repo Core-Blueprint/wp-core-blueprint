@@ -170,10 +170,15 @@ export const createSession = ({
 		replace(nextProject, options = {}) {
 			assertActive();
 			const source = String(options?.source || 'editor');
-			const next = projectState.replace(nextProject, { source });
-			editorState.selection.batch({ source: 'replace', action: source }, () => {
+			let next = null;
+			editorState.selection.batch({
+				source: 'replace',
+				action: source,
+				force: editorState.selection.paths().length > 0,
+			}, () => {
 				if (options?.resetSelection === true) editorState.selection.clear();
-				else editorState.reconcile(next.root);
+				else editorState.reconcile(nextProject?.root);
+				next = projectState.replace(nextProject, { source });
 			});
 			return next;
 		},

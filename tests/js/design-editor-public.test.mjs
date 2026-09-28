@@ -229,3 +229,42 @@ test('canonical selection controller synchronizes Layers Inspector and canvas an
 	controller.destroy();
 	session.dispose();
 });
+
+
+test('same-path insert still publishes semantic selection and keeps the controller synchronized', () => {
+	const session = publicEditor.createSession({ project: flowProject(), profile: 'document-flow' });
+	session.select([0]);
+	const changes = [];
+	session.subscribeSelection((snapshot, context) => changes.push({ snapshot, context }));
+
+	session.execute(publicEditor.insertNodeCommand([], 0, node('text', [], { value: { source: 'literal', text: 'Inserted first' } })));
+	assert.equal(changes.length, 1);
+	assert.equal(changes[0].context.event.source, 'command');
+	assert.equal(changes[0].context.event.action, 'insert-node');
+	assert.deepEqual(changes[0].snapshot.primary, [0]);
+	session.dispose();
+});
+
+test('project change consumers observe reconciled selection for structural commands and replacement', () => {
+	let session = null;
+	const observed = [];
+	session = publicEditor.createSession({
+		project: flowProject(),
+		profile: 'document-flow',
+		onChange: (project, context) => observed.push({
+			source: context.event.source,
+			count: project.root.children.length,
+			primary: session.selection().primary,
+		}),
+	});
+	session.select([0]);
+
+	session.execute(publicEditor.insertNodeCommand([], 0, node('text', [], { value: { source: 'literal', text: 'Inserted first' } })));
+	assert.deepEqual(observed[0], { source: 'command', count: 2, primary: [0] });
+
+	const replacement = flowProject();
+	replacement.root.children = [];
+	session.replace(replacement, { source: 'context-switch' });
+	assert.deepEqual(observed[1], { source: 'context-switch', count: 0, primary: null });
+	session.dispose();
+});

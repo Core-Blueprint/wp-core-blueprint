@@ -205,20 +205,27 @@ test('SelectionState publishes only real changes and batches compound selection 
 	assert.equal(events[0].event.source, 'ui');
 	assert.equal(events[0].event.action, 'select');
 
-	selection.batch({ source: 'command', action: 'insert-node' }, () => {
+	selection.batch({ source: 'fixture', action: 'no-op' }, () => {
+		selection.select([0]);
+	});
+	assert.equal(events.length, 1, 'A genuine no-op batch must not publish noise.');
+
+	selection.batch({ source: 'command', action: 'insert-node', force: true }, () => {
 		selection.remap((path) => [path[0] + 1]);
 		selection.select([0]);
 	});
-	assert.equal(events.length, 1, 'A batch with the same final selection must not publish noise.');
+	assert.equal(events.length, 2, 'Structural selection must publish when the same path now identifies a different node.');
+	assert.equal(events[1].event.action, 'insert-node');
+	assert.deepEqual(events[1].snapshot.primary, [0]);
 
 	selection.batch({ source: 'command', action: 'reorder-node' }, () => {
 		selection.remap((path) => [path[0] + 1]);
 		selection.reconcile(project().root);
 	});
-	assert.equal(events.length, 2);
-	assert.equal(events[1].event.source, 'command');
-	assert.equal(events[1].event.action, 'reorder-node');
-	assert.deepEqual(events[1].snapshot.primary, [1]);
+	assert.equal(events.length, 3);
+	assert.equal(events[2].event.source, 'command');
+	assert.equal(events[2].event.action, 'reorder-node');
+	assert.deepEqual(events[2].snapshot.primary, [1]);
 
 	const beforeFailure = selection.snapshot();
 	assert.throws(() => selection.batch({ source: 'command', action: 'failed' }, () => {
@@ -226,7 +233,7 @@ test('SelectionState publishes only real changes and batches compound selection 
 		throw new Error('selection failure');
 	}), /selection failure/);
 	assert.deepEqual(selection.snapshot(), beforeFailure);
-	assert.equal(events.length, 2, 'Failed batches must roll back without publishing transient selection.');
+	assert.equal(events.length, 3, 'Failed batches must roll back without publishing transient selection.');
 	unsubscribe();
 });
 
@@ -254,5 +261,38 @@ test('command history publishes one coherent final selection event for insert an
 	assert.equal(events.length, 3);
 	assert.equal(events[2].event.action, 'redo');
 	assert.deepEqual(events[2].snapshot.primary, [1]);
+	history.dispose();
+});
+
+
+test('structural project listeners observe the final remapped selection', () => {
+	const state = new core.ProjectState(project());
+	const editor = new core.EditorState();
+	editor.selection.select([0]);
+	const observed = [];
+	state.subscribe(() => observed.push(editor.selection.primary()));
+	const history = new core.CommandHistory(state, editor);
+
+	history.execute(core.reorderNodeCommand([], 0, 2));
+	assert.deepEqual(observed, [[2]]);
+	assert.deepEqual(editor.selection.primary(), [2]);
+	history.dispose();
+});
+
+test('undo and redo publish project changes with restored selection already active', () => {
+	const state = new core.ProjectState(project());
+	const editor = new core.EditorState();
+	editor.selection.select([0]);
+	const history = new core.CommandHistory(state, editor);
+	history.execute(core.reorderNodeCommand([], 0, 2));
+
+	const observed = [];
+	state.subscribe((event) => observed.push({ source: event.source, primary: editor.selection.primary() }));
+	assert.equal(history.undo(), true);
+	assert.equal(history.redo(), true);
+	assert.deepEqual(observed, [
+		{ source: 'history', primary: [0] },
+		{ source: 'history', primary: [2] },
+	]);
 	history.dispose();
 });
