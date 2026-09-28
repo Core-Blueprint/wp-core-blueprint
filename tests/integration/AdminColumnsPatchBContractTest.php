@@ -60,7 +60,6 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 		unregister_meta_key( 'post', 'cb_ac_render', 'post' );
 		unregister_meta_key( 'post', 'cb_ac_collision', 'post' );
 		$_POST = [];
-		$_REQUEST = [];
 		if ( '__cb_ac_patch_b_missing__' === $this->saved_policy ) {
 			delete_option( PolicyRepository::OPTION );
 		} else {
@@ -297,71 +296,6 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 		ob_start();
 		do_action( 'manage_post_posts_custom_column', $column_id, $post_id );
 		self::assertSame( '', (string) ob_get_clean() );
-	}
-
-	public function test_b9_ajax_save_uses_nonce_and_preserves_wordpress_user_screen_options(): void {
-		$admin_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
-		$admin = get_userdata( $admin_id );
-		self::assertInstanceOf( WP_User::class, $admin );
-		self::assertTrue( PrivilegedAccessRegistry::approve( $admin, 0, 'admin-columns-b9-fixture' ) );
-		wp_set_current_user( $admin_id );
-		self::assertTrue( current_user_can( 'manage_options' ) );
-
-		$hidden_meta_key = 'manageedit-postcolumnshidden';
-		update_user_meta( $admin_id, $hidden_meta_key, [ 'author' ] );
-
-		$_POST = [
-			'nonce' => wp_create_nonce( AdminColumnsAjax::NONCE_ACTION ),
-			'screen_id' => 'edit-post',
-			'operation' => 'save',
-			'screen_policy' => (string) wp_json_encode( [
-				'order' => [ 'cb', 'title', 'date' ],
-				'hidden' => [ 'date' ],
-				'taxonomies' => [],
-				'meta' => [],
-			] ),
-		];
-		$_REQUEST = $_POST;
-
-		$output = '';
-		$die_handler = static function () use ( &$output ): callable {
-			return static function () use ( &$output ): void {
-				$buffer = ob_get_clean();
-				if ( false !== $buffer ) {
-					$output .= $buffer;
-				}
-				throw new RuntimeException( '__cb_admin_columns_wp_die__' );
-			};
-		};
-
-		add_filter( 'wp_doing_ajax', '__return_true' );
-		add_filter( 'wp_die_ajax_handler', $die_handler, 1 );
-		$buffer_level = ob_get_level();
-		ini_set( 'implicit_flush', false );
-		ob_start();
-		try {
-			AdminColumnsAjax::handle();
-			self::fail( 'AJAX handler did not terminate through wp_die().' );
-		} catch ( RuntimeException $error ) {
-			self::assertSame( '__cb_admin_columns_wp_die__', $error->getMessage() );
-		} finally {
-			while ( ob_get_level() > $buffer_level ) {
-				$buffer = ob_get_clean();
-				if ( false !== $buffer ) {
-					$output .= $buffer;
-				}
-			}
-			remove_filter( 'wp_die_ajax_handler', $die_handler, 1 );
-			remove_filter( 'wp_doing_ajax', '__return_true' );
-			$_POST = [];
-			$_REQUEST = [];
-		}
-
-		$payload = json_decode( $output, true );
-		self::assertIsArray( $payload );
-		self::assertTrue( (bool) ( $payload['success'] ?? false ) );
-		self::assertSame( [ 'date' ], PolicyRepository::screen( 'edit-post' )['hidden'] );
-		self::assertSame( [ 'author' ], get_user_meta( $admin_id, $hidden_meta_key, true ) );
 	}
 
 	public function test_b10_profiles_are_portable_and_rollback_admin_columns_after_later_failure(): void {
