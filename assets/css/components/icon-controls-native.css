@@ -1,0 +1,100 @@
+/**
+ * WordPress-native adapter for canonical compact icon controls.
+ */
+.cb-core-icon-control {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	box-sizing: border-box;
+	width: 30px;
+	height: 30px;
+	min-width: 30px;
+	min-height: 30px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 2px;
+	box-shadow: none;
+	color: var(--cb-accent, #2271b1);
+	line-height: 1;
+	text-decoration: none;
+	user-select: none;
+	vertical-align: middle;
+}
+
+.cb-core-icon-control:hover:not(:disabled):not([aria-disabled="true"]) {
+	background: var(--cb-interactive-hover, #f0f0f1);
+	border-color: var(--cb-interactive-border-hover, #8c8f94);
+	box-shadow: none;
+	color: var(--cb-accent-strong, #135e96);
+	text-decoration: none;
+}
+
+.cb-core-icon-control:focus,
+.cb-core-icon-control:focus-visible {
+	background: var(--cb-surface-1, #fff);
+	border-color: var(--cb-interactive-focus, #2271b1);
+	box-shadow: none;
+	color: var(--cb-accent-strong, #135e96);
+	outline: 1px solid var(--cb-interactive-focus, #2271b1);
+	outline-offset: 1px;
+	text-decoration: none;
+}
+
+.cb-core-icon-control[aria-expanded="true"],
+.cb-core-icon-control[aria-pressed="true"],
+.cb-core-icon-control.is-active {
+	background: var(--cb-surface-2, #f6f7f7);
+	border-color: var(--cb-interactive-border-hover, #8c8f94);
+	color: var(--cb-accent-strong, #135e96);
+}
+
+.cb-core-icon-control:disabled,
+.cb-core-icon-control[aria-disabled="true"] {
+	cursor: default;
+	opacity: .45;
+}
+
+.cb-core-icon-control > .dashicons {
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	font-size: 18px;
+	line-height: 18px;
+}
+
+.cb-core-icon-control > .cb-core-icon {
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+}
+
+.cb-core-reorder-handle > .dashicons {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	line-height: 20px;
+}
+
+.cb-core-reorder-handle > .cb-core-icon {
+	width: 20px;
+	height: 20px;
+}
+
+.cb-core-disclosure-toggle > .dashicons,
+.cb-core-disclosure-toggle > .cb-core-icon {
+	transition: transform 140ms ease;
+}
+
+.cb-core-disclosure-toggle[aria-expanded="true"] > .dashicons,
+.cb-core-disclosure-toggle[aria-expanded="true"] > .cb-core-icon {
+	transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cb-core-disclosure-toggle > .dashicons,
+	.cb-core-disclosure-toggle > .cb-core-icon {
+		transition: none;
+	}
+}

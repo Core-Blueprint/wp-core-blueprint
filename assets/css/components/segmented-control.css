@@ -1,0 +1,63 @@
+/**
+ * Domain-neutral segmented single-choice/view control for Core Admin.
+ *
+ * Consumers own labels, selected value and behavior. The active state remains
+ * intentionally quieter than a primary action.
+ */
+.cb-core-segmented-control {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	box-sizing: border-box;
+	padding: 2px;
+	background: var(--cb-surface-2);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-sm);
+}
+
+.cb-core-segmented-control__option {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 30px;
+	padding: 4px 10px;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: calc(var(--cb-radius-sm) - 1px);
+	box-shadow: none;
+	color: var(--cb-text-muted);
+	font: inherit;
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-medium);
+	line-height: 1.2;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.cb-core-segmented-control__option:hover:not(:disabled):not([aria-disabled="true"]) {
+	background: var(--cb-interactive-hover);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-segmented-control__option.is-active,
+.cb-core-segmented-control__option[aria-checked="true"],
+.cb-core-segmented-control__option[aria-pressed="true"] {
+	background: var(--cb-surface-1);
+	border-color: var(--cb-interactive-border-hover);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-segmented-control__option:focus,
+.cb-core-segmented-control__option:focus-visible {
+	border-color: var(--cb-interactive-focus);
+	box-shadow: none;
+	outline: 1px solid var(--cb-interactive-focus);
+	outline-offset: 1px;
+}
+
+.cb-core-segmented-control__option:disabled,
+.cb-core-segmented-control__option[aria-disabled="true"] {
+	cursor: default;
+	opacity: .5;
+}

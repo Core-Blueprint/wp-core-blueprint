@@ -109,7 +109,7 @@ $render_audience_picker = static function ( ?array $rule, string $kind, string $
 						>
 							<button
 								type="button"
-								class="button-link cb-core-admin-navigation-row__drag"
+								class="button-link cb-core-icon-control cb-core-reorder-handle cb-core-admin-navigation-row__drag"
 								data-cb-core-reorder-handle
 								aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $label ) ); ?>"
 							>

@@ -21,10 +21,13 @@ Status: **public v1 freeze candidate**.
 | Icon Picker | `CB\Core\UI\Assets::enqueue_icon_picker()` | `@cb-core/icon-picker`, `window.cbCore.iconPicker` |
 | Capability Picker | `CB\Core\UI\Assets::enqueue_capability_picker()` | `@cb-core/capability-picker`, `window.cbCore.capabilityPicker` |
 | Choice Group | `CB\Core\UI\Assets::enqueue_choice_group()` | PHP/CSS primitive; no JavaScript runtime required |
+| Icon Control | `CB\Core\UI\Assets::enqueue_icon_controls()` | PHP/CSS primitive; no JavaScript runtime required |
 | Object Picker | `CB\Core\UI\Assets::enqueue_object_picker()` | `@cb-core/object-picker`, `window.cbCore.objectPicker` |
 | Select Picker | `CB\Core\UI\Assets::enqueue_select_picker()` | `@cb-core/select-picker`, `window.cbCore.selectPicker` |
 | Interactive Grid | `CB\Core\UI\Assets::enqueue_interactive_grid()` | PHP/CSS primitive; no JavaScript runtime required |
 | Reorder | `CB\Core\UI\Assets::enqueue_reorder()` | `@cb-core/reorder`, `window.cbCore.reorder` (Core API `1.1+`) |
+| Segmented Control | `CB\Core\UI\Assets::enqueue_segmented_control()` | PHP/CSS primitive; no JavaScript runtime required |
+| Status presentation | `CB\Core\UI\Assets::enqueue_status()` | PHP/CSS presentation for `CB\Core\UI\Status` |
 | Form Composition | `CB\Core\UI\FormComposition::enqueue()` | PHP/CSS primitive; no JavaScript runtime required |
 
 Consumers provide business meaning and exact values. Foundation owns generic behavior, accessibility and presentation adapters.

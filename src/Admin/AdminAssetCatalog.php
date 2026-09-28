@@ -253,10 +253,12 @@ final class AdminAssetCatalog {
 			'foundation.time-picker'       => 'time-picker',
 			'foundation.object-picker'     => 'object-picker',
 			'foundation.icon-picker'       => 'icon-picker',
+			'foundation.icon-control'      => 'icon-control',
 			'foundation.capability-picker' => 'capability-picker',
 			'foundation.select-picker'     => 'select-picker',
 			'foundation.interactive-grid'   => 'interactive-grid',
 			'foundation.reorder'           => 'reorder',
+			'foundation.segmented-control' => 'segmented-control',
 			'foundation.choice-group'      => 'choice-group',
 			'foundation.token-input'       => 'token-input',
 		];
@@ -297,6 +299,12 @@ final class AdminAssetCatalog {
 				break;
 			case 'reorder':
 				UiAssets::enqueue_reorder( UiAssets::REORDER_PRESENTATION_CORE );
+				break;
+			case 'icon-control':
+				UiAssets::enqueue_icon_controls( UiAssets::ICON_CONTROL_PRESENTATION_CORE );
+				break;
+			case 'segmented-control':
+				UiAssets::enqueue_segmented_control( UiAssets::SEGMENTED_CONTROL_PRESENTATION_CORE );
 				break;
 			case 'choice-group':
 				UiAssets::enqueue_choice_group( UiAssets::CHOICE_GROUP_PRESENTATION_CORE );

@@ -126,7 +126,7 @@ final class ScreenSettings {
 						>
 							<button
 								type="button"
-								class="button-link cb-admin-columns-governance__handle"
+								class="button-link cb-core-icon-control cb-core-reorder-handle cb-admin-columns-governance__handle"
 								data-cb-core-reorder-handle
 								aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $label ) ); ?>"
 								title="<?php esc_attr_e( 'Move', 'core-blueprint' ); ?>"

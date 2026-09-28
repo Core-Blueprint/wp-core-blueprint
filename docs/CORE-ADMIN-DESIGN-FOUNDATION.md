@@ -198,6 +198,10 @@ Informational dot + text status indicator.
 
 The visible label carries the accessible state meaning; the dot is decorative and should be `aria-hidden`. Canonical dot modifiers include success, warning, danger, info and muted.
 
+Standalone WordPress admin screens load this same semantic markup through
+`CB\Core\UI\Assets::enqueue_status()`; Base selects the WordPress-native
+presentation adapter without importing the Core Admin token/theme boundary.
+
 ## `empty-state`
 
 Standalone empty-result/message surface.

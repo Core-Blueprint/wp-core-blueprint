@@ -53,53 +53,6 @@ body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-ro
 	border-bottom: 1px solid var(--cb-border);
 }
 
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
-	width: 30px;
-	height: 30px;
-	min-width: 30px;
-	min-height: 30px;
-	padding: 0;
-	background: transparent;
-	border: 1px solid transparent;
-	border-radius: var(--cb-radius-sm);
-	box-shadow: none;
-	color: var(--cb-accent);
-	line-height: 1;
-	text-decoration: none;
-	user-select: none;
-}
-
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag:hover {
-	background: var(--cb-interactive-hover);
-	border-color: var(--cb-interactive-border-hover);
-	box-shadow: none;
-	color: var(--cb-accent-strong);
-	text-decoration: none;
-}
-
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag:focus,
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag:focus-visible {
-	background: var(--cb-surface-1);
-	border-color: var(--cb-interactive-focus);
-	box-shadow: none;
-	color: var(--cb-accent-strong);
-	outline: 1px solid var(--cb-interactive-focus);
-	outline-offset: 1px;
-	text-decoration: none;
-}
-
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag .dashicons {
-	width: 20px;
-	height: 20px;
-	margin: 0;
-	font-size: 20px;
-	line-height: 20px;
-}
-
 body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__identity {
 	display: flex;
 	align-items: center;

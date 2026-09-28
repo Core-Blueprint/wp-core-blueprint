@@ -39,6 +39,12 @@ final class Assets {
 	public const SELECT_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const REORDER_PRESENTATION_CORE = 'core';
 	public const REORDER_PRESENTATION_WP_NATIVE = 'wp-native';
+	public const ICON_CONTROL_PRESENTATION_CORE = 'core';
+	public const ICON_CONTROL_PRESENTATION_WP_NATIVE = 'wp-native';
+	public const STATUS_PRESENTATION_CORE = 'core';
+	public const STATUS_PRESENTATION_WP_NATIVE = 'wp-native';
+	public const SEGMENTED_CONTROL_PRESENTATION_CORE = 'core';
+	public const SEGMENTED_CONTROL_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const INTERACTIVE_GRID_PRESENTATION_CORE = 'core';
 	public const INTERACTIVE_GRID_PRESENTATION_WP_NATIVE = 'wp-native';
 
@@ -533,21 +539,24 @@ final class Assets {
 			$presentation = self::REORDER_PRESENTATION_WP_NATIVE;
 		}
 
+		self::enqueue_icon_controls(
+			self::REORDER_PRESENTATION_CORE === $presentation
+				? self::ICON_CONTROL_PRESENTATION_CORE
+				: self::ICON_CONTROL_PRESENTATION_WP_NATIVE
+		);
+
 		if ( self::REORDER_PRESENTATION_CORE === $presentation ) {
-			if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
-			}
 			wp_enqueue_style(
 				'cb-core-css-reorder',
 				CB_CORE_URL . 'assets/css/components/reorder.css',
-				[ 'cb-core-css-tokens' ],
+				[ 'cb-core-css-tokens', 'cb-core-css-icon-controls' ],
 				CB_CORE_VERSION
 			);
 		} else {
 			wp_enqueue_style(
 				'cb-core-css-reorder-native',
 				CB_CORE_URL . 'assets/css/components/reorder-native.css',
-				[],
+				[ 'cb-core-css-icon-controls-native' ],
 				CB_CORE_VERSION
 			);
 		}
@@ -681,6 +690,127 @@ final class Assets {
 		}
 	}
 
+
+
+	/**
+	 * Enqueue the shared Icon Control Foundation.
+	 *
+	 * Icon Control owns compact square control geometry and visual interaction
+	 * states only. Consumers keep semantic meaning and behavior. Reorder and
+	 * compact disclosure controls compose this primitive rather than redrawing
+	 * hover, focus and disabled states locally.
+	 *
+	 * @param string|null $presentation `wp-native`, `core`, or null for auto.
+	 */
+	public static function enqueue_icon_controls( ?string $presentation = null ): void {
+		if ( null === $presentation ) {
+			$presentation = self::is_core_admin_screen()
+				? self::ICON_CONTROL_PRESENTATION_CORE
+				: self::ICON_CONTROL_PRESENTATION_WP_NATIVE;
+		} elseif ( ! in_array( $presentation, [ self::ICON_CONTROL_PRESENTATION_WP_NATIVE, self::ICON_CONTROL_PRESENTATION_CORE ], true ) ) {
+			$presentation = self::ICON_CONTROL_PRESENTATION_WP_NATIVE;
+		}
+
+		wp_enqueue_style( 'dashicons' );
+
+		if ( self::ICON_CONTROL_PRESENTATION_CORE === $presentation ) {
+			if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
+			}
+			wp_enqueue_style(
+				'cb-core-css-icon-controls',
+				CB_CORE_URL . 'assets/css/components/icon-controls.css',
+				[ 'cb-core-css-tokens', 'dashicons' ],
+				CB_CORE_VERSION
+			);
+			return;
+		}
+
+		wp_enqueue_style(
+			'cb-core-css-icon-controls-native',
+			CB_CORE_URL . 'assets/css/components/icon-controls-native.css',
+			[ 'dashicons' ],
+			CB_CORE_VERSION
+		);
+	}
+
+	/**
+	 * Enqueue standalone-safe Status presentation.
+	 *
+	 * Status markup continues to come from CB\Core\UI\Status. This helper
+	 * exposes the presentation boundary to standalone first-party extensions
+	 * without requiring private Core Admin handles or the full admin theme.
+	 *
+	 * @param string|null $presentation `wp-native`, `core`, or null for auto.
+	 */
+	public static function enqueue_status( ?string $presentation = null ): void {
+		if ( null === $presentation ) {
+			$presentation = self::is_core_admin_screen()
+				? self::STATUS_PRESENTATION_CORE
+				: self::STATUS_PRESENTATION_WP_NATIVE;
+		} elseif ( ! in_array( $presentation, [ self::STATUS_PRESENTATION_WP_NATIVE, self::STATUS_PRESENTATION_CORE ], true ) ) {
+			$presentation = self::STATUS_PRESENTATION_WP_NATIVE;
+		}
+
+		if ( self::STATUS_PRESENTATION_CORE === $presentation ) {
+			if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
+			}
+			wp_enqueue_style(
+				'cb-core-css-status-indicators',
+				CB_CORE_URL . 'assets/css/components/status-indicators.css',
+				[ 'cb-core-css-tokens' ],
+				CB_CORE_VERSION
+			);
+			return;
+		}
+
+		wp_enqueue_style(
+			'cb-core-css-status-indicators-native',
+			CB_CORE_URL . 'assets/css/components/status-indicators-native.css',
+			[],
+			CB_CORE_VERSION
+		);
+	}
+
+	/**
+	 * Enqueue the shared Segmented Control Foundation.
+	 *
+	 * This is a domain-neutral single-choice/view presentation primitive. Base
+	 * owns grouping geometry and active/hover/focus/disabled states; consumers
+	 * own labels, selected value, semantics and any behavior.
+	 *
+	 * @param string|null $presentation `wp-native`, `core`, or null for auto.
+	 */
+	public static function enqueue_segmented_control( ?string $presentation = null ): void {
+		if ( null === $presentation ) {
+			$presentation = self::is_core_admin_screen()
+				? self::SEGMENTED_CONTROL_PRESENTATION_CORE
+				: self::SEGMENTED_CONTROL_PRESENTATION_WP_NATIVE;
+		} elseif ( ! in_array( $presentation, [ self::SEGMENTED_CONTROL_PRESENTATION_WP_NATIVE, self::SEGMENTED_CONTROL_PRESENTATION_CORE ], true ) ) {
+			$presentation = self::SEGMENTED_CONTROL_PRESENTATION_WP_NATIVE;
+		}
+
+		if ( self::SEGMENTED_CONTROL_PRESENTATION_CORE === $presentation ) {
+			if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
+			}
+			wp_enqueue_style(
+				'cb-core-css-segmented-control',
+				CB_CORE_URL . 'assets/css/components/segmented-control.css',
+				[ 'cb-core-css-tokens' ],
+				CB_CORE_VERSION
+			);
+			return;
+		}
+
+		wp_enqueue_style(
+			'cb-core-css-segmented-control-native',
+			CB_CORE_URL . 'assets/css/components/segmented-control-native.css',
+			[],
+			CB_CORE_VERSION
+		);
+	}
 
 	/**
 	 * Enqueue the shared Icon Picker Foundation.

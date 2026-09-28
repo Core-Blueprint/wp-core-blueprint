@@ -1,0 +1,103 @@
+/**
+ * Canonical compact icon controls for Core Admin.
+ *
+ * Geometry and visual interaction belong to Base. Consumer classes own only
+ * placement and domain behavior.
+ */
+.cb-core-icon-control {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	box-sizing: border-box;
+	width: 30px;
+	height: 30px;
+	min-width: 30px;
+	min-height: 30px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: var(--cb-radius-sm);
+	box-shadow: none;
+	color: var(--cb-accent);
+	line-height: 1;
+	text-decoration: none;
+	user-select: none;
+	vertical-align: middle;
+}
+
+.cb-core-icon-control:hover:not(:disabled):not([aria-disabled="true"]) {
+	background: var(--cb-interactive-hover);
+	border-color: var(--cb-interactive-border-hover);
+	box-shadow: none;
+	color: var(--cb-accent-strong);
+	text-decoration: none;
+}
+
+.cb-core-icon-control:focus,
+.cb-core-icon-control:focus-visible {
+	background: var(--cb-surface-1);
+	border-color: var(--cb-interactive-focus);
+	box-shadow: none;
+	color: var(--cb-accent-strong);
+	outline: 1px solid var(--cb-interactive-focus);
+	outline-offset: 1px;
+	text-decoration: none;
+}
+
+.cb-core-icon-control[aria-expanded="true"],
+.cb-core-icon-control[aria-pressed="true"],
+.cb-core-icon-control.is-active {
+	background: var(--cb-surface-2);
+	border-color: var(--cb-interactive-border-hover);
+	color: var(--cb-accent-strong);
+}
+
+.cb-core-icon-control:disabled,
+.cb-core-icon-control[aria-disabled="true"] {
+	cursor: default;
+	opacity: .45;
+}
+
+.cb-core-icon-control > .dashicons {
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	font-size: 18px;
+	line-height: 18px;
+}
+
+.cb-core-icon-control > .cb-core-icon {
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+}
+
+.cb-core-reorder-handle > .dashicons {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	line-height: 20px;
+}
+
+.cb-core-reorder-handle > .cb-core-icon {
+	width: 20px;
+	height: 20px;
+}
+
+.cb-core-disclosure-toggle > .dashicons,
+.cb-core-disclosure-toggle > .cb-core-icon {
+	transition: transform 140ms ease;
+}
+
+.cb-core-disclosure-toggle[aria-expanded="true"] > .dashicons,
+.cb-core-disclosure-toggle[aria-expanded="true"] > .cb-core-icon {
+	transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cb-core-disclosure-toggle > .dashicons,
+	.cb-core-disclosure-toggle > .cb-core-icon {
+		transition: none;
+	}
+}

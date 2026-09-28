@@ -1,0 +1,60 @@
+/**
+ * WordPress-native adapter for the Segmented Control Foundation.
+ */
+.cb-core-segmented-control {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	box-sizing: border-box;
+	padding: 2px;
+	background: #f0f0f1;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+}
+
+.cb-core-segmented-control__option {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 30px;
+	padding: 4px 10px;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 2px;
+	box-shadow: none;
+	color: #50575e;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.2;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.cb-core-segmented-control__option:hover:not(:disabled):not([aria-disabled="true"]) {
+	background: #f6f7f7;
+	color: #1d2327;
+}
+
+.cb-core-segmented-control__option.is-active,
+.cb-core-segmented-control__option[aria-checked="true"],
+.cb-core-segmented-control__option[aria-pressed="true"] {
+	background: #fff;
+	border-color: #8c8f94;
+	color: #1d2327;
+}
+
+.cb-core-segmented-control__option:focus,
+.cb-core-segmented-control__option:focus-visible {
+	border-color: #2271b1;
+	box-shadow: none;
+	outline: 1px solid #2271b1;
+	outline-offset: 1px;
+}
+
+.cb-core-segmented-control__option:disabled,
+.cb-core-segmented-control__option[aria-disabled="true"] {
+	cursor: default;
+	opacity: .5;
+}

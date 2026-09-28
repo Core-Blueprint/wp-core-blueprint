@@ -54,11 +54,13 @@ final class PageRegistry {
 		'clipboard',
 		'design-editor',
 		'icon-picker',
+		'icon-control',
 		'icons',
 		'modal',
 		'object-picker',
 		'interactive-grid',
 		'reorder',
+		'segmented-control',
 		'select-picker',
 		'time-picker',
 		'toast',
@@ -397,6 +399,12 @@ final class PageRegistry {
 				break;
 			case 'reorder':
 				UiAssets::enqueue_reorder( UiAssets::REORDER_PRESENTATION_CORE );
+				break;
+			case 'icon-control':
+				UiAssets::enqueue_icon_controls( UiAssets::ICON_CONTROL_PRESENTATION_CORE );
+				break;
+			case 'segmented-control':
+				UiAssets::enqueue_segmented_control( UiAssets::SEGMENTED_CONTROL_PRESENTATION_CORE );
 				break;
 			case 'icons':
 				UiAssets::enqueue_icons();

@@ -54,6 +54,7 @@ Consumers own item markup. The minimal contract is:
         >
             <button
                 type="button"
+                class="button-link cb-core-icon-control cb-core-reorder-handle"
                 data-cb-core-reorder-handle
                 aria-label="Reorder Example item"
             >
@@ -272,9 +273,11 @@ Registered Core Admin pages declare:
 ]
 ```
 
-Base presentation owns only generic reorder states: handle interaction,
-dragging, insertion marker, pending state, focus treatment, reduced motion and
-live-region utility. Consumers continue to own their row/card/list composition.
+Reorder composes the Icon Control Foundation for canonical handle geometry,
+hover, focus and disabled presentation. Reorder itself owns only interaction
+states: grab/grabbing cursor, dragging, insertion marker, pending state,
+reduced motion and live-region utility. Consumers continue to own their
+row/card/list composition.
 
 ## Persistence boundary
 

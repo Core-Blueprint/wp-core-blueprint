@@ -12,6 +12,8 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 		foreach ( [
 			'cb-core-css-reorder',
 			'cb-core-css-reorder-native',
+			'cb-core-css-icon-controls',
+			'cb-core-css-icon-controls-native',
 			'cb-core-css-tokens',
 			'cb-core-css-modals',
 			'cb-core-css-token-inputs',
@@ -67,13 +69,15 @@ final class CB_Base_Reorder_Foundation_Contract_Test extends WP_UnitTestCase {
 
 		$styles = wp_styles();
 		self::assertArrayHasKey( 'cb-core-css-reorder-native', $styles->registered );
-		self::assertSame( [], $styles->registered['cb-core-css-reorder-native']->deps );
+		self::assertSame( [ 'cb-core-css-icon-controls-native' ], $styles->registered['cb-core-css-reorder-native']->deps );
+		self::assertTrue( wp_style_is( 'cb-core-css-icon-controls-native', 'enqueued' ) );
 	}
 
 	public function test_core_reorder_enqueue_uses_tokens_without_loading_unrelated_foundations(): void {
 		Assets::enqueue_reorder( Assets::REORDER_PRESENTATION_CORE );
 
 		self::assertTrue( wp_style_is( 'cb-core-css-reorder', 'enqueued' ) );
+		self::assertTrue( wp_style_is( 'cb-core-css-icon-controls', 'enqueued' ) );
 		self::assertTrue( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
 		self::assertFalse( wp_style_is( 'cb-core-css-modals', 'enqueued' ) );
 		self::assertFalse( wp_style_is( 'cb-core-css-token-inputs', 'enqueued' ) );
