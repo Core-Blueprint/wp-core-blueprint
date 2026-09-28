@@ -148,11 +148,10 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 
 		foreach ( [ $reports_runtime, $mail_runtime ] as $runtime ) {
 			self::assertStringContainsString( 'cb-core-design-shell__layer-list', $runtime );
-			self::assertStringContainsString( 'cb-core-design-shell__layer-row', $runtime );
-			self::assertStringContainsString( 'cb-core-design-shell__layer-select', $runtime );
-			self::assertStringContainsString( 'cb-core-design-shell__layer-actions', $runtime );
-			self::assertStringContainsString( 'cb-core-design-shell__layer-action', $runtime );
-			self::assertStringContainsString( 'decorateDesignerControl', $runtime );
+			self::assertStringContainsString( 'createDesignerLayerRow', $runtime );
+			self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
+			self::assertStringNotContainsString( "row.className = 'cb-core-design-shell__layer-row';", $runtime );
+			self::assertStringNotContainsString( 'decorateDesignerControl', $runtime );
 			self::assertStringNotContainsString( 'cb-core-reports-structure__row', $runtime );
 			self::assertStringNotContainsString( 'cb-core-mail-structure__row', $runtime );
 		}
@@ -168,6 +167,8 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'createSession', $runtime );
 		self::assertStringContainsString( "profile: 'document-flow'", $runtime );
 		self::assertStringContainsString( 'createDesignerShell( shell, { session } )', $runtime );
+		self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
+		self::assertStringContainsString( 'createDesignerLayerRow', $runtime );
 		self::assertStringContainsString( 'commands.reorderNode', $runtime );
 		self::assertStringContainsString( 'commands.setProperty', $runtime );
 		self::assertStringContainsString( "command?.label === 'remove-node'", $runtime );
@@ -185,10 +186,14 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "qs( '[data-cb-report-inspector]'", $runtime );
 		self::assertStringContainsString( 'renderElements', $runtime );
 		self::assertStringContainsString( 'renderLayers', $runtime );
+		self::assertStringContainsString( 'renderInspector', $runtime );
 		self::assertStringContainsString( "layerList.className = 'cb-core-design-shell__layer-list'", $runtime );
-		self::assertStringContainsString( 'row.dataset.cbReportLayer = block.type', $runtime );
-		self::assertStringContainsString( 'createLayerMoveButton', $runtime );
-		self::assertStringContainsString( "activatePanel( 'inspector' )", $runtime );
+		self::assertStringContainsString( 'layer.row.dataset.cbReportLayer = block.type', $runtime );
+		self::assertStringContainsString( 'createDesignerLayerRow', $runtime );
+		self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
+		self::assertStringContainsString( 'previewHost?.setSelection', $runtime );
+		self::assertStringNotContainsString( 'createLayerMoveButton', $runtime );
+		self::assertStringNotContainsString( 'session.editorState.selection', $runtime );
 		self::assertStringNotContainsString( "layerList.className = 'cb-core-design-shell__palette-grid'", $runtime );
 		self::assertStringNotContainsString( '.cb-core-design-shell__workspace', $style );
 		self::assertStringNotContainsString( '.cb-core-design-shell__layer-row', $style );

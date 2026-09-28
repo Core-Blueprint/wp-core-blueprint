@@ -11,10 +11,11 @@
 import { qs, qsa, apiPost } from '../core/dom.js';
 import { createFlowPreviewHost } from '../design/document/flow/index.js';
 import {
+	commands,
+	createDesignerLayerRow,
+	createDesignerSelectionController,
 	createDesignerShell,
 	createSession,
-	commands,
-	decorateDesignerControl,
 } from '@cb-core/design-editor';
 
 const dataEl      = document.getElementById( 'wp-script-module-data-@cb-core/reports-preferences' );
@@ -104,7 +105,6 @@ if ( FORM ) {
 		? Object.keys( blockLabels )
 		: composer.blocks.map( ( block ) => block.type );
 
-	let selectedBlockType = composer.blocks[0]?.type || '';
 	let layerList = null;
 	let inspectorTitle = null;
 	let enabledControl = null;
@@ -113,6 +113,7 @@ if ( FORM ) {
 	let previewSequence = 0;
 	let previewHost = null;
 	let designerShell = null;
+	let selectionController = null;
 
 	const setSaveState = ( state ) => {
 		if ( ! shell ) return;
@@ -146,9 +147,21 @@ if ( FORM ) {
 	};
 
 	const blockLabel = ( type ) => blockLabels[ type ] || type.replaceAll( '_', ' ' );
-	const selectedBlock = () => composer.blocks.find( ( block ) => block.type === selectedBlockType ) || null;
-	const selectedIndex = () => composer.blocks.findIndex( ( block ) => block.type === selectedBlockType );
+	const selectedIndex = () => {
+		const primary = session.selection().primary;
+		return Array.isArray( primary ) && primary.length === 1 && Number.isInteger( primary[0] )
+			? primary[0]
+			: -1;
+	};
+	const selectedBlock = () => {
+		const index = selectedIndex();
+		return index >= 0 ? ( composer.blocks[ index ] || null ) : null;
+	};
 	const isStructuralBlock = ( block ) => block?.type === 'header' || block?.type === 'footer';
+	const syncPreviewSelection = () => {
+		const selected = selectedBlock();
+		previewHost?.setSelection( selected && selected.enabled !== false ? selected.type : null );
+	};
 	const schedulePreview = () => {
 		window.clearTimeout( previewTimer );
 		previewTimer = window.setTimeout( renderPreview, 180 );
@@ -159,10 +172,8 @@ if ( FORM ) {
 		profile: 'document-flow',
 		onChange: ( project ) => {
 			composer = composerFromProject( project, composerSchemaVersion );
-			if ( ! composer.blocks.some( ( block ) => block.type === selectedBlockType ) ) {
-				selectedBlockType = composer.blocks[0]?.type || '';
-			}
 			renderComposerControls();
+			syncPreviewSelection();
 			schedulePreview();
 		},
 		allowCommand: ( command ) => {
@@ -173,14 +184,10 @@ if ( FORM ) {
 
 	designerShell = shell ? createDesignerShell( shell, { session } ) : null;
 
-	const selectBlock = ( type, { openInspector = true } = {} ) => {
+	const selectBlock = ( type, { openInspector = true, source = 'ui' } = {} ) => {
 		const index = composer.blocks.findIndex( ( block ) => block.type === type );
-		if ( index < 0 ) return false;
-		selectedBlockType = type;
-		session.editorState.selection.select( [ index ] );
-		renderComposerControls();
-		if ( openInspector ) designerShell?.activatePanel( 'inspector' );
-		return true;
+		if ( index < 0 || ! selectionController ) return false;
+		return selectionController.select( [ index ], { openInspector, source } );
 	};
 
 	const buildComposerControls = () => {
@@ -218,19 +225,6 @@ if ( FORM ) {
 		}
 	};
 
-	const createLayerMoveButton = ( block, direction, disabled ) => {
-		const button = document.createElement( 'button' );
-		button.type = 'button';
-		button.className = 'button cb-core-button cb-core-design-shell__layer-action';
-		button.disabled = disabled;
-		const action = direction < 0 ? ( composerUi.moveUp || 'Move up' ) : ( composerUi.moveDown || 'Move down' );
-		const label = `${ action }: ${ blockLabel( block.type ) }`;
-		button.textContent = label;
-		decorateDesignerControl( button, direction < 0 ? 'arrow-up' : 'arrow-down', { iconOnly: true, label } );
-		button.addEventListener( 'click', () => moveBlock( block.type, direction ) );
-		return button;
-	};
-
 	const renderElements = () => {
 		if ( ! elementsBody ) return;
 		elementsBody.replaceChildren();
@@ -241,7 +235,7 @@ if ( FORM ) {
 			button.type = 'button';
 			button.className = 'cb-core-design-shell__palette-item';
 			button.dataset.cbReportElement = type;
-			button.setAttribute( 'aria-pressed', type === selectedBlockType ? 'true' : 'false' );
+			button.setAttribute( 'aria-pressed', type === selectedBlock()?.type ? 'true' : 'false' );
 			button.textContent = blockLabel( type );
 			button.addEventListener( 'click', () => selectBlock( type ) );
 			elementsBody.append( button );
@@ -253,48 +247,41 @@ if ( FORM ) {
 		layerList.replaceChildren();
 
 		composer.blocks.forEach( ( block, index ) => {
-			const row = document.createElement( 'div' );
-			row.className = 'cb-core-design-shell__layer-row';
-			row.dataset.cbReportLayer = block.type;
-			if ( block.type === selectedBlockType ) row.classList.add( 'is-selected' );
-
-			const select = document.createElement( 'button' );
-			select.type = 'button';
-			select.className = 'cb-core-design-shell__layer-select';
-
-			const label = document.createElement( 'span' );
-			label.className = 'cb-core-design-shell__layer-label';
-			label.textContent = blockLabel( block.type );
-
-			const meta = document.createElement( 'span' );
-			meta.className = 'cb-core-design-shell__layer-meta';
-			meta.textContent = block.enabled !== false
-				? ( composerUi.visible || 'Visible' )
-				: ( composerUi.hidden || 'Hidden' );
-
-			select.append( label, meta );
-			select.addEventListener( 'click', () => selectBlock( block.type ) );
-
-			const actions = document.createElement( 'div' );
-			actions.className = 'cb-core-design-shell__layer-actions';
-			if ( ! isStructuralBlock( block ) ) {
-				actions.append(
-					createLayerMoveButton( block, -1, index <= 1 ),
-					createLayerMoveButton( block, 1, index >= composer.blocks.length - 2 )
-				);
-			}
-
-			row.append( select, actions );
-			layerList.append( row );
+			const structural = isStructuralBlock( block );
+			const layer = createDesignerLayerRow( {
+				documentRef: document,
+				label: blockLabel( block.type ),
+				meta: block.enabled !== false
+					? ( composerUi.visible || 'Visible' )
+					: ( composerUi.hidden || 'Hidden' ),
+				selected: index === selectedIndex(),
+				onSelect: () => selectionController?.select( [ index ] ),
+				actions: structural ? {} : {
+					moveUp: {
+						disabled: index <= 1,
+						onActivate: () => moveBlock( block.type, -1 ),
+					},
+					moveDown: {
+						disabled: index >= composer.blocks.length - 2,
+						onActivate: () => moveBlock( block.type, 1 ),
+					},
+				},
+			} );
+			layer.row.dataset.cbReportLayer = block.type;
+			layerList.append( layer.row );
 		} );
 	};
 
-	const renderComposerControls = () => {
+	const renderInspector = () => {
 		const selected = selectedBlock();
-		renderElements();
-		renderLayers();
-
-		if ( ! selected ) return;
+		if ( ! selected ) {
+			if ( inspectorTitle ) inspectorTitle.textContent = '';
+			if ( enabledControl ) {
+				enabledControl.checked = false;
+				enabledControl.disabled = true;
+			}
+			return;
+		}
 		if ( inspectorTitle ) inspectorTitle.textContent = blockLabel( selected.type );
 		if ( enabledControl ) {
 			enabledControl.checked = selected.enabled !== false;
@@ -302,18 +289,23 @@ if ( FORM ) {
 		}
 	};
 
+	const renderComposerControls = () => {
+		renderElements();
+		renderLayers();
+		renderInspector();
+	};
+
 	const applyComposer = ( next ) => {
 		if ( ! next || ! Array.isArray( next.blocks ) ) return;
+		const previousType = selectedBlock()?.type || '';
 		composer = normalizeClientTemplate( next );
-		selectedBlockType = composer.blocks.some( ( block ) => block.type === selectedBlockType )
-			? selectedBlockType
-			: ( composer.blocks[0]?.type || '' );
+		session.replace( projectFromComposer( composer ), { source: 'server', resetSelection: true } );
 
-		session.editorState.selection.clear();
-		session.replace( projectFromComposer( composer ), { source: 'server' } );
-		const index = selectedIndex();
-		if ( index >= 0 ) session.editorState.selection.select( [ index ] );
-		renderComposerControls();
+		const preferredIndex = composer.blocks.findIndex( ( block ) => block.type === previousType );
+		const nextIndex = preferredIndex >= 0 ? preferredIndex : ( composer.blocks.length ? 0 : -1 );
+		if ( nextIndex >= 0 ) {
+			selectionController?.select( [ nextIndex ], { openInspector: false, source: 'server' } );
+		}
 		designerShell?.syncHistory();
 	};
 
@@ -325,8 +317,7 @@ if ( FORM ) {
 		const target = index + direction;
 		if ( target < 1 || target > composer.blocks.length - 2 ) return false;
 
-		selectedBlockType = type;
-		session.editorState.selection.select( [ index ] );
+		selectionController?.select( [ index ], { openInspector: false, source: 'layers' } );
 		session.execute( commands.reorderNode( [], index, target ) );
 		return true;
 	}
@@ -413,6 +404,7 @@ if ( FORM ) {
 				return;
 			}
 			host.render( response.data.html );
+			syncPreviewSelection();
 			setPreviewState( '', 'success' );
 		} catch ( error ) {
 			if ( requestSequence !== previewSequence ) return;
@@ -424,7 +416,19 @@ if ( FORM ) {
 	}
 
 	buildComposerControls();
-	selectBlock( selectedBlockType, { openInspector: false } );
+	selectionController = createDesignerSelectionController( {
+		session,
+		shell: designerShell,
+		renderLayers: () => {
+			renderElements();
+			renderLayers();
+		},
+		renderInspector,
+		syncCanvas: syncPreviewSelection,
+	} );
+	if ( composer.blocks.length ) {
+		selectionController.select( [ 0 ], { openInspector: false, source: 'initial' } );
+	}
 	designerShell?.syncHistory();
 
 	enabledControl?.addEventListener( 'change', () => {
@@ -577,6 +581,7 @@ if ( FORM ) {
 
 	window.addEventListener( 'beforeunload', () => {
 		previewHost?.destroy();
+		selectionController?.destroy();
 		session.dispose();
 	}, { once: true } );
 }
