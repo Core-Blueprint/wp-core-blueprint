@@ -181,6 +181,13 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "'foundation.clipboard'", $manifest );
 	}
 
+	public function test_mail_designer_shell_starts_hidden_until_shared_launch_activates_it(): void {
+		$root = dirname( __DIR__, 2 );
+		$template = (string) file_get_contents( $root . '/templates/mail-designer.php' );
+
+		self::assertStringContainsString( '<div class="cb-core-design-shell" data-cb-design-shell hidden>', $template );
+	}
+
 	public function test_mail_designer_opts_into_shared_fullscreen_without_owning_fullscreen_runtime(): void {
 		$root = dirname( __DIR__, 2 );
 		$template = (string) file_get_contents( $root . '/templates/mail-designer.php' );

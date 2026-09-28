@@ -369,6 +369,23 @@ test('direct Designer mode is server-declared, first-paint fullscreen and exits 
 	);
 });
 
+test('manual Designer launch waits for a ready shell before revealing fullscreen UI', async () => {
+	const launch = await readFile(launchSource, 'utf8');
+	const shell = await readFile(shellSource, 'utf8');
+	const manualBody = launch.match(/const initializeManualLaunch = \([^)]*\) => \{([\s\S]*?)\n\t\};/)?.[1] ?? '';
+
+	assert.match(shell, /SHELL_READY_EVENT\s*=\s*'cb:design-shell:ready'/);
+	assert.match(shell, /root\.dataset\.cbDesignShellInitialized\s*=\s*'true'/);
+	assert.match(shell, /dispatchEvent\(new CustomEvent\(SHELL_READY_EVENT/);
+	assert.match(launch, /SHELL_READY_EVENT\s*=\s*'cb:design-shell:ready'/);
+	assert.match(manualBody, /shell\.dataset\.cbDesignShellInitialized\s*!==\s*'true'/);
+	assert.match(manualBody, /launchPending\s*=\s*true/);
+	assert.match(manualBody, /button\.setAttribute\('aria-busy', 'true'\)/);
+	assert.match(manualBody, /shell\.addEventListener\(SHELL_READY_EVENT/);
+	assert.match(manualBody, /setDesignerMode\(true\)[\s\S]*fullscreen\.click\(\)/);
+	assert.match(manualBody, /if \(fullscreen\.getAttribute\('aria-pressed'\) !== 'true'\) setDesignerMode\(false\)/);
+});
+
 test('shared Designer UX defines canonical sidebar roles, Lucide icons and reduced-motion-safe transitions', async () => {
 	const shell = await readFile(shellSource, 'utf8');
 	const icons = await readFile(iconsSource, 'utf8');

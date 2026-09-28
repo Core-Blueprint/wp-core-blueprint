@@ -7,6 +7,7 @@
 	const DIRECT_ENTER_RETRY_DELAY_MS = 25;
 	const DIRECT_ENTER_RETRY_LIMIT = 80;
 	const SAVE_EVENT = 'cb:design-shell:savechange';
+	const SHELL_READY_EVENT = 'cb:design-shell:ready';
 	const DIRECT_MODE = 'direct';
 	const RESPONSIVE_DRAWER_QUERY = '(max-width: 1280px)';
 
@@ -460,15 +461,37 @@
 		label.textContent = String(config.label || 'Design with Core Blueprint');
 		button.append(label);
 
+		let launchPending = false;
+
 		const setDesignerMode = (active) => {
 			root.classList.toggle('is-designer-mode-active', active);
 			wrapper.hidden = active;
 			shell.hidden = !active;
 		};
 
-		button.addEventListener('click', () => {
+		const clearPending = () => {
+			launchPending = false;
+			button.disabled = false;
+			button.removeAttribute('aria-busy');
+		};
+
+		const enterDesignerMode = () => {
+			if (shell.dataset.cbDesignShellInitialized !== 'true') {
+				launchPending = true;
+				button.disabled = true;
+				button.setAttribute('aria-busy', 'true');
+				return;
+			}
+
+			clearPending();
 			setDesignerMode(true);
 			if (fullscreen.getAttribute('aria-pressed') !== 'true') fullscreen.click();
+			if (fullscreen.getAttribute('aria-pressed') !== 'true') setDesignerMode(false);
+		};
+
+		button.addEventListener('click', enterDesignerMode);
+		shell.addEventListener(SHELL_READY_EVENT, () => {
+			if (launchPending) enterDesignerMode();
 		});
 
 		shell.addEventListener('cb:design-shell:fullscreenchange', (event) => {

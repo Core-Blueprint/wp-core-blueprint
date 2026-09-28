@@ -94,7 +94,7 @@ foreach ( (array) $templates as $definition ) {
 						<input id="cb-mail-designer-subject" type="text" name="subject" value="<?php echo esc_attr( (string) $current_template['subject'] ); ?>" required data-cb-mail-subject />
 					</div>
 
-					<div class="cb-core-design-shell" data-cb-design-shell>
+					<div class="cb-core-design-shell" data-cb-design-shell hidden>
 						<div class="cb-core-design-shell__toolbar cb-core-mail-designer__toolbar" role="toolbar" aria-label="<?php esc_attr_e( 'Editor actions', 'core-blueprint' ); ?>">
 							<div class="cb-core-design-shell__toolbar-group">
 								<span class="cb-core-mail-designer__toolbar-label" data-cb-design-shell-group-label><?php esc_html_e( 'History', 'core-blueprint' ); ?></span>

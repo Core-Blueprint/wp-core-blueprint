@@ -15,6 +15,7 @@ const DEFAULT_GROUP = 'default';
 const FULLSCREEN_ROOT_CLASS = 'is-fullscreen';
 const FULLSCREEN_DOCUMENT_CLASS = 'cb-core-design-shell-focus-mode';
 const FULLSCREEN_EVENT = 'cb:design-shell:fullscreenchange';
+const SHELL_READY_EVENT = 'cb:design-shell:ready';
 const FULLSCREEN_ENTER_CLASS = 'is-entering';
 const FULLSCREEN_EXIT_CLASS = 'is-exiting';
 const FULLSCREEN_EXIT_MS = 130;
@@ -504,6 +505,11 @@ export const createDesignerShell = (root, {
 		},
 	});
 	shellControllers.set(root, controller);
+	root.dataset.cbDesignShellInitialized = 'true';
+	root.dispatchEvent(new CustomEvent(SHELL_READY_EVENT, {
+		bubbles: true,
+		detail: Object.freeze({ initialized: true }),
+	}));
 	return controller;
 };
 
