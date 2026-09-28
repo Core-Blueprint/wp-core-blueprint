@@ -128,6 +128,8 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 		self::assertStringNotContainsString( 'class="x"', $html );
 		self::assertStringNotContainsString( '<form', strtolower( $html ) );
 		self::assertStringContainsString( 'data-cb-core-reorder', $html );
+		self::assertStringContainsString( 'dashicons dashicons-move', $html );
+		self::assertStringNotContainsString( '>Move</button>', $html );
 		self::assertFalse( get_option( PolicyRepository::OPTION, false ), 'Presentation labels/discovery must not persist policy state.' );
 		ScreenSettings::enqueue();
 		self::assertTrue( wp_style_is( 'cb-core-css-form-composition-native', 'enqueued' ) );
@@ -139,6 +141,8 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( 'var(--cb-surface-1, #fff)', $css );
 		self::assertStringContainsString( 'var(--cb-border, #dcdcde)', $css );
 		self::assertStringNotContainsString( 'background: #fff;', $css );
+		self::assertStringNotContainsString( 'cursor: move;', $css );
+		self::assertStringContainsString( '.cb-admin-columns-governance__handle .dashicons', $css );
 
 		$GLOBALS['pagenow'] = 'users.php';
 		set_current_screen( 'users' );

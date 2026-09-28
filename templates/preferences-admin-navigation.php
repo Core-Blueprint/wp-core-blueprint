@@ -80,16 +80,22 @@ $audience_value = static function ( ?array $rule, string $key ): string {
 						$hidden  = is_array( $item['hidden'] ?? null ) ? $item['hidden'] : null;
 						?>
 						<article
-							class="cb-core-admin-navigation-row"
+							class="cb-core-admin-navigation-row cb-core-admin-navigation-row--menu"
 							data-cb-core-reorder-item="<?php echo esc_attr( $id ); ?>"
 							data-cb-core-reorder-label="<?php echo esc_attr( $label ); ?>"
 							data-cb-admin-navigation-menu-row
 							data-navigation-id="<?php echo esc_attr( $id ); ?>"
 						>
-							<p>
-								<button type="button" class="button" data-cb-core-reorder-handle aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $label ) ); ?>">
-									<span class="dashicons dashicons-menu" aria-hidden="true"></span>
-								</button>
+							<button
+								type="button"
+								class="button-link cb-core-admin-navigation-row__drag"
+								data-cb-core-reorder-handle
+								aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $label ) ); ?>"
+							>
+								<span class="dashicons dashicons-move" aria-hidden="true"></span>
+							</button>
+
+							<div class="cb-core-admin-navigation-row__identity">
 								<strong><?php echo esc_html( $label ); ?></strong>
 								<?php if ( $label !== $id ) : ?>
 									<code><?php echo esc_html( $id ); ?></code>
@@ -97,14 +103,18 @@ $audience_value = static function ( ?array $rule, string $key ): string {
 								<?php if ( ! $present ) : ?>
 									<span class="cb-core-state-badge cb-core-state-badge--neutral"><?php esc_html_e( 'Not present in this request', 'core-blueprint' ); ?></span>
 								<?php endif; ?>
-							</p>
-							<p>
-								<label>
-									<input type="checkbox" data-cb-admin-navigation-hide <?php checked( null !== $hidden ); ?> />
-									<?php esc_html_e( 'Hide this menu item when the audience matches', 'core-blueprint' ); ?>
-								</label>
-							</p>
-							<details class="cb-core-disclosure cb-core-disclosure--compact">
+							</div>
+
+							<label class="cb-core-admin-navigation-row__toggle">
+								<input type="checkbox" data-cb-admin-navigation-hide <?php checked( null !== $hidden ); ?> />
+								<span><?php esc_html_e( 'Hide this menu item when the audience matches', 'core-blueprint' ); ?></span>
+							</label>
+
+							<details
+								class="cb-core-disclosure cb-core-disclosure--compact cb-core-admin-navigation-row__audience"
+								data-cb-admin-navigation-hide-audience
+								<?php if ( null === $hidden ) : ?>hidden<?php endif; ?>
+							>
 								<summary class="cb-core-disclosure__summary">
 									<span class="cb-core-disclosure__icon dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
 									<span class="cb-core-disclosure__title"><?php esc_html_e( 'Audience', 'core-blueprint' ); ?></span>
@@ -142,8 +152,8 @@ $audience_value = static function ( ?array $rule, string $key ): string {
 				$hidden  = is_array( $item['hidden'] ?? null ) ? $item['hidden'] : null;
 				$renamed = is_array( $item['renamed'] ?? null ) ? $item['renamed'] : null;
 				?>
-				<article class="cb-core-admin-navigation-row" data-cb-admin-navigation-toolbar-row data-navigation-id="<?php echo esc_attr( $id ); ?>">
-					<p>
+				<article class="cb-core-admin-navigation-row cb-core-admin-navigation-row--toolbar" data-cb-admin-navigation-toolbar-row data-navigation-id="<?php echo esc_attr( $id ); ?>">
+					<div class="cb-core-admin-navigation-row__identity">
 						<strong><?php echo esc_html( $label ); ?></strong>
 						<?php if ( $label !== $id ) : ?>
 							<code><?php echo esc_html( $id ); ?></code>
@@ -151,33 +161,47 @@ $audience_value = static function ( ?array $rule, string $key ): string {
 						<?php if ( ! $present ) : ?>
 							<span class="cb-core-state-badge cb-core-state-badge--neutral"><?php esc_html_e( 'Not present in this request', 'core-blueprint' ); ?></span>
 						<?php endif; ?>
-					</p>
-					<p>
-						<label>
-							<input type="checkbox" data-cb-admin-navigation-hide <?php checked( null !== $hidden ); ?> />
-							<?php esc_html_e( 'Hide this Toolbar node when the audience matches', 'core-blueprint' ); ?>
-						</label>
-					</p>
-					<div class="cb-core-field">
-						<label><?php esc_html_e( 'Hide audience role slugs', 'core-blueprint' ); ?></label>
-						<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $hidden, 'roles' ) ); ?>" data-cb-admin-navigation-hide-roles />
 					</div>
-					<div class="cb-core-field">
-						<label><?php esc_html_e( 'Hide audience capabilities', 'core-blueprint' ); ?></label>
-						<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $hidden, 'capabilities' ) ); ?>" data-cb-admin-navigation-hide-capabilities />
-					</div>
-					<div class="cb-core-field">
+
+					<label class="cb-core-admin-navigation-row__toggle">
+						<input type="checkbox" data-cb-admin-navigation-hide <?php checked( null !== $hidden ); ?> />
+						<span><?php esc_html_e( 'Hide this Toolbar node when the audience matches', 'core-blueprint' ); ?></span>
+					</label>
+
+					<div class="cb-core-field cb-core-admin-navigation-row__rename">
 						<label><?php esc_html_e( 'Rename to', 'core-blueprint' ); ?></label>
 						<input type="text" class="regular-text" maxlength="120" value="<?php echo esc_attr( (string) ( $renamed['label'] ?? '' ) ); ?>" data-cb-admin-navigation-rename-label />
 						<p class="description"><?php esc_html_e( 'Leave empty to keep the WordPress/plugin title.', 'core-blueprint' ); ?></p>
 					</div>
-					<div class="cb-core-field">
-						<label><?php esc_html_e( 'Rename audience role slugs', 'core-blueprint' ); ?></label>
-						<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $renamed, 'roles' ) ); ?>" data-cb-admin-navigation-rename-roles />
+
+					<div
+						class="cb-core-admin-navigation-row__audience-fields"
+						data-cb-admin-navigation-hide-audience
+						<?php if ( null === $hidden ) : ?>hidden<?php endif; ?>
+					>
+						<div class="cb-core-field">
+							<label><?php esc_html_e( 'Hide audience role slugs', 'core-blueprint' ); ?></label>
+							<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $hidden, 'roles' ) ); ?>" data-cb-admin-navigation-hide-roles />
+						</div>
+						<div class="cb-core-field">
+							<label><?php esc_html_e( 'Hide audience capabilities', 'core-blueprint' ); ?></label>
+							<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $hidden, 'capabilities' ) ); ?>" data-cb-admin-navigation-hide-capabilities />
+						</div>
 					</div>
-					<div class="cb-core-field">
-						<label><?php esc_html_e( 'Rename audience capabilities', 'core-blueprint' ); ?></label>
-						<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $renamed, 'capabilities' ) ); ?>" data-cb-admin-navigation-rename-capabilities />
+
+					<div
+						class="cb-core-admin-navigation-row__audience-fields"
+						data-cb-admin-navigation-rename-audience
+						<?php if ( '' === (string) ( $renamed['label'] ?? '' ) ) : ?>hidden<?php endif; ?>
+					>
+						<div class="cb-core-field">
+							<label><?php esc_html_e( 'Rename audience role slugs', 'core-blueprint' ); ?></label>
+							<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $renamed, 'roles' ) ); ?>" data-cb-admin-navigation-rename-roles />
+						</div>
+						<div class="cb-core-field">
+							<label><?php esc_html_e( 'Rename audience capabilities', 'core-blueprint' ); ?></label>
+							<input type="text" class="regular-text" value="<?php echo esc_attr( $audience_value( $renamed, 'capabilities' ) ); ?>" data-cb-admin-navigation-rename-capabilities />
+						</div>
 					</div>
 				</article>
 			<?php endforeach; ?>

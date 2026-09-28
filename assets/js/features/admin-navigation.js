@@ -74,8 +74,27 @@ if (root) {
 		if (payloadInput) payloadInput.value = JSON.stringify(buildPolicy());
 	};
 
-	root.addEventListener('input', syncPayload);
-	root.addEventListener('change', syncPayload);
+	const syncRowPresentation = (row) => {
+		const hideEnabled = row.querySelector('[data-cb-admin-navigation-hide]')?.checked === true;
+		const hideAudience = row.querySelector('[data-cb-admin-navigation-hide-audience]');
+		if (hideAudience) hideAudience.hidden = !hideEnabled;
+
+		const renameInput = row.querySelector('[data-cb-admin-navigation-rename-label]');
+		const renameAudience = row.querySelector('[data-cb-admin-navigation-rename-audience]');
+		if (renameAudience) renameAudience.hidden = !(renameInput?.value.trim());
+	};
+
+	const syncPresentation = () => {
+		for (const row of [...menuRows(), ...toolbarRows()]) syncRowPresentation(row);
+	};
+
+	const syncEditor = () => {
+		syncPresentation();
+		syncPayload();
+	};
+
+	root.addEventListener('input', syncEditor);
+	root.addEventListener('change', syncEditor);
 	form?.addEventListener('submit', syncPayload);
 
 	const reorderFoundation = window.cbCore?.reorder;
@@ -91,5 +110,6 @@ if (root) {
 		console.warn('[cb-core/admin-navigation] Reorder Foundation unavailable; menu ordering controls are inactive.');
 	}
 
+	syncPresentation();
 	syncPayload();
 }

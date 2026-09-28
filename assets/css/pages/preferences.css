@@ -35,13 +35,15 @@ body.core-blueprint_page_core-blueprint-preferences .cb-core-preferences-section
 }
 
 
-/* Preferences → Admin Navigation: the Reorder Foundation owns movement,
- * while this feature owns compact row composition. Menu and Toolbar identities
- * are settings rows, not standalone content panels. */
+/* Preferences → Admin Navigation: Reorder owns interaction; this page owns
+ * compact settings-row composition. Drag controls follow the suite-wide
+ * button-link + dashicons-move pattern used by Docs and LMS. */
 body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: var(--cb-space-3) var(--cb-space-4);
+	grid-template-columns: 30px minmax(0, 1fr) minmax(280px, 420px);
+	align-items: center;
+	column-gap: var(--cb-space-3);
+	row-gap: var(--cb-space-2);
 	max-width: 920px;
 	padding: var(--cb-space-3) 0;
 	border-top: 1px solid var(--cb-border);
@@ -51,50 +53,136 @@ body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-ro
 	border-bottom: 1px solid var(--cb-border);
 }
 
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > p,
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > details {
-	grid-column: 1 / -1;
-	margin: 0;
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	width: 30px;
+	height: 30px;
+	min-width: 30px;
+	min-height: 30px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: var(--cb-radius-sm);
+	box-shadow: none;
+	color: var(--cb-accent);
+	line-height: 1;
+	text-decoration: none;
+	user-select: none;
 }
 
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > p:first-child {
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag:hover {
+	background: var(--cb-interactive-hover);
+	border-color: var(--cb-interactive-border-hover);
+	box-shadow: none;
+	color: var(--cb-accent-strong);
+	text-decoration: none;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag:focus,
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag:focus-visible {
+	background: var(--cb-surface-1);
+	border-color: var(--cb-interactive-focus);
+	box-shadow: none;
+	color: var(--cb-accent-strong);
+	outline: 1px solid var(--cb-interactive-focus);
+	outline-offset: 1px;
+	text-decoration: none;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__drag .dashicons {
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	font-size: 20px;
+	line-height: 20px;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__identity {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
 	gap: var(--cb-space-2);
+	min-width: 0;
 	color: var(--cb-text-strong);
 }
 
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > p:first-child .button {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 34px;
-	min-height: 34px;
-	padding: 0;
-}
-
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > p:first-child code {
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__identity code {
 	font-size: var(--cb-fs-xs);
 }
 
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > .cb-core-field {
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__toggle {
+	display: flex;
+	align-items: center;
+	gap: var(--cb-space-2);
+	min-width: 0;
+	margin: 0;
+	color: var(--cb-text);
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__toggle input {
+	flex: 0 0 auto;
+	margin: 0;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__audience {
+	grid-column: 2 / -1;
+	width: min(100%, 760px);
+	margin: var(--cb-space-1) 0 0;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__rename {
+	grid-column: 1 / -1;
+	max-width: 520px;
+	margin: var(--cb-space-1) 0 0;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__audience-fields {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--cb-space-3);
+	max-width: 760px;
+	padding-top: var(--cb-space-2);
+	border-top: 1px solid var(--cb-border);
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__audience-fields > .cb-core-field {
 	max-width: none;
 	margin: 0;
 }
 
-body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row .cb-core-disclosure--compact {
-	max-width: 760px;
-	margin-top: 0;
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__audience[hidden],
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__audience-fields[hidden] {
+	display: none;
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row--toolbar {
+	grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+	align-items: start;
 }
 
 @media (max-width: 782px) {
-	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row {
-		grid-template-columns: minmax(0, 1fr);
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row,
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row--toolbar {
+		grid-template-columns: 30px minmax(0, 1fr);
 	}
 
-	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row > .cb-core-field {
-		grid-column: 1;
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__toggle,
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__audience,
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__rename,
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__audience-fields {
+		grid-column: 2;
+	}
+
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row--toolbar .cb-core-admin-navigation-row__identity {
+		grid-column: 1 / -1;
+	}
+
+	body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-row__audience-fields {
+		grid-template-columns: 1fr;
 	}
 }
 

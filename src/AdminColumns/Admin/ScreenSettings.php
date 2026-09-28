@@ -124,7 +124,14 @@ final class ScreenSettings {
 								data-source-key="<?php echo esc_attr( $source['key'] ); ?>"
 							<?php endif; ?>
 						>
-							<button type="button" class="button-link cb-admin-columns-governance__handle" data-cb-core-reorder-handle aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $label ) ); ?>" <?php disabled( 'cb' === $column_id ); ?>><?php esc_html_e( 'Move', 'core-blueprint' ); ?></button>
+							<button
+								type="button"
+								class="button-link cb-admin-columns-governance__handle"
+								data-cb-core-reorder-handle
+								aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $label ) ); ?>"
+								title="<?php esc_attr_e( 'Move', 'core-blueprint' ); ?>"
+								<?php disabled( 'cb' === $column_id ); ?>
+							><span class="dashicons dashicons-move" aria-hidden="true"></span></button>
 							<label class="cb-admin-columns-governance__visibility">
 								<input type="checkbox" data-column-visible <?php checked( ! $hidden ); ?> <?php disabled( $protected ); ?> />
 								<span><?php echo esc_html( $label ); ?></span>

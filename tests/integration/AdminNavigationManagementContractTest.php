@@ -149,9 +149,16 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'window.cbCore?.reorder', $script );
 		self::assertStringContainsString( 'reorderFoundation.enhance', $script );
 		self::assertStringContainsString( 'data-cb-admin-navigation-payload', $template );
-		self::assertStringContainsString( 'class="cb-core-admin-navigation-row"', $template );
+		self::assertStringContainsString( 'cb-core-admin-navigation-row--menu', $template );
+		self::assertStringContainsString( 'button-link cb-core-admin-navigation-row__drag', $template );
+		self::assertStringContainsString( 'dashicons dashicons-move', $template );
+		self::assertStringNotContainsString( 'dashicons dashicons-menu', $template );
+		self::assertStringContainsString( 'data-cb-admin-navigation-hide-audience', $template );
+		self::assertStringContainsString( 'data-cb-admin-navigation-rename-audience', $template );
 		self::assertStringContainsString( 'cb-core-disclosure--compact', $template );
 		self::assertStringNotContainsString( 'class="cb-core-panel"', $template );
+		self::assertStringContainsString( 'syncPresentation', $script );
+		self::assertStringContainsString( 'renameAudience.hidden', $script );
 		self::assertStringContainsString( 'JSON.stringify(buildPolicy())', $script );
 		self::assertStringNotContainsString( 'jQuery', $script );
 		self::assertStringNotContainsString( '#adminmenu', $script );
