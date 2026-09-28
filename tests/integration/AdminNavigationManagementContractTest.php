@@ -129,6 +129,31 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 		self::assertSame( 'Example Site', $toolbar_by_id['site-name']['label'] );
 	}
 
+	public function test_audience_picker_catalogs_are_searchable_and_preserve_unknown_references(): void {
+		add_role( 'cb_nav_picker_test', 'Navigation Picker Test', [
+			'read'                   => true,
+			'cb_nav_picker_test_cap' => true,
+		] );
+
+		try {
+			$roles = AdminNavigationAdmin::search_roles( 'navigation picker' );
+			self::assertContains( 'cb_nav_picker_test', array_column( $roles, 'id' ) );
+
+			$capabilities = AdminNavigationAdmin::search_capabilities( 'cb_nav_picker_test_cap' );
+			self::assertContains( 'cb_nav_picker_test_cap', array_column( $capabilities, 'id' ) );
+
+			$selected_roles = AdminNavigationAdmin::role_picker_items( [ 'cb_nav_picker_test', 'missing-role' ] );
+			self::assertSame( [ 'cb_nav_picker_test', 'missing-role' ], array_column( $selected_roles, 'id' ) );
+			self::assertSame( 'missing-role', $selected_roles[1]['label'] );
+
+			$selected_capabilities = AdminNavigationAdmin::capability_picker_items( [ 'cb_nav_picker_test_cap', 'missing_capability' ] );
+			self::assertSame( [ 'cb_nav_picker_test_cap', 'missing_capability' ], array_column( $selected_capabilities, 'id' ) );
+			self::assertSame( 'missing_capability', $selected_capabilities[1]['label'] );
+		} finally {
+			remove_role( 'cb_nav_picker_test' );
+		}
+	}
+
 	public function test_form_handler_is_manage_options_and_nonce_gated_and_does_not_write_options_directly(): void {
 		$source = file_get_contents( CB_CORE_DIR . 'src/AdminNavigation/Admin.php' );
 		self::assertIsString( $source );
@@ -136,6 +161,10 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'check_admin_referer( self::NONCE_ACTION, self::NONCE_NAME )', $source );
 		self::assertStringContainsString( 'Policy::replace( $payload, $actor )', $source );
 		self::assertStringContainsString( 'Policy::reset( $actor )', $source );
+		self::assertStringContainsString( "Request::nonce( self::PICKER_NONCE_ACTION, '_ajax_nonce' )", $source );
+		self::assertStringContainsString( "Request::cap( 'manage_options' )", $source );
+		self::assertStringContainsString( "'wp_ajax_' . self::ROLE_SEARCH_ACTION", $source );
+		self::assertStringContainsString( "'wp_ajax_' . self::CAPABILITY_SEARCH_ACTION", $source );
 		self::assertStringNotContainsString( 'update_option(', $source );
 		self::assertStringNotContainsString( 'delete_option(', $source );
 	}
@@ -155,10 +184,15 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 		self::assertStringNotContainsString( 'dashicons dashicons-menu', $template );
 		self::assertStringContainsString( 'data-cb-admin-navigation-hide-audience', $template );
 		self::assertStringContainsString( 'data-cb-admin-navigation-rename-audience', $template );
+		self::assertStringContainsString( 'data-cb-admin-navigation-hide-roles-picker', $template );
+		self::assertStringContainsString( 'data-cb-admin-navigation-hide-capabilities-picker', $template );
+		self::assertStringContainsString( '\\CB\\Core\\UI\\ObjectPicker::render', $template );
+		self::assertStringContainsString( 'cb-core-admin-navigation-toolbar-item', $template );
 		self::assertStringContainsString( 'cb-core-disclosure--compact', $template );
 		self::assertStringNotContainsString( 'class="cb-core-panel"', $template );
 		self::assertStringContainsString( 'syncPresentation', $script );
 		self::assertStringContainsString( 'renameAudience.hidden', $script );
+		self::assertStringContainsString( 'data-cb-core-object-picker-input', $script );
 		self::assertStringContainsString( 'JSON.stringify(buildPolicy())', $script );
 		self::assertStringNotContainsString( 'jQuery', $script );
 		self::assertStringNotContainsString( '#adminmenu', $script );

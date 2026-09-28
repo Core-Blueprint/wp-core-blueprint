@@ -19,9 +19,14 @@ if (root) {
 			});
 	};
 
+	const pickerValue = (row, prefix, kind) => (
+		row.querySelector(`[data-cb-admin-navigation-${prefix}-${kind}-picker] [data-cb-core-object-picker-input]`)?.value
+		|| ''
+	);
+
 	const audience = (row, prefix) => ({
-		roles: uniqueReferences(row.querySelector(`[data-cb-admin-navigation-${prefix}-roles]`)?.value),
-		capabilities: uniqueReferences(row.querySelector(`[data-cb-admin-navigation-${prefix}-capabilities]`)?.value),
+		roles: uniqueReferences(pickerValue(row, prefix, 'roles')),
+		capabilities: uniqueReferences(pickerValue(row, prefix, 'capabilities')),
 	});
 
 	const menuRows = () => Array.from(menuList?.children || [])

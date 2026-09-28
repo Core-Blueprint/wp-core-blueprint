@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace CB\Core\AdminNavigation;
 
+use CB\Core\Ajax\Request;
+use CB\Core\Permissions\CapabilityCatalog;
+
 defined( 'ABSPATH' ) || exit;
 
 final class Admin {
@@ -18,9 +21,14 @@ final class Admin {
 	public const FORM_ACTION = 'cb_core_admin_navigation_save';
 	public const NONCE_ACTION = 'cb_core_admin_navigation_preferences';
 	public const NONCE_NAME = '_cb_admin_navigation_nonce';
+	public const PICKER_NONCE_ACTION = 'cb_core_admin_navigation_picker';
+	public const ROLE_SEARCH_ACTION = 'cb_core_admin_navigation_search_roles';
+	public const CAPABILITY_SEARCH_ACTION = 'cb_core_admin_navigation_search_capabilities';
 
 	public static function boot(): void {
 		add_action( 'admin_post_' . self::FORM_ACTION, [ self::class, 'handle_save' ] );
+		add_action( 'wp_ajax_' . self::ROLE_SEARCH_ACTION, [ self::class, 'ajax_search_roles' ] );
+		add_action( 'wp_ajax_' . self::CAPABILITY_SEARCH_ACTION, [ self::class, 'ajax_search_capabilities' ] );
 	}
 
 	public static function can_manage(): bool {
@@ -107,6 +115,113 @@ final class Admin {
 
 		wp_safe_redirect( add_query_arg( 'admin_navigation_notice', $ok ? 'saved' : 'invalid', $redirect ) );
 		exit;
+	}
+
+	/** @param list<string> $roles @return list<array{id:string,label:string,meta:string}> */
+	public static function role_picker_items( array $roles ): array {
+		$registry = (array) wp_roles()->roles;
+		$items = [];
+		foreach ( $roles as $role ) {
+			if ( ! is_string( $role ) || '' === $role ) {
+				continue;
+			}
+			$details = isset( $registry[ $role ] ) && is_array( $registry[ $role ] ) ? $registry[ $role ] : [];
+			$name = isset( $details['name'] ) && is_string( $details['name'] ) ? translate_user_role( $details['name'] ) : $role;
+			$items[] = [
+				'id'    => $role,
+				'label' => '' !== $name ? $name : $role,
+				'meta'  => $name !== $role ? $role : '',
+			];
+		}
+		return $items;
+	}
+
+	/** @param list<string> $capabilities @return list<array{id:string,label:string,meta:string}> */
+	public static function capability_picker_items( array $capabilities ): array {
+		$catalog = CapabilityCatalog::all();
+		$items = [];
+		foreach ( $capabilities as $capability ) {
+			if ( ! is_string( $capability ) || '' === $capability ) {
+				continue;
+			}
+			$entry = isset( $catalog[ $capability ] ) && is_array( $catalog[ $capability ] ) ? $catalog[ $capability ] : [];
+			$label = isset( $entry['label'] ) && is_string( $entry['label'] ) && '' !== $entry['label'] ? $entry['label'] : $capability;
+			$items[] = [
+				'id'    => $capability,
+				'label' => $label,
+				'meta'  => $label !== $capability ? $capability : '',
+			];
+		}
+		return $items;
+	}
+
+	/** @return list<array{id:string,label:string,meta:string}> */
+	public static function search_roles( string $search ): array {
+		$search = trim( $search );
+		if ( strlen( $search ) < 2 ) {
+			return [];
+		}
+
+		$items = [];
+		foreach ( (array) wp_roles()->roles as $slug => $details ) {
+			if ( ! is_string( $slug ) || ! is_array( $details ) ) {
+				continue;
+			}
+			$name = isset( $details['name'] ) && is_string( $details['name'] ) ? translate_user_role( $details['name'] ) : $slug;
+			if ( false === mb_stripos( $slug . ' ' . $name, $search ) ) {
+				continue;
+			}
+			$items[] = [
+				'id'    => $slug,
+				'label' => '' !== $name ? $name : $slug,
+				'meta'  => $name !== $slug ? $slug : '',
+			];
+		}
+
+		usort( $items, static fn( array $a, array $b ): int => strnatcasecmp( (string) $a['label'], (string) $b['label'] ) );
+		return array_slice( $items, 0, 50 );
+	}
+
+	/** @return list<array{id:string,label:string,meta:string}> */
+	public static function search_capabilities( string $search ): array {
+		$search = trim( $search );
+		if ( strlen( $search ) < 2 ) {
+			return [];
+		}
+
+		$items = [];
+		foreach ( CapabilityCatalog::all() as $capability => $entry ) {
+			if ( ! is_string( $capability ) || ! is_array( $entry ) ) {
+				continue;
+			}
+			$label = isset( $entry['label'] ) && is_string( $entry['label'] ) ? $entry['label'] : $capability;
+			$group = isset( $entry['group'] ) && is_string( $entry['group'] ) ? $entry['group'] : '';
+			$source = isset( $entry['source'] ) && is_string( $entry['source'] ) ? $entry['source'] : '';
+			if ( false === mb_stripos( $capability . ' ' . $label . ' ' . $group . ' ' . $source, $search ) ) {
+				continue;
+			}
+			$items[] = [
+				'id'    => $capability,
+				'label' => '' !== $label ? $label : $capability,
+				'meta'  => $label !== $capability ? $capability : '',
+			];
+			if ( count( $items ) >= 50 ) {
+				break;
+			}
+		}
+		return $items;
+	}
+
+	public static function ajax_search_roles(): void {
+		Request::nonce( self::PICKER_NONCE_ACTION, '_ajax_nonce' );
+		Request::cap( 'manage_options' );
+		wp_send_json_success( [ 'items' => self::search_roles( Request::text( 'search' ) ) ] );
+	}
+
+	public static function ajax_search_capabilities(): void {
+		Request::nonce( self::PICKER_NONCE_ACTION, '_ajax_nonce' );
+		Request::cap( 'manage_options' );
+		wp_send_json_success( [ 'items' => self::search_capabilities( Request::text( 'search' ) ) ] );
 	}
 
 	/** @param list<string> $catalog @param list<string> $preferred @return list<string> */
