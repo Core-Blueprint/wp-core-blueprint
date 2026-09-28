@@ -192,3 +192,67 @@ test('command failures are transactional and do not mutate project or editor sna
 	assert.equal(history.canUndo, false);
 	history.dispose();
 });
+
+
+test('SelectionState publishes only real changes and batches compound selection mutations', () => {
+	const selection = new core.SelectionState();
+	const events = [];
+	const unsubscribe = selection.subscribe((event, snapshot) => events.push({ event, snapshot }));
+
+	assert.equal(selection.select([0], { source: 'ui' }), true);
+	assert.equal(selection.select([0], { source: 'ui' }), false);
+	assert.equal(events.length, 1);
+	assert.equal(events[0].event.source, 'ui');
+	assert.equal(events[0].event.action, 'select');
+
+	selection.batch({ source: 'command', action: 'insert-node' }, () => {
+		selection.remap((path) => [path[0] + 1]);
+		selection.select([0]);
+	});
+	assert.equal(events.length, 1, 'A batch with the same final selection must not publish noise.');
+
+	selection.batch({ source: 'command', action: 'reorder-node' }, () => {
+		selection.remap((path) => [path[0] + 1]);
+		selection.reconcile(project().root);
+	});
+	assert.equal(events.length, 2);
+	assert.equal(events[1].event.source, 'command');
+	assert.equal(events[1].event.action, 'reorder-node');
+	assert.deepEqual(events[1].snapshot.primary, [1]);
+
+	const beforeFailure = selection.snapshot();
+	assert.throws(() => selection.batch({ source: 'command', action: 'failed' }, () => {
+		selection.select([2]);
+		throw new Error('selection failure');
+	}), /selection failure/);
+	assert.deepEqual(selection.snapshot(), beforeFailure);
+	assert.equal(events.length, 2, 'Failed batches must roll back without publishing transient selection.');
+	unsubscribe();
+});
+
+test('command history publishes one coherent final selection event for insert and history restore', () => {
+	const state = new core.ProjectState(project());
+	const editor = new core.EditorState();
+	editor.selection.select([2]);
+	const history = new core.CommandHistory(state, editor);
+	const events = [];
+	editor.selection.subscribe((event, snapshot) => events.push({ event, snapshot }));
+
+	history.execute(core.insertNodeCommand([], 1, node('inserted')));
+	assert.equal(events.length, 1);
+	assert.equal(events[0].event.source, 'command');
+	assert.equal(events[0].event.action, 'insert-node');
+	assert.deepEqual(events[0].snapshot.primary, [1]);
+
+	assert.equal(history.undo(), true);
+	assert.equal(events.length, 2);
+	assert.equal(events[1].event.source, 'history');
+	assert.equal(events[1].event.action, 'undo');
+	assert.deepEqual(events[1].snapshot.primary, [2]);
+
+	assert.equal(history.redo(), true);
+	assert.equal(events.length, 3);
+	assert.equal(events[2].event.action, 'redo');
+	assert.deepEqual(events[2].snapshot.primary, [1]);
+	history.dispose();
+});

@@ -21,17 +21,17 @@ export class EditorState {
 		};
 	}
 
-	restore(snapshot) {
+	restore(snapshot, selectionEvent = {}) {
 		if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
 			throw new TypeError('Invalid editor state snapshot.');
 		}
-		this.selection.restore(snapshot.selection ?? { paths: [], primary: null });
+		this.selection.restore(snapshot.selection ?? { paths: [], primary: null }, selectionEvent);
 		this.inspector.restore(snapshot.inspector ?? { activeSection: null, expanded: [] });
 		this.validation.replace(Array.isArray(snapshot.validation) ? snapshot.validation : []);
 	}
 
-	reconcile(root) {
-		this.selection.reconcile(root);
+	reconcile(root, selectionEvent = {}) {
+		return this.selection.reconcile(root, selectionEvent);
 	}
 
 	toJSON() {

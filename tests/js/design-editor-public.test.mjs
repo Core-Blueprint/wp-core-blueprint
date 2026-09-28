@@ -74,6 +74,8 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof window.cbCore?.designEditor?.createSession, 'function');
 	assert.equal(typeof publicEditor.createDesignerShell, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.create, 'function');
+	assert.equal(typeof publicEditor.createDesignerSelectionController, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.selection?.createController, 'function');
 	assert.equal(typeof publicEditor.animateLayoutChange, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.motion?.animateLayoutChange, 'function');
 	assert.equal(typeof publicEditor.commands?.insertNode, 'function');
@@ -170,4 +172,60 @@ test('unknown profiles fail closed', () => {
 		() => publicEditor.createSession({ project: flowProject(), profile: 'commerce-financial' }),
 		/Unknown Design Foundation editor profile/
 	);
+});
+
+
+test('session selection lifecycle validates paths, reconciles replacement and exposes inspector context', () => {
+	const changes = [];
+	const session = publicEditor.createSession({
+		project: flowProject(),
+		profile: 'document-flow',
+		onSelectionChange: (snapshot, context) => changes.push({ snapshot, context }),
+	});
+
+	assert.equal(session.select([0], { source: 'layers' }), true);
+	assert.equal(changes.length, 1);
+	assert.equal(changes[0].context.event.source, 'layers');
+	assert.equal(changes[0].context.inspector.target.kind, 'single');
+	assert.deepEqual(changes[0].snapshot.primary, [0]);
+	assert.equal(session.select([99], { source: 'layers' }), false);
+	assert.equal(changes.length, 1);
+
+	const replacement = flowProject();
+	replacement.root.children = [];
+	session.replace(replacement, { source: 'context-switch' });
+	assert.equal(changes.length, 2);
+	assert.equal(changes[1].context.event.source, 'replace');
+	assert.equal(changes[1].context.event.action, 'context-switch');
+	assert.equal(changes[1].snapshot.primary, null);
+	session.dispose();
+});
+
+test('canonical selection controller synchronizes Layers Inspector and canvas and opens Inspector for UI and insert selection', () => {
+	const session = publicEditor.createSession({ project: flowProject(), profile: 'document-flow' });
+	const order = [];
+	const panels = [];
+	const controller = publicEditor.createDesignerSelectionController({
+		session,
+		shell: { activatePanel: (panel) => panels.push(panel) },
+		renderLayers: (context) => order.push(['layers', context.primary]),
+		renderInspector: (context) => order.push(['inspector', context.inspector.target.kind]),
+		syncCanvas: (context) => order.push(['canvas', context.primary]),
+	});
+
+	assert.deepEqual(order.slice(0, 3).map(([name]) => name), ['layers', 'inspector', 'canvas']);
+	order.length = 0;
+
+	assert.equal(controller.select([0]), true);
+	assert.deepEqual(order.map(([name]) => name), ['layers', 'inspector', 'canvas']);
+	assert.deepEqual(panels, ['inspector']);
+	order.length = 0;
+
+	session.execute(publicEditor.insertNodeCommand([], 1, node('text', [], { value: { source: 'literal', text: 'Inserted' } })));
+	assert.deepEqual(order.map(([name]) => name), ['layers', 'inspector', 'canvas']);
+	assert.deepEqual(panels, ['inspector', 'inspector']);
+	assert.deepEqual(session.selection().primary, [1]);
+
+	controller.destroy();
+	session.dispose();
 });

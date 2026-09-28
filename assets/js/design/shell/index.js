@@ -7,6 +7,7 @@ import {
 	DESIGNER_LAYER_ACTIONS,
 	createDesignerLayerRow,
 } from './layers.js';
+import { createDesignerSelectionController } from './selection-controller.js';
 
 const element = (root, selector) => root?.querySelector?.(selector) ?? null;
 const elements = (root, selector) => Array.from(root?.querySelectorAll?.(selector) ?? []);
@@ -511,5 +512,6 @@ export {
 	DESIGNER_LAYER_ACTIONS,
 	createDesignerIcon,
 	createDesignerLayerRow,
+	createDesignerSelectionController,
 	decorateDesignerControl,
 };

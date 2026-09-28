@@ -135,3 +135,12 @@ This contract deliberately separates a stable Designer structure and session exp
 Base owns the Layers row and its standard actions. Consumers provide the semantic label/meta, nesting depth, selection callback and bounded move/remove callbacks through the public Designer Layers helper. They must not recreate the row or substitute product-specific text buttons for canonical actions.
 
 Standard row actions are ordered as move up, move down, remove. Move/remove controls are icon-only with accessible labels. The action overlay is visible on pointer hover, keyboard focus within the row and whenever the row is selected; otherwise it remains visually hidden without changing the row layout.
+
+
+## Canonical selection lifecycle
+
+Selection is Base-owned session state. Every real selection mutation publishes one canonical change event with a revision, source and action. Command-driven remaps are batched so insert, remove and reorder expose only their final coherent selection state; undo and redo restore selection through the same lifecycle.
+
+Consumers must not manually coordinate separate Layers, Inspector and canvas selection paths. They bind domain render adapters through the public Designer selection controller. Base invokes those adapters in deterministic order: Layers, Inspector, canvas. Explicit UI selection opens the canonical Inspector panel, and insertion of a newly selected element may do the same automatically.
+
+The session public boundary provides selection snapshots, validated `select()`, `clearSelection()` and `subscribeSelection()`. Project replacement reconciles selection against the new tree by default; a context switch may request `resetSelection: true` when selection must not carry across documents.

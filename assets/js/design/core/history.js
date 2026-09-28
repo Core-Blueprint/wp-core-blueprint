@@ -54,23 +54,26 @@ export class CommandHistory {
 			throw new TypeError('Editor commands must return a project transition.');
 		}
 
+		const commandLabel = String(editorCommand.label || 'command');
 		try {
 			this.#projectState.replace(effect.project, { source: 'command' });
-			if (typeof effect.remapSelection === 'function') {
-				this.#editorState.selection.remap(effect.remapSelection);
-			}
-			if (Array.isArray(effect.selectPath)) {
-				this.#editorState.selection.select(effect.selectPath);
-			}
-			this.#editorState.reconcile(this.#projectState.current().root);
+			this.#editorState.selection.batch({ source: 'command', action: commandLabel }, () => {
+				if (typeof effect.remapSelection === 'function') {
+					this.#editorState.selection.remap(effect.remapSelection);
+				}
+				if (Array.isArray(effect.selectPath)) {
+					this.#editorState.selection.select(effect.selectPath);
+				}
+				this.#editorState.reconcile(this.#projectState.current().root);
+			});
 		} catch (error) {
 			this.#projectState.replace(beforeProject, { source: 'history' });
-			this.#editorState.restore(beforeEditor);
+			this.#editorState.restore(beforeEditor, { source: 'history', action: 'rollback' });
 			throw error;
 		}
 
 		const entry = Object.freeze({
-			label: String(editorCommand.label || 'command'),
+			label: commandLabel,
 			beforeProject: cloneValue(beforeProject),
 			beforeEditor: cloneValue(beforeEditor),
 			afterProject: this.#projectState.snapshot(),
@@ -86,7 +89,7 @@ export class CommandHistory {
 		const entry = this.#undo.pop();
 		if (!entry) return false;
 		this.#projectState.replace(entry.beforeProject, { source: 'history' });
-		this.#editorState.restore(entry.beforeEditor);
+		this.#editorState.restore(entry.beforeEditor, { source: 'history', action: 'undo' });
 		this.#redo.push(entry);
 		return true;
 	}
@@ -95,7 +98,7 @@ export class CommandHistory {
 		const entry = this.#redo.pop();
 		if (!entry) return false;
 		this.#projectState.replace(entry.afterProject, { source: 'history' });
-		this.#editorState.restore(entry.afterEditor);
+		this.#editorState.restore(entry.afterEditor, { source: 'history', action: 'redo' });
 		this.#undo.push(entry);
 		return true;
 	}

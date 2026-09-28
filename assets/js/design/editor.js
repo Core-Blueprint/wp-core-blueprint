@@ -5,6 +5,7 @@ import {
 	buildInspectorContext,
 	handleEditorShortcut,
 	insertNodeCommand,
+	nodeAt,
 	removeNodeCommand,
 	reorderNodeCommand,
 	setPropertyCommand,
@@ -24,6 +25,7 @@ import {
 	configureDesignerSidebar,
 	createDesignerIcon,
 	createDesignerLayerRow,
+	createDesignerSelectionController,
 	createDesignerShell,
 	decorateDesignerControl,
 } from './shell/index.js';
@@ -78,6 +80,7 @@ export const createSession = ({
 	profile,
 	validate = null,
 	onChange = null,
+	onSelectionChange = null,
 	allowCommand = null,
 	historyLimit = 100,
 } = {}) => {
@@ -104,7 +107,7 @@ export const createSession = ({
 
 	validateCurrent();
 
-	const unsubscribe = projectState.subscribe((event, currentProject) => {
+	const unsubscribeProject = projectState.subscribe((event, currentProject) => {
 		const diagnostics = validateCurrent(event);
 		if (typeof onChange === 'function') {
 			onChange(currentProject, Object.freeze({
@@ -114,6 +117,26 @@ export const createSession = ({
 			}));
 		}
 	});
+
+	const selectionContext = (event) => Object.freeze({
+		event,
+		profile: profileContext,
+		projectRevision: projectState.revision,
+		inspector: buildInspectorContext(
+			projectState.current().root,
+			editorState.selection,
+			editorState.validation,
+		),
+	});
+
+	const subscribeSelection = (listener, options = {}) => editorState.selection.subscribe(
+		(event, snapshot) => listener(snapshot, selectionContext(event)),
+		options,
+	);
+
+	const unsubscribeConfiguredSelection = typeof onSelectionChange === 'function'
+		? subscribeSelection(onSelectionChange)
+		: null;
 
 	const assertActive = () => {
 		if (disposed) throw new Error('Design editor session has been disposed.');
@@ -146,7 +169,29 @@ export const createSession = ({
 		snapshot: () => projectState.snapshot(),
 		replace(nextProject, options = {}) {
 			assertActive();
-			return projectState.replace(nextProject, options);
+			const source = String(options?.source || 'editor');
+			const next = projectState.replace(nextProject, { source });
+			editorState.selection.batch({ source: 'replace', action: source }, () => {
+				if (options?.resetSelection === true) editorState.selection.clear();
+				else editorState.reconcile(next.root);
+			});
+			return next;
+		},
+		selection: () => editorState.selection.snapshot(),
+		select(path, { additive = false, source = 'consumer' } = {}) {
+			assertActive();
+			if (!Array.isArray(path) || !nodeAt(projectState.current().root, path)) return false;
+			editorState.selection.select(path, { additive, source, action: 'select' });
+			return true;
+		},
+		clearSelection({ source = 'consumer' } = {}) {
+			assertActive();
+			return editorState.selection.clear({ source, action: 'clear' });
+		},
+		subscribeSelection(listener, options = {}) {
+			assertActive();
+			if (typeof listener !== 'function') throw new TypeError('Design editor selection listener must be a function.');
+			return subscribeSelection(listener, options);
 		},
 		execute,
 		undo() {
@@ -176,7 +221,8 @@ export const createSession = ({
 		dispose() {
 			if (disposed) return;
 			disposed = true;
-			unsubscribe();
+			unsubscribeConfiguredSelection?.();
+			unsubscribeProject();
 			history.dispose();
 		},
 	});
@@ -204,6 +250,7 @@ export {
 	configureDesignerViewports,
 	createDesignerIcon,
 	createDesignerLayerRow,
+	createDesignerSelectionController,
 	createDesignerShell,
 	decorateDesignerControl,
 	insertNodeCommand,
@@ -236,6 +283,9 @@ const publicApi = Object.freeze({
 		layers: Object.freeze({
 			actions: DESIGNER_LAYER_ACTIONS,
 			createRow: createDesignerLayerRow,
+		}),
+		selection: Object.freeze({
+			createController: createDesignerSelectionController,
 		}),
 	}),
 	commands,
