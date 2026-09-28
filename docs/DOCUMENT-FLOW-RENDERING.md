@@ -81,7 +81,7 @@ The optional `$preview_regions` map is preview-only Designer metadata. Each sema
 ]
 ```
 
-Every referenced path must resolve to an existing typed `RenderBlock`, and one render path may belong to only one semantic region. Invalid or duplicate paths fail closed. Region metadata is never emitted by paged HTML/PDF rendering.
+Every referenced path must resolve to an existing typed `RenderBlock`, and one render path may belong to only one semantic region. Invalid or duplicate paths fail closed. When a region is selected, the isolated preview may apply editor-only outline and minimum-height affordances so even empty blocks remain visible and selectable; those styles are removed when selection clears. Region metadata and editor affordances are never emitted by paged HTML/PDF rendering.
 
 For browser embedding, consumers should place the returned complete document in an isolated `iframe` using `srcdoc` and a bare `sandbox` attribute. Consumers should not add `allow-scripts`, `allow-same-origin`, remote-resource permissions or other capabilities that the Flow preview does not require.
 

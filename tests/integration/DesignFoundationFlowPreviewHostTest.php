@@ -48,6 +48,8 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( 'data.region===null', $first_bridge );
 		self::assertStringContainsString( "root.querySelectorAll('[data-cb-flow-preview-region]')", $first_bridge );
 		self::assertStringContainsString( "target.style.outline='2px solid #00a8e8'", $first_bridge );
+		self::assertStringContainsString( "target.style.minHeight='1em'", $first_bridge );
+		self::assertStringContainsString( "target.style.minHeight=record.minHeight", $first_bridge );
 		self::assertStringContainsString( "target.removeAttribute('data-cb-flow-preview-selected')", $first_bridge );
 
 		$hash = base64_encode( hash( 'sha256', $first_bridge, true ) );

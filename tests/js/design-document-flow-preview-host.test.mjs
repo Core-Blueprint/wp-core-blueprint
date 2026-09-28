@@ -483,3 +483,91 @@ test('parent host never reads iframe DOM and never grants same-origin', () => {
 	assert.doesNotMatch(source, /scrollHeight/);
 	assert.doesNotMatch(source, /allow-same-origin/);
 });
+
+
+test('selected preview regions keep empty elements visibly selectable and restore prior inline styles', () => {
+	const bridge = sizingBridge();
+	let messageHandler = null;
+
+	class HTMLElementStub {
+		constructor(region) {
+			this.region = region;
+			this.attributes = new Map();
+			this.style = {
+				outline: '',
+				outlineOffset: '',
+				minHeight: '0px',
+			};
+		}
+
+		getAttribute(name) {
+			if (name === 'data-cb-flow-preview-region') return this.region;
+			return this.attributes.get(name) ?? null;
+		}
+
+		setAttribute(name, value) {
+			this.attributes.set(name, String(value));
+		}
+
+		removeAttribute(name) {
+			this.attributes.delete(name);
+		}
+	}
+
+	const target = new HTMLElementStub('empty-paragraph');
+	const parentWindow = { postMessage() {} };
+	const root = {
+		scrollHeight: 100,
+		offsetHeight: 100,
+		getBoundingClientRect: () => ({ height: 100 }),
+		getAttribute: (name) => name === 'data-cb-flow-preview-root' ? '1' : null,
+		querySelectorAll: (selector) => selector === '[data-cb-flow-preview-region]' ? [target] : [],
+	};
+	const windowObject = {
+		parent: parentWindow,
+		addEventListener(type, handler) {
+			if (type === 'message') messageHandler = handler;
+		},
+	};
+	const documentObject = {
+		querySelectorAll(selector) {
+			if (selector === 'meta[name="cb-core-flow-preview-protocol"]') return [{ content: '1' }];
+			if (selector === '[data-cb-flow-preview-root]') return [root];
+			return [];
+		},
+		documentElement: {
+			getAttribute: (name) => name === 'data-cb-core-flow-preview-generation' ? '1' : null,
+		},
+	};
+	class ResizeObserverStub {
+		observe() {}
+	}
+
+	runInNewContext(bridge, {
+		window: windowObject,
+		document: documentObject,
+		HTMLElement: HTMLElementStub,
+		ResizeObserver: ResizeObserverStub,
+		requestAnimationFrame: () => 1,
+		Number,
+		Math,
+	});
+
+	const selection = {
+		type: 'cb-core-flow-preview-selection',
+		version: 1,
+		generation: 1,
+		region: 'empty-paragraph',
+	};
+	messageHandler({ source: parentWindow, data: selection });
+	assert.equal(target.style.outline, '2px solid #00a8e8');
+	assert.equal(target.style.outlineOffset, '3px');
+	assert.equal(target.style.minHeight, '1em');
+	assert.equal(target.getAttribute('data-cb-flow-preview-selected'), '1');
+
+	messageHandler({ source: parentWindow, data: { ...selection, region: null } });
+	assert.equal(target.style.outline, '');
+	assert.equal(target.style.outlineOffset, '');
+	assert.equal(target.style.minHeight, '0px');
+	assert.equal(target.getAttribute('data-cb-flow-preview-selected'), null);
+});
