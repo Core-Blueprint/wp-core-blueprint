@@ -19,9 +19,11 @@ import * as flowProfile from './document/flow/index.js';
 import * as mailProfile from './mail/index.js';
 import {
 	DESIGNER_ICON_NAMES,
+	DESIGNER_LAYER_ACTIONS,
 	DESIGNER_SIDEBAR_ROLES,
 	configureDesignerSidebar,
 	createDesignerIcon,
+	createDesignerLayerRow,
 	createDesignerShell,
 	decorateDesignerControl,
 } from './shell/index.js';
@@ -190,6 +192,7 @@ export const commands = Object.freeze({
 export {
 	CommandHistory,
 	DESIGNER_ICON_NAMES,
+	DESIGNER_LAYER_ACTIONS,
 	DESIGNER_MOTION_DEFAULTS,
 	DESIGNER_MOTION_KEY_ATTRIBUTE,
 	DESIGNER_SIDEBAR_ROLES,
@@ -200,6 +203,7 @@ export {
 	configureDesignerSidebar,
 	configureDesignerViewports,
 	createDesignerIcon,
+	createDesignerLayerRow,
 	createDesignerShell,
 	decorateDesignerControl,
 	insertNodeCommand,
@@ -228,6 +232,10 @@ const publicApi = Object.freeze({
 			names: DESIGNER_ICON_NAMES,
 			create: createDesignerIcon,
 			decorate: decorateDesignerControl,
+		}),
+		layers: Object.freeze({
+			actions: DESIGNER_LAYER_ACTIONS,
+			createRow: createDesignerLayerRow,
 		}),
 	}),
 	commands,

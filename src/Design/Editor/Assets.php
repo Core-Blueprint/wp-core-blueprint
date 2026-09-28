@@ -193,6 +193,11 @@ final class Assets {
 					'elements'     => __( 'Elements', 'core-blueprint' ),
 					'dynamic-data' => __( 'Dynamic data', 'core-blueprint' ),
 				],
+				'layerActionLabels' => [
+					'moveUp'   => __( 'Move element up', 'core-blueprint' ),
+					'moveDown' => __( 'Move element down', 'core-blueprint' ),
+					'remove'   => __( 'Remove element', 'core-blueprint' ),
+				],
 				'sidebarLabels' => [
 					'inspector' => __( 'Inspector', 'core-blueprint' ),
 					// WordPress editor vocabulary intentionally uses the default text domain.

@@ -3,6 +3,10 @@ import {
 	createDesignerIcon,
 	decorateDesignerControl,
 } from './icons.js';
+import {
+	DESIGNER_LAYER_ACTIONS,
+	createDesignerLayerRow,
+} from './layers.js';
 
 const element = (root, selector) => root?.querySelector?.(selector) ?? null;
 const elements = (root, selector) => Array.from(root?.querySelectorAll?.(selector) ?? []);
@@ -504,6 +508,8 @@ export const createDesignerShell = (root, {
 
 export {
 	DESIGNER_ICON_NAMES,
+	DESIGNER_LAYER_ACTIONS,
 	createDesignerIcon,
+	createDesignerLayerRow,
 	decorateDesignerControl,
 };

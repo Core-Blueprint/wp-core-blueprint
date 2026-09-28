@@ -114,7 +114,8 @@ Base owns:
 - left palette role order and shared labels;
 - right sidebar role order and shared labels;
 - desktop and responsive rail behavior;
-- shared rail/tab/panel presentation.
+- shared rail/tab/panel presentation;
+- Layers row DOM, action order, iconography, selected-state presentation and action affordances.
 
 Consumers own:
 
@@ -123,9 +124,14 @@ Consumers own:
 - element definitions;
 - dynamic-data definitions;
 - Inspector fields and validation;
-- Layers data and bounded reorder policy;
+- Layers semantic data and bounded reorder/remove policy, supplied through Base-owned Layers rows;
 - Settings fields;
 - canvas/render semantics;
 - persistence and permissions.
 
 This contract deliberately separates a stable Designer structure and session experience from flexible product composition.
+## Canonical Layers interaction
+
+Base owns the Layers row and its standard actions. Consumers provide the semantic label/meta, nesting depth, selection callback and bounded move/remove callbacks through the public Designer Layers helper. They must not recreate the row or substitute product-specific text buttons for canonical actions.
+
+Standard row actions are ordered as move up, move down, remove. Move/remove controls are icon-only with accessible labels. The action overlay is visible on pointer hover, keyboard focus within the row and whenever the row is selected; otherwise it remains visually hidden without changing the row layout.
