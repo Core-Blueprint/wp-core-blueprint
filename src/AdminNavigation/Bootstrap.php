@@ -20,7 +20,7 @@ final class Bootstrap {
 		self::$booted = true;
 
 		add_action( 'init', [ self::class, 'register_events' ], 1 );
-		if ( RequestContext::is_admin_post() ) {
+		if ( RequestContext::is_admin_post() || RequestContext::is_ajax() ) {
 			Admin::boot();
 		}
 

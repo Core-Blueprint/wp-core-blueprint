@@ -11,18 +11,16 @@ use CB\Core\Permissions\PrivilegedAccessRegistry;
  */
 final class AdminNavigationAjaxContractTest extends WP_Ajax_UnitTestCase {
 
-	public function set_up(): void {
-		parent::set_up();
-
-		if ( false === has_action( 'wp_ajax_' . AdminNavigationAdmin::ROLE_SEARCH_ACTION, [ AdminNavigationAdmin::class, 'ajax_search_roles' ] ) ) {
-			AdminNavigationAdmin::boot();
-		}
-	}
 
 	public function tear_down(): void {
 		remove_role( 'cb_nav_picker_ajax' );
 		wp_set_current_user( 0 );
 		parent::tear_down();
+	}
+
+	public function test_plugin_bootstrap_registers_picker_ajax_handlers(): void {
+		self::assertNotFalse( has_action( 'wp_ajax_' . AdminNavigationAdmin::ROLE_SEARCH_ACTION, [ AdminNavigationAdmin::class, 'ajax_search_roles' ] ) );
+		self::assertNotFalse( has_action( 'wp_ajax_' . AdminNavigationAdmin::CAPABILITY_SEARCH_ACTION, [ AdminNavigationAdmin::class, 'ajax_search_capabilities' ] ) );
 	}
 
 	public function test_role_picker_search_runs_through_canonical_ajax_boundary(): void {
