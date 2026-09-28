@@ -14,6 +14,9 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        'Move element up' => 'Déplacer l’élément vers le haut',
+        'Move element down' => 'Déplacer l’élément vers le bas',
+        'Remove element' => 'Supprimer l’élément',
         'Reports Designer' => 'Reports Designer',
         'Design loaded' => 'Modèle chargé',
         'Loading design…' => 'Chargement du modèle…',
