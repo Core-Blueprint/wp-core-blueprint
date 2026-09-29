@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Environment\EnvironmentTypeTestShim;
 use CB\Core\Governance\RetentionPolicy;
 use CB\Core\Integrity\Storage\ResultRepository;
 use CB\Core\Log\Verbosity;
@@ -37,6 +38,7 @@ final class CB_Base_Core_Setup_Security_Governance_Contract_Test extends WP_Unit
 		}
 
 		delete_option( ReviewRepository::OPTION );
+		EnvironmentTypeTestShim::reset();
 		wp_set_current_user( 0 );
 	}
 
@@ -44,6 +46,7 @@ final class CB_Base_Core_Setup_Security_Governance_Contract_Test extends WP_Unit
 		foreach ( $this->saved_options as $option => $value ) {
 			$this->restore_option( (string) $option, $value );
 		}
+		EnvironmentTypeTestShim::reset();
 		wp_set_current_user( 0 );
 
 		parent::tear_down();
