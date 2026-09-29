@@ -1,10 +1,11 @@
 <?php
 declare(strict_types=1);
 /**
- * Persistence for Core Setup human review intent.
+ * Persistence for Core Setup lifecycle and human review intent.
  *
- * This repository stores no canonical module configuration. Only bounded review
- * metadata that cannot be derived from the owning modules belongs here.
+ * This repository stores no canonical module configuration. Only bounded Setup
+ * metadata that cannot be derived from the owning modules belongs here:
+ * lifecycle origin, review fingerprints/dispositions, and section annotations.
  *
  * @package Core_Blueprint
  * @since   1.0.0
@@ -18,6 +19,10 @@ final class ReviewRepository {
 	public const OPTION         = 'cb_core_setup_state';
 	public const SCHEMA_VERSION = 1;
 
+	public const ORIGIN_FIRST_INSTALL    = 'first_install';
+	public const ORIGIN_EXISTING_INSTALL = 'existing_install';
+	public const ORIGINS = [ self::ORIGIN_FIRST_INSTALL, self::ORIGIN_EXISTING_INSTALL ];
+
 	public const REVIEWED       = 'reviewed';
 	public const LATER          = 'later';
 	public const NOT_APPLICABLE = 'not_applicable';
@@ -26,9 +31,56 @@ final class ReviewRepository {
 	private const MAX_REASON_LENGTH = 1000;
 	private const MAX_NOTE_LENGTH   = 4000;
 
-	/** @return array{schema_version:int,checks:array<string,array<string,mixed>>,sections:array<string,array<string,mixed>>} */
+	/**
+	 * @return array{
+	 *   schema_version:int,
+	 *   lifecycle:array{origin:string,initialized_at:int,started_at:int,started_by:int},
+	 *   checks:array<string,array<string,mixed>>,
+	 *   sections:array<string,array<string,mixed>>
+	 * }
+	 */
 	public static function state(): array {
 		return self::normalize_state( get_option( self::OPTION, [] ) );
+	}
+
+	/** @return array{origin:string,initialized_at:int,started_at:int,started_by:int} */
+	public static function lifecycle(): array {
+		return self::state()['lifecycle'];
+	}
+
+	public static function initialize_lifecycle( string $origin, int $initialized_at = 0 ): bool {
+		if ( ! in_array( $origin, self::ORIGINS, true ) ) {
+			return false;
+		}
+
+		$state = self::state();
+		if ( in_array( $state['lifecycle']['origin'], self::ORIGINS, true ) ) {
+			return true;
+		}
+
+		$state['lifecycle'] = [
+			'origin'         => $origin,
+			'initialized_at' => $initialized_at > 0 ? $initialized_at : time(),
+			'started_at'     => 0,
+			'started_by'     => 0,
+		];
+
+		return self::persist( $state );
+	}
+
+	public static function mark_started( int $user_id = 0, int $started_at = 0 ): bool {
+		$state = self::state();
+		if ( $state['lifecycle']['started_at'] > 0 ) {
+			return true;
+		}
+		if ( ! in_array( $state['lifecycle']['origin'], self::ORIGINS, true ) ) {
+			return false;
+		}
+
+		$state['lifecycle']['started_at'] = $started_at > 0 ? $started_at : time();
+		$state['lifecycle']['started_by'] = max( 0, $user_id );
+
+		return self::persist( $state );
 	}
 
 	/** @return array<string,mixed>|null */
@@ -58,6 +110,9 @@ final class ReviewRepository {
 			return false;
 		}
 		$state = self::state();
+		if ( ! isset( $state['checks'][ $check_id ] ) ) {
+			return true;
+		}
 		unset( $state['checks'][ $check_id ] );
 		return self::persist( $state );
 	}
@@ -79,6 +134,14 @@ final class ReviewRepository {
 
 		$state = self::state();
 		$note  = self::sanitize_bounded_text( $note, self::MAX_NOTE_LENGTH );
+		$current = is_array( $state['sections'][ $section_id ] ?? null )
+			? (string) ( $state['sections'][ $section_id ]['note'] ?? '' )
+			: '';
+
+		if ( $current === $note ) {
+			return true;
+		}
+
 		if ( '' === $note ) {
 			unset( $state['sections'][ $section_id ] );
 		} else {
@@ -97,22 +160,48 @@ final class ReviewRepository {
 			return false;
 		}
 
-		$state = self::state();
-		$state['checks'][ $check_id ] = [
+		$state  = self::state();
+		$reason = self::sanitize_bounded_text( $reason, self::MAX_REASON_LENGTH );
+		$next   = [
 			'disposition' => $disposition,
 			'fingerprint' => $evidence->fingerprint(),
-			'reason'      => self::sanitize_bounded_text( $reason, self::MAX_REASON_LENGTH ),
-			'updated_at'  => time(),
+			'reason'      => $reason,
 			'updated_by'  => max( 0, $user_id ),
 		];
+		$current = is_array( $state['checks'][ $check_id ] ?? null ) ? $state['checks'][ $check_id ] : null;
 
+		if (
+			is_array( $current )
+			&& (string) ( $current['disposition'] ?? '' ) === $next['disposition']
+			&& (string) ( $current['fingerprint'] ?? '' ) === $next['fingerprint']
+			&& (string) ( $current['reason'] ?? '' ) === $next['reason']
+			&& (int) ( $current['updated_by'] ?? 0 ) === $next['updated_by']
+		) {
+			return true;
+		}
+
+		$state['checks'][ $check_id ] = $next + [ 'updated_at' => time() ];
 		return self::persist( $state );
 	}
 
-	/** @param mixed $raw @return array{schema_version:int,checks:array<string,array<string,mixed>>,sections:array<string,array<string,mixed>>} */
+	/**
+	 * @param mixed $raw
+	 * @return array{
+	 *   schema_version:int,
+	 *   lifecycle:array{origin:string,initialized_at:int,started_at:int,started_by:int},
+	 *   checks:array<string,array<string,mixed>>,
+	 *   sections:array<string,array<string,mixed>>
+	 * }
+	 */
 	private static function normalize_state( mixed $raw ): array {
 		$default = [
 			'schema_version' => self::SCHEMA_VERSION,
+			'lifecycle'      => [
+				'origin'         => '',
+				'initialized_at' => 0,
+				'started_at'     => 0,
+				'started_by'     => 0,
+			],
 			'checks'         => [],
 			'sections'       => [],
 		];
@@ -123,6 +212,28 @@ final class ReviewRepository {
 		$version = isset( $raw['schema_version'] ) ? (int) $raw['schema_version'] : 0;
 		if ( self::SCHEMA_VERSION !== $version ) {
 			return $default;
+		}
+
+		$lifecycle_raw = is_array( $raw['lifecycle'] ?? null ) ? $raw['lifecycle'] : [];
+		$origin = isset( $lifecycle_raw['origin'] ) && is_string( $lifecycle_raw['origin'] )
+			? $lifecycle_raw['origin']
+			: '';
+		if ( ! in_array( $origin, self::ORIGINS, true ) ) {
+			$origin = '';
+		}
+		$lifecycle = [
+			'origin'         => $origin,
+			'initialized_at' => max( 0, (int) ( $lifecycle_raw['initialized_at'] ?? 0 ) ),
+			'started_at'     => max( 0, (int) ( $lifecycle_raw['started_at'] ?? 0 ) ),
+			'started_by'     => max( 0, (int) ( $lifecycle_raw['started_by'] ?? 0 ) ),
+		];
+		if ( '' === $origin ) {
+			$lifecycle = $default['lifecycle'];
+		} elseif ( 0 === $lifecycle['initialized_at'] ) {
+			$lifecycle['initialized_at'] = $lifecycle['started_at'];
+		}
+		if ( 0 === $lifecycle['started_at'] ) {
+			$lifecycle['started_by'] = 0;
 		}
 
 		$checks = [];
@@ -164,6 +275,7 @@ final class ReviewRepository {
 
 		return [
 			'schema_version' => self::SCHEMA_VERSION,
+			'lifecycle'      => $lifecycle,
 			'checks'         => $checks,
 			'sections'       => $sections,
 		];
