@@ -31,7 +31,6 @@ return [
         'The Routing & URLs policy could not be changed.' => 'Não foi possível alterar a política de Encaminhamento e URLs.',
         'Review how public category archives are routed and optionally use clean root-level archive URLs with compact pagination.' => 'Reveja como os arquivos públicos de categorias são encaminhados e utilize, opcionalmente, URLs limpos de arquivo ao nível da raiz com paginação compacta.',
         'Clean Archive URLs' => 'URLs limpos de arquivo',
-        'Enabled' => 'Ativado',
         'WordPress default' => 'Predefinição do WordPress',
         'This policy removes the category base from public category archive URLs and uses p{n} for archive pagination. It is always opt-in.' => 'Esta política remove a base de categoria dos URLs públicos de arquivos de categorias e utiliza p{n} para a paginação de arquivos. A ativação é sempre explícita.',
         'WordPress archive' => 'Arquivo do WordPress',
