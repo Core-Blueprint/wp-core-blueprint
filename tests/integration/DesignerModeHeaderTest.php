@@ -21,7 +21,9 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'const BOOT_RETRY_LIMIT = 200;', $launch );
 		self::assertStringContainsString( "window.addEventListener('cb:design-editor:ready', attemptBoot)", $launch );
 		self::assertStringContainsString( 'retryTimer = window.setTimeout(() => {', $launch );
-		self::assertStringContainsString( 'if (boot()) {', $launch );
+		self::assertStringContainsString( 'complete = boot();', $launch );
+		self::assertStringContainsString( 'try {', $launch );
+		self::assertStringContainsString( 'if (complete) {', $launch );
 		self::assertStringContainsString( "window.removeEventListener('cb:design-editor:ready', attemptBoot)", $launch );
 	}
 
