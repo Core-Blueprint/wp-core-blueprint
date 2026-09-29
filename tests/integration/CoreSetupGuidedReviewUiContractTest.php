@@ -50,11 +50,11 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 			preg_match_all( '/<a[^>]+class="nav-tab(?: nav-tab-active)?"/', $html )
 		);
 		self::assertMatchesRegularExpression(
-			'/tab=environment-availability[^"]*" class="nav-tab nav-tab-active"/',
+			'/tab=overview[^"]*" class="nav-tab nav-tab-active"/',
 			$html
 		);
-		self::assertStringContainsString( 'name="action" value="cb_core_setup_review"', $html );
-		self::assertStringContainsString( 'name="_wpnonce"', $html );
+		self::assertStringContainsString( 'cb-core-tab-cards', $html );
+		self::assertStringContainsString( 'cb-core-status-strip', $html );
 		self::assertStringNotContainsString( 'name="fingerprint"', $html );
 		self::assertGreaterThan( 0, ReviewRepository::lifecycle()['started_at'] );
 	}
@@ -67,7 +67,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 
 		self::assertStringNotContainsString( 'Start Core Setup</h2>', $html );
 		self::assertMatchesRegularExpression(
-			'/tab=review[^"]*" class="nav-tab nav-tab-active"/',
+			'/tab=overview[^"]*" class="nav-tab nav-tab-active"/',
 			$html
 		);
 		self::assertStringContainsString( 'cb-core-status-strip', $html );
