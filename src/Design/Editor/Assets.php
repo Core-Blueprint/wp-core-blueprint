@@ -214,11 +214,7 @@ final class Assets {
 					'ready'   => __( 'Design loaded', 'core-blueprint' ),
 					'error'   => __( 'The selected design could not be loaded.', 'core-blueprint' ),
 				],
-				'failureLabels' => [
-					'boot'    => __( 'Designer could not start. Reload the page and try again.', 'core-blueprint' ),
-					'enter'   => __( 'Designer could not enter fullscreen mode. Reload the page and try again.', 'core-blueprint' ),
-					'toolbar' => __( 'Designer toolbar could not start. Reload the page and try again.', 'core-blueprint' ),
-				],
+				'failureLabel' => __( 'Designer could not start. Reload the page and try again.', 'core-blueprint' ),
 			]
 		);
 	}
