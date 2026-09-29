@@ -39,46 +39,41 @@ final class Runtime {
 			return;
 		}
 
-		$paths = array_keys( CategoryRoutes::all() );
-		if ( [] === $paths ) {
+		foreach ( self::rewrite_definitions() as $regex => $query ) {
+			add_rewrite_rule( $regex, $query, 'top' );
+		}
+	}
+
+	/**
+	 * Reactivation must restore persisted rewrite rules after deactivation
+	 * removed the plugin-owned routes. The actual flush remains deferred until
+	 * init, where current categories have been registered by WordPress/plugins.
+	 */
+	public static function reconcile_activation(): void {
+		if ( Policy::enabled() ) {
+			self::mark_rewrite_dirty();
+		}
+	}
+
+	/**
+	 * Remove only the rewrite rules currently owned by URL Governance, then
+	 * flush the WordPress rewrite table while the deactivation hook still has a
+	 * fully bootstrapped WordPress runtime.
+	 */
+	public static function cleanup_deactivation(): void {
+		if ( ! Policy::enabled() && '1' !== (string) get_option( self::REWRITE_DIRTY_OPTION, '' ) ) {
 			return;
 		}
 
-		usort(
-			$paths,
-			static fn( string $a, string $b ): int => strlen( $b ) <=> strlen( $a )
-		);
+		global $wp_rewrite;
+		if ( $wp_rewrite instanceof \WP_Rewrite ) {
+			foreach ( array_keys( self::rewrite_definitions() ) as $regex ) {
+				unset( $wp_rewrite->extra_rules_top[ $regex ], $wp_rewrite->extra_rules[ $regex ] );
+			}
+		}
 
-		$alternation = implode(
-			'|',
-			array_map(
-				static fn( string $path ): string => preg_quote( $path, '#' ),
-				$paths
-			)
-		);
-
-		// Only known category paths are expanded. There is deliberately no
-		// generic root catch-all that could consume Pages, CPTs or endpoints.
-		add_rewrite_rule(
-			'^(' . $alternation . ')/p([0-9]+)/?$',
-			'index.php?category_name=$matches[1]&paged=$matches[2]',
-			'top'
-		);
-		add_rewrite_rule(
-			'^(' . $alternation . ')/feed/(feed|rdf|rss|rss2|atom)/?$',
-			'index.php?category_name=$matches[1]&feed=$matches[2]',
-			'top'
-		);
-		add_rewrite_rule(
-			'^(' . $alternation . ')/(feed|rdf|rss|rss2|atom)/?$',
-			'index.php?category_name=$matches[1]&feed=$matches[2]',
-			'top'
-		);
-		add_rewrite_rule(
-			'^(' . $alternation . ')/?$',
-			'index.php?category_name=$matches[1]',
-			'top'
-		);
+		flush_rewrite_rules( false );
+		delete_option( self::REWRITE_DIRTY_OPTION );
 	}
 
 	public static function filter_term_link( string $url, WP_Term $term, string $taxonomy ): string {
@@ -251,6 +246,332 @@ final class Runtime {
 
 		flush_rewrite_rules( false );
 		delete_option( self::REWRITE_DIRTY_OPTION );
+	}
+
+	/** @return array<string,string> regex => WordPress rewrite query. */
+	private static function rewrite_definitions(): array {
+		$paths = array_keys( CategoryRoutes::all() );
+		if ( [] === $paths ) {
+			return [];
+		}
+
+		usort(
+			$paths,
+			static fn( string $a, string $b ): int => strlen( $b ) <=> strlen( $a )
+		);
+
+		$alternation = implode(
+			'|',
+			array_map(
+				static fn( string $path ): string => preg_quote( $path, '#' ),
+				$paths
+			)
+		);
+
+		// Only known category paths are expanded. There is deliberately no
+		// generic root catch-all that could consume Pages, CPTs or endpoints.
+		return [
+			'^(' . $alternation . ')/p([0-9]+)/?		foreach ( CategoryRoutes::all() as $path => $_term ) {
+			$quoted = preg_quote( $path, '#' );
+
+			if ( $current === $path ) {
+				return true;
+			}
+			if ( preg_match( '#^' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?$#', $current ) ) {
+				return true;
+			}
+			if ( preg_match( '#^' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?$#', $current ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static function current_request_path(): string {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+
+		return self::relative_path_from_url( $request_uri );
+	}
+
+	private static function relative_path_from_url( string $url ): string {
+		$request_path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$home_path    = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+
+		$request_path = '/' . ltrim( rawurldecode( $request_path ), '/' );
+		$home_path    = '/' . trim( rawurldecode( $home_path ), '/' );
+
+		if ( '/' !== $home_path && str_starts_with( $request_path, $home_path . '/' ) ) {
+			$request_path = substr( $request_path, strlen( $home_path ) );
+		} elseif ( $request_path === $home_path ) {
+			$request_path = '/';
+		}
+
+		return trim( $request_path, '/' );
+	}
+
+	private static function redirect_if_needed( string $target ): void {
+		$request_uri  = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		$request_path = rawurldecode( (string) wp_parse_url( $request_uri, PHP_URL_PATH ) );
+		$target_path  = rawurldecode( (string) wp_parse_url( $target, PHP_URL_PATH ) );
+
+		if ( $request_path !== $target_path ) {
+			self::redirect( $target );
+		}
+	}
+
+	private static function redirect( string $target ): never {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		$query = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
+
+		if ( '' !== $query ) {
+			$args = [];
+			parse_str( $query, $args );
+			if ( is_array( $args ) && [] !== $args ) {
+				$target = add_query_arg( $args, $target );
+			}
+		}
+
+		wp_safe_redirect( $target, 301, 'Core Blueprint URL Governance' );
+		exit;
+	}
+
+	private function __construct() {}
+}
+ =>
+				'index.php?category_name=$matches[1]&paged=$matches[2]',
+			'^(' . $alternation . ')/feed/(feed|rdf|rss|rss2|atom)/?		foreach ( CategoryRoutes::all() as $path => $_term ) {
+			$quoted = preg_quote( $path, '#' );
+
+			if ( $current === $path ) {
+				return true;
+			}
+			if ( preg_match( '#^' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?$#', $current ) ) {
+				return true;
+			}
+			if ( preg_match( '#^' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?$#', $current ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static function current_request_path(): string {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+
+		return self::relative_path_from_url( $request_uri );
+	}
+
+	private static function relative_path_from_url( string $url ): string {
+		$request_path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$home_path    = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+
+		$request_path = '/' . ltrim( rawurldecode( $request_path ), '/' );
+		$home_path    = '/' . trim( rawurldecode( $home_path ), '/' );
+
+		if ( '/' !== $home_path && str_starts_with( $request_path, $home_path . '/' ) ) {
+			$request_path = substr( $request_path, strlen( $home_path ) );
+		} elseif ( $request_path === $home_path ) {
+			$request_path = '/';
+		}
+
+		return trim( $request_path, '/' );
+	}
+
+	private static function redirect_if_needed( string $target ): void {
+		$request_uri  = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		$request_path = rawurldecode( (string) wp_parse_url( $request_uri, PHP_URL_PATH ) );
+		$target_path  = rawurldecode( (string) wp_parse_url( $target, PHP_URL_PATH ) );
+
+		if ( $request_path !== $target_path ) {
+			self::redirect( $target );
+		}
+	}
+
+	private static function redirect( string $target ): never {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		$query = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
+
+		if ( '' !== $query ) {
+			$args = [];
+			parse_str( $query, $args );
+			if ( is_array( $args ) && [] !== $args ) {
+				$target = add_query_arg( $args, $target );
+			}
+		}
+
+		wp_safe_redirect( $target, 301, 'Core Blueprint URL Governance' );
+		exit;
+	}
+
+	private function __construct() {}
+}
+ =>
+				'index.php?category_name=$matches[1]&feed=$matches[2]',
+			'^(' . $alternation . ')/(feed|rdf|rss|rss2|atom)/?		foreach ( CategoryRoutes::all() as $path => $_term ) {
+			$quoted = preg_quote( $path, '#' );
+
+			if ( $current === $path ) {
+				return true;
+			}
+			if ( preg_match( '#^' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?$#', $current ) ) {
+				return true;
+			}
+			if ( preg_match( '#^' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?$#', $current ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static function current_request_path(): string {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+
+		return self::relative_path_from_url( $request_uri );
+	}
+
+	private static function relative_path_from_url( string $url ): string {
+		$request_path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$home_path    = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+
+		$request_path = '/' . ltrim( rawurldecode( $request_path ), '/' );
+		$home_path    = '/' . trim( rawurldecode( $home_path ), '/' );
+
+		if ( '/' !== $home_path && str_starts_with( $request_path, $home_path . '/' ) ) {
+			$request_path = substr( $request_path, strlen( $home_path ) );
+		} elseif ( $request_path === $home_path ) {
+			$request_path = '/';
+		}
+
+		return trim( $request_path, '/' );
+	}
+
+	private static function redirect_if_needed( string $target ): void {
+		$request_uri  = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		$request_path = rawurldecode( (string) wp_parse_url( $request_uri, PHP_URL_PATH ) );
+		$target_path  = rawurldecode( (string) wp_parse_url( $target, PHP_URL_PATH ) );
+
+		if ( $request_path !== $target_path ) {
+			self::redirect( $target );
+		}
+	}
+
+	private static function redirect( string $target ): never {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		$query = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
+
+		if ( '' !== $query ) {
+			$args = [];
+			parse_str( $query, $args );
+			if ( is_array( $args ) && [] !== $args ) {
+				$target = add_query_arg( $args, $target );
+			}
+		}
+
+		wp_safe_redirect( $target, 301, 'Core Blueprint URL Governance' );
+		exit;
+	}
+
+	private function __construct() {}
+}
+ =>
+				'index.php?category_name=$matches[1]&feed=$matches[2]',
+			'^(' . $alternation . ')/?		foreach ( CategoryRoutes::all() as $path => $_term ) {
+			$quoted = preg_quote( $path, '#' );
+
+			if ( $current === $path ) {
+				return true;
+			}
+			if ( preg_match( '#^' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?$#', $current ) ) {
+				return true;
+			}
+			if ( preg_match( '#^' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?$#', $current ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static function current_request_path(): string {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+
+		return self::relative_path_from_url( $request_uri );
+	}
+
+	private static function relative_path_from_url( string $url ): string {
+		$request_path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$home_path    = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+
+		$request_path = '/' . ltrim( rawurldecode( $request_path ), '/' );
+		$home_path    = '/' . trim( rawurldecode( $home_path ), '/' );
+
+		if ( '/' !== $home_path && str_starts_with( $request_path, $home_path . '/' ) ) {
+			$request_path = substr( $request_path, strlen( $home_path ) );
+		} elseif ( $request_path === $home_path ) {
+			$request_path = '/';
+		}
+
+		return trim( $request_path, '/' );
+	}
+
+	private static function redirect_if_needed( string $target ): void {
+		$request_uri  = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		$request_path = rawurldecode( (string) wp_parse_url( $request_uri, PHP_URL_PATH ) );
+		$target_path  = rawurldecode( (string) wp_parse_url( $target, PHP_URL_PATH ) );
+
+		if ( $request_path !== $target_path ) {
+			self::redirect( $target );
+		}
+	}
+
+	private static function redirect( string $target ): never {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		$query = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
+
+		if ( '' !== $query ) {
+			$args = [];
+			parse_str( $query, $args );
+			if ( is_array( $args ) && [] !== $args ) {
+				$target = add_query_arg( $args, $target );
+			}
+		}
+
+		wp_safe_redirect( $target, 301, 'Core Blueprint URL Governance' );
+		exit;
+	}
+
+	private function __construct() {}
+}
+ =>
+				'index.php?category_name=$matches[1]',
+		];
 	}
 
 	private static function is_clean_canonical_path( string $current ): bool {
