@@ -210,6 +210,39 @@ after(async () => {
 	if (tempDirectory) await rm(tempDirectory, { recursive: true, force: true });
 });
 
+test('shared shell initialization is idempotent and destroy permits clean reinitialization', () => {
+	const { root, fullscreen } = buildShell();
+	let subscriptions = 0;
+	let unsubscriptions = 0;
+	const session = {
+		projectState: {
+			subscribe() {
+				subscriptions += 1;
+				return () => { unsubscriptions += 1; };
+			},
+		},
+	};
+
+	const first = createDesignerShell(root, { session });
+	const duplicate = createDesignerShell(root, { session });
+	assert.equal(duplicate, first);
+	assert.equal(subscriptions, 1);
+	assert.equal(root.dataset.cbDesignShellInitialized, 'true');
+
+	first.destroy();
+	assert.equal(unsubscriptions, 1);
+	assert.equal(root.dataset.cbDesignShellInitialized, undefined);
+
+	const second = createDesignerShell(root, { session });
+	assert.notEqual(second, first);
+	assert.equal(subscriptions, 2);
+	fullscreen.dispatchEvent(new Event('click'));
+	assert.equal(second.isFullscreen(), true);
+	second.destroy();
+	assert.equal(unsubscriptions, 2);
+	assert.equal(document.documentElement.classList.contains('cb-core-design-shell-focus-mode'), false);
+});
+
 test('shared shell exposes transient fullscreen controller state without persistence', () => {
 	const outside = new FakeButton(document);
 	outside.focus();
