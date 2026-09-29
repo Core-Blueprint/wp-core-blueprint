@@ -5,10 +5,26 @@
 	const COMPACT_WIDTH = 800;
 	const READY_RETRY_DELAY_MS = 50;
 	const READY_RETRY_LIMIT = 200;
+	const FAILURE_EVENT = 'cb:design-shell:failure';
 	const initialized = new WeakSet();
 	let sequence = 0;
 
 	const sharedShellApi = () => window.cbCore?.designEditor?.shell ?? null;
+	const failureMessage = () => String(
+		config.failureLabels?.toolbar
+		|| 'Designer toolbar could not start. Reload the page and try again.'
+	).trim();
+
+	const failPendingToolbars = (message = failureMessage()) => {
+		document.querySelectorAll('[data-cb-design-launch-root] [data-cb-design-shell]').forEach((shell) => {
+			if (initialized.has(shell)) return;
+			shell.dataset.cbDesignShellToolbarState = 'error';
+			shell.dispatchEvent(new CustomEvent(FAILURE_EVENT, {
+				bubbles: true,
+				detail: Object.freeze({ phase: 'toolbar', message }),
+			}));
+		});
+	};
 	const labelFor = (control) => String(
 		control?.getAttribute?.('aria-label')
 		|| control?.getAttribute?.('title')
@@ -264,9 +280,19 @@
 	const start = () => {
 		let attempts = 0;
 		const attempt = () => {
-			if (boot()) return;
+			let complete = false;
+			try {
+				complete = boot();
+			} catch (error) {
+				failPendingToolbars(error?.message || failureMessage());
+				return;
+			}
+			if (complete) return;
 			attempts += 1;
-			if (attempts >= READY_RETRY_LIMIT) return;
+			if (attempts >= READY_RETRY_LIMIT) {
+				failPendingToolbars();
+				return;
+			}
 			window.setTimeout(attempt, READY_RETRY_DELAY_MS);
 		};
 		attempt();
