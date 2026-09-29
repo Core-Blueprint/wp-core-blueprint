@@ -158,7 +158,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		Settings::set_key(
 			Policy::SETTINGS_KEY,
 			[ Policy::CLEAN_ARCHIVE_URLS => true ],
-			test:routing'
+			'test:routing'
 		);
 		$this->reset_settings_cache();
 
