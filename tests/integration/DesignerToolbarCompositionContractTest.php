@@ -228,4 +228,20 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'actual toolbar composition', $docs );
 		self::assertStringContainsString( 'Consumers must not implement their own mobile toolbar', $docs );
 	}
+	public function test_adaptive_toolbar_reports_readiness_failure_instead_of_stopping_silently(): void {
+		$runtime = $this->source( 'assets/js/features/designer-toolbar.js' );
+
+		self::assertStringContainsString( "const FAILURE_EVENT = 'cb:design-shell:failure';", $runtime );
+		self::assertStringContainsString( 'const failPendingToolbars =', $runtime );
+		self::assertStringContainsString( "shell.dataset.cbDesignShellToolbarState = 'error';", $runtime );
+		self::assertStringContainsString( "phase: 'toolbar'", $runtime );
+		self::assertStringContainsString( 'if (attempts >= READY_RETRY_LIMIT) {', $runtime );
+		self::assertStringContainsString( 'failPendingToolbars();', $runtime );
+
+		$failure_position = strpos( $runtime, 'failPendingToolbars();' );
+		$return_position  = strpos( $runtime, 'return;', $failure_position ?: 0 );
+		self::assertIsInt( $failure_position );
+		self::assertIsInt( $return_position );
+		self::assertGreaterThan( $failure_position, $return_position );
+	}
 }
