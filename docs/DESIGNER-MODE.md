@@ -8,6 +8,8 @@ Base owns the shared Designer Shell chrome, viewport lifecycle, launch transitio
 
 ## Public entry points
 
+The frozen v1 browser API is defined in `DESIGNER-FOUNDATION-API.md`. Consumers must use `@cb-core/design-editor` and must not import private files below `assets/js/design/`.
+
 The Design Foundation deliberately exposes two different levels of integration.
 
 ### Editor engine and shell only
@@ -74,6 +76,20 @@ Direct mode rules:
 - Consumer Designer Shell roots remain geometrically neutral. Outer margins, fixed positioning, viewport height and fullscreen transitions belong to Base.
 
 Direct mode is transient UI state. It does not change the consumer's document/workflow model and must not be persisted as domain data.
+
+## Launch failure semantics
+
+Designer Mode uses bounded readiness retries while the public editor module, shell controller and adaptive toolbar become available. Retry exhaustion is an explicit failure state, not a successful or silent terminal state.
+
+Base must:
+
+- leave incomplete launch roots uninitialized;
+- surface a visible error message when launch readiness cannot be reached;
+- surface a visible error when manual or direct fullscreen entry cannot be established;
+- surface adaptive-toolbar readiness failure through the same Designer error presentation;
+- keep direct-mode failure output visible instead of leaving the route hidden behind first-paint protection.
+
+Consumers must not add their own retry loops, fallback overlays or duplicate launch error presentation around this lifecycle.
 
 ## Canonical responsive geometry
 
