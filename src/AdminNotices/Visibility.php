@@ -18,11 +18,16 @@ defined( 'ABSPATH' ) || exit;
 
 final class Visibility {
 
+	public static function governance_available(): bool {
+		return Roles::operator_count() > 0;
+	}
+
+	public static function current_user_is_manager(): bool {
+		return current_user_can( Capabilities::MANAGE );
+	}
+
 	public static function allows_current_user( string $source_id ): bool {
-		if ( Roles::operator_count() < 1 ) {
-			return true;
-		}
-		if ( current_user_can( Capabilities::MANAGE ) ) {
+		if ( ! self::governance_available() || self::current_user_is_manager() ) {
 			return true;
 		}
 
