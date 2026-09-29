@@ -28,6 +28,12 @@ class ReleaseBuilderTest(unittest.TestCase):
         for name in builder.RUNTIME_DIRS:
             (self.source / name).mkdir()
             (self.source / name / 'fixture.txt').write_text(name)
+        design = self.source / 'assets/js/design'
+        (design / 'shell').mkdir(parents=True)
+        (design / 'editor.js').write_text(
+            "import { fixture } from './shell/fixture.js';\\nexport { fixture };\\n"
+        )
+        (design / 'shell/fixture.js').write_text("export const fixture = 1;\\n")
         self.output = self.root / 'dist'
 
     def archive(self, path, extra=False):
@@ -130,6 +136,27 @@ class ReleaseBuilderTest(unittest.TestCase):
         gate.assert_not_called()
         self.assertFalse(self.output.exists())
 
+    def test_design_module_revision_changes_with_transitive_source(self):
+        first = builder.design_module_revision(self.source)
+        (self.source / 'assets/js/design/shell/fixture.js').write_text(
+            "export const fixture = 2;\\n"
+        )
+        second = builder.design_module_revision(self.source)
+        self.assertNotEqual(first, second)
+
+    def test_packaged_design_imports_receive_graph_revision(self):
+        revision = builder.design_module_revision(self.source)
+        path = self.root / 'design.zip'
+        editor = self.source / 'assets/js/design/editor.js'
+        with zipfile.ZipFile(path, 'w') as archive:
+            builder.add_file(archive, self.source, editor, revision)
+        with zipfile.ZipFile(path) as archive:
+            packaged = archive.read('core-blueprint/assets/js/design/editor.js').decode()
+        self.assertIn(
+            f"./shell/fixture.js?cb-design={revision}",
+            packaged,
+        )
+
     def test_verified_archive_remains_deterministic(self):
         with mock.patch.object(builder, 'preflight'), mock.patch.object(builder, 'run_gate'):
             first, _ = builder.build(self.source, self.output)
@@ -137,7 +164,12 @@ class ReleaseBuilderTest(unittest.TestCase):
             second, checksum = builder.build(self.source, self.output)
         self.assertEqual(initial, second.read_bytes())
         self.assertTrue(checksum.read_text().startswith(builder.hashlib.sha256(initial).hexdigest()))
-        builder.verify_archive(second, builder.runtime_hashes(self.source))
+        files = builder.collect_files(self.source)
+        revision = builder.design_module_revision(self.source)
+        builder.verify_archive(
+            second,
+            builder.package_hashes(self.source, files, revision),
+        )
 
 
 if __name__ == '__main__':
