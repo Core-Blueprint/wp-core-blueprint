@@ -21,6 +21,10 @@ final class Bootstrap {
 			Runtime::boot();
 		}
 
+		if ( RequestContext::is_admin_post() || RequestContext::is_ajax() ) {
+			Admin::boot();
+		}
+
 		add_action( 'init', [ __CLASS__, 'register_event_labels' ], 1 );
 	}
 
