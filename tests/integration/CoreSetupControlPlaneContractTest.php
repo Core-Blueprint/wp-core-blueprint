@@ -82,16 +82,16 @@ final class CB_Base_Core_Setup_Control_Plane_Contract_Test extends WP_UnitTestCa
 		self::assertSame( $before + 1, $this->audit_count( 'core_setup_started' ) );
 	}
 
-	public function test_cp3_summary_owns_raw_counts_not_percentages_and_covers_all_28_checks(): void {
+	public function test_cp3_summary_owns_raw_counts_not_percentages_and_covers_all_29_checks(): void {
 		Lifecycle::initialize_activation( false );
 		$summary = Summary::build( Registry::all() );
 
-		self::assertSame( 28, $summary['total'] );
+		self::assertSame( 29, $summary['total'] );
 		self::assertArrayNotHasKey( 'percentage', $summary );
 		self::assertArrayNotHasKey( 'progress', $summary );
 
 		$total = array_sum( $summary['counts'] );
-		self::assertSame( 28, $total );
+		self::assertSame( 29, $total );
 		self::assertSame(
 			[ 'environment-availability', 'administrator-recovery', 'safeguards', 'operations', 'mail', 'privacy-governance', 'cms-tools' ],
 			array_keys( $summary['sections'] )
@@ -102,7 +102,7 @@ final class CB_Base_Core_Setup_Control_Plane_Contract_Test extends WP_UnitTestCa
 		self::assertSame( 3, $summary['sections']['operations']['total'] );
 		self::assertSame( 3, $summary['sections']['mail']['total'] );
 		self::assertSame( 3, $summary['sections']['privacy-governance']['total'] );
-		self::assertSame( 8, $summary['sections']['cms-tools']['total'] );
+		self::assertSame( 9, $summary['sections']['cms-tools']['total'] );
 	}
 
 	public function test_cp4_current_user_summary_respects_per_check_capabilities(): void {
