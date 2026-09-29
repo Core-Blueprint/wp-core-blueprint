@@ -226,7 +226,7 @@ final class Preferences extends PageBase {
 				'url'   => add_query_arg( 'tab', 'admin-notices', $base_url ),
 				'label' => __( 'Admin Notices', 'core-blueprint' ),
 				'desc'  => __( 'Control which audiences see supported WordPress admin notice sources while keeping operators and protected notices visible.', 'core-blueprint' ),
-				'icon'  => 'warning',
+				'icon'  => 'triangle-alert',
 			];
 		}
 
