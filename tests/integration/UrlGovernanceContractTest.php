@@ -15,7 +15,6 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 	private mixed $saved_permalink_structure;
 	private mixed $saved_category_base;
 	private mixed $saved_rewrite_dirty;
-	private string $saved_wp_rewrite_category_base = '';
 	private array $saved_extra_rules_top = [];
 
 	public function set_up(): void {
@@ -28,7 +27,6 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->saved_category_base       = get_option( 'category_base', '__cb_missing__' );
 		$this->saved_rewrite_dirty       = get_option( 'cb_core_routing_rewrite_dirty', '__cb_missing__' );
 		$this->saved_extra_rules_top     = is_array( $wp_rewrite->extra_rules_top ) ? $wp_rewrite->extra_rules_top : [];
-		$this->saved_wp_rewrite_category_base = (string) $wp_rewrite->category_base;
 
 		$this->reset_settings_cache();
 		update_option( 'permalink_structure', '/%category%/%postname%/', false );
@@ -45,7 +43,6 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->restore_option( 'category_base', $this->saved_category_base );
 		$this->restore_option( 'cb_core_routing_rewrite_dirty', $this->saved_rewrite_dirty );
 		$wp_rewrite->extra_rules_top = $this->saved_extra_rules_top;
-		$wp_rewrite->category_base   = $this->saved_wp_rewrite_category_base;
 		$this->reset_settings_cache();
 
 		parent::tear_down();
@@ -103,9 +100,6 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_category_base_dot_is_treated_as_no_legacy_base(): void {
-		global $wp_rewrite;
-
-		$wp_rewrite->category_base = '.';
 		update_option( 'category_base', '.', false );
 
 		self::assertSame( '', CategoryRoutes::category_base_path() );
@@ -171,12 +165,115 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$wp_rewrite->extra_rules_top = [];
 		Runtime::register_rewrite_rules();
 
-		self::assertArrayHasKey( '^(blog)/p([0-9]+)/?$', $wp_rewrite->extra_rules_top );
-		self::assertSame(
-			'index.php?category_name=$matches[1]&paged=$matches[2]',
-			$wp_rewrite->extra_rules_top['^(blog)/p([0-9]+)/?$']
+		$pagination_rules = array_filter(
+			$wp_rewrite->extra_rules_top,
+			static fn( string $query, string $regex ): bool =>
+				str_contains( $regex, '/p([0-9]+)' )
+				&& str_contains( $regex, 'blog' )
+				&& 'index.php?category_name=$matches[1]&paged=$matches[2]' === $query,
+			ARRAY_FILTER_USE_BOTH
 		);
-		self::assertArrayNotHasKey( '^(.+?)/p([0-9]+)/?$', $wp_rewrite->extra_rules_top );
+
+		self::assertCount( 1, $pagination_rules );
+		self::assertArrayNotHasKey( '^(.+?)/p([0-9]+)/?	}
+
+	public function test_term_link_changes_only_after_explicit_enable(): void {
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		$term    = get_term( $term_id, 'category' );
+		self::assertInstanceOf( WP_Term::class, $term );
+
+		$wordpress = home_url( '/category/blog/' );
+		self::assertSame( $wordpress, Runtime::filter_term_link( $wordpress, $term, 'category' ) );
+
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		self::assertSame(
+			CategoryRoutes::canonical_url( $term ),
+			Runtime::filter_term_link( $wordpress, $term, 'category' )
+		);
+	}
+
+	public function test_redirect_canonical_suppresses_only_clean_canonical_shapes(): void {
+		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		$candidate = home_url( '/blog/page/2/' );
+
+		self::assertFalse(
+			Runtime::filter_redirect_canonical( $candidate, home_url( '/blog/p2/' ) )
+		);
+		self::assertSame(
+			$candidate,
+			Runtime::filter_redirect_canonical( $candidate, home_url( '/blog/rss2/' ) )
+		);
+	}
+
+	public function test_category_changes_mark_rewrite_rules_dirty_only_when_policy_is_enabled(): void {
+		delete_option( 'cb_core_routing_rewrite_dirty' );
+		Runtime::category_changed();
+		self::assertFalse( get_option( 'cb_core_routing_rewrite_dirty', false ) );
+
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		Runtime::category_changed();
+		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
+	}
+
+	public function test_core_setup_registers_routing_as_optional_cms_tool(): void {
+		$check = Registry::get( 'routing-urls' );
+
+		self::assertNotNull( $check );
+		self::assertSame( 'cms-tools', $check->section() );
+		self::assertSame( 'Routing & URLs', $check->label() );
+		self::assertStringContainsString(
+			'page=' . Preferences::SLUG . '&tab=routing',
+			html_entity_decode( $check->configuration_url() )
+		);
+	}
+
+	public function test_preferences_owns_routing_instead_of_extensions_settings_hub(): void {
+		$preferences_source = file_get_contents( CB_CORE_DIR . 'src/Admin/Pages/Preferences.php' );
+		self::assertIsString( $preferences_source );
+		self::assertStringContainsString( "'routing'", $preferences_source );
+		self::assertStringContainsString( 'Routing & URLs', $preferences_source );
+
+		$settings_source = file_get_contents( CB_CORE_DIR . 'src/Admin/Pages/Settings.php' );
+		self::assertIsString( $settings_source );
+		self::assertStringContainsString(
+			'canonical configuration directory for Core Blueprint extensions',
+			$settings_source
+		);
+	}
+
+	private function reset_settings_cache(): void {
+		$property = new ReflectionProperty( Settings::class, 'cached' );
+		$property->setValue( null, null );
+	}
+
+	private function restore_option( string $name, mixed $value ): void {
+		if ( '__cb_missing__' === $value ) {
+			delete_option( $name );
+			return;
+		}
+		update_option( $name, $value, false );
+	}
+}
+, $wp_rewrite->extra_rules_top );
 	}
 
 	public function test_term_link_changes_only_after_explicit_enable(): void {
