@@ -203,6 +203,11 @@ final class Core {
 		// Profiles deliberately exclude secrets, identities and runtime evidence.
 		\CB\Core\Profiles\Bootstrap::boot();
 
+		// Core Setup subsystem - persistent read-only review/control plane.
+		// Canonical subsystem settings remain owned by their modules; Setup stores
+		// only lifecycle, review intent and bounded section annotations.
+		\CB\Core\Setup\Bootstrap::boot();
+
 
 		// HUD subsystem - the floating "front door" launcher. Renders on
 		// admin AND frontend for capable logged-in users; honours the
@@ -338,6 +343,10 @@ final class Core {
 		if ( ! get_option( CB_CORE_SETTINGS, false ) ) {
 			update_option( CB_CORE_SETTINGS, Settings::defaults(), true );
 		}
+
+		// Core Setup origin is authoritative only at the activation boundary.
+		// A later lazy bootstrap never upgrades an established site to first-install.
+		\CB\Core\Setup\Lifecycle::initialize_activation( $is_first_activation );
 
 		OptionPolicy::sync_active();
 
