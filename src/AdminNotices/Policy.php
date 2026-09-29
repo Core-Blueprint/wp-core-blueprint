@@ -141,6 +141,9 @@ final class Policy {
 			if ( self::SELECTED !== $visibility && ( [] !== $audience['roles'] || [] !== $audience['capabilities'] ) ) {
 				throw new \InvalidArgumentException( 'Admin Notices audience is only valid for selected visibility.' );
 			}
+			if ( self::SELECTED === $visibility && [] === $audience['roles'] && [] === $audience['capabilities'] ) {
+				throw new \InvalidArgumentException( 'Selected Admin Notices visibility requires at least one role or capability.' );
+			}
 
 			$normalized[] = [
 				'source'     => $source,
