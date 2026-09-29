@@ -130,10 +130,12 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( "wrapper.className = 'cb-core-design-shell__field';", $script );
 		self::assertStringContainsString( "label.className = 'cb-core-design-shell__field-label';", $script );
-		self::assertStringContainsString( "empty.className = 'cb-core-design-shell__empty-state';", $script );
-		self::assertStringContainsString( "tree.className = 'cb-core-design-shell__layer-list';", $script );
-		self::assertStringContainsString( 'createDesignerLayerRow({', $script );
+		self::assertStringContainsString( 'createDesignerLayerTree({', $script );
+		self::assertStringContainsString( "emptyMessage: 'This mail template does not contain editable elements.'", $script );
 		self::assertStringContainsString( 'createDesignerSelectionController({', $script );
+		self::assertStringNotContainsString( "empty.className = 'cb-core-design-shell__empty-state';", $script );
+		self::assertStringNotContainsString( "tree.className = 'cb-core-design-shell__layer-list';", $script );
+		self::assertStringNotContainsString( 'createDesignerLayerRow({', $script );
 		self::assertStringNotContainsString( "row.className = 'cb-core-design-shell__layer-row';", $script );
 		self::assertStringNotContainsString( "remove.textContent = 'Remove element';", $script );
 
