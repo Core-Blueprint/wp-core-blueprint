@@ -72,7 +72,6 @@ $catalog['messages'] = array_replace(
         'Review optional modern image and SVG handling against the capabilities of this server.' => 'Beoordeel de optionele verwerking van moderne afbeeldingsformaten en SVG aan de hand van de mogelijkheden van deze server.',
         'Review reason:' => 'Reden voor beoordeling:',
         'Review retention periods for security, maintenance, login, settings, and general audit data.' => 'Beoordeel de bewaartermijnen voor beveiligings-, onderhouds-, login-, instellingen- en algemene auditgegevens.',
-        'Review section' => 'Sectie beoordelen',
         'Review the Base configuration and record the choices for this site.' => 'Beoordeel de Base-configuratie en leg de keuzes voor deze site vast.',
         'Review the Core Shield master state and its active hardening modules.' => 'Beoordeel de hoofdstatus van Core Shield en de actieve hardening-modules.',
         'Review the current Core Blueprint configuration and record the choices made for this site. Core Setup reads each subsystem live, so you can reopen it at any time to review what changed.' => 'Beoordeel de huidige Core Blueprint-configuratie en leg de keuzes voor deze site vast. Core Setup leest ieder subsysteem live uit, zodat je het op ieder moment opnieuw kunt openen om wijzigingen te beoordelen.',
