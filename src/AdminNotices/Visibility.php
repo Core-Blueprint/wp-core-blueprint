@@ -27,7 +27,11 @@ final class Visibility {
 	}
 
 	public static function allows_current_user( string $source_id ): bool {
-		if ( ! self::governance_available() || self::current_user_is_manager() ) {
+		if (
+			SourceResolver::is_protected_id( $source_id )
+			|| ! self::governance_available()
+			|| self::current_user_is_manager()
+		) {
 			return true;
 		}
 
