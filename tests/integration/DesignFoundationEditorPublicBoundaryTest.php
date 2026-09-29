@@ -43,7 +43,8 @@ final class CB_Design_Foundation_Editor_Public_Boundary_Test extends WP_UnitTest
 	}
 	public function test_public_browser_api_is_frozen_and_first_party_consumers_do_not_bypass_it(): void {
 		$root = dirname( __DIR__, 2 );
-		$docs = (string) file_get_contents( $root . '/docs/DESIGNER-FOUNDATION-API.md' );
+		$docs       = (string) file_get_contents( $root . '/docs/DESIGNER-FOUNDATION-API.md' );
+		$public_api = (string) file_get_contents( $root . '/docs/PUBLIC-API.md' );
 
 		self::assertStringContainsString( 'Status: **public v1 frozen contract**.', $docs );
 		self::assertStringContainsString( "@cb-core/design-editor", $docs );
@@ -55,6 +56,8 @@ final class CB_Design_Foundation_Editor_Public_Boundary_Test extends WP_UnitTest
 		self::assertStringContainsString( 'createFlowPreviewHost', $docs );
 		self::assertStringContainsString( 'ProjectState', $docs );
 		self::assertStringContainsString( 'does **not** make them a supported extension contract', $docs );
+		self::assertStringContainsString( 'Designer Foundation — semantic Foundation requirement `design-editor`', $public_api );
+		self::assertStringContainsString( '`@cb-core/design-editor`', $public_api );
 
 		foreach ( glob( $root . '/assets/js/features/*.js' ) ?: [] as $path ) {
 			$source = (string) file_get_contents( $path );
