@@ -249,55 +249,59 @@ final class Page extends PageBase {
 					</p>
 				<?php endif; ?>
 
-				<div class="cb-core-actions">
-					<?php if ( '' !== $config_url ) : ?>
-						<a class="button" href="<?php echo $config_url; ?>">
-							<?php esc_html_e( 'Open settings', 'core-blueprint' ); ?>
-						</a>
-					<?php endif; ?>
+				<div class="cb-core-field cb-core-field--separated">
+					<div class="cb-core-actions">
+						<?php if ( '' !== $config_url ) : ?>
+							<a class="button" href="<?php echo $config_url; ?>">
+								<?php esc_html_e( 'Open settings', 'core-blueprint' ); ?>
+							</a>
+						<?php endif; ?>
 
-					<?php if ( $can_mark_reviewed && StatusResolver::CONFIGURED !== $status ) : ?>
-						<?php self::render_review_form( $section_id, (string) $check['id'], ReviewRepository::REVIEWED, __( 'Mark reviewed', 'core-blueprint' ) ); ?>
-					<?php endif; ?>
+						<?php if ( $can_mark_reviewed && StatusResolver::CONFIGURED !== $status ) : ?>
+							<?php self::render_review_form( $section_id, (string) $check['id'], ReviewRepository::REVIEWED, __( 'Mark reviewed', 'core-blueprint' ) ); ?>
+						<?php endif; ?>
 
-					<?php if ( null !== $review ) : ?>
-						<form class="cb-core-form-inline" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-							<input type="hidden" name="action" value="cb_core_setup_clear">
-							<input type="hidden" name="check_id" value="<?php echo esc_attr( (string) $check['id'] ); ?>">
-							<input type="hidden" name="return_tab" value="<?php echo esc_attr( $section_id ); ?>">
-							<?php wp_nonce_field( 'cb_core_setup_clear' ); ?>
-							<button type="submit" class="button"><?php esc_html_e( 'Reset review', 'core-blueprint' ); ?></button>
-						</form>
-					<?php endif; ?>
+						<?php if ( null !== $review ) : ?>
+							<form class="cb-core-form-inline" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+								<input type="hidden" name="action" value="cb_core_setup_clear">
+								<input type="hidden" name="check_id" value="<?php echo esc_attr( (string) $check['id'] ); ?>">
+								<input type="hidden" name="return_tab" value="<?php echo esc_attr( $section_id ); ?>">
+								<?php wp_nonce_field( 'cb_core_setup_clear' ); ?>
+								<button type="submit" class="button"><?php esc_html_e( 'Reset review', 'core-blueprint' ); ?></button>
+							</form>
+						<?php endif; ?>
+					</div>
 				</div>
 
 				<?php if ( $allows_later || $allows_na ) : ?>
-					<hr>
-					<h4><?php esc_html_e( 'Other review choices', 'core-blueprint' ); ?></h4>
+					<div class="cb-core-field cb-core-field--separated">
+						<span class="cb-core-field__label"><?php esc_html_e( 'Other review choices', 'core-blueprint' ); ?></span>
+						<div class="cb-core-field__control">
+							<?php if ( $allows_later ) : ?>
+								<?php
+								self::render_reasoned_review_form(
+									$section_id,
+									(string) $check['id'],
+									ReviewRepository::LATER,
+									__( 'Review later', 'core-blueprint' ),
+									__( 'Why will this be reviewed later?', 'core-blueprint' )
+								);
+								?>
+							<?php endif; ?>
 
-					<?php if ( $allows_later ) : ?>
-						<?php
-						self::render_reasoned_review_form(
-							$section_id,
-							(string) $check['id'],
-							ReviewRepository::LATER,
-							__( 'Review later', 'core-blueprint' ),
-							__( 'Why will this be reviewed later?', 'core-blueprint' )
-						);
-						?>
-					<?php endif; ?>
-
-					<?php if ( $allows_na ) : ?>
-						<?php
-						self::render_reasoned_review_form(
-							$section_id,
-							(string) $check['id'],
-							ReviewRepository::NOT_APPLICABLE,
-							__( 'Mark not applicable', 'core-blueprint' ),
-							__( 'Why does this not apply to this site?', 'core-blueprint' )
-						);
-						?>
-					<?php endif; ?>
+							<?php if ( $allows_na ) : ?>
+								<?php
+								self::render_reasoned_review_form(
+									$section_id,
+									(string) $check['id'],
+									ReviewRepository::NOT_APPLICABLE,
+									__( 'Mark not applicable', 'core-blueprint' ),
+									__( 'Why does this not apply to this site?', 'core-blueprint' )
+								);
+								?>
+							<?php endif; ?>
+						</div>
+					</div>
 				<?php endif; ?>
 			</div>
 		</article>
@@ -325,19 +329,17 @@ final class Page extends PageBase {
 		string $placeholder
 	): void {
 		?>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<form class="cb-core-field cb-core-field--inline" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="cb_core_setup_review">
 			<input type="hidden" name="check_id" value="<?php echo esc_attr( $check_id ); ?>">
 			<input type="hidden" name="disposition" value="<?php echo esc_attr( $disposition ); ?>">
 			<input type="hidden" name="return_tab" value="<?php echo esc_attr( $return_tab ); ?>">
 			<?php wp_nonce_field( 'cb_core_setup_review' ); ?>
-			<p>
-				<label>
-					<span class="screen-reader-text"><?php echo esc_html( $placeholder ); ?></span>
-					<input type="text" name="reason" required maxlength="1000" class="regular-text" placeholder="<?php echo esc_attr( $placeholder ); ?>">
-				</label>
-				<button type="submit" class="button"><?php echo esc_html( $label ); ?></button>
-			</p>
+			<label>
+				<span class="screen-reader-text"><?php echo esc_html( $placeholder ); ?></span>
+				<input type="text" name="reason" required maxlength="1000" class="regular-text" placeholder="<?php echo esc_attr( $placeholder ); ?>">
+			</label>
+			<button type="submit" class="button"><?php echo esc_html( $label ); ?></button>
 		</form>
 		<?php
 	}
