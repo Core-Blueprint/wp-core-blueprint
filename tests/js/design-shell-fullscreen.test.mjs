@@ -232,6 +232,7 @@ test('shared shell initialization is idempotent and destroy permits clean reinit
 	first.destroy();
 	assert.equal(unsubscriptions, 1);
 	assert.equal(root.dataset.cbDesignShellInitialized, undefined);
+	assert.throws(() => first.enterFullscreen(), /Designer shell has been destroyed/);
 
 	const second = createDesignerShell(root, { session });
 	assert.notEqual(second, first);
