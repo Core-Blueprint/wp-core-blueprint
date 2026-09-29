@@ -8,10 +8,73 @@
 	const DIRECT_ENTER_RETRY_LIMIT = 80;
 	const SAVE_EVENT = 'cb:design-shell:savechange';
 	const SHELL_READY_EVENT = 'cb:design-shell:ready';
+	const FAILURE_EVENT = 'cb:design-shell:failure';
 	const DIRECT_MODE = 'direct';
 	const RESPONSIVE_DRAWER_QUERY = '(max-width: 1280px)';
 
 	const sharedShellApi = () => window.cbCore?.designEditor?.shell ?? null;
+	const failureMessage = (key, fallback) => String(config.failureLabels?.[key] || fallback).trim();
+
+	const failureRoot = (target) => {
+		if (!(target instanceof Element)) return null;
+		if (target.matches('[data-cb-design-launch-root]')) return target;
+		return target.closest('[data-cb-design-launch-root]');
+	};
+
+	const renderFailure = (target, phase, message) => {
+		const root = failureRoot(target);
+		if (!root) return false;
+		const shell = target.matches?.('[data-cb-design-shell]')
+			? target
+			: root.querySelector('[data-cb-design-shell]');
+		const normalizedPhase = String(phase || 'boot').trim() || 'boot';
+		const normalizedMessage = String(message || failureMessage('boot', 'Designer could not start. Reload the page and try again.')).trim();
+
+		root.dataset.cbDesignLaunchState = 'error';
+		root.dataset.cbDesignLaunchFailure = normalizedPhase;
+		if (shell) {
+			shell.dataset.cbDesignShellState = 'error';
+			shell.removeAttribute('aria-busy');
+			const status = shell.querySelector('[data-cb-design-shell-status]');
+			if (status) {
+				status.textContent = normalizedMessage;
+				status.classList.add('is-error');
+			}
+		}
+
+		let notice = root.querySelector(':scope > [data-cb-design-launch-failure]');
+		if (!notice) {
+			notice = document.createElement('div');
+			notice.className = 'notice notice-error inline cb-core-design-launch__failure';
+			notice.dataset.cbDesignLaunchFailure = '';
+			notice.setAttribute('role', 'alert');
+			const context = root.querySelector('[data-cb-design-launch-context]');
+			if (context) context.insertAdjacentElement('afterend', notice);
+			else root.prepend(notice);
+		}
+		notice.textContent = normalizedMessage;
+		notice.hidden = false;
+		console.error('[Core Blueprint Designer]', normalizedPhase, normalizedMessage);
+		return true;
+	};
+
+	const dispatchFailure = (target, phase, message) => {
+		if (!(target instanceof Element)) return false;
+		target.dispatchEvent(new CustomEvent(FAILURE_EVENT, {
+			bubbles: true,
+			detail: Object.freeze({ phase, message }),
+		}));
+		return true;
+	};
+
+	document.addEventListener(FAILURE_EVENT, (event) => {
+		renderFailure(
+			event.target,
+			event.detail?.phase,
+			event.detail?.message
+		);
+	});
+
 
 	const discoverSidebarRoles = (shell) => {
 		const roles = {};
@@ -419,7 +482,15 @@
 			}
 
 			attempts += 1;
-			if (attempts >= DIRECT_ENTER_RETRY_LIMIT) return;
+			if (attempts >= DIRECT_ENTER_RETRY_LIMIT) {
+				stopRetry();
+				dispatchFailure(
+					root,
+					'direct-enter',
+					failureMessage('enter', 'Designer could not enter fullscreen mode. Reload the page and try again.')
+				);
+				return;
+			}
 			timer = window.setTimeout(attemptEnter, DIRECT_ENTER_RETRY_DELAY_MS);
 		};
 
@@ -486,7 +557,14 @@
 			clearPending();
 			setDesignerMode(true);
 			if (fullscreen.getAttribute('aria-pressed') !== 'true') fullscreen.click();
-			if (fullscreen.getAttribute('aria-pressed') !== 'true') setDesignerMode(false);
+			if (fullscreen.getAttribute('aria-pressed') !== 'true') {
+				setDesignerMode(false);
+				dispatchFailure(
+					root,
+					'enter',
+					failureMessage('enter', 'Designer could not enter fullscreen mode. Reload the page and try again.')
+				);
+			}
 		};
 
 		button.addEventListener('click', enterDesignerMode);
@@ -513,13 +591,17 @@
 			|| typeof shellApi.configureViewports !== 'function'
 		) return false;
 
+		let pending = false;
 		document.querySelectorAll('[data-cb-design-launch-root]').forEach((root) => {
 			if (root.dataset.cbDesignLaunchInitialized === 'true') return;
 
 			const shell = root.querySelector('[data-cb-design-shell]');
 			const fullscreen = shell?.querySelector('[data-cb-design-shell-fullscreen]');
 			const context = root.querySelector('[data-cb-design-launch-context]');
-			if (!shell || !fullscreen) return;
+			if (!shell || !fullscreen) {
+				pending = true;
+				return;
+			}
 
 			const requestedMode = String(root.dataset.cbDesignLaunchMode || '').trim();
 			const exitUrl = requestedMode === DIRECT_MODE ? directExitUrl(root) : '';
@@ -529,9 +611,17 @@
 				root.removeAttribute('data-cb-design-launch-mode');
 				root.removeAttribute('data-cb-design-exit-url');
 			}
-			if (!direct && (!context || root.querySelector('[data-cb-design-launch]'))) return;
+			if (!direct && !context) {
+				pending = true;
+				return;
+			}
+			if (!direct && root.querySelector('[data-cb-design-launch]')) {
+				root.dataset.cbDesignLaunchInitialized = 'true';
+				return;
+			}
 
 			root.dataset.cbDesignLaunchInitialized = 'true';
+			root.dataset.cbDesignLaunchState = 'ready';
 			composeHeader(root, shell, shellApi, { direct, exitUrl });
 
 			if (direct) {
@@ -541,7 +631,14 @@
 
 			initializeManualLaunch(root, shell, fullscreen, context, shellApi);
 		});
-		return true;
+		return !pending;
+	};
+
+	const failPendingLaunchRoots = (phase, message) => {
+		document.querySelectorAll('[data-cb-design-launch-root]').forEach((root) => {
+			if (root.dataset.cbDesignLaunchInitialized === 'true') return;
+			dispatchFailure(root, phase, message);
+		});
 	};
 
 	const start = () => {
@@ -561,13 +658,28 @@
 
 		const attemptBoot = () => {
 			if (settled) return;
-			if (boot()) {
+			let complete = false;
+			try {
+				complete = boot();
+			} catch (error) {
+				failPendingLaunchRoots(
+					'boot',
+					error?.message || failureMessage('boot', 'Designer could not start. Reload the page and try again.')
+				);
+				stop();
+				return;
+			}
+			if (complete) {
 				stop();
 				return;
 			}
 
 			attempts += 1;
 			if (attempts >= BOOT_RETRY_LIMIT) {
+				failPendingLaunchRoots(
+					'boot',
+					failureMessage('boot', 'Designer could not start. Reload the page and try again.')
+				);
 				stop();
 				return;
 			}
