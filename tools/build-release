@@ -36,6 +36,10 @@ RUNTIME_DIRS = (
     "licenses",
 )
 FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
+DESIGN_MODULE_ROOT = Path("assets/js/design")
+DESIGN_IMPORT_RE = re.compile(
+    r"(?P<prefix>\\b(?:from|import)\\s+)(?P<quote>['\"])(?P<specifier>\\.{1,2}/[^'\"?]+\\.js)(?P=quote)"
+)
 
 
 def fail(message: str) -> "NoReturn":
@@ -110,6 +114,54 @@ def runtime_hashes(source: Path) -> dict[str, str]:
     }
 
 
+def design_module_revision(source: Path) -> str:
+    root = source / DESIGN_MODULE_ROOT
+    modules = sorted(
+        root.rglob("*.js"),
+        key=lambda item: item.relative_to(source).as_posix(),
+    )
+    if not modules:
+        fail("Design Foundation module graph is missing.")
+
+    digest = hashlib.sha256()
+    for path in modules:
+        digest.update(path.relative_to(source).as_posix().encode("utf-8"))
+        digest.update(b"\\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\\0")
+    return digest.hexdigest()[:16]
+
+
+def package_bytes(source: Path, path: Path, design_revision: str | None = None) -> bytes:
+    payload = path.read_bytes()
+    relative = path.relative_to(source)
+    if (
+        design_revision
+        and relative.suffix == ".js"
+        and DESIGN_MODULE_ROOT in relative.parents
+    ):
+        text = payload.decode("utf-8")
+
+        def stamp(match: re.Match[str]) -> str:
+            return (
+                f"{match.group('prefix')}{match.group('quote')}"
+                f"{match.group('specifier')}?cb-design={design_revision}"
+                f"{match.group('quote')}"
+            )
+
+        payload = DESIGN_IMPORT_RE.sub(stamp, text).encode("utf-8")
+    return payload
+
+
+def package_hashes(source: Path, files: list[Path], design_revision: str) -> dict[str, str]:
+    return {
+        path.relative_to(source).as_posix(): hashlib.sha256(
+            package_bytes(source, path, design_revision)
+        ).hexdigest()
+        for path in files
+    }
+
+
 def preflight(source: Path, expected: dict[str, str]) -> None:
     for tool in ("php", "node", "bash", "unzip"):
         if shutil.which(tool) is None:
@@ -177,13 +229,23 @@ def verify_archive(path: Path, expected: dict[str, str]) -> None:
                 fail(f"Archive bytes differ from verified source: {relative}.")
 
 
-def add_file(archive: zipfile.ZipFile, source: Path, path: Path) -> None:
+def add_file(
+    archive: zipfile.ZipFile,
+    source: Path,
+    path: Path,
+    design_revision: str | None = None,
+) -> None:
     relative = path.relative_to(source).as_posix()
     info = zipfile.ZipInfo(f"{PLUGIN_ROOT}/{relative}", FIXED_ZIP_TIME)
     info.compress_type = zipfile.ZIP_DEFLATED
     info.create_system = 3
     info.external_attr = 0o100644 << 16
-    archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+    archive.writestr(
+        info,
+        package_bytes(source, path, design_revision),
+        compress_type=zipfile.ZIP_DEFLATED,
+        compresslevel=9,
+    )
 
 
 def build(source: Path, output_dir: Path) -> tuple[Path, Path]:
@@ -198,8 +260,10 @@ def build(source: Path, output_dir: Path) -> tuple[Path, Path]:
     version = read_version(plugin_file)
     files = collect_files(source)
 
-    expected = runtime_hashes(source)
-    preflight(source, expected)
+    source_expected = runtime_hashes(source)
+    preflight(source, source_expected)
+    design_revision = design_module_revision(source)
+    package_expected = package_hashes(source, files, design_revision)
 
     # Only verified archives receive the final release name/checksum. On gate
     # failure an earlier accepted artifact is preserved, never overwritten.
@@ -211,13 +275,13 @@ def build(source: Path, output_dir: Path) -> tuple[Path, Path]:
         pending_checksum = Path(temporary) / checksum_path.name
         with zipfile.ZipFile(pending_zip, "w") as archive:
             for path in files:
-                add_file(archive, source, path)
-        verify_archive(pending_zip, expected)
+                add_file(archive, source, path, design_revision)
+        verify_archive(pending_zip, package_expected)
         run_gate(["bash", "tests/bin/run-release-package-scenario.sh",
                   str(pending_zip), version], source, "Packaged runtime boundary and PHP syntax")
         # Recheck after the package gate and before publishing its checksum.
-        verify_archive(pending_zip, expected)
-        if runtime_hashes(source) != expected:
+        verify_archive(pending_zip, package_expected)
+        if runtime_hashes(source) != source_expected:
             fail("Release source changed during packaging.")
         digest = hashlib.sha256(pending_zip.read_bytes()).hexdigest()
         pending_checksum.write_text(f"{digest}  {zip_path.name}\n", encoding="utf-8")
