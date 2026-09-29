@@ -36,6 +36,7 @@ use CB\Core\Setup\Checks\OperationalToolsCheck;
 use CB\Core\Setup\Checks\PrivacyIpHandlingCheck;
 use CB\Core\Setup\Checks\PrivilegedAccessProtectionCheck;
 use CB\Core\Setup\Checks\PrivilegedAccessReviewCheck;
+use CB\Core\Setup\Checks\RoutingUrlsCheck;
 use CB\Core\Setup\Checks\SnippetsCheck;
 use CB\Core\Setup\Checks\TwoFactorReadinessCheck;
 
@@ -92,6 +93,7 @@ final class Registry {
 			),
 			new AdminNavigationCheck(),
 			new AdminColumnsCheck(),
+			new RoutingUrlsCheck(),
 		];
 
 		$out = [];
