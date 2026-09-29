@@ -157,6 +157,15 @@ class ReleaseBuilderTest(unittest.TestCase):
             packaged,
         )
 
+    def test_design_revision_does_not_rewrite_non_design_javascript(self):
+        runtime = self.source / 'assets/js/runtime.js'
+        runtime.write_text("import './dependency.js';\\n")
+        revision = builder.design_module_revision(self.source)
+        self.assertEqual(
+            runtime.read_bytes(),
+            builder.package_bytes(self.source, runtime, revision),
+        )
+
     def test_verified_archive_remains_deterministic(self):
         with mock.patch.object(builder, 'preflight'), mock.patch.object(builder, 'run_gate'):
             first, _ = builder.build(self.source, self.output)
