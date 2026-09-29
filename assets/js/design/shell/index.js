@@ -110,7 +110,12 @@ export const createDesignerShell = (root, {
 	if (!(root instanceof Element)) {
 		throw new TypeError('Designer shell requires a root Element.');
 	}
+	const existing = shellControllers.get(root);
+	if (existing) return existing;
 
+	const lifecycle = new AbortController();
+	const { signal } = lifecycle;
+	const frameCleanups = [];
 	const undo = element(root, '[data-cb-design-shell-undo]');
 	const redo = element(root, '[data-cb-design-shell-redo]');
 	const fullscreen = element(root, '[data-cb-design-shell-fullscreen]');
@@ -158,7 +163,7 @@ export const createDesignerShell = (root, {
 	};
 	// ProjectState emits during CommandHistory.execute(), before the new history
 	// entry is pushed. Defer one microtask so chrome reflects the committed stack.
-	session?.projectState?.subscribe?.(scheduleHistorySync);
+	const unsubscribeProject = session?.projectState?.subscribe?.(scheduleHistorySync) ?? null;
 
 	const syncFullscreenControl = () => {
 		if (!fullscreen) return;
@@ -352,7 +357,8 @@ export const createDesignerShell = (root, {
 			boundDocument = nextDocument;
 			boundDocument.addEventListener?.('keydown', handleFrameFullscreenKeydown, true);
 		};
-		frame.addEventListener?.('load', bind);
+		frame.addEventListener?.('load', bind, { signal });
+		frameCleanups.push(() => boundDocument?.removeEventListener?.('keydown', handleFrameFullscreenKeydown, true));
 		bind();
 	};
 
@@ -433,7 +439,7 @@ export const createDesignerShell = (root, {
 
 	tabs.forEach((tab) => {
 		const state = group(groupIdFor(tab));
-		tab.addEventListener('click', () => activatePanel(tab.dataset.cbDesignShellTab, { group: state.id }));
+		tab.addEventListener('click', () => activatePanel(tab.dataset.cbDesignShellTab, { group: state.id }), { signal });
 		tab.addEventListener('keydown', (event) => {
 			if (event.key === 'ArrowLeft') {
 				event.preventDefault();
@@ -448,20 +454,20 @@ export const createDesignerShell = (root, {
 				event.preventDefault();
 				activatePanel(state.tabs.at(-1)?.dataset.cbDesignShellTab, { focus: true, group: state.id });
 			}
-		});
+		}, { signal });
 	});
 
 	undo?.addEventListener('click', () => {
 		if (!session?.undo) return;
 		session.undo();
 		syncHistory();
-	});
+	}, { signal });
 	redo?.addEventListener('click', () => {
 		if (!session?.redo) return;
 		session.redo();
 		syncHistory();
-	});
-	fullscreen?.addEventListener('click', toggleFullscreen);
+	}, { signal });
+	fullscreen?.addEventListener('click', toggleFullscreen, { signal });
 	frames.forEach(bindFrameKeyboard);
 
 	const pendingSidebarConfiguration = pendingSidebarConfigs.get(root);
@@ -486,6 +492,21 @@ export const createDesignerShell = (root, {
 	syncHistory();
 	syncFullscreenControl();
 
+	const destroy = () => {
+		if (!shellControllers.has(root)) return;
+		if (fullscreenState || exitPending) {
+			exitFullscreenInternal({ restoreFocus: false, immediate: true });
+		}
+		clearExitTimer();
+		clearEnterMotion();
+		lifecycle.abort();
+		frameCleanups.splice(0).forEach((cleanup) => cleanup());
+		unsubscribeProject?.();
+		pendingSidebarConfigs.delete(root);
+		shellControllers.delete(root);
+		delete root.dataset.cbDesignShellInitialized;
+	};
+
 	const controller = Object.freeze({
 		root,
 		activatePanel,
@@ -495,6 +516,7 @@ export const createDesignerShell = (root, {
 		enterFullscreen,
 		exitFullscreen,
 		toggleFullscreen,
+		destroy,
 		get activePanel() {
 			return group(DEFAULT_GROUP).activePanel;
 		},
