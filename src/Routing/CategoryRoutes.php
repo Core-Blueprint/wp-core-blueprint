@@ -70,15 +70,7 @@ final class CategoryRoutes {
 	}
 
 	public static function category_base_path(): string {
-		global $wp_rewrite;
-
-		$base = '';
-		if ( $wp_rewrite instanceof \WP_Rewrite ) {
-			$base = trim( (string) $wp_rewrite->category_base, '/' );
-		}
-		if ( '' === $base ) {
-			$base = trim( (string) get_option( 'category_base', '' ), '/' );
-		}
+		$base = trim( (string) get_option( 'category_base', '' ), '/' );
 
 		if ( '.' === $base ) {
 			return '';
