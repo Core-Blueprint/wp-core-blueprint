@@ -70,7 +70,9 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 			'/tab=review[^"]*" class="nav-tab nav-tab-active"/',
 			$html
 		);
-		self::assertStringContainsString( 'Review section', $html );
+		self::assertStringContainsString( 'cb-core-status-strip', $html );
+		self::assertStringContainsString( 'cb-core-tab-cards', $html );
+		self::assertStringContainsString( 'cb-core-tab-card', $html );
 		self::assertStringContainsString( '28 checks', $html );
 
 		$_GET['tab'] = 'mail';
@@ -119,9 +121,26 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'Why will this be reviewed later?', $html );
 		self::assertStringContainsString( 'Section note', $html );
 		self::assertStringContainsString( 'cb_core_setup_note', $html );
+		self::assertStringContainsString( 'cb-core-field cb-core-field--separated', $html );
+		self::assertStringContainsString( 'cb-core-field cb-core-field--inline', $html );
+		self::assertStringNotContainsString( '<hr', $html );
 	}
 
-	public function test_ui5_limited_manage_options_user_sees_only_authorized_checks(): void {
+	public function test_ui5_review_uses_shared_overview_cards_and_status_badges(): void {
+		$this->trusted_admin();
+		Lifecycle::initialize_activation( false );
+
+		$html = $this->render_setup();
+
+		self::assertStringContainsString( 'cb-core-status-strip', $html );
+		self::assertStringContainsString( 'cb-core-status-card', $html );
+		self::assertStringContainsString( 'cb-core-tab-cards', $html );
+		self::assertStringContainsString( 'cb-core-tab-card__body', $html );
+		self::assertStringContainsString( 'cb-core-state-badge', $html );
+		self::assertStringNotContainsString( '<hr', $html );
+	}
+
+	public function test_ui6_limited_manage_options_user_sees_only_authorized_checks(): void {
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		$user = get_userdata( $user_id );
 		self::assertInstanceOf( WP_User::class, $user );
