@@ -141,6 +141,13 @@ final class AdminModuleDefinitionsPreferences {
 					'deps' => [ '@cb-core/reorder' ],
 				];
 			},
+			'@cb-core/admin-notices' => static function (): array {
+				return [
+					'id'   => '@cb-core/admin-notices',
+					'src'  => 'features/admin-notices.js',
+					'deps' => [],
+				];
+			},
 			'@cb-core/permissions' => static function () use ( $admin_nonce, $ajax_url, $save_status ): array {
 				return [
 					'id'   => '@cb-core/permissions',
