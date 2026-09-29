@@ -57,6 +57,8 @@ final class Runtime {
 			)
 		);
 
+		// Only known category paths are expanded. There is deliberately no
+		// generic root catch-all that could consume Pages, CPTs or endpoints.
 		add_rewrite_rule(
 			'^(' . $alternation . ')/p([0-9]+)/?$',
 			'index.php?category_name=$matches[1]&paged=$matches[2]',
@@ -112,8 +114,9 @@ final class Runtime {
 	}
 
 	/**
-	 * Keep WordPress redirect_canonical from translating an already-canonical
-	 * compact route back to the default /page/{n}/ shape.
+	 * Keep WordPress redirect_canonical from translating an already-normalized
+	 * compact route back to the default /page/{n}/ shape. Priority-zero routing
+	 * normalization runs before redirect_canonical and owns slash/legacy forms.
 	 *
 	 * @param string|false $redirect_url
 	 * @return string|false
@@ -153,33 +156,79 @@ final class Runtime {
 
 		foreach ( CategoryRoutes::all() as $path => $term ) {
 			$quoted      = preg_quote( $path, '#' );
-			$legacy_base = trim( $category_base . '/' . $path, '/' );
+			$legacy_base = '' !== $category_base
+				? trim( $category_base . '/' . $path, '/' )
+				: $path;
 
-			if ( $current === $legacy_base ) {
+			// Normalize the clean root route itself, including trailing slash.
+			if ( $current === $path ) {
+				self::redirect_if_needed( CategoryRoutes::canonical_url( $term ) );
+				return;
+			}
+
+			// Legacy WordPress category-base route. When category_base is already
+			// removed by another configuration, legacy_base equals the clean path
+			// and must not redirect to itself.
+			if ( $legacy_base !== $path && $current === $legacy_base ) {
 				self::redirect( CategoryRoutes::canonical_url( $term ) );
 			}
 
-			if ( preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/(?:page|p)/?([0-9]+)/?$#', $current, $match ) ) {
+			if (
+				$legacy_base !== $path
+				&& preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/(?:page|p)/?([0-9]+)/?$#', $current, $match )
+			) {
 				self::redirect( CategoryRoutes::canonical_url( $term, max( 1, (int) $match[1] ) ) );
 			}
 
+			// WordPress default pagination remains a supported legacy route.
 			if ( preg_match( '#^' . $quoted . '/page/?([0-9]+)/?$#', $current, $match ) ) {
 				self::redirect( CategoryRoutes::canonical_url( $term, max( 1, (int) $match[1] ) ) );
 			}
 
-			if ( preg_match( '#^' . $quoted . '/p([01])/?$#', $current ) ) {
-				self::redirect( CategoryRoutes::canonical_url( $term ) );
+			// Compact pagination owns exactly one canonical spelling. p0/p1,
+			// leading zeros and missing trailing slashes normalize here.
+			if ( preg_match( '#^' . $quoted . '/p([0-9]+)/?$#', $current, $match ) ) {
+				$raw_page = (string) $match[1];
+				$page     = (int) $raw_page;
+				$target   = CategoryRoutes::canonical_url( $term, max( 1, $page ) );
+
+				if ( $page < 2 || (string) $page !== $raw_page ) {
+					self::redirect( $target );
+				}
+
+				self::redirect_if_needed( $target );
+				return;
 			}
 
-			if ( $current === $legacy_base . '/feed' ) {
-				self::redirect( CategoryRoutes::feed_url( $term ) );
+			// Canonical clean feed shape.
+			if ( $current === $path . '/feed' ) {
+				self::redirect_if_needed( CategoryRoutes::feed_url( $term ) );
+				return;
+			}
+			if ( preg_match( '#^' . $quoted . '/feed/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
+				self::redirect_if_needed( CategoryRoutes::feed_url( $term, (string) $match[1] ) );
+				return;
 			}
 
-			if ( preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/feed/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
+			// Alternate WordPress feed suffixes remain readable but redirect to
+			// one canonical /feed/{format}/ shape.
+			if ( preg_match( '#^' . $quoted . '/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
 				self::redirect( CategoryRoutes::feed_url( $term, (string) $match[1] ) );
 			}
 
-			if ( preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
+			if ( $legacy_base !== $path && $current === $legacy_base . '/feed' ) {
+				self::redirect( CategoryRoutes::feed_url( $term ) );
+			}
+			if (
+				$legacy_base !== $path
+				&& preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/feed/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
+			) {
+				self::redirect( CategoryRoutes::feed_url( $term, (string) $match[1] ) );
+			}
+			if (
+				$legacy_base !== $path
+				&& preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
+			) {
 				self::redirect( CategoryRoutes::feed_url( $term, (string) $match[1] ) );
 			}
 		}
@@ -211,13 +260,10 @@ final class Runtime {
 			if ( $current === $path ) {
 				return true;
 			}
-			if ( preg_match( '#^' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?$#', $current ) ) {
+			if ( preg_match( '#^' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?$', $current ) ) {
 				return true;
 			}
-			if ( preg_match( '#^' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?$#', $current ) ) {
-				return true;
-			}
-			if ( preg_match( '#^' . $quoted . '/(feed|rdf|rss|rss2|atom)/?$#', $current ) ) {
+			if ( preg_match( '#^' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?$', $current ) ) {
 				return true;
 			}
 		}
@@ -247,6 +293,18 @@ final class Runtime {
 		}
 
 		return trim( $request_path, '/' );
+	}
+
+	private static function redirect_if_needed( string $target ): void {
+		$request_uri  = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		$request_path = rawurldecode( (string) wp_parse_url( $request_uri, PHP_URL_PATH ) );
+		$target_path  = rawurldecode( (string) wp_parse_url( $target, PHP_URL_PATH ) );
+
+		if ( $request_path !== $target_path ) {
+			self::redirect( $target );
+		}
 	}
 
 	private static function redirect( string $target ): never {
