@@ -12,7 +12,8 @@ final class CB_Designer_History_Chrome_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( 'const scheduleHistorySync = () => {', $shell );
 		self::assertStringContainsString( "if (typeof queueMicrotask === 'function') queueMicrotask(syncHistory);", $shell );
-		self::assertStringContainsString( 'session?.projectState?.subscribe?.(scheduleHistorySync);', $shell );
-		self::assertStringContainsString( 'if (!session?.history) return;', $shell );
+		self::assertStringContainsString( 'const unsubscribeProject = session?.projectState?.subscribe?.(scheduleHistorySync) ?? null;', $shell );
+		self::assertStringContainsString( 'if (destroyed || !session?.history) return;', $shell );
+		self::assertStringContainsString( 'unsubscribeProject?.();', $shell );
 	}
 }
