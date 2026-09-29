@@ -20,6 +20,7 @@ use CB\Core\Setup\Presentation;
 use CB\Core\Setup\ReviewRepository;
 use CB\Core\Setup\StatusResolver;
 use CB\Core\Setup\Summary;
+use CB\Core\UI\Icon;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -350,20 +351,20 @@ final class Page extends PageBase {
 		?>
 		<section class="cb-core-panel">
 			<h2><?php esc_html_e( 'Section note', 'core-blueprint' ); ?></h2>
-			<p>
-				<?php esc_html_e( 'Store setup-specific context for this section. This note does not change configuration and does not depend on the optional Notes module.', 'core-blueprint' ); ?>
-			</p>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<form class="cb-core-field" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="cb_core_setup_note">
 				<input type="hidden" name="section_id" value="<?php echo esc_attr( $section_id ); ?>">
 				<input type="hidden" name="return_tab" value="<?php echo esc_attr( $section_id ); ?>">
 				<?php wp_nonce_field( 'cb_core_setup_note' ); ?>
-				<p>
+				<p class="description">
+					<?php esc_html_e( 'Store setup-specific context for this section. This note does not change configuration and does not depend on the optional Notes module.', 'core-blueprint' ); ?>
+				</p>
+				<div class="cb-core-field__control">
 					<textarea name="note" rows="5" class="large-text" maxlength="4000"><?php echo esc_textarea( $note ); ?></textarea>
-				</p>
-				<p class="cb-core-actions">
+				</div>
+				<div class="cb-core-actions">
 					<button type="submit" class="button button-primary"><?php esc_html_e( 'Save section note', 'core-blueprint' ); ?></button>
-				</p>
+				</div>
 			</form>
 		</section>
 		<?php
@@ -383,22 +384,46 @@ final class Page extends PageBase {
 			</p>
 		</section>
 
-		<?php foreach ( (array) $summary['sections'] as $section_id => $section ) : ?>
-			<article class="cb-core-card">
-				<div class="cb-core-card__header">
-					<h3 class="cb-core-card__title"><?php echo esc_html( (string) $section['label'] ); ?></h3>
-				</div>
-				<div class="cb-core-card__body">
-					<p><?php echo esc_html( self::count_line( (array) $section ) ); ?></p>
-				</div>
-				<div class="cb-core-card__footer">
-					<a class="button" href="<?php echo esc_url( add_query_arg( [ 'page' => self::SLUG, 'tab' => (string) $section_id ], admin_url( 'admin.php' ) ) ); ?>">
-						<?php esc_html_e( 'Review section', 'core-blueprint' ); ?>
-					</a>
-				</div>
-			</article>
-		<?php endforeach; ?>
+		<div class="cb-core-tab-cards">
+			<?php foreach ( (array) $summary['sections'] as $section_id => $section ) : ?>
+				<?php $section_status = self::section_status( (array) $section ); ?>
+				<a class="cb-core-tab-card" href="<?php echo esc_url( add_query_arg( [ 'page' => self::SLUG, 'tab' => (string) $section_id ], admin_url( 'admin.php' ) ) ); ?>">
+					<span class="cb-core-tab-card__body">
+						<span class="cb-core-tab-card__label"><?php echo esc_html( (string) $section['label'] ); ?></span>
+						<span class="cb-core-tab-card__desc"><?php echo esc_html( self::count_line( (array) $section ) ); ?></span>
+						<span>
+							<span class="cb-core-state-badge cb-core-state-badge--compact cb-core-state-badge--<?php echo esc_attr( Presentation::status_badge_variant( $section_status ) ); ?>">
+								<?php echo esc_html( Presentation::status_label( $section_status ) ); ?>
+							</span>
+						</span>
+					</span>
+					<span class="cb-core-tab-card__arrow" aria-hidden="true">
+						<?php echo Icon::render( 'chevron-right', [ 'size' => Icon::SIZE_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Icon::render() is escape-clean. ?>
+					</span>
+				</a>
+			<?php endforeach; ?>
+		</div>
 		<?php
+	}
+
+	/** @param array<string,mixed> $section */
+	private static function section_status( array $section ): string {
+		$counts = is_array( $section['counts'] ?? null ) ? $section['counts'] : [];
+
+		if ( (int) ( $counts[ StatusResolver::ATTENTION ] ?? 0 ) > 0 ) {
+			return StatusResolver::ATTENTION;
+		}
+		if ( (int) ( $counts[ StatusResolver::NEEDS_REVIEW ] ?? 0 ) > 0 ) {
+			return StatusResolver::NEEDS_REVIEW;
+		}
+		if ( (int) ( $counts[ StatusResolver::LATER ] ?? 0 ) > 0 ) {
+			return StatusResolver::LATER;
+		}
+		if ( (int) ( $counts[ StatusResolver::CONFIGURED ] ?? 0 ) > 0 ) {
+			return StatusResolver::CONFIGURED;
+		}
+
+		return StatusResolver::NOT_APPLICABLE;
 	}
 
 	/** @param array<string,mixed> $scope */
