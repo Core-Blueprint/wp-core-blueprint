@@ -194,6 +194,14 @@ final class Language {
 		'integrity_distribution_locale_changed'  => 'Core Scanner: WordPress distribution locale was set ({mode})',
 		'integrity_distribution_locale_detected' => "Core Scanner detected the WordPress distribution locale: {detected}",
 
+		// Consequential mutation acknowledgements
+		'media.replace.acknowledged' => 'Backup and recovery responsibility was acknowledged before replacing a media file',
+		'content.models.schema.import.acknowledged' => 'Backup and recovery responsibility was acknowledged before importing a Content Models schema',
+		'content.models.native.import.acknowledged' => 'Backup and recovery responsibility was acknowledged before adopting WordPress-native schema into Content Models',
+		'snippets.restore.acknowledged' => 'Backup and recovery responsibility was acknowledged before restoring snippets with preserved IDs',
+		'notes.import.overwrite.acknowledged' => 'Backup and recovery responsibility was acknowledged before overwriting existing Notes during import',
+		'integrity.quarantine.restore.acknowledged' => 'Backup and recovery responsibility was acknowledged before restoring a quarantined Scanner item',
+
 		// Notes
 		'note_created'         => 'A note was created',
 		'note_updated'         => 'A note was updated',

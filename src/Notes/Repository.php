@@ -428,9 +428,13 @@ final class Repository {
         return $rows;
     }
 
-    public static function import_commit( array $notes, array $decisions ): array {
+    public static function import_commit( array $notes, array $decisions, bool $overwrite_acknowledged = false ): array {
         $summary = [ 'created' => 0, 'overwritten' => 0, 'copied' => 0, 'skipped' => 0, 'failed' => 0 ];
+        $prepared = [];
 
+        // Resolve every target before the first mutation. This guarantees that an
+        // unacknowledged overwrite can never occur after earlier rows were already
+        // created or copied in the same import request.
         foreach ( $notes as $index => $note ) {
             if ( ! is_array( $note ) ) {
                 continue;
@@ -439,6 +443,22 @@ final class Repository {
             $incoming = self::normalize_import_note( $note );
             $decision = isset( $decisions[ (string) $index ] ) ? sanitize_key( (string) $decisions[ (string) $index ] ) : 'skip';
             $existing = self::find_import_match( $incoming );
+
+            if ( 'overwrite' === $decision && $existing && ! $overwrite_acknowledged ) {
+                throw new \InvalidArgumentException( __( 'Confirm your responsibility for backup and recovery before overwriting existing Notes.', 'core-blueprint' ) );
+            }
+
+            $prepared[] = [
+                'incoming' => $incoming,
+                'decision' => $decision,
+                'existing' => $existing,
+            ];
+        }
+
+        foreach ( $prepared as $item ) {
+            $incoming = $item['incoming'];
+            $decision = (string) $item['decision'];
+            $existing = $item['existing'];
 
             if ( 'skip' === $decision ) {
                 $summary['skipped']++;

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CB\Core\Snippets\Admin;
 
+use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Log\AuditLog;
 use CB\Core\Snippets\ImportExport\Exporter;
 use CB\Core\Snippets\ImportExport\Importer;
@@ -13,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Actions {
 	private const RESULT_PREFIX = 'cb_core_snippets_result_';
+	private const RESTORE_ACKNOWLEDGEMENT_FIELD = 'snippets_restore_acknowledgement';
 
 	public static function boot(): void {
 		add_action( 'admin_post_cb_core_snippets_save', [ __CLASS__, 'save' ] );
@@ -144,7 +146,28 @@ final class Actions {
 			self::fail( __( 'The uploaded JSON file could not be read.', 'core-blueprint' ), 'import-export' );
 		}
 
-		$result = Importer::import_json( $json, isset( $_POST['overwrite'] ) );
+		$document = json_decode( $json, true );
+		$preserve_requested = isset( $_POST['overwrite'] ) && '1' === (string) wp_unslash( $_POST['overwrite'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce.
+		$preserve_ids = $preserve_requested
+			&& is_array( $document )
+			&& Exporter::FILE_TYPE === (string) ( $document['file_type'] ?? '' );
+
+		if ( $preserve_ids ) {
+			try {
+				MutationAcknowledgement::require_confirmed(
+					$_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
+					__( 'Confirm your responsibility for backup and recovery before restoring snippets with preserved IDs.', 'core-blueprint' )
+				);
+			} catch ( \InvalidArgumentException $error ) {
+				self::fail( $error->getMessage(), 'import-export' );
+			}
+			AuditLog::log( 'snippets.restore.acknowledged', 'notice', [
+				'preserve_ids'            => true,
+				'recovery_responsibility' => true,
+			] );
+		}
+
+		$result = Importer::import_json( $json, $preserve_ids );
 		AuditLog::log( 'snippets_imported', 'notice', [
 			'source'  => (string) $result['source'],
 			'created' => (int) $result['created'],

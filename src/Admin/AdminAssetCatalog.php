@@ -230,7 +230,7 @@ final class AdminAssetCatalog {
 				},
 			];
 		}
-		if ( 'provider.snippets-list' === $asset_id || 'provider.snippets-editor' === $asset_id ) {
+		if ( in_array( $asset_id, [ 'provider.snippets-list', 'provider.snippets-editor', 'provider.snippets-import-export' ], true ) ) {
 			$editor = 'provider.snippets-editor' === $asset_id;
 			return [
 				'type'     => 'provider',

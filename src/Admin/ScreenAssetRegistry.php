@@ -333,6 +333,10 @@ final class ScreenAssetRegistry {
 	/** @return string[] */
 	private static function snippets_requirements( string $tab, string $view ): array {
 		$items = [ 'page.snippets', 'page.security', 'component.nav-tabs' ];
+		if ( 'import-export' === $tab ) {
+			$items[] = 'provider.snippets-import-export';
+			return $items;
+		}
 		if ( 'snippets' !== $tab ) {
 			return $items;
 		}
