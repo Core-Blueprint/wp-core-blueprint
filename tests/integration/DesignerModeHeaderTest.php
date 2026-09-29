@@ -184,8 +184,7 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "return !pending;", $launch );
 		self::assertStringContainsString( "failPendingLaunchRoots(", $launch );
 		self::assertStringContainsString( "'direct-enter'", $launch );
-		self::assertStringContainsString( "'failureLabels' => [", $assets );
-		self::assertStringContainsString( "'boot'    => __( 'Designer could not start. Reload the page and try again.'", $assets );
+		self::assertStringContainsString( "'failureLabel' => __( 'Designer could not start. Reload the page and try again.'", $assets );
 		self::assertStringContainsString( ':not([data-cb-design-launch-state="error"])', $css );
 		self::assertStringContainsString( '## Launch failure semantics', $docs );
 
