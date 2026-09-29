@@ -15,6 +15,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 	private mixed $saved_permalink_structure;
 	private mixed $saved_category_base;
 	private mixed $saved_rewrite_dirty;
+	private string $saved_wp_rewrite_category_base = '';
 	private array $saved_extra_rules_top = [];
 
 	public function set_up(): void {
@@ -27,6 +28,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->saved_category_base       = get_option( 'category_base', '__cb_missing__' );
 		$this->saved_rewrite_dirty       = get_option( 'cb_core_routing_rewrite_dirty', '__cb_missing__' );
 		$this->saved_extra_rules_top     = is_array( $wp_rewrite->extra_rules_top ) ? $wp_rewrite->extra_rules_top : [];
+		$this->saved_wp_rewrite_category_base = (string) $wp_rewrite->category_base;
 
 		$this->reset_settings_cache();
 		update_option( 'permalink_structure', '/%category%/%postname%/', false );
@@ -43,6 +45,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->restore_option( 'category_base', $this->saved_category_base );
 		$this->restore_option( 'cb_core_routing_rewrite_dirty', $this->saved_rewrite_dirty );
 		$wp_rewrite->extra_rules_top = $this->saved_extra_rules_top;
+		$wp_rewrite->category_base   = $this->saved_wp_rewrite_category_base;
 		$this->reset_settings_cache();
 
 		parent::tear_down();
@@ -86,6 +89,26 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 			home_url( user_trailingslashit( 'news/company/p2', 'paged' ) ),
 			CategoryRoutes::canonical_url( $term, 2 )
 		);
+	}
+
+	public function test_category_base_dot_is_treated_as_no_legacy_base(): void {
+		global $wp_rewrite;
+
+		$wp_rewrite->category_base = '.';
+		update_option( 'category_base', '.', false );
+
+		self::assertSame( '', CategoryRoutes::category_base_path() );
+	}
+
+	public function test_disabled_runtime_does_not_register_clean_category_rules(): void {
+		global $wp_rewrite;
+
+		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		$wp_rewrite->extra_rules_top = [];
+
+		Runtime::register_rewrite_rules();
+
+		self::assertSame( [], $wp_rewrite->extra_rules_top );
 	}
 
 	public function test_preflight_blocks_an_existing_public_content_route(): void {
@@ -164,6 +187,42 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 			CategoryRoutes::canonical_url( $term ),
 			Runtime::filter_term_link( $wordpress, $term, 'category' )
 		);
+	}
+
+	public function test_redirect_canonical_suppresses_only_clean_canonical_shapes(): void {
+		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		$candidate = home_url( '/blog/page/2/' );
+
+		self::assertFalse(
+			Runtime::filter_redirect_canonical( $candidate, home_url( '/blog/p2/' ) )
+		);
+		self::assertSame(
+			$candidate,
+			Runtime::filter_redirect_canonical( $candidate, home_url( '/blog/rss2/' ) )
+		);
+	}
+
+	public function test_category_changes_mark_rewrite_rules_dirty_only_when_policy_is_enabled(): void {
+		delete_option( 'cb_core_routing_rewrite_dirty' );
+		Runtime::category_changed();
+		self::assertFalse( get_option( 'cb_core_routing_rewrite_dirty', false ) );
+
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		Runtime::category_changed();
+		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
 	}
 
 	public function test_core_setup_registers_routing_as_optional_cms_tool(): void {
