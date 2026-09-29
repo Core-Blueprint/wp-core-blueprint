@@ -33,9 +33,17 @@ final class Runtime {
 	public static function apply( string $hook ): array {
 		if (
 			! in_array( $hook, self::SITE_HOOKS, true )
-			|| ! Policy::has_restrictions()
 			|| is_network_admin()
 			|| is_user_admin()
+		) {
+			return [];
+		}
+
+		$entries = Discovery::callbacks( $hook );
+		SourceLedger::observe_hook( $hook, $entries );
+
+		if (
+			! Policy::has_restrictions()
 			|| ! Visibility::governance_available()
 			|| Visibility::current_user_is_manager()
 		) {
@@ -43,7 +51,7 @@ final class Runtime {
 		}
 
 		$removed = [];
-		foreach ( Discovery::callbacks( $hook ) as $entry ) {
+		foreach ( $entries as $entry ) {
 			$source = $entry['source'];
 			if ( empty( $source['manageable'] ) || Visibility::allows_current_user( (string) $source['id'] ) ) {
 				continue;
