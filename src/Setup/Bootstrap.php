@@ -38,9 +38,11 @@ final class Bootstrap {
 				'components' => [
 					'actions',
 					'cards',
+					'fields',
 					'form-controls',
 					'nav-tabs',
 					'notices',
+					'overview',
 					'panels',
 					'state-badges',
 				],
