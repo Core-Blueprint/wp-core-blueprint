@@ -41,4 +41,31 @@ final class CB_Design_Foundation_Editor_Public_Boundary_Test extends WP_UnitTest
 		self::assertStringContainsString( 'allowCommand', $facade );
 		self::assertStringContainsString( 'onChange', $facade );
 	}
+	public function test_public_browser_api_is_frozen_and_first_party_consumers_do_not_bypass_it(): void {
+		$root = dirname( __DIR__, 2 );
+		$docs = (string) file_get_contents( $root . '/docs/DESIGNER-FOUNDATION-API.md' );
+
+		self::assertStringContainsString( 'Status: **public v1 frozen contract**.', $docs );
+		self::assertStringContainsString( "@cb-core/design-editor", $docs );
+		self::assertStringContainsString( 'createSession(options)', $docs );
+		self::assertStringContainsString( 'createDesignerShell(root, options)', $docs );
+		self::assertStringContainsString( 'createDesignerSelectionController(options)', $docs );
+		self::assertStringContainsString( 'commands.insertNode', $docs );
+		self::assertStringContainsString( 'document-flow', $docs );
+		self::assertStringContainsString( 'createFlowPreviewHost', $docs );
+		self::assertStringContainsString( 'ProjectState', $docs );
+		self::assertStringContainsString( 'does **not** make them a supported extension contract', $docs );
+
+		foreach ( glob( $root . '/assets/js/features/*.js' ) ?: [] as $path ) {
+			$source = (string) file_get_contents( $path );
+			if ( ! str_contains( $source, '@cb-core/design-editor' ) ) {
+				continue;
+			}
+			self::assertSame(
+				0,
+				preg_match( '/from\\s+[\'"]\.\.\/design\//', $source ),
+				basename( $path ) . ' must not mix the public Designer module with private Design source imports.'
+			);
+		}
+	}
 }
