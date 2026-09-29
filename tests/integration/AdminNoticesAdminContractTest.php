@@ -7,6 +7,7 @@ use CB\Core\AdminNotices\Policy;
 use CB\Core\AdminNotices\SourceLedger;
 use CB\Core\AdminNotices\SourceResolver;
 use CB\Core\AdminNotices\Visibility;
+use CB\Core\Admin\Pages\Preferences;
 use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\Roles;
 
@@ -41,6 +42,7 @@ final class CB_Base_Admin_Notices_Admin_Contract_Test extends WP_UnitTestCase {
 		self::assertTrue( current_user_can( Capabilities::MANAGE ) );
 		self::assertTrue( Admin::can_manage() );
 		self::assertFalse( current_user_can( 'manage_options' ) );
+		self::assertSame( Capabilities::MANAGE, ( new Preferences() )->capability() );
 	}
 
 	public function test_ana2_protected_sources_cannot_be_restricted_and_visibility_fails_open(): void {

@@ -47,6 +47,20 @@ final class Preferences extends PageBase {
 		return 90;
 	}
 
+	/**
+	 * Keep the normal Preferences page on manage_options while allowing a
+	 * delegated Admin Notices manager to reach only that governed tab.
+	 */
+	public function capability(): string {
+		if ( current_user_can( 'manage_options' ) ) {
+			return 'manage_options';
+		}
+
+		return AdminNoticesAdmin::can_manage()
+			? \CB\Core\AdminNotices\Capabilities::MANAGE
+			: 'manage_options';
+	}
+
 	public function render(): void {
 		$this->guard();
 
@@ -72,9 +86,9 @@ final class Preferences extends PageBase {
 
 
 		// Admin Notices governance is a dedicated operator capability boundary.
-		// Preferences itself remains manage_options-gated in the current Base
-		// architecture; the tab and all mutation endpoints additionally require
-		// cb_manage_admin_notices.
+		// A delegated manager may reach Preferences without manage_options, but
+		// the surface is narrowed to this tab before any other Preferences content
+		// can be rendered.
 		if ( ! AdminNoticesAdmin::can_manage() ) {
 			unset( $tab_labels['admin-notices'] );
 			$available_tabs = array_values( array_diff( $available_tabs, [ 'admin-notices' ] ) );
@@ -122,7 +136,16 @@ final class Preferences extends PageBase {
 			$available_tabs = array_values( array_diff( $available_tabs, [ 'cli' ] ) );
 		}
 
-		$tab = $this->active_tab( $available_tabs, 'overview' );
+		$delegated_admin_notices = ! current_user_can( 'manage_options' ) && AdminNoticesAdmin::can_manage();
+		if ( $delegated_admin_notices ) {
+			$available_tabs = [ 'admin-notices' ];
+			$tab_labels     = [ 'admin-notices' => $tab_labels['admin-notices'] ];
+		}
+
+		$tab = $this->active_tab(
+			$available_tabs,
+			$delegated_admin_notices ? 'admin-notices' : 'overview'
+		);
 
 		switch ( $tab ) {
 			case 'privacy':         $this->render_privacy_tab( $tab, $tab_labels );         return;
