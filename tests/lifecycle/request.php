@@ -233,7 +233,7 @@ try {
         cb_a2_expect(is_string($first_activated_at) && '' !== $first_activated_at, 'First activation marker missing.');
         cb_a2_expect(false !== $guard_marker && 0 < (int) $guard_marker, 'Privileged guard bootstrap marker missing.');
         cb_a2_expect('1.0' === (string) get_option('cb_core_db_version', ''), 'Audit schema marker not current after first activation.');
-        cb_a2_expect(1 === (int) get_option('cb_core_role_policy_schema_version', 0), 'Role Policy schema not initialized on first activation.');
+        cb_a2_expect(\CB\Core\Permissions\RolePolicySchema::current_schema() === (int) get_option('cb_core_role_policy_schema_version', 0), 'Role Policy schema not initialized on first activation.');
         cb_a2_expect(1 === (int) get_option('cb_core_trust_schema_version', 0), 'Trust Schema not initialized on first activation.');
         cb_a2_expect('auto' === (string) get_option('cb_core_theme_default', ''), 'Theme default was not initialized.');
         cb_a2_expect('auto' === (string) get_option('cb_locale_default', ''), 'Locale default was not initialized.');
