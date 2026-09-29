@@ -72,7 +72,6 @@ $catalog['messages'] = array_replace(
         'Review optional modern image and SVG handling against the capabilities of this server.' => 'Prüfe die optionale Verarbeitung moderner Bildformate und SVG anhand der Fähigkeiten dieses Servers.',
         'Review reason:' => 'Prüfgrund:',
         'Review retention periods for security, maintenance, login, settings, and general audit data.' => 'Prüfe die Aufbewahrungsfristen für Sicherheits-, Wartungs-, Anmelde-, Einstellungs- und allgemeine Auditdaten.',
-        'Review section' => 'Abschnitt prüfen',
         'Review the Base configuration and record the choices for this site.' => 'Prüfe die Base-Konfiguration und dokumentiere die Entscheidungen für diese Website.',
         'Review the Core Shield master state and its active hardening modules.' => 'Prüfe den Hauptstatus von Core Shield und seine aktiven Härtungsmodule.',
         'Review the current Core Blueprint configuration and record the choices made for this site. Core Setup reads each subsystem live, so you can reopen it at any time to review what changed.' => 'Prüfe die aktuelle Core Blueprint-Konfiguration und dokumentiere die Entscheidungen für diese Website. Core Setup liest jedes Teilsystem live, sodass du es jederzeit erneut öffnen kannst, um Änderungen zu prüfen.',
