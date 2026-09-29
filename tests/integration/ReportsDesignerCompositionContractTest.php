@@ -148,6 +148,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 
 		foreach ( [ $reports_runtime, $mail_runtime ] as $runtime ) {
 			self::assertStringContainsString( 'createDesignerLayerTree', $runtime );
+			self::assertStringContainsString( 'onSelectItem:', $runtime );
 			self::assertStringNotContainsString( 'cb-core-design-shell__layer-list', $runtime );
 			self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
 			self::assertStringNotContainsString( "row.className = 'cb-core-design-shell__layer-row';", $runtime );

@@ -53,6 +53,9 @@ final class CB_Designer_Layer_Interaction_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( 'collapsedKeys', $layers );
 		self::assertStringContainsString( 'dragRecord.parentKey !== parentKey', $layers );
 		self::assertStringContainsString( 'reorder.onMove', $layers );
+		self::assertStringContainsString( 'onSelectItem = null', $layers );
+		self::assertStringContainsString( "source: 'layers'", $layers );
+		self::assertStringContainsString( 'openInspector: false', $layers );
 	}
 
 	public function test_layer_action_labels_are_localized_by_base(): void {

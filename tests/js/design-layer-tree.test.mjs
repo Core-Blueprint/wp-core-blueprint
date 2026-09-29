@@ -159,18 +159,21 @@ after(async () => {
 
 const nestedItems = () => [{
 	key: '[0]',
+	path: [0],
 	label: 'Section',
 	meta: 'Section',
 	selected: true,
 	onSelect: () => {},
 	children: [{
 		key: '[0,0]',
+		path: [0, 0],
 		label: 'Heading',
 		meta: 'Your booking was cancelled',
 		onSelect: () => {},
 		children: [],
 	}, {
 		key: '[0,1]',
+		path: [0, 1],
 		label: 'Text',
 		meta: 'Hi {{booking.customer_name}}',
 		onSelect: () => {},
@@ -200,6 +203,25 @@ test('hierarchical Layers mirror parent-child document structure and suppress re
 	const sectionSelect = section.children[1];
 	assert.equal(sectionSelect.querySelector('.cb-core-design-shell__layer-meta'), null);
 	assert.equal(heading.children[1].querySelector('.cb-core-design-shell__layer-meta')?.textContent, 'Your booking was cancelled');
+});
+
+test('Layer selection stays in Layers while publishing selection intent to the consumer adapter', () => {
+	let selected = null;
+	const tree = createDesignerLayerTree({
+		documentRef: document,
+		onSelectItem: (path, options) => {
+			selected = { path, options };
+		},
+	});
+	tree.render(nestedItems());
+
+	const headingSelect = tree.row('[0,0]').children[1];
+	headingSelect.dispatchEvent(new Event('click'));
+
+	assert.deepEqual(selected?.path, [0, 0]);
+	assert.equal(selected?.options?.source, 'layers');
+	assert.equal(selected?.options?.openInspector, false);
+	assert.equal(selected?.options?.key, '[0,0]');
 });
 
 test('collapse is transient tree UI state and restores descendants without mutating descriptors', () => {

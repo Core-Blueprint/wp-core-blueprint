@@ -198,6 +198,7 @@ if ( FORM ) {
 			layerTree = createDesignerLayerTree( {
 				documentRef: document,
 				ariaLabel: 'Layers',
+				onSelectItem: ( path, options ) => selectionController?.select( path, options ),
 			} );
 			layerTree.element.dataset.cbReportLayerList = '';
 			section.append( layerTree.element );
@@ -251,12 +252,12 @@ if ( FORM ) {
 			const structural = isStructuralBlock( block );
 			return {
 				key: block.type,
+				path: [ index ],
 				label: blockLabel( block.type ),
 				meta: block.enabled !== false
 					? ( composerUi.visible || 'Visible' )
 					: ( composerUi.hidden || 'Hidden' ),
 				selected: index === selectedIndex(),
-				onSelect: () => selectionController?.select( [ index ] ),
 				dataset: { cbReportLayer: block.type },
 				reorder: structural ? null : {
 					index,

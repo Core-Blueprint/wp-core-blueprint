@@ -371,10 +371,10 @@ if (root) {
 
 		return {
 			key: pathKey(path),
+			path: [...path],
 			label: definition?.label || (node.type === 'mail.section' ? 'Section' : node.type || 'Element'),
 			meta: nodeSummary(node, definition),
 			selected: samePath(path, session.selection().primary),
-			onSelect: () => selectionController?.select(path),
 			actions: {
 				remove: node.type !== 'mail.section'
 					? () => session.execute(commands.removeNode(path))
@@ -431,6 +431,7 @@ if (root) {
 		documentRef: document,
 		ariaLabel: 'Layers',
 		emptyMessage: 'This mail template does not contain editable elements.',
+		onSelectItem: (path, options) => selectionController?.select(path, options),
 	});
 	structure.replaceChildren(layerTree.element);
 	selectionController = createDesignerSelectionController({

@@ -179,6 +179,9 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		$feature = (string) file_get_contents( $root . '/assets/js/features/mail-designer.js' );
 
 		self::assertStringContainsString( 'createDesignerLayerTree', $feature );
+		self::assertStringContainsString( 'onSelectItem: (path, options) => selectionController?.select(path, options)', $feature );
+		self::assertStringContainsString( 'path: [...path]', $feature );
+		self::assertStringNotContainsString( 'onSelect: () => selectionController?.select(path)', $feature );
 		self::assertStringContainsString( 'createDesignerSelectionController', $feature );
 		self::assertStringContainsString( 'renderLayers: renderStructure', $feature );
 		self::assertStringContainsString( 'renderInspector,', $feature );

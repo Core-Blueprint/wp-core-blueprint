@@ -134,7 +134,7 @@ This contract deliberately separates a stable Designer structure and session exp
 
 The Layers view must visually mirror the actual document hierarchy. Consumers describe semantic nodes; Base owns how that hierarchy is rendered and operated.
 
-Consumers use the public Designer Layers tree helper and provide only stable keys/paths, labels, optional useful summaries, selected state, child descriptors and bounded callbacks. A grouping node with children is rendered as a parent with nested descendants. Consumers must not recursively build their own Layer rows or simulate hierarchy with local margins.
+Consumers use the public Designer Layers tree helper and provide only stable keys/paths, labels, optional useful summaries, selected state, child descriptors and bounded callbacks. The tree-level selection adapter owns Layers selection intent: clicking a Layer selects that path with source `layers` while keeping the Layers panel active. A grouping node with children is rendered as a parent with nested descendants. Consumers must not recursively build their own Layer rows or simulate hierarchy with local margins.
 
 Base owns:
 
@@ -159,6 +159,6 @@ Standard row actions remain ordered as move up, move down, remove. Move/remove c
 
 Selection is Base-owned session state. Every real selection mutation publishes one canonical change event with a revision, source and action. Structural operations may also publish when the final path is unchanged but now identifies a different semantic node. Command-driven remaps are batched so insert, remove and reorder expose only their final coherent selection state; undo and redo restore selection through the same lifecycle.
 
-Consumers must not manually coordinate separate Layers, Inspector and canvas selection paths. They bind domain render adapters through the public Designer selection controller. Base invokes those adapters in deterministic order: Layers, Inspector, canvas. Explicit UI selection opens the canonical Inspector panel, and insertion of a newly selected element may do the same automatically.
+Consumers must not manually coordinate separate Layers, Inspector and canvas selection paths. They bind domain render adapters through the public Designer selection controller. Base invokes those adapters in deterministic order: Layers, Inspector, canvas. Selection determines which element is active; the interaction source determines panel activation. A Layers click keeps Layers open while synchronizing Inspector data and canvas selection. Canvas selection and insertion may activate Inspector when the interaction intent is editing.
 
 The session public boundary provides selection snapshots, validated `select()`, `clearSelection()` and `subscribeSelection()`. Structural project changes are published only after their canonical selection has been remapped, so project and selection consumers observe one coherent editor state. Project replacement reconciles selection against the new tree by default; a context switch may request `resetSelection: true` when selection must not carry across documents.

@@ -244,11 +244,16 @@ export const createDesignerLayerTree = ({
 	documentRef = typeof document !== 'undefined' ? document : null,
 	ariaLabel = 'Layers',
 	emptyMessage = '',
+	onSelectItem = null,
 } = {}) => {
 	if (!documentRef?.createElement) {
 		throw new TypeError('Designer layer tree requires a DOM Document.');
 	}
+	if (onSelectItem !== null && onSelectItem !== undefined && typeof onSelectItem !== 'function') {
+		throw new TypeError('Designer layer tree onSelectItem adapter must be a function or null.');
+	}
 
+	const selectionAdapter = typeof onSelectItem === 'function' ? onSelectItem : null;
 	const element = documentRef.createElement('div');
 	element.className = 'cb-core-design-shell__layer-list cb-core-design-shell__layer-tree';
 	element.dataset.cbDesignLayerTree = '1';
@@ -300,12 +305,21 @@ export const createDesignerLayerTree = ({
 					};
 				}
 
+				const itemPath = Array.isArray(item.path) ? [...item.path] : null;
+				const itemSelect = selectionAdapter && itemPath
+					? () => selectionAdapter(itemPath, Object.freeze({
+						source: 'layers',
+						openInspector: false,
+						key,
+					}))
+					: item.onSelect;
+
 				const layer = createDesignerLayerRow({
 					documentRef,
 					label: item.label,
 					meta: item.meta,
 					selected: item.selected === true,
-					onSelect: item.onSelect,
+					onSelect: itemSelect,
 					actions,
 					expandable,
 					expanded,

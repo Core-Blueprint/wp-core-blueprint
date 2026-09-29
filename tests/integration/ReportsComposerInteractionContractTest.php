@@ -56,6 +56,9 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'renderInspector', $runtime );
 		self::assertStringContainsString( 'moveBlock', $runtime );
 		self::assertStringContainsString( 'createDesignerLayerTree', $runtime );
+		self::assertStringContainsString( 'onSelectItem: ( path, options ) => selectionController?.select( path, options )', $runtime );
+		self::assertStringContainsString( 'path: [ index ]', $runtime );
+		self::assertStringNotContainsString( 'onSelect: () => selectionController?.select( [ index ] )', $runtime );
 		self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
 		self::assertStringContainsString( 'previewHost?.setSelection', $runtime );
 		self::assertStringContainsString( "qs( '[data-cb-report-elements]'", $runtime );
