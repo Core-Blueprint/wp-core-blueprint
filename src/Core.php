@@ -88,6 +88,11 @@ final class Core {
 		// ::log() for high-volume events.
 		AuditLog::init_queue();
 
+		// URL Governance owns the opt-in clean category routing contract. It
+		// registers no public-route mutations until the administrator explicitly
+		// enables the policy; admin-post transport remains available while off.
+		\CB\Core\Routing\Bootstrap::boot();
+
 
 		// Built-in module registration filter.
 		add_filter( 'cb_core_modules', [ $this, 'register_builtin_modules' ] );
