@@ -85,8 +85,8 @@ final class ScreenContext {
 				'allowed' => [ 'overview', 'environment', 'access-mode', 'login-shield', 'two-factor', 'core-shield', 'core-scanner', 'failsafe' ],
 			],
 			'core-blueprint-mail' => [
-				'default' => 'settings',
-				'allowed' => [ 'settings', 'test', 'logs' ],
+				'default' => 'overview',
+				'allowed' => [ 'overview', 'templates', 'settings', 'test', 'logs' ],
 			],
 			'core-blueprint-snippets' => [
 				'default' => 'snippets',

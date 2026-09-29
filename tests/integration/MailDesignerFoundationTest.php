@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Admin\ScreenContext;
 use CB\Core\Design\Profile\Mail\HtmlRenderer;
 use CB\Core\Design\Profile\Mail\Validator;
 use CB\Core\Mail\Designer\BindingRegistry;
@@ -58,6 +59,33 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertFalse( MailSettings::delivery_enabled() );
 		self::assertTrue( MailSettings::designer_enabled() );
 		self::assertTrue( MailSettings::enabled() );
+	}
+
+	public function test_mail_screen_context_matches_renderer_tab_routes(): void {
+		$original_get = $_GET;
+
+		try {
+			$routes = [
+				''          => 'overview',
+				'overview'  => 'overview',
+				'templates' => 'templates',
+				'settings'  => 'settings',
+				'test'      => 'test',
+				'logs'      => 'logs',
+			];
+
+			foreach ( $routes as $requested => $expected ) {
+				$_GET = [ 'page' => 'core-blueprint-mail' ];
+				if ( '' !== $requested ) {
+					$_GET['tab'] = $requested;
+				}
+
+				$context = ScreenContext::from_request( 'core-blueprint_page_core-blueprint-mail' );
+				self::assertSame( $expected, $context->tab(), 'Mail ScreenContext route drifted from the renderer for tab: ' . ( '' === $requested ? '(default)' : $requested ) );
+			}
+		} finally {
+			$_GET = $original_get;
+		}
 	}
 
 	public function test_wordpress_templates_use_the_single_mail_design_profile(): void {
