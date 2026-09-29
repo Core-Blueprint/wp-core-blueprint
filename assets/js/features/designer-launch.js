@@ -620,16 +620,16 @@
 				return;
 			}
 
-			root.dataset.cbDesignLaunchInitialized = 'true';
-			root.dataset.cbDesignLaunchState = 'ready';
 			composeHeader(root, shell, shellApi, { direct, exitUrl });
 
 			if (direct) {
 				initializeDirectLaunch(root, shell, fullscreen, shellApi, exitUrl);
-				return;
+			} else {
+				initializeManualLaunch(root, shell, fullscreen, context, shellApi);
 			}
 
-			initializeManualLaunch(root, shell, fullscreen, context, shellApi);
+			root.dataset.cbDesignLaunchInitialized = 'true';
+			root.dataset.cbDesignLaunchState = 'ready';
 		});
 		return !pending;
 	};
