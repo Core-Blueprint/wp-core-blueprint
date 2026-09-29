@@ -38,7 +38,7 @@ RUNTIME_DIRS = (
 FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
 DESIGN_MODULE_ROOT = Path("assets/js/design")
 DESIGN_IMPORT_RE = re.compile(
-    r"(?P<prefix>\\b(?:from|import)\\s+)(?P<quote>['\"])(?P<specifier>\\.{1,2}/[^'\"?]+\\.js)(?P=quote)"
+    r"(?P<prefix>\b(?:from|import)\s+)(?P<quote>['\"])(?P<specifier>\.{1,2}/[^'\"?]+\.js)(?P=quote)"
 )
 
 
@@ -126,9 +126,9 @@ def design_module_revision(source: Path) -> str:
     digest = hashlib.sha256()
     for path in modules:
         digest.update(path.relative_to(source).as_posix().encode("utf-8"))
-        digest.update(b"\\0")
+        digest.update(b"\0")
         digest.update(path.read_bytes())
-        digest.update(b"\\0")
+        digest.update(b"\0")
     return digest.hexdigest()[:16]
 
 
