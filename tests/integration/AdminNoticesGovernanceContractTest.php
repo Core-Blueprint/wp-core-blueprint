@@ -271,8 +271,8 @@ final class CB_Base_Admin_Notices_Governance_Contract_Test extends WP_UnitTestCa
 		foreach ( [ 'querySelector', 'jQuery', 'display:none', 'display: none', 'wp_admin_notice_markup', 'ob_start(', 'preg_match( $markup' ] as $forbidden ) {
 			self::assertStringNotContainsString( $forbidden, $source );
 		}
-		self::assertStringContainsString( "remove_action( $hook, $entry['callback']", $source );
-		self::assertStringContainsString( "add_action( $hook, [ __CLASS__, 'govern_current_hook' ], PHP_INT_MIN )", $source );
+		self::assertStringContainsString( 'remove_action( $hook, $entry[\'callback\']', $source );
+		self::assertStringContainsString( 'add_action( $hook, [ __CLASS__, \'govern_current_hook\' ], PHP_INT_MIN )', $source );
 	}
 
 	private function approved_operator(): int {
