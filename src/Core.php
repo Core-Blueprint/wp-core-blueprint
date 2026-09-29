@@ -355,6 +355,10 @@ final class Core {
 
 		OptionPolicy::sync_active();
 
+		// Clean Archive URLs are persistent policy. Deactivation removes the
+		// owned rewrite rules, so reactivation must schedule their reconciliation.
+		\CB\Core\Routing\Runtime::reconcile_activation();
+
 		Retention::schedule();
 
 		// Privileged Access Guard unattended reconciliation. The guard also
@@ -419,6 +423,10 @@ final class Core {
 		AuditLog::log( 'plugin.deactivated', 'warning', [
 			'version' => CB_CORE_VERSION,
 		] );
+
+		// Remove URL Governance rewrites before Base stops participating in
+		// WordPress routing. The policy itself remains stored for reactivation.
+		\CB\Core\Routing\Runtime::cleanup_deactivation();
 
 		// Clear bypass transient window. Persistent emergency-bypass option is
 		// intentionally left alone - deactivation must never silently re-enable
