@@ -7,6 +7,7 @@ use CB\Core\ExtensionRegistry;
 use CB\Core\Profiles\Sections\AIGovernanceSection;
 use CB\Core\Profiles\Sections\AdminColumnsSection;
 use CB\Core\Profiles\Sections\AdminNavigationSection;
+use CB\Core\Profiles\Sections\AdminNoticesSection;
 use CB\Core\Profiles\Sections\AuditNotificationsSection;
 use CB\Core\Profiles\Sections\ContentModelsSection;
 use CB\Core\Profiles\Sections\EnvironmentGovernanceSection;
@@ -175,6 +176,7 @@ final class SectionRegistry {
 			new SecuritySection(),
 			new AdminNavigationSection(),
 			new AdminColumnsSection(),
+			new AdminNoticesSection(),
 			new PrivacySection(),
 			new EnvironmentGovernanceSection(),
 			new AuditNotificationsSection(),
