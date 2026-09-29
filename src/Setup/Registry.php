@@ -12,9 +12,21 @@ declare(strict_types=1);
 
 namespace CB\Core\Setup;
 
+use CB\Core\Setup\Checks\AccessModeCheck;
+use CB\Core\Setup\Checks\AuditRetentionCheck;
+use CB\Core\Setup\Checks\AuditVerbosityCheck;
+use CB\Core\Setup\Checks\CoreScannerPolicyCheck;
+use CB\Core\Setup\Checks\CoreScannerReadinessCheck;
+use CB\Core\Setup\Checks\CoreShieldCheck;
+use CB\Core\Setup\Checks\EnvironmentIdentityCheck;
 use CB\Core\Setup\Checks\EnvironmentIndexingProtectionCheck;
+use CB\Core\Setup\Checks\FailsafeReadinessCheck;
 use CB\Core\Setup\Checks\LoginShieldCheck;
 use CB\Core\Setup\Checks\MailDeliveryStrategyCheck;
+use CB\Core\Setup\Checks\PrivacyIpHandlingCheck;
+use CB\Core\Setup\Checks\PrivilegedAccessProtectionCheck;
+use CB\Core\Setup\Checks\PrivilegedAccessReviewCheck;
+use CB\Core\Setup\Checks\TwoFactorReadinessCheck;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -23,9 +35,25 @@ final class Registry {
 	/** @return array<string,CheckInterface> */
 	public static function all(): array {
 		$checks = [
+			new EnvironmentIdentityCheck(),
 			new EnvironmentIndexingProtectionCheck(),
+			new AccessModeCheck(),
+
+			new PrivilegedAccessProtectionCheck(),
+			new PrivilegedAccessReviewCheck(),
+			new TwoFactorReadinessCheck(),
+			new FailsafeReadinessCheck(),
+
+			new CoreShieldCheck(),
 			new LoginShieldCheck(),
+			new CoreScannerPolicyCheck(),
+			new CoreScannerReadinessCheck(),
+
 			new MailDeliveryStrategyCheck(),
+
+			new PrivacyIpHandlingCheck(),
+			new AuditRetentionCheck(),
+			new AuditVerbosityCheck(),
 		];
 
 		$out = [];
