@@ -53,7 +53,11 @@ final class Runtime {
 		$removed = [];
 		foreach ( $entries as $entry ) {
 			$source = $entry['source'];
-			if ( empty( $source['manageable'] ) || Visibility::allows_current_user( (string) $source['id'] ) ) {
+			if (
+				empty( $source['manageable'] )
+				|| ! empty( $source['protected'] )
+				|| Visibility::allows_current_user( (string) $source['id'] )
+			) {
 				continue;
 			}
 
