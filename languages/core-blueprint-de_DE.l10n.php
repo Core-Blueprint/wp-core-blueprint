@@ -300,4 +300,10 @@ if ( ! is_array( $admin_columns ) || ! isset( $admin_columns['messages'] ) || ! 
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $admin_columns['messages'] );
 
+$admin_notices = require __DIR__ . '/admin-notices/core-blueprint-de_DE.php';
+if ( ! is_array( $admin_notices ) || ! isset( $admin_notices['messages'] ) || ! is_array( $admin_notices['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $admin_notices['messages'] );
+
 return $catalog;
