@@ -36,7 +36,8 @@ final class Runtime {
 			|| ! Policy::has_restrictions()
 			|| is_network_admin()
 			|| is_user_admin()
-			|| Visibility::allows_current_user( '__manager_probe__' )
+			|| ! Visibility::governance_available()
+			|| Visibility::current_user_is_manager()
 		) {
 			return [];
 		}
