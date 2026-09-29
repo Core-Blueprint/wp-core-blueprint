@@ -32,17 +32,30 @@ final class Bootstrap {
 	}
 
 	public static function register_admin_page(): void {
-		PageRegistry::register_base( new Page() );
+		PageRegistry::register_base(
+			new Page(),
+			[
+				'components' => [
+					'actions',
+					'cards',
+					'form-controls',
+					'nav-tabs',
+					'notices',
+					'panels',
+					'state-badges',
+				],
+			]
+		);
 	}
 
 	public static function register_event_labels(): void {
 		EventRegistry::register_core_many( [
-			'core.setup.started'        => 'Core Setup started',
-			'core.setup.reviewed'       => 'Core Setup check reviewed',
-			'core.setup.deferred'       => 'Core Setup check deferred',
-			'core.setup.not.applicable' => 'Core Setup check marked not applicable',
-			'core.setup.review.cleared' => 'Core Setup review cleared',
-			'core.setup.note.updated'   => 'Core Setup section note updated',
+			'core.setup.started'        => __( 'Core Setup started', 'core-blueprint' ),
+			'core.setup.reviewed'       => __( 'Core Setup check reviewed', 'core-blueprint' ),
+			'core.setup.deferred'       => __( 'Core Setup check deferred', 'core-blueprint' ),
+			'core.setup.not.applicable' => __( 'Core Setup check marked not applicable', 'core-blueprint' ),
+			'core.setup.review.cleared' => __( 'Core Setup review cleared', 'core-blueprint' ),
+			'core.setup.note.updated'   => __( 'Core Setup section note updated', 'core-blueprint' ),
 		] );
 	}
 
