@@ -75,15 +75,6 @@ if (root) {
 		) || null;
 	};
 
-	const nodeAt = (projectValue, path) => {
-		let node = projectValue?.root;
-		for (const index of path || []) {
-			node = node?.children?.[index];
-			if (!node) return null;
-		}
-		return node || null;
-	};
-
 	const primarySection = () => {
 		const children = session.project()?.root?.children;
 		if (!Array.isArray(children)) return null;
@@ -311,9 +302,13 @@ if (root) {
 		fields.forEach((field) => emailInspector.append(createRootField(field)));
 	};
 
-	const renderInspector = () => {
+	const renderInspector = (context = null) => {
 		inspector.replaceChildren();
-		const selectedPath = session.selection().primary;
+		const selectedPath = Array.isArray(context?.primary) ? context.primary : session.selection().primary;
+		const target = context?.inspector?.target ?? session.inspector().target;
+		const selectedEntry = Array.isArray(selectedPath)
+			? target?.entries?.find((entry) => samePath(entry?.path, selectedPath))
+			: null;
 		if (!selectedPath) {
 			const heading = document.createElement('h3');
 			heading.className = 'cb-core-design-shell__panel-section-title';
@@ -325,7 +320,7 @@ if (root) {
 			return;
 		}
 
-		const node = nodeAt(session.project(), selectedPath);
+		const node = selectedEntry?.node ?? null;
 		if (!node) return;
 		const definition = definitionForNode(node);
 		const heading = document.createElement('h3');
