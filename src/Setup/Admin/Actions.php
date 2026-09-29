@@ -34,35 +34,47 @@ final class Actions {
 		$check_id = isset( $_POST['check_id'] ) ? sanitize_key( wp_unslash( $_POST['check_id'] ) ) : '';
 		$disposition = isset( $_POST['disposition'] ) ? sanitize_key( wp_unslash( $_POST['disposition'] ) ) : '';
 		$reason = isset( $_POST['reason'] ) ? (string) wp_unslash( $_POST['reason'] ) : '';
+		$return_tab = self::return_tab_from_request();
 
 		self::guard_check( $check_id );
 
 		try {
 			$changed = ReviewManager::record( $check_id, $disposition, $reason, get_current_user_id() );
-			self::set_result( 'success', $changed ? 'Setup review updated.' : 'Setup review is already current.' );
+			self::set_result(
+				'success',
+				$changed
+					? __( 'Setup review updated.', 'core-blueprint' )
+					: __( 'Setup review is already current.', 'core-blueprint' )
+			);
 		} catch ( \InvalidArgumentException $e ) {
 			self::set_result( 'error', $e->getMessage() );
 		} catch ( \RuntimeException $e ) {
-			self::set_result( 'error', 'Setup review could not be updated from the current site state.' );
+			self::set_result( 'error', __( 'Setup review could not be updated from the current site state.', 'core-blueprint' ) );
 		}
 
-		self::redirect();
+		self::redirect( $return_tab );
 	}
 
 	public static function clear(): void {
 		self::guard( 'cb_core_setup_clear' );
 
 		$check_id = isset( $_POST['check_id'] ) ? sanitize_key( wp_unslash( $_POST['check_id'] ) ) : '';
+		$return_tab = self::return_tab_from_request();
 		self::guard_check( $check_id );
 
 		try {
 			$changed = ReviewManager::clear( $check_id );
-			self::set_result( 'success', $changed ? 'Setup review cleared.' : 'This setup check had no stored review.' );
+			self::set_result(
+				'success',
+				$changed
+					? __( 'Setup review cleared.', 'core-blueprint' )
+					: __( 'This setup check had no stored review.', 'core-blueprint' )
+			);
 		} catch ( \RuntimeException $e ) {
-			self::set_result( 'error', 'Setup review could not be cleared.' );
+			self::set_result( 'error', __( 'Setup review could not be cleared.', 'core-blueprint' ) );
 		}
 
-		self::redirect();
+		self::redirect( $return_tab );
 	}
 
 	public static function note(): void {
@@ -70,19 +82,29 @@ final class Actions {
 
 		$section_id = isset( $_POST['section_id'] ) ? sanitize_key( wp_unslash( $_POST['section_id'] ) ) : '';
 		$note = isset( $_POST['note'] ) ? (string) wp_unslash( $_POST['note'] ) : '';
+		$return_tab = self::return_tab_from_request();
 
 		if ( ! SectionRegistry::is_known( $section_id ) || ! SectionRegistry::can_manage_note( $section_id ) ) {
-			wp_die( 'You do not have permission to manage this Core Setup section.', 'Forbidden', [ 'response' => 403 ] );
+			wp_die(
+				esc_html__( 'You do not have permission to manage this Core Setup section.', 'core-blueprint' ),
+				esc_html__( 'Forbidden', 'core-blueprint' ),
+				[ 'response' => 403 ]
+			);
 		}
 
 		try {
 			$changed = ReviewManager::save_section_note( $section_id, $note, get_current_user_id() );
-			self::set_result( 'success', $changed ? 'Section note updated.' : 'Section note is unchanged.' );
+			self::set_result(
+				'success',
+				$changed
+					? __( 'Section note updated.', 'core-blueprint' )
+					: __( 'Section note is unchanged.', 'core-blueprint' )
+			);
 		} catch ( \RuntimeException $e ) {
-			self::set_result( 'error', 'Section note could not be updated.' );
+			self::set_result( 'error', __( 'Section note could not be updated.', 'core-blueprint' ) );
 		}
 
-		self::redirect();
+		self::redirect( $return_tab );
 	}
 
 	public static function pull_result(): ?array {
@@ -94,7 +116,11 @@ final class Actions {
 
 	private static function guard( string $nonce_action ): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'You do not have permission to manage Core Setup.', 'Forbidden', [ 'response' => 403 ] );
+			wp_die(
+				esc_html__( 'You do not have permission to manage Core Setup.', 'core-blueprint' ),
+				esc_html__( 'Forbidden', 'core-blueprint' ),
+				[ 'response' => 403 ]
+			);
 		}
 		check_admin_referer( $nonce_action );
 	}
@@ -102,10 +128,18 @@ final class Actions {
 	private static function guard_check( string $check_id ): void {
 		$check = Registry::get( $check_id );
 		if ( null === $check ) {
-			wp_die( 'Unknown Core Setup check.', 'Invalid request', [ 'response' => 400 ] );
+			wp_die(
+				esc_html__( 'Unknown Core Setup check.', 'core-blueprint' ),
+				esc_html__( 'Invalid request', 'core-blueprint' ),
+				[ 'response' => 400 ]
+			);
 		}
 		if ( ! current_user_can( $check->capability() ) ) {
-			wp_die( 'You do not have permission to review this Core Setup check.', 'Forbidden', [ 'response' => 403 ] );
+			wp_die(
+				esc_html__( 'You do not have permission to review this Core Setup check.', 'core-blueprint' ),
+				esc_html__( 'Forbidden', 'core-blueprint' ),
+				[ 'response' => 403 ]
+			);
 		}
 	}
 
@@ -117,8 +151,24 @@ final class Actions {
 		);
 	}
 
-	private static function redirect(): void {
-		wp_safe_redirect( admin_url( 'admin.php?page=' . Page::SLUG ) );
+	private static function return_tab_from_request(): string {
+		$tab = isset( $_POST['return_tab'] ) ? sanitize_key( wp_unslash( $_POST['return_tab'] ) ) : 'review';
+		if ( 'review' === $tab || SectionRegistry::is_known( $tab ) ) {
+			return $tab;
+		}
+		return 'review';
+	}
+
+	private static function redirect( string $tab ): void {
+		wp_safe_redirect(
+			add_query_arg(
+				[
+					'page' => Page::SLUG,
+					'tab'  => $tab,
+				],
+				admin_url( 'admin.php' )
+			)
+		);
 		exit;
 	}
 
