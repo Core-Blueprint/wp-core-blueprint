@@ -6,9 +6,22 @@
  */
 
 @media (scripting: enabled) {
-	[data-cb-design-launch-root][data-cb-design-launch-mode="direct"]:not([data-cb-design-launch-initialized="true"]) {
+	[data-cb-design-launch-root][data-cb-design-launch-mode="direct"]:not([data-cb-design-launch-initialized="true"]):not([data-cb-design-launch-state="error"]) {
 		visibility: hidden;
 	}
+}
+
+.cb-core-design-launch__failure {
+	position: relative;
+	z-index: 100001;
+	margin-block: var(--cb-space-3);
+}
+
+[data-cb-design-launch-root][data-cb-design-launch-mode="direct"][data-cb-design-launch-state="error"] > .cb-core-design-launch__failure {
+	position: fixed;
+	inset-block-start: var(--cb-space-4);
+	inset-inline: var(--cb-space-4);
+	margin: 0;
 }
 
 .cb-core-design-shell__workspace--collapsible {
