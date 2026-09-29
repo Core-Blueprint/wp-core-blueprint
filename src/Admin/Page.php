@@ -49,6 +49,7 @@ interface Page {
 	 *
 	 * Current Core Blueprint Base positions:
 	 *   10  Dashboard
+	 *   15  Core Setup
 	 *   20  Logs
 	 *   22  Notes
 	 *   25  Reports
