@@ -46,6 +46,7 @@ const SIDEBAR_ROLE_ICONS = Object.freeze({
 
 let activeFullscreenExit = null;
 const shellControllers = new WeakMap();
+const shellSessions = new WeakMap();
 const pendingSidebarConfigs = new WeakMap();
 
 const normalizeGroupId = (value) => String(value || DEFAULT_GROUP).trim() || DEFAULT_GROUP;
@@ -111,7 +112,12 @@ export const createDesignerShell = (root, {
 		throw new TypeError('Designer shell requires a root Element.');
 	}
 	const existing = shellControllers.get(root);
-	if (existing) return existing;
+	if (existing) {
+		if (shellSessions.get(root) !== session) {
+			throw new Error('Designer shell root is already initialized with a different session.');
+		}
+		return existing;
+	}
 
 	const lifecycle = new AbortController();
 	const { signal } = lifecycle;
@@ -518,6 +524,7 @@ export const createDesignerShell = (root, {
 		unsubscribeProject?.();
 		pendingSidebarConfigs.delete(root);
 		shellControllers.delete(root);
+		shellSessions.delete(root);
 		delete root.dataset.cbDesignShellInitialized;
 		destroyed = true;
 	};
@@ -543,6 +550,7 @@ export const createDesignerShell = (root, {
 		},
 	});
 	shellControllers.set(root, controller);
+	shellSessions.set(root, session);
 	root.dataset.cbDesignShellInitialized = 'true';
 	root.dispatchEvent(new CustomEvent(SHELL_READY_EVENT, {
 		bubbles: true,
