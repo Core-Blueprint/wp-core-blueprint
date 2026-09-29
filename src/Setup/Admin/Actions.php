@@ -152,11 +152,11 @@ final class Actions {
 	}
 
 	private static function return_tab_from_request(): string {
-		$tab = isset( $_POST['return_tab'] ) ? sanitize_key( wp_unslash( $_POST['return_tab'] ) ) : 'review';
-		if ( 'review' === $tab || SectionRegistry::is_known( $tab ) ) {
+		$tab = isset( $_POST['return_tab'] ) ? sanitize_key( wp_unslash( $_POST['return_tab'] ) ) : 'overview';
+		if ( 'overview' === $tab || SectionRegistry::is_known( $tab ) ) {
 			return $tab;
 		}
-		return 'review';
+		return 'overview';
 	}
 
 	private static function redirect( string $tab ): void {
