@@ -115,7 +115,7 @@ Base owns:
 - right sidebar role order and shared labels;
 - desktop and responsive rail behavior;
 - shared rail/tab/panel presentation;
-- Layers row DOM, action order, iconography, selected-state presentation and action affordances.
+- Layers tree traversal, parent/child presentation, transient collapse state, row DOM, action order, iconography, selected-state presentation, keyboard navigation and action affordances.
 
 Consumers own:
 
@@ -124,7 +124,7 @@ Consumers own:
 - element definitions;
 - dynamic-data definitions;
 - Inspector fields and validation;
-- Layers semantic data and bounded reorder/remove policy, supplied through Base-owned Layers rows;
+- Layers semantic descriptors and bounded reorder/remove policy, supplied through the Base-owned Layers tree;
 - Settings fields;
 - canvas/render semantics;
 - persistence and permissions.
@@ -132,9 +132,27 @@ Consumers own:
 This contract deliberately separates a stable Designer structure and session experience from flexible product composition.
 ## Canonical Layers interaction
 
-Base owns the Layers row and its standard actions. Consumers provide the semantic label/meta, nesting depth, selection callback and bounded move/remove callbacks through the public Designer Layers helper. They must not recreate the row or substitute product-specific text buttons for canonical actions.
+The Layers view must visually mirror the actual document hierarchy. Consumers describe semantic nodes; Base owns how that hierarchy is rendered and operated.
 
-Standard row actions are ordered as move up, move down, remove. Move/remove controls are icon-only with accessible labels. The action overlay is visible on pointer hover, keyboard focus within the row and whenever the row is selected; otherwise it remains visually hidden without changing the row layout.
+Consumers use the public Designer Layers tree helper and provide only stable keys/paths, labels, optional useful summaries, selected state, child descriptors and bounded callbacks. A grouping node with children is rendered as a parent with nested descendants. Consumers must not recursively build their own Layer rows or simulate hierarchy with local margins.
+
+Base owns:
+
+- recursive tree traversal and canonical row composition;
+- parent/child indentation and hierarchy guides;
+- expand/collapse disclosure for nodes with children;
+- transient collapse state that never mutates or serializes the project;
+- suppression of redundant secondary metadata when it only repeats the primary label;
+- compact Layers density and selected/hover/focus presentation;
+- ARIA tree/treeitem/group metadata and keyboard traversal;
+- sibling move controls and same-parent drag/reorder when the consumer supplies a bounded reorder policy;
+- standard action order, iconography and accessible labels.
+
+Keyboard navigation follows tree conventions: Up/Down move through visible Layers, Right opens a collapsed parent or enters its first child, Left closes an expanded parent or returns to its parent, and Home/End move to the first/last visible Layer.
+
+Reorder remains bounded by the consumer's domain policy. Base never decides whether a domain node may be removed, moved across a structural boundary or persisted. Cross-parent drag/drop is not part of the v1 Layers contract.
+
+Standard row actions remain ordered as move up, move down, remove. Move/remove controls are icon-only with accessible labels. The action overlay is visible on pointer hover, keyboard focus within the row and whenever the row is selected; otherwise it remains visually hidden without changing row geometry.
 
 
 ## Canonical selection lifecycle

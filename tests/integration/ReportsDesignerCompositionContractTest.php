@@ -147,8 +147,8 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		$mail_style      = $this->source( 'assets/css/pages/mail-designer.css' );
 
 		foreach ( [ $reports_runtime, $mail_runtime ] as $runtime ) {
-			self::assertStringContainsString( 'cb-core-design-shell__layer-list', $runtime );
-			self::assertStringContainsString( 'createDesignerLayerRow', $runtime );
+			self::assertStringContainsString( 'createDesignerLayerTree', $runtime );
+			self::assertStringNotContainsString( 'cb-core-design-shell__layer-list', $runtime );
 			self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
 			self::assertStringNotContainsString( "row.className = 'cb-core-design-shell__layer-row';", $runtime );
 			self::assertStringNotContainsString( 'decorateDesignerControl', $runtime );
@@ -168,7 +168,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "profile: 'document-flow'", $runtime );
 		self::assertStringContainsString( 'createDesignerShell( shell, { session } )', $runtime );
 		self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
-		self::assertStringContainsString( 'createDesignerLayerRow', $runtime );
+		self::assertStringContainsString( 'createDesignerLayerTree', $runtime );
 		self::assertStringContainsString( 'commands.reorderNode', $runtime );
 		self::assertStringContainsString( 'commands.setProperty', $runtime );
 		self::assertStringContainsString( "command?.label === 'remove-node'", $runtime );
@@ -187,9 +187,9 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'renderElements', $runtime );
 		self::assertStringContainsString( 'renderLayers', $runtime );
 		self::assertStringContainsString( 'renderInspector', $runtime );
-		self::assertStringContainsString( "layerList.className = 'cb-core-design-shell__layer-list'", $runtime );
-		self::assertStringContainsString( 'layer.row.dataset.cbReportLayer = block.type', $runtime );
-		self::assertStringContainsString( 'createDesignerLayerRow', $runtime );
+		self::assertStringContainsString( "layerTree = createDesignerLayerTree", $runtime );
+		self::assertStringContainsString( "dataset: { cbReportLayer: block.type }", $runtime );
+		self::assertStringContainsString( 'createDesignerLayerTree', $runtime );
 		self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
 		self::assertStringContainsString( 'previewHost?.setSelection', $runtime );
 		self::assertStringNotContainsString( 'createLayerMoveButton', $runtime );

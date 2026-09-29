@@ -1,6 +1,6 @@
 import {
 	commands,
-	createDesignerLayerRow,
+	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerShell,
 	createSession,
@@ -57,8 +57,8 @@ if (root) {
 
 	let previewTimer = 0;
 	let previewController = null;
-	let dragPath = null;
 	let shell = null;
+	let layerTree = null;
 	let selectionController = null;
 	let contextHydrating = false;
 
@@ -363,84 +363,49 @@ if (root) {
 		return true;
 	};
 
-	const createStructureRow = (node, path, depth, siblingCount) => {
+	const structureItem = (node, path, siblingCount) => {
 		const definition = definitionForNode(node);
 		const index = path.at(-1);
+		const children = Array.isArray(node?.children) ? node.children : [];
 		const canMove = path.length > 0 && Number.isInteger(index);
-		const layer = createDesignerLayerRow({
-			documentRef: document,
+
+		return {
+			key: pathKey(path),
 			label: definition?.label || (node.type === 'mail.section' ? 'Section' : node.type || 'Element'),
 			meta: nodeSummary(node, definition),
-			depth,
 			selected: samePath(path, session.selection().primary),
 			onSelect: () => selectionController?.select(path),
 			actions: {
-				moveUp: canMove ? {
-					disabled: index === 0,
-					onActivate: () => moveNode(path, Math.max(0, index - 1)),
-				} : false,
-				moveDown: canMove ? {
-					disabled: index === siblingCount - 1,
-					onActivate: () => moveNode(path, Math.min(siblingCount - 1, index + 1)),
-				} : false,
 				remove: node.type !== 'mail.section'
 					? () => session.execute(commands.removeNode(path))
 					: false,
 			},
-		});
-		const row = layer.row;
-		row.draggable = path.length > 0;
-
-		row.addEventListener('dragstart', (event) => {
-			dragPath = [...path];
-			if (event.dataTransfer) {
-				event.dataTransfer.effectAllowed = 'move';
-				event.dataTransfer.setData('text/plain', pathKey(path));
-			}
-		});
-		row.addEventListener('dragover', (event) => {
-			if (!Array.isArray(dragPath) || !samePath(parentPath(dragPath), parentPath(path))) return;
-			event.preventDefault();
-			if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-		});
-		row.addEventListener('drop', (event) => {
-			event.preventDefault();
-			if (!Array.isArray(dragPath) || !samePath(parentPath(dragPath), parentPath(path))) return;
-			const fromIndex = dragPath.at(-1);
-			const toIndex = path.at(-1);
-			if (Number.isInteger(fromIndex) && Number.isInteger(toIndex) && fromIndex !== toIndex) {
-				session.execute(commands.reorderNode(parentPath(path), fromIndex, toIndex));
-			}
-			dragPath = null;
-		});
-		row.addEventListener('dragend', () => { dragPath = null; });
-
-		return row;
+			reorder: canMove ? {
+				index,
+				minIndex: 0,
+				maxIndex: Math.max(0, siblingCount - 1),
+				onMove: (toIndex) => moveNode(path, toIndex),
+			} : null,
+			children: children.map((child, childIndex) => (
+				child && typeof child === 'object'
+					? structureItem(child, [...path, childIndex], children.length)
+					: null
+			)).filter(Boolean),
+		};
 	};
 
 	const renderStructure = () => {
-		structure.replaceChildren();
-		const tree = document.createElement('div');
-		tree.className = 'cb-core-design-shell__layer-list';
-		const projectRoot = session.project()?.root;
-		const renderChildren = (children, parent, depth) => {
-			if (!Array.isArray(children)) return;
-			children.forEach((node, index) => {
-				if (!node || typeof node !== 'object') return;
-				const path = [...parent, index];
-				tree.append(createStructureRow(node, path, depth, children.length));
-				renderChildren(node.children, path, depth + 1);
-			});
-		};
-		renderChildren(projectRoot?.children, [], 0);
-		if (!tree.children.length) {
-			const empty = document.createElement('p');
-			empty.className = 'cb-core-design-shell__empty-state';
-			empty.textContent = 'This mail template does not contain editable elements.';
-			structure.append(empty);
-			return;
-		}
-		structure.append(tree);
+		const children = session.project()?.root?.children;
+		const items = Array.isArray(children)
+			? children
+				.map((node, index) => (
+					node && typeof node === 'object'
+						? structureItem(node, [index], children.length)
+						: null
+				))
+				.filter(Boolean)
+			: [];
+		layerTree?.render(items);
 	};
 
 	const render = () => {
@@ -462,6 +427,12 @@ if (root) {
 		session,
 		defaultPanel: 'email',
 	});
+	layerTree = createDesignerLayerTree({
+		documentRef: document,
+		ariaLabel: 'Layers',
+		emptyMessage: 'This mail template does not contain editable elements.',
+	});
+	structure.replaceChildren(layerTree.element);
 	selectionController = createDesignerSelectionController({
 		session,
 		shell,

@@ -25,6 +25,7 @@ import {
 	configureDesignerSidebar,
 	createDesignerIcon,
 	createDesignerLayerRow,
+	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerShell,
 	decorateDesignerControl,
@@ -255,6 +256,7 @@ export {
 	configureDesignerViewports,
 	createDesignerIcon,
 	createDesignerLayerRow,
+	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerShell,
 	decorateDesignerControl,
@@ -288,6 +290,7 @@ const publicApi = Object.freeze({
 		layers: Object.freeze({
 			actions: DESIGNER_LAYER_ACTIONS,
 			createRow: createDesignerLayerRow,
+			createTree: createDesignerLayerTree,
 		}),
 		selection: Object.freeze({
 			createController: createDesignerSelectionController,

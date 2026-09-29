@@ -12,7 +12,7 @@ import { qs, qsa, apiPost } from '../core/dom.js';
 import { createFlowPreviewHost } from '../design/document/flow/index.js';
 import {
 	commands,
-	createDesignerLayerRow,
+	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerShell,
 	createSession,
@@ -105,7 +105,7 @@ if ( FORM ) {
 		? Object.keys( blockLabels )
 		: composer.blocks.map( ( block ) => block.type );
 
-	let layerList = null;
+	let layerTree = null;
 	let inspectorTitle = null;
 	let enabledControl = null;
 	let mediaFrame = null;
@@ -195,10 +195,12 @@ if ( FORM ) {
 			const section = document.createElement( 'section' );
 			section.className = 'cb-core-design-shell__panel-section';
 
-			layerList = document.createElement( 'div' );
-			layerList.className = 'cb-core-design-shell__layer-list';
-			layerList.dataset.cbReportLayerList = '';
-			section.append( layerList );
+			layerTree = createDesignerLayerTree( {
+				documentRef: document,
+				ariaLabel: 'Layers',
+			} );
+			layerTree.element.dataset.cbReportLayerList = '';
+			section.append( layerTree.element );
 			layersBody.append( section );
 		}
 
@@ -243,33 +245,28 @@ if ( FORM ) {
 	};
 
 	const renderLayers = () => {
-		if ( ! layerList ) return;
-		layerList.replaceChildren();
+		if ( ! layerTree ) return;
 
-		composer.blocks.forEach( ( block, index ) => {
+		layerTree.render( composer.blocks.map( ( block, index ) => {
 			const structural = isStructuralBlock( block );
-			const layer = createDesignerLayerRow( {
-				documentRef: document,
+			return {
+				key: block.type,
 				label: blockLabel( block.type ),
 				meta: block.enabled !== false
 					? ( composerUi.visible || 'Visible' )
 					: ( composerUi.hidden || 'Hidden' ),
 				selected: index === selectedIndex(),
 				onSelect: () => selectionController?.select( [ index ] ),
-				actions: structural ? {} : {
-					moveUp: {
-						disabled: index <= 1,
-						onActivate: () => moveBlock( block.type, -1 ),
-					},
-					moveDown: {
-						disabled: index >= composer.blocks.length - 2,
-						onActivate: () => moveBlock( block.type, 1 ),
-					},
+				dataset: { cbReportLayer: block.type },
+				reorder: structural ? null : {
+					index,
+					minIndex: 1,
+					maxIndex: composer.blocks.length - 2,
+					onMove: ( targetIndex ) => moveBlock( block.type, targetIndex - index ),
 				},
-			} );
-			layer.row.dataset.cbReportLayer = block.type;
-			layerList.append( layer.row );
-		} );
+				children: [],
+			};
+		} ) );
 	};
 
 	const renderInspector = () => {

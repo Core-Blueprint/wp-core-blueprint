@@ -55,13 +55,13 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'renderLayers', $runtime );
 		self::assertStringContainsString( 'renderInspector', $runtime );
 		self::assertStringContainsString( 'moveBlock', $runtime );
-		self::assertStringContainsString( 'createDesignerLayerRow', $runtime );
+		self::assertStringContainsString( 'createDesignerLayerTree', $runtime );
 		self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
 		self::assertStringContainsString( 'previewHost?.setSelection', $runtime );
 		self::assertStringContainsString( "qs( '[data-cb-report-elements]'", $runtime );
 		self::assertStringContainsString( "qs( '[data-cb-report-layers]'", $runtime );
 		self::assertStringContainsString( "qs( '[data-cb-report-inspector]'", $runtime );
-		self::assertStringContainsString( "layerList.className = 'cb-core-design-shell__layer-list'", $runtime );
+		self::assertStringContainsString( "layerTree = createDesignerLayerTree", $runtime );
 		self::assertStringContainsString( 'commands.reorderNode( [], index, target )', $runtime );
 		self::assertStringNotContainsString( 'createLayerMoveButton', $runtime );
 		self::assertStringNotContainsString( 'session.editorState.selection', $runtime );

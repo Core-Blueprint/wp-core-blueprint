@@ -6,6 +6,7 @@ import {
 import {
 	DESIGNER_LAYER_ACTIONS,
 	createDesignerLayerRow,
+	createDesignerLayerTree,
 } from './layers.js';
 import { createDesignerSelectionController } from './selection-controller.js';
 
@@ -518,6 +519,7 @@ export {
 	DESIGNER_LAYER_ACTIONS,
 	createDesignerIcon,
 	createDesignerLayerRow,
+	createDesignerLayerTree,
 	createDesignerSelectionController,
 	decorateDesignerControl,
 };

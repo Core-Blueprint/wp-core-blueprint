@@ -178,7 +178,7 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		$root = dirname( __DIR__, 2 );
 		$feature = (string) file_get_contents( $root . '/assets/js/features/mail-designer.js' );
 
-		self::assertStringContainsString( 'createDesignerLayerRow', $feature );
+		self::assertStringContainsString( 'createDesignerLayerTree', $feature );
 		self::assertStringContainsString( 'createDesignerSelectionController', $feature );
 		self::assertStringContainsString( 'renderLayers: renderStructure', $feature );
 		self::assertStringContainsString( 'renderInspector,', $feature );
@@ -188,6 +188,8 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( 'renderSelectionViews', $feature );
 		self::assertStringNotContainsString( 'session.editorState.selection.select', $feature );
 		self::assertStringNotContainsString( 'session.editorState.selection.clear', $feature );
+		self::assertStringNotContainsString( 'createDesignerLayerRow', $feature );
+		self::assertStringNotContainsString( 'dragPath', $feature );
 		self::assertStringNotContainsString( 'decorateDesignerControl', $feature );
 		self::assertStringNotContainsString( "remove.textContent = 'Remove element';", $feature );
 	}
