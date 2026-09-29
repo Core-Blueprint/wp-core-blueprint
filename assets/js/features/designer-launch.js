@@ -13,7 +13,10 @@
 	const RESPONSIVE_DRAWER_QUERY = '(max-width: 1280px)';
 
 	const sharedShellApi = () => window.cbCore?.designEditor?.shell ?? null;
-	const failureMessage = (key, fallback) => String(config.failureLabels?.[key] || fallback).trim();
+	const failureMessage = () => String(
+		config.failureLabel
+		|| 'Designer could not start. Reload the page and try again.'
+	).trim();
 
 	const failureRoot = (target) => {
 		if (!(target instanceof Element)) return null;
@@ -28,7 +31,7 @@
 			? target
 			: root.querySelector('[data-cb-design-shell]');
 		const normalizedPhase = String(phase || 'boot').trim() || 'boot';
-		const normalizedMessage = String(message || failureMessage('boot', 'Designer could not start. Reload the page and try again.')).trim();
+		const normalizedMessage = String(message || failureMessage()).trim();
 
 		root.dataset.cbDesignLaunchState = 'error';
 		root.dataset.cbDesignLaunchFailure = normalizedPhase;
@@ -487,7 +490,7 @@
 				dispatchFailure(
 					root,
 					'direct-enter',
-					failureMessage('enter', 'Designer could not enter fullscreen mode. Reload the page and try again.')
+					failureMessage()
 				);
 				return;
 			}
@@ -562,7 +565,7 @@
 				dispatchFailure(
 					root,
 					'enter',
-					failureMessage('enter', 'Designer could not enter fullscreen mode. Reload the page and try again.')
+					failureMessage()
 				);
 			}
 		};
@@ -664,7 +667,7 @@
 			} catch (error) {
 				failPendingLaunchRoots(
 					'boot',
-					error?.message || failureMessage('boot', 'Designer could not start. Reload the page and try again.')
+					error?.message || failureMessage()
 				);
 				stop();
 				return;
@@ -678,7 +681,7 @@
 			if (attempts >= BOOT_RETRY_LIMIT) {
 				failPendingLaunchRoots(
 					'boot',
-					failureMessage('boot', 'Designer could not start. Reload the page and try again.')
+					failureMessage()
 				);
 				stop();
 				return;
