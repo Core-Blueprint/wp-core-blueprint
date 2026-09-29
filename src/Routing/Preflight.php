@@ -61,12 +61,12 @@ final class Preflight {
 				);
 			}
 
-			$page = get_page_by_path( $path, OBJECT, 'page' );
-			if ( $page instanceof \WP_Post ) {
+			foreach ( self::public_content_collisions( $path ) as $collision ) {
 				$blockers[] = sprintf(
-					/* translators: 1: category name, 2: route path */
-					__( 'Category "%1$s" conflicts with the existing Page route "/%2$s/".', 'core-blueprint' ),
+					/* translators: 1: category name, 2: content label, 3: route path */
+					__( 'Category "%1$s" conflicts with existing public content "%2$s" at "/%3$s/".', 'core-blueprint' ),
 					$term->name,
+					$collision,
 					$path
 				);
 			}
@@ -134,6 +134,71 @@ final class Preflight {
 			'warnings'       => $warnings,
 			'checked_at'     => time(),
 		];
+	}
+
+	/** @return string[] */
+	private static function public_content_collisions( string $path ): array {
+		$slug = basename( trim( $path, '/' ) );
+		if ( '' === $slug ) {
+			return [];
+		}
+
+		$post_types = array_values( get_post_types( [ 'public' => true ], 'names' ) );
+		if ( [] === $post_types ) {
+			return [];
+		}
+
+		$candidates = get_posts(
+			[
+				'post_type'        => $post_types,
+				'post_status'      => 'publish',
+				'name'             => $slug,
+				'posts_per_page'   => 50,
+				'no_found_rows'    => true,
+				'suppress_filters' => false,
+			]
+		);
+
+		$collisions = [];
+		foreach ( $candidates as $post ) {
+			if ( ! $post instanceof \WP_Post ) {
+				continue;
+			}
+
+			$permalink = get_permalink( $post );
+			if ( ! is_string( $permalink ) || '' === $permalink ) {
+				continue;
+			}
+
+			if ( self::relative_public_path( $permalink ) === trim( $path, '/' ) ) {
+				$type  = get_post_type_object( $post->post_type );
+				$label = $type instanceof WP_Post_Type
+					? (string) $type->labels->singular_name
+					: (string) $post->post_type;
+				$collisions[] = sprintf(
+					/* translators: 1: content title, 2: content type */
+					__( '%1$s (%2$s)', 'core-blueprint' ),
+					get_the_title( $post ),
+					$label
+				);
+			}
+		}
+
+		sort( $collisions, SORT_STRING );
+		return array_values( array_unique( $collisions ) );
+	}
+
+	private static function relative_public_path( string $url ): string {
+		$path      = '/' . ltrim( (string) wp_parse_url( $url, PHP_URL_PATH ), '/' );
+		$home_path = '/' . trim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
+
+		if ( '/' !== $home_path && str_starts_with( $path, $home_path . '/' ) ) {
+			$path = substr( $path, strlen( $home_path ) );
+		} elseif ( $path === $home_path ) {
+			$path = '/';
+		}
+
+		return trim( rawurldecode( $path ), '/' );
 	}
 
 	/** @return array<string,string> archive path => label */

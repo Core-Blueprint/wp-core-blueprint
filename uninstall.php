@@ -119,6 +119,7 @@ $foundation_options = [
 	'cb_core_role_policy_drift',
 	'cb_core_profiles_apply_lock',
 	'cb_core_setup_state',
+	'cb_core_routing_rewrite_dirty',
 ];
 
 foreach ( $foundation_options as $opt ) {
@@ -165,6 +166,7 @@ $cb_base_transient_prefixes = [
 	'cb_core_alert_',
 	'cb_core_profile_',
 	'cb_core_2fa_ch_',
+	'cb_core_routing_preflight_',
 	'cb_core_two_factor_profile_notice_',
 	'cb_cm_',
 ];
