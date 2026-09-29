@@ -123,6 +123,10 @@ final class CB_Base_Admin_Notices_Governance_Contract_Test extends WP_UnitTestCa
 		];
 		self::assertTrue( Policy::replace( $policy, 'test' ) );
 
+		$operator_id = $this->approved_operator();
+		wp_set_current_user( $operator_id );
+		self::assertTrue( Visibility::allows_current_user( 'plugin:example-plugin' ) );
+
 		$editor_id = self::factory()->user->create( [ 'role' => 'editor' ] );
 		wp_set_current_user( $editor_id );
 		self::assertTrue( Visibility::allows_current_user( 'plugin:example-plugin' ) );

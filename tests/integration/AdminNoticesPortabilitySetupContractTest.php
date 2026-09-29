@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use CB\Core\AdminNotices\Capabilities as AdminNoticeCapabilities;
 use CB\Core\AdminNotices\Policy;
+use CB\Core\AdminNotices\SourceLedger;
 use CB\Core\Profiles\SectionInterface;
 use CB\Core\Profiles\SectionRegistry as ProfileSectionRegistry;
 use CB\Core\Setup\CheckInterface;
@@ -11,11 +12,14 @@ use CB\Core\Setup\Registry as SetupRegistry;
 final class CB_Base_Admin_Notices_Portability_Setup_Contract_Test extends WP_UnitTestCase {
 
 	private mixed $saved_policy;
+	private mixed $saved_ledger;
 
 	public function set_up(): void {
 		parent::set_up();
 		$this->saved_policy = get_option( Policy::OPTION, '__cb_admin_notices_missing__' );
+		$this->saved_ledger = get_option( SourceLedger::OPTION, '__cb_admin_notices_missing__' );
 		delete_option( Policy::OPTION );
+		delete_option( SourceLedger::OPTION );
 	}
 
 	public function tear_down(): void {
@@ -23,6 +27,11 @@ final class CB_Base_Admin_Notices_Portability_Setup_Contract_Test extends WP_Uni
 			delete_option( Policy::OPTION );
 		} else {
 			update_option( Policy::OPTION, $this->saved_policy, false );
+		}
+		if ( '__cb_admin_notices_missing__' === $this->saved_ledger ) {
+			delete_option( SourceLedger::OPTION );
+		} else {
+			update_option( SourceLedger::OPTION, $this->saved_ledger, false );
 		}
 		parent::tear_down();
 	}
@@ -42,14 +51,25 @@ final class CB_Base_Admin_Notices_Portability_Setup_Contract_Test extends WP_Uni
 			],
 		];
 		self::assertTrue( Policy::replace( $policy, 'test:admin-notices-profile' ) );
+		update_option(
+			SourceLedger::OPTION,
+			[
+				'version' => 1,
+				'sources' => [
+					'plugin:runtime-only-plugin' => [
+						'id' => 'plugin:runtime-only-plugin',
+					],
+				],
+			],
+			false
+		);
 
 		$exported = $section->export();
 		self::assertSame( [ 'rules' ], array_keys( $exported ) );
 		self::assertSame( $policy['rules'], $exported['rules'] );
-		self::assertStringNotContainsString(
-			'cb_core_admin_notices_source_ledger',
-			(string) wp_json_encode( $exported )
-		);
+		$serialized = (string) wp_json_encode( $exported );
+		self::assertStringNotContainsString( SourceLedger::OPTION, $serialized );
+		self::assertStringNotContainsString( 'plugin:runtime-only-plugin', $serialized );
 
 		self::assertTrue( Policy::reset( 'test:admin-notices-profile-reset' ) );
 		$section->apply( $exported, 'test:admin-notices-profile-apply' );

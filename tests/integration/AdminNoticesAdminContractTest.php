@@ -50,6 +50,28 @@ final class CB_Base_Admin_Notices_Admin_Contract_Test extends WP_UnitTestCase {
 		self::assertSame( Capabilities::MANAGE, ( new Preferences() )->capability() );
 	}
 
+	public function test_ana1b_approved_pure_operator_renders_only_the_admin_notices_preferences_surface(): void {
+		$user_id = self::factory()->user->create( [ 'role' => Roles::OPERATOR_ROLE ] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'admin_notices_preferences_fixture' ) );
+		wp_set_current_user( $user_id );
+
+		$_GET['page'] = Preferences::SLUG;
+		$_GET['tab']  = 'overview';
+
+		ob_start();
+		( new Preferences() )->render();
+		$html = (string) ob_get_clean();
+
+		self::assertStringContainsString( 'tab=admin-notices', $html );
+		self::assertStringContainsString( 'nav-tab nav-tab-active', $html );
+		self::assertStringNotContainsString( 'tab=privacy', $html );
+		self::assertStringNotContainsString( 'tab=notifications', $html );
+		self::assertStringNotContainsString( 'tab=permissions', $html );
+		self::assertFalse( current_user_can( 'manage_options' ) );
+	}
+
 	public function test_ana2_protected_sources_cannot_be_restricted_and_visibility_fails_open(): void {
 		$policy = Policy::defaults();
 		$policy['rules'][] = [
