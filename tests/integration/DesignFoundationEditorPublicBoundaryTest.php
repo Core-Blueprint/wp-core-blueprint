@@ -56,7 +56,7 @@ final class CB_Design_Foundation_Editor_Public_Boundary_Test extends WP_UnitTest
 		self::assertStringContainsString( 'createFlowPreviewHost', $docs );
 		self::assertStringContainsString( 'ProjectState', $docs );
 		self::assertStringContainsString( 'does **not** make them a supported extension contract', $docs );
-		self::assertStringContainsString( 'Designer Foundation — semantic Foundation requirement `design-editor`', $public_api );
+		self::assertStringContainsString( 'Designer Foundation: semantic Foundation requirement `design-editor`', $public_api );
 		self::assertStringContainsString( '`@cb-core/design-editor`', $public_api );
 
 		foreach ( glob( $root . '/assets/js/features/*.js' ) ?: [] as $path ) {
