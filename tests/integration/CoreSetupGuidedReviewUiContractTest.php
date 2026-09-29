@@ -35,7 +35,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		parent::tear_down();
 	}
 
-	public function test_ui1_first_install_opens_the_first_section_and_uses_start_wording(): void {
+	public function test_ui1_first_install_opens_overview_first_and_uses_start_wording(): void {
 		$this->trusted_admin();
 		Lifecycle::initialize_activation( true );
 
@@ -44,7 +44,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'Start Core Setup', $html );
 		self::assertStringNotContainsString( 'Complete Core Setup', $html );
 		self::assertStringContainsString( 'Environment &amp; availability (3)', $html );
-		self::assertStringContainsString( 'Review (28)', $html );
+		self::assertStringContainsString( 'Overview (28)', $html );
 		self::assertSame(
 			8,
 			preg_match_all( '/<a[^>]+class="nav-tab(?: nav-tab-active)?"/', $html )
@@ -59,7 +59,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertGreaterThan( 0, ReviewRepository::lifecycle()['started_at'] );
 	}
 
-	public function test_ui2_existing_site_opens_review_by_default_and_remains_reopenable(): void {
+	public function test_ui2_existing_site_opens_overview_by_default_and_sections_remain_reopenable(): void {
 		$this->trusted_admin();
 		Lifecycle::initialize_activation( false );
 
@@ -126,7 +126,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringNotContainsString( '<hr', $html );
 	}
 
-	public function test_ui5_review_uses_shared_overview_cards_and_status_badges(): void {
+	public function test_ui5_overview_uses_shared_overview_cards_and_status_badges(): void {
 		$this->trusted_admin();
 		Lifecycle::initialize_activation( false );
 
@@ -150,9 +150,9 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 
 		$html = $this->render_setup();
 
-		self::assertStringContainsString( 'Review (23)', $html );
+		self::assertStringContainsString( 'Overview (23)', $html );
 		self::assertStringContainsString( 'CMS tools (5)', $html );
-		self::assertStringNotContainsString( 'Review (28)', $html );
+		self::assertStringNotContainsString( 'Overview (28)', $html );
 	}
 
 	private function render_setup(): string {
