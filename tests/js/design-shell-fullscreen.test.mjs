@@ -421,7 +421,10 @@ test('manual Designer launch waits for a ready shell before revealing fullscreen
 	assert.match(manualBody, /button\.setAttribute\('aria-busy', 'true'\)/);
 	assert.match(manualBody, /shell\.addEventListener\(SHELL_READY_EVENT/);
 	assert.match(manualBody, /setDesignerMode\(true\)[\s\S]*fullscreen\.click\(\)/);
-	assert.match(manualBody, /if \(fullscreen\.getAttribute\('aria-pressed'\) !== 'true'\) setDesignerMode\(false\)/);
+	assert.match(
+		manualBody,
+		/if \(fullscreen\.getAttribute\('aria-pressed'\) !== 'true'\) \{[\s\S]*setDesignerMode\(false\);[\s\S]*dispatchFailure\([\s\S]*'enter'[\s\S]*failureMessage\(\)[\s\S]*\);[\s\S]*\}/
+	);
 });
 
 test('shared Designer UX defines canonical sidebar roles, Lucide icons and reduced-motion-safe transitions', async () => {
