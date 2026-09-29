@@ -7,8 +7,10 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Preview_Host_Test extend
 		$source = file_get_contents( CB_CORE_DIR . 'assets/js/features/reports-preferences.js' );
 		self::assertIsString( $source );
 
-		self::assertStringContainsString( "import { createFlowPreviewHost } from '../design/document/flow/index.js';", $source );
+		self::assertStringContainsString( "from '@cb-core/design-editor';", $source );
+		self::assertStringContainsString( "profiles['document-flow']?.createFlowPreviewHost", $source );
 		self::assertStringContainsString( 'createFlowPreviewHost( previewFrame )', $source );
+		self::assertStringNotContainsString( "../design/document/flow/index.js", $source );
 		self::assertStringContainsString( 'host.render( response.data.html )', $source );
 		self::assertStringContainsString( 'previewHost?.destroy()', $source );
 
