@@ -29,22 +29,37 @@ final class RoutingUrlsCheck implements CheckInterface {
 
 	public function evidence(): Evidence {
 		try {
-			$enabled   = Policy::enabled();
+			$enabled = Policy::enabled();
+
+			if ( ! $enabled ) {
+				return new Evidence(
+					Evidence::HEALTH_OK,
+					'routing.wordpress-default',
+					[
+						'enabled'             => false,
+						'permalink_structure' => (string) get_option( 'permalink_structure', '' ),
+						'category_base'       => \CB\Core\Routing\CategoryRoutes::category_base_path(),
+					],
+					[
+						'enabled'       => false,
+						'blocker_count' => 0,
+					]
+				);
+			}
+
 			$preflight = Preflight::run();
-			$attention = $enabled && empty( $preflight['ready'] );
+			$attention = empty( $preflight['ready'] );
 
 			return new Evidence(
 				$attention ? Evidence::HEALTH_ATTENTION : Evidence::HEALTH_OK,
-				$attention
-					? 'routing.collision-detected'
-					: ( $enabled ? 'routing.clean-archives-enabled' : 'routing.wordpress-default' ),
+				$attention ? 'routing.collision-detected' : 'routing.clean-archives-enabled',
 				[
-					'enabled'               => $enabled,
+					'enabled'               => true,
 					'preflight_fingerprint' => (string) ( $preflight['fingerprint'] ?? '' ),
 					'blocker_count'         => count( (array) ( $preflight['blockers'] ?? [] ) ),
 				],
 				[
-					'enabled'       => $enabled,
+					'enabled'       => true,
 					'blocker_count' => count( (array) ( $preflight['blockers'] ?? [] ) ),
 				]
 			);
