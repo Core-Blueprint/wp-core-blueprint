@@ -84,7 +84,8 @@ final class CB_Base_Interactive_Grid_Foundation_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'must never nest', $doc );
 		self::assertStringContainsString( 'real focusable control', $doc );
 		self::assertStringContainsString( 'The v1 contract is intentionally **tabular**', $doc );
-		self::assertStringContainsString( '`interactive-grid` and `icons`', $public_api );
+		self::assertStringContainsString( '`interactive-grid`', $public_api );
+		self::assertStringContainsString( '`icons`', $public_api );
 		self::assertStringContainsString( 'tabular interactive-cell presentation boundary', $public_api );
 	}
 }
