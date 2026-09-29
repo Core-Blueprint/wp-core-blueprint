@@ -9,6 +9,7 @@ use CB\Core\AdminNotices\SourceResolver;
 use CB\Core\AdminNotices\Visibility;
 use CB\Core\Admin\Pages\Preferences;
 use CB\Core\Permissions\PrivilegedAccessGuard;
+use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Permissions\Roles;
 
 final class CB_Base_Admin_Notices_Admin_Contract_Test extends WP_UnitTestCase {
@@ -37,6 +38,10 @@ final class CB_Base_Admin_Notices_Admin_Contract_Test extends WP_UnitTestCase {
 
 	public function test_ana1_pure_operator_has_notice_management_authority_without_manage_options(): void {
 		$user_id = self::factory()->user->create( [ 'role' => Roles::OPERATOR_ROLE ] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'admin_notices_admin_fixture' ) );
+		self::assertTrue( PrivilegedAccessRegistry::is_approved( $user ) );
 		wp_set_current_user( $user_id );
 
 		self::assertTrue( current_user_can( Capabilities::MANAGE ) );
