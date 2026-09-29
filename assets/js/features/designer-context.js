@@ -6,6 +6,7 @@
 	const CHANGED_EVENT = 'cb:design-shell:contextchanged';
 	const boundControls = new WeakSet();
 	const activeRoots = new WeakSet();
+	const transitionGenerations = new WeakMap();
 
 	const label = (key, fallback) => String(config.contextLabels?.[key] || fallback).trim();
 
@@ -52,10 +53,12 @@
 		return transition;
 	};
 
-	const hideTransition = (shell, transition, delay = 140) => {
+	const hideTransition = (shell, transition, generation, delay = 140) => {
 		window.setTimeout(() => {
+			if (transitionGenerations.get(shell) !== generation) return;
 			transition.classList.remove('is-active');
 			window.setTimeout(() => {
+				if (transitionGenerations.get(shell) !== generation) return;
 				transition.hidden = true;
 				shell.classList.remove('is-context-switching');
 				transitionHost(shell).removeAttribute('aria-busy');
@@ -119,6 +122,8 @@
 
 		activeRoots.add(root);
 		control.disabled = true;
+		const generation = (transitionGenerations.get(shell) || 0) + 1;
+		transitionGenerations.set(shell, generation);
 		const transition = setTransition(shell, 'loading', label('loading', 'Loading…'));
 
 		responsePromise.then((result) => {
@@ -128,11 +133,11 @@
 				bubbles: true,
 				detail: { value, previousValue, control, result },
 			}));
-			hideTransition(shell, transition, 120);
+			hideTransition(shell, transition, generation, 120);
 		}).catch((error) => {
 			control.value = previousValue;
 			setTransition(shell, 'error', error?.message || label('error', 'Could not load selection.'));
-			hideTransition(shell, transition, 1100);
+			hideTransition(shell, transition, generation, 1100);
 		}).finally(() => {
 			control.disabled = false;
 			activeRoots.delete(root);
