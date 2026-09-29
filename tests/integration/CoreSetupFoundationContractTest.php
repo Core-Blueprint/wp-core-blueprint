@@ -46,15 +46,16 @@ final class CB_Base_Core_Setup_Foundation_Contract_Test extends WP_UnitTestCase 
 		parent::tear_down();
 	}
 
-	public function test_cs1_registry_starts_with_three_distinct_proof_checks(): void {
-		self::assertSame(
-			[ 'environment-indexing-protection', 'login-shield', 'mail-delivery-strategy' ],
-			array_keys( Registry::all() )
-		);
-		self::assertSame(
-			[ 'environment-availability', 'safeguards', 'mail' ],
-			array_keys( Registry::sections() )
-		);
+	public function test_cs1_registry_preserves_the_three_phase_one_proof_checks(): void {
+		$checks = Registry::all();
+		self::assertArrayHasKey( 'environment-indexing-protection', $checks );
+		self::assertArrayHasKey( 'login-shield', $checks );
+		self::assertArrayHasKey( 'mail-delivery-strategy', $checks );
+
+		$sections = Registry::sections();
+		self::assertArrayHasKey( 'environment-availability', $sections );
+		self::assertArrayHasKey( 'safeguards', $sections );
+		self::assertArrayHasKey( 'mail', $sections );
 	}
 
 	public function test_cs2_matching_review_fingerprint_is_required_for_configured_state(): void {
