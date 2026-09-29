@@ -5,6 +5,7 @@ use CB\Core\Admin\Pages\Dashboard;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Setup\Admin\Page as SetupPage;
 use CB\Core\Setup\Lifecycle;
+use CB\Core\Setup\Registry;
 use CB\Core\Setup\ReviewRepository;
 
 final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTestCase {
@@ -117,6 +118,20 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'cb_core_setup_note', $html );
 	}
 
+	public function test_ui5_limited_manage_options_user_sees_only_authorized_checks(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$user = get_userdata( $user_id );
+		self::assertInstanceOf( WP_User::class, $user );
+		wp_set_current_user( $user_id );
+		Lifecycle::initialize_activation( false );
+
+		$html = $this->render_setup();
+
+		self::assertStringContainsString( 'Review (23)', $html );
+		self::assertStringContainsString( 'CMS tools (5)', $html );
+		self::assertStringNotContainsString( 'Review (28)', $html );
+	}
+
 	private function render_setup(): string {
 		ob_start();
 		( new SetupPage() )->render();
@@ -127,6 +142,11 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		$user = get_userdata( $user_id );
 		self::assertInstanceOf( WP_User::class, $user );
+
+		foreach ( Registry::all() as $check ) {
+			$user->add_cap( $check->capability() );
+		}
+
 		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'core_setup_guided_ui_fixture' ) );
 		wp_set_current_user( $user_id );
 		return $user_id;
