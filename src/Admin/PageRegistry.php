@@ -43,6 +43,7 @@ final class PageRegistry {
 		'core-blueprint-reports',
 		'core-blueprint-safeguards',
 		'core-blueprint-settings',
+		'core-blueprint-setup',
 		'core-blueprint-snippets',
 		'core-blueprint-user-roles',
 	];
