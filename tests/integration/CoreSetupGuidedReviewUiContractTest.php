@@ -45,7 +45,10 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringNotContainsString( 'Complete Core Setup', $html );
 		self::assertStringContainsString( 'Environment &amp; availability (3)', $html );
 		self::assertStringContainsString( 'Review (28)', $html );
-		self::assertSame( 8, substr_count( $html, 'class="nav-tab' ) );
+		self::assertSame(
+			8,
+			preg_match_all( '/<a[^>]+class="nav-tab(?: nav-tab-active)?"/', $html )
+		);
 		self::assertMatchesRegularExpression(
 			'/tab=environment-availability[^"]*" class="nav-tab nav-tab-active"/',
 			$html
@@ -122,6 +125,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		$user = get_userdata( $user_id );
 		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'core_setup_limited_ui_fixture' ) );
 		wp_set_current_user( $user_id );
 		Lifecycle::initialize_activation( false );
 
