@@ -9,14 +9,19 @@
  */
 
 import { qs, qsa, apiPost } from '../core/dom.js';
-import { createFlowPreviewHost } from '../design/document/flow/index.js';
 import {
 	commands,
 	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerShell,
 	createSession,
+	profiles,
 } from '@cb-core/design-editor';
+
+const createFlowPreviewHost = profiles['document-flow']?.createFlowPreviewHost;
+if ( typeof createFlowPreviewHost !== 'function' ) {
+	throw new Error( 'Design Foundation document-flow preview host is unavailable.' );
+}
 
 const dataEl      = document.getElementById( 'wp-script-module-data-@cb-core/reports-preferences' );
 const data        = dataEl ? JSON.parse( dataEl.textContent ) : {};
