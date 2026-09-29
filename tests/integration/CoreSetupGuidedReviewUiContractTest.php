@@ -49,6 +49,12 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 			8,
 			preg_match_all( '/<a[^>]+class="nav-tab(?: nav-tab-active)?"/', $html )
 		);
+		$overview_position = strpos( $html, 'tab=overview' );
+		$first_section_position = strpos( $html, 'tab=environment-availability' );
+		self::assertIsInt( $overview_position );
+		self::assertIsInt( $first_section_position );
+		self::assertLessThan( $first_section_position, $overview_position );
+		self::assertStringNotContainsString( 'tab=review', $html );
 		self::assertMatchesRegularExpression(
 			'/tab=overview[^"]*" class="nav-tab nav-tab-active"/',
 			$html
