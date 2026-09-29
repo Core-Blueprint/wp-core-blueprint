@@ -300,4 +300,10 @@ if ( ! is_array( $admin_columns ) || ! isset( $admin_columns['messages'] ) || ! 
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $admin_columns['messages'] );
 
+$routing = require __DIR__ . '/routing/core-blueprint-de_DE.php';
+if ( ! is_array( $routing ) || ! isset( $routing['messages'] ) || ! is_array( $routing['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $routing['messages'] );
+
 return $catalog;
