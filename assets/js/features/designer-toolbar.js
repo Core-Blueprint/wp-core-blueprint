@@ -18,6 +18,8 @@
 	const failPendingToolbars = (message = failureMessage()) => {
 		document.querySelectorAll('[data-cb-design-launch-root] [data-cb-design-shell]').forEach((shell) => {
 			if (initialized.has(shell)) return;
+			const root = shell.closest('[data-cb-design-launch-root]');
+			if (root?.dataset.cbDesignLaunchState === 'error') return;
 			shell.dataset.cbDesignShellToolbarState = 'error';
 			shell.dispatchEvent(new CustomEvent(FAILURE_EVENT, {
 				bubbles: true,
@@ -76,7 +78,6 @@
 		const actionAnchor = closeControl || save;
 		if (!start || !center || !end) return false;
 
-		initialized.add(shell);
 		toolbar.dataset.cbDesignShellCompactToolbar = 'true';
 
 		const viewportControls = Array.from(toolbar.querySelectorAll('[data-cb-design-shell-viewport]'));
@@ -263,6 +264,7 @@
 			if (!openRecord || openRecord.wrapper.contains(event.target)) return;
 			closeMenu(openRecord);
 		}, true);
+		initialized.add(shell);
 		return true;
 	};
 
