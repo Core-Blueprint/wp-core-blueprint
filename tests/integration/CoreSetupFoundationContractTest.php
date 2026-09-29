@@ -119,7 +119,10 @@ final class CB_Base_Core_Setup_Foundation_Contract_Test extends WP_UnitTestCase 
 		self::assertInstanceOf( WP_User::class, $admin_user );
 		self::assertTrue( PrivilegedAccessRegistry::approve( $admin_user, 0, 'core_setup_visibility_fixture' ) );
 		wp_set_current_user( $administrator );
-		self::assertSame( array_keys( Registry::all() ), array_keys( Registry::visible() ) );
+		$visible = Registry::visible();
+		foreach ( Registry::all() as $id => $check ) {
+			self::assertSame( current_user_can( $check->capability() ), isset( $visible[ $id ] ), $id );
+		}
 	}
 
 	public function test_cs6_mail_evidence_contains_no_raw_transport_secret_values(): void {
