@@ -27,26 +27,26 @@ final class ReviewManager {
 			$evidence = Evidence::unavailable( 'setup.provider-unavailable' );
 		}
 		if ( Evidence::HEALTH_UNAVAILABLE === $evidence->health() ) {
-			throw new \RuntimeException( 'Core Setup evidence is unavailable.' );
+			throw new \RuntimeException( __( 'Core Setup evidence is unavailable.', 'core-blueprint' ) );
 		}
 
 		$reason = trim( sanitize_textarea_field( $reason ) );
 		if ( ReviewRepository::LATER === $disposition ) {
 			if ( ! $check->allows_later() ) {
-				throw new \InvalidArgumentException( 'This Core Setup check cannot be deferred.' );
+				throw new \InvalidArgumentException( __( 'This Core Setup check cannot be deferred.', 'core-blueprint' ) );
 			}
 			if ( '' === $reason ) {
-				throw new \InvalidArgumentException( 'A reason is required when deferring a Core Setup check.' );
+				throw new \InvalidArgumentException( __( 'A reason is required when deferring a Core Setup check.', 'core-blueprint' ) );
 			}
 		} elseif ( ReviewRepository::NOT_APPLICABLE === $disposition ) {
 			if ( ! $check->allows_not_applicable( $evidence ) ) {
-				throw new \InvalidArgumentException( 'This Core Setup check is currently applicable.' );
+				throw new \InvalidArgumentException( __( 'This Core Setup check is currently applicable.', 'core-blueprint' ) );
 			}
 			if ( '' === $reason ) {
-				throw new \InvalidArgumentException( 'A reason is required for Not applicable.' );
+				throw new \InvalidArgumentException( __( 'A reason is required for Not applicable.', 'core-blueprint' ) );
 			}
 		} elseif ( ReviewRepository::REVIEWED !== $disposition ) {
-			throw new \InvalidArgumentException( 'Invalid Core Setup review disposition.' );
+			throw new \InvalidArgumentException( __( 'Invalid Core Setup review disposition.', 'core-blueprint' ) );
 		}
 
 		$before = ReviewRepository::check( $check_id );
@@ -56,7 +56,7 @@ final class ReviewManager {
 			ReviewRepository::NOT_APPLICABLE => ReviewRepository::mark_not_applicable( $check_id, $evidence, $reason, $user_id ),
 		};
 		if ( ! $saved ) {
-			throw new \RuntimeException( 'Core Setup review metadata could not be saved.' );
+			throw new \RuntimeException( __( 'Core Setup review metadata could not be saved.', 'core-blueprint' ) );
 		}
 
 		$after = ReviewRepository::check( $check_id );
@@ -86,7 +86,7 @@ final class ReviewManager {
 			return false;
 		}
 		if ( ! ReviewRepository::clear_check( $check_id ) ) {
-			throw new \RuntimeException( 'Core Setup review metadata could not be cleared.' );
+			throw new \RuntimeException( __( 'Core Setup review metadata could not be cleared.', 'core-blueprint' ) );
 		}
 
 		AuditLog::log( 'core.setup.review.cleared', 'notice', [
@@ -97,15 +97,15 @@ final class ReviewManager {
 
 	public static function save_section_note( string $section_id, string $note, int $user_id = 0 ): bool {
 		if ( ! SectionRegistry::is_known( $section_id ) ) {
-			throw new \InvalidArgumentException( 'Unknown Core Setup section.' );
+			throw new \InvalidArgumentException( __( 'Unknown Core Setup section.', 'core-blueprint' ) );
 		}
 		if ( ! SectionRegistry::can_manage_note( $section_id ) ) {
-			throw new \RuntimeException( 'Core Setup section access denied.' );
+			throw new \RuntimeException( __( 'Core Setup section access denied.', 'core-blueprint' ) );
 		}
 
 		$before = ReviewRepository::section_note( $section_id );
 		if ( ! ReviewRepository::save_section_note( $section_id, $note, $user_id ) ) {
-			throw new \RuntimeException( 'Core Setup section note could not be saved.' );
+			throw new \RuntimeException( __( 'Core Setup section note could not be saved.', 'core-blueprint' ) );
 		}
 		$after = ReviewRepository::section_note( $section_id );
 
@@ -125,15 +125,15 @@ final class ReviewManager {
 
 	private static function authorized_check( string $check_id ): CheckInterface {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			throw new \RuntimeException( 'Core Setup access denied.' );
+			throw new \RuntimeException( __( 'Core Setup access denied.', 'core-blueprint' ) );
 		}
 
 		$check = Registry::get( $check_id );
 		if ( ! $check instanceof CheckInterface ) {
-			throw new \InvalidArgumentException( 'Unknown Core Setup check.' );
+			throw new \InvalidArgumentException( __( 'Unknown Core Setup check.', 'core-blueprint' ) );
 		}
 		if ( ! current_user_can( $check->capability() ) ) {
-			throw new \RuntimeException( 'Core Setup check access denied.' );
+			throw new \RuntimeException( __( 'Core Setup check access denied.', 'core-blueprint' ) );
 		}
 
 		return $check;
