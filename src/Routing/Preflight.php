@@ -148,7 +148,14 @@ final class Preflight {
 			return [];
 		}
 
-		$candidates = get_posts(
+		$candidates = [];
+
+		$exact = get_page_by_path( trim( $path, '/' ), OBJECT, $post_types );
+		if ( $exact instanceof \WP_Post && 'publish' === $exact->post_status ) {
+			$candidates[ $exact->ID ] = $exact;
+		}
+
+		$slug_candidates = get_posts(
 			[
 				'post_type'        => $post_types,
 				'post_status'      => 'publish',
@@ -158,6 +165,11 @@ final class Preflight {
 				'suppress_filters' => false,
 			]
 		);
+		foreach ( $slug_candidates as $candidate ) {
+			if ( $candidate instanceof \WP_Post ) {
+				$candidates[ $candidate->ID ] = $candidate;
+			}
+		}
 
 		$collisions = [];
 		foreach ( $candidates as $post ) {
