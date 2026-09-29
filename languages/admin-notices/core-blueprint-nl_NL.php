@@ -39,5 +39,8 @@ return [
         'This source is protected and always remains visible to everyone.' => 'Deze bron is beveiligd en blijft altijd voor iedereen zichtbaar.',
         'Who should see this notice source?' => 'Wie moet deze meldingsbron zien?',
         'You do not have permission to manage Admin Notices.' => 'Je hebt geen toestemming om adminmeldingen te beheren.',
+        'Portable audience policy for supported WordPress admin notice sources. Runtime source observations are not included.' => 'Draagbaar doelgroepbeleid voor ondersteunde bronnen van WordPress-adminmeldingen. Runtime-waarnemingen van bronnen worden niet meegenomen.',
+        'Could not apply the Admin Notices profile policy.' => 'Het profielbeleid voor adminmeldingen kon niet worden toegepast.',
+        'Review whether supported WordPress admin notice sources need audience rules for operators and client-facing roles.' => 'Controleer of ondersteunde bronnen van WordPress-adminmeldingen doelgroepregels nodig hebben voor operators en klantgerichte rollen.',
     ],
 ];

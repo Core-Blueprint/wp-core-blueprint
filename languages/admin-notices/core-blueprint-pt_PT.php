@@ -39,5 +39,8 @@ return [
         'This source is protected and always remains visible to everyone.' => 'Esta fonte está protegida e permanece sempre visível para todos.',
         'Who should see this notice source?' => 'Quem deve ver esta fonte de avisos?',
         'You do not have permission to manage Admin Notices.' => 'Não tem permissão para gerir os avisos de administração.',
+        'Portable audience policy for supported WordPress admin notice sources. Runtime source observations are not included.' => 'Política de público portátil para as fontes suportadas de avisos de administração do WordPress. As observações de fontes em tempo de execução não são incluídas.',
+        'Could not apply the Admin Notices profile policy.' => 'Não foi possível aplicar a política de perfil dos avisos de administração.',
+        'Review whether supported WordPress admin notice sources need audience rules for operators and client-facing roles.' => 'Reveja se as fontes suportadas de avisos de administração do WordPress precisam de regras de público para operadores e funções orientadas ao cliente.',
     ],
 ];
