@@ -3,8 +3,10 @@ declare(strict_types=1);
 /**
  * Resolve notice-source visibility for the current user.
  *
- * The cb_operator population is the safety anchor. When no operator exists,
- * notice governance fails open and no source is suppressed for anyone.
+ * The effective cb_operator manager population is the safety anchor. When no
+ * operator can currently manage Admin Notices, governance fails open and no
+ * source is suppressed for anyone. This includes quarantined/blocked operators
+ * in Enforce mode while preserving Monitor-mode capability semantics.
  *
  * @package Core_Blueprint
  * @since   1.0.0
@@ -19,7 +21,14 @@ defined( 'ABSPATH' ) || exit;
 final class Visibility {
 
 	public static function governance_available(): bool {
-		return Roles::operator_count() > 0;
+		foreach ( Roles::operator_ids() as $user_id ) {
+			$user = get_userdata( $user_id );
+			if ( $user instanceof \WP_User && user_can( $user, Capabilities::MANAGE ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public static function current_user_is_manager(): bool {

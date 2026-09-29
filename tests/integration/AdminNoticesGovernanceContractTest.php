@@ -89,6 +89,34 @@ final class CB_Base_Admin_Notices_Governance_Contract_Test extends WP_UnitTestCa
 		Policy::normalize( $invalid );
 	}
 
+	public function test_an1b_governance_fails_open_until_an_operator_is_effectively_authorized(): void {
+		$operator_id = self::factory()->user->create( [ 'role' => Roles::OPERATOR_ROLE ] );
+		$operator = get_userdata( $operator_id );
+		self::assertInstanceOf( WP_User::class, $operator );
+
+		$policy = Policy::defaults();
+		$policy['rules'][] = [
+			'source'     => 'plugin:example-plugin',
+			'visibility' => Policy::OPERATORS_ONLY,
+			'audience'   => [ 'roles' => [], 'capabilities' => [] ],
+		];
+		self::assertTrue( Policy::replace( $policy, 'test-fail-open' ) );
+
+		$editor_id = self::factory()->user->create( [ 'role' => 'editor' ] );
+		wp_set_current_user( $editor_id );
+
+		if ( user_can( $operator, Capabilities::MANAGE ) ) {
+			self::markTestSkipped( 'Current Privileged Access mode leaves the unapproved operator effective; fail-open quarantine branch is not active.' );
+		}
+
+		self::assertFalse( Visibility::governance_available() );
+		self::assertTrue( Visibility::allows_current_user( 'plugin:example-plugin' ) );
+
+		self::assertTrue( PrivilegedAccessRegistry::approve( $operator, 0, 'admin_notices_fail_open_fixture' ) );
+		self::assertTrue( Visibility::governance_available() );
+		self::assertFalse( Visibility::allows_current_user( 'plugin:example-plugin' ) );
+	}
+
 	public function test_an2_operator_always_sees_restricted_sources_and_editor_does_not(): void {
 		$operator_id = $this->approved_operator();
 		$policy = Policy::defaults();
