@@ -129,6 +129,10 @@ final class Policy {
 				throw new \InvalidArgumentException( 'Admin Notices visibility is invalid.' );
 			}
 
+			if ( SourceResolver::is_protected_id( $source ) && self::EVERYONE !== $visibility ) {
+				throw new \InvalidArgumentException( 'Protected Admin Notices sources must remain visible to everyone.' );
+			}
+
 			$audience_raw = $rule['audience'] ?? null;
 			if ( ! is_array( $audience_raw ) || array_is_list( $audience_raw ) ) {
 				throw new \InvalidArgumentException( 'Admin Notices audience is invalid.' );
