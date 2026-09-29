@@ -42,9 +42,10 @@ final class Runtime {
 		$entries = Discovery::callbacks( $hook );
 		SourceLedger::observe_hook( $hook, $entries );
 
+		$governance_available = Visibility::governance_available();
 		if (
 			! Policy::has_restrictions()
-			|| ! Visibility::governance_available()
+			|| ! $governance_available
 			|| Visibility::current_user_is_manager()
 		) {
 			return [];
@@ -56,7 +57,7 @@ final class Runtime {
 			if (
 				empty( $source['manageable'] )
 				|| ! empty( $source['protected'] )
-				|| Visibility::allows_current_user( (string) $source['id'] )
+				|| Visibility::allows_current_user( (string) $source['id'], $governance_available )
 			) {
 				continue;
 			}
