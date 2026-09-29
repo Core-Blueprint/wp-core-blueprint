@@ -11,8 +11,8 @@
 
 	const sharedShellApi = () => window.cbCore?.designEditor?.shell ?? null;
 	const failureMessage = () => String(
-		config.failureLabels?.toolbar
-		|| 'Designer toolbar could not start. Reload the page and try again.'
+		config.failureLabel
+		|| 'Designer could not start. Reload the page and try again.'
 	).trim();
 
 	const failPendingToolbars = (message = failureMessage()) => {
