@@ -102,4 +102,17 @@ if (( php_files == 0 )); then
 fi
 
 echo "[H] packaged PHP syntax PASS: $php_files files"
+
+js_files=0
+while IFS= read -r -d '' js_file; do
+  node --check "$js_file" >/dev/null
+  js_files=$((js_files + 1))
+done < <(find "$PLUGIN_DIR/assets" -type f -name '*.js' -print0 | sort -z)
+
+if (( js_files == 0 )); then
+  echo "[H] No JavaScript files found in packaged plugin." >&2
+  exit 1
+fi
+
+echo "[H] packaged JavaScript syntax PASS: $js_files files"
 echo "[H] release package boundary scenario PASS"
