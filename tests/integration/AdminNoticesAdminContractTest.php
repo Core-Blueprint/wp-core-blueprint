@@ -7,6 +7,7 @@ use CB\Core\AdminNotices\Policy;
 use CB\Core\AdminNotices\SourceLedger;
 use CB\Core\AdminNotices\SourceResolver;
 use CB\Core\AdminNotices\Visibility;
+use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\Roles;
 
 final class CB_Base_Admin_Notices_Admin_Contract_Test extends WP_UnitTestCase {
@@ -20,7 +21,9 @@ final class CB_Base_Admin_Notices_Admin_Contract_Test extends WP_UnitTestCase {
 		$this->saved_ledger = get_option( SourceLedger::OPTION, '__cb_notices_missing__' );
 		delete_option( Policy::OPTION );
 		delete_option( SourceLedger::OPTION );
-		Roles::ensure_operator_role();
+		PrivilegedAccessGuard::trusted_mutation( static function (): void {
+			Roles::ensure_operator_role();
+		} );
 		wp_set_current_user( 0 );
 	}
 

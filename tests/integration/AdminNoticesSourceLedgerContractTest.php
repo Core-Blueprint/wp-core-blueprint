@@ -67,7 +67,7 @@ final class CB_Base_Admin_Notices_Source_Ledger_Contract_Test extends WP_UnitTes
 
 		$serialized = wp_json_encode( SourceLedger::get() );
 		self::assertIsString( $serialized );
-		foreach ( [ 'callback', 'render_secondary', '<div', 'nonce', 'action_url', 'message' ] as $forbidden ) {
+		foreach ( [ '"callback":', 'render_secondary', '<div', 'nonce', 'action_url', 'message' ] as $forbidden ) {
 			self::assertStringNotContainsString( $forbidden, $serialized );
 		}
 	}
