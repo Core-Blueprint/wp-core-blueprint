@@ -107,9 +107,12 @@ final class CategoryRoutes {
 			return home_url( '/' );
 		}
 
-		$path .= '/feed';
-		if ( '' !== $feed && 'feed' !== $feed ) {
-			$path .= '/' . sanitize_key( $feed );
+		$path        .= '/feed';
+		$feed         = sanitize_key( $feed );
+		$default_feed = sanitize_key( (string) get_default_feed() );
+
+		if ( '' !== $feed && 'feed' !== $feed && $default_feed !== $feed ) {
+			$path .= '/' . $feed;
 		}
 
 		return home_url( user_trailingslashit( $path, 'feed' ) );
