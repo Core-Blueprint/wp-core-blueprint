@@ -4,6 +4,7 @@ declare(strict_types=1);
 use CB\Core\Environment\EnvironmentTypeTestShim;
 use CB\Core\Environment\Governance;
 use CB\Core\Mail\Settings as MailSettings;
+use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Settings;
 use CB\Core\Setup\CheckInterface;
 use CB\Core\Setup\Evidence;
@@ -97,6 +98,11 @@ final class CB_Base_Core_Setup_Foundation_Contract_Test extends WP_UnitTestCase 
 		self::assertSame( StatusResolver::NOT_APPLICABLE, StatusResolver::resolve( $check, $production ) );
 
 		EnvironmentTypeTestShim::set( 'staging' );
+		Settings::set_key(
+			Governance::POLICY_KEY,
+			[ Governance::PROTECT_SEARCH_INDEXING => true ],
+			'test:core-setup'
+		);
 		$staging = $check->evidence();
 		self::assertTrue( ReviewRepository::mark_not_applicable( $check->id(), $staging, 'Invalid on staging.', 9 ) );
 		self::assertSame( StatusResolver::NEEDS_REVIEW, StatusResolver::resolve( $check, $staging ) );
@@ -108,6 +114,9 @@ final class CB_Base_Core_Setup_Foundation_Contract_Test extends WP_UnitTestCase 
 		self::assertSame( [], Registry::visible() );
 
 		$administrator = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$admin_user = get_userdata( $administrator );
+		self::assertInstanceOf( WP_User::class, $admin_user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $admin_user, 0, 'core_setup_visibility_fixture' ) );
 		wp_set_current_user( $administrator );
 		self::assertSame( array_keys( Registry::all() ), array_keys( Registry::visible() ) );
 	}
