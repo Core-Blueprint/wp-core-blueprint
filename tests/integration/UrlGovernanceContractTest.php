@@ -91,6 +91,17 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_default_feed_format_resolves_to_one_canonical_feed_url(): void {
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		$term    = get_term( $term_id, 'category' );
+
+		self::assertInstanceOf( WP_Term::class, $term );
+		self::assertSame(
+			CategoryRoutes::feed_url( $term ),
+			CategoryRoutes::feed_url( $term, get_default_feed() )
+		);
+	}
+
 	public function test_category_base_dot_is_treated_as_no_legacy_base(): void {
 		global $wp_rewrite;
 
