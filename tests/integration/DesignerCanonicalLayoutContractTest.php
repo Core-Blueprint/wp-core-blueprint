@@ -73,6 +73,9 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( "const REQUEST_EVENT = 'cb:design-shell:contextrequest';", $runtime );
 		self::assertStringContainsString( "const CHANGED_EVENT = 'cb:design-shell:contextchanged';", $runtime );
+		self::assertStringContainsString( 'const transitionGenerations = new WeakMap();', $runtime );
+		self::assertStringContainsString( 'transitionGenerations.set(shell, generation);', $runtime );
+		self::assertStringContainsString( 'transitionGenerations.get(shell) !== generation', $runtime );
 		self::assertStringContainsString( 'respondWith', $runtime );
 		self::assertStringContainsString( "document.addEventListener('change'", $runtime );
 		self::assertStringContainsString( 'event.stopImmediatePropagation();', $runtime );
