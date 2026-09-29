@@ -97,6 +97,8 @@ $foundation_options = [
 	'cb_core_content_models_schema',
 	'cb_core_content_models_rewrite_dirty',
 	'cb_core_admin_columns_policy',
+	'cb_core_admin_notices_policy',
+	'cb_core_admin_notice_sources',
 	'cb_core_compliance_resource_assignments',
 	'cb_core_compliance_custom_resources',
 	'cb_core_hud_disabled',
