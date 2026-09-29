@@ -132,6 +132,11 @@ export const createDesignerShell = (root, {
 	let temporaryRootTabIndex = null;
 	let initialized = false;
 	let sidebarDefaultPanel = null;
+	let destroyed = false;
+
+	const assertActive = () => {
+		if (destroyed) throw new Error('Designer shell has been destroyed.');
+	};
 
 	const groupIdFor = (node) => normalizeGroupId(node?.dataset?.cbDesignShellGroup);
 	const group = (groupId = DEFAULT_GROUP) => {
@@ -151,7 +156,7 @@ export const createDesignerShell = (root, {
 	panels.forEach((panel) => group(groupIdFor(panel)).panels.push(panel));
 
 	const syncHistory = () => {
-		if (!session?.history) return;
+		if (destroyed || !session?.history) return;
 		if (undo instanceof HTMLButtonElement) undo.disabled = !session.history.canUndo;
 		if (redo instanceof HTMLButtonElement) redo.disabled = !session.history.canRedo;
 	};
@@ -265,6 +270,7 @@ export const createDesignerShell = (root, {
 	};
 
 	const enterFullscreen = () => {
+		assertActive();
 		if (fullscreenState) return false;
 		if (exitPending) exitFullscreenInternal({ restoreFocus: false, immediate: true });
 		if (activeFullscreenExit && activeFullscreenExit !== exitFullscreenInternal) {
@@ -296,8 +302,14 @@ export const createDesignerShell = (root, {
 		return true;
 	};
 
-	const exitFullscreen = () => exitFullscreenInternal();
-	const toggleFullscreen = () => fullscreenState ? exitFullscreen() : enterFullscreen();
+	const exitFullscreen = () => {
+		assertActive();
+		return exitFullscreenInternal();
+	};
+	const toggleFullscreen = () => {
+		assertActive();
+		return fullscreenState ? exitFullscreenInternal() : enterFullscreen();
+	};
 	const isFullscreen = () => fullscreenState;
 
 	function handleFullscreenFocusin() {
@@ -363,6 +375,7 @@ export const createDesignerShell = (root, {
 	};
 
 	const activatePanel = (panelId, { focus = false, group: requestedGroup = DEFAULT_GROUP } = {}) => {
+		assertActive();
 		const id = String(panelId || '').trim();
 		if (!id) return false;
 		const state = group(requestedGroup);
@@ -389,6 +402,7 @@ export const createDesignerShell = (root, {
 		labels = {},
 		activeRole = 'inspector',
 	} = {}) => {
+		assertActive();
 		const state = group(DEFAULT_GROUP);
 		const records = DESIGNER_SIDEBAR_ROLES.map((role) => {
 			const panelId = String(roles?.[role] || role).trim();
@@ -493,7 +507,7 @@ export const createDesignerShell = (root, {
 	syncFullscreenControl();
 
 	const destroy = () => {
-		if (!shellControllers.has(root)) return;
+		if (destroyed) return;
 		if (fullscreenState || exitPending) {
 			exitFullscreenInternal({ restoreFocus: false, immediate: true });
 		}
@@ -505,6 +519,7 @@ export const createDesignerShell = (root, {
 		pendingSidebarConfigs.delete(root);
 		shellControllers.delete(root);
 		delete root.dataset.cbDesignShellInitialized;
+		destroyed = true;
 	};
 
 	const controller = Object.freeze({
