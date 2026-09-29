@@ -81,6 +81,7 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof publicEditor.commands?.insertNode, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.commands?.insertNode, 'function');
 	assert.equal(typeof publicEditor.profiles['document-flow'].normalizeFlowLayout, 'function');
+	assert.equal(typeof publicEditor.profiles['document-flow'].createFlowPreviewHost, 'function');
 	assert.equal(typeof publicEditor.profiles['document-fixed'].translateFrame, 'function');
 });
 
