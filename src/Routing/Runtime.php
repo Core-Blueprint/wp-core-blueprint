@@ -260,10 +260,10 @@ final class Runtime {
 			if ( $current === $path ) {
 				return true;
 			}
-			if ( preg_match( '#^' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?# ) {
+			if ( preg_match( '#^' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?$#', $current ) ) {
 				return true;
 			}
-			if ( preg_match( '#^' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?# ) {
+			if ( preg_match( '#^' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?$#', $current ) ) {
 				return true;
 			}
 		}
