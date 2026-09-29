@@ -61,7 +61,7 @@ final class Page extends PageBase {
 		$summary = Summary::current_user();
 		$result  = Actions::pull_result();
 		$tabs    = self::tab_labels( $summary );
-		$default = $first_visit ? (string) array_key_first( $summary['sections'] ) : 'review';
+		$default = 'overview';
 		$tab     = $this->active_tab( array_keys( $tabs ), $default );
 
 		ob_start();
@@ -88,8 +88,8 @@ final class Page extends PageBase {
 			<?php self::render_status_strip( $summary ); ?>
 
 			<?php
-			if ( 'review' === $tab ) {
-				self::render_review( $summary );
+			if ( 'overview' === $tab ) {
+				self::render_overview( $summary );
 			} elseif ( isset( $summary['sections'][ $tab ] ) ) {
 				self::render_section( $tab, $summary['sections'][ $tab ] );
 			}
@@ -102,7 +102,14 @@ final class Page extends PageBase {
 
 	/** @param array<string,mixed> $summary @return array<string,string> */
 	private static function tab_labels( array $summary ): array {
-		$tabs = [];
+		$tabs = [
+			'overview' => sprintf(
+				/* translators: %d: total number of setup checks */
+				__( 'Overview (%d)', 'core-blueprint' ),
+				(int) ( $summary['total'] ?? 0 )
+			),
+		];
+
 		foreach ( (array) $summary['sections'] as $section_id => $section ) {
 			$tabs[ (string) $section_id ] = sprintf(
 				/* translators: 1: section name, 2: number of setup checks */
@@ -111,11 +118,7 @@ final class Page extends PageBase {
 				(int) ( $section['total'] ?? 0 )
 			);
 		}
-		$tabs['review'] = sprintf(
-			/* translators: %d: total number of setup checks */
-			__( 'Review (%d)', 'core-blueprint' ),
-			(int) ( $summary['total'] ?? 0 )
-		);
+
 		return $tabs;
 	}
 
@@ -371,10 +374,10 @@ final class Page extends PageBase {
 	}
 
 	/** @param array<string,mixed> $summary */
-	private static function render_review( array $summary ): void {
+	private static function render_overview( array $summary ): void {
 		?>
 		<section class="cb-core-panel">
-			<h2><?php esc_html_e( 'Review', 'core-blueprint' ); ?></h2>
+			<h2><?php esc_html_e( 'Overview', 'core-blueprint' ); ?></h2>
 			<p>
 				<strong><?php echo esc_html( Presentation::overall_label( (string) $summary['overall'] ) ); ?></strong>
 				<?php echo esc_html( ' · ' . self::count_line( $summary ) ); ?>
