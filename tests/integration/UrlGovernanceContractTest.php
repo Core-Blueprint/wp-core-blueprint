@@ -158,7 +158,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		Settings::set_key(
 			Policy::SETTINGS_KEY,
 			[ Policy::CLEAN_ARCHIVE_URLS => true ],
-			'test:routing'
+			test:routing'
 		);
 		$this->reset_settings_cache();
 
@@ -175,7 +175,14 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		);
 
 		self::assertCount( 1, $pagination_rules );
-		self::assertArrayNotHasKey( '^(.+?)/p([0-9]+)/?
+		self::assertFalse(
+			array_key_exists(
+				'^(.+?)/p([0-9]+)/?$',
+				$wp_rewrite->extra_rules_top
+			)
+		);
+	}
+
 	public function test_term_link_changes_only_after_explicit_enable(): void {
 		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 		$term    = get_term( $term_id, 'category' );
