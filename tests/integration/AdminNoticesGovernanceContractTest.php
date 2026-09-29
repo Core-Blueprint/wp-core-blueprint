@@ -131,6 +131,29 @@ final class CB_Base_Admin_Notices_Governance_Contract_Test extends WP_UnitTestCa
 		wp_set_current_user( $editor_id );
 		self::assertTrue( Visibility::allows_current_user( 'plugin:example-plugin' ) );
 
+		$capability_user_id = self::factory()->user->create( [ 'role' => 'subscriber' ] );
+		$capability_user = get_userdata( $capability_user_id );
+		self::assertInstanceOf( WP_User::class, $capability_user );
+		$capability_user->add_cap( 'cb_notice_fixture_cap' );
+
+		$policy['rules'][0]['audience'] = [
+			'roles'        => [ 'editor' ],
+			'capabilities' => [ 'cb_notice_fixture_cap' ],
+		];
+		self::assertTrue( Policy::replace( $policy, 'test-or-semantics' ) );
+
+		wp_set_current_user( $editor_id );
+		self::assertTrue(
+			Visibility::allows_current_user( 'plugin:example-plugin' ),
+			'A selected role must be sufficient even when the selected capability is absent.'
+		);
+
+		wp_set_current_user( $capability_user_id );
+		self::assertTrue(
+			Visibility::allows_current_user( 'plugin:example-plugin' ),
+			'A selected capability must be sufficient even when the selected role is absent.'
+		);
+
 		$author_id = self::factory()->user->create( [ 'role' => 'author' ] );
 		wp_set_current_user( $author_id );
 		self::assertFalse( Visibility::allows_current_user( 'plugin:example-plugin' ) );
