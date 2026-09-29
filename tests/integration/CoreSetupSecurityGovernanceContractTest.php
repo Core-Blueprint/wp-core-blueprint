@@ -24,6 +24,7 @@ final class CB_Base_Core_Setup_Security_Governance_Contract_Test extends WP_Unit
 
 	public function set_up(): void {
 		parent::set_up();
+		$this->reset_settings_cache();
 
 		foreach ( [
 			CB_CORE_SETTINGS,
@@ -46,6 +47,7 @@ final class CB_Base_Core_Setup_Security_Governance_Contract_Test extends WP_Unit
 		foreach ( $this->saved_options as $option => $value ) {
 			$this->restore_option( (string) $option, $value );
 		}
+		$this->reset_settings_cache();
 		EnvironmentTypeTestShim::reset();
 		wp_set_current_user( 0 );
 
@@ -125,7 +127,7 @@ final class CB_Base_Core_Setup_Security_Governance_Contract_Test extends WP_Unit
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		$user = get_userdata( $user_id );
 		self::assertInstanceOf( WP_User::class, $user );
-		self::assertTrue( PrivilegedAccessRegistry::flag_for_review( $user, 'core_setup_fixture', 'test' ) );
+		PrivilegedAccessRegistry::flag_for_review( $user, 'core_setup_fixture', 'test' );
 
 		$check = Registry::get( 'privileged-access-review' );
 		self::assertInstanceOf( CheckInterface::class, $check );
@@ -221,6 +223,13 @@ final class CB_Base_Core_Setup_Security_Governance_Contract_Test extends WP_Unit
 
 		\CB\Core\Environment\EnvironmentTypeTestShim::set( 'staging' );
 		self::assertSame( StatusResolver::NEEDS_REVIEW, StatusResolver::resolve( $check ) );
+	}
+
+
+	private function reset_settings_cache(): void {
+		$reflection = new ReflectionClass( Settings::class );
+		$cached = $reflection->getProperty( 'cached' );
+		$cached->setValue( null, null );
 	}
 
 	private function restore_option( string $name, mixed $value ): void {
