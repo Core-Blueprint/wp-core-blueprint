@@ -11,7 +11,7 @@ declare(strict_types=1);
  *                     Core Shield, Core Scanner, Failsafe).
  *                     Each card shows live state + one factual line and
  *                     deeplinks to the relevant Safeguards tab.
- *   2. Operations   - Logs, Notes, Reports, Core Profiles.
+ *   2. Operations   - Core Setup, Logs, Notes, Reports, Core Profiles.
  *   3. CMS Tools    - first-party CMS baseline modules such as User Roles,
  *                     Media Replace, and Package Downloads.
  *   4. Preferences  - navigation cards mirroring the available Preferences tabs,
@@ -59,6 +59,8 @@ use CB\Core\Modules\Status;
 use CB\Core\Security\AccessMode;
 use CB\Core\Snippets\Admin\Page as SnippetsPage;
 use CB\Core\Snippets\State as SnippetsState;
+use CB\Core\Setup\Admin\Page as SetupPage;
+use CB\Core\Setup\ReviewRepository as SetupReviewRepository;
 use CB\Core\UI\StatusMenu;
 
 defined( 'ABSPATH' ) || exit;
@@ -110,6 +112,7 @@ final class Dashboard extends PageBase {
 		$package_download_slug = PackageDownloadPage::SLUG;
 		$snippets_slug         = SnippetsPage::SLUG;
 		$content_models_slug    = ContentModelsPage::SLUG;
+		$setup_slug             = SetupPage::SLUG;
 
 		// Optional-module state for managed Dashboard cards. Disabled modules stay
 		// visible here for discoverability while their functional pages hide; the
@@ -128,7 +131,19 @@ final class Dashboard extends PageBase {
 
 		$disabled_meta = __( 'Disabled', 'core-blueprint' );
 
+		$setup_lifecycle = SetupReviewRepository::lifecycle();
+		$setup_first_unstarted = SetupReviewRepository::ORIGIN_FIRST_INSTALL === $setup_lifecycle['origin']
+			&& 0 === (int) $setup_lifecycle['started_at'];
+
 		$operations_cards = [
+			[
+				'id'    => 'core-setup',
+				'title' => 'Core Setup',
+				'meta'  => $setup_first_unstarted
+					? 'Complete the Core Blueprint setup checklist'
+					: 'Review setup status and configuration choices',
+				'url'   => admin_url( 'admin.php?page=' . $setup_slug ),
+			],
 			[
 				'id'    => 'logs',
 				'title' => __( 'Logs',    'core-blueprint' ),
