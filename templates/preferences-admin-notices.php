@@ -219,11 +219,15 @@ $kind_labels = [
 								<div data-cb-admin-notices-selected-audience <?php if ( \CB\Core\AdminNotices\Policy::SELECTED !== $visibility ) : ?>hidden<?php endif; ?>>
 									<div class="cb-core-field" role="group" aria-labelledby="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-roles-label">
 										<span class="cb-core-field__label" id="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-roles-label"><?php esc_html_e( 'Roles', 'core-blueprint' ); ?></span>
-										<?php echo $render_audience_picker( $rule, 'roles', 'cb-admin-notices-' . (string) $index . '-roles' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+										<div data-cb-admin-notices-roles-picker>
+											<?php echo $render_audience_picker( $rule, 'roles', 'cb-admin-notices-' . (string) $index . '-roles' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+										</div>
 									</div>
 									<div class="cb-core-field" role="group" aria-labelledby="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-capabilities-label">
 										<span class="cb-core-field__label" id="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-capabilities-label"><?php esc_html_e( 'Capabilities', 'core-blueprint' ); ?></span>
-										<?php echo $render_audience_picker( $rule, 'capabilities', 'cb-admin-notices-' . (string) $index . '-capabilities' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+										<div data-cb-admin-notices-capabilities-picker>
+											<?php echo $render_audience_picker( $rule, 'capabilities', 'cb-admin-notices-' . (string) $index . '-capabilities' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+										</div>
 									</div>
 									<p class="description"><?php esc_html_e( 'Selected audience uses OR matching: a matching role or capability is enough. Operators remain visible regardless of this selection.', 'core-blueprint' ); ?></p>
 								</div>
