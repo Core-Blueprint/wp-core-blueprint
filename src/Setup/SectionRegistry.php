@@ -19,13 +19,13 @@ final class SectionRegistry {
 	/** @return array<string,array{label:string,order:int}> */
 	public static function all(): array {
 		return [
-			'environment-availability' => [ 'label' => 'Environment & availability', 'order' => 10 ],
-			'administrator-recovery'   => [ 'label' => 'Administrator & recovery',   'order' => 20 ],
-			'safeguards'               => [ 'label' => 'Safeguards',                 'order' => 30 ],
-			'operations'               => [ 'label' => 'Operations',                 'order' => 40 ],
-			'mail'                     => [ 'label' => 'Mail',                       'order' => 50 ],
-			'privacy-governance'       => [ 'label' => 'Privacy & governance',       'order' => 60 ],
-			'cms-tools'                => [ 'label' => 'CMS tools',                  'order' => 70 ],
+			'environment-availability' => [ 'label' => __( 'Environment & availability', 'core-blueprint' ), 'order' => 10 ],
+			'administrator-recovery'   => [ 'label' => __( 'Administrator & recovery', 'core-blueprint' ),   'order' => 20 ],
+			'safeguards'               => [ 'label' => __( 'Safeguards', 'core-blueprint' ),                 'order' => 30 ],
+			'operations'               => [ 'label' => __( 'Operations', 'core-blueprint' ),                 'order' => 40 ],
+			'mail'                     => [ 'label' => __( 'Mail', 'core-blueprint' ),                       'order' => 50 ],
+			'privacy-governance'       => [ 'label' => __( 'Privacy & governance', 'core-blueprint' ),       'order' => 60 ],
+			'cms-tools'                => [ 'label' => __( 'CMS tools', 'core-blueprint' ),                  'order' => 70 ],
 		];
 	}
 
