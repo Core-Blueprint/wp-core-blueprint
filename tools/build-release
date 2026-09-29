@@ -40,6 +40,9 @@ DESIGN_MODULE_ROOT = Path("assets/js/design")
 DESIGN_IMPORT_RE = re.compile(
     r"(?P<prefix>\b(?:from|import)\s+)(?P<quote>['\"])(?P<specifier>\.{1,2}/[^'\"?]+\.js)(?P=quote)"
 )
+DESIGN_RELATIVE_JS_RE = re.compile(
+    r"(?P<quote>['\"])(?P<specifier>\.{1,2}/[^'\"?]+\.js)(?P=quote)"
+)
 
 
 def fail(message: str) -> "NoReturn":
@@ -149,7 +152,14 @@ def package_bytes(source: Path, path: Path, design_revision: str | None = None) 
                 f"{match.group('quote')}"
             )
 
-        payload = DESIGN_IMPORT_RE.sub(stamp, text).encode("utf-8")
+        stamped = DESIGN_IMPORT_RE.sub(stamp, text)
+        leftover = DESIGN_RELATIVE_JS_RE.search(stamped)
+        if leftover:
+            fail(
+                "Unversioned relative Design module reference remains in "
+                f"{relative.as_posix()}: {leftover.group('specifier')}"
+            )
+        payload = stamped.encode("utf-8")
     return payload
 
 
