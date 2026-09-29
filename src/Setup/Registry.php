@@ -13,8 +13,11 @@ declare(strict_types=1);
 namespace CB\Core\Setup;
 
 use CB\Core\Setup\Checks\AccessModeCheck;
+use CB\Core\Setup\Checks\AdminColumnsCheck;
+use CB\Core\Setup\Checks\AdminNavigationCheck;
 use CB\Core\Setup\Checks\AuditRetentionCheck;
 use CB\Core\Setup\Checks\AuditVerbosityCheck;
+use CB\Core\Setup\Checks\ContentModelsCheck;
 use CB\Core\Setup\Checks\CoreScannerPolicyCheck;
 use CB\Core\Setup\Checks\CoreScannerReadinessCheck;
 use CB\Core\Setup\Checks\CoreShieldCheck;
@@ -22,10 +25,18 @@ use CB\Core\Setup\Checks\EnvironmentIdentityCheck;
 use CB\Core\Setup\Checks\EnvironmentIndexingProtectionCheck;
 use CB\Core\Setup\Checks\FailsafeReadinessCheck;
 use CB\Core\Setup\Checks\LoginShieldCheck;
+use CB\Core\Setup\Checks\MailDeliveryReadinessCheck;
 use CB\Core\Setup\Checks\MailDeliveryStrategyCheck;
+use CB\Core\Setup\Checks\MailDesignerCheck;
+use CB\Core\Setup\Checks\MediaFormatsCheck;
+use CB\Core\Setup\Checks\ModuleActivationDecisionCheck;
+use CB\Core\Setup\Checks\NotificationsPolicyCheck;
+use CB\Core\Setup\Checks\OperationalLogsCheck;
+use CB\Core\Setup\Checks\OperationalToolsCheck;
 use CB\Core\Setup\Checks\PrivacyIpHandlingCheck;
 use CB\Core\Setup\Checks\PrivilegedAccessProtectionCheck;
 use CB\Core\Setup\Checks\PrivilegedAccessReviewCheck;
+use CB\Core\Setup\Checks\SnippetsCheck;
 use CB\Core\Setup\Checks\TwoFactorReadinessCheck;
 
 defined( 'ABSPATH' ) || exit;
@@ -49,11 +60,38 @@ final class Registry {
 			new CoreScannerPolicyCheck(),
 			new CoreScannerReadinessCheck(),
 
+			new OperationalLogsCheck(),
+			new NotificationsPolicyCheck(),
+			new OperationalToolsCheck(),
+
 			new MailDeliveryStrategyCheck(),
+			new MailDeliveryReadinessCheck(),
+			new MailDesignerCheck(),
 
 			new PrivacyIpHandlingCheck(),
 			new AuditRetentionCheck(),
 			new AuditVerbosityCheck(),
+
+			new ContentModelsCheck(),
+			new SnippetsCheck(),
+			new ModuleActivationDecisionCheck(
+				'user-roles',
+				'User Roles',
+				admin_url( 'admin.php?page=core-blueprint-user-roles' )
+			),
+			new ModuleActivationDecisionCheck(
+				'media-replace',
+				'Media Replace',
+				admin_url( 'admin.php?page=core-blueprint-media-replace' )
+			),
+			new MediaFormatsCheck(),
+			new ModuleActivationDecisionCheck(
+				'package-downloads',
+				'Package Downloads',
+				admin_url( 'admin.php?page=core-blueprint-package-downloads' )
+			),
+			new AdminNavigationCheck(),
+			new AdminColumnsCheck(),
 		];
 
 		$out = [];
