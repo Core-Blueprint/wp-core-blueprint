@@ -157,6 +157,13 @@ class ReleaseBuilderTest(unittest.TestCase):
             packaged,
         )
 
+    def test_unstamped_dynamic_design_import_fails_closed(self):
+        lazy = self.source / 'assets/js/design/lazy.js'
+        lazy.write_text("import('./shell/fixture.js');\n")
+        revision = builder.design_module_revision(self.source)
+        with self.assertRaises(SystemExit):
+            builder.package_bytes(self.source, lazy, revision)
+
     def test_design_revision_does_not_rewrite_non_design_javascript(self):
         runtime = self.source / 'assets/js/runtime.js'
         runtime.write_text("import './dependency.js';\\n")
