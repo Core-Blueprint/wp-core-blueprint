@@ -186,6 +186,9 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'renderLayers: renderStructure', $feature );
 		self::assertStringContainsString( 'renderInspector,', $feature );
 		self::assertStringContainsString( 'syncCanvas: syncPreviewSelection', $feature );
+		self::assertStringContainsString( 'context?.inspector?.target ?? session.inspector().target', $feature );
+		self::assertStringContainsString( 'selectedEntry?.node ?? null', $feature );
+		self::assertStringNotContainsString( 'const nodeAt =', $feature );
 		self::assertStringContainsString( 'resetSelection: true', $feature );
 		self::assertStringContainsString( "remove: node.type !== 'mail.section'", $feature );
 		self::assertStringNotContainsString( 'renderSelectionViews', $feature );
