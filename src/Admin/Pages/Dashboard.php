@@ -138,10 +138,12 @@ final class Dashboard extends PageBase {
 		$operations_cards = [
 			[
 				'id'    => 'core-setup',
-				'title' => 'Core Setup',
+				'title' => $setup_first_unstarted
+					? __( 'Start Core Setup', 'core-blueprint' )
+					: __( 'Review Core Setup', 'core-blueprint' ),
 				'meta'  => $setup_first_unstarted
-					? 'Complete the Core Blueprint setup checklist'
-					: 'Review setup status and configuration choices',
+					? __( 'Review the Base configuration and record the choices for this site.', 'core-blueprint' )
+					: __( 'Reopen the setup checklist and review the current site configuration.', 'core-blueprint' ),
 				'url'   => admin_url( 'admin.php?page=' . $setup_slug ),
 			],
 			[
