@@ -21,6 +21,7 @@ $catalog['messages'] = array_replace(
         'Design loaded' => 'Design carregado',
         'Loading design…' => 'A carregar o design…',
         'The selected design could not be loaded.' => 'Não foi possível carregar o design selecionado.',
+        'Designer could not start. Reload the page and try again.' => 'Não foi possível iniciar o Designer. Recarregue a página e tente novamente.',
         'The selected mail template is incomplete.' => 'O modelo de e-mail selecionado está incompleto.',
         'The SVG replacement could not be sanitized safely.' => 'Não foi possível limpar com segurança o ficheiro SVG de substituição.',
         'The sanitized SVG replacement no longer matches the expected file type.' => 'O ficheiro SVG de substituição limpo já não corresponde ao tipo de ficheiro esperado.',
