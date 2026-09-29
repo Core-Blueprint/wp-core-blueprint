@@ -59,6 +59,10 @@ final class Summary {
 				$evidence = Evidence::unavailable( 'setup.provider-unavailable' );
 			}
 			$review = ReviewRepository::check( $check->id() );
+			$review_current = is_array( $review )
+				&& isset( $review['fingerprint'] )
+				&& is_string( $review['fingerprint'] )
+				&& hash_equals( $evidence->fingerprint(), strtolower( $review['fingerprint'] ) );
 			$status = StatusResolver::resolve( $check, $evidence, $review );
 
 			$counts[ $status ]++;
@@ -70,7 +74,9 @@ final class Summary {
 				'label'                 => $check->label(),
 				'kind'                  => $check->kind(),
 				'status'                => $status,
+				'evidence_health'       => $evidence->health(),
 				'evidence_code'         => $evidence->code(),
+				'review_current'        => $review_current,
 				'configuration_url'     => $check->configuration_url(),
 				'allows_later'          => $check->allows_later(),
 				'allows_not_applicable' => $check->allows_not_applicable( $evidence ),
