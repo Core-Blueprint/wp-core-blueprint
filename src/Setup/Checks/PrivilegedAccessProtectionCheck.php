@@ -42,8 +42,7 @@ final class PrivilegedAccessProtectionCheck implements CheckInterface {
 					? 'privileged-access.enforce'
 					: 'privileged-access.monitor',
 				[
-					'mode'                    => $mode,
-					'approved_operator_count' => $operators,
+					'mode' => $mode,
 				],
 				[
 					'mode'                    => $mode,
