@@ -18,6 +18,7 @@ use CB\Core\Admin\Overview;
 use CB\Core\Admin\PageBase;
 use CB\Core\Admin\Tabbed;
 use CB\Core\AdminNavigation\Admin as AdminNavigationAdmin;
+use CB\Core\AdminNotices\Admin as AdminNoticesAdmin;
 use CB\Core\Themes;
 use CB\Core\UI;
 use CB\Core\HUD\MenuPreferences;
@@ -52,7 +53,7 @@ final class Preferences extends PageBase {
 		// Personal/site-wide preferences come first, followed by module-specific
 		// configuration that remains meaningful independently from activation, then
 		// meta-governance and reference tabs. Module on/off state lives on Dashboard.
-		$available_tabs = [ 'overview', 'privacy', 'notifications', 'language', 'appearance', 'floating-menu', 'admin-navigation', 'reports', 'notes', 'permissions', 'cli', 'about' ];
+		$available_tabs = [ 'overview', 'privacy', 'notifications', 'language', 'appearance', 'floating-menu', 'admin-navigation', 'admin-notices', 'reports', 'notes', 'permissions', 'cli', 'about' ];
 		$tab_labels     = [
 			'overview'        => __( 'Overview',        'core-blueprint' ),
 			'privacy'         => __( 'Privacy',         'core-blueprint' ),
@@ -61,6 +62,7 @@ final class Preferences extends PageBase {
 			'appearance'      => __( 'Appearance',      'core-blueprint' ),
 			'floating-menu'   => __( 'Floating Menu',   'core-blueprint' ),
 			'admin-navigation'=> __( 'Admin Navigation','core-blueprint' ),
+			'admin-notices'   => __( 'Admin Notices',   'core-blueprint' ),
 			'reports'           => __( 'Reports',           'core-blueprint' ),
 			'notes'           => __( 'Notes',           'core-blueprint' ),
 			'permissions'     => __( 'Permissions',     'core-blueprint' ),
@@ -68,6 +70,15 @@ final class Preferences extends PageBase {
 			'about'           => __( 'About',           'core-blueprint' ),
 		];
 
+
+		// Admin Notices governance is a dedicated operator capability boundary.
+		// Preferences itself remains manage_options-gated in the current Base
+		// architecture; the tab and all mutation endpoints additionally require
+		// cb_manage_admin_notices.
+		if ( ! AdminNoticesAdmin::can_manage() ) {
+			unset( $tab_labels['admin-notices'] );
+			$available_tabs = array_values( array_diff( $available_tabs, [ 'admin-notices' ] ) );
+		}
 
 		// Reports preferences remain visible to anyone who can manage branding
 		// or Reports configuration. Module activation itself lives on Dashboard.
@@ -120,6 +131,7 @@ final class Preferences extends PageBase {
 			case 'appearance':      $this->render_appearance_tab( $tab, $tab_labels );      return;
 			case 'floating-menu':   $this->render_floating_menu_tab( $tab, $tab_labels );   return;
 			case 'admin-navigation':$this->render_admin_navigation_tab( $tab, $tab_labels ); return;
+			case 'admin-notices':   $this->render_admin_notices_tab( $tab, $tab_labels );    return;
 			case 'reports':           $this->render_reports_tab( $tab, $tab_labels );                            return;
 			case 'permissions':     $this->render_permissions_tab( $tab, $tab_labels );     return;
 			case 'notes':           $this->render_notes_tab( $tab, $tab_labels );           return;
@@ -207,6 +219,16 @@ final class Preferences extends PageBase {
 				'icon'  => 'menu',
 			],
 		];
+
+		if ( AdminNoticesAdmin::can_manage() ) {
+			$tab_cards[] = [
+				'slug'  => 'admin-notices',
+				'url'   => add_query_arg( 'tab', 'admin-notices', $base_url ),
+				'label' => __( 'Admin Notices', 'core-blueprint' ),
+				'desc'  => __( 'Control which audiences see supported WordPress admin notice sources while keeping operators and protected notices visible.', 'core-blueprint' ),
+				'icon'  => 'warning',
+			];
+		}
 
 
 		// Reports card - visible to operators with branding OR reports cap.
@@ -411,6 +433,24 @@ final class Preferences extends PageBase {
 		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 
+
+	/** Render site-wide Admin Notices audience governance policy. */
+	private function render_admin_notices_tab( string $tab, array $tab_labels ): void {
+		if ( ! AdminNoticesAdmin::can_manage() ) {
+			$this->render_subsystem_missing( __( 'You do not have permission to manage Admin Notices.', 'core-blueprint' ) );
+			return;
+		}
+
+		$state  = AdminNoticesAdmin::editor_state();
+		$notice = isset( $_GET['admin_notices_notice'] )
+			? sanitize_key( wp_unslash( $_GET['admin_notices_notice'] ) )
+			: ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- redirect notice only.
+
+		ob_start();
+		include CB_CORE_DIR . 'templates/preferences-admin-notices.php';
+		$html = ob_get_clean();
+		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
+	}
 
 	/** Render site-wide native WordPress Admin Navigation presentation policy. */
 	private function render_admin_navigation_tab( string $tab, array $tab_labels ): void {
