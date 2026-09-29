@@ -171,4 +171,28 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( '#131648', $mark );
 		self::assertStringNotContainsString( 'assets/core-blueprint-icon.svg', $assets );
 	}
+	public function test_designer_launch_failures_are_visible_and_never_commit_incomplete_readiness(): void {
+		$root   = dirname( __DIR__, 2 );
+		$launch = (string) file_get_contents( $root . '/assets/js/features/designer-launch.js' );
+		$assets = (string) file_get_contents( $root . '/src/Design/Editor/Assets.php' );
+		$css    = (string) file_get_contents( $root . '/assets/css/design/designer-mode.css' );
+		$docs   = (string) file_get_contents( $root . '/docs/DESIGNER-MODE.md' );
+
+		self::assertStringContainsString( "const FAILURE_EVENT = 'cb:design-shell:failure';", $launch );
+		self::assertStringContainsString( "root.dataset.cbDesignLaunchState = 'error';", $launch );
+		self::assertStringContainsString( "notice.setAttribute('role', 'alert');", $launch );
+		self::assertStringContainsString( "return !pending;", $launch );
+		self::assertStringContainsString( "failPendingLaunchRoots(", $launch );
+		self::assertStringContainsString( "'direct-enter'", $launch );
+		self::assertStringContainsString( "'failureLabels' => [", $assets );
+		self::assertStringContainsString( "'boot'    => __( 'Designer could not start. Reload the page and try again.'", $assets );
+		self::assertStringContainsString( ':not([data-cb-design-launch-state="error"])', $css );
+		self::assertStringContainsString( '## Launch failure semantics', $docs );
+
+		$compose_position = strpos( $launch, 'composeHeader(root, shell, shellApi, { direct, exitUrl });' );
+		$ready_position   = strpos( $launch, "root.dataset.cbDesignLaunchInitialized = 'true';", $compose_position ?: 0 );
+		self::assertIsInt( $compose_position );
+		self::assertIsInt( $ready_position );
+		self::assertGreaterThan( $compose_position, $ready_position );
+	}
 }
