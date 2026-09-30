@@ -66,6 +66,21 @@ class ReleaseBuilderTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 builder.run_gate(['fixture-gate'], self.source, 'fixture')
 
+    def test_internal_changelog_history_is_source_only(self):
+        history = self.source / 'CHANGELOG-HISTORY.md'
+        history.write_text('internal pre-v1 history\n')
+
+        collected = {
+            path.relative_to(self.source).as_posix()
+            for path in builder.collect_files(self.source)
+        }
+        self.assertNotIn('CHANGELOG-HISTORY.md', collected)
+
+        archive_path = self.root / 'history-exclusion.zip'
+        self.archive(archive_path)
+        with zipfile.ZipFile(archive_path) as archive:
+            self.assertNotIn('core-blueprint/CHANGELOG-HISTORY.md', archive.namelist())
+
     def test_archive_rejects_extra_root(self):
         path = self.root / 'bad.zip'
         self.archive(path, extra=True)
