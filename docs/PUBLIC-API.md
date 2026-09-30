@@ -100,6 +100,8 @@ add_action( 'cb_core_register_extensions', static function (): void {
 
 `requires_api` is required and uses `major.minor`. Compatibility requires the same Core API major and a Base API minor greater than or equal to the requested minor. `requires_base` is optional and should be used only when a concrete Base product release is required beyond the API contract. No Composer-style range grammar is part of v1.
 
+`requires_api` expresses the minimum Core API contract a consumer needs; it is not a declaration of the currently installed Base API. A consumer that uses only Core API 1.0 contracts may continue to declare `1.0` under Base API 1.1, while a consumer of the Reorder Foundation must declare at least `1.1`.
+
 `status_id` is optional and references the separate `Modules\Status` registry. It is not an extension alias. Extension health remains the status vocabulary `ok|warn|err|off|unknown`; `off` is a deliberate state and is not collapsed to an unhealthy boolean.
 
 Read the Base-owned inventory projection through:
