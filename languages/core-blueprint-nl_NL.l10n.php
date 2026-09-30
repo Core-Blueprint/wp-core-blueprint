@@ -300,9 +300,15 @@ if ( ! is_array( $admin_columns ) || ! isset( $admin_columns['messages'] ) || ! 
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $admin_columns['messages'] );
 
+$admin_notices = require __DIR__ . '/admin-notices/core-blueprint-nl_NL.php';
+if ( ! is_array( $admin_notices ) || ! isset( $admin_notices['messages'] ) || ! is_array( $admin_notices['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $admin_notices['messages'] );
+
 $routing = require __DIR__ . '/routing/core-blueprint-nl_NL.php';
 if ( ! is_array( $routing ) || ! isset( $routing['messages'] ) || ! is_array( $routing['messages'] ) ) {
-    return [];
+    throw new RuntimeException( 'Invalid Core Blueprint routing locale catalog.' );
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $routing['messages'] );
 

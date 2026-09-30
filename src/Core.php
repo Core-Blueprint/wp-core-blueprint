@@ -88,11 +88,6 @@ final class Core {
 		// ::log() for high-volume events.
 		AuditLog::init_queue();
 
-		// URL Governance owns the opt-in clean category routing contract. It
-		// registers no public-route mutations until the administrator explicitly
-		// enables the policy; admin-post transport remains available while off.
-		\CB\Core\Routing\Bootstrap::boot();
-
 
 		// Built-in module registration filter.
 		add_filter( 'cb_core_modules', [ $this, 'register_builtin_modules' ] );
@@ -156,6 +151,16 @@ final class Core {
 		// listeners that auto-disable hide_from_admins when the operator
 		// count drops to zero.
 		\CB\Core\Permissions\Bootstrap::boot();
+
+		// URL Governance owns the opt-in clean category routing contract. It
+		// remains disabled by default and registers only explicit category paths.
+		// Runtime drift fails open to native WordPress routing.
+		\CB\Core\Routing\Bootstrap::boot();
+
+		// Admin Notices Governance - audience-scoped presentation policy for
+		// WordPress admin-notice producers. Runtime is fail-open, never parses
+		// arbitrary notice HTML, and never suppresses notices from CB Operators.
+		\CB\Core\AdminNotices\Bootstrap::boot();
 
 		// Media Replace subsystem - native attachment replacement with a
 		// transactional rollback path. v1 preserves attachment ID, filename
@@ -355,8 +360,8 @@ final class Core {
 
 		OptionPolicy::sync_active();
 
-		// Clean Archive URLs are persistent policy. Deactivation removes the
-		// owned rewrite rules, so reactivation must schedule their reconciliation.
+		// Deactivation removes URL Governance rewrite rules while preserving
+		// policy, so activation schedules safe reconciliation when enabled.
 		\CB\Core\Routing\Runtime::reconcile_activation();
 
 		Retention::schedule();
@@ -425,7 +430,7 @@ final class Core {
 		] );
 
 		// Remove URL Governance rewrites before Base stops participating in
-		// WordPress routing. The policy itself remains stored for reactivation.
+		// WordPress routing. The policy remains stored for reactivation.
 		\CB\Core\Routing\Runtime::cleanup_deactivation();
 
 		// Clear bypass transient window. Persistent emergency-bypass option is

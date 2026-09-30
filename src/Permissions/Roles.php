@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace CB\Core\Permissions;
 
+use CB\Core\AdminNotices\Capabilities as AdminNoticeCapabilities;
+
 defined( 'ABSPATH' ) || exit;
 
 final class Roles {
@@ -72,6 +74,9 @@ final class Roles {
 		'cb_manage_branding',
 		'cb_manage_permissions',
 		'cb_manage_roles',
+		// Audience governance for WordPress admin notices. Presentation-only;
+		// deliberately not part of the privileged fingerprint trigger set.
+		AdminNoticeCapabilities::MANAGE,
 		'cb_manage_content_models',
 		'cb_manage_media_replace',
 		'cb_upload_svg',

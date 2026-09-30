@@ -15,6 +15,8 @@ namespace CB\Core\Setup;
 use CB\Core\Setup\Checks\AccessModeCheck;
 use CB\Core\Setup\Checks\AdminColumnsCheck;
 use CB\Core\Setup\Checks\AdminNavigationCheck;
+use CB\Core\Setup\Checks\AdminNoticesCheck;
+use CB\Core\Setup\Checks\RoutingUrlsCheck;
 use CB\Core\Setup\Checks\AuditRetentionCheck;
 use CB\Core\Setup\Checks\AuditVerbosityCheck;
 use CB\Core\Setup\Checks\ContentModelsCheck;
@@ -36,7 +38,6 @@ use CB\Core\Setup\Checks\OperationalToolsCheck;
 use CB\Core\Setup\Checks\PrivacyIpHandlingCheck;
 use CB\Core\Setup\Checks\PrivilegedAccessProtectionCheck;
 use CB\Core\Setup\Checks\PrivilegedAccessReviewCheck;
-use CB\Core\Setup\Checks\RoutingUrlsCheck;
 use CB\Core\Setup\Checks\SnippetsCheck;
 use CB\Core\Setup\Checks\TwoFactorReadinessCheck;
 
@@ -93,6 +94,7 @@ final class Registry {
 			),
 			new AdminNavigationCheck(),
 			new AdminColumnsCheck(),
+			new AdminNoticesCheck(),
 			new RoutingUrlsCheck(),
 		];
 

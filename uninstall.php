@@ -97,6 +97,10 @@ $foundation_options = [
 	'cb_core_content_models_schema',
 	'cb_core_content_models_rewrite_dirty',
 	'cb_core_admin_columns_policy',
+	'cb_core_admin_notices_policy',
+	'cb_core_admin_notice_sources',
+	'cb_core_routing_rewrite_dirty',
+	'cb_core_routing_runtime_suspended',
 	'cb_core_compliance_resource_assignments',
 	'cb_core_compliance_custom_resources',
 	'cb_core_hud_disabled',
@@ -119,8 +123,6 @@ $foundation_options = [
 	'cb_core_role_policy_drift',
 	'cb_core_profiles_apply_lock',
 	'cb_core_setup_state',
-	'cb_core_routing_rewrite_dirty',
-	'cb_core_routing_runtime_suspended',
 ];
 
 foreach ( $foundation_options as $opt ) {
@@ -164,10 +166,10 @@ $cb_base_transient_prefixes = [
 	'cb_core_new_token_',
 	'cb_core_privileged_guard_sweep',
 	'cb_core_media_replace_notice_',
+	'cb_core_routing_preflight_',
 	'cb_core_alert_',
 	'cb_core_profile_',
 	'cb_core_2fa_ch_',
-	'cb_core_routing_preflight_',
 	'cb_core_two_factor_profile_notice_',
 	'cb_cm_',
 ];
