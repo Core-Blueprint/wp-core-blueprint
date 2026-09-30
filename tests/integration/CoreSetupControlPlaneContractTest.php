@@ -86,12 +86,12 @@ final class CB_Base_Core_Setup_Control_Plane_Contract_Test extends WP_UnitTestCa
 		Lifecycle::initialize_activation( false );
 		$summary = Summary::build( Registry::all() );
 
-		self::assertSame( 28, $summary['total'] );
+		self::assertSame( 29, $summary['total'] );
 		self::assertArrayNotHasKey( 'percentage', $summary );
 		self::assertArrayNotHasKey( 'progress', $summary );
 
 		$total = array_sum( $summary['counts'] );
-		self::assertSame( 28, $total );
+		self::assertSame( 29, $total );
 		self::assertSame(
 			[ 'environment-availability', 'administrator-recovery', 'safeguards', 'operations', 'mail', 'privacy-governance', 'cms-tools' ],
 			array_keys( $summary['sections'] )
