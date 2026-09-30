@@ -63,7 +63,6 @@ final class AIClientObserver {
 				return;
 			}
 
-			TraceContext::enter( $id, $link['correlation_id'] );
 			$key = $descriptor['model_key'];
 			self::$stacks[ $key ] ??= [];
 			self::$stacks[ $key ][] = [
@@ -103,7 +102,6 @@ final class AIClientObserver {
 				'evidence'      => $evidence,
 				'completed_at'  => gmdate( 'Y-m-d H:i:s' ),
 			] );
-			TraceContext::leave( $frame['id'] );
 		} );
 	}
 
@@ -114,7 +112,6 @@ final class AIClientObserver {
 					Repository::update( $frame['id'], [
 						'capture_state' => 'generation-started',
 					] );
-					TraceContext::leave( $frame['id'] );
 				}
 			}
 			self::$stacks = [];
