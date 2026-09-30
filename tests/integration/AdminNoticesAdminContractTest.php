@@ -7,6 +7,7 @@ use CB\Core\AdminNotices\Policy;
 use CB\Core\AdminNotices\SourceLedger;
 use CB\Core\AdminNotices\SourceResolver;
 use CB\Core\AdminNotices\Visibility;
+use CB\Core\Admin\Admin as CoreAdmin;
 use CB\Core\Admin\Pages\Preferences;
 use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
@@ -48,6 +49,7 @@ final class CB_Base_Admin_Notices_Admin_Contract_Test extends WP_UnitTestCase {
 		self::assertTrue( Admin::can_manage() );
 		self::assertFalse( current_user_can( 'manage_options' ) );
 		self::assertSame( Capabilities::MANAGE, ( new Preferences() )->capability() );
+		self::assertSame( Capabilities::MANAGE, CoreAdmin::parent_menu_capability() );
 	}
 
 	public function test_ana1b_approved_pure_operator_renders_only_the_admin_notices_preferences_surface(): void {

@@ -16,6 +16,8 @@ use CB\Core\Admin\Pages\Logs;
 use CB\Core\Admin\Pages\Preferences;
 use CB\Core\Admin\Pages\Safeguards;
 use CB\Core\Admin\Pages\Settings as SettingsPage;
+use CB\Core\AdminNotices\Admin as AdminNoticesAdmin;
+use CB\Core\AdminNotices\Capabilities as AdminNoticesCapabilities;
 use CB\Core\Compliance\Admin\Page as CompliancePage;
 use CB\Core\UI\AdminTheme;
 use CB\Core\UI\AdminThemeAdapters;
@@ -58,21 +60,60 @@ final class Admin {
 			return;
 		}
 
-		add_menu_page(
+		$menu_capability = (string) apply_filters(
+			'cb_core_menu_capability',
+			self::parent_menu_capability()
+		);
+
+		$hook = add_menu_page(
 			'Core Blueprint',
 			'Core Blueprint',
 			/**
 			 * Filter: cb_core_menu_capability
 			 *
-			 * The capability required to see Core Blueprint admin pages.
-			 * Defaults to 'manage_options'.
+			 * The capability required to see the Core Blueprint parent menu.
+			 * Defaults to manage_options, or the delegated Admin Notices capability
+			 * for an approved manager who intentionally lacks manage_options.
 			 */
-			(string) apply_filters( 'cb_core_menu_capability', 'manage_options' ),
+			$menu_capability,
 			CB_CORE_PARENT_MENU,
 			[ __CLASS__, 'render_parent_landing' ],
 			self::get_menu_icon(),
 			3
 		);
+
+		if ( $hook && ! current_user_can( 'manage_options' ) && AdminNoticesAdmin::can_manage() ) {
+			add_action( 'load-' . $hook, [ __CLASS__, 'redirect_delegated_parent_landing' ] );
+		}
+	}
+
+	/** Capability used for the parent menu for the current user. */
+	public static function parent_menu_capability(): string {
+		if ( current_user_can( 'manage_options' ) ) {
+			return 'manage_options';
+		}
+
+		return AdminNoticesAdmin::can_manage()
+			? AdminNoticesCapabilities::MANAGE
+			: 'manage_options';
+	}
+
+	/**
+	 * Keep delegated Admin Notices managers out of the Dashboard surface.
+	 *
+	 * WordPress may route a parent-menu click through the auto-generated
+	 * top-level submenu item. Redirect before admin output starts so the
+	 * delegated user lands on the only Preferences tab they are allowed to use.
+	 */
+	public static function redirect_delegated_parent_landing(): void {
+		if ( current_user_can( 'manage_options' ) || ! AdminNoticesAdmin::can_manage() ) {
+			return;
+		}
+
+		wp_safe_redirect(
+			admin_url( 'admin.php?page=' . Preferences::SLUG . '&tab=admin-notices' )
+		);
+		exit;
 	}
 
 	/** Render the dashboard when the top-level parent entry is selected. */
