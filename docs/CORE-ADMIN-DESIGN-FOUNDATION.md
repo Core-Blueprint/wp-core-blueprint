@@ -71,7 +71,7 @@ Supported structural elements include `__header`, `__title`, `__icon`, `__body`,
 
 ## `metric-tiles`
 
-Compact KPI/value tile rendered with the current `CB\Core\UI\Tile` metric variant. This semantic exposes only the generic metric contract; legacy/navigation tile variants are not included.
+Compact KPI/value tile rendered with the current `CB\Core\UI\Tile` metric variant. This semantic exposes only the generic metric contract; navigation variants are not included.
 
 ```php
 echo CB\Core\UI\Tile::render( [
@@ -83,7 +83,7 @@ echo CB\Core\UI\Tile::render( [
 ] );
 ```
 
-Base owns metric-card surface, label/value hierarchy and semantic state treatment. Consumers own the KPI meaning and layout of multiple tiles. `Tile::quick` and navigation/status tile variants are not part of this semantic requirement.
+Base owns metric-card surface, label/value hierarchy and semantic state treatment. Consumers own the KPI meaning and layout of multiple tiles. Navigation/status tile variants are not part of this semantic requirement.
 
 ## `notices`
 
@@ -255,4 +255,4 @@ The resulting contract uses `.cb-core-desc.cb-core-dual[data-active]`, `.cb-core
 
 Private/page-specific styles such as `table-cols`, `policy-table`, `log-table`, Scanner/Reports-specific table rules and other feature composition CSS are **not** promoted by this contract merely because more than one Base screen uses them. A future public primitive requires a genuinely reusable markup/behavior contract first.
 
-Legacy/navigation tile variants such as `Tile::quick` are not promoted by the `metric-tiles` contract.
+Navigation and status-navigation tile variants are not promoted by the `metric-tiles` contract.
