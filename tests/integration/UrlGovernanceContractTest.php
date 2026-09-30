@@ -365,6 +365,64 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_content_only_edits_do_not_dirty_routing_but_slug_changes_do(): void {
+		$page_id = self::factory()->post->create(
+			[
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_title'  => 'Routing page',
+				'post_name'   => 'routing-page',
+			]
+		);
+
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+		delete_option( 'cb_core_routing_rewrite_dirty' );
+
+		wp_update_post(
+			[
+				'ID'         => $page_id,
+				'post_title' => 'Routing page updated',
+			]
+		);
+		self::assertFalse( get_option( 'cb_core_routing_rewrite_dirty', false ) );
+
+		wp_update_post(
+			[
+				'ID'        => $page_id,
+				'post_name' => 'routing-page-renamed',
+			]
+		);
+		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
+	}
+
+	public function test_category_relationship_changes_dirty_routing_when_policy_is_enabled(): void {
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		$post_id = self::factory()->post->create(
+			[
+				'post_status' => 'publish',
+				'post_title'  => 'Relationship routing post',
+				'post_name'   => 'relationship-routing-post',
+			]
+		);
+
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+		delete_option( 'cb_core_routing_rewrite_dirty' );
+
+		wp_set_post_categories( $post_id, [ $term_id ], false );
+
+		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
+	}
+
 	public function test_runtime_fails_open_after_a_post_enable_route_collision_and_recovers_after_resolution(): void {
 		global $wp_rewrite;
 
