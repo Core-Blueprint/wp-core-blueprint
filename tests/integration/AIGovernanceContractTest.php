@@ -134,6 +134,18 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertSame( $parent_id, $row->parent_activity_id );
 	}
 
+	public function test_stale_ability_trace_is_not_reused_outside_live_ability_execution(): void {
+		$stale_parent = wp_generate_uuid4();
+		$stale_correlation = wp_generate_uuid4();
+		TraceContext::enter( $stale_parent, $stale_correlation, 'ability' );
+
+		$link = TraceContext::link();
+
+		$this->assertNull( $link['parent_activity_id'] );
+		$this->assertNotSame( $stale_correlation, $link['correlation_id'] );
+		$this->assertTrue( wp_is_uuid( $link['correlation_id'], 4 ) );
+	}
+
 	public function test_wordpress_ai_client_observer_records_provider_model_and_tokens_without_content(): void {
 		$provider_metadata = new class() {
 			public function getId(): string { return 'openai'; }
@@ -242,6 +254,7 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 			'transport'      => 'http',
 			'request_id'     => 'customer secret request identifier',
 			'failure_reason' => 'Private tool output must never become governance evidence.',
+			'resource_uri'   => 'fixture://top/path?token=top-secret',
 			'params'         => [ 'uri' => 'fixture://resource/path?token=never-store-this' ],
 		] );
 
@@ -255,6 +268,8 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'Private tool output', (string) $row->evidence );
 		$this->assertStringNotContainsString( 'never-store-this', (string) $row->evidence );
 		$this->assertSame( 'fixture://resource/path', $row->evidence_decoded['mcp']['params']['uri'] );
+		$this->assertSame( 'fixture://top/path', $row->evidence_decoded['mcp']['resource_uri'] );
+		$this->assertStringNotContainsString( 'top-secret', (string) $row->evidence );
 	}
 
 	public function test_mcp_default_server_integration_composes_existing_handler(): void {
