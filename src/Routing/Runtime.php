@@ -36,6 +36,9 @@ final class Runtime {
 		add_action( 'created_category', [ self::class, 'category_changed' ], 10, 0 );
 		add_action( 'edited_category', [ self::class, 'category_changed' ], 10, 0 );
 		add_action( 'delete_category', [ self::class, 'category_changed' ], 10, 0 );
+		add_action( 'created_term', [ self::class, 'public_term_changed' ], 10, 3 );
+		add_action( 'edited_term', [ self::class, 'public_term_changed' ], 10, 3 );
+		add_action( 'delete_term', [ self::class, 'public_term_changed' ], 10, 3 );
 
 		add_action( 'save_post', [ self::class, 'public_content_changed' ], 10, 3 );
 		add_action( 'before_delete_post', [ self::class, 'public_content_deleted' ], 10, 2 );
@@ -274,6 +277,19 @@ final class Runtime {
 
 	public static function category_changed(): void {
 		if ( Policy::enabled() ) {
+			self::mark_rewrite_dirty();
+		}
+	}
+
+	public static function public_term_changed( int $term_id, int $term_taxonomy_id, string $taxonomy ): void {
+		unset( $term_id, $term_taxonomy_id );
+
+		if ( ! Policy::enabled() || 'category' === $taxonomy ) {
+			return;
+		}
+
+		$object = get_taxonomy( $taxonomy );
+		if ( $object instanceof \WP_Taxonomy && $object->public ) {
 			self::mark_rewrite_dirty();
 		}
 	}
