@@ -166,7 +166,29 @@ final class CategoryRoutes {
 	}
 
 	public static function canonical_url( WP_Term $term, int $page = 1 ): string {
-		$link = get_term_link( $term, 'category' );
+		if ( 'category' !== $term->taxonomy ) {
+			return '';
+		}
+
+		// Resolve the same clean permastruct even during activation preflight,
+		// when the persistent policy is still disabled. Downstream term_link and
+		// home_url filters still receive and finish the resulting public URL.
+		$term_id = (int) $term->term_id;
+		$clean = static function ( string $termlink, WP_Term $candidate ) use ( $term_id ): string {
+			if ( 'category' !== $candidate->taxonomy || (int) $candidate->term_id !== $term_id ) {
+				return $termlink;
+			}
+
+			return self::clean_permastruct( $termlink );
+		};
+
+		add_filter( 'pre_term_link', $clean, 5, 2 );
+		try {
+			$link = get_term_link( $term, 'category' );
+		} finally {
+			remove_filter( 'pre_term_link', $clean, 5 );
+		}
+
 		if ( is_wp_error( $link ) || ! is_string( $link ) || '' === $link ) {
 			return '';
 		}
