@@ -15,6 +15,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 	private mixed $saved_permalink_structure;
 	private mixed $saved_category_base;
 	private mixed $saved_rewrite_dirty;
+	private mixed $saved_runtime_suspended;
 	private array $saved_extra_rules_top = [];
 
 	public function set_up(): void {
@@ -26,12 +27,14 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->saved_permalink_structure = get_option( 'permalink_structure', '__cb_missing__' );
 		$this->saved_category_base       = get_option( 'category_base', '__cb_missing__' );
 		$this->saved_rewrite_dirty       = get_option( 'cb_core_routing_rewrite_dirty', '__cb_missing__' );
+		$this->saved_runtime_suspended   = get_option( 'cb_core_routing_runtime_suspended', '__cb_missing__' );
 		$this->saved_extra_rules_top     = is_array( $wp_rewrite->extra_rules_top ) ? $wp_rewrite->extra_rules_top : [];
 
 		$this->reset_settings_cache();
 		update_option( 'permalink_structure', '/%category%/%postname%/', false );
 		update_option( 'category_base', '', false );
 		Settings::set_key( Policy::SETTINGS_KEY, Policy::defaults(), 'test:routing' );
+		delete_option( 'cb_core_routing_runtime_suspended' );
 		$this->reset_settings_cache();
 	}
 
@@ -42,6 +45,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->restore_option( 'permalink_structure', $this->saved_permalink_structure );
 		$this->restore_option( 'category_base', $this->saved_category_base );
 		$this->restore_option( 'cb_core_routing_rewrite_dirty', $this->saved_rewrite_dirty );
+		$this->restore_option( 'cb_core_routing_runtime_suspended', $this->saved_runtime_suspended );
 		$wp_rewrite->extra_rules_top = $this->saved_extra_rules_top;
 		$this->reset_settings_cache();
 
@@ -323,6 +327,57 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 			self::assertStringNotContainsString( '/p([0-9]+)', $regex );
 			self::assertStringNotContainsString( 'blog', $regex );
 		}
+	}
+
+	public function test_runtime_fails_open_after_a_post_enable_route_collision_and_recovers_after_resolution(): void {
+		global $wp_rewrite;
+
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		$term    = get_term( $term_id, 'category' );
+		self::assertInstanceOf( WP_Term::class, $term );
+
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+		Runtime::mark_rewrite_dirty();
+		Runtime::prepare_runtime();
+
+		self::assertTrue( Runtime::is_active() );
+
+		$page_id = self::factory()->post->create(
+			[
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_title'  => 'Blog landing',
+				'post_name'   => 'blog',
+			]
+		);
+
+		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
+		Runtime::prepare_runtime();
+
+		self::assertFalse( Runtime::is_active() );
+		self::assertSame( '1', get_option( 'cb_core_routing_runtime_suspended' ) );
+
+		$wp_rewrite->extra_rules_top = [];
+		Runtime::register_rewrite_rules();
+		self::assertSame( [], $wp_rewrite->extra_rules_top );
+
+		$wordpress = home_url( '/category/blog/' );
+		self::assertSame(
+			$wordpress,
+			Runtime::filter_term_link( $wordpress, $term, 'category' )
+		);
+
+		wp_delete_post( $page_id, true );
+		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
+		Runtime::prepare_runtime();
+
+		self::assertTrue( Runtime::is_active() );
+		self::assertFalse( get_option( 'cb_core_routing_runtime_suspended', false ) );
 	}
 
 	public function test_disabled_core_setup_evidence_reports_wordpress_default_without_collision_attention(): void {
