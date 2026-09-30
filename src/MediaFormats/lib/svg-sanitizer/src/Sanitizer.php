@@ -630,18 +630,20 @@ class Sanitizer
             return true;
         }
 
-        // Allow relative URIs.
-        if ('/' === substr($value, 0, 1)) {
+        // Core Blueprint: when remote references are disabled, direct hrefs must
+        // remain self-contained too. Fragments and the raster data URIs below
+        // remain allowed; site-relative and HTTP(S) resources are rejected.
+        if (!$this->removeRemoteReferences && '/' === substr($value, 0, 1)) {
             return true;
         }
 
-        // Allow HTTPS domains.
-        if ('https://' === substr($value, 0, 8)) {
+        // Allow HTTPS domains only when remote references are permitted.
+        if (!$this->removeRemoteReferences && 'https://' === substr($value, 0, 8)) {
             return true;
         }
 
-        // Allow HTTP domains.
-        if ('http://' === substr($value, 0, 7)) {
+        // Allow HTTP domains only when remote references are permitted.
+        if (!$this->removeRemoteReferences && 'http://' === substr($value, 0, 7)) {
             return true;
         }
 
