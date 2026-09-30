@@ -171,18 +171,19 @@ final class Preflight {
 		$candidates = [];
 
 		$exact = get_page_by_path( trim( $path, '/' ), OBJECT, $post_types );
-		if ( $exact instanceof \WP_Post && 'publish' === $exact->post_status ) {
+		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
+		if ( $exact instanceof \WP_Post && in_array( $exact->post_status, $public_statuses, true ) ) {
 			$candidates[ $exact->ID ] = $exact;
 		}
 
 		$slug_candidates = get_posts(
 			[
 				'post_type'        => $post_types,
-				'post_status'      => 'publish',
+				'post_status'      => array_values( get_post_stati( [ 'public' => true ], 'names' ) ),
 				'name'             => $slug,
-				'posts_per_page'   => 50,
+				'posts_per_page'   => -1,
 				'no_found_rows'    => true,
-				'suppress_filters' => false,
+				'suppress_filters' => true,
 			]
 		);
 		foreach ( $slug_candidates as $candidate ) {
@@ -220,15 +221,20 @@ final class Preflight {
 			return [];
 		}
 
-		$placeholders = implode( ', ', array_fill( 0, count( $post_types ), '%s' ) );
-		$args         = array_merge( $post_types, [ '^p[0-9]+$' ] );
-		$sql          = $wpdb->prepare(
+		$post_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
+		if ( [] === $post_statuses ) {
+			return [];
+		}
+
+		$type_placeholders   = implode( ', ', array_fill( 0, count( $post_types ), '%s' ) );
+		$status_placeholders = implode( ', ', array_fill( 0, count( $post_statuses ), '%s' ) );
+		$args                = array_merge( $post_types, $post_statuses, [ '^p[0-9]+$' ] );
+		$sql                 = $wpdb->prepare(
 			"SELECT ID
 			FROM {$wpdb->posts}
-			WHERE post_status = 'publish'
-				AND post_type IN ({$placeholders})
-				AND post_name REGEXP %s
-			LIMIT 500",
+			WHERE post_type IN ({$type_placeholders})
+				AND post_status IN ({$status_placeholders})
+				AND post_name REGEXP %s",
 			...$args
 		);
 		$ids = is_string( $sql ) ? $wpdb->get_col( $sql ) : [];
@@ -386,8 +392,7 @@ final class Preflight {
 				AND tt.term_id = %d
 				AND p.post_type = %s
 				AND p.post_status NOT IN ('trash', 'auto-draft')
-				AND p.post_name LIKE %s
-			LIMIT 100",
+				AND p.post_name LIKE %s",
 			'category',
 			$term_id,
 			'post',
