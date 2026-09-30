@@ -103,7 +103,7 @@ final class MCPEventProjector {
 	/** @param array<string,mixed> $tags @return array<string,mixed> */
 	private static function evidence( array $tags ): array {
 		$out = [];
-		foreach ( [ 'status', 'method', 'server_id', 'revision', 'component_type', 'error_category' ] as $key ) {
+		foreach ( [ 'status', 'method', 'server_id', 'revision', 'component_type', 'error_type', 'error_category' ] as $key ) {
 			if ( ! isset( $tags[ $key ] ) || ! is_scalar( $tags[ $key ] ) ) {
 				continue;
 			}
