@@ -46,8 +46,8 @@ final class Runtime {
 		add_action( 'set_object_terms', [ self::class, 'category_relationship_changed' ], 10, 6 );
 		add_action( 'update_option_permalink_structure', [ self::class, 'routing_structure_changed' ], 10, 0 );
 		add_action( 'update_option_category_base', [ self::class, 'routing_structure_changed' ], 10, 0 );
-		add_action( 'activated_plugin', [ self::class, 'routing_structure_changed' ], 10, 0 );
-		add_action( 'deactivated_plugin', [ self::class, 'routing_structure_changed' ], 10, 0 );
+		add_action( 'activated_plugin', [ self::class, 'plugin_routing_structure_changed' ], 10, 1 );
+		add_action( 'deactivated_plugin', [ self::class, 'plugin_routing_structure_changed' ], 10, 1 );
 		add_action( 'switch_theme', [ self::class, 'routing_structure_changed' ], 10, 0 );
 		add_action( 'upgrader_process_complete', [ self::class, 'routing_structure_changed' ], 10, 0 );
 	}
@@ -401,6 +401,14 @@ final class Runtime {
 		) {
 			self::mark_rewrite_dirty();
 		}
+	}
+
+	public static function plugin_routing_structure_changed( string $plugin ): void {
+		if ( defined( 'CB_CORE_BASENAME' ) && CB_CORE_BASENAME === $plugin ) {
+			return;
+		}
+
+		self::routing_structure_changed();
 	}
 
 	public static function routing_structure_changed(): void {
