@@ -15,7 +15,7 @@ namespace CB\Core\AIGovernance;
 defined( 'ABSPATH' ) || exit;
 
 final class TraceContext {
-	/** @var array<int,array{activity_id:string,correlation_id:string,scope:string}> */
+	/** @var array<int,array{activity_id:string,correlation_id:string,scope:string,ability_depth:int}> */
 	private static array $frames = [];
 
 	/** @return array{correlation_id:string,parent_activity_id:?string} */
@@ -28,19 +28,23 @@ final class TraceContext {
 	}
 
 	public static function prepare_ability_open(): void {
-		if ( self::ability_execution_depth() <= 1 ) {
-			self::$frames = [];
-		}
+		$depth = self::ability_execution_depth();
+		self::$frames = array_values( array_filter(
+			self::$frames,
+			static fn( array $frame ): bool => 'ability' !== $frame['scope'] || $frame['ability_depth'] < $depth
+		) );
 	}
 
 	public static function enter( string $activity_id, string $correlation_id, string $scope = 'generic' ): void {
 		if ( ! wp_is_uuid( $activity_id, 4 ) || ! wp_is_uuid( $correlation_id, 4 ) ) {
 			return;
 		}
+		$scope = sanitize_key( $scope ) ?: 'generic';
 		self::$frames[] = [
-			'activity_id'   => $activity_id,
+			'activity_id'    => $activity_id,
 			'correlation_id' => $correlation_id,
-			'scope'          => sanitize_key( $scope ) ?: 'generic',
+			'scope'          => $scope,
+			'ability_depth'  => 'ability' === $scope ? self::ability_execution_depth() : 0,
 		];
 	}
 
@@ -62,25 +66,25 @@ final class TraceContext {
 		return self::current()['correlation_id'] ?? null;
 	}
 
-	/** @return array{activity_id:string,correlation_id:string,scope:string}|null */
+	/** @return array{activity_id:string,correlation_id:string,scope:string,ability_depth:int}|null */
 	private static function current(): ?array {
+		$ability_depth = self::ability_execution_depth();
 		while ( [] !== self::$frames ) {
 			$current = self::$frames[ array_key_last( self::$frames ) ];
 			if ( ! is_array( $current ) ) {
 				array_pop( self::$frames );
 				continue;
 			}
-			if ( 'ability' === $current['scope'] && ! self::ability_execution_active() ) {
-				self::$frames = [];
-				return null;
+			if (
+				'ability' === $current['scope']
+				&& ( $ability_depth < 1 || $current['ability_depth'] > $ability_depth )
+			) {
+				array_pop( self::$frames );
+				continue;
 			}
 			return $current;
 		}
 		return null;
-	}
-
-	private static function ability_execution_active(): bool {
-		return self::ability_execution_depth() > 0;
 	}
 
 	private static function ability_execution_depth(): int {
