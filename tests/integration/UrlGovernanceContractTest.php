@@ -161,6 +161,23 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( '/blog/p2/', implode( ' ', $result['blockers'] ) );
 	}
 
+	public function test_preflight_does_not_block_draft_p_number_posts(): void {
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		self::factory()->post->create(
+			[
+				'post_status'   => 'draft',
+				'post_title'    => 'Draft pagination slug',
+				'post_name'     => 'p2',
+				'post_category' => [ $term_id ],
+			]
+		);
+
+		$result = Preflight::run();
+
+		self::assertTrue( $result['ready'] );
+		self::assertStringNotContainsString( '/blog/p2/', implode( ' ', $result['blockers'] ) );
+	}
+
 	public function test_preflight_blocks_public_cpt_single_on_reserved_compact_pagination_route(): void {
 		register_post_type(
 			'cb_route_item',
