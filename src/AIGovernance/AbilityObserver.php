@@ -162,6 +162,7 @@ final class AbilityObserver {
 			return;
 		}
 		$source = SourceContext::detect();
+		TraceContext::prepare_ability_open();
 		$link = TraceContext::link();
 		$activity_id = wp_generate_uuid4();
 		global $wp_version;
