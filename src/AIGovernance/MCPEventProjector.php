@@ -19,7 +19,11 @@ final class MCPEventProjector {
 
 		$status = isset( $tags['status'] ) ? sanitize_key( (string) $tags['status'] ) : '';
 		$failure_reason = self::machine_identifier( $tags['failure_reason'] ?? null );
-		$outcome = 'success' === $status ? 'succeeded' : 'failed';
+		$outcome = match ( $status ) {
+			'success' => 'succeeded',
+			'error'   => 'failed',
+			default   => 'unknown',
+		};
 		if ( 'permission_denied' === $failure_reason ) {
 			$outcome = 'denied';
 		}
@@ -99,7 +103,7 @@ final class MCPEventProjector {
 	/** @param array<string,mixed> $tags @return array<string,mixed> */
 	private static function evidence( array $tags ): array {
 		$out = [];
-		foreach ( [ 'method', 'server_id', 'revision', 'component_type', 'error_category' ] as $key ) {
+		foreach ( [ 'status', 'method', 'server_id', 'revision', 'component_type', 'error_category' ] as $key ) {
 			if ( ! isset( $tags[ $key ] ) || ! is_scalar( $tags[ $key ] ) ) {
 				continue;
 			}
