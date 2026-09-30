@@ -231,19 +231,28 @@ final class Preflight {
 	private static function public_pagination_candidates(): array {
 		global $wpdb;
 
-		static $cached_last_changed = null;
-		static $cached_candidates   = [];
-
-		$last_changed = (string) wp_cache_get_last_changed( 'posts' );
-		if ( null !== $cached_last_changed && hash_equals( $cached_last_changed, $last_changed ) ) {
-			return $cached_candidates;
-		}
+		static $cached_signature  = null;
+		static $cached_candidates = [];
 
 		$post_types    = array_values( get_post_types( [ 'public' => true ], 'names' ) );
 		$post_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
+		sort( $post_types, SORT_STRING );
+		sort( $post_statuses, SORT_STRING );
+
+		$signature = Fingerprint::hash(
+			[
+				'posts_last_changed' => (string) wp_cache_get_last_changed( 'posts' ),
+				'post_types'         => $post_types,
+				'post_statuses'      => $post_statuses,
+			]
+		);
+		if ( null !== $cached_signature && hash_equals( $cached_signature, $signature ) ) {
+			return $cached_candidates;
+		}
+
 		if ( [] === $post_types || [] === $post_statuses || ! $wpdb instanceof \wpdb ) {
-			$cached_last_changed = $last_changed;
-			$cached_candidates   = [];
+			$cached_signature  = $signature;
+			$cached_candidates = [];
 			return [];
 		}
 
@@ -279,8 +288,8 @@ final class Preflight {
 		}
 
 		ksort( $candidates, SORT_STRING );
-		$cached_last_changed = $last_changed;
-		$cached_candidates   = $candidates;
+		$cached_signature  = $signature;
+		$cached_candidates = $candidates;
 		return $candidates;
 	}
 
