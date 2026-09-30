@@ -25,7 +25,6 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 			CB_CORE_SETTINGS,
 			ReviewRepository::OPTION,
 			MailSettings::OPTION,
-			MailSettings::ENABLED_OPTION,
 			'active_plugins',
 			'admin_email',
 			AdminNavigationPolicy::OPTION,
@@ -126,7 +125,6 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 		$mail['smtp_username'] = '';
 		$mail['smtp_password'] = 'raw-secret-password';
 		update_option( MailSettings::OPTION, $mail, false );
-		update_option( MailSettings::ENABLED_OPTION, '1', true );
 		update_option( 'active_plugins', [], false );
 
 		$strategy = Registry::get( 'mail-delivery-strategy' );
@@ -159,7 +157,6 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 		$mail = MailSettings::defaults();
 		$mail['delivery_enabled'] = false;
 		update_option( MailSettings::OPTION, $mail, false );
-		update_option( MailSettings::ENABLED_OPTION, '0', true );
 
 		$check = Registry::get( 'mail-delivery-readiness' );
 		self::assertInstanceOf( CheckInterface::class, $check );

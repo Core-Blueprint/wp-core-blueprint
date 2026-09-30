@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 /**
- * Aggregate Mail module state used by the existing Dashboard activation card.
+ * Canonical aggregate Mail module state used by the Dashboard activation card.
  *
- * Mail Delivery and Mail Designer are independent runtime capabilities. This
- * compatibility state is enabled whenever either capability is enabled.
- * Enabling the legacy module from Dashboard preserves historic behaviour by
- * enabling Delivery; disabling it is an explicit master-off and disables both.
+ * Mail Delivery and Mail Designer are independent persisted capabilities. The
+ * aggregate module state is enabled whenever either capability is enabled.
+ * Enabling the module-level control starts Delivery while Designer remains an
+ * explicit opt-in; disabling the module disables both capabilities.
  *
  * @package Core_Blueprint
  * @since   1.0.0
@@ -33,8 +33,8 @@ final class State implements ModuleStateInterface {
 
 		$previous = $current;
 		if ( $enabled ) {
-			// Preserve the pre-split Dashboard meaning: activating Mail enables
-			// outbound delivery. Designer remains explicit opt-in.
+			// The module-level on action starts outbound delivery by default.
+			// Designer remains an explicit opt-in capability.
 			$current['delivery_enabled'] = true;
 		} else {
 			$current['delivery_enabled'] = false;

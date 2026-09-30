@@ -64,6 +64,18 @@ if ( '1' === getenv( 'CB_PERFORMANCE_QUERY_TRACE' ) ) {
         $cb_f3_mark_phase( 'wp_loaded' );
     }, PHP_INT_MAX );
 
+    add_action( 'admin_init', static function () use ( $cb_f3_mark_phase ): void {
+        $cb_f3_mark_phase( 'admin_init' );
+    }, PHP_INT_MAX );
+
+    add_action( 'admin_menu', static function () use ( $cb_f3_mark_phase ): void {
+        $cb_f3_mark_phase( 'admin_menu' );
+    }, PHP_INT_MAX );
+
+    add_action( 'admin_enqueue_scripts', static function () use ( $cb_f3_mark_phase ): void {
+        $cb_f3_mark_phase( 'admin_load_enqueue' );
+    }, PHP_INT_MAX );
+
     add_action( 'wp', static function () use ( $cb_f3_mark_phase ): void {
         $cb_f3_mark_phase( 'wp' );
     }, PHP_INT_MAX );
@@ -166,19 +178,29 @@ write_auth_guard
 profile_as frontend control_frontend 0 0
 profile_as frontend control_operator_frontend 0 1
 profile_as frontend control_operator_frontend_rendered 0 1 0 1 1
-profile_as admin control_admin 0 1
+profile_as admin control_admin 0 1 0 1
 
 php "$REQUEST" activate
 
-# Base-enabled comparison requests.
+# Capture the first authenticated admin request separately so one-time
+# activation/schema/policy reconciliation cost can be distinguished from the
+# later steady-state generic admin request.
+profile_as admin admin_first_request 1 1 0 1
+
+# Base-enabled steady-state comparison requests.
 profile_as frontend frontend 1 0
 profile_as frontend operator_frontend 1 1 1
 profile_as frontend operator_frontend_rendered 1 1 1 1 1
-profile_as admin admin 1 1
+profile_as admin admin 1 1 0 1
 profile_as dashboard dashboard 1 1
 profile_as logs logs 1 1
 profile_as reports reports 1 1
 profile_as safeguards safeguards 1 1
+
+# Verify that canonical disabled modules do not continue to execute their
+# active runtime paths on an otherwise identical authenticated admin request.
+php "$REQUEST" disable_modules
+profile_as admin admin_modules_disabled 1 1 0 1
 
 php -r '
   $dir = rtrim($argv[1], "/\\");
@@ -204,6 +226,7 @@ php -r '
       "operator_frontend"         => [ "control" => "control_operator_frontend", "base" => "operator_frontend" ],
       "operator_frontend_rendered"=> [ "control" => "control_operator_frontend_rendered", "base" => "operator_frontend_rendered" ],
       "generic_admin"             => [ "control" => "control_admin", "base" => "admin" ],
+      "generic_admin_modules_disabled" => [ "control" => "control_admin", "base" => "admin_modules_disabled" ],
   ];
 
   $metricPaths = [
@@ -270,17 +293,16 @@ php -r '
       return $trace;
   };
 
-  $controlTracePath = $traceDir . "/control_operator_frontend_rendered.json";
-  $baseTracePath = $traceDir . "/operator_frontend_rendered.json";
-  if (!is_file($controlTracePath) || !is_file($baseTracePath)) {
-      throw new RuntimeException("F3A rendered operator query traces are missing.");
-  }
-
-  $controlTrace = $loadTrace($controlTracePath);
-  $baseTrace = $loadTrace($baseTracePath);
-
   $phaseCounts = static function (array $entries): array {
-      $counts = [ "bootstrap" => 0, "wp" => 0, "enqueue" => 0, "render" => 0 ];
+      $counts = [
+          "bootstrap" => 0,
+          "wp" => 0,
+          "enqueue" => 0,
+          "render" => 0,
+          "admin_init" => 0,
+          "admin_menu" => 0,
+          "admin_load_enqueue" => 0,
+      ];
       foreach ($entries as $entry) {
           if (!is_array($entry)) {
               continue;
@@ -292,13 +314,6 @@ php -r '
       }
       return $counts;
   };
-
-  $controlPhaseCounts = $phaseCounts($controlTrace["entries"]);
-  $basePhaseCounts = $phaseCounts($baseTrace["entries"]);
-  $phaseDelta = [];
-  foreach ($basePhaseCounts as $phase => $count) {
-      $phaseDelta[$phase] = $count - ($controlPhaseCounts[$phase] ?? 0);
-  }
 
   $queryKey = static function (array $entry): string {
       return (string) ($entry["phase"] ?? "") . "\n" . (string) ($entry["sql"] ?? "");
@@ -329,16 +344,77 @@ php -r '
       return $extra;
   };
 
-  $queryAttribution = [
-      "control_trace" => "query-traces/control_operator_frontend_rendered.json",
-      "base_trace" => "query-traces/operator_frontend_rendered.json",
-      "phase_counts" => [
-          "control" => $controlPhaseCounts,
-          "base" => $basePhaseCounts,
-          "delta" => $phaseDelta,
+  $buildAttribution = static function (
+      string $controlPath,
+      string $basePath
+  ) use ($loadTrace, $phaseCounts, $extraQueries): array {
+      if (!is_file($controlPath) || !is_file($basePath)) {
+          throw new RuntimeException("F3A query attribution trace is missing.");
+      }
+
+      $controlTrace = $loadTrace($controlPath);
+      $baseTrace = $loadTrace($basePath);
+      $controlPhaseCounts = $phaseCounts($controlTrace["entries"]);
+      $basePhaseCounts = $phaseCounts($baseTrace["entries"]);
+      $phaseDelta = [];
+      foreach ($basePhaseCounts as $phase => $count) {
+          $phaseDelta[$phase] = $count - ($controlPhaseCounts[$phase] ?? 0);
+      }
+
+      return [
+          "phase_counts" => [
+              "control" => $controlPhaseCounts,
+              "base" => $basePhaseCounts,
+              "delta" => $phaseDelta,
+          ],
+          "base_extra_queries" => $extraQueries($baseTrace["entries"], $controlTrace["entries"]),
+          "control_only_queries" => $extraQueries($controlTrace["entries"], $baseTrace["entries"]),
+      ];
+  };
+
+  $frontendAttribution = $buildAttribution(
+      $traceDir . "/control_operator_frontend_rendered.json",
+      $traceDir . "/operator_frontend_rendered.json"
+  );
+  $queryAttribution = array_merge(
+      [
+          "control_trace" => "query-traces/control_operator_frontend_rendered.json",
+          "base_trace" => "query-traces/operator_frontend_rendered.json",
       ],
-      "base_extra_queries" => $extraQueries($baseTrace["entries"], $controlTrace["entries"]),
-      "control_only_queries" => $extraQueries($controlTrace["entries"], $baseTrace["entries"]),
+      $frontendAttribution
+  );
+
+  $adminAttribution = [
+      "steady_state" => array_merge(
+          [
+              "control_trace" => "query-traces/control_admin.json",
+              "base_trace" => "query-traces/admin.json",
+          ],
+          $buildAttribution(
+              $traceDir . "/control_admin.json",
+              $traceDir . "/admin.json"
+          )
+      ),
+      "first_request" => array_merge(
+          [
+              "control_trace" => "query-traces/control_admin.json",
+              "base_trace" => "query-traces/admin_first_request.json",
+          ],
+          $buildAttribution(
+              $traceDir . "/control_admin.json",
+              $traceDir . "/admin_first_request.json"
+          )
+      ),
+      "modules_disabled" => array_merge(
+          [
+              "control_trace" => "query-traces/control_admin.json",
+              "base_trace" => "query-traces/admin_modules_disabled.json",
+          ],
+          $buildAttribution(
+              $traceDir . "/control_admin.json",
+              $traceDir . "/admin_modules_disabled.json"
+          )
+      ),
   ];
 
   $out = [
@@ -347,6 +423,7 @@ php -r '
       "records" => $records,
       "comparisons" => $comparisons,
       "query_attribution" => $queryAttribution,
+      "admin_query_attribution" => $adminAttribution,
   ];
   file_put_contents(
       $dir . "/baseline.json",

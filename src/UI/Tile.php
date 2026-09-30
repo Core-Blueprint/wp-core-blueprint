@@ -3,16 +3,12 @@ declare(strict_types=1);
 /**
  * Tile - CB UI primitive for tile-shaped content cards.
  *
- * Four variants, all built on a shared .cb-core-tile base (component
+ * Three variants, all built on a shared .cb-core-tile base (component
  * CSS in assets/css/components/tile-grid.css):
  *
  *   - 'navigation' calm navigation card for ordinary admin destinations.
  *
  *   - 'status-nav' navigation card with an optional operational state-dot.
- *
- *   - 'quick'      legacy navigation variant kept for backwards compatibility.
- *                  New code should prefer navigation or status-nav.
- *
  *
  *   - 'metric'  compact KPI tile with label/value/state-line. Used for
  *               maintenance-report KPI strips and similar at-a-glance
@@ -50,7 +46,6 @@ final class Tile {
 
 	public const VARIANT_NAVIGATION = 'navigation';
 	public const VARIANT_STATUS_NAV = 'status-nav';
-	public const VARIANT_QUICK      = 'quick';
 	public const VARIANT_METRIC     = 'metric';
 
 	/**
@@ -89,32 +84,16 @@ final class Tile {
 	 * @return string HTML - safe to echo directly.
 	 */
 	public static function render( array $args ): string {
-		$variant = (string) ( $args['variant'] ?? self::VARIANT_QUICK );
+		$variant = (string) ( $args['variant'] ?? self::VARIANT_NAVIGATION );
 		switch ( $variant ) {
-			case self::VARIANT_NAVIGATION:
-				return self::render_navigation( $args, false );
 			case self::VARIANT_STATUS_NAV:
 				return self::render_navigation( $args, true );
 			case self::VARIANT_METRIC:
 				return self::render_metric( $args );
-			case self::VARIANT_QUICK:
+			case self::VARIANT_NAVIGATION:
 			default:
-				return self::render_quick( $args );
+				return self::render_navigation( $args, false );
 		}
-	}
-
-	/**
-	 * Quick-link tile: kicker, title, meta, optional href, optional state-dot.
-	 *
-	 * Recognised args:
-	 *   kicker, title, meta : strings (escaped here)
-	 *   href                : URL - if set the tile renders as <a>
-	 *   state               : 'active'|'inactive'|'warning'|'idle'|'error' for the
-	 *                         top-right state-dot. Omit to render no dot.
-	 *   class               : extra class string appended to the wrapper
-	 */
-	private static function render_quick( array $args ): string {
-		return self::render_navigation_tile( $args, 'cb-core-tile--quick', true );
 	}
 
 	/**

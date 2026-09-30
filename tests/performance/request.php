@@ -20,7 +20,7 @@ $profile_scenarios = [
     'reports'    => [ 'type' => 'admin', 'page' => 'core-blueprint-reports' ],
     'safeguards' => [ 'type' => 'admin', 'page' => 'core-blueprint-safeguards' ],
 ];
-$allowed_stages = array_merge([ 'install', 'activate', 'cleanup' ], array_keys($profile_scenarios));
+$allowed_stages = array_merge([ 'install', 'activate', 'disable_modules', 'cleanup' ], array_keys($profile_scenarios));
 
 if (!in_array($stage, $allowed_stages, true)) {
     fwrite(STDERR, "Usage: php tests/performance/request.php <" . implode('|', $allowed_stages) . ">\n");
@@ -361,6 +361,7 @@ if (1 !== preg_match('/^[A-Za-z0-9_]+$/D', $table_prefix)) {
 
 $is_install = 'install' === $stage;
 $is_activate = 'activate' === $stage;
+$is_disable_modules = 'disable_modules' === $stage;
 $is_profile = isset($profile_scenarios[$stage]);
 $is_admin = $is_profile && 'admin' === ($profile_scenarios[$stage]['type'] ?? '');
 $page = $is_profile ? (string) ($profile_scenarios[$stage]['page'] ?? '') : '';
@@ -474,6 +475,28 @@ try {
         cb_f1_expect(is_plugin_active($plugin_basename), 'Core Blueprint did not become active in performance setup.');
 
         fwrite(STDOUT, "[F1] activate PASS\n");
+        exit(0);
+    }
+
+    if ($is_disable_modules) {
+        $admin = get_user_by('login', 'cbadmin');
+        cb_f1_expect($admin instanceof WP_User, 'Performance administrator is missing before module disablement.');
+        wp_set_current_user((int) $admin->ID);
+
+        $definitions = \CB\Core\Modules\ActivationRegistry::definitions();
+        cb_f1_expect([] !== $definitions, 'Canonical module activation registry is empty.');
+
+        $disabled = [];
+        foreach ($definitions as $id => $definition) {
+            $state = $definition['state'] ?? '';
+            cb_f1_expect(is_string($state) && '' !== $state, 'Module activation definition has no state class: ' . (string) $id);
+            $state::set_enabled(false, 'performance-harness');
+            cb_f1_expect(false === $state::is_enabled(), 'Module remained enabled after canonical disablement: ' . (string) $id);
+            $disabled[] = (string) $id;
+        }
+
+        sort($disabled);
+        fwrite(STDOUT, "[F3A] canonical module disablement PASS: " . implode(',', $disabled) . "\n");
         exit(0);
     }
 

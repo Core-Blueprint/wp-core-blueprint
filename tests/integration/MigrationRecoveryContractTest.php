@@ -57,6 +57,31 @@ final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_repeated_admin_failsafe_checks_use_negative_option_cache_for_absent_recovery_state(): void {
+		global $wpdb;
+
+		self::assertInstanceOf( wpdb::class, $wpdb );
+		$_SERVER['SCRIPT_NAME'] = '/wp-admin/index.php';
+		$_SERVER['REQUEST_URI'] = '/wp-admin/index.php';
+		$_REQUEST = [];
+
+		delete_option( 'cb_core_migration_recovery_state' );
+		wp_cache_delete( 'cb_core_migration_recovery_state', 'options' );
+		wp_cache_delete( 'notoptions', 'options' );
+
+		$before = (int) $wpdb->num_queries;
+		for ( $i = 0; $i < 50; $i++ ) {
+			self::assertFalse( Recovery::filter_failsafe_bypass( false ) );
+		}
+		$delta = (int) $wpdb->num_queries - $before;
+
+		self::assertLessThanOrEqual(
+			1,
+			$delta,
+			'An absent migration recovery state must be negatively cached instead of re-queried for each admin capability check.'
+		);
+	}
+
 	public function test_activation_ignores_pre_switch_cached_recovery_state_after_database_swap(): void {
 		global $wpdb;
 

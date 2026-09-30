@@ -19,7 +19,8 @@
  * @since   1.0.0
  */
 
-import { apiPost, copyToClipboard } from '../core/dom.js';
+import { apiPost } from '../core/dom.js';
+import { copy as copyToClipboard } from '../core/clipboard.js';
 
 const dataEl = document.getElementById( 'wp-script-module-data-@cb-core/failsafe' );
 const data   = dataEl ? JSON.parse( dataEl.textContent ) : {};
@@ -247,9 +248,12 @@ if ( nonce ) {
 	// ─── Token display → copy to clipboard ──────────────────────────────────
 	const copyToken = ( target ) => {
 		const text = ( target?.textContent || '' ).trim();
-		if ( text ) {
-			copyToClipboard( text, target );
-		}
+		if ( ! text ) return;
+
+		void copyToClipboard( text, {
+			successMessage: i18n.copiedToClipboard || 'Copied to clipboard.',
+			errorMessage: i18n.copyFailed || 'Could not copy to clipboard.',
+		} );
 	};
 
 	document.addEventListener( 'click', ( event ) => {

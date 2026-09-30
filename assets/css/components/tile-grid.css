@@ -6,7 +6,6 @@
  *   .cb-core-tile                       BASE - flex-column, surface, border, radius
  *   .cb-core-tile--navigation           Calm navigation target
  *   .cb-core-tile--status-nav           Navigation target with state-dot
- *   .cb-core-tile--quick                Legacy nav target with hover-gradient strip
  *   .cb-core-tile--metric               KPI display with label/value/state
  *
  * State modifiers (apply to metric tiles and shared state helpers):
@@ -19,13 +18,13 @@
  *
  * Sub-elements (BEM):
  *
- *   __kicker     small uppercase top label (quick variant)
+ *   __kicker     small top label for navigation variants
  *   __title      main heading
  *   __subtitle   secondary line under title
  *   __icon       dashicon
  *   __note       small text body
  *   __meta       footer-left muted text
- *   __dot        static state-dot (quick variant, top-right)
+ *   __dot        static state-dot (status-nav variant, top-right)
  *   __dot--*     state colour for the static dot
  *   __label      KPI label (metric variant)
  *   __value      KPI value (metric variant)
@@ -147,50 +146,7 @@
 	opacity: 0.85;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
- * VARIANT - quick (nav target)
- * ═════════════════════════════════════════════════════════════════════ */
-
-.cb-core-tile--quick:hover,
-.cb-core-tile--quick:focus-visible {
-	background: var(--cb-surface-2);
-	border-color: var(--cb-accent);
-	transform: translateY(-1px);
-	outline: none;
-}
-
-.cb-core-tile--quick::before {
-	content: "";
-	position: absolute;
-	inset: 0 0 auto 0;
-	height: 2px;
-	background: var(--cb-grad);
-	opacity: 0;
-	transition: opacity 120ms ease;
-}
-
-.cb-core-tile--quick:hover::before {
-	opacity: 1;
-}
-
-.cb-core-tile--quick .cb-core-tile__kicker {
-	display: block;
-	font-size: var(--cb-fs-xs);
-	font-weight: var(--cb-fw-semibold);
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--cb-text-muted);
-}
-
-.cb-core-tile--quick .cb-core-tile__title {
-	margin-top: var(--cb-space-1);
-}
-
-.cb-core-tile--quick .cb-core-tile__meta {
-	margin-top: var(--cb-space-2);
-}
-
-/* Quick-tile state-dot (top-right, static). Keep its visual treatment
+/* Status-navigation state-dot (top-right, static). Keep its visual treatment
  * identical to the Status Menu Foundation indicator: a flat 8px state dot
  * without a ring or ambient glow. Positioning remains tile-specific. */
 .cb-core-tile__dot {
@@ -209,14 +165,6 @@
 .cb-core-tile__dot--error { background: var(--cb-danger); }
 .cb-core-tile__dot--idle,
 .cb-core-tile__dot--inactive { background: var(--cb-text-faint); }
-
-.cb-core-tile--quick[data-state="inactive"] {
-	opacity: 0.55;
-}
-
-.cb-core-tile--quick[data-state="inactive"]:hover {
-	opacity: 0.85;
-}
 
 /* ═══════════════════════════════════════════════════════════════════════
  * VARIANT - metric (KPI tile: label / value / state)
