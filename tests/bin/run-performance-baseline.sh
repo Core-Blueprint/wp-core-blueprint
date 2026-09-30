@@ -197,6 +197,11 @@ profile_as logs logs 1 1
 profile_as reports reports 1 1
 profile_as safeguards safeguards 1 1
 
+# Verify that canonical disabled modules do not continue to execute their
+# active runtime paths on an otherwise identical authenticated admin request.
+php "$REQUEST" disable_modules
+profile_as admin admin_modules_disabled 1 1 0 1
+
 php -r '
   $dir = rtrim($argv[1], "/\\");
   $traceDir = $dir . "/query-traces";
@@ -221,6 +226,7 @@ php -r '
       "operator_frontend"         => [ "control" => "control_operator_frontend", "base" => "operator_frontend" ],
       "operator_frontend_rendered"=> [ "control" => "control_operator_frontend_rendered", "base" => "operator_frontend_rendered" ],
       "generic_admin"             => [ "control" => "control_admin", "base" => "admin" ],
+      "generic_admin_modules_disabled" => [ "control" => "control_admin", "base" => "admin_modules_disabled" ],
   ];
 
   $metricPaths = [
@@ -397,6 +403,16 @@ php -r '
           $buildAttribution(
               $traceDir . "/control_admin.json",
               $traceDir . "/admin_first_request.json"
+          )
+      ),
+      "modules_disabled" => array_merge(
+          [
+              "control_trace" => "query-traces/control_admin.json",
+              "base_trace" => "query-traces/admin_modules_disabled.json",
+          ],
+          $buildAttribution(
+              $traceDir . "/control_admin.json",
+              $traceDir . "/admin_modules_disabled.json"
           )
       ),
   ];
