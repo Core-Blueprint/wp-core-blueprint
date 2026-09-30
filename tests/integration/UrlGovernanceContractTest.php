@@ -487,6 +487,10 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 				'https://nl.example.test/nl/blog/p2/',
 				CategoryRoutes::canonical_url( $term, 2 )
 			);
+			self::assertSame(
+				'https://nl.example.test/nl/blog/feed/',
+				CategoryRoutes::feed_url( $term )
+			);
 		} finally {
 			remove_filter( 'term_link', $language_context, 50 );
 		}
