@@ -148,6 +148,7 @@ final class AbilityObserver {
 						'evidence'      => $frame['evidence'],
 						'error_code'    => $frame['error_code'],
 					] );
+					TraceContext::leave( $frame['id'] );
 				}
 				unset( self::$stacks[ $ability_name ] );
 			}
@@ -161,6 +162,8 @@ final class AbilityObserver {
 			return;
 		}
 		$source = SourceContext::detect();
+		$link = TraceContext::link();
+		$activity_id = wp_generate_uuid4();
 		global $wp_version;
 		$evidence = array_replace_recursive(
 			[
@@ -173,7 +176,10 @@ final class AbilityObserver {
 			$evidence
 		);
 		$id = Repository::insert( [
-			'operation_type' => 'ability',
+			'activity_id'       => $activity_id,
+			'correlation_id'    => $link['correlation_id'],
+			'parent_activity_id' => $link['parent_activity_id'],
+			'operation_type'    => 'ability',
 			'operation'      => $ability_name,
 			'transport'      => $source['transport'],
 			'source_id'      => $source['source_id'],
@@ -185,6 +191,7 @@ final class AbilityObserver {
 		if ( false === $id ) {
 			return;
 		}
+		TraceContext::enter( $id, $link['correlation_id'] );
 		self::$stacks[ $ability_name ] ??= [];
 		self::$stacks[ $ability_name ][] = [
 			'id'            => $id,
@@ -228,6 +235,7 @@ final class AbilityObserver {
 			'evidence'      => array_replace_recursive( $frame['evidence'], $evidence ),
 			'completed_at'  => gmdate( 'Y-m-d H:i:s' ),
 		] );
+		TraceContext::leave( $frame['id'] );
 	}
 
 	private static function has_current( string $ability_name ): bool {
@@ -257,5 +265,6 @@ final class AbilityObserver {
 	/** @internal */
 	public static function reset_for_tests(): void {
 		self::$stacks = [];
+		TraceContext::reset_for_tests();
 	}
 }
