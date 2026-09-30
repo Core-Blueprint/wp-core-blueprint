@@ -378,7 +378,8 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 			static fn( string $query, string $regex ): bool =>
 				str_contains( $regex, '/p([0-9]+)' )
 				&& str_contains( $regex, 'blog' )
-				&& 'index.php?category_name=$matches[1]&paged=$matches[2]' === $query,
+				&& str_contains( $query, 'category_name=$matches[1]&paged=$matches[2]' )
+				&& str_contains( $query, 'cb_core_clean_archive=1' ),
 			ARRAY_FILTER_USE_BOTH
 		);
 
@@ -421,7 +422,8 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertIsString( $wp->matched_rule );
 		self::assertStringContainsString( '/p([0-9]+)', $wp->matched_rule );
 		self::assertStringContainsString( 'blog', $wp->matched_rule );
-		self::assertSame( 'category_name=blog&paged=2', $wp->matched_query );
+		self::assertStringContainsString( 'category_name=blog&paged=2', $wp->matched_query );
+		self::assertStringContainsString( 'cb_core_clean_archive=1', $wp->matched_query );
 	}
 	public function test_term_link_changes_only_after_explicit_enable(): void {
 		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
@@ -647,6 +649,37 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 			remove_filter( 'category_rewrite_rules', $language_rules, 10 );
 			remove_filter( 'query_vars', $language_query_var );
 		}
+	}
+
+	public function test_final_fail_open_boundary_removes_downstream_transformed_owned_rules(): void {
+		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		$owned = Runtime::filter_category_rewrite_rules( [] );
+		self::assertNotEmpty( $owned );
+
+		$transformed = [];
+		foreach ( $owned as $regex => $query ) {
+			$shifted = str_replace(
+				[ '$matches[3]', '$matches[2]', '$matches[1]' ],
+				[ '$matches[4]', '$matches[3]', '$matches[2]' ],
+				$query
+			);
+			$transformed[ '^(en|nl)/' . ltrim( $regex, '^' ) ] =
+				str_replace( 'index.php?', 'index.php?lang=$matches[1]&', $shifted );
+		}
+		$transformed['^keep-me/?$'] = 'index.php?keep=1';
+
+		update_option( 'cb_core_routing_runtime_suspended', '1', false );
+
+		$filtered = Runtime::filter_generated_rules( $transformed );
+
+		self::assertSame( [ '^keep-me/?$' => 'index.php?keep=1' ], $filtered );
 	}
 
 	public function test_redirect_canonical_suppresses_only_clean_canonical_shapes(): void {
