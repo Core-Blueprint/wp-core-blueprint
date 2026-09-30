@@ -120,6 +120,7 @@ $foundation_options = [
 	'cb_core_profiles_apply_lock',
 	'cb_core_setup_state',
 	'cb_core_routing_rewrite_dirty',
+	'cb_core_routing_runtime_suspended',
 ];
 
 foreach ( $foundation_options as $opt ) {
