@@ -724,6 +724,17 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertGreaterThan( 0, $evidence->context()['blocker_count'] );
 	}
 
+	public function test_routing_preferences_use_shared_base_composition_foundation(): void {
+		$template = file_get_contents( CB_CORE_DIR . 'templates/preferences-routing.php' );
+		self::assertIsString( $template );
+
+		self::assertStringContainsString( 'cb-core-preferences-section', $template );
+		self::assertStringContainsString( 'cb-core-stack', $template );
+		self::assertStringContainsString( 'widefat cb-core-kv', $template );
+		self::assertStringNotContainsString( 'cb-core-panel', $template );
+		self::assertStringNotContainsString( 'cb-core-kv-table', $template );
+	}
+
 	public function test_core_setup_registers_routing_as_optional_cms_tool(): void {
 		$check = Registry::get( 'routing-urls' );
 
