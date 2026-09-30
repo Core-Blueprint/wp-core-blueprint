@@ -4,6 +4,13 @@
 
 ## 1.0.0-rc1 — 2026-09-09
 
+### AI Governance WordPress-native observability
+
+- Observe the WordPress 7.0 AI Client through its official generation lifecycle and retain provider, model, capability, duration and token-count metadata without storing prompts or generated content.
+- Compose the official WordPress MCP Adapter default-server observability handler so MCP request, session, component and failure evidence is captured without replacing an existing handler.
+- Add evidence-based request-local correlation for directly nested governed operations, while refusing heuristic correlation across boundaries that do not expose a shared identifier.
+- Extend the dedicated AI Activity schema to v1.1 with indexed correlation, provider and model dimensions, matching filters and export fields while leaving the global Base database marker unchanged.
+
 ### Reorder Foundation motion polish
 
 - Add Base-owned reduced-motion-aware FLIP settling for pointer, keyboard and programmatic reorder moves, including animated rollback after persistence failure.
