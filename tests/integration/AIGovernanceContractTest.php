@@ -237,6 +237,8 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertSame( 'mcp/tools/call', $row->operation );
 		$this->assertSame( 'mcp-http', $row->transport );
 		$this->assertSame( 'wordpress-mcp-adapter', $row->source_id );
+		$this->assertSame( 'succeeded', $row->outcome );
+		$this->assertSame( 'success', $row->evidence_decoded['mcp']['status'] );
 		$this->assertSame( 'ability', $row->target_type );
 		$this->assertSame( 'fixture/write', $row->target_id );
 		$this->assertSame( 15, (int) $row->duration_ms );
@@ -270,6 +272,20 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertSame( 'fixture://resource/path', $row->evidence_decoded['mcp']['params']['uri'] );
 		$this->assertSame( 'fixture://top/path', $row->evidence_decoded['mcp']['resource_uri'] );
 		$this->assertStringNotContainsString( 'top-secret', (string) $row->evidence );
+	}
+
+	public function test_mcp_unknown_status_remains_unknown_instead_of_guessing_failure(): void {
+		$id = MCPEventProjector::record( 'mcp.request', [
+			'status'    => 'future-state',
+			'method'    => 'tools/call',
+			'transport' => 'http',
+		] );
+
+		$this->assertIsString( $id );
+		$row = Repository::get( $id );
+		$this->assertNotNull( $row );
+		$this->assertSame( 'unknown', $row->outcome );
+		$this->assertSame( 'future-state', $row->evidence_decoded['mcp']['status'] );
 	}
 
 	public function test_mcp_default_server_integration_composes_existing_handler(): void {
