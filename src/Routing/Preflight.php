@@ -153,7 +153,7 @@ final class Preflight {
 			return [];
 		}
 
-		$post_types = array_values( get_post_types( [ 'public' => true ], 'names' ) );
+		$post_types = array_keys( self::viewable_post_type_objects() );
 		if ( [] === $post_types ) {
 			return [];
 		}
@@ -161,15 +161,15 @@ final class Preflight {
 		$candidates = [];
 
 		$exact = get_page_by_path( trim( $path, '/' ), OBJECT, $post_types );
-		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
-		if ( $exact instanceof \WP_Post && in_array( $exact->post_status, $public_statuses, true ) ) {
+		$viewable_statuses = self::viewable_post_status_names();
+		if ( $exact instanceof \WP_Post && is_post_publicly_viewable( $exact ) ) {
 			$candidates[ $exact->ID ] = $exact;
 		}
 
 		$slug_candidates = get_posts(
 			[
 				'post_type'        => $post_types,
-				'post_status'      => array_values( get_post_stati( [ 'public' => true ], 'names' ) ),
+				'post_status'      => $viewable_statuses,
 				'name'             => $slug,
 				'posts_per_page'   => -1,
 				'no_found_rows'    => true,
@@ -177,7 +177,7 @@ final class Preflight {
 			]
 		);
 		foreach ( $slug_candidates as $candidate ) {
-			if ( $candidate instanceof \WP_Post ) {
+			if ( $candidate instanceof \WP_Post && is_post_publicly_viewable( $candidate ) ) {
 				$candidates[ $candidate->ID ] = $candidate;
 			}
 		}
@@ -224,7 +224,7 @@ final class Preflight {
 		static $cached_key        = null;
 		static $cached_candidates = [];
 
-		$post_type_objects = get_post_types( [ 'public' => true ], 'objects' );
+		$post_type_objects = self::viewable_post_type_objects();
 		$post_types        = [];
 		$post_type_routes  = [];
 
@@ -243,7 +243,7 @@ final class Preflight {
 		ksort( $post_type_routes, SORT_STRING );
 		sort( $post_types, SORT_STRING );
 
-		$post_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
+		$post_statuses = self::viewable_post_status_names();
 		sort( $post_statuses, SORT_STRING );
 
 		$cache_payload = wp_json_encode(
@@ -309,7 +309,7 @@ final class Preflight {
 		$slug       = basename( trim( $path, '/' ) );
 		$collisions = [];
 
-		foreach ( get_taxonomies( [ 'public' => true ], 'objects' ) as $taxonomy ) {
+		foreach ( self::viewable_taxonomy_objects() as $taxonomy ) {
 			if (
 				! $taxonomy instanceof WP_Taxonomy
 				|| 'category' === $taxonomy->name
@@ -367,7 +367,7 @@ final class Preflight {
 	/** @return array<string,string> archive path => label */
 	private static function public_post_type_archive_paths(): array {
 		$paths = [];
-		$types = get_post_types( [ 'public' => true ], 'objects' );
+		$types = self::viewable_post_type_objects();
 
 		foreach ( $types as $type ) {
 			if ( ! $type instanceof WP_Post_Type || ! $type->has_archive ) {
@@ -395,7 +395,7 @@ final class Preflight {
 	/** @return array<string,string> taxonomy route path => label */
 	private static function public_taxonomy_paths(): array {
 		$paths      = [];
-		$taxonomies = get_taxonomies( [ 'public' => true ], 'objects' );
+		$taxonomies = self::viewable_taxonomy_objects();
 
 		foreach ( $taxonomies as $taxonomy ) {
 			if ( ! $taxonomy instanceof WP_Taxonomy || 'category' === $taxonomy->name || false === $taxonomy->rewrite ) {
@@ -415,6 +415,42 @@ final class Preflight {
 		return $paths;
 	}
 
+
+	/** @return array<string,WP_Post_Type> */
+	private static function viewable_post_type_objects(): array {
+		$out = [];
+		foreach ( get_post_types( [], 'objects' ) as $type ) {
+			if ( $type instanceof WP_Post_Type && is_post_type_viewable( $type ) ) {
+				$out[ $type->name ] = $type;
+			}
+		}
+		ksort( $out, SORT_STRING );
+		return $out;
+	}
+
+	/** @return string[] */
+	private static function viewable_post_status_names(): array {
+		$out = [];
+		foreach ( get_post_stati( [], 'objects' ) as $status ) {
+			if ( is_object( $status ) && isset( $status->name ) && is_post_status_viewable( $status ) ) {
+				$out[] = (string) $status->name;
+			}
+		}
+		sort( $out, SORT_STRING );
+		return array_values( array_unique( $out ) );
+	}
+
+	/** @return array<string,WP_Taxonomy> */
+	private static function viewable_taxonomy_objects(): array {
+		$out = [];
+		foreach ( get_taxonomies( [], 'objects' ) as $taxonomy ) {
+			if ( $taxonomy instanceof WP_Taxonomy && is_taxonomy_viewable( $taxonomy ) ) {
+				$out[ $taxonomy->name ] = $taxonomy;
+			}
+		}
+		ksort( $out, SORT_STRING );
+		return $out;
+	}
 
 	private function __construct() {}
 }
