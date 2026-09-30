@@ -16,7 +16,9 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 	private mixed $saved_category_base;
 	private mixed $saved_rewrite_dirty;
 	private mixed $saved_runtime_suspended;
+	private mixed $saved_rewrite_rules_option;
 	private array $saved_extra_rules_top = [];
+	private array $saved_extra_rules = [];
 
 	public function set_up(): void {
 		parent::set_up();
@@ -28,7 +30,9 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->saved_category_base       = get_option( 'category_base', '__cb_missing__' );
 		$this->saved_rewrite_dirty       = get_option( 'cb_core_routing_rewrite_dirty', '__cb_missing__' );
 		$this->saved_runtime_suspended   = get_option( 'cb_core_routing_runtime_suspended', '__cb_missing__' );
+		$this->saved_rewrite_rules_option = get_option( 'rewrite_rules', '__cb_missing__' );
 		$this->saved_extra_rules_top     = is_array( $wp_rewrite->extra_rules_top ) ? $wp_rewrite->extra_rules_top : [];
+		$this->saved_extra_rules         = is_array( $wp_rewrite->extra_rules ) ? $wp_rewrite->extra_rules : [];
 
 		$this->reset_settings_cache();
 		update_option( 'permalink_structure', '/%category%/%postname%/', false );
@@ -46,7 +50,9 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->restore_option( 'category_base', $this->saved_category_base );
 		$this->restore_option( 'cb_core_routing_rewrite_dirty', $this->saved_rewrite_dirty );
 		$this->restore_option( 'cb_core_routing_runtime_suspended', $this->saved_runtime_suspended );
+		$this->restore_option( 'rewrite_rules', $this->saved_rewrite_rules_option );
 		$wp_rewrite->extra_rules_top = $this->saved_extra_rules_top;
+		$wp_rewrite->extra_rules     = $this->saved_extra_rules;
 		$this->reset_settings_cache();
 
 		parent::tear_down();
@@ -153,6 +159,36 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 
 		self::assertFalse( $result['ready'] );
 		self::assertStringContainsString( '/blog/p2/', implode( ' ', $result['blockers'] ) );
+	}
+
+	public function test_preflight_blocks_public_cpt_single_on_reserved_compact_pagination_route(): void {
+		register_post_type(
+			'cb_route_item',
+			[
+				'public'      => true,
+				'has_archive' => false,
+				'rewrite'     => [ 'slug' => 'blog' ],
+			]
+		);
+
+		try {
+			self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+			self::factory()->post->create(
+				[
+					'post_type'   => 'cb_route_item',
+					'post_status' => 'publish',
+					'post_title'  => 'CPT pagination collision',
+					'post_name'   => 'p2',
+				]
+			);
+
+			$result = Preflight::run();
+
+			self::assertFalse( $result['ready'] );
+			self::assertStringContainsString( '/blog/p2/', implode( ' ', $result['blockers'] ) );
+		} finally {
+			unregister_post_type( 'cb_route_item' );
+		}
 	}
 
 	public function test_enabled_runtime_registers_specific_category_rules_without_a_root_catch_all(): void {
@@ -347,6 +383,11 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 
 		self::assertTrue( Runtime::is_active() );
 
+		$wp_rewrite->extra_rules_top = [];
+		Runtime::register_rewrite_rules();
+		$owned_rules = $wp_rewrite->extra_rules_top;
+		self::assertNotEmpty( $owned_rules );
+
 		$page_id = self::factory()->post->create(
 			[
 				'post_type'   => 'page',
@@ -361,6 +402,14 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 
 		self::assertFalse( Runtime::is_active() );
 		self::assertSame( '1', get_option( 'cb_core_routing_runtime_suspended' ) );
+
+		$filtered = Runtime::filter_generated_rules(
+			$owned_rules + [ '^keep-me$' => 'index.php?keep=1' ]
+		);
+		self::assertArrayHasKey( '^keep-me$', $filtered );
+		foreach ( array_keys( $owned_rules ) as $owned_regex ) {
+			self::assertArrayNotHasKey( $owned_regex, $filtered );
+		}
 
 		$wp_rewrite->extra_rules_top = [];
 		Runtime::register_rewrite_rules();
@@ -378,6 +427,15 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 
 		self::assertTrue( Runtime::is_active() );
 		self::assertFalse( get_option( 'cb_core_routing_runtime_suspended', false ) );
+
+		$restored = Runtime::filter_generated_rules( [ '^keep-me$' => 'index.php?keep=1' ] );
+		self::assertArrayHasKey( '^keep-me$', $restored );
+		self::assertTrue(
+			(bool) array_filter(
+				array_keys( $restored ),
+				static fn( string $regex ): bool => str_contains( $regex, 'blog' ) && str_contains( $regex, '/p([0-9]+)' )
+			)
+		);
 	}
 
 	public function test_disabled_core_setup_evidence_reports_wordpress_default_without_collision_attention(): void {
