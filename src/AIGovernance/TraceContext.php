@@ -42,7 +42,7 @@ final class TraceContext {
 			if ( self::$frames[ $index ]['activity_id'] !== $activity_id ) {
 				continue;
 			}
-			array_splice( self::$frames, $index, 1 );
+			array_splice( self::$frames, $index );
 			return;
 		}
 	}
