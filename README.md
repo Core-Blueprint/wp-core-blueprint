@@ -163,6 +163,14 @@ Media Replace allows an existing Media Library file to be replaced while preserv
 
 Relevant replacements are recorded through the audit layer.
 
+### Routing & URLs
+
+Routing & URLs provides opt-in governance for public category archive routes while keeping WordPress rewrite/query behavior canonical.
+
+Clean Archive URLs can remove the category base from category archives and use compact pagination such as `/blog/p2/`. Activation requires a collision preflight, existing WordPress category routes can redirect to the clean canonical routes, and the policy remains reversible.
+
+If a later content or routing change introduces a known collision, Core Blueprint suspends its clean archive rewrites and fails open to WordPress default category routing until the conflict is resolved.
+
 ### Media Formats
 
 *Optional module — can be enabled or disabled independently.*
