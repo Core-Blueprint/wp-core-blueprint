@@ -35,7 +35,7 @@ register_shutdown_function(
             : [];
 
         $ordered_marks = [];
-        foreach ( [ 'wp_loaded', 'wp', 'enqueue', 'render' ] as $phase ) {
+        foreach ( [ 'wp_loaded', 'wp', 'enqueue', 'render', 'admin_init', 'admin_menu', 'admin_load_enqueue' ] as $phase ) {
             if ( isset( $marks[ $phase ] ) && is_numeric( $marks[ $phase ] ) ) {
                 $ordered_marks[ $phase ] = max( 0, (int) $marks[ $phase ] );
             }
@@ -61,6 +61,15 @@ register_shutdown_function(
             }
             if ( isset( $ordered_marks['render'] ) && $position <= $ordered_marks['render'] ) {
                 return 'render';
+            }
+            if ( isset( $ordered_marks['admin_init'] ) && $position <= $ordered_marks['admin_init'] ) {
+                return 'admin_init';
+            }
+            if ( isset( $ordered_marks['admin_menu'] ) && $position <= $ordered_marks['admin_menu'] ) {
+                return 'admin_menu';
+            }
+            if ( isset( $ordered_marks['admin_load_enqueue'] ) && $position <= $ordered_marks['admin_load_enqueue'] ) {
+                return 'admin_load_enqueue';
             }
             return 'after_measurement';
         };
