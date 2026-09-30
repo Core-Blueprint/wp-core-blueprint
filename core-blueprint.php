@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Core Blueprint
  * Plugin URI:  https://coreblueprint.io
- * Description: The Core Blueprint foundation plugin. Security baseline, audit logging, failsafe lockout prevention, admin theming, site-wide locale preference, and governed shared services for the Core Blueprint suite.
- * Version:     1.0.0-rc1
+ * Description: Core Blueprint provides governance, security, audit logging, permissions, administration tools, and shared foundations for WordPress.
+ * Version:     1.0.0
  * Author:      Core Blueprint
  * Author URI:  https://coreblueprint.io
  * License:     GPL-2.0+
@@ -34,7 +34,7 @@ if ( defined( 'CB_CORE_FILE' ) || defined( 'CB_CORE_VERSION' ) ) {
 
 // ─── Plugin constants ─────────────────────────────────────────────────────────
 
-define( 'CB_CORE_VERSION',     '1.0.0-rc1' );
+define( 'CB_CORE_VERSION',     '1.0.0' );
 define( 'CB_CORE_API_VERSION', '1.1' );
 define( 'CB_CORE_MIN_PHP',         '8.4' );
 define( 'CB_CORE_RECOMMENDED_PHP', '8.5' );

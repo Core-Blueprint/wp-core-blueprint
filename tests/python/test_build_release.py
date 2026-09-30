@@ -24,7 +24,7 @@ class ReleaseBuilderTest(unittest.TestCase):
         for name in builder.ROOT_FILES:
             (self.source / name).write_text('fixture\n')
         (self.source / 'core-blueprint.php').write_text(
-            "<?php\n/**\n * Version: 1.0.0-rc1\n */\ndefine( 'CB_CORE_VERSION', '1.0.0-rc1' );\n")
+            "<?php\n/**\n * Version: 1.0.0\n */\ndefine( 'CB_CORE_VERSION', '1.0.0' );\n")
         for name in builder.RUNTIME_DIRS:
             (self.source / name).mkdir()
             (self.source / name / 'fixture.txt').write_text(name)
@@ -45,7 +45,7 @@ class ReleaseBuilderTest(unittest.TestCase):
 
     def test_failed_preflight_preserves_previous_artifact(self):
         self.output.mkdir()
-        archive = self.output / 'core-blueprint-1.0.0-rc1.zip'
+        archive = self.output / 'core-blueprint-1.0.0.zip'
         checksum = self.output / (archive.name + '.sha256')
         archive.write_bytes(b'previous accepted artifact')
         checksum.write_text('previous checksum')

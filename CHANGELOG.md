@@ -1,6 +1,17 @@
 # Core Blueprint changelog
 
-> This changelog tracks the public `1.0.0-rc1` launch line. Internal pre-v1 development history is retained in `CHANGELOG-HISTORY.md` in the source repository and is not included in production packages.
+> This changelog tracks the public v1 launch line. The earlier `1.0.0-rc1` candidate remains documented below as the supported update baseline. Internal pre-v1 development history is retained in `CHANGELOG-HISTORY.md` in the source repository and is not included in production packages.
+
+## 1.0.0 — 2026-09-30
+
+### Stable v1 and WordPress.org submission readiness
+
+- Promote the public plugin version from `1.0.0-rc1` to stable `1.0.0` while retaining the validated RC as the canonical update-smoke baseline.
+- Add a WordPress.org-standard `readme.txt` with installation, support, source, privacy and external-service disclosure.
+- Document the optional Brevo transactional email transport, including when data is sent and the applicable Brevo Terms of Service and Privacy Policy.
+- Require `readme.txt` inside the deterministic production package and regression-lock the stable tag, runtime version and package boundary.
+- Add a blocking WordPress.org Plugin Check `plugin_repo` CI gate against the exact production package.
+- Keep Base free of third-party plugin/theme updater injection and alternate executable software delivery.
 
 ## 1.0.0-rc1 — 2026-09-09
 

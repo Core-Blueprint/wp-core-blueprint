@@ -23,6 +23,7 @@ ROOT_FILES = (
     "core-blueprint.php",
     "uninstall.php",
     "README.md",
+    "readme.txt",
     "CHANGELOG.md",
     "LICENSE",
 )

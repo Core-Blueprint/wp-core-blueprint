@@ -235,7 +235,7 @@ jobs:
     env:
       CB_PREVIOUS_RC_SHA: 9786408510d51fa55ccc070ae3dc4aa5a1190856
       CB_PREVIOUS_RC_VERSION: 1.0.0-rc1
-      CB_CANDIDATE_VERSION: 1.0.0-rc1
+      CB_CANDIDATE_VERSION: 1.0.0
       CB_WP_CLI_PHAR: /tmp/core-blueprint-release-tools/wp-cli-2.12.0.phar
       WP_CORE_DIR: /tmp/core-blueprint-release-wp
       WP_TESTS_DIR: /tmp/core-blueprint-release-wp-tests
@@ -307,3 +307,29 @@ jobs:
             ${{ runner.temp }}/cb-release-candidate/core-blueprint-${{ env.CB_CANDIDATE_VERSION }}.zip.sha256
           if-no-files-found: error
           retention-days: 14
+
+
+  wordpress-org:
+    name: WordPress.org Plugin Check — plugin_repo
+    runs-on: ubuntu-24.04
+    needs: release-package
+
+    steps:
+      - name: Download canonical candidate artifact
+        uses: actions/download-artifact@v4.3.0
+        with:
+          name: core-blueprint-1.0.0
+          path: ${{ runner.temp }}/cb-wordpress-org-artifact
+
+      - name: Extract canonical candidate
+        run: |
+          mkdir -p "$RUNNER_TEMP/cb-wordpress-org"
+          unzip -q "$RUNNER_TEMP/cb-wordpress-org-artifact/core-blueprint-1.0.0.zip" -d "$RUNNER_TEMP/cb-wordpress-org"
+
+      - name: Run WordPress.org Plugin Check
+        uses: WordPress/plugin-check-action@v1.1.6
+        with:
+          build-dir: ${{ runner.temp }}/cb-wordpress-org/core-blueprint
+          categories: plugin_repo
+          wp-version: latest
+          strict: 'true'
