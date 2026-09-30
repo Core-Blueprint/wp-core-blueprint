@@ -18,7 +18,7 @@ final class MCPEventProjector {
 		}
 
 		$status = isset( $tags['status'] ) ? sanitize_key( (string) $tags['status'] ) : '';
-		$failure_reason = isset( $tags['failure_reason'] ) ? sanitize_key( (string) $tags['failure_reason'] ) : '';
+		$failure_reason = self::machine_identifier( $tags['failure_reason'] ?? null );
 		$outcome = 'success' === $status ? 'succeeded' : 'failed';
 		if ( 'permission_denied' === $failure_reason ) {
 			$outcome = 'denied';
@@ -97,14 +97,12 @@ final class MCPEventProjector {
 		$allowed = [
 			'method',
 			'server_id',
-			'request_id',
 			'revision',
 			'component_type',
 			'tool_name',
 			'ability_name',
 			'prompt_name',
 			'resource_uri',
-			'failure_reason',
 			'error_category',
 			'params',
 		];
@@ -115,6 +113,22 @@ final class MCPEventProjector {
 			}
 			$out[ $key ] = $tags[ $key ];
 		}
+		if ( array_key_exists( 'request_id', $tags ) && is_scalar( $tags['request_id'] ) ) {
+			$request_id = (string) $tags['request_id'];
+			if ( 1 === preg_match( '/^[A-Za-z0-9._:-]{1,100}$/D', $request_id ) ) {
+				$out['request_id'] = $request_id;
+			} elseif ( '' !== $request_id ) {
+				$out['request_id_fingerprint'] = self::fingerprint( $request_id );
+			}
+		}
+		if ( array_key_exists( 'failure_reason', $tags ) && is_scalar( $tags['failure_reason'] ) ) {
+			$reason = self::machine_identifier( $tags['failure_reason'] );
+			if ( null !== $reason ) {
+				$out['failure_reason'] = $reason;
+			} else {
+				$out['failure_reason_summary'] = Privacy::summarize( (string) $tags['failure_reason'] );
+			}
+		}
 		foreach ( [ 'session_id' => 'session_fingerprint', 'new_session_id' => 'new_session_fingerprint' ] as $source => $target ) {
 			if ( ! isset( $tags[ $source ] ) || ! is_scalar( $tags[ $source ] ) || '' === (string) $tags[ $source ] ) {
 				continue;
@@ -122,6 +136,14 @@ final class MCPEventProjector {
 			$out[ $target ] = self::fingerprint( (string) $tags[ $source ] );
 		}
 		return $out;
+	}
+
+	private static function machine_identifier( mixed $value ): ?string {
+		if ( ! is_scalar( $value ) ) {
+			return null;
+		}
+		$value = trim( (string) $value );
+		return 1 === preg_match( '/^[a-z0-9][a-z0-9_.:-]{0,99}$/D', $value ) ? $value : null;
 	}
 
 	private static function fingerprint( string $value ): string {
