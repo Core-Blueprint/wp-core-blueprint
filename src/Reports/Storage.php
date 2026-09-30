@@ -58,16 +58,11 @@ final class Storage {
 	public static function install_schema(): void {
 		global $wpdb;
 
-		$table     = self::table_name();
-		$installed = (string) get_option( self::DB_OPT_KEY, '0' );
+		$table = self::table_name();
 
-		if ( version_compare( $installed, self::DB_VERSION, '<' ) ) {
-			$existing = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
-			if ( $existing === $table ) {
-				$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			}
-		}
-
+		// Public v1 uses the snapshot schema as its baseline. Reconciliation must
+		// therefore be non-destructive even when the version marker is missing or
+		// stale: dbDelta() repairs the declared shape in place and preserves rows.
 		$charset = $wpdb->get_charset_collate();
 		$sql     = "CREATE TABLE {$table} (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
