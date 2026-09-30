@@ -191,7 +191,7 @@ final class AbilityObserver {
 		if ( false === $id ) {
 			return;
 		}
-		TraceContext::enter( $id, $link['correlation_id'] );
+		TraceContext::enter( $id, $link['correlation_id'], 'ability' );
 		self::$stacks[ $ability_name ] ??= [];
 		self::$stacks[ $ability_name ][] = [
 			'id'            => $id,
