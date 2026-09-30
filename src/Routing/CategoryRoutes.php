@@ -197,8 +197,19 @@ final class CategoryRoutes {
 	}
 
 	public static function pagination_url( string $url, WP_Term $term, int $page ): string {
+		return self::route_url( $url, self::path( $term ), $page );
+	}
+
+	public static function route_url( string $url, string $route_path, int $page = 1 ): string {
+		$page   = max( 1, $page );
 		$suffix = $page > 1 ? [ 'p' . $page ] : [];
-		return self::rewrite_term_tail( $url, $term, $suffix, $page > 1 ? 'paged' : 'category' );
+
+		return self::rewrite_path_tail(
+			$url,
+			$route_path,
+			$suffix,
+			$page > 1 ? 'paged' : 'category'
+		);
 	}
 
 	public static function feed_url( WP_Term $term, string $feed = '' ): string {
@@ -207,6 +218,10 @@ final class CategoryRoutes {
 			return '';
 		}
 
+		return self::route_feed_url( $link, self::path( $term ), $feed );
+	}
+
+	public static function route_feed_url( string $url, string $route_path, string $feed = '' ): string {
 		$feed         = sanitize_key( $feed );
 		$default_feed = sanitize_key( (string) get_default_feed() );
 		$suffix       = [ 'feed' ];
@@ -215,7 +230,7 @@ final class CategoryRoutes {
 			$suffix[] = $feed;
 		}
 
-		return self::rewrite_term_tail( $link, $term, $suffix, 'feed' );
+		return self::rewrite_path_tail( $url, $route_path, $suffix, 'feed' );
 	}
 
 	/**
@@ -227,40 +242,40 @@ final class CategoryRoutes {
 	 *
 	 * @param string[] $suffix
 	 */
-	private static function rewrite_term_tail( string $url, WP_Term $term, array $suffix, string $trail_type ): string {
+	private static function rewrite_path_tail( string $url, string $route_path, array $suffix, string $trail_type ): string {
 		$old_path = wp_parse_url( $url, PHP_URL_PATH );
 		if ( ! is_string( $old_path ) || '' === $old_path ) {
 			return $url;
 		}
 
-		$term_path = self::path( $term );
-		if ( '' === $term_path ) {
+		$route_path = trim( $route_path, '/' );
+		if ( '' === $route_path ) {
 			return $url;
 		}
 
-		$path_segments = self::segments( $old_path );
-		$term_segments = self::segments( $term_path );
-		if ( [] === $path_segments || [] === $term_segments || count( $path_segments ) < count( $term_segments ) ) {
+		$path_segments  = self::segments( $old_path );
+		$route_segments = self::segments( $route_path );
+		if ( [] === $path_segments || [] === $route_segments || count( $path_segments ) < count( $route_segments ) ) {
 			return $url;
 		}
 
-		$decoded_path = array_map( 'rawurldecode', $path_segments );
-		$decoded_term = array_map( 'rawurldecode', $term_segments );
-		$term_count   = count( $term_segments );
+		$decoded_path  = array_map( 'rawurldecode', $path_segments );
+		$decoded_route = array_map( 'rawurldecode', $route_segments );
+		$route_count   = count( $route_segments );
 
-		for ( $start = count( $path_segments ) - $term_count; $start >= 0; $start-- ) {
-			if ( array_slice( $decoded_path, $start, $term_count ) !== $decoded_term ) {
+		for ( $start = count( $path_segments ) - $route_count; $start >= 0; $start-- ) {
+			if ( array_slice( $decoded_path, $start, $route_count ) !== $decoded_route ) {
 				continue;
 			}
 
-			$tail = array_slice( $decoded_path, $start + $term_count );
+			$tail = array_slice( $decoded_path, $start + $route_count );
 			if ( ! self::recognized_route_tail( $tail ) ) {
 				continue;
 			}
 
 			$prefix = array_slice( $path_segments, 0, $start );
 			$prefix = self::without_known_category_base( $prefix );
-			$route  = array_slice( $path_segments, $start, $term_count );
+			$route  = array_slice( $path_segments, $start, $route_count );
 			$parts  = array_merge( $prefix, $route, $suffix );
 
 			$new_path = '/' . implode( '/', $parts );
