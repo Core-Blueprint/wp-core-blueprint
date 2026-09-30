@@ -354,8 +354,13 @@ final class Runtime {
 			return;
 		}
 
-		$type = get_post_type_object( $post->post_type );
-		if ( ! $type instanceof \WP_Post_Type || ! $type->public ) {
+		$type            = get_post_type_object( $post->post_type );
+		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
+		if (
+			! $type instanceof \WP_Post_Type
+			|| ! $type->public
+			|| ! in_array( $post->post_status, $public_statuses, true )
+		) {
 			return;
 		}
 
@@ -376,8 +381,13 @@ final class Runtime {
 			return;
 		}
 
-		$type = get_post_type_object( $post->post_type );
-		if ( $type instanceof \WP_Post_Type && $type->public ) {
+		$type            = get_post_type_object( $post->post_type );
+		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
+		if (
+			$type instanceof \WP_Post_Type
+			&& $type->public
+			&& in_array( $post->post_status, $public_statuses, true )
+		) {
 			self::mark_rewrite_dirty();
 		}
 	}
