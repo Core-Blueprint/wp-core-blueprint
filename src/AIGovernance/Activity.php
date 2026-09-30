@@ -47,8 +47,12 @@ final class Activity {
 		$evidence = isset( $activity['evidence'] ) && is_array( $activity['evidence'] ) ? $activity['evidence'] : [];
 		$evidence['reported_by'] = 'consumer';
 
+		$link = TraceContext::link();
 		$row = [
-			'operation_type' => 'operation',
+			'activity_id'       => wp_generate_uuid4(),
+			'correlation_id'    => $link['correlation_id'],
+			'parent_activity_id' => $link['parent_activity_id'],
+			'operation_type'    => 'operation',
 			'operation'      => $operation,
 			'transport'      => $transport,
 			'source_id'      => $activity['source_id'] ?? null,
