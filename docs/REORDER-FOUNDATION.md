@@ -2,6 +2,8 @@
 
 Status: **public v1 freeze candidate**.
 
+Introduced in Core API `1.1`.
+
 Core Blueprint Reorder Foundation provides one generic interaction contract for
 changing the canonical order of consumer-owned items. It supports ordered lists
 within one workspace and optional movement between related lists.
