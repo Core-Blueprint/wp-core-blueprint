@@ -48,21 +48,22 @@ if ( isset( $states[ $routing_state ] ) ) {
 		?>
 	<?php endif; ?>
 
-	<section class="cb-core-panel" aria-labelledby="cb-core-routing-policy-title">
+	<section class="cb-core-preferences-section" aria-labelledby="cb-core-routing-policy-title">
 		<h2 id="cb-core-routing-policy-title"><?php esc_html_e( 'Clean Archive URLs', 'core-blueprint' ); ?></h2>
-		<p>
-			<?php
-			echo \CB\Core\UI\Status::render(
-				$routing_enabled ? 'active' : 'idle',
-				$routing_enabled ? __( 'Enabled', 'core-blueprint' ) : __( 'WordPress default', 'core-blueprint' )
-			); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
-			?>
-		</p>
-		<p class="description">
-			<?php esc_html_e( 'This policy removes the category base from public category archive URLs and uses p{n} for archive pagination. It is always opt-in.', 'core-blueprint' ); ?>
-		</p>
+		<div class="cb-core-stack">
+			<div>
+				<?php
+				echo \CB\Core\UI\Status::render(
+					$routing_enabled ? 'active' : 'idle',
+					$routing_enabled ? __( 'Enabled', 'core-blueprint' ) : __( 'WordPress default', 'core-blueprint' )
+				); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
+				?>
+			</div>
+			<p class="description">
+				<?php esc_html_e( 'This policy removes the category base from public category archive URLs and uses p{n} for archive pagination. It is always opt-in.', 'core-blueprint' ); ?>
+			</p>
 
-		<?php if ( $routing_enabled && ! $routing_runtime_active ) : ?>
+			<?php if ( $routing_enabled && ! $routing_runtime_active ) : ?>
 			<?php
 			$routing_blockers = is_array( $routing_preflight['blockers'] ?? null )
 				? $routing_preflight['blockers']
@@ -74,25 +75,27 @@ if ( isset( $states[ $routing_state ] ) ) {
 				'items'   => $routing_blockers,
 			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
 			?>
-		<?php endif; ?>
+			<?php endif; ?>
 
-		<table class="widefat striped cb-core-kv-table">
+			<table class="widefat cb-core-kv">
 			<tbody>
 				<tr><th scope="row"><?php esc_html_e( 'WordPress archive', 'core-blueprint' ); ?></th><td><code><?php echo esc_html( $default_root ); ?></code></td></tr>
 				<tr><th scope="row"><?php esc_html_e( 'WordPress pagination', 'core-blueprint' ); ?></th><td><code><?php echo esc_html( $default_page ); ?></code></td></tr>
 				<tr><th scope="row"><?php esc_html_e( 'Core Blueprint archive', 'core-blueprint' ); ?></th><td><code><?php echo esc_html( $clean_root ); ?></code></td></tr>
 				<tr><th scope="row"><?php esc_html_e( 'Core Blueprint pagination', 'core-blueprint' ); ?></th><td><code><?php echo esc_html( $clean_page ); ?></code></td></tr>
 			</tbody>
-		</table>
+			</table>
+		</div>
 	</section>
 
 	<?php if ( ! $routing_enabled ) : ?>
-		<section class="cb-core-panel" aria-labelledby="cb-core-routing-preflight-title">
+		<section class="cb-core-preferences-section" aria-labelledby="cb-core-routing-preflight-title">
 			<h2 id="cb-core-routing-preflight-title"><?php esc_html_e( 'Activation preflight', 'core-blueprint' ); ?></h2>
 			<p class="description">
 				<?php esc_html_e( 'Core Blueprint checks known public content, post type, taxonomy and p{n} collisions before this policy can be enabled.', 'core-blueprint' ); ?>
 			</p>
 
+			<div class="cb-core-stack">
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="<?php echo esc_attr( \CB\Core\Routing\Admin::PREFLIGHT_ACTION ); ?>" />
 				<?php wp_nonce_field( \CB\Core\Routing\Admin::PREFLIGHT_NONCE ); ?>
@@ -137,10 +140,12 @@ if ( isset( $states[ $routing_state ] ) ) {
 					</form>
 				<?php endif; ?>
 			<?php endif; ?>
+			</div>
 		</section>
 	<?php else : ?>
-		<section class="cb-core-panel" aria-labelledby="cb-core-routing-disable-title">
+		<section class="cb-core-preferences-section" aria-labelledby="cb-core-routing-disable-title">
 			<h2 id="cb-core-routing-disable-title"><?php esc_html_e( 'Disable policy', 'core-blueprint' ); ?></h2>
+			<div class="cb-core-stack">
 			<?php
 			echo \CB\Core\UI\Notice::render( [
 				'variant' => \CB\Core\UI\Notice::WARNING,
@@ -160,6 +165,7 @@ if ( isset( $states[ $routing_state ] ) ) {
 				submit_button( __( 'Disable Clean Archive URLs', 'core-blueprint' ), 'secondary cb-core-button cb-core-button--secondary', 'submit', false );
 				?>
 			</form>
+			</div>
 		</section>
 	<?php endif; ?>
 </div>
