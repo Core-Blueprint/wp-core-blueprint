@@ -90,4 +90,31 @@ SVG;
 			@unlink( $file );
 		}
 	}
+
+	public function test_remote_css_references_are_removed(): void {
+		if ( ! Environment::svg_supported() ) {
+			self::markTestSkipped( 'SVG runtime is unavailable in this test environment.' );
+		}
+
+		$file = wp_tempnam( 'cb-svg-remote-css.svg' );
+		self::assertIsString( $file );
+		$dirty = <<<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg">
+  <style>@\69 mport url(https://example.invalid/remote.css); rect { fill: \75 rl(//example.invalid/fill.svg#paint); }</style>
+  <rect width="10" height="10" style="stroke: image-set('https://example.invalid/stroke.png' 1x);" />
+</svg>
+SVG;
+		self::assertNotFalse( file_put_contents( $file, $dirty ) );
+
+		try {
+			self::assertTrue( SvgSanitizer::sanitize_file( $file ) );
+			$clean = file_get_contents( $file );
+			self::assertIsString( $clean );
+			self::assertStringNotContainsString( 'example.invalid', $clean );
+			self::assertStringNotContainsString( '@import', strtolower( $clean ) );
+		} finally {
+			@unlink( $file );
+		}
+	}
+
 }
