@@ -1,6 +1,6 @@
 <?php
 return [
-    'project-id-version' => 'Core Blueprint 1.0.0-rc1',
+    'project-id-version' => 'Core Blueprint 1.0.0',
     'language' => 'fr_FR',
     'plural-forms' => 'nplurals=2; plural=(n > 1);',
     'content-type' => 'text/plain; charset=UTF-8',
