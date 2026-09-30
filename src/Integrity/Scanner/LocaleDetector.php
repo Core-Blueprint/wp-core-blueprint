@@ -188,13 +188,11 @@ final class LocaleDetector {
 	 * Candidate locales tried in order of likelihood.
 	 *
 	 * Order rationale:
-	 *   1. get_locale() - UI-locale, matches the install for most sites
-	 *   2. en_US - fallback covering the "site installed in English,
-	 *      switched to local language for testing" pattern (Chris's
-	 *      Beacon site is exactly this case)
-	 *   3. WPLANG constant (legacy pre-WP 4.0)
-	 *   4. WPLANG site_option (multisite)
-	 *   5. get_available_languages() - installed language packs that
+	 *   1. get_locale() - current WordPress site/UI locale resolution
+	 *   2. en_US - fallback for sites whose installed distribution remains
+	 *      English while the configured UI locale changed later
+	 *   3. WPLANG site_option - multisite/network default candidate
+	 *   4. get_available_languages() - installed language packs that
 	 *      may correspond to a previously-downloaded distribution
 	 *
 	 * Duplicates are removed while preserving order so an early
