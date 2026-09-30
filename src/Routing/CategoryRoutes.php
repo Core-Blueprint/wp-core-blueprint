@@ -300,14 +300,29 @@ final class CategoryRoutes {
 			return true;
 		}
 
-		if ( 1 === count( $tail ) && 1 === preg_match( '/^p[0-9]+$/', $tail[0] ) ) {
+		if (
+			1 === count( $tail )
+			&& (
+				1 === preg_match( '/^p[0-9]+$/', $tail[0] )
+				|| 1 === preg_match( '/^page[0-9]+$/', $tail[0] )
+				|| in_array( $tail[0], [ 'feed', 'rdf', 'rss', 'rss2', 'atom' ], true )
+			)
+		) {
 			return true;
 		}
 
 		if (
 			2 === count( $tail )
-			&& 'page' === $tail[0]
+			&& in_array( $tail[0], [ 'page', 'p' ], true )
 			&& ctype_digit( $tail[1] )
+		) {
+			return true;
+		}
+
+		if (
+			2 === count( $tail )
+			&& 'feed' === $tail[0]
+			&& in_array( $tail[1], [ 'feed', 'rdf', 'rss', 'rss2', 'atom' ], true )
 		) {
 			return true;
 		}
