@@ -445,13 +445,30 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 
 	public function test_query_filters_and_retention_prune_the_dedicated_store(): void {
 		$id_a = Activity::record( [ 'operation' => 'fixture/a', 'outcome' => 'succeeded', 'source_id' => 'adapter-a' ] );
-		$id_b = Activity::record( [ 'operation' => 'fixture/b', 'outcome' => 'failed', 'source_id' => 'adapter-b' ] );
+		$id_b = Activity::record( [
+			'operation'      => 'fixture/b',
+			'outcome'        => 'failed',
+			'source_id'      => 'adapter-b',
+			'provider_id'    => 'provider-b',
+			'provider_label' => 'Provider B',
+			'model_id'       => 'model-b',
+			'model_label'    => 'Model B',
+		] );
 		$this->assertIsString( $id_a );
 		$this->assertIsString( $id_b );
 
-		$filtered = Repository::query( [ 'source' => 'adapter-b', 'outcome' => 'failed' ] );
+		$filtered = Repository::query( [
+			'source'   => 'adapter-b',
+			'provider' => 'provider-b',
+			'model'    => 'model-b',
+			'outcome'  => 'failed',
+		] );
 		$this->assertSame( 1, $filtered['total'] );
 		$this->assertSame( 'fixture/b', $filtered['rows'][0]->operation );
+		$this->assertSame( 'provider-b', $filtered['rows'][0]->provider_id );
+		$this->assertSame( 'Provider B', $filtered['rows'][0]->provider_label );
+		$this->assertSame( 'model-b', $filtered['rows'][0]->model_id );
+		$this->assertSame( 'Model B', $filtered['rows'][0]->model_label );
 
 		global $wpdb;
 		$wpdb->update( Repository::table(), [ 'created_at' => '2020-01-01 00:00:00' ], [ 'activity_id' => $id_a ], [ '%s' ], [ '%s' ] );
