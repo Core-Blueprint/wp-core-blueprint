@@ -20,6 +20,8 @@ final class AIClientObserver {
 	public static function boot(): void {
 		add_action( 'wp_ai_client_before_generate_result', [ __CLASS__, 'on_before_generate_result' ], 10, 1 );
 		add_action( 'wp_ai_client_after_generate_result', [ __CLASS__, 'on_after_generate_result' ], 10, 1 );
+		add_action( 'wp_ai_client_before_generate_embedding', [ __CLASS__, 'on_before_generate_result' ], 10, 1 );
+		add_action( 'wp_ai_client_after_generate_embedding', [ __CLASS__, 'on_after_generate_result' ], 10, 1 );
 		add_action( 'shutdown', [ __CLASS__, 'flush_open' ], PHP_INT_MAX - 1 );
 	}
 
@@ -49,13 +51,7 @@ final class AIClientObserver {
 				'outcome'           => 'unknown',
 				'capture_state'     => 'generation-started',
 				'evidence'          => array_replace_recursive(
-					[
-						'capture' => [
-							'platform' => 'wordpress-ai-client',
-						],
-						'capability'    => $descriptor['capability'],
-						'message_count' => $descriptor['message_count'],
-					],
+					self::request_evidence( $descriptor ),
 					$source['evidence']
 				),
 			] );
@@ -118,7 +114,7 @@ final class AIClientObserver {
 		} );
 	}
 
-	/** @return array{model_key:int,capability:string,message_count:int,provider_id:?string,provider_label:?string,model_id:?string,model_label:?string}|null */
+	/** @return array{model_key:int,capability:string,message_count:?int,input_count:?int,provider_id:?string,provider_label:?string,model_id:?string,model_label:?string}|null */
 	private static function describe_event( object $event ): ?array {
 		if ( ! method_exists( $event, 'getModel' ) ) {
 			return null;
@@ -143,10 +139,16 @@ final class AIClientObserver {
 			$capability = 'unknown';
 		}
 
-		$message_count = 0;
+		$message_count = null;
 		if ( method_exists( $event, 'getMessages' ) ) {
 			$messages = $event->getMessages();
 			$message_count = is_array( $messages ) ? count( $messages ) : 0;
+		}
+
+		$input_count = null;
+		if ( method_exists( $event, 'getInputs' ) ) {
+			$inputs = $event->getInputs();
+			$input_count = is_array( $inputs ) ? count( $inputs ) : 0;
 		}
 
 		$provider_id = null;
@@ -172,12 +174,30 @@ final class AIClientObserver {
 		return [
 			'model_key'      => spl_object_id( $model ),
 			'capability'     => substr( $capability, 0, 100 ),
-			'message_count'  => max( 0, $message_count ),
+			'message_count'  => null === $message_count ? null : max( 0, $message_count ),
+			'input_count'    => null === $input_count ? null : max( 0, $input_count ),
 			'provider_id'    => $provider_id,
 			'provider_label' => $provider_label,
 			'model_id'       => $model_id,
 			'model_label'    => $model_label,
 		];
+	}
+
+	/** @param array{capability:string,message_count:?int,input_count:?int} $descriptor @return array<string,mixed> */
+	private static function request_evidence( array $descriptor ): array {
+		$evidence = [
+			'capture' => [
+				'platform' => 'wordpress-ai-client',
+			],
+			'capability' => $descriptor['capability'],
+		];
+		if ( null !== $descriptor['message_count'] ) {
+			$evidence['message_count'] = $descriptor['message_count'];
+		}
+		if ( null !== $descriptor['input_count'] ) {
+			$evidence['input_count'] = $descriptor['input_count'];
+		}
+		return $evidence;
 	}
 
 	/** @return array<string,mixed> */
@@ -188,6 +208,13 @@ final class AIClientObserver {
 
 		if ( method_exists( $result, 'getCandidateCount' ) ) {
 			$summary['candidate_count'] = max( 0, (int) $result->getCandidateCount() );
+		}
+		if ( method_exists( $result, 'getEmbeddings' ) ) {
+			$embeddings = $result->getEmbeddings();
+			$summary['embedding_count'] = is_array( $embeddings ) ? count( $embeddings ) : 0;
+		}
+		if ( method_exists( $result, 'getDimensions' ) ) {
+			$summary['dimensions'] = max( 0, (int) $result->getDimensions() );
 		}
 
 		if ( method_exists( $result, 'getTokenUsage' ) ) {
