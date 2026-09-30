@@ -671,6 +671,22 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 				3
 			)
 		);
+		self::assertSame(
+			'https://nl.example.test/site/nl/blog/p2/?lang=nl',
+			CategoryRoutes::route_url(
+				'https://nl.example.test/site/nl/category/blog/page2/?lang=nl',
+				'blog',
+				2
+			)
+		);
+		self::assertSame(
+			'https://nl.example.test/site/nl/blog/feed/rss2/?lang=nl',
+			CategoryRoutes::route_feed_url(
+				'https://nl.example.test/site/nl/category/blog/rss2/?lang=nl',
+				'blog',
+				'rss2'
+			)
+		);
 	}
 
 	public function test_category_base_name_does_not_consume_an_identical_site_subdirectory(): void {
