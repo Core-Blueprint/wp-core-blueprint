@@ -12,6 +12,7 @@ return [
         'Review public URL routing and optionally use clean category archive URLs with compact p{n} pagination.' => 'Vérifiez le routage des URL publiques et utilisez éventuellement des URL d’archives de catégories simplifiées avec une pagination compacte p{n}.',
         'You do not have permission to manage Routing & URLs.' => 'Vous n’avez pas l’autorisation de gérer le routage et les URL.',
         'Category "%1$s" uses the reserved root route "/%2$s/".' => 'La catégorie « %1$s » utilise la route racine réservée « /%2$s/ ».',
+        'Category "%1$s" could not be resolved to a public clean route safely.' => 'La route publique propre de la catégorie « %1$s » n’a pas pu être résolue de manière sûre.',
         'Category "%1$s" conflicts with existing public content "%2$s" at "/%3$s/".' => 'La catégorie « %1$s » entre en conflit avec le contenu public existant « %2$s » à l’adresse « /%3$s/ ».',
         'Category "%1$s" conflicts with the "%2$s" post type archive at "/%3$s/".' => 'La catégorie « %1$s » entre en conflit avec l’archive du type de contenu « %2$s » à l’adresse « /%3$s/ ».',
         'Category "%1$s" conflicts with the "%2$s" taxonomy route at "/%3$s/".' => 'La catégorie « %1$s » entre en conflit avec la route de taxonomie « %2$s » à l’adresse « /%3$s/ ».',
