@@ -232,6 +232,7 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertNotSame( 'fixture-session', $row->evidence_decoded['mcp']['session_fingerprint'] );
 		$this->assertStringNotContainsString( 'fixture-session', (string) $row->evidence );
 		$this->assertArrayNotHasKey( 'arguments', $row->evidence_decoded['mcp']['params'] );
+		$this->assertSame( [ 'post_id', '[REDACTED]' ], $row->evidence_decoded['mcp']['params']['arguments_keys'] );
 	}
 
 	public function test_mcp_free_text_failure_and_request_ids_are_not_persisted_raw(): void {
