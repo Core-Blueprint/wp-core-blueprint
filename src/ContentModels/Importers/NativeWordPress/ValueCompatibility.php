@@ -18,7 +18,7 @@ final class ValueCompatibility {
 	public static function inspect( array $meta, string $field_type ): array {
 		$rows = self::rows( $meta );
 		foreach ( $rows as $row ) {
-			$value = maybe_unserialize( $row['raw'] );
+			$value = self::decode_raw_value( $row['raw'] );
 			if ( ! self::value_is_compatible( $value, $field_type ) ) {
 				return [
 					'compatible' => false,
@@ -38,6 +38,19 @@ final class ValueCompatibility {
 			];
 		}
 		return [ 'compatible' => true, 'count' => count( $rows ), 'digest' => self::digest( $rows ), 'reason' => '' ];
+	}
+
+	/**
+	 * Decode one raw WordPress meta value without instantiating serialized classes.
+	 *
+	 * @return mixed
+	 */
+	private static function decode_raw_value( string $raw ) {
+		if ( ! is_serialized( $raw ) ) {
+			return $raw;
+		}
+
+		return unserialize( trim( $raw ), [ 'allowed_classes' => false ] );
 	}
 
 	/** @param mixed $value */
