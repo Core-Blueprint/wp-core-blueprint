@@ -165,7 +165,7 @@ Base records the adapter's `mcp.request` completion event and its bounded reques
 
 - status and MCP method;
 - transport;
-- server identifiers, bounded request identifiers, and site-bound fingerprints for sensitive or non-standard request/session identifiers;
+- server identifiers, numeric request IDs, and site-bound fingerprints for string request IDs and MCP session identifiers;
 - negotiated schema revision;
 - tool, Ability, prompt or resource identity;
 - machine-readable failure reason and error category; free-text failure output is reduced to metadata shape only;
