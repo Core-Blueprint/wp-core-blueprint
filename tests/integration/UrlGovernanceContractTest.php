@@ -556,6 +556,71 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertArrayHasKey( '^nl/context-check/?$', $rules );
 	}
 
+	public function test_language_prefix_rewrite_filter_can_compose_with_clean_category_routes(): void {
+		global $wp_rewrite;
+
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		for ( $i = 1; $i <= 11; $i++ ) {
+			self::factory()->post->create(
+				[
+					'post_status'   => 'publish',
+					'post_title'    => 'Language routing post ' . $i,
+					'post_name'     => 'language-routing-post-' . $i,
+					'post_category' => [ $term_id ],
+				]
+			);
+		}
+
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		$language_rules = static function ( array $rules ): array {
+			$prefixed = [];
+			foreach ( $rules as $regex => $query ) {
+				$shifted = str_replace(
+					[ '$matches[3]', '$matches[2]', '$matches[1]' ],
+					[ '$matches[4]', '$matches[3]', '$matches[2]' ],
+					$query
+				);
+				$shifted = str_replace(
+					'index.php?',
+					'index.php?lang=$matches[1]&',
+					$shifted
+				);
+
+				$prefixed[ '^(en|nl)/' . ltrim( $regex, '^' ) ] = $shifted;
+			}
+
+			return $prefixed + $rules;
+		};
+		$language_query_var = static function ( array $vars ): array {
+			$vars[] = 'lang';
+			return $vars;
+		};
+
+		add_filter( 'category_rewrite_rules', $language_rules, 10 );
+		add_filter( 'query_vars', $language_query_var );
+		try {
+			$wp_rewrite->set_permalink_structure( '/%category%/%postname%/' );
+			flush_rewrite_rules( false );
+
+			self::go_to( home_url( '/nl/blog/p2/' ) );
+
+			self::assertTrue( is_category( 'blog' ) );
+			self::assertTrue( is_paged() );
+			self::assertFalse( is_404() );
+			self::assertSame( 2, (int) get_query_var( 'paged' ) );
+			self::assertSame( 'nl', (string) get_query_var( 'lang' ) );
+		} finally {
+			remove_filter( 'category_rewrite_rules', $language_rules, 10 );
+			remove_filter( 'query_vars', $language_query_var );
+		}
+	}
+
 	public function test_redirect_canonical_suppresses_only_clean_canonical_shapes(): void {
 		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 		Settings::set_key(
