@@ -183,6 +183,42 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_compact_blog_page_two_parses_as_category_pagination_not_post_page(): void {
+		global $wp_rewrite, $wp_query;
+
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		for ( $i = 1; $i <= 11; $i++ ) {
+			self::factory()->post->create(
+				[
+					'post_status'   => 'publish',
+					'post_title'    => 'Routing post ' . $i,
+					'post_name'     => 'routing-post-' . $i,
+					'post_category' => [ $term_id ],
+				]
+			);
+		}
+
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		$wp_rewrite->set_permalink_structure( '/%category%/%postname%/' );
+		Runtime::register_rewrite_rules();
+		flush_rewrite_rules( false );
+
+		self::go_to( home_url( '/blog/p2/' ) );
+
+		self::assertTrue( is_category( 'blog' ) );
+		self::assertTrue( is_paged() );
+		self::assertFalse( is_404() );
+		self::assertSame( 2, (int) get_query_var( 'paged' ) );
+		self::assertSame( '', (string) get_query_var( 'name' ) );
+		self::assertSame( 1, (int) $wp_query->post_count );
+	}
+
 	public function test_term_link_changes_only_after_explicit_enable(): void {
 		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 		$term    = get_term( $term_id, 'category' );
