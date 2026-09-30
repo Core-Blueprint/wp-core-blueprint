@@ -1,5 +1,9 @@
 <?php
 declare(strict_types=1);
+namespace CB\Core\UI;
+
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Field - CB UI primitive for form-field wrappers.
  *
@@ -51,9 +55,6 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\UI;
-
-defined( 'ABSPATH' ) || exit;
 
 final class Field {
 

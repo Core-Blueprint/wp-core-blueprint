@@ -1,5 +1,9 @@
 <?php
 declare(strict_types=1);
+namespace CB\Core\UI;
+
+defined( 'ABSPATH' ) || exit;
+
 /**
  * RadioGroup - CB UI primitive for radio-card groups.
  *
@@ -56,9 +60,6 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\UI;
-
-defined( 'ABSPATH' ) || exit;
 
 final class RadioGroup {
 
