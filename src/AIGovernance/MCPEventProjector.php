@@ -88,7 +88,11 @@ final class MCPEventProjector {
 		if ( '' === $key || empty( $tags[ $key ] ) ) {
 			return [ 'type' => null, 'id' => null, 'label' => null ];
 		}
-		$value = substr( sanitize_text_field( (string) $tags[ $key ] ), 0, 190 );
+		$value = sanitize_text_field( (string) $tags[ $key ] );
+		if ( 'resource' === $type ) {
+			$value = (string) preg_replace( '/[?#].*$/', '', $value );
+		}
+		$value = substr( $value, 0, 190 );
 		return [ 'type' => $type, 'id' => $value, 'label' => $value ];
 	}
 
@@ -118,12 +122,11 @@ final class MCPEventProjector {
 				$out['params'] = $params;
 			}
 		}
-		if ( array_key_exists( 'request_id', $tags ) && is_scalar( $tags['request_id'] ) ) {
-			$request_id = (string) $tags['request_id'];
-			if ( 1 === preg_match( '/^[A-Za-z0-9._:-]{1,100}$/D', $request_id ) ) {
-				$out['request_id'] = $request_id;
-			} elseif ( '' !== $request_id ) {
-				$out['request_id_fingerprint'] = self::fingerprint( $request_id );
+		if ( array_key_exists( 'request_id', $tags ) ) {
+			if ( is_int( $tags['request_id'] ) ) {
+				$out['request_id'] = $tags['request_id'];
+			} elseif ( is_string( $tags['request_id'] ) && '' !== $tags['request_id'] ) {
+				$out['request_id_fingerprint'] = self::fingerprint( $tags['request_id'] );
 			}
 		}
 		if ( array_key_exists( 'failure_reason', $tags ) && is_scalar( $tags['failure_reason'] ) ) {
@@ -165,7 +168,7 @@ final class MCPEventProjector {
 					continue;
 				}
 				$value = substr( sanitize_text_field( (string) $key ), 0, 100 );
-				if ( 1 === preg_match( '/(?:pass(?:word)?|secret|token|api[_-]?key|credential|authorization|cookie|nonce)/i', $value ) ) {
+				if ( 1 === preg_match( '/(?:pass(?:word)?|secret|token|bearer|api[_-]?key|private[_-]?key|credential|authorization|cookie|nonce|access[_-]?token|refresh[_-]?token|client[_-]?secret|(?:^|[_-])key$)/i', $value ) ) {
 					$value = '[redacted]';
 				}
 				$keys[] = $value;
