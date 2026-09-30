@@ -42,6 +42,7 @@ return [
         'Run routing preflight' => 'Executar verificação prévia do encaminhamento',
         'No known blocking collisions found' => 'Não foram encontrados conflitos de bloqueio conhecidos',
         'Blocking route collisions found' => 'Foram encontrados conflitos de rotas que bloqueiam a ativação',
+        'Clean Archive URLs are temporarily suspended because route collisions were detected. WordPress default category routing remains active until the collisions are resolved.' => 'Os URLs limpos de arquivo estão temporariamente suspensos porque foram detetados conflitos de rotas. O encaminhamento predefinido de categorias do WordPress permanece ativo até os conflitos serem resolvidos.',
         'Review before enabling' => 'Rever antes de ativar',
         'I understand that this changes public category URLs.' => 'Compreendo que isto altera os URLs públicos das categorias.',
         'Existing WordPress category routes will redirect to the clean canonical routes while this policy is active.' => 'As rotas de categorias existentes do WordPress serão redirecionadas para as rotas canónicas limpas enquanto esta política estiver ativa.',
