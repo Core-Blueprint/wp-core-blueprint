@@ -328,6 +328,8 @@ jobs:
 
       - name: Run WordPress.org Plugin Check
         uses: WordPress/plugin-check-action@v1.1.7
+        env:
+          WP_ENV_PHP_VERSION: '8.4'
         with:
           build-dir: ${{ runner.temp }}/cb-wordpress-org/core-blueprint
           categories: plugin_repo
