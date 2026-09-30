@@ -152,6 +152,11 @@ final class Core {
 		// count drops to zero.
 		\CB\Core\Permissions\Bootstrap::boot();
 
+		// Admin Notices Governance - audience-scoped presentation policy for
+		// WordPress admin-notice producers. Runtime is fail-open, never parses
+		// arbitrary notice HTML, and never suppresses notices from CB Operators.
+		\CB\Core\AdminNotices\Bootstrap::boot();
+
 		// Media Replace subsystem - native attachment replacement with a
 		// transactional rollback path. v1 preserves attachment ID, filename
 		// and URL; the filename strategy boundary is ready for a later

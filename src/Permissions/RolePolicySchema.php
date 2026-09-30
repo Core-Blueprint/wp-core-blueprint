@@ -27,7 +27,7 @@ final class RolePolicySchema {
 
 	private const OPTION         = 'cb_core_role_policy_schema_version';
 	private const DRIFT_OPTION   = 'cb_core_role_policy_drift';
-	private const CURRENT_SCHEMA = 1;
+	private const CURRENT_SCHEMA = 2;
 
 	private static int $suspended = 0;
 
@@ -94,6 +94,17 @@ final class RolePolicySchema {
 		}
 
 		self::inspect( true, 'schema_migrated' );
+	}
+
+	/**
+	 * Schema 2 adds the presentation-only Admin Notices governance capability
+	 * to the canonical CB Operator role. The capability is intentionally not a
+	 * Privileged Access trigger/fingerprint capability, so existing signed
+	 * operator approvals remain valid across this role-policy migration.
+	 */
+	private static function migrate_to_2(): bool {
+		self::reconcile_roles();
+		return true;
 	}
 
 	/**

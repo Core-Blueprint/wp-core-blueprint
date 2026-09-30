@@ -19,6 +19,8 @@ declare(strict_types=1);
 
 namespace CB\Core\Permissions;
 
+use CB\Core\AdminNotices\Capabilities as AdminNoticeCapabilities;
+
 defined( 'ABSPATH' ) || exit;
 
 final class CapabilityCatalog {
@@ -152,6 +154,12 @@ final class CapabilityCatalog {
 				'group' => ( self::i18n_ready() ? __( 'Core Blueprint', 'core-blueprint' ) : 'Core Blueprint' ),
 				'source' => 'Core Blueprint',
 				'description' => ( self::i18n_ready() ? __( 'Create and manage WordPress roles and their primitive capabilities.', 'core-blueprint' ) : 'Create and manage WordPress roles and their primitive capabilities.' ),
+			],
+			AdminNoticeCapabilities::MANAGE => [
+				'label' => ( self::i18n_ready() ? __( 'Manage admin notices', 'core-blueprint' ) : 'Manage admin notices' ),
+				'group' => ( self::i18n_ready() ? __( 'Core Blueprint', 'core-blueprint' ) : 'Core Blueprint' ),
+				'source' => 'Core Blueprint',
+				'description' => ( self::i18n_ready() ? __( 'Manage which audiences see supported WordPress admin notice sources.', 'core-blueprint' ) : 'Manage which audiences see supported WordPress admin notice sources.' ),
 			],
 			'cb_manage_integrity' => [
 				'label' => ( self::i18n_ready() ? __( 'Run integrity scans', 'core-blueprint' ) : 'Run integrity scans' ),
