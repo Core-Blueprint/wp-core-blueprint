@@ -11,7 +11,16 @@ final class CB_Base_Admin_Navigation_Boundary_Contract_Test extends WP_UnitTestC
 		self::assertIsString( $asset_registry );
 		self::assertIsString( $modules );
 
-		self::assertStringContainsString( "'floating-menu', 'admin-navigation', 'reports'", $screen_context );
+		$saved_get = $_GET;
+		$_GET['page'] = 'core-blueprint-preferences';
+		$_GET['tab']  = 'admin-navigation';
+		try {
+			$context = \CB\Core\Admin\ScreenContext::from_request( 'core-blueprint_page_core-blueprint-preferences' );
+			self::assertSame( 'core-blueprint-preferences', $context->page() );
+			self::assertSame( 'admin-navigation', $context->tab() );
+		} finally {
+			$_GET = $saved_get;
+		}
 		self::assertSame( 1, substr_count( $asset_registry, "case 'admin-navigation':" ) );
 		self::assertStringContainsString( "'component.interactive-surfaces', 'foundation.object-picker', 'foundation.reorder', 'module.admin-navigation'", $asset_registry );
 		self::assertStringContainsString( "'@cb-core/admin-navigation' => static function", $modules );
