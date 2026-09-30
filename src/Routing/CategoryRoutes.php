@@ -28,9 +28,11 @@ final class CategoryRoutes {
 			[
 				'taxonomy'         => 'category',
 				'hide_empty'       => false,
-				// Route generation must see the canonical WordPress term set.
-				// Providers that honor the standard suppression contract should
-				// not scope this infrastructure query to a presentation context.
+				// Route generation is infrastructure, not presentation. The
+				// singular core flag suppresses WordPress' final get_terms filter;
+				// the plural query flag is also retained for ecosystem query
+				// layers that honor WP_Query-style filter suppression.
+				'suppress_filter'  => true,
 				'suppress_filters' => true,
 			]
 		);
