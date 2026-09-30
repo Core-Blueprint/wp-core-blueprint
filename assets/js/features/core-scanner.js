@@ -22,7 +22,7 @@
  */
 
 import { qs, qsa } from '../core/dom.js';
-import { copy as copyToClipboard } from '../core/clipboard.js';
+import { copy as copyToClipboard } from '../core/clipboard-runtime.js';
 
 const dataEl = document.getElementById( 'wp-script-module-data-@cb-core/core-scanner' );
 const data   = dataEl ? JSON.parse( dataEl.textContent ) : {};
