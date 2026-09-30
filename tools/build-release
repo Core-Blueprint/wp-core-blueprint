@@ -26,7 +26,6 @@ ROOT_FILES = (
     "CHANGELOG.md",
     "LICENSE",
 )
-OPTIONAL_ROOT_FILES = ("CHANGELOG-HISTORY.md",)
 RUNTIME_DIRS = (
     "src",
     "includes",
@@ -74,13 +73,6 @@ def collect_files(source: Path) -> list[Path]:
         if path.is_symlink():
             fail(f"Release file may not be a symlink: {relative}")
         files.append(path)
-
-    for relative in OPTIONAL_ROOT_FILES:
-        path = source / relative
-        if path.exists():
-            if not path.is_file() or path.is_symlink():
-                fail(f"Optional release file is not a regular file: {relative}")
-            files.append(path)
 
     for relative in RUNTIME_DIRS:
         root = source / relative
