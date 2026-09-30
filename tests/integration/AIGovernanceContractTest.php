@@ -242,6 +242,7 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 			'transport'      => 'http',
 			'request_id'     => 'customer secret request identifier',
 			'failure_reason' => 'Private tool output must never become governance evidence.',
+			'params'         => [ 'uri' => 'fixture://resource/path?token=never-store-this' ],
 		] );
 
 		$this->assertIsString( $id );
@@ -252,6 +253,8 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertSame( 'string', $row->evidence_decoded['mcp']['failure_reason_summary']['type'] );
 		$this->assertStringNotContainsString( 'customer secret request identifier', (string) $row->evidence );
 		$this->assertStringNotContainsString( 'Private tool output', (string) $row->evidence );
+		$this->assertStringNotContainsString( 'never-store-this', (string) $row->evidence );
+		$this->assertSame( 'fixture://resource/path', $row->evidence_decoded['mcp']['params']['uri'] );
 	}
 
 	public function test_mcp_default_server_integration_composes_existing_handler(): void {
