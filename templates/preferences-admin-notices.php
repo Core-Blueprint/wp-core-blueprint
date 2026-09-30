@@ -202,18 +202,20 @@ $kind_labels = [
 							<?php else : ?>
 								<fieldset class="cb-core-field" data-cb-admin-notices-visibility-group>
 									<legend class="cb-core-field__label"><?php esc_html_e( 'Who should see this notice source?', 'core-blueprint' ); ?></legend>
-									<label>
-										<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="everyone" data-cb-admin-notices-visibility <?php checked( \CB\Core\AdminNotices\Policy::EVERYONE, $visibility ); ?> />
-										<?php esc_html_e( 'Everyone', 'core-blueprint' ); ?>
-									</label><br />
-									<label>
-										<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="operators_only" data-cb-admin-notices-visibility <?php checked( \CB\Core\AdminNotices\Policy::OPERATORS_ONLY, $visibility ); ?> />
-										<?php esc_html_e( 'Operators only', 'core-blueprint' ); ?>
-									</label><br />
-									<label>
-										<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="selected" data-cb-admin-notices-visibility <?php checked( \CB\Core\AdminNotices\Policy::SELECTED, $visibility ); ?> />
-										<?php esc_html_e( 'Selected roles or capabilities', 'core-blueprint' ); ?>
-									</label>
+									<div class="cb-core-field__choices cb-core-admin-notices-visibility-choices">
+										<label>
+											<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="everyone" data-cb-admin-notices-visibility <?php checked( \CB\Core\AdminNotices\Policy::EVERYONE, $visibility ); ?> />
+											<?php esc_html_e( 'Everyone', 'core-blueprint' ); ?>
+										</label>
+										<label>
+											<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="operators_only" data-cb-admin-notices-visibility <?php checked( \CB\Core\AdminNotices\Policy::OPERATORS_ONLY, $visibility ); ?> />
+											<?php esc_html_e( 'Operators only', 'core-blueprint' ); ?>
+										</label>
+										<label>
+											<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="selected" data-cb-admin-notices-visibility <?php checked( \CB\Core\AdminNotices\Policy::SELECTED, $visibility ); ?> />
+											<?php esc_html_e( 'Selected roles or capabilities', 'core-blueprint' ); ?>
+										</label>
+									</div>
 								</fieldset>
 
 								<div data-cb-admin-notices-selected-audience <?php if ( \CB\Core\AdminNotices\Policy::SELECTED !== $visibility ) : ?>hidden<?php endif; ?>>
