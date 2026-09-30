@@ -357,22 +357,18 @@ final class Preflight {
 	/** @return array<string,string> archive path => label */
 	private static function public_post_type_archive_paths(): array {
 		$paths = [];
-		$types = self::viewable_post_type_objects();
 
-		foreach ( $types as $type ) {
+		foreach ( self::viewable_post_type_objects() as $type ) {
 			if ( ! $type instanceof WP_Post_Type || ! $type->has_archive ) {
 				continue;
 			}
 
-			$path = '';
-			if ( is_string( $type->has_archive ) ) {
-				$path = trim( $type->has_archive, '/' );
-			} elseif ( is_array( $type->rewrite ) && isset( $type->rewrite['slug'] ) ) {
-				$path = trim( (string) $type->rewrite['slug'], '/' );
-			} else {
-				$path = $type->name;
+			$link = get_post_type_archive_link( $type->name );
+			if ( ! is_string( $link ) || '' === $link ) {
+				continue;
 			}
 
+			$path = self::relative_public_path( $link );
 			if ( '' !== $path ) {
 				$paths[ $path ] = (string) $type->labels->singular_name;
 			}
