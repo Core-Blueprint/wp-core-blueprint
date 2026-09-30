@@ -84,4 +84,4 @@
 - Keep the public plugin version at `1.0.0-rc1`, with Core API and database schema versions unchanged at `1.0`.
 - Make CSV export explicit about the `fputcsv()` escape argument so Base remains clean on PHP 8.4+ without changing the existing CSV escaping behaviour.
 - Align Settings Hub integration fixtures with Privileged Access Protection by explicitly approving administrator identities created for tests rather than weakening the production quarantine boundary.
-- Re-pin the release-package update smoke to an earlier canonical `1.0.0-rc1` main baseline (`9786408510d51fa55ccc070ae3dc4aa5a1190856`) instead of the stale pre-normalization `1.0.0-rc2` baseline.
+- Pin the release-package update smoke to a canonical earlier `1.0.0-rc1` main baseline so install/update validation exercises the supported current-RC lifecycle.
