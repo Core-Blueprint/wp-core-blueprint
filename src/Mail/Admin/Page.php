@@ -65,7 +65,6 @@ final class Page extends PageBase {
 		$sender_identity_overrides = Settings::sender_identity_overrides();
 		$delivery_enabled          = DeliveryState::is_enabled();
 		$designer_enabled          = DesignerState::is_enabled();
-		$enabled                   = $delivery_enabled; // Legacy template variable: Delivery tab only.
 		$conflicts                 = ConflictDetector::active();
 		$runtime_active            = Runtime::is_active();
 		$has_brevo_secret          = '' !== Secrets::decrypt( (string) $settings['brevo_api_key'] );

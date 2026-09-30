@@ -29,7 +29,7 @@ defined( 'ABSPATH' ) || exit;
 				printf( esc_html__( 'Core Blueprint is delivering mail through %s.', 'core-blueprint' ), esc_html( $provider_label ) );
 			} elseif ( '' !== $activation_error ) {
 				echo esc_html( $activation_error );
-			} elseif ( $enabled && ! empty( $conflicts ) ) {
+			} elseif ( $delivery_enabled && ! empty( $conflicts ) ) {
 				esc_html_e( 'Mail is enabled, but Core Blueprint intentionally registers no transport hooks while a conflict exists.', 'core-blueprint' );
 			} else {
 				esc_html_e( 'WordPress mail delivery is untouched by Core Blueprint.', 'core-blueprint' );

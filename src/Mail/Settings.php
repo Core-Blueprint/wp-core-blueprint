@@ -59,11 +59,11 @@ final class Settings {
 	}
 
 	public static function all(): array {
-		$stored = get_option( self::OPTION, [] );
-		$stored = is_array( $stored ) ? $stored : [];
-		unset( $stored['enabled'] );
+		$defaults = self::defaults();
+		$stored   = get_option( self::OPTION, [] );
+		$stored   = is_array( $stored ) ? array_intersect_key( $stored, $defaults ) : [];
 
-		$settings = array_merge( self::defaults(), $stored );
+		$settings = array_merge( $defaults, $stored );
 		$settings['delivery_enabled'] = ! empty( $settings['delivery_enabled'] );
 		$settings['designer_enabled'] = ! empty( $settings['designer_enabled'] );
 		return $settings;
@@ -71,9 +71,9 @@ final class Settings {
 
 	public static function save( array $settings ): bool {
 		$previous_config = get_option( self::OPTION, null );
+		$defaults        = self::defaults();
 
-		$settings = array_merge( self::defaults(), $settings );
-		unset( $settings['enabled'] );
+		$settings = array_merge( $defaults, array_intersect_key( $settings, $defaults ) );
 		$settings['delivery_enabled'] = ! empty( $settings['delivery_enabled'] );
 		$settings['designer_enabled'] = ! empty( $settings['designer_enabled'] );
 
