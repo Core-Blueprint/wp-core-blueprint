@@ -208,6 +208,95 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_preflight_blocks_queryable_nonpublic_cpt_single_route_collisions(): void {
+		register_post_type(
+			'cb_route_queryable',
+			[
+				'public'             => false,
+				'publicly_queryable' => true,
+				'has_archive'        => false,
+				'rewrite'            => [ 'slug' => 'blog' ],
+			]
+		);
+
+		try {
+			self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+			self::factory()->post->create(
+				[
+					'post_type'   => 'cb_route_queryable',
+					'post_status' => 'publish',
+					'post_title'  => 'Queryable CPT collision',
+					'post_name'   => 'p2',
+				]
+			);
+
+			$result = Preflight::run();
+
+			self::assertFalse( $result['ready'] );
+			self::assertStringContainsString( '/blog/p2/', implode( ' ', $result['blockers'] ) );
+		} finally {
+			unregister_post_type( 'cb_route_queryable' );
+		}
+	}
+
+	public function test_preflight_does_not_treat_a_taxonomy_rewrite_base_as_a_term_route_collision(): void {
+		register_taxonomy(
+			'cb_route_topic',
+			'post',
+			[
+				'public'             => false,
+				'publicly_queryable' => true,
+				'rewrite'            => [ 'slug' => 'topics' ],
+			]
+		);
+
+		try {
+			self::factory()->category->create( [ 'name' => 'Topics', 'slug' => 'topics' ] );
+
+			$result = Preflight::run();
+
+			self::assertTrue( $result['ready'] );
+			self::assertStringNotContainsString( 'taxonomy route at "/topics/"', implode( ' ', $result['blockers'] ) );
+		} finally {
+			unregister_taxonomy( 'cb_route_topic' );
+		}
+	}
+
+	public function test_preflight_blocks_a_concrete_nested_taxonomy_term_route_collision(): void {
+		register_taxonomy(
+			'cb_route_topic',
+			'post',
+			[
+				'public'             => false,
+				'publicly_queryable' => true,
+				'hierarchical'       => true,
+				'rewrite'            => [
+					'slug'         => 'news',
+					'hierarchical' => true,
+				],
+			]
+		);
+
+		try {
+			$parent_id = self::factory()->category->create( [ 'name' => 'News', 'slug' => 'news' ] );
+			self::factory()->category->create(
+				[
+					'name'   => 'Company',
+					'slug'   => 'company',
+					'parent' => $parent_id,
+				]
+			);
+			wp_insert_term( 'Company', 'cb_route_topic', [ 'slug' => 'company' ] );
+
+			$result = Preflight::run();
+
+			self::assertFalse( $result['ready'] );
+			self::assertStringContainsString( '/news/company/', implode( ' ', $result['blockers'] ) );
+		} finally {
+			unregister_taxonomy( 'cb_route_topic' );
+		}
+	}
+
 	public function test_enabled_runtime_registers_specific_category_rules_without_a_root_catch_all(): void {
 		global $wp_rewrite;
 
