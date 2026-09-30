@@ -102,6 +102,13 @@ final class Runtime {
 			return;
 		}
 
+		global $wp_rewrite;
+		if ( $wp_rewrite instanceof \WP_Rewrite ) {
+			foreach ( array_keys( self::rewrite_definitions() ) as $regex ) {
+				unset( $wp_rewrite->extra_rules_top[ $regex ], $wp_rewrite->extra_rules[ $regex ] );
+			}
+		}
+
 		self::$deactivating = true;
 		try {
 			flush_rewrite_rules( false );
