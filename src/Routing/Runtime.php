@@ -175,7 +175,7 @@ final class Runtime {
 	 * @return string|false
 	 */
 	public static function filter_redirect_canonical( $redirect_url, string $requested_url ) {
-		if ( ! Policy::enabled() ) {
+		if ( ! self::is_active() ) {
 			return $redirect_url;
 		}
 
