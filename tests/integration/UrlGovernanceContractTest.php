@@ -19,7 +19,6 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 	private mixed $saved_rewrite_rules_option;
 	private mixed $saved_posts_per_page;
 	private string $saved_wp_permalink_structure = '';
-	private string $saved_wp_category_base = '';
 	private array $saved_extra_rules_top = [];
 	private array $saved_extra_rules = [];
 
@@ -36,7 +35,6 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->saved_rewrite_rules_option = get_option( 'rewrite_rules', '__cb_missing__' );
 		$this->saved_posts_per_page      = get_option( 'posts_per_page', '__cb_missing__' );
 		$this->saved_wp_permalink_structure = (string) $wp_rewrite->permalink_structure;
-		$this->saved_wp_category_base    = (string) $wp_rewrite->category_base;
 		$this->saved_extra_rules_top     = is_array( $wp_rewrite->extra_rules_top ) ? $wp_rewrite->extra_rules_top : [];
 		$this->saved_extra_rules         = is_array( $wp_rewrite->extra_rules ) ? $wp_rewrite->extra_rules : [];
 
@@ -45,7 +43,6 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		update_option( 'category_base', '', false );
 		update_option( 'posts_per_page', 10, false );
 		$wp_rewrite->set_permalink_structure( '/%category%/%postname%/' );
-		$wp_rewrite->category_base = '';
 		Settings::set_key( Policy::SETTINGS_KEY, Policy::defaults(), 'test:routing' );
 		delete_option( 'cb_core_routing_runtime_suspended' );
 		$this->reset_settings_cache();
@@ -62,7 +59,6 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->restore_option( 'rewrite_rules', $this->saved_rewrite_rules_option );
 		$this->restore_option( 'posts_per_page', $this->saved_posts_per_page );
 		$wp_rewrite->set_permalink_structure( $this->saved_wp_permalink_structure );
-		$wp_rewrite->category_base = $this->saved_wp_category_base;
 		$wp_rewrite->extra_rules_top = $this->saved_extra_rules_top;
 		$wp_rewrite->extra_rules     = $this->saved_extra_rules;
 		$this->reset_settings_cache();
@@ -380,7 +376,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_compact_blog_page_two_parses_as_category_pagination_not_post_page(): void {
-		global $wp_rewrite, $wp_query;
+		global $wp, $wp_rewrite;
 
 		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 		for ( $i = 1; $i <= 11; $i++ ) {
@@ -412,7 +408,10 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertFalse( is_404() );
 		self::assertSame( 2, (int) get_query_var( 'paged' ) );
 		self::assertSame( '', (string) get_query_var( 'name' ) );
-		self::assertSame( 1, (int) $wp_query->post_count );
+		self::assertIsString( $wp->matched_rule );
+		self::assertStringContainsString( '/p([0-9]+)', $wp->matched_rule );
+		self::assertStringContainsString( 'blog', $wp->matched_rule );
+		self::assertSame( 'category_name=blog&paged=2', $wp->matched_query );
 	}
 
 	public function test_term_link_changes_only_after_explicit_enable(): void {
