@@ -15,7 +15,7 @@ namespace CB\Core\AIGovernance;
 defined( 'ABSPATH' ) || exit;
 
 final class TraceContext {
-	/** @var array<int,array{activity_id:string,correlation_id:string}> */
+	/** @var array<int,array{activity_id:string,correlation_id:string,scope:string}> */
 	private static array $frames = [];
 
 	/** @return array{correlation_id:string,parent_activity_id:?string} */
@@ -27,13 +27,14 @@ final class TraceContext {
 		];
 	}
 
-	public static function enter( string $activity_id, string $correlation_id ): void {
+	public static function enter( string $activity_id, string $correlation_id, string $scope = 'generic' ): void {
 		if ( ! wp_is_uuid( $activity_id, 4 ) || ! wp_is_uuid( $correlation_id, 4 ) ) {
 			return;
 		}
 		self::$frames[] = [
 			'activity_id'   => $activity_id,
 			'correlation_id' => $correlation_id,
+			'scope'          => sanitize_key( $scope ) ?: 'generic',
 		];
 	}
 
@@ -55,13 +56,30 @@ final class TraceContext {
 		return self::current()['correlation_id'] ?? null;
 	}
 
-	/** @return array{activity_id:string,correlation_id:string}|null */
+	/** @return array{activity_id:string,correlation_id:string,scope:string}|null */
 	private static function current(): ?array {
-		if ( [] === self::$frames ) {
-			return null;
+		while ( [] !== self::$frames ) {
+			$current = self::$frames[ array_key_last( self::$frames ) ];
+			if ( ! is_array( $current ) ) {
+				array_pop( self::$frames );
+				continue;
+			}
+			if ( 'ability' === $current['scope'] && ! self::ability_execution_active() ) {
+				self::$frames = [];
+				return null;
+			}
+			return $current;
 		}
-		$current = self::$frames[ array_key_last( self::$frames ) ];
-		return is_array( $current ) ? $current : null;
+		return null;
+	}
+
+	private static function ability_execution_active(): bool {
+		foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 64 ) as $frame ) {
+			if ( 'WP_Ability' === ( $frame['class'] ?? null ) && 'execute' === ( $frame['function'] ?? null ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** @internal */
