@@ -214,15 +214,36 @@ final class Preflight {
 
 	/** @return array<string,string> public route path => content label */
 	private static function public_pagination_content_collisions( string $path ): array {
-		global $wpdb;
+		$prefix     = trim( $path, '/' );
+		$collisions = [];
 
-		$post_types = array_values( get_post_types( [ 'public' => true ], 'names' ) );
-		if ( [] === $post_types || ! $wpdb instanceof \wpdb ) {
-			return [];
+		foreach ( self::public_pagination_candidates() as $public_path => $label ) {
+			if ( 1 === preg_match( '#^' . preg_quote( $prefix, '#' ) . '/p[0-9]+$#', $public_path ) ) {
+				$collisions[ $public_path ] = $label;
+			}
 		}
 
+		ksort( $collisions, SORT_STRING );
+		return $collisions;
+	}
+
+	/** @return array<string,string> public route path => content label */
+	private static function public_pagination_candidates(): array {
+		global $wpdb;
+
+		static $cached_last_changed = null;
+		static $cached_candidates   = [];
+
+		$last_changed = (string) wp_cache_get_last_changed( 'posts' );
+		if ( null !== $cached_last_changed && hash_equals( $cached_last_changed, $last_changed ) ) {
+			return $cached_candidates;
+		}
+
+		$post_types    = array_values( get_post_types( [ 'public' => true ], 'names' ) );
 		$post_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
-		if ( [] === $post_statuses ) {
+		if ( [] === $post_types || [] === $post_statuses || ! $wpdb instanceof \wpdb ) {
+			$cached_last_changed = $last_changed;
+			$cached_candidates   = [];
 			return [];
 		}
 
@@ -239,8 +260,7 @@ final class Preflight {
 		);
 		$ids = is_string( $sql ) ? $wpdb->get_col( $sql ) : [];
 
-		$prefix     = trim( $path, '/' );
-		$collisions = [];
+		$candidates = [];
 		foreach ( (array) $ids as $post_id ) {
 			$post = get_post( (int) $post_id );
 			if ( ! $post instanceof \WP_Post ) {
@@ -253,16 +273,17 @@ final class Preflight {
 			}
 
 			$public_path = self::relative_public_path( $permalink );
-			if ( 1 !== preg_match( '#^' . preg_quote( $prefix, '#' ) . '/p[0-9]+$#', $public_path ) ) {
-				continue;
+			if ( '' !== $public_path ) {
+				$candidates[ $public_path ] = self::public_post_label( $post );
 			}
-
-			$collisions[ $public_path ] = self::public_post_label( $post );
 		}
 
-		ksort( $collisions, SORT_STRING );
-		return $collisions;
+		ksort( $candidates, SORT_STRING );
+		$cached_last_changed = $last_changed;
+		$cached_candidates   = $candidates;
+		return $candidates;
 	}
+
 
 	/** @return string[] */
 	private static function public_taxonomy_term_collisions( string $path ): array {
