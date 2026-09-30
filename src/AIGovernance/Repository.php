@@ -228,10 +228,18 @@ final class Repository {
 			$where[] = 'source_id = %s';
 			$params[] = self::bounded_text( $args['source'], 190 );
 		}
-		foreach ( [ 'type' => 'operation_type', 'transport' => 'transport' ] as $key => $column ) {
-			if ( ! empty( $args[ $key ] ) ) {
-				$where[] = $column . ' = %s';
-				$params[] = self::bounded_key( $args[ $key ], 30, '' );
+		if ( ! empty( $args['type'] ) ) {
+			$type = sanitize_key( (string) $args['type'] );
+			if ( in_array( $type, Activity::OPERATION_TYPES, true ) ) {
+				$where[] = 'operation_type = %s';
+				$params[] = $type;
+			}
+		}
+		if ( ! empty( $args['transport'] ) ) {
+			$transport = sanitize_key( (string) $args['transport'] );
+			if ( in_array( $transport, Activity::TRANSPORTS, true ) ) {
+				$where[] = 'transport = %s';
+				$params[] = $transport;
 			}
 		}
 		foreach ( [ 'provider' => 'provider_id', 'model' => 'model_id' ] as $key => $column ) {
