@@ -280,7 +280,7 @@ Consumer business authorization and permission checks remain owned by the consum
 The Base-owned **Core Blueprint → Logs → AI Activity** tab provides:
 
 - an empty state when nothing has been recorded;
-- date, actor, source, operation type, transport, provider, model, operation and outcome filters;
+- date, actor, source, correlation ID, operation type, transport, provider, model, operation and outcome filters;
 - activity list;
 - per-record detail view;
 - CSV export;
