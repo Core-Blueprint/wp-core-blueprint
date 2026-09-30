@@ -240,6 +240,105 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
 	}
 
+	public function test_reactivation_marks_rewrite_reconciliation_dirty_when_policy_is_enabled(): void {
+		delete_option( 'cb_core_routing_rewrite_dirty' );
+
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		Runtime::reconcile_activation();
+
+		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
+	}
+
+	public function test_reactivation_is_noop_when_policy_is_disabled(): void {
+		delete_option( 'cb_core_routing_rewrite_dirty' );
+
+		Runtime::reconcile_activation();
+
+		self::assertFalse( get_option( 'cb_core_routing_rewrite_dirty', false ) );
+	}
+
+	public function test_deactivation_cleanup_preserves_policy_and_removes_registered_rules(): void {
+		global $wp_rewrite;
+
+		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		$wp_rewrite->extra_rules_top = [];
+		Runtime::register_rewrite_rules();
+		self::assertNotEmpty( $wp_rewrite->extra_rules_top );
+
+		Runtime::cleanup_deactivation();
+
+		self::assertTrue( Policy::enabled() );
+		self::assertFalse( get_option( 'cb_core_routing_rewrite_dirty', false ) );
+
+		foreach ( array_keys( $wp_rewrite->extra_rules_top ) as $regex ) {
+			self::assertStringNotContainsString( '/p([0-9]+)', $regex );
+			self::assertStringNotContainsString( 'blog', $regex );
+		}
+	}
+
+	public function test_disabled_core_setup_evidence_reports_wordpress_default_without_collision_attention(): void {
+		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		self::factory()->post->create(
+			[
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_title'  => 'Blog landing',
+				'post_name'   => 'blog',
+			]
+		);
+
+		$check = Registry::get( 'routing-urls' );
+		self::assertNotNull( $check );
+
+		$evidence = $check->evidence();
+
+		self::assertSame( 'ok', $evidence->health() );
+		self::assertSame( 'routing.wordpress-default', $evidence->code() );
+		self::assertFalse( $evidence->context()['enabled'] );
+		self::assertSame( 0, $evidence->context()['blocker_count'] );
+	}
+
+	public function test_enabled_core_setup_evidence_surfaces_route_collisions_as_attention(): void {
+		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		self::factory()->post->create(
+			[
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_title'  => 'Blog landing',
+				'post_name'   => 'blog',
+			]
+		);
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		$check = Registry::get( 'routing-urls' );
+		self::assertNotNull( $check );
+
+		$evidence = $check->evidence();
+
+		self::assertSame( 'attention', $evidence->health() );
+		self::assertSame( 'routing.collision-detected', $evidence->code() );
+		self::assertTrue( $evidence->context()['enabled'] );
+		self::assertGreaterThan( 0, $evidence->context()['blocker_count'] );
+	}
+
 	public function test_core_setup_registers_routing_as_optional_cms_tool(): void {
 		$check = Registry::get( 'routing-urls' );
 
