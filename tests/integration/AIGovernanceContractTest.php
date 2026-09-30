@@ -265,7 +265,7 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertSame( 2, $row->evidence_decoded['input_count'] );
 		$this->assertSame( 2, $row->evidence_decoded['result']['embedding_count'] );
 		$this->assertSame( 1536, $row->evidence_decoded['result']['dimensions'] );
-		$this->assertSame( 9, $row->evidence_decoded['result']['token_usage']['total'] );
+		$this->assertSame( 9, $row->evidence_decoded['result']['usage_counts']['total_count'] );
 		$this->assertStringNotContainsString( 'never-store-embedding-input', (string) $row->evidence );
 		$this->assertStringNotContainsString( '0.123456789', (string) $row->evidence );
 	}
