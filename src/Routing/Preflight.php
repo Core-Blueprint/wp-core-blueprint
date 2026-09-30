@@ -110,16 +110,6 @@ final class Preflight {
 					$path
 				);
 			}
-
-			foreach ( self::reserved_post_slugs( (int) $term->term_id ) as $post_slug ) {
-				$blockers[] = sprintf(
-					/* translators: 1: post slug, 2: category name, 3: category route */
-					__( 'Post slug "%1$s" in category "%2$s" conflicts with reserved pagination route "/%3$s/%1$s/".', 'core-blueprint' ),
-					$post_slug,
-					$term->name,
-					$path
-				);
-			}
 		}
 
 		if ( [] === $routes ) {
@@ -405,51 +395,6 @@ final class Preflight {
 		return $paths;
 	}
 
-	/** @return string[] */
-	private static function reserved_post_slugs( int $term_id ): array {
-		global $wpdb;
-
-		if ( $term_id < 1 || ! $wpdb instanceof \wpdb ) {
-			return [];
-		}
-
-		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
-		if ( [] === $public_statuses ) {
-			return [];
-		}
-
-		$status_placeholders = implode( ', ', array_fill( 0, count( $public_statuses ), '%s' ) );
-		$args                = array_merge(
-			[ 'category', $term_id, 'post' ],
-			$public_statuses,
-			[ $wpdb->esc_like( 'p' ) . '%' ]
-		);
-		$sql                 = $wpdb->prepare(
-			"SELECT DISTINCT p.post_name
-			FROM {$wpdb->posts} p
-			INNER JOIN {$wpdb->term_relationships} tr ON tr.object_id = p.ID
-			INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
-			WHERE tt.taxonomy = %s
-				AND tt.term_id = %d
-				AND p.post_type = %s
-				AND p.post_status IN ({$status_placeholders})
-				AND p.post_name LIKE %s",
-			...$args
-		);
-
-		$slugs = is_string( $sql ) ? $wpdb->get_col( $sql ) : [];
-		$out   = [];
-
-		foreach ( (array) $slugs as $slug ) {
-			$slug = (string) $slug;
-			if ( 1 === preg_match( '/^p[0-9]+$/', $slug ) ) {
-				$out[] = $slug;
-			}
-		}
-
-		sort( $out, SORT_STRING );
-		return array_values( array_unique( $out ) );
-	}
 
 	private function __construct() {}
 }
