@@ -445,6 +445,9 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 
 	public function test_query_filters_and_retention_prune_the_dedicated_store(): void {
 		$id_a = Activity::record( [ 'operation' => 'fixture/a', 'outcome' => 'succeeded', 'source_id' => 'adapter-a' ] );
+		$parent_id = wp_generate_uuid4();
+		$correlation_id = wp_generate_uuid4();
+		TraceContext::enter( $parent_id, $correlation_id );
 		$id_b = Activity::record( [
 			'operation'      => 'fixture/b',
 			'outcome'        => 'failed',
@@ -454,17 +457,20 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 			'model_id'       => 'model-b',
 			'model_label'    => 'Model B',
 		] );
+		TraceContext::leave( $parent_id );
 		$this->assertIsString( $id_a );
 		$this->assertIsString( $id_b );
 
 		$filtered = Repository::query( [
-			'source'   => 'adapter-b',
-			'provider' => 'provider-b',
-			'model'    => 'model-b',
-			'outcome'  => 'failed',
+			'source'      => 'adapter-b',
+			'provider'    => 'provider-b',
+			'model'       => 'model-b',
+			'correlation' => $correlation_id,
+			'outcome'     => 'failed',
 		] );
 		$this->assertSame( 1, $filtered['total'] );
 		$this->assertSame( 'fixture/b', $filtered['rows'][0]->operation );
+		$this->assertSame( $correlation_id, $filtered['rows'][0]->correlation_id );
 		$this->assertSame( 'provider-b', $filtered['rows'][0]->provider_id );
 		$this->assertSame( 'Provider B', $filtered['rows'][0]->provider_label );
 		$this->assertSame( 'model-b', $filtered['rows'][0]->model_id );
