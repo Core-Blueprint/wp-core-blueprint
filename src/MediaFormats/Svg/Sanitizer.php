@@ -15,7 +15,7 @@ use CB\Core\MediaFormats\Vendor\SvgSanitize\Sanitizer as UpstreamSanitizer;
 defined( 'ABSPATH' ) || exit;
 
 final class Sanitizer {
-	public const VERSION = '0.22.0';
+	public const VERSION = '1.0.0';
 	private const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
 
 	/** @return true|\WP_Error */
