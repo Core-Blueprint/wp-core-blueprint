@@ -228,6 +228,10 @@ Optional keys:
 - `transport` — one of `unknown`, `php`, `rest`, `cli`, `mcp-http`, `mcp-stdio`, `reported`;
 - `source_id`;
 - `source_label`;
+- `provider_id`;
+- `provider_label`;
+- `model_id`;
+- `model_label`;
 - `target_type`;
 - `target_id`;
 - `target_label`;
@@ -247,6 +251,8 @@ $activity_id = Activity::record( [
     'transport'    => 'reported',
     'source_id'    => 'my-plugin-agent-adapter',
     'source_label' => 'My Plugin Agent Adapter',
+    'provider_id'  => 'provider-id-if-known',
+    'model_id'     => 'model-id-if-known',
     'target_type'  => 'post',
     'target_id'    => (string) $post_id,
     'evidence'     => [
