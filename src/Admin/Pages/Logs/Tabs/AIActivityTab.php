@@ -97,7 +97,7 @@ final class AIActivityTab {
 						<span class="cb-core-toolbar__label"><?php esc_html_e( 'Operation type', 'core-blueprint' ); ?></span>
 						<select name="type">
 							<option value=""><?php esc_html_e( 'Any', 'core-blueprint' ); ?></option>
-							<?php foreach ( [ 'ability', 'ai-client', 'mcp-request', 'operation' ] as $type ) : ?>
+							<?php foreach ( Activity::OPERATION_TYPES as $type ) : ?>
 								<option value="<?php echo esc_attr( $type ); ?>" <?php selected( $raw['type'], $type ); ?>><?php echo esc_html( $type ); ?></option>
 							<?php endforeach; ?>
 						</select>
