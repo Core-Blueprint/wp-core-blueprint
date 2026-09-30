@@ -94,6 +94,32 @@ final class AIActivityTab {
 						<input type="text" name="source" value="<?php echo esc_attr( $raw['source'] ); ?>" placeholder="wordpress-mcp-adapter" />
 					</label>
 					<label class="cb-core-toolbar__field">
+						<span class="cb-core-toolbar__label"><?php esc_html_e( 'Operation type', 'core-blueprint' ); ?></span>
+						<select name="type">
+							<option value=""><?php esc_html_e( 'Any', 'core-blueprint' ); ?></option>
+							<?php foreach ( [ 'ability', 'ai-client', 'mcp-request', 'operation' ] as $type ) : ?>
+								<option value="<?php echo esc_attr( $type ); ?>" <?php selected( $raw['type'], $type ); ?>><?php echo esc_html( $type ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</label>
+					<label class="cb-core-toolbar__field">
+						<span class="cb-core-toolbar__label"><?php esc_html_e( 'Transport', 'core-blueprint' ); ?></span>
+						<select name="transport">
+							<option value=""><?php esc_html_e( 'Any', 'core-blueprint' ); ?></option>
+							<?php foreach ( Activity::TRANSPORTS as $transport ) : ?>
+								<option value="<?php echo esc_attr( $transport ); ?>" <?php selected( $raw['transport'], $transport ); ?>><?php echo esc_html( $transport ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</label>
+					<label class="cb-core-toolbar__field">
+						<span class="cb-core-toolbar__label"><?php esc_html_e( 'Provider ID', 'core-blueprint' ); ?></span>
+						<input type="text" name="provider" value="<?php echo esc_attr( $raw['provider'] ); ?>" />
+					</label>
+					<label class="cb-core-toolbar__field">
+						<span class="cb-core-toolbar__label"><?php esc_html_e( 'Model ID', 'core-blueprint' ); ?></span>
+						<input type="text" name="model" value="<?php echo esc_attr( $raw['model'] ); ?>" />
+					</label>
+					<label class="cb-core-toolbar__field">
 						<span class="cb-core-toolbar__label"><?php esc_html_e( 'Operation contains', 'core-blueprint' ); ?></span>
 						<input type="text" name="operation" value="<?php echo esc_attr( $raw['operation'] ); ?>" placeholder="plugin/ability" />
 					</label>
@@ -211,6 +237,8 @@ final class AIActivityTab {
 				<?php
 				$details = [
 					__( 'Activity ID', 'core-blueprint' ) => $row->activity_id,
+					__( 'Correlation ID', 'core-blueprint' ) => $row->correlation_id ?: '—',
+					__( 'Parent activity ID', 'core-blueprint' ) => $row->parent_activity_id ?: '—',
 					__( 'Observed at', 'core-blueprint' ) => $row->created_at,
 					__( 'Completed at', 'core-blueprint' ) => $row->completed_at ?: '—',
 					__( 'Actor', 'core-blueprint' ) => self::actor_label( $row ),
@@ -253,7 +281,7 @@ final class AIActivityTab {
 		if ( '' !== $raw['actor'] ) {
 			$filters['actor'] = max( 0, (int) $raw['actor'] );
 		}
-		foreach ( [ 'source', 'operation', 'outcome' ] as $key ) {
+		foreach ( [ 'source', 'type', 'transport', 'provider', 'model', 'operation', 'outcome' ] as $key ) {
 			if ( '' !== $raw[ $key ] ) {
 				$filters[ $key ] = $raw[ $key ];
 			}
@@ -261,7 +289,7 @@ final class AIActivityTab {
 		return $filters;
 	}
 
-	/** @return array{from:string,to:string,actor:string,source:string,operation:string,outcome:string} */
+	/** @return array{from:string,to:string,actor:string,source:string,type:string,transport:string,provider:string,model:string,operation:string,outcome:string} */
 	private static function raw_filter_values(): array {
 		$outcome = isset( $_GET['outcome'] ) ? sanitize_key( (string) wp_unslash( $_GET['outcome'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return [
@@ -269,6 +297,10 @@ final class AIActivityTab {
 			'to'        => isset( $_GET['to'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['to'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'actor'     => isset( $_GET['actor'] ) ? (string) max( 0, (int) $_GET['actor'] ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'source'    => isset( $_GET['source'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['source'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'type'      => isset( $_GET['type'] ) ? sanitize_key( (string) wp_unslash( $_GET['type'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'transport' => isset( $_GET['transport'] ) ? sanitize_key( (string) wp_unslash( $_GET['transport'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'provider'  => isset( $_GET['provider'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['provider'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'model'     => isset( $_GET['model'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['model'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'operation' => isset( $_GET['operation'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['operation'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'outcome'   => in_array( $outcome, Activity::OUTCOMES, true ) ? $outcome : '',
 		];
@@ -282,13 +314,24 @@ final class AIActivityTab {
 	}
 
 	private static function source_label( object $row ): string {
+		$parts = [];
 		if ( ! empty( $row->source_label ) ) {
-			return (string) $row->source_label;
+			$parts[] = (string) $row->source_label;
+		} elseif ( ! empty( $row->source_id ) ) {
+			$parts[] = (string) $row->source_id;
 		}
-		if ( ! empty( $row->source_id ) ) {
-			return (string) $row->source_id;
+		if ( ! empty( $row->provider_label ) ) {
+			$parts[] = (string) $row->provider_label;
+		} elseif ( ! empty( $row->provider_id ) ) {
+			$parts[] = (string) $row->provider_id;
 		}
-		return __( 'Unknown source', 'core-blueprint' );
+		if ( ! empty( $row->model_label ) ) {
+			$parts[] = (string) $row->model_label;
+		} elseif ( ! empty( $row->model_id ) ) {
+			$parts[] = (string) $row->model_id;
+		}
+		$parts = array_values( array_unique( array_filter( $parts ) ) );
+		return [] !== $parts ? implode( ' · ', $parts ) : __( 'Unknown source', 'core-blueprint' );
 	}
 
 	private static function target_label( object $row ): string {
