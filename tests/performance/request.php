@@ -483,7 +483,7 @@ try {
         cb_f1_expect($admin instanceof WP_User, 'Performance administrator is missing before module disablement.');
         wp_set_current_user((int) $admin->ID);
 
-        $definitions = \\CB\\Core\\Modules\\ActivationRegistry::definitions();
+        $definitions = \CB\Core\Modules\ActivationRegistry::definitions();
         cb_f1_expect([] !== $definitions, 'Canonical module activation registry is empty.');
 
         $disabled = [];
