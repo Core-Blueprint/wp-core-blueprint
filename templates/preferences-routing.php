@@ -3,6 +3,7 @@
  * Preferences > Routing & URLs.
  *
  * @var bool                     $routing_enabled
+ * @var bool                     $routing_runtime_active
  * @var array<string,mixed>|null $routing_preflight
  * @var string                   $routing_state
  * @var string                   $routing_example
@@ -60,6 +61,20 @@ if ( isset( $states[ $routing_state ] ) ) {
 		<p class="description">
 			<?php esc_html_e( 'This policy removes the category base from public category archive URLs and uses p{n} for archive pagination. It is always opt-in.', 'core-blueprint' ); ?>
 		</p>
+
+		<?php if ( $routing_enabled && ! $routing_runtime_active ) : ?>
+			<?php
+			$routing_blockers = is_array( $routing_preflight['blockers'] ?? null )
+				? $routing_preflight['blockers']
+				: [];
+			echo \CB\Core\UI\Notice::render( [
+				'variant' => \CB\Core\UI\Notice::WARNING,
+				'title'   => __( 'Blocking route collisions found', 'core-blueprint' ),
+				'message' => __( 'Clean Archive URLs are temporarily suspended because route collisions were detected. WordPress default category routing remains active until the collisions are resolved.', 'core-blueprint' ),
+				'items'   => $routing_blockers,
+			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
+			?>
+		<?php endif; ?>
 
 		<table class="widefat striped cb-core-kv-table">
 			<tbody>
