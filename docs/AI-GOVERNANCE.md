@@ -175,7 +175,7 @@ Base records the adapter's `mcp.request` completion event and its bounded reques
 - server identifiers, numeric request IDs, and site-bound fingerprints for string request IDs and MCP session identifiers;
 - negotiated schema revision;
 - tool, Ability, prompt or resource identity;
-- machine-readable failure reason and error category; free-text failure output is reduced to metadata shape only;
+- machine-readable failure reason, error type and error category; free-text failure output is reduced to metadata shape only;
 - request duration;
 - the adapter's sanitized parameter summary.
 
