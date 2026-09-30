@@ -457,7 +457,7 @@ final class Runtime {
 
 	/** @return array<string,string> regex => WordPress rewrite query. */
 	private static function rewrite_definitions(): array {
-		$paths = array_keys( CategoryRoutes::all() );
+		$paths = CategoryRoutes::paths();
 		if ( [] === $paths ) {
 			return [];
 		}
@@ -481,7 +481,7 @@ final class Runtime {
 			'^(' . $alternation . ')/p([0-9]+)/?
 
 	private static function is_clean_canonical_path( string $current ): bool {
-		foreach ( CategoryRoutes::all() as $path => $_term ) {
+		foreach ( CategoryRoutes::paths() as $path ) {
 			$quoted = preg_quote( $path, '#' );
 
 			if ( $current === $path ) {
