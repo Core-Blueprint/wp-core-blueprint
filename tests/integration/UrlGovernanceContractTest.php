@@ -144,7 +144,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( '/blog/', implode( ' ', $result['blockers'] ) );
 	}
 
-	public function test_preflight_reserves_p_number_post_slugs_inside_categories(): void {
+	public function test_preflight_blocks_posts_that_really_publish_on_compact_pagination_routes(): void {
 		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 		self::factory()->post->create(
 			[
