@@ -456,6 +456,8 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		);
 
 		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
+		self::assertFalse( Runtime::is_active() );
+
 		Runtime::prepare_runtime();
 
 		self::assertFalse( Runtime::is_active() );
