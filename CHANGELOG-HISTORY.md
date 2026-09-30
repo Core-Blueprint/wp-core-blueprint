@@ -1,3 +1,7 @@
+# Core Blueprint internal pre-v1 changelog history
+
+> Source-only historical record. Version, Core API and schema statements below describe the state at each internal pre-v1 milestone and are not the current Base contract. Use `CHANGELOG.md` for the public launch line and `docs/PUBLIC-API.md` for the current public API version.
+
 ## 1.0.0-rc5 — 2026-09-05
 
 ### Modal Foundation confirmation checkbox gate
