@@ -301,7 +301,7 @@ final class Runtime {
 		}
 
 		$object = get_taxonomy( $taxonomy );
-		if ( $object instanceof \WP_Taxonomy && $object->public ) {
+		if ( $object instanceof \WP_Taxonomy && is_taxonomy_viewable( $object ) ) {
 			self::mark_rewrite_dirty();
 		}
 	}
@@ -318,17 +318,11 @@ final class Runtime {
 			return;
 		}
 
-		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
-		$current_type    = get_post_type_object( $post->post_type );
-		$previous_type   = $post_before instanceof \WP_Post
-			? get_post_type_object( $post_before->post_type )
-			: null;
-		$public_type     = ( $current_type instanceof \WP_Post_Type && $current_type->public )
-			|| ( $previous_type instanceof \WP_Post_Type && $previous_type->public );
-		$public_status   = in_array( $post->post_status, $public_statuses, true )
-			|| ( $post_before instanceof \WP_Post && in_array( $post_before->post_status, $public_statuses, true ) );
+		$current_viewable  = is_post_publicly_viewable( $post );
+		$previous_viewable = $post_before instanceof \WP_Post
+			&& is_post_publicly_viewable( $post_before );
 
-		if ( ! $public_type || ! $public_status ) {
+		if ( ! $current_viewable && ! $previous_viewable ) {
 			return;
 		}
 
@@ -365,13 +359,7 @@ final class Runtime {
 			return;
 		}
 
-		$type            = get_post_type_object( $post->post_type );
-		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
-		if (
-			! $type instanceof \WP_Post_Type
-			|| ! $type->public
-			|| ! in_array( $post->post_status, $public_statuses, true )
-		) {
+		if ( ! is_post_publicly_viewable( $post ) ) {
 			return;
 		}
 
@@ -392,13 +380,7 @@ final class Runtime {
 			return;
 		}
 
-		$type            = get_post_type_object( $post->post_type );
-		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
-		if (
-			$type instanceof \WP_Post_Type
-			&& $type->public
-			&& in_array( $post->post_status, $public_statuses, true )
-		) {
+		if ( is_post_publicly_viewable( $post ) ) {
 			self::mark_rewrite_dirty();
 		}
 	}
