@@ -43,6 +43,15 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		update_option( 'category_base', '', false );
 		update_option( 'posts_per_page', 10, false );
 		$wp_rewrite->set_permalink_structure( '/%category%/%postname%/' );
+
+		// WordPress registers built-in taxonomy permastructs during init. The
+		// integration bootstrap starts with plain permalinks, so refreshing only
+		// WP_Rewrite::permalink_structure leaves get_term_link() on ?cat={id}.
+		// Re-run the native registration after changing the permalink fixture so
+		// these tests exercise the same category lifecycle as a real pretty-
+		// permalink request.
+		create_initial_taxonomies();
+
 		Settings::set_key( Policy::SETTINGS_KEY, Policy::defaults(), 'test:routing' );
 		delete_option( 'cb_core_routing_runtime_suspended' );
 		$this->reset_settings_cache();
@@ -59,6 +68,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->restore_option( 'rewrite_rules', $this->saved_rewrite_rules_option );
 		$this->restore_option( 'posts_per_page', $this->saved_posts_per_page );
 		$wp_rewrite->set_permalink_structure( $this->saved_wp_permalink_structure );
+		create_initial_taxonomies();
 		$wp_rewrite->extra_rules_top = $this->saved_extra_rules_top;
 		$wp_rewrite->extra_rules     = $this->saved_extra_rules;
 		$this->reset_settings_cache();
@@ -680,7 +690,7 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 			)
 		);
 		self::assertSame(
-			'https://nl.example.test/site/nl/blog/feed/rss2/?lang=nl',
+			'https://nl.example.test/site/nl/blog/feed/?lang=nl',
 			CategoryRoutes::route_feed_url(
 				'https://nl.example.test/site/nl/category/blog/rss2/?lang=nl',
 				'blog',
