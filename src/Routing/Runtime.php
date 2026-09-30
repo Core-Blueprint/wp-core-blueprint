@@ -442,17 +442,26 @@ final class Runtime {
 	 * @return array<string,string>
 	 */
 	public static function filter_generated_rules( array $rules ): array {
-		if ( ! self::$deactivating && self::is_active() ) {
-			return $rules;
-		}
+		$owned = [];
+		$other = [];
 
 		foreach ( $rules as $regex => $query ) {
 			if ( self::is_owned_rewrite_query( $query ) ) {
-				unset( $rules[ $regex ] );
+				$owned[ $regex ] = $query;
+				continue;
 			}
+
+			$other[ $regex ] = $query;
 		}
 
-		return $rules;
+		if ( self::$deactivating || ! self::is_active() ) {
+			return $other;
+		}
+
+		// Keep the exact regex/query that WordPress and downstream routing
+		// providers produced, but ensure Core Blueprint-owned archive routes win
+		// before generic post/page rewrites can consume the same request.
+		return $owned + $other;
 	}
 
 	private static function apply_preflight_state(): bool {
