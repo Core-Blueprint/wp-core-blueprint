@@ -190,7 +190,7 @@ final class Runtime {
 			return;
 		}
 
-		$current_url   = self::current_request_url();
+		$current_url    = self::current_request_url();
 		$category_base = trim( CategoryRoutes::category_base_path(), '/' );
 
 		foreach ( CategoryRoutes::paths() as $path ) {
@@ -198,40 +198,39 @@ final class Runtime {
 			$legacy_base = '' !== $category_base
 				? trim( $category_base . '/' . $path, '/' )
 				: $path;
+			$legacy_quoted = preg_quote( $legacy_base, '#' );
 
-			// Normalize the clean root route itself, including trailing slash,
-			// without reconstructing host, language or query context.
-			if ( $current === $path ) {
+			// Match the owned route at the end of the request while preserving
+			// any unknown leading context such as a language directory or site
+			// subdirectory. Core Blueprint never needs to identify that context.
+			if ( preg_match( '#(?:^|/)' . $quoted . '/?$#', $current ) ) {
 				self::redirect_if_needed( CategoryRoutes::route_url( $current_url, $path ) );
 				return;
 			}
 
-			// Legacy WordPress category-base route. When category_base is already
-			// removed by another configuration, legacy_base equals the clean path
-			// and must not redirect to itself.
-			if ( $legacy_base !== $path && $current === $legacy_base ) {
+			if (
+				$legacy_base !== $path
+				&& preg_match( '#(?:^|/)' . $legacy_quoted . '/?$#', $current )
+			) {
 				self::redirect( CategoryRoutes::route_url( $current_url, $path ) );
 			}
 
 			if (
 				$legacy_base !== $path
-				&& preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/(?:page|p)/?([0-9]+)/?$#', $current, $match )
+				&& preg_match( '#(?:^|/)' . $legacy_quoted . '/(?:page|p)/?([0-9]+)/?$#', $current, $match )
 			) {
 				self::redirect(
 					CategoryRoutes::route_url( $current_url, $path, max( 1, (int) $match[1] ) )
 				);
 			}
 
-			// WordPress default pagination remains a supported legacy route.
-			if ( preg_match( '#^' . $quoted . '/page/?([0-9]+)/?$#', $current, $match ) ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/page/?([0-9]+)/?$#', $current, $match ) ) {
 				self::redirect(
 					CategoryRoutes::route_url( $current_url, $path, max( 1, (int) $match[1] ) )
 				);
 			}
 
-			// Compact pagination owns exactly one canonical spelling. p0/p1,
-			// leading zeros and missing trailing slashes normalize here.
-			if ( preg_match( '#^' . $quoted . '/p([0-9]+)/?$#', $current, $match ) ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/p([0-9]+)/?$#', $current, $match ) ) {
 				$raw_page = (string) $match[1];
 				$page     = (int) $raw_page;
 				$target   = CategoryRoutes::route_url( $current_url, $path, max( 1, $page ) );
@@ -244,32 +243,32 @@ final class Runtime {
 				return;
 			}
 
-			// Canonical clean feed shape.
-			if ( $current === $path . '/feed' ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/feed/?$#', $current ) ) {
 				self::redirect_if_needed( CategoryRoutes::route_feed_url( $current_url, $path ) );
 				return;
 			}
-			if ( preg_match( '#^' . $quoted . '/feed/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/feed/(feed|rdf|rss|rss2|atom)/?$', $current, $match ) ) {
 				self::redirect_if_needed(
 					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
 				);
 				return;
 			}
 
-			// Alternate WordPress feed suffixes remain readable but redirect to
-			// one canonical /feed/{format}/ shape.
-			if ( preg_match( '#^' . $quoted . '/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/(feed|rdf|rss|rss2|atom)/?$', $current, $match ) ) {
 				self::redirect(
 					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
 				);
 			}
 
-			if ( $legacy_base !== $path && $current === $legacy_base . '/feed' ) {
+			if (
+				$legacy_base !== $path
+				&& preg_match( '#(?:^|/)' . $legacy_quoted . '/feed/?$#', $current )
+			) {
 				self::redirect( CategoryRoutes::route_feed_url( $current_url, $path ) );
 			}
 			if (
 				$legacy_base !== $path
-				&& preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/feed/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
+				&& preg_match( '#(?:^|/)' . $legacy_quoted . '/feed/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
 			) {
 				self::redirect(
 					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
@@ -277,7 +276,7 @@ final class Runtime {
 			}
 			if (
 				$legacy_base !== $path
-				&& preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
+				&& preg_match( '#(?:^|/)' . $legacy_quoted . '/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
 			) {
 				self::redirect(
 					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
@@ -511,13 +510,13 @@ final class Runtime {
 		foreach ( CategoryRoutes::paths() as $path ) {
 			$quoted = preg_quote( $path, '#' );
 
-			if ( $current === $path ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/?$#', $current ) ) {
 				return true;
 			}
-			if ( preg_match( '#^' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?$#', $current ) ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/p([2-9][0-9]*|1[0-9]+)/?$#', $current ) ) {
 				return true;
 			}
-			if ( preg_match( '#^' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?$#', $current ) ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/feed(?:/(feed|rdf|rss|rss2|atom))?/?$#', $current ) ) {
 				return true;
 			}
 		}
