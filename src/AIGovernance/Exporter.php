@@ -16,7 +16,9 @@ final class Exporter {
 	/** @return array<string,string> */
 	public static function columns(): array {
 		return [
-			'activity_id'      => __( 'Activity ID', 'core-blueprint' ),
+			'activity_id'        => __( 'Activity ID', 'core-blueprint' ),
+			'correlation_id'     => __( 'Correlation ID', 'core-blueprint' ),
+			'parent_activity_id' => __( 'Parent activity ID', 'core-blueprint' ),
 			'created_at'       => __( 'Observed at', 'core-blueprint' ),
 			'completed_at'     => __( 'Completed at', 'core-blueprint' ),
 			'actor_user_id'    => __( 'Actor user ID', 'core-blueprint' ),
@@ -25,7 +27,11 @@ final class Exporter {
 			'operation'        => __( 'Operation', 'core-blueprint' ),
 			'transport'        => __( 'Transport', 'core-blueprint' ),
 			'source_id'        => __( 'Source ID', 'core-blueprint' ),
-			'source_label'     => __( 'Source', 'core-blueprint' ),
+			'source_label'       => __( 'Source', 'core-blueprint' ),
+			'provider_id'        => __( 'Provider ID', 'core-blueprint' ),
+			'provider_label'     => __( 'Provider', 'core-blueprint' ),
+			'model_id'           => __( 'Model ID', 'core-blueprint' ),
+			'model_label'        => __( 'Model', 'core-blueprint' ),
 			'outcome'          => __( 'Outcome', 'core-blueprint' ),
 			'capture_state'    => __( 'Capture state', 'core-blueprint' ),
 			'target_type'      => __( 'Target type', 'core-blueprint' ),
