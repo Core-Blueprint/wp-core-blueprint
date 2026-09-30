@@ -148,7 +148,7 @@ For a completed generation Base records:
 - model ID and label;
 - message count, never message content;
 - candidate count when available;
-- prompt, completion, total and thought token counts when available;
+- prompt, completion, total and thought token counts when available, stored as bounded usage-count metadata rather than under secret-like token keys;
 - observed transport, duration and actor.
 
 Base also registers forward-compatible listeners for the AI Client embedding lifecycle names produced by WordPress' generic event dispatcher:
