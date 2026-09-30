@@ -12,6 +12,7 @@ return [
         'Review public URL routing and optionally use clean category archive URLs with compact p{n} pagination.' => 'Controleer publieke URL-routing en gebruik optioneel schone categoriearchief-URL\'s met compacte p{n}-paginering.',
         'You do not have permission to manage Routing & URLs.' => 'Je hebt geen toestemming om Routing & URL\'s te beheren.',
         'Category "%1$s" uses the reserved root route "/%2$s/".' => 'Categorie "%1$s" gebruikt de gereserveerde rootroute "/%2$s/".',
+        'Category "%1$s" could not be resolved to a public clean route safely.' => 'Categorie "%1$s" kon niet veilig naar een publieke schone route worden herleid.',
         'Category "%1$s" conflicts with existing public content "%2$s" at "/%3$s/".' => 'Categorie "%1$s" conflicteert met bestaande publieke content "%2$s" op "/%3$s/".',
         'Category "%1$s" conflicts with the "%2$s" post type archive at "/%3$s/".' => 'Categorie "%1$s" conflicteert met het archief van berichttype "%2$s" op "/%3$s/".',
         'Category "%1$s" conflicts with the "%2$s" taxonomy route at "/%3$s/".' => 'Categorie "%1$s" conflicteert met de taxonomieroute "%2$s" op "/%3$s/".',
