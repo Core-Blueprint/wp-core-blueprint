@@ -29,24 +29,20 @@ final class OptionPolicy {
 	}
 
 	public static function sync_active(): void {
-		if ( function_exists( 'wp_set_option_autoload_values' ) ) {
-			$values = [];
-			foreach ( self::HOT_OPTIONS as $option ) {
-				$values[ $option ] = true;
-			}
-			wp_set_option_autoload_values( $values );
+		$values = [];
+		foreach ( self::HOT_OPTIONS as $option ) {
+			$values[ $option ] = true;
 		}
+		wp_set_option_autoload_values( $values );
 		update_option( self::VERSION_OPTION, self::VERSION, true );
 	}
 
 	public static function mark_inactive(): void {
-		if ( function_exists( 'wp_set_option_autoload_values' ) ) {
-			$values = [];
-			foreach ( self::HOT_OPTIONS as $option ) {
-				$values[ $option ] = false;
-			}
-			wp_set_option_autoload_values( $values );
+		$values = [];
+		foreach ( self::HOT_OPTIONS as $option ) {
+			$values[ $option ] = false;
 		}
+		wp_set_option_autoload_values( $values );
 		delete_option( self::VERSION_OPTION );
 	}
 }
