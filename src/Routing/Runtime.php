@@ -478,7 +478,20 @@ final class Runtime {
 		$marker = '&' . self::ROUTE_MARKER;
 
 		return [
-			'^(' . $alternation . ')/p([0-9]+)/?
+			'^(' . $alternation . ')/p([0-9]+)/?$' =>
+				'index.php?category_name=$matches[1]&paged=$matches[2]' . $marker,
+			'^(' . $alternation . ')/feed/(feed|rdf|rss|rss2|atom)/?$' =>
+				'index.php?category_name=$matches[1]&feed=$matches[2]' . $marker,
+			'^(' . $alternation . ')/(feed|rdf|rss|rss2|atom)/?$' =>
+				'index.php?category_name=$matches[1]&feed=$matches[2]' . $marker,
+			'^(' . $alternation . ')/?$' =>
+				'index.php?category_name=$matches[1]' . $marker,
+		];
+	}
+
+	private static function is_owned_rewrite_query( string $query ): bool {
+		return str_contains( $query, self::ROUTE_MARKER );
+	}
 
 	private static function is_clean_canonical_path( string $current ): bool {
 		foreach ( CategoryRoutes::paths() as $path ) {
