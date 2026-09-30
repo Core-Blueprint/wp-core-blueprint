@@ -9,6 +9,7 @@ use CB\Core\AdminNotices\SourceResolver;
 use CB\Core\AdminNotices\Visibility;
 use CB\Core\Admin\Admin as CoreAdmin;
 use CB\Core\Admin\Pages\Preferences;
+use CB\Core\Admin\ScreenContext;
 use CB\Core\Permissions\PrivilegedAccessGuard;
 use CB\Core\Permissions\PrivilegedAccessRegistry;
 use CB\Core\Permissions\Roles;
@@ -158,6 +159,20 @@ final class CB_Base_Admin_Notices_Admin_Contract_Test extends WP_UnitTestCase {
 		$rows = array_column( $state['sources'], null, 'id' );
 		self::assertSame( Policy::OPERATORS_ONLY, $rows['plugin:example-plugin']['rule']['visibility'] );
 		self::assertSame( Policy::EVERYONE, $rows['wordpress:core']['rule']['visibility'] );
+	}
+
+	public function test_ana4b_admin_notices_tab_is_preserved_by_screen_context_asset_routing(): void {
+		$saved_get = $_GET;
+		$_GET['page'] = Preferences::SLUG;
+		$_GET['tab']  = 'admin-notices';
+
+		try {
+			$context = ScreenContext::from_request( 'core-blueprint_page_core-blueprint-preferences' );
+			self::assertSame( Preferences::SLUG, $context->page() );
+			self::assertSame( 'admin-notices', $context->tab() );
+		} finally {
+			$_GET = $saved_get;
+		}
 	}
 
 	public function test_ana5_preferences_editor_is_foundation_first_without_custom_notice_css_or_dom_hiding(): void {
