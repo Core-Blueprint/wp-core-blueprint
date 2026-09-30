@@ -149,6 +149,33 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 			Runtime::filter_category_rewrite_rules( $wordpress )
 		);
 	}
+	public function test_route_catalog_uses_the_wordpress_hierarchy_query_contract(): void {
+		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+
+		$seen = null;
+		$capture = static function ( array $args, array $taxonomies ) use ( &$seen ): array {
+			if ( in_array( 'category', $taxonomies, true ) ) {
+				$seen = $args;
+			}
+			return $args;
+		};
+
+		add_filter( 'get_terms_args', $capture, 99, 2 );
+		try {
+			$entries = CategoryRoutes::entries();
+		} finally {
+			remove_filter( 'get_terms_args', $capture, 99 );
+		}
+
+		self::assertNotEmpty( $entries );
+		self::assertIsArray( $seen );
+		self::assertSame( 'all', $seen['get'] ?? null );
+		self::assertSame( 'id', $seen['orderby'] ?? null );
+		self::assertSame( 'id=>parent', $seen['fields'] ?? null );
+		self::assertTrue( $seen['suppress_filter'] ?? false );
+		self::assertTrue( $seen['suppress_filters'] ?? false );
+	}
+
 	public function test_preflight_requires_standard_pretty_permalinks_without_index_php(): void {
 		update_option( 'permalink_structure', '', false );
 		$plain = Preflight::run();
@@ -203,6 +230,76 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertFalse( $result['ready'] );
 		self::assertNotEmpty( $result['blockers'] );
 		self::assertStringContainsString( '/blog/', implode( ' ', $result['blockers'] ) );
+	}
+
+	public function test_preflight_does_not_cross_language_domain_route_contexts(): void {
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog NL', 'slug' => 'blog' ] );
+		$page_id = self::factory()->post->create(
+			[
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_title'  => 'Blog EN',
+				'post_name'   => 'blog',
+			]
+		);
+
+		$term_context = static function ( string $url, WP_Term $term ) use ( $term_id ): string {
+			return (int) $term->term_id === $term_id
+				? 'https://nl.example.test/nl/category/blog/'
+				: $url;
+		};
+		$page_context = static function ( string $url, int $post_id ) use ( $page_id ): string {
+			return $post_id === $page_id
+				? 'https://en.example.test/en/blog/'
+				: $url;
+		};
+
+		add_filter( 'term_link', $term_context, 50, 2 );
+		add_filter( 'page_link', $page_context, 50, 2 );
+		try {
+			$result = Preflight::run();
+		} finally {
+			remove_filter( 'term_link', $term_context, 50 );
+			remove_filter( 'page_link', $page_context, 50 );
+		}
+
+		self::assertTrue( $result['ready'] );
+		self::assertStringNotContainsString( 'Blog EN', implode( ' ', $result['blockers'] ) );
+	}
+
+	public function test_preflight_does_not_cross_query_language_route_contexts(): void {
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog NL', 'slug' => 'blog' ] );
+		$page_id = self::factory()->post->create(
+			[
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_title'  => 'Blog EN',
+				'post_name'   => 'blog',
+			]
+		);
+
+		$term_context = static function ( string $url, WP_Term $term ) use ( $term_id ): string {
+			return (int) $term->term_id === $term_id
+				? 'https://example.test/category/blog/?lang=nl'
+				: $url;
+		};
+		$page_context = static function ( string $url, int $post_id ) use ( $page_id ): string {
+			return $post_id === $page_id
+				? 'https://example.test/blog/?lang=en'
+				: $url;
+		};
+
+		add_filter( 'term_link', $term_context, 50, 2 );
+		add_filter( 'page_link', $page_context, 50, 2 );
+		try {
+			$result = Preflight::run();
+		} finally {
+			remove_filter( 'term_link', $term_context, 50 );
+			remove_filter( 'page_link', $page_context, 50 );
+		}
+
+		self::assertTrue( $result['ready'] );
+		self::assertStringNotContainsString( 'Blog EN', implode( ' ', $result['blockers'] ) );
 	}
 
 	public function test_preflight_blocks_posts_that_really_publish_on_compact_pagination_routes(): void {
