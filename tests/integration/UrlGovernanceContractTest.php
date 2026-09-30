@@ -126,6 +126,44 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertSame( [], $wp_rewrite->extra_rules_top );
 	}
 
+	public function test_preflight_requires_standard_pretty_permalinks_without_index_php(): void {
+		update_option( 'permalink_structure', '', false );
+		$plain = Preflight::run();
+
+		self::assertFalse( $plain['ready'] );
+		self::assertStringContainsString(
+			'pretty permalink structure without index.php',
+			implode( ' ', $plain['blockers'] )
+		);
+
+		update_option( 'permalink_structure', '/index.php/%postname%/', false );
+		$index = Preflight::run();
+
+		self::assertFalse( $index['ready'] );
+		self::assertStringContainsString(
+			'pretty permalink structure without index.php',
+			implode( ' ', $index['blockers'] )
+		);
+	}
+
+	public function test_preflight_reserves_the_current_wordpress_author_base(): void {
+		global $wp_rewrite;
+
+		$saved_author_base = $wp_rewrite->author_base;
+		$wp_rewrite->author_base = 'people';
+
+		try {
+			self::factory()->category->create( [ 'name' => 'People', 'slug' => 'people' ] );
+
+			$result = Preflight::run();
+
+			self::assertFalse( $result['ready'] );
+			self::assertStringContainsString( '/people/', implode( ' ', $result['blockers'] ) );
+		} finally {
+			$wp_rewrite->author_base = $saved_author_base;
+		}
+	}
+
 	public function test_preflight_blocks_an_existing_public_content_route(): void {
 		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 		self::factory()->post->create(
