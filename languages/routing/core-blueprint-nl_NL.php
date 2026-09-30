@@ -42,6 +42,7 @@ return [
         'Run routing preflight' => 'Routing-preflight uitvoeren',
         'No known blocking collisions found' => 'Geen bekende blokkerende conflicten gevonden',
         'Blocking route collisions found' => 'Blokkerende routeconflicten gevonden',
+        'Clean Archive URLs are temporarily suspended because route collisions were detected. WordPress default category routing remains active until the collisions are resolved.' => 'Clean Archive URLs zijn tijdelijk opgeschort omdat routeconflicten zijn gedetecteerd. De standaard categorierouting van WordPress blijft actief totdat de conflicten zijn opgelost.',
         'Review before enabling' => 'Controleren vóór inschakelen',
         'I understand that this changes public category URLs.' => 'Ik begrijp dat dit publieke categorie-URL\'s wijzigt.',
         'Existing WordPress category routes will redirect to the clean canonical routes while this policy is active.' => 'Bestaande WordPress-categorieroutes worden doorgestuurd naar de schone canonieke routes zolang dit beleid actief is.',
