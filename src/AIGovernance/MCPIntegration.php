@@ -21,13 +21,11 @@ final class MCPIntegration {
 	public static function wrap_default_server( mixed $config ): array {
 		$config = is_array( $config ) ? $config : [];
 		$existing = $config['observability_handler'] ?? null;
-		if (
+		self::$delegate_class = (
 			is_string( $existing )
 			&& '' !== $existing
 			&& MCPObservabilityHandler::class !== $existing
-		) {
-			self::$delegate_class = $existing;
-		}
+		) ? $existing : null;
 		$config['observability_handler'] = MCPObservabilityHandler::class;
 		return $config;
 	}
