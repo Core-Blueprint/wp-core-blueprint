@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 $root = dirname(__DIR__);
+if ( ! defined( 'ABSPATH' ) ) {
+    define( 'ABSPATH', $root . '/' );
+}
 $domain = 'core-blueprint';
 $locales = [ 'nl_NL', 'de_DE', 'fr_FR', 'es_ES', 'it_IT', 'pt_PT' ];
 

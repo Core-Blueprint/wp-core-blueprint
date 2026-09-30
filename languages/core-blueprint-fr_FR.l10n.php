@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Composed Core Blueprint PHP translation catalog.
  * Combines the base catalog with current feature translations.
