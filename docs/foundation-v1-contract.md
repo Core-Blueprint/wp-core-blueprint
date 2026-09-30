@@ -104,7 +104,6 @@ The normative contract is `SETTINGS-HUB-FOUNDATION.md`.
 ## Compatibility
 
 - Historical Toolbar aliases (`cb-core-filter-bar*`) remain supported for backwards compatibility, but Base itself uses `cb-core-toolbar*`.
-- Legacy `Tile::quick` remains available for backwards compatibility; new navigation surfaces should use the formal navigation/status tile variants or Overview navigation cards as appropriate. The public `metric-tiles` semantic exposes only the current generic metric/KPI tile contract and does not promote those legacy/navigation variants.
 - Modal confirm presentation uses only the canonical `confirmVariant` option.
 
 ## Release guardrails
