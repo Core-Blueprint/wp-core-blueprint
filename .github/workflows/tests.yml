@@ -327,7 +327,7 @@ jobs:
           unzip -q "$RUNNER_TEMP/cb-wordpress-org-artifact/core-blueprint-1.0.0.zip" -d "$RUNNER_TEMP/cb-wordpress-org"
 
       - name: Run WordPress.org Plugin Check
-        uses: WordPress/plugin-check-action@v1.1.6
+        uses: WordPress/plugin-check-action@v1.1.7
         with:
           build-dir: ${{ runner.temp }}/cb-wordpress-org/core-blueprint
           categories: plugin_repo
