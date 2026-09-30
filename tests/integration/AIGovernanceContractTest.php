@@ -228,7 +228,9 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertSame( 'ability', $row->target_type );
 		$this->assertSame( 'fixture/write', $row->target_id );
 		$this->assertSame( 15, (int) $row->duration_ms );
-		$this->assertSame( 'fixture-session', $row->evidence_decoded['mcp']['session_id'] );
+		$this->assertArrayHasKey( 'session_fingerprint', $row->evidence_decoded['mcp'] );
+		$this->assertNotSame( 'fixture-session', $row->evidence_decoded['mcp']['session_fingerprint'] );
+		$this->assertStringNotContainsString( 'fixture-session', (string) $row->evidence );
 		$this->assertArrayNotHasKey( 'arguments', $row->evidence_decoded['mcp']['params'] );
 	}
 
