@@ -131,7 +131,6 @@ final class CB_Base_Core_Setup_Foundation_Contract_Test extends WP_UnitTestCase 
 		$mail['smtp_password'] = 'raw-secret-password';
 		$mail['brevo_api_key'] = 'raw-secret-api-key';
 		update_option( MailSettings::OPTION, $mail, false );
-		update_option( MailSettings::ENABLED_OPTION, '1', true );
 		update_option( 'active_plugins', [], false );
 
 		$check = Registry::get( 'mail-delivery-strategy' );
