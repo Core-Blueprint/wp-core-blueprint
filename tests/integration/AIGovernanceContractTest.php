@@ -211,6 +211,63 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'never-store-this-prompt', (string) $row->evidence );
 	}
 
+	public function test_wordpress_ai_client_embedding_observer_records_shape_without_inputs_or_vectors(): void {
+		$provider_metadata = new class() {
+			public function getId(): string { return 'openai'; }
+			public function getName(): string { return 'OpenAI'; }
+		};
+		$model_metadata = new class() {
+			public function getId(): string { return 'fixture-embedding-model'; }
+			public function getName(): string { return 'Fixture Embedding Model'; }
+		};
+		$model = new class( $provider_metadata, $model_metadata ) {
+			public function __construct( private object $provider, private object $metadata ) {}
+			public function providerMetadata(): object { return $this->provider; }
+			public function metadata(): object { return $this->metadata; }
+		};
+		$capability = new class() {
+			public string $value = 'embedding_generation';
+		};
+		$before = new class( $model, $capability ) {
+			public function __construct( private object $model, private object $capability ) {}
+			public function getModel(): object { return $this->model; }
+			public function getCapability(): object { return $this->capability; }
+			public function getInputs(): array { return [ 'never-store-embedding-input-a', 'never-store-embedding-input-b' ]; }
+		};
+		$usage = new class() {
+			public function getPromptTokens(): int { return 9; }
+			public function getCompletionTokens(): int { return 0; }
+			public function getTotalTokens(): int { return 9; }
+			public function getThoughtTokens(): ?int { return null; }
+		};
+		$result = new class( $usage ) {
+			public function __construct( private object $usage ) {}
+			public function getEmbeddings(): array { return [ [ 0.123456789, 0.987654321 ], [ 0.456789123, 0.321987654 ] ]; }
+			public function getDimensions(): int { return 1536; }
+			public function getTokenUsage(): object { return $this->usage; }
+		};
+		$after = new class( $model, $capability, $result ) {
+			public function __construct( private object $model, private object $capability, private object $result ) {}
+			public function getModel(): object { return $this->model; }
+			public function getCapability(): object { return $this->capability; }
+			public function getInputs(): array { return [ 'never-store-embedding-input-a', 'never-store-embedding-input-b' ]; }
+			public function getResult(): object { return $this->result; }
+		};
+
+		AIClientObserver::on_before_generate_result( $before );
+		AIClientObserver::on_after_generate_result( $after );
+
+		$query = Repository::query( [ 'operation' => 'wordpress-ai-client/embedding_generation' ] );
+		$this->assertSame( 1, $query['total'] );
+		$row = $query['rows'][0];
+		$this->assertSame( 2, $row->evidence_decoded['input_count'] );
+		$this->assertSame( 2, $row->evidence_decoded['result']['embedding_count'] );
+		$this->assertSame( 1536, $row->evidence_decoded['result']['dimensions'] );
+		$this->assertSame( 9, $row->evidence_decoded['result']['token_usage']['total'] );
+		$this->assertStringNotContainsString( 'never-store-embedding-input', (string) $row->evidence );
+		$this->assertStringNotContainsString( '0.123456789', (string) $row->evidence );
+	}
+
 	public function test_mcp_observability_projection_records_request_evidence_without_argument_values(): void {
 		$id = MCPEventProjector::record( 'mcp.request', [
 			'status'         => 'success',
