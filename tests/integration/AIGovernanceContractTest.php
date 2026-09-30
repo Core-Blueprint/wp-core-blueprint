@@ -234,6 +234,25 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'arguments', $row->evidence_decoded['mcp']['params'] );
 	}
 
+	public function test_mcp_free_text_failure_and_request_ids_are_not_persisted_raw(): void {
+		$id = MCPEventProjector::record( 'mcp.request', [
+			'status'         => 'error',
+			'method'         => 'tools/call',
+			'transport'      => 'http',
+			'request_id'     => 'customer secret request identifier',
+			'failure_reason' => 'Private tool output must never become governance evidence.',
+		] );
+
+		$this->assertIsString( $id );
+		$row = Repository::get( $id );
+		$this->assertNotNull( $row );
+		$this->assertArrayHasKey( 'request_id_fingerprint', $row->evidence_decoded['mcp'] );
+		$this->assertArrayHasKey( 'failure_reason_summary', $row->evidence_decoded['mcp'] );
+		$this->assertSame( 'string', $row->evidence_decoded['mcp']['failure_reason_summary']['type'] );
+		$this->assertStringNotContainsString( 'customer secret request identifier', (string) $row->evidence );
+		$this->assertStringNotContainsString( 'Private tool output', (string) $row->evidence );
+	}
+
 	public function test_mcp_default_server_integration_composes_existing_handler(): void {
 		$config = MCPIntegration::wrap_default_server( [
 			'observability_handler' => 'Fixture\\ExistingObservabilityHandler',
