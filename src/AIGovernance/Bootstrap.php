@@ -30,6 +30,8 @@ final class Bootstrap {
 		add_action( 'cb_core_logs_register_tabs', [ __CLASS__, 'register_log_tab' ] );
 
 		AbilityObserver::boot();
+		AIClientObserver::boot();
+		MCPIntegration::boot();
 
 		if ( RequestContext::is_admin_post() ) {
 			Actions::boot();
