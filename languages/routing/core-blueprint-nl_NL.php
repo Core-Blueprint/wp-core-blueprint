@@ -15,7 +15,6 @@ return [
         'Category "%1$s" conflicts with existing public content "%2$s" at "/%3$s/".' => 'Categorie "%1$s" conflicteert met bestaande publieke content "%2$s" op "/%3$s/".',
         'Category "%1$s" conflicts with the "%2$s" post type archive at "/%3$s/".' => 'Categorie "%1$s" conflicteert met het archief van berichttype "%2$s" op "/%3$s/".',
         'Category "%1$s" conflicts with the "%2$s" taxonomy route at "/%3$s/".' => 'Categorie "%1$s" conflicteert met de taxonomieroute "%2$s" op "/%3$s/".',
-        'Post slug "%1$s" in category "%2$s" conflicts with reserved pagination route "/%3$s/%1$s/".' => 'Berichtslug "%1$s" in categorie "%2$s" conflicteert met de gereserveerde pagineringsroute "/%3$s/%1$s/".',
         'No categories currently exist. New category routes will be added automatically while the policy is active.' => 'Er bestaan momenteel geen categorieën. Nieuwe categorieroutes worden automatisch toegevoegd zolang het beleid actief is.',
         'Enabling this policy changes canonical category URLs. Existing WordPress category URLs will redirect to the clean routes.' => 'Door dit beleid in te schakelen veranderen de canonieke categorie-URL\'s. Bestaande WordPress-categorie-URL\'s worden doorgestuurd naar de schone routes.',
         'The current post permalink structure contains %category%. Core Blueprint will reserve p{n} inside category paths for archive pagination.' => 'De huidige permalinkstructuur voor berichten bevat %category%. Core Blueprint reserveert p{n} binnen categoriepaden voor archiefpaginering.',
