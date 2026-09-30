@@ -309,6 +309,54 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( 'Blog EN', implode( ' ', $result['blockers'] ) );
 	}
 
+	public function test_preflight_does_not_cross_language_domain_pagination_contexts(): void {
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog NL', 'slug' => 'blog' ] );
+		$parent_id = self::factory()->post->create(
+			[
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_title'  => 'Blog EN',
+				'post_name'   => 'blog',
+			]
+		);
+		$child_id = self::factory()->post->create(
+			[
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_title'  => 'P2 EN',
+				'post_name'   => 'p2',
+				'post_parent' => $parent_id,
+			]
+		);
+
+		$term_context = static function ( string $url, WP_Term $term ) use ( $term_id ): string {
+			return (int) $term->term_id === $term_id
+				? 'https://nl.example.test/nl/category/blog/'
+				: $url;
+		};
+		$page_context = static function ( string $url, int $post_id ) use ( $parent_id, $child_id ): string {
+			if ( $post_id === $parent_id ) {
+				return 'https://en.example.test/en/blog/';
+			}
+			if ( $post_id === $child_id ) {
+				return 'https://en.example.test/en/blog/p2/';
+			}
+			return $url;
+		};
+
+		add_filter( 'term_link', $term_context, 50, 2 );
+		add_filter( 'page_link', $page_context, 50, 2 );
+		try {
+			$result = Preflight::run();
+		} finally {
+			remove_filter( 'term_link', $term_context, 50 );
+			remove_filter( 'page_link', $page_context, 50 );
+		}
+
+		self::assertTrue( $result['ready'] );
+		self::assertStringNotContainsString( 'P2 EN', implode( ' ', $result['blockers'] ) );
+	}
+
 	public function test_preflight_blocks_posts_that_really_publish_on_compact_pagination_routes(): void {
 		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 		self::factory()->post->create(
