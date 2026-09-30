@@ -829,6 +829,61 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_final_boundary_promotes_transformed_owned_routes_before_generic_post_rules(): void {
+		self::factory()->category->create( [ 'name' => 'News', 'slug' => 'news' ] );
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+
+		$owned = Runtime::filter_category_rewrite_rules( [] );
+		self::assertNotEmpty( $owned );
+
+		$pagination_regex = '';
+		$pagination_query = '';
+		foreach ( $owned as $regex => $query ) {
+			if ( str_contains( $regex, '/p([0-9]+)' ) ) {
+				$pagination_regex = $regex;
+				$pagination_query = $query;
+				break;
+			}
+		}
+
+		self::assertNotSame( '', $pagination_regex );
+		self::assertNotSame( '', $pagination_query );
+
+		$shifted_query = str_replace(
+			[ '$matches[3]', '$matches[2]', '$matches[1]' ],
+			[ '$matches[4]', '$matches[3]', '$matches[2]' ],
+			$pagination_query
+		);
+		$shifted_query = str_replace(
+			'index.php?',
+			'index.php?lang=$matches[1]&',
+			$shifted_query
+		);
+
+		$language_regex = '(en)/' . ltrim( $pagination_regex, '^' );
+		$generic_regex  = '^(.+?)/([^/]+)(?:/([0-9]+))?/?$';
+		$generic_query  = 'index.php?category_name=$matches[1]&name=$matches[2]&page=$matches[3]';
+
+		self::assertSame( 1, preg_match( '#^' . $generic_regex . '#', 'en/news/p2' ) );
+		self::assertSame( 1, preg_match( '#^' . $language_regex . '#', 'en/news/p2' ) );
+
+		$filtered = Runtime::filter_generated_rules(
+			[
+				$generic_regex  => $generic_query,
+				$language_regex => $shifted_query,
+			]
+		);
+
+		self::assertSame( $language_regex, array_key_first( $filtered ) );
+		self::assertSame( $shifted_query, $filtered[ $language_regex ] );
+		self::assertSame( $generic_query, $filtered[ $generic_regex ] );
+	}
+
 	public function test_final_fail_open_boundary_removes_downstream_transformed_owned_rules(): void {
 		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 		Settings::set_key(
