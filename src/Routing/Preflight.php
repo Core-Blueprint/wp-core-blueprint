@@ -40,7 +40,7 @@ final class Preflight {
 	public static function run(): array {
 		$blockers = [];
 		$warnings = [];
-		$routes              = CategoryRoutes::all();
+		$entries             = CategoryRoutes::entries();
 		$cpt                 = self::public_post_type_archive_paths();
 		$tax                 = self::public_taxonomy_paths();
 		$permalink_structure = (string) get_option( 'permalink_structure', '' );
@@ -50,7 +50,28 @@ final class Preflight {
 			$blockers[] = __( 'Clean Archive URLs require a standard WordPress pretty permalink structure without index.php.', 'core-blueprint' );
 		}
 
-		foreach ( $routes as $path => $term ) {
+		$category_routes = [];
+
+		foreach ( $entries as $entry ) {
+			$path = $entry['path'];
+			$term = $entry['term'];
+			$canonical_url = CategoryRoutes::canonical_url( $term );
+			$route_identity = self::route_identity( $canonical_url );
+
+			$category_routes[] = [
+				'term_id'  => (int) $term->term_id,
+				'path'     => $path,
+				'identity' => $route_identity,
+			];
+
+			if ( '' === $route_identity ) {
+				$blockers[] = sprintf(
+					/* translators: 1: category name */
+					__( 'Category "%1$s" could not be resolved to a public clean route safely.', 'core-blueprint' ),
+					$term->name
+				);
+				continue;
+			}
 			$first_segment = explode( '/', $path, 2 )[0] ?? '';
 			if ( in_array( $first_segment, $reserved_roots, true ) ) {
 				$blockers[] = sprintf(
@@ -61,7 +82,7 @@ final class Preflight {
 				);
 			}
 
-			foreach ( self::public_content_collisions( $path ) as $collision ) {
+			foreach ( self::public_content_collisions( $term, $path ) as $collision ) {
 				$blockers[] = sprintf(
 					/* translators: 1: category name, 2: content label, 3: route path */
 					__( 'Category "%1$s" conflicts with existing public content "%2$s" at "/%3$s/".', 'core-blueprint' ),
@@ -71,7 +92,7 @@ final class Preflight {
 				);
 			}
 
-			foreach ( self::public_pagination_content_collisions( $path ) as $collision_path => $collision ) {
+			foreach ( self::public_pagination_content_collisions( $term, $path ) as $collision_path => $collision ) {
 				$blockers[] = sprintf(
 					/* translators: 1: category name, 2: content label, 3: route path */
 					__( 'Category "%1$s" conflicts with existing public content "%2$s" at "/%3$s/".', 'core-blueprint' ),
@@ -102,7 +123,7 @@ final class Preflight {
 			}
 		}
 
-		if ( [] === $routes ) {
+		if ( [] === $entries ) {
 			$warnings[] = __( 'No categories currently exist. New category routes will be added automatically while the policy is active.', 'core-blueprint' );
 		} else {
 			$warnings[] = __( 'Enabling this policy changes canonical category URLs. Existing WordPress category URLs will redirect to the clean routes.', 'core-blueprint' );
@@ -119,7 +140,7 @@ final class Preflight {
 			[
 				'permalink_structure' => $permalink_structure,
 				'category_base'       => CategoryRoutes::category_base_path(),
-				'category_routes'     => array_keys( $routes ),
+				'category_routes'     => $category_routes,
 				'post_type_archives'  => $cpt,
 				'taxonomy_routes'     => $tax,
 			]
@@ -128,7 +149,7 @@ final class Preflight {
 		return [
 			'ready'          => [] === $blockers,
 			'fingerprint'    => $fingerprint,
-			'category_count' => count( $routes ),
+			'category_count' => count( $entries ),
 			'blockers'       => $blockers,
 			'warnings'       => $warnings,
 			'checked_at'     => time(),
@@ -136,9 +157,14 @@ final class Preflight {
 	}
 
 	/** @return string[] */
-	private static function public_content_collisions( string $path ): array {
+	private static function public_content_collisions( \WP_Term $term, string $path ): array {
 		$slug = basename( trim( $path, '/' ) );
 		if ( '' === $slug ) {
+			return [];
+		}
+
+		$category_identity = self::route_identity( CategoryRoutes::canonical_url( $term ) );
+		if ( '' === $category_identity ) {
 			return [];
 		}
 
@@ -182,7 +208,7 @@ final class Preflight {
 				continue;
 			}
 
-			if ( self::relative_public_path( $permalink ) === trim( $path, '/' ) ) {
+			if ( self::route_identity( $permalink ) === $category_identity ) {
 				$collisions[] = self::public_post_label( $post );
 			}
 		}
@@ -192,21 +218,34 @@ final class Preflight {
 	}
 
 	/** @return array<string,string> public route path => content label */
-	private static function public_pagination_content_collisions( string $path ): array {
-		$prefix     = trim( $path, '/' );
+	private static function public_pagination_content_collisions( \WP_Term $term, string $path ): array {
 		$collisions = [];
 
-		foreach ( self::public_pagination_candidates() as $public_path => $label ) {
-			if ( 1 === preg_match( '#^' . preg_quote( $prefix, '#' ) . '/p[0-9]+$#', $public_path ) ) {
-				$collisions[ $public_path ] = $label;
+		foreach ( self::public_pagination_candidates() as $candidate ) {
+			$page = $candidate['page'];
+			$expected = CategoryRoutes::canonical_url( $term, $page );
+			if (
+				'' === $expected
+				|| self::route_identity( $candidate['url'] ) !== self::route_identity( $expected )
+			) {
+				continue;
 			}
+
+			$collision_path = self::relative_public_path( $candidate['url'] );
+			if ( '' === $collision_path ) {
+				$collision_path = trim( $path, '/' ) . '/p' . $page;
+			}
+
+			$collisions[ $collision_path ] = $candidate['label'];
 		}
 
 		ksort( $collisions, SORT_STRING );
 		return $collisions;
 	}
 
-	/** @return array<string,string> public route path => content label */
+	/**
+	 * @return array<int,array{url:string,label:string,page:int}>
+	 */
 	private static function public_pagination_candidates(): array {
 		global $wpdb;
 
@@ -237,7 +276,7 @@ final class Preflight {
 
 		$cache_payload = wp_json_encode(
 			[
-				'posts_last_changed' => (string) wp_cache_get_last_changed( 'posts' ),
+				'posts_last_changed'  => (string) wp_cache_get_last_changed( 'posts' ),
 				'permalink_structure' => (string) get_option( 'permalink_structure', '' ),
 				'post_types'          => $post_type_routes,
 				'post_statuses'       => $post_statuses,
@@ -275,18 +314,32 @@ final class Preflight {
 				continue;
 			}
 
+			if ( 1 !== preg_match( '/^p([0-9]+)$/', (string) $post->post_name, $match ) ) {
+				continue;
+			}
+			$page = (int) $match[1];
+			if ( $page < 1 ) {
+				continue;
+			}
+
 			$permalink = get_permalink( $post );
 			if ( ! is_string( $permalink ) || '' === $permalink ) {
 				continue;
 			}
 
-			$public_path = self::relative_public_path( $permalink );
-			if ( '' !== $public_path ) {
-				$candidates[ $public_path ] = self::public_post_label( $post );
-			}
+			$candidates[] = [
+				'url'   => $permalink,
+				'label' => self::public_post_label( $post ),
+				'page'  => $page,
+			];
 		}
 
-		ksort( $candidates, SORT_STRING );
+		usort(
+			$candidates,
+			static fn( array $a, array $b ): int =>
+				strcmp( self::route_identity( $a['url'] ), self::route_identity( $b['url'] ) )
+		);
+
 		$cached_key        = $cache_key;
 		$cached_candidates = $candidates;
 		return $candidates;
@@ -338,6 +391,47 @@ final class Preflight {
 			get_the_title( $post ),
 			$label
 		);
+	}
+
+	private static function route_identity( string $url ): string {
+		if ( '' === $url ) {
+			return '';
+		}
+
+		$parts = wp_parse_url( $url );
+		if ( ! is_array( $parts ) ) {
+			return '';
+		}
+
+		$host = strtolower( (string) ( $parts['host'] ?? '' ) );
+		if ( '' === $host ) {
+			$home = wp_parse_url( home_url( '/' ) );
+			$host = is_array( $home ) ? strtolower( (string) ( $home['host'] ?? '' ) ) : '';
+		}
+		if ( '' === $host ) {
+			return '';
+		}
+
+		$port = isset( $parts['port'] ) ? ':' . (int) $parts['port'] : '';
+		$path = '/' . trim( rawurldecode( (string) ( $parts['path'] ?? '/' ) ), '/' );
+		if ( '/' !== $path ) {
+			$path .= '/';
+		}
+
+		$query = [];
+		if ( isset( $parts['query'] ) && '' !== (string) $parts['query'] ) {
+			parse_str( (string) $parts['query'], $query );
+			if ( ! is_array( $query ) ) {
+				$query = [];
+			}
+			ksort( $query, SORT_STRING );
+		}
+
+		$query_string = [] !== $query
+			? '?' . http_build_query( $query, '', '&', PHP_QUERY_RFC3986 )
+			: '';
+
+		return $host . $port . $path . $query_string;
 	}
 
 	private static function relative_public_path( string $url ): string {
