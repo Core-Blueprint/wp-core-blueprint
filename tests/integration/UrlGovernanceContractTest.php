@@ -874,6 +874,9 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertFalse(
 			Runtime::filter_redirect_canonical( $candidate, home_url( '/blog/p2/' ) )
 		);
+		self::assertFalse(
+			Runtime::filter_redirect_canonical( $candidate, home_url( '/en/blog/p2/' ) )
+		);
 		self::assertSame(
 			$candidate,
 			Runtime::filter_redirect_canonical( $candidate, home_url( '/blog/rss2/' ) )
