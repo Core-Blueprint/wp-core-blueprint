@@ -18,6 +18,7 @@ return [
         'No categories currently exist. New category routes will be added automatically while the policy is active.' => 'Atualmente não existem categorias. As novas rotas de categorias serão adicionadas automaticamente enquanto a política estiver ativa.',
         'Enabling this policy changes canonical category URLs. Existing WordPress category URLs will redirect to the clean routes.' => 'Ativar esta política altera os URLs canónicos das categorias. Os URLs de categorias existentes do WordPress serão redirecionados para as rotas limpas.',
         'The current post permalink structure contains %category%. Core Blueprint will reserve p{n} inside category paths for archive pagination.' => 'A estrutura atual de ligações permanentes dos artigos contém %category%. O Core Blueprint reserva p{n} nos caminhos das categorias para a paginação de arquivos.',
+        'Clean Archive URLs require a standard WordPress pretty permalink structure without index.php.' => 'Os URLs limpos de arquivo requerem uma estrutura padrão de ligações permanentes do WordPress sem index.php.',
         '%1$s (%2$s)' => '%1$s (%2$s)',
         'Preflight passed. Review the findings below before enabling Clean Archive URLs.' => 'A verificação prévia foi concluída com êxito. Reveja os resultados abaixo antes de ativar os URLs limpos de arquivo.',
         'Clean Archive URLs cannot be enabled until the reported route collisions are resolved.' => 'Os URLs limpos de arquivo não podem ser ativados até que os conflitos de rotas indicados sejam resolvidos.',
