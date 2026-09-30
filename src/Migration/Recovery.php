@@ -558,7 +558,7 @@ final class Recovery {
 
 	private static function state(): array {
 		$state = get_option( self::OPTION, [] );
-		if ( ! is_array( $state ) ) {
+		if ( ! is_array( $state ) || [] === $state ) {
 			return [];
 		}
 		if ( self::state_expired( $state ) ) {

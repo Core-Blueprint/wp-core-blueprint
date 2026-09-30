@@ -64,6 +64,18 @@ if ( '1' === getenv( 'CB_PERFORMANCE_QUERY_TRACE' ) ) {
         $cb_f3_mark_phase( 'wp_loaded' );
     }, PHP_INT_MAX );
 
+    add_action( 'admin_init', static function () use ( $cb_f3_mark_phase ): void {
+        $cb_f3_mark_phase( 'admin_init' );
+    }, PHP_INT_MAX );
+
+    add_action( 'admin_menu', static function () use ( $cb_f3_mark_phase ): void {
+        $cb_f3_mark_phase( 'admin_menu' );
+    }, PHP_INT_MAX );
+
+    add_action( 'admin_enqueue_scripts', static function () use ( $cb_f3_mark_phase ): void {
+        $cb_f3_mark_phase( 'admin_load_enqueue' );
+    }, PHP_INT_MAX );
+
     add_action( 'wp', static function () use ( $cb_f3_mark_phase ): void {
         $cb_f3_mark_phase( 'wp' );
     }, PHP_INT_MAX );
