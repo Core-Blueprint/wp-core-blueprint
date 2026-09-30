@@ -19,10 +19,14 @@ defined( 'ABSPATH' ) || exit;
 final class Runtime {
 
 	private const REWRITE_DIRTY_OPTION = 'cb_core_routing_rewrite_dirty';
+	private const RUNTIME_SUSPENDED_OPTION = 'cb_core_routing_runtime_suspended';
+	private static bool $deactivating = false;
 
 	public static function boot(): void {
+		add_action( 'init', [ self::class, 'prepare_runtime' ], 4 );
 		add_action( 'init', [ self::class, 'register_rewrite_rules' ], 5 );
 		add_action( 'init', [ self::class, 'maybe_flush_rewrite_rules' ], 99 );
+		add_filter( 'rewrite_rules_array', [ self::class, 'filter_generated_rules' ], 999 );
 
 		add_filter( 'term_link', [ self::class, 'filter_term_link' ], 20, 3 );
 		add_filter( 'get_pagenum_link', [ self::class, 'filter_pagenum_link' ], 20, 2 );
@@ -32,10 +36,41 @@ final class Runtime {
 		add_action( 'created_category', [ self::class, 'category_changed' ], 10, 0 );
 		add_action( 'edited_category', [ self::class, 'category_changed' ], 10, 0 );
 		add_action( 'delete_category', [ self::class, 'category_changed' ], 10, 0 );
+
+		add_action( 'save_post', [ self::class, 'public_content_changed' ], 10, 3 );
+		add_action( 'before_delete_post', [ self::class, 'public_content_deleted' ], 10, 2 );
+		add_action( 'update_option_permalink_structure', [ self::class, 'routing_structure_changed' ], 10, 0 );
+		add_action( 'update_option_category_base', [ self::class, 'routing_structure_changed' ], 10, 0 );
+		add_action( 'activated_plugin', [ self::class, 'routing_structure_changed' ], 10, 0 );
+		add_action( 'deactivated_plugin', [ self::class, 'routing_structure_changed' ], 10, 0 );
+		add_action( 'switch_theme', [ self::class, 'routing_structure_changed' ], 10, 0 );
+		add_action( 'upgrader_process_complete', [ self::class, 'routing_structure_changed' ], 10, 0 );
+	}
+
+	public static function is_active(): bool {
+		return Policy::enabled()
+			&& '1' !== (string) get_option( self::RUNTIME_SUSPENDED_OPTION, '' );
+	}
+
+	/**
+	 * Re-evaluate derived runtime safety only after a relevant routing mutation.
+	 * Normal requests do not pay for a full collision preflight.
+	 */
+	public static function prepare_runtime(): void {
+		if ( ! self::is_active() ) {
+			delete_option( self::RUNTIME_SUSPENDED_OPTION );
+			return;
+		}
+
+		if ( '1' !== (string) get_option( self::REWRITE_DIRTY_OPTION, '' ) ) {
+			return;
+		}
+
+		self::apply_preflight_state();
 	}
 
 	public static function register_rewrite_rules(): void {
-		if ( ! Policy::enabled() ) {
+		if ( ! self::is_active() ) {
 			return;
 		}
 
@@ -59,22 +94,26 @@ final class Runtime {
 	 * The routing policy remains stored and is reconciled on reactivation.
 	 */
 	public static function cleanup_deactivation(): void {
-		if ( ! Policy::enabled() && '1' !== (string) get_option( self::REWRITE_DIRTY_OPTION, '' ) ) {
+		if (
+			! Policy::enabled()
+			&& '1' !== (string) get_option( self::REWRITE_DIRTY_OPTION, '' )
+			&& '1' !== (string) get_option( self::RUNTIME_SUSPENDED_OPTION, '' )
+		) {
 			return;
 		}
 
-		global $wp_rewrite;
-		if ( $wp_rewrite instanceof \WP_Rewrite ) {
-			foreach ( array_keys( self::rewrite_definitions() ) as $regex ) {
-				unset( $wp_rewrite->extra_rules_top[ $regex ], $wp_rewrite->extra_rules[ $regex ] );
-			}
+		self::$deactivating = true;
+		try {
+			flush_rewrite_rules( false );
+		} finally {
+			self::$deactivating = false;
+			delete_option( self::REWRITE_DIRTY_OPTION );
+			delete_option( self::RUNTIME_SUSPENDED_OPTION );
 		}
-
-		flush_rewrite_rules( false );
-		delete_option( self::REWRITE_DIRTY_OPTION );
 	}
+
 	public static function filter_term_link( string $url, WP_Term $term, string $taxonomy ): string {
-		if ( ! Policy::enabled() || 'category' !== $taxonomy || 'category' !== $term->taxonomy ) {
+		if ( ! self::is_active() || 'category' !== $taxonomy || 'category' !== $term->taxonomy ) {
 			return $url;
 		}
 
@@ -82,7 +121,7 @@ final class Runtime {
 	}
 
 	public static function filter_pagenum_link( string $url, int $pagenum ): string {
-		if ( ! Policy::enabled() || ! is_category() ) {
+		if ( ! self::is_active() || ! is_category() ) {
 			return $url;
 		}
 
@@ -127,7 +166,7 @@ final class Runtime {
 	}
 
 	public static function maybe_redirect_legacy_route(): void {
-		if ( ! Policy::enabled() || is_admin() || wp_doing_ajax() ) {
+		if ( ! self::is_active() || is_admin() || wp_doing_ajax() ) {
 			return;
 		}
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
@@ -232,6 +271,42 @@ final class Runtime {
 		}
 	}
 
+	public static function public_content_changed( int $post_id, \WP_Post $post, bool $update ): void {
+		unset( $update );
+
+		if (
+			! Policy::enabled()
+			|| wp_is_post_revision( $post_id )
+			|| wp_is_post_autosave( $post_id )
+		) {
+			return;
+		}
+
+		$type = get_post_type_object( $post->post_type );
+		if ( $type instanceof \WP_Post_Type && $type->public ) {
+			self::mark_rewrite_dirty();
+		}
+	}
+
+	public static function public_content_deleted( int $post_id, \WP_Post $post ): void {
+		unset( $post_id );
+
+		if ( ! Policy::enabled() ) {
+			return;
+		}
+
+		$type = get_post_type_object( $post->post_type );
+		if ( $type instanceof \WP_Post_Type && $type->public ) {
+			self::mark_rewrite_dirty();
+		}
+	}
+
+	public static function routing_structure_changed(): void {
+		if ( Policy::enabled() ) {
+			self::mark_rewrite_dirty();
+		}
+	}
+
 	public static function mark_rewrite_dirty(): void {
 		update_option( self::REWRITE_DIRTY_OPTION, '1', false );
 	}
@@ -243,6 +318,41 @@ final class Runtime {
 
 		flush_rewrite_rules( false );
 		delete_option( self::REWRITE_DIRTY_OPTION );
+	}
+
+	/** @param array<string,string> $rules @return array<string,string> */
+	public static function filter_generated_rules( array $rules ): array {
+		$definitions = self::rewrite_definitions();
+
+		if ( self::$deactivating || ! Policy::enabled() ) {
+			foreach ( array_keys( $definitions ) as $regex ) {
+				unset( $rules[ $regex ] );
+			}
+			return $rules;
+		}
+
+		$ready = self::apply_preflight_state();
+		if ( ! $ready ) {
+			foreach ( array_keys( $definitions ) as $regex ) {
+				unset( $rules[ $regex ] );
+			}
+			return $rules;
+		}
+
+		return $definitions + $rules;
+	}
+
+	private static function apply_preflight_state(): bool {
+		$result = Preflight::run();
+		$ready  = ! empty( $result['ready'] );
+
+		if ( $ready ) {
+			delete_option( self::RUNTIME_SUSPENDED_OPTION );
+		} else {
+			update_option( self::RUNTIME_SUSPENDED_OPTION, '1', false );
+		}
+
+		return $ready;
 	}
 
 	/** @return array<string,string> regex => WordPress rewrite query. */
