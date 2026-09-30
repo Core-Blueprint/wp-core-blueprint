@@ -256,13 +256,14 @@ final class Preferences extends PageBase {
 		}
 
 
-			[
-				'slug'  => 'routing',
-				'url'   => add_query_arg( 'tab', 'routing', $base_url ),
-				'label' => __( 'Routing & URLs', 'core-blueprint' ),
-				'desc'  => __( 'Review public URL routing and optionally use clean category archive URLs with compact p{n} pagination.', 'core-blueprint' ),
-				'icon'  => 'settings',
-			],
+		$tab_cards[] = [
+			'slug'  => 'routing',
+			'url'   => add_query_arg( 'tab', 'routing', $base_url ),
+			'label' => __( 'Routing & URLs',  'core-blueprint' ),
+			'desc'  => __( 'Review public URL routing and optionally use clean category archive URLs with compact p{n} pagination.', 'core-blueprint' ),
+			'icon'  => 'settings',
+		];
+
 
 		// Reports card - visible to operators with branding OR reports cap.
 		// Same visibility rule as the tab itself in render().
