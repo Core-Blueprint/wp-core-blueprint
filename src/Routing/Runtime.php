@@ -25,12 +25,17 @@ final class Runtime {
 
 	public static function boot(): void {
 		add_action( 'init', [ self::class, 'prepare_runtime' ], 90 );
-		add_action( 'init', [ self::class, 'register_rewrite_rules' ], 91 );
 		add_action( 'init', [ self::class, 'maybe_flush_rewrite_rules' ], 99 );
+
+		// Enter the native category rewrite lifecycle before multilingual plugins
+		// decorate those rules with their own language context.
+		add_filter( 'category_rewrite_rules', [ self::class, 'filter_category_rewrite_rules' ], 9 );
 		add_filter( 'rewrite_rules_array', [ self::class, 'filter_generated_rules' ], 999 );
 
-		add_filter( 'term_link', [ self::class, 'filter_term_link' ], 20, 3 );
-		add_filter( 'get_pagenum_link', [ self::class, 'filter_pagenum_link' ], 20, 2 );
+		// Change only the raw category permastruct. WordPress and downstream
+		// plugins remain responsible for resolving the final public URL context.
+		add_filter( 'pre_term_link', [ self::class, 'filter_pre_term_link' ], 5, 2 );
+		add_filter( 'get_pagenum_link', [ self::class, 'filter_pagenum_link' ], 999, 2 );
 		add_filter( 'redirect_canonical', [ self::class, 'filter_redirect_canonical' ], 10, 2 );
 		add_action( 'template_redirect', [ self::class, 'maybe_redirect_legacy_route' ], 0 );
 
@@ -83,16 +88,6 @@ final class Runtime {
 		self::$prepared_ready = self::apply_preflight_state();
 	}
 
-	public static function register_rewrite_rules(): void {
-		if ( ! self::is_active() ) {
-			return;
-		}
-
-		foreach ( self::rewrite_definitions() as $regex => $query ) {
-			add_rewrite_rule( $regex, $query, 'top' );
-		}
-	}
-
 	/**
 	 * Reactivation restores persisted routing policy after deactivation removed
 	 * the plugin-owned rewrite rules. Flushing remains deferred until init.
@@ -134,12 +129,12 @@ final class Runtime {
 		}
 	}
 
-	public static function filter_term_link( string $url, WP_Term $term, string $taxonomy ): string {
-		if ( ! self::is_active() || 'category' !== $taxonomy || 'category' !== $term->taxonomy ) {
-			return $url;
+	public static function filter_pre_term_link( string $termlink, WP_Term $term ): string {
+		if ( ! self::is_active() || 'category' !== $term->taxonomy ) {
+			return $termlink;
 		}
 
-		return CategoryRoutes::canonical_url( $term );
+		return CategoryRoutes::clean_permastruct( $termlink );
 	}
 
 	public static function filter_pagenum_link( string $url, int $pagenum ): string {
@@ -152,18 +147,7 @@ final class Runtime {
 			return $url;
 		}
 
-		$canonical = CategoryRoutes::canonical_url( $term, max( 1, $pagenum ) );
-		$query     = (string) wp_parse_url( $url, PHP_URL_QUERY );
-
-		if ( '' !== $query ) {
-			$args = [];
-			parse_str( $query, $args );
-			if ( is_array( $args ) && [] !== $args ) {
-				$canonical = add_query_arg( $args, $canonical );
-			}
-		}
-
-		return $canonical;
+		return CategoryRoutes::pagination_url( $url, $term, max( 1, $pagenum ) );
 	}
 
 	/**
@@ -413,27 +397,46 @@ final class Runtime {
 		delete_option( self::REWRITE_DIRTY_OPTION );
 	}
 
-	/** @param array<string,string> $rules @return array<string,string> */
-	public static function filter_generated_rules( array $rules ): array {
-		$definitions = self::rewrite_definitions();
-
+	/**
+	 * Add clean category rules inside WordPress' native category rewrite
+	 * lifecycle. Later ecosystem filters can safely add language prefixes,
+	 * language query vars or other routing context without Core Blueprint
+	 * needing to know which provider supplied them.
+	 *
+	 * @param array<string,string> $rules
+	 * @return array<string,string>
+	 */
+	public static function filter_category_rewrite_rules( array $rules ): array {
 		if ( self::$deactivating || ! Policy::enabled() ) {
-			foreach ( array_keys( $definitions ) as $regex ) {
-				unset( $rules[ $regex ] );
-			}
 			return $rules;
 		}
 
 		$ready = self::apply_preflight_state();
 		self::$prepared_ready = $ready;
 		if ( ! $ready ) {
-			foreach ( array_keys( $definitions ) as $regex ) {
-				unset( $rules[ $regex ] );
-			}
 			return $rules;
 		}
 
-		return $definitions + $rules;
+		return self::rewrite_definitions() + $rules;
+	}
+
+	/**
+	 * Final fail-open boundary. Route creation belongs to
+	 * category_rewrite_rules; this filter never injects routes on its own.
+	 *
+	 * @param array<string,string> $rules
+	 * @return array<string,string>
+	 */
+	public static function filter_generated_rules( array $rules ): array {
+		if ( ! self::$deactivating && self::is_active() ) {
+			return $rules;
+		}
+
+		foreach ( array_keys( self::rewrite_definitions() ) as $regex ) {
+			unset( $rules[ $regex ] );
+		}
+
+		return $rules;
 	}
 
 	private static function apply_preflight_state(): bool {
