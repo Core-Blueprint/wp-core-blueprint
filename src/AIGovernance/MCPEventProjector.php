@@ -98,23 +98,30 @@ final class MCPEventProjector {
 
 	/** @param array<string,mixed> $tags @return array<string,mixed> */
 	private static function evidence( array $tags ): array {
-		$allowed = [
-			'method',
-			'server_id',
-			'revision',
-			'component_type',
-			'tool_name',
-			'ability_name',
-			'prompt_name',
-			'resource_uri',
-			'error_category',
-		];
 		$out = [];
-		foreach ( $allowed as $key ) {
-			if ( ! array_key_exists( $key, $tags ) ) {
+		foreach ( [ 'method', 'server_id', 'revision', 'component_type', 'error_category' ] as $key ) {
+			if ( ! isset( $tags[ $key ] ) || ! is_scalar( $tags[ $key ] ) ) {
 				continue;
 			}
-			$out[ $key ] = $tags[ $key ];
+			$value = substr( sanitize_text_field( (string) $tags[ $key ] ), 0, 190 );
+			if ( '' !== $value ) {
+				$out[ $key ] = $value;
+			}
+		}
+		foreach ( [ 'tool_name', 'ability_name', 'prompt_name' ] as $key ) {
+			if ( ! isset( $tags[ $key ] ) || ! is_scalar( $tags[ $key ] ) ) {
+				continue;
+			}
+			$value = substr( sanitize_text_field( (string) $tags[ $key ] ), 0, 190 );
+			if ( '' !== $value ) {
+				$out[ $key ] = $value;
+			}
+		}
+		if ( isset( $tags['resource_uri'] ) && is_scalar( $tags['resource_uri'] ) ) {
+			$uri = self::resource_uri( (string) $tags['resource_uri'], 500 );
+			if ( '' !== $uri ) {
+				$out['resource_uri'] = $uri;
+			}
 		}
 		if ( isset( $tags['params'] ) && is_array( $tags['params'] ) ) {
 			$params = self::safe_params( $tags['params'] );
@@ -153,9 +160,11 @@ final class MCPEventProjector {
 			if ( ! isset( $params[ $key ] ) || ! is_scalar( $params[ $key ] ) ) {
 				continue;
 			}
-			$value = trim( sanitize_text_field( (string) $params[ $key ] ) );
+			$value = 'uri' === $key
+				? self::resource_uri( (string) $params[ $key ], $max )
+				: substr( trim( sanitize_text_field( (string) $params[ $key ] ) ), 0, $max );
 			if ( '' !== $value ) {
-				$out[ $key ] = substr( $value, 0, $max );
+				$out[ $key ] = $value;
 			}
 		}
 		if ( isset( $params['arguments_count'] ) && is_numeric( $params['arguments_count'] ) ) {
@@ -178,6 +187,12 @@ final class MCPEventProjector {
 			}
 		}
 		return $out;
+	}
+
+	private static function resource_uri( string $value, int $max ): string {
+		$value = trim( sanitize_text_field( $value ) );
+		$value = (string) preg_replace( '/[?#].*$/', '', $value );
+		return substr( $value, 0, $max );
 	}
 
 	private static function machine_identifier( mixed $value ): ?string {
