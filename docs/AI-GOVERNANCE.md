@@ -2,7 +2,7 @@
 
 Core Blueprint Base owns the canonical governance evidence boundary for WordPress abilities, agents and machine integrations.
 
-AI Governance is **not** an AI provider, chat interface, agent runtime or policy engine. Its v1 responsibility is evidence, observability, retention and audit export.
+AI Governance is **not** an AI provider, chat interface, agent runtime or policy engine. Its responsibility is WordPress-native evidence, observability, retention and audit export across Abilities, the WordPress AI Client, supported machine integrations and consumer-reported operations.
 
 ## Governing principles
 
@@ -64,10 +64,13 @@ Each activity has a stable opaque UUID plus these first-class dimensions:
 | Field | Meaning |
 | --- | --- |
 | `actor_user_id`, `actor_user_login` | Current WordPress actor where available. Base resolves this itself. |
-| `operation_type` | `ability` for automatic WordPress Ability evidence, `operation` for consumer-reported activity. |
+| `correlation_id`, `parent_activity_id` | Opaque request-local trace identifiers created only from directly observed nesting. They are never reconstructed heuristically. |
+| `operation_type` | `ability`, `ai-client`, `mcp-request`, or `operation` for consumer-reported activity. |
 | `operation` | Stable Ability/operation identifier. |
 | `transport` | Observed execution boundary such as `php`, `rest`, `cli`, `mcp-http`, `mcp-stdio`, or `reported`. |
 | `source_id`, `source_label` | Integration/source only when reliably attributed; otherwise null. |
+| `provider_id`, `provider_label` | WordPress AI Client provider metadata when the AI Client supplies it. |
+| `model_id`, `model_label` | WordPress AI Client model metadata when the AI Client supplies it. |
 | `outcome` | What is known about the terminal result: `unknown`, `succeeded`, `failed`, `denied`, `invalid`, `short-circuited`. |
 | `capture_state` | Strongest lifecycle evidence observed for that record. |
 | `target_*` | Optional target metadata supplied by a trusted consumer/integration. |
@@ -131,6 +134,56 @@ This permits broader evidence for:
 
 The observer uses the common argument subset for the 6.9/7.0 before/after actions so its callbacks remain valid on both supported WordPress versions even though WordPress 7.1 adds the Ability instance as an extra action argument.
 
+## WordPress AI Client capture
+
+WordPress 7.0 exposes generation lifecycle actions through the provider-agnostic AI Client. Base observes:
+
+- `wp_ai_client_before_generate_result`;
+- `wp_ai_client_after_generate_result`.
+
+For a completed generation Base records:
+
+- the AI Client capability;
+- provider ID and label;
+- model ID and label;
+- message count, never message content;
+- candidate count when available;
+- prompt, completion, total and thought token counts when available;
+- observed transport, duration and actor.
+
+The automatic observer does **not** retain prompt text, generated content, candidate payloads, provider response bodies, credentials or arbitrary `additionalData`.
+
+The current WordPress AI Client lifecycle has no common terminal action for provider exceptions that occur after the before-generation event. Such a record therefore remains `outcome=unknown` with `capture_state=generation-started`; Base does not guess that it failed.
+
+## WordPress MCP Adapter request observability
+
+When the official WordPress MCP Adapter creates its canonical default server, Base composes its observability handler through the official `mcp_adapter_default_server_config` filter.
+
+If another default-server observability handler was already configured, Base delegates to it first and then records its own governance evidence. An AI Governance storage failure therefore does not replace the adapter response or suppress another observability integration.
+
+Base records the adapter's `mcp.request` completion event and its bounded request metadata, including where supplied:
+
+- status and MCP method;
+- transport;
+- server, request and session identifiers;
+- negotiated schema revision;
+- tool, Ability, prompt or resource identity;
+- failure reason and error category;
+- request duration;
+- the adapter's sanitized parameter summary.
+
+Base does not turn generic REST traffic into MCP evidence. It also does not infer the identity of ChatGPT, Claude or another client from transport alone.
+
+Server-start and component-registration telemetry are intentionally not copied into AI Activity because they are runtime diagnostics rather than user or agent operations.
+
+## Correlation
+
+Correlation is request-local and evidence-based.
+
+When Base directly observes one governed operation starting inside another governed operation, the child inherits the parent's opaque `correlation_id` and stores the parent's activity UUID as `parent_activity_id`.
+
+Base does not correlate separate MCP and Ability rows by matching timestamps, names or durations. If the platform does not expose a reliable common request identifier at both boundaries, those records remain separate evidence.
+
 ## Source and transport attribution
 
 Direct PHP Ability execution is recorded as `transport=php` and source unknown unless another reliable integration boundary reports source metadata.
@@ -139,14 +192,14 @@ Generic REST Ability execution is `transport=rest`; REST alone is not AI or MCP 
 
 Generic WP-CLI execution is `transport=cli`; CLI alone is not AI or MCP evidence.
 
-The official WordPress MCP Adapter is attributed automatically only when both of these are true:
+For Ability records, the official WordPress MCP Adapter is attributed automatically only when both of these are true:
 
 1. the official `WP\MCP\Core\McpAdapter` runtime is loaded; and
 2. the request is on its canonical default-server boundary:
    - HTTP endpoint `/wp-json/mcp/mcp-adapter-default-server`, or
    - WP-CLI command `mcp-adapter serve`.
 
-That supports source attribution to the **WordPress MCP Adapter**. It still does not identify a provider/model/client such as ChatGPT, Claude or another agent unless a future adapter supplies reliable evidence for that identity.
+That supports source attribution to the **WordPress MCP Adapter** for Ability execution. Separately, the official Adapter observability handler supplies first-class MCP request records for its default server. Neither boundary identifies a provider/model/client such as ChatGPT, Claude or another agent unless the platform supplies reliable evidence for that identity.
 
 ## Public consumer API
 
@@ -209,10 +262,10 @@ Consumer business authorization and permission checks remain owned by the consum
 
 ## Admin surface and export
 
-The Base-owned **Core Blueprint → AI Governance** page provides:
+The Base-owned **Core Blueprint → Logs → AI Activity** tab provides:
 
 - an empty state when nothing has been recorded;
-- date, actor, source, operation and outcome filters;
+- date, actor, source, operation type, transport, provider, model, operation and outcome filters;
 - activity list;
 - per-record detail view;
 - CSV export;
@@ -231,4 +284,4 @@ An activity logging/storage failure must not be used to grant, deny or replace a
 
 ## Out of scope for v1
 
-AI Governance v1 does not include provider configuration, prompt/response archives, token/cost tracking, autonomous agents, approval workflow orchestration, policy enforcement, anomaly detection, Hub aggregation or heuristic AI detection.
+AI Governance does not include provider configuration, prompt/response archives, cost calculation, autonomous agents, approval workflow orchestration, policy enforcement, anomaly detection, Hub aggregation or heuristic AI detection.
