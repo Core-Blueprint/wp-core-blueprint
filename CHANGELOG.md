@@ -23,6 +23,7 @@
 
 ### Reorder Foundation motion polish
 
+- Publish the Reorder Foundation as a public Core API `1.1` contract, preserving the 1.x compatibility rule where a Base API minor satisfies equal-or-lower requested minors.
 - Add Base-owned reduced-motion-aware FLIP settling for pointer, keyboard and programmatic reorder moves, including animated rollback after persistence failure.
 - Keep consumer markup and transforms independent by animating positional `translate` only, with an instant fallback when reduced motion is requested or Web Animations are unavailable.
 
@@ -51,7 +52,7 @@
 - Add the provider-neutral Data Mapper field-schema and mapping boundary with deterministic id/label/alias matching, explicit direct/ignore/constant transforms and no fuzzy guessing for ambiguous fields.
 - Add the shared Data Mapper workspace as a consumer of the existing public Designer Shell, including request-local file intake, field mapping, Undo/Redo, auto-match, inspection and preview handoff without Base-owned AJAX or browser persistence.
 - Keep extension providers authoritative for field meaning, portable identity, canonical validation, mutations, audit meaning and authorized upload/download transport; Base does not write provider records directly.
-- Add DX/Mapper regression coverage for canonical identity, stale/tampered plans, CSV formula protection, mapping ambiguity, required fields, malformed initial mappings and the request-local browser boundary while keeping `1.0.0-rc1` and Core API `1.0` unchanged.
+- Add DX/Mapper regression coverage for canonical identity, stale/tampered plans, CSV formula protection, mapping ambiguity, required fields, malformed initial mappings and the request-local browser boundary.
 
 ### Forms Foundation v1 — normalized form ingress
 
@@ -81,7 +82,7 @@
 
 ### Golden Standard Gate 1 — PHP 8.4 and CI baseline
 
-- Keep the public plugin version at `1.0.0-rc1`, with Core API and database schema versions unchanged at `1.0`.
+- At this earlier hardening milestone, keep the public plugin version at `1.0.0-rc1`, with Core API and database schema versions then at `1.0`; Core API was subsequently advanced to `1.1` when the Reorder Foundation was published.
 - Make CSV export explicit about the `fputcsv()` escape argument so Base remains clean on PHP 8.4+ without changing the existing CSV escaping behaviour.
 - Align Settings Hub integration fixtures with Privileged Access Protection by explicitly approving administrator identities created for tests rather than weakening the production quarantine boundary.
 - Pin the release-package update smoke to a canonical earlier `1.0.0-rc1` main baseline so install/update validation exercises the supported current-RC lifecycle.
