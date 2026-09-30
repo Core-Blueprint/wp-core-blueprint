@@ -404,7 +404,18 @@ final class Preflight {
 			return [];
 		}
 
-		$sql = $wpdb->prepare(
+		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
+		if ( [] === $public_statuses ) {
+			return [];
+		}
+
+		$status_placeholders = implode( ', ', array_fill( 0, count( $public_statuses ), '%s' ) );
+		$args                = array_merge(
+			[ 'category', $term_id, 'post' ],
+			$public_statuses,
+			[ $wpdb->esc_like( 'p' ) . '%' ]
+		);
+		$sql                 = $wpdb->prepare(
 			"SELECT DISTINCT p.post_name
 			FROM {$wpdb->posts} p
 			INNER JOIN {$wpdb->term_relationships} tr ON tr.object_id = p.ID
@@ -412,12 +423,9 @@ final class Preflight {
 			WHERE tt.taxonomy = %s
 				AND tt.term_id = %d
 				AND p.post_type = %s
-				AND p.post_status NOT IN ('trash', 'auto-draft')
+				AND p.post_status IN ({$status_placeholders})
 				AND p.post_name LIKE %s",
-			'category',
-			$term_id,
-			'post',
-			$wpdb->esc_like( 'p' ) . '%'
+			...$args
 		);
 
 		$slugs = is_string( $sql ) ? $wpdb->get_col( $sql ) : [];
