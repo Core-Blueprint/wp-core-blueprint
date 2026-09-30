@@ -167,6 +167,59 @@ body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-navigation-to
 }
 
 
+/* Preferences → Admin Notices: keep the audience selector compact and
+ * visually grouped inside the disclosure body. */
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-notices-visibility-choices {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--cb-space-2);
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-notices-visibility-choices > label {
+	display: flex;
+	align-items: center;
+	gap: var(--cb-space-2);
+}
+
+body.core-blueprint_page_core-blueprint-preferences .cb-core-admin-notices-visibility-choices input[type="radio"] {
+	margin: 0;
+}
+
+body.core-blueprint_page_core-blueprint-preferences [data-cb-admin-notices-selected-audience] {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--cb-space-3);
+	max-width: 760px;
+	margin-top: var(--cb-space-2);
+}
+
+body.core-blueprint_page_core-blueprint-preferences [data-cb-admin-notices-selected-audience][hidden] {
+	display: none;
+}
+
+body.core-blueprint_page_core-blueprint-preferences [data-cb-admin-notices-selected-audience] > .cb-core-field {
+	max-width: none;
+	margin-bottom: 0;
+}
+
+body.core-blueprint_page_core-blueprint-preferences [data-cb-admin-notices-selected-audience] > .description {
+	grid-column: 1 / -1;
+	margin: 0;
+}
+
+body.core-blueprint_page_core-blueprint-preferences [data-cb-admin-notices-selected-audience] .cb-core-object-picker__results {
+	position: static;
+	width: 100%;
+	margin-top: 0;
+}
+
+@media (max-width: 782px) {
+	body.core-blueprint_page_core-blueprint-preferences [data-cb-admin-notices-selected-audience] {
+		grid-template-columns: 1fr;
+	}
+}
+
+
 /* Shared Preferences scope control. Used by Language and Appearance when a
  * setting can be viewed/edited at personal or site-default scope. Geometry
  * lives here so individual tabs do not recreate the same segmented control. */

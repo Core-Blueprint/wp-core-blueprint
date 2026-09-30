@@ -283,6 +283,11 @@ final class ScreenAssetRegistry {
 				return array_merge( $items, [
 					'component.badges', 'component.interactive-surfaces', 'foundation.object-picker', 'foundation.reorder', 'module.admin-navigation',
 				] );
+			case 'admin-notices':
+				return array_merge( $items, [
+					'component.overview-framework', 'component.cards', 'component.state-badges',
+					'component.interactive-surfaces', 'foundation.object-picker', 'module.admin-notices',
+				] );
 			case 'reports':
 				return array_merge( $items, [
 					'page.reports', 'component.panels', 'foundation.modal',

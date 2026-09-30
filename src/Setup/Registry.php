@@ -15,6 +15,7 @@ namespace CB\Core\Setup;
 use CB\Core\Setup\Checks\AccessModeCheck;
 use CB\Core\Setup\Checks\AdminColumnsCheck;
 use CB\Core\Setup\Checks\AdminNavigationCheck;
+use CB\Core\Setup\Checks\AdminNoticesCheck;
 use CB\Core\Setup\Checks\AuditRetentionCheck;
 use CB\Core\Setup\Checks\AuditVerbosityCheck;
 use CB\Core\Setup\Checks\ContentModelsCheck;
@@ -92,6 +93,7 @@ final class Registry {
 			),
 			new AdminNavigationCheck(),
 			new AdminColumnsCheck(),
+			new AdminNoticesCheck(),
 		];
 
 		$out = [];
