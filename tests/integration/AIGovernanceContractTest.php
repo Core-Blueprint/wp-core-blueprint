@@ -311,6 +311,8 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 			'status'         => 'error',
 			'method'         => 'tools/call',
 			'transport'      => 'http',
+			'error_type'     => 'WP\\MCP\\Infrastructure\\ValidationException',
+			'error_category' => 'validation',
 			'request_id'     => 'customer secret request identifier',
 			'failure_reason' => 'Private tool output must never become governance evidence.',
 			'resource_uri'   => 'fixture://top/path?token=top-secret',
@@ -321,6 +323,8 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$row = Repository::get( $id );
 		$this->assertNotNull( $row );
 		$this->assertArrayHasKey( 'request_id_fingerprint', $row->evidence_decoded['mcp'] );
+		$this->assertSame( 'WP\\MCP\\Infrastructure\\ValidationException', $row->evidence_decoded['mcp']['error_type'] );
+		$this->assertSame( 'validation', $row->evidence_decoded['mcp']['error_category'] );
 		$this->assertArrayHasKey( 'failure_reason_summary', $row->evidence_decoded['mcp'] );
 		$this->assertSame( 'string', $row->evidence_decoded['mcp']['failure_reason_summary']['type'] );
 		$this->assertStringNotContainsString( 'customer secret request identifier', (string) $row->evidence );
