@@ -190,17 +190,19 @@ final class Runtime {
 			return;
 		}
 
+		$current_url   = self::current_request_url();
 		$category_base = trim( CategoryRoutes::category_base_path(), '/' );
 
-		foreach ( CategoryRoutes::all() as $path => $term ) {
+		foreach ( CategoryRoutes::paths() as $path ) {
 			$quoted      = preg_quote( $path, '#' );
 			$legacy_base = '' !== $category_base
 				? trim( $category_base . '/' . $path, '/' )
 				: $path;
 
-			// Normalize the clean root route itself, including trailing slash.
+			// Normalize the clean root route itself, including trailing slash,
+			// without reconstructing host, language or query context.
 			if ( $current === $path ) {
-				self::redirect_if_needed( CategoryRoutes::canonical_url( $term ) );
+				self::redirect_if_needed( CategoryRoutes::route_url( $current_url, $path ) );
 				return;
 			}
 
@@ -208,19 +210,23 @@ final class Runtime {
 			// removed by another configuration, legacy_base equals the clean path
 			// and must not redirect to itself.
 			if ( $legacy_base !== $path && $current === $legacy_base ) {
-				self::redirect( CategoryRoutes::canonical_url( $term ) );
+				self::redirect( CategoryRoutes::route_url( $current_url, $path ) );
 			}
 
 			if (
 				$legacy_base !== $path
 				&& preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/(?:page|p)/?([0-9]+)/?$#', $current, $match )
 			) {
-				self::redirect( CategoryRoutes::canonical_url( $term, max( 1, (int) $match[1] ) ) );
+				self::redirect(
+					CategoryRoutes::route_url( $current_url, $path, max( 1, (int) $match[1] ) )
+				);
 			}
 
 			// WordPress default pagination remains a supported legacy route.
 			if ( preg_match( '#^' . $quoted . '/page/?([0-9]+)/?$#', $current, $match ) ) {
-				self::redirect( CategoryRoutes::canonical_url( $term, max( 1, (int) $match[1] ) ) );
+				self::redirect(
+					CategoryRoutes::route_url( $current_url, $path, max( 1, (int) $match[1] ) )
+				);
 			}
 
 			// Compact pagination owns exactly one canonical spelling. p0/p1,
@@ -228,7 +234,7 @@ final class Runtime {
 			if ( preg_match( '#^' . $quoted . '/p([0-9]+)/?$#', $current, $match ) ) {
 				$raw_page = (string) $match[1];
 				$page     = (int) $raw_page;
-				$target   = CategoryRoutes::canonical_url( $term, max( 1, $page ) );
+				$target   = CategoryRoutes::route_url( $current_url, $path, max( 1, $page ) );
 
 				if ( $page < 2 || (string) $page !== $raw_page ) {
 					self::redirect( $target );
@@ -240,34 +246,42 @@ final class Runtime {
 
 			// Canonical clean feed shape.
 			if ( $current === $path . '/feed' ) {
-				self::redirect_if_needed( CategoryRoutes::feed_url( $term ) );
+				self::redirect_if_needed( CategoryRoutes::route_feed_url( $current_url, $path ) );
 				return;
 			}
 			if ( preg_match( '#^' . $quoted . '/feed/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
-				self::redirect_if_needed( CategoryRoutes::feed_url( $term, (string) $match[1] ) );
+				self::redirect_if_needed(
+					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
+				);
 				return;
 			}
 
 			// Alternate WordPress feed suffixes remain readable but redirect to
 			// one canonical /feed/{format}/ shape.
 			if ( preg_match( '#^' . $quoted . '/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
-				self::redirect( CategoryRoutes::feed_url( $term, (string) $match[1] ) );
+				self::redirect(
+					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
+				);
 			}
 
 			if ( $legacy_base !== $path && $current === $legacy_base . '/feed' ) {
-				self::redirect( CategoryRoutes::feed_url( $term ) );
+				self::redirect( CategoryRoutes::route_feed_url( $current_url, $path ) );
 			}
 			if (
 				$legacy_base !== $path
 				&& preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/feed/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
 			) {
-				self::redirect( CategoryRoutes::feed_url( $term, (string) $match[1] ) );
+				self::redirect(
+					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
+				);
 			}
 			if (
 				$legacy_base !== $path
 				&& preg_match( '#^' . preg_quote( $legacy_base, '#' ) . '/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
 			) {
-				self::redirect( CategoryRoutes::feed_url( $term, (string) $match[1] ) );
+				self::redirect(
+					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
+				);
 			}
 		}
 	}
@@ -509,6 +523,27 @@ final class Runtime {
 		}
 
 		return false;
+	}
+
+	private static function current_request_url(): string {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
+			: '';
+		if ( '' === $request_uri ) {
+			return home_url( '/' );
+		}
+
+		$home = wp_parse_url( home_url( '/' ) );
+		if ( ! is_array( $home ) || empty( $home['host'] ) ) {
+			return $request_uri;
+		}
+
+		$scheme = isset( $home['scheme'] ) && '' !== (string) $home['scheme']
+			? (string) $home['scheme']
+			: ( is_ssl() ? 'https' : 'http' );
+		$port = isset( $home['port'] ) ? ':' . (int) $home['port'] : '';
+
+		return $scheme . '://' . (string) $home['host'] . $port . '/' . ltrim( $request_uri, '/' );
 	}
 
 	private static function current_request_path(): string {
