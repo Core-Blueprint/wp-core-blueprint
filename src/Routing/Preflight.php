@@ -221,27 +221,47 @@ final class Preflight {
 	private static function public_pagination_candidates(): array {
 		global $wpdb;
 
-		static $cached_signature  = null;
+		static $cached_key        = null;
 		static $cached_candidates = [];
 
-		$post_types    = array_values( get_post_types( [ 'public' => true ], 'names' ) );
-		$post_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
+		$post_type_objects = get_post_types( [ 'public' => true ], 'objects' );
+		$post_types        = [];
+		$post_type_routes  = [];
+
+		foreach ( $post_type_objects as $type ) {
+			if ( ! $type instanceof WP_Post_Type ) {
+				continue;
+			}
+
+			$post_types[] = $type->name;
+			$post_type_routes[ $type->name ] = [
+				'has_archive'  => $type->has_archive,
+				'hierarchical' => (bool) $type->hierarchical,
+				'rewrite'      => $type->rewrite,
+			];
+		}
+		ksort( $post_type_routes, SORT_STRING );
 		sort( $post_types, SORT_STRING );
+
+		$post_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
 		sort( $post_statuses, SORT_STRING );
 
-		$signature = Fingerprint::hash(
+		$cache_payload = wp_json_encode(
 			[
 				'posts_last_changed' => (string) wp_cache_get_last_changed( 'posts' ),
-				'post_types'         => $post_types,
-				'post_statuses'      => $post_statuses,
+				'permalink_structure' => (string) get_option( 'permalink_structure', '' ),
+				'post_types'          => $post_type_routes,
+				'post_statuses'       => $post_statuses,
 			]
 		);
-		if ( null !== $cached_signature && hash_equals( $cached_signature, $signature ) ) {
+		$cache_key = hash( 'sha256', is_string( $cache_payload ) ? $cache_payload : '' );
+
+		if ( null !== $cached_key && hash_equals( $cached_key, $cache_key ) ) {
 			return $cached_candidates;
 		}
 
 		if ( [] === $post_types || [] === $post_statuses || ! $wpdb instanceof \wpdb ) {
-			$cached_signature  = $signature;
+			$cached_key        = $cache_key;
 			$cached_candidates = [];
 			return [];
 		}
@@ -278,7 +298,7 @@ final class Preflight {
 		}
 
 		ksort( $candidates, SORT_STRING );
-		$cached_signature  = $signature;
+		$cached_key        = $cache_key;
 		$cached_candidates = $candidates;
 		return $candidates;
 	}
