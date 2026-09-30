@@ -41,8 +41,9 @@ defined( 'ABSPATH' ) || exit;
  *     per-request. The scanner runs in admin context where the locale
  *     might be different than in front-end context.
  *
- *   - WPLANG was set in wp-config.php (legacy, pre-WP 4.0) but the
- *     installed core distribution does not match the requested locale.
+ *   - WordPress locale resolution (including WPLANG when explicitly
+ *     defined) points at a UI locale whose installed core distribution
+ *     differs from the files present on disk.
  *
  * For checksum verification, we need the DISTRIBUTION-locale, not the
  * UI-locale. The discriminator file is `wp-includes/version.php`: its
@@ -211,12 +212,6 @@ final class LocaleDetector {
 
 		$candidates[] = 'en_US';
 
-		if ( defined( 'WPLANG' ) ) {
-			$wplang = (string) constant( 'WPLANG' );
-			if ( '' !== $wplang ) {
-				$candidates[] = $wplang;
-			}
-		}
 
 		if ( function_exists( 'get_site_option' ) ) {
 			$site_wplang = (string) get_site_option( 'WPLANG', '' );
