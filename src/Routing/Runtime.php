@@ -57,7 +57,7 @@ final class Runtime {
 	 * Normal requests do not pay for a full collision preflight.
 	 */
 	public static function prepare_runtime(): void {
-		if ( ! self::is_active() ) {
+		if ( ! Policy::enabled() ) {
 			delete_option( self::RUNTIME_SUSPENDED_OPTION );
 			return;
 		}
