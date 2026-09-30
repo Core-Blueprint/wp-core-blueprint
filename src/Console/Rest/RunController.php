@@ -21,11 +21,11 @@ declare(strict_types=1);
  * capabilities are checked individually too - a command can declare
  * its own capability override and the runner respects it.
  *
- * Run-able gate: the runner executes any command that implements
+ * Runnable gate: Registry exposes only commands that implement
  * CommandInterface. 'none'/'state' commands run directly; 'destructive'
  * commands require a confirm token, issued by GET /console/confirm-token
- * after the UI confirm modal. Legacy commands not yet ported to
- * CommandInterface return 423 Locked with a "run from a terminal" hint.
+ * after the UI confirm modal. A command that cannot be instantiated as
+ * CommandInterface fails closed with 423 Locked as an invalid registration.
  *
  * @package Core_Blueprint
  * @since   1.0.0
