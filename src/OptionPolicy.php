@@ -14,7 +14,6 @@ final class OptionPolicy {
 	private const HOT_OPTIONS = [
 		'cb_core_settings',
 		'cb_core_access_mode',
-		'cb_core_mail_enabled',
 		'cb_core_db_version',
 		'cb_core_mail_log_db_version',
 		'cb_core_notes_db_version',

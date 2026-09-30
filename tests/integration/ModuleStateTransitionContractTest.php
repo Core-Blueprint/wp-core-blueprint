@@ -56,7 +56,6 @@ final class CB_Base_Module_State_Transition_Contract_Test extends WP_UnitTestCas
         }
 
         $this->assert_scanner_refused_disable_has_no_runtime_side_effects();
-        $this->assert_mail_partial_write_refusal_converges_to_previous_state();
     }
 
     /** @return array<string,array{state:class-string,event_prefix:string,options:string[]}> */
@@ -80,7 +79,7 @@ final class CB_Base_Module_State_Transition_Contract_Test extends WP_UnitTestCas
             'mail' => [
                 'state'        => MailState::class,
                 'event_prefix' => 'mail_subsystem_',
-                'options'      => [ MailSettings::OPTION, MailSettings::ENABLED_OPTION ],
+                'options'      => [ MailSettings::OPTION ],
             ],
             'media-replace' => [
                 'state'        => MediaReplaceState::class,
@@ -129,41 +128,6 @@ final class CB_Base_Module_State_Transition_Contract_Test extends WP_UnitTestCas
         if ( ! $initial ) {
             IntegrityState::set_enabled( false, 'b1-scanner-precondition-restore' );
         }
-    }
-
-    private function assert_mail_partial_write_refusal_converges_to_previous_state(): void {
-        $initial = MailState::is_enabled();
-        $target = ! $initial;
-
-        // Refuse only the hot state option. The cold config write may occur first,
-        // so State must restore that mirror before surfacing failure.
-        $filters = $this->block_option_writes( [ MailSettings::ENABLED_OPTION ] );
-        $thrown = null;
-        try {
-            MailState::set_enabled( $target, 'b1-mail-hot-refusal' );
-        } catch ( RuntimeException $exception ) {
-            $thrown = $exception;
-        } finally {
-            $this->remove_option_write_blocks( $filters );
-        }
-        self::assertInstanceOf( RuntimeException::class, $thrown );
-        self::assertSame( $initial, MailState::is_enabled(), 'Mail hot-state refusal did not preserve runtime state.' );
-        self::assertSame( $initial, ! empty( MailSettings::all()['enabled'] ), 'Mail hot-state refusal left cold config drift.' );
-
-        // Refuse only the cold config option. The hot option can change first;
-        // the adapter has an explicit safe local compensation back to pre-state.
-        $filters = $this->block_option_writes( [ MailSettings::OPTION ] );
-        $thrown = null;
-        try {
-            MailState::set_enabled( $target, 'b1-mail-config-refusal' );
-        } catch ( RuntimeException $exception ) {
-            $thrown = $exception;
-        } finally {
-            $this->remove_option_write_blocks( $filters );
-        }
-        self::assertInstanceOf( RuntimeException::class, $thrown );
-        self::assertSame( $initial, MailState::is_enabled(), 'Mail config refusal did not compensate runtime state.' );
-        self::assertSame( $initial, ! empty( MailSettings::all()['enabled'] ), 'Mail config refusal changed cold config.' );
     }
 
     private function event_for( string $prefix, bool $enabled ): string {

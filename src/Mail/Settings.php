@@ -3,10 +3,9 @@ declare(strict_types=1);
 /**
  * Mail module settings repository.
  *
- * Delivery and presentation are intentionally independent capabilities. The
- * legacy `enabled` state remains as an aggregate compatibility flag so existing
- * Dashboard/module integrations continue to work while new code uses the
- * explicit delivery/designer accessors.
+ * Delivery and presentation are intentionally independent persisted capabilities.
+ * The module-level state is a computed projection: Mail is active whenever
+ * delivery or designer is enabled. No aggregate state is persisted separately.
  *
  * @package Core_Blueprint
  * @since   1.0.0
@@ -19,14 +18,12 @@ defined( 'ABSPATH' ) || exit;
 final class Settings {
 
 	public const OPTION = 'cb_core_mail_settings';
-	public const ENABLED_OPTION = 'cb_core_mail_enabled';
 	public const PROVIDERS = [ 'brevo', 'smtp' ];
 	public const ENCRYPTIONS = [ 'none', 'tls', 'ssl' ];
 	public const RETENTION_DAYS = [ 7, 14, 30, 60, 90, 180, 365 ];
 
 	public static function defaults(): array {
 		return [
-			'enabled'            => false,
 			'delivery_enabled'   => false,
 			'designer_enabled'   => false,
 			'provider'           => 'brevo',
@@ -47,7 +44,7 @@ final class Settings {
 		];
 	}
 
-	/** Aggregate compatibility state used by the existing module registry. */
+	/** Canonical aggregate projection used by the module activation registry. */
 	public static function enabled(): bool {
 		$settings = self::all();
 		return ! empty( $settings['delivery_enabled'] ) || ! empty( $settings['designer_enabled'] );
@@ -64,57 +61,35 @@ final class Settings {
 	public static function all(): array {
 		$stored = get_option( self::OPTION, [] );
 		$stored = is_array( $stored ) ? $stored : [];
-
-		// Legacy installs used `enabled` (and the hot enabled option) as the
-		// transport switch. Until the first save after this split, preserve that
-		// exact behaviour by treating the legacy state as delivery-enabled only.
-		if ( ! array_key_exists( 'delivery_enabled', $stored ) ) {
-			$legacy_hot = get_option( self::ENABLED_OPTION, null );
-			$legacy_enabled = null !== $legacy_hot
-				? (bool) $legacy_hot
-				: ! empty( $stored['enabled'] );
-			$stored['delivery_enabled'] = $legacy_enabled;
-		}
-		if ( ! array_key_exists( 'designer_enabled', $stored ) ) {
-			$stored['designer_enabled'] = false;
-		}
+		unset( $stored['enabled'] );
 
 		$settings = array_merge( self::defaults(), $stored );
-		$settings['enabled'] = ! empty( $settings['delivery_enabled'] ) || ! empty( $settings['designer_enabled'] );
+		$settings['delivery_enabled'] = ! empty( $settings['delivery_enabled'] );
+		$settings['designer_enabled'] = ! empty( $settings['designer_enabled'] );
 		return $settings;
 	}
 
 	public static function save( array $settings ): bool {
 		$previous_config = get_option( self::OPTION, null );
-		$previous_state  = get_option( self::ENABLED_OPTION, null );
 
 		$settings = array_merge( self::defaults(), $settings );
+		unset( $settings['enabled'] );
 		$settings['delivery_enabled'] = ! empty( $settings['delivery_enabled'] );
 		$settings['designer_enabled'] = ! empty( $settings['designer_enabled'] );
-		$settings['enabled'] = $settings['delivery_enabled'] || $settings['designer_enabled'];
-		$expected_state = $settings['enabled'] ? '1' : '0';
 
 		$config_changed = update_option( self::OPTION, $settings, false );
-		$state_changed  = update_option( self::ENABLED_OPTION, $expected_state, true );
 
 		$persisted_config = get_option( self::OPTION, null );
-		$persisted_state  = get_option( self::ENABLED_OPTION, null );
-		if ( $settings !== $persisted_config || $expected_state !== (string) $persisted_state ) {
+		if ( $settings !== $persisted_config ) {
 			if ( null === $previous_config ) {
 				delete_option( self::OPTION );
 			} else {
 				update_option( self::OPTION, $previous_config, false );
 			}
-
-			if ( null === $previous_state ) {
-				delete_option( self::ENABLED_OPTION );
-			} else {
-				update_option( self::ENABLED_OPTION, $previous_state, true );
-			}
 			return false;
 		}
 
-		return $config_changed || $state_changed;
+		return $config_changed;
 	}
 
 	/**

@@ -12,12 +12,10 @@ use CB\Core\Mail\Settings as MailSettings;
 
 final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 	private mixed $original_settings;
-	private mixed $original_enabled;
 
 	public function set_up(): void {
 		parent::set_up();
 		$this->original_settings = get_option( MailSettings::OPTION, null );
-		$this->original_enabled = get_option( MailSettings::ENABLED_OPTION, null );
 		TemplateRegistry::_reset_for_testing();
 		BindingRegistry::_reset_for_testing();
 	}
@@ -28,25 +26,24 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		} else {
 			update_option( MailSettings::OPTION, $this->original_settings, false );
 		}
-		if ( null === $this->original_enabled ) {
-			delete_option( MailSettings::ENABLED_OPTION );
-		} else {
-			update_option( MailSettings::ENABLED_OPTION, $this->original_enabled, true );
-		}
 		TemplateRegistry::_reset_for_testing();
 		BindingRegistry::_reset_for_testing();
 		parent::tear_down();
 	}
 
-	public function test_legacy_mail_enabled_state_migrates_to_delivery_only_in_memory(): void {
+	public function test_mail_settings_persist_only_independent_v1_states(): void {
 		delete_option( MailSettings::OPTION );
-		delete_option( MailSettings::ENABLED_OPTION );
-		update_option( MailSettings::OPTION, [ 'enabled' => true ], false );
-		update_option( MailSettings::ENABLED_OPTION, '1', true );
 
-		$settings = MailSettings::all();
-		self::assertTrue( $settings['delivery_enabled'] );
-		self::assertFalse( $settings['designer_enabled'] );
+		$settings = MailSettings::defaults();
+		$settings['delivery_enabled'] = true;
+		$settings['designer_enabled'] = false;
+		self::assertTrue( MailSettings::save( $settings ) );
+
+		$stored = get_option( MailSettings::OPTION, null );
+		self::assertIsArray( $stored );
+		self::assertArrayNotHasKey( 'enabled', $stored );
+		self::assertTrue( (bool) $stored['delivery_enabled'] );
+		self::assertFalse( (bool) $stored['designer_enabled'] );
 		self::assertTrue( MailSettings::enabled() );
 	}
 

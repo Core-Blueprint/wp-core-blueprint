@@ -216,7 +216,6 @@ try {
         cb_a3_uninstall_expect(is_plugin_active($base_basename), 'Base must be active before uninstall state is seeded.');
         wp_set_current_user((int) $admin->ID);
 
-        update_option('cb_core_mail_enabled', '1', false);
         update_option('cb_core_admin_notices_policy', [
             'version' => 1,
             'rules' => [
@@ -392,7 +391,7 @@ try {
         cb_a3_uninstall_expect(!$vendor_role->has_cap('cb_manage_notes'), 'Base-owned capability survived on a third-party role.');
         cb_a3_uninstall_expect($vendor_role->has_cap('vendor_keep_cap'), 'Third-party capability was deleted from a third-party role.');
 
-        foreach (['cb_core_settings', 'cb_core_bypass_token', 'cb_core_mail_enabled', 'cb_core_admin_notices_policy', 'cb_core_admin_notice_sources', 'cb_core_integrity_a3_generation', 'cb_core_schema_lock_a3', 'cb_core_quarantine_mutation_lock_a3', 'cb_core_2fa_ch_lock_a3'] as $option) {
+        foreach (['cb_core_settings', 'cb_core_bypass_token', 'cb_core_admin_notices_policy', 'cb_core_admin_notice_sources', 'cb_core_integrity_a3_generation', 'cb_core_schema_lock_a3', 'cb_core_quarantine_mutation_lock_a3', 'cb_core_2fa_ch_lock_a3'] as $option) {
             cb_a3_uninstall_expect(false === get_option($option, false), 'Base-owned option survived uninstall: ' . $option);
         }
         cb_a3_uninstall_expect(['evidence' => 'preserve-me'] === get_option('cb_core_quarantine_workspace', null), 'Quarantine evidence index was deleted by Base uninstall.');

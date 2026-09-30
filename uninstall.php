@@ -85,7 +85,6 @@ $foundation_options = [
 	'cb_core_access_mode',
 	'cb_core_access_mode_config',
 	'cb_core_mail_settings',
-	'cb_core_mail_enabled',
 	'cb_core_mail_log_db_version',
 	'cb_core_mail_template_overrides',
 	'cb_core_snippets_settings',
