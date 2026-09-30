@@ -153,18 +153,25 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 
 		$seen = null;
+		$final_filter_called = false;
 		$capture = static function ( array $args, array $taxonomies ) use ( &$seen ): array {
 			if ( in_array( 'category', $taxonomies, true ) ) {
 				$seen = $args;
 			}
 			return $args;
 		};
+		$final_filter = static function ( array $terms ) use ( &$final_filter_called ): array {
+			$final_filter_called = true;
+			return $terms;
+		};
 
 		add_filter( 'get_terms_args', $capture, 99, 2 );
+		add_filter( 'get_terms', $final_filter, 99, 1 );
 		try {
 			$entries = CategoryRoutes::entries();
 		} finally {
 			remove_filter( 'get_terms_args', $capture, 99 );
+			remove_filter( 'get_terms', $final_filter, 99 );
 		}
 
 		self::assertNotEmpty( $entries );
@@ -172,8 +179,8 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertSame( 'all', $seen['get'] ?? null );
 		self::assertSame( 'id', $seen['orderby'] ?? null );
 		self::assertSame( 'id=>parent', $seen['fields'] ?? null );
-		self::assertTrue( $seen['suppress_filter'] ?? false );
 		self::assertTrue( $seen['suppress_filters'] ?? false );
+		self::assertFalse( $final_filter_called );
 	}
 
 	public function test_preflight_requires_standard_pretty_permalinks_without_index_php(): void {
