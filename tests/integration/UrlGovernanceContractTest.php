@@ -513,6 +513,11 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 			$wordpress,
 			Runtime::filter_term_link( $wordpress, $term, 'category' )
 		);
+		$candidate = home_url( '/blog/page/2/' );
+		self::assertSame(
+			$candidate,
+			Runtime::filter_redirect_canonical( $candidate, home_url( '/blog/p2/' ) )
+		);
 
 		wp_delete_post( $page_id, true );
 		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
