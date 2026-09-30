@@ -20,17 +20,11 @@ defined( 'ABSPATH' ) || exit;
 
 final class Preflight {
 
-	private const RESERVED_ROOT_SEGMENTS = [
-		'author',
-		'comments',
+	private const SYSTEM_RESERVED_ROOT_SEGMENTS = [
 		'embed',
-		'feed',
-		'page',
-		'search',
 		'wp-admin',
 		'wp-content',
 		'wp-includes',
-		'wp-json',
 	];
 
 	/**
@@ -46,13 +40,19 @@ final class Preflight {
 	public static function run(): array {
 		$blockers = [];
 		$warnings = [];
-		$routes   = CategoryRoutes::all();
-		$cpt      = self::public_post_type_archive_paths();
-		$tax      = self::public_taxonomy_paths();
+		$routes              = CategoryRoutes::all();
+		$cpt                 = self::public_post_type_archive_paths();
+		$tax                 = self::public_taxonomy_paths();
+		$permalink_structure = (string) get_option( 'permalink_structure', '' );
+		$reserved_roots      = self::reserved_root_segments();
+
+		if ( '' === trim( $permalink_structure ) || str_contains( $permalink_structure, 'index.php' ) ) {
+			$blockers[] = __( 'Clean Archive URLs require a standard WordPress pretty permalink structure without index.php.', 'core-blueprint' );
+		}
 
 		foreach ( $routes as $path => $term ) {
 			$first_segment = explode( '/', $path, 2 )[0] ?? '';
-			if ( in_array( $first_segment, self::RESERVED_ROOT_SEGMENTS, true ) ) {
+			if ( in_array( $first_segment, $reserved_roots, true ) ) {
 				$blockers[] = sprintf(
 					/* translators: 1: category name, 2: route segment */
 					__( 'Category "%1$s" uses the reserved root route "/%2$s/".', 'core-blueprint' ),
@@ -108,7 +108,6 @@ final class Preflight {
 			$warnings[] = __( 'Enabling this policy changes canonical category URLs. Existing WordPress category URLs will redirect to the clean routes.', 'core-blueprint' );
 		}
 
-		$permalink_structure = (string) get_option( 'permalink_structure', '' );
 		if ( str_contains( $permalink_structure, '%category%' ) ) {
 			$warnings[] = __( 'The current post permalink structure contains %category%. Core Blueprint will reserve p{n} inside category paths for archive pagination.', 'core-blueprint' );
 		}
@@ -401,6 +400,41 @@ final class Preflight {
 		return $paths;
 	}
 
+
+	/** @return string[] */
+	private static function reserved_root_segments(): array {
+		$segments = self::SYSTEM_RESERVED_ROOT_SEGMENTS;
+
+		global $wp_rewrite;
+		if ( $wp_rewrite instanceof \WP_Rewrite ) {
+			foreach ( [ 'author_base', 'search_base', 'pagination_base', 'comments_pagination_base', 'feed_base', 'comments_base' ] as $property ) {
+				if ( ! property_exists( $wp_rewrite, $property ) ) {
+					continue;
+				}
+				$base  = trim( (string) $wp_rewrite->{$property}, '/' );
+				$first = explode( '/', $base, 2 )[0] ?? '';
+				if ( '' !== $first ) {
+					$segments[] = $first;
+				}
+			}
+		}
+
+		$rest_prefix = trim( (string) rest_get_url_prefix(), '/' );
+		if ( '' !== $rest_prefix ) {
+			$segments[] = explode( '/', $rest_prefix, 2 )[0] ?? $rest_prefix;
+		}
+
+		$segments = array_values(
+			array_unique(
+				array_filter(
+					array_map( 'sanitize_title', $segments ),
+					static fn( string $segment ): bool => '' !== $segment
+				)
+			)
+		);
+		sort( $segments, SORT_STRING );
+		return $segments;
+	}
 
 	/** @return array<string,WP_Post_Type> */
 	private static function viewable_post_type_objects(): array {
