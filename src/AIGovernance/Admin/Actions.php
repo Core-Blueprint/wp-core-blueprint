@@ -92,7 +92,7 @@ final class Actions {
 		if ( ! empty( $_POST['actor'] ) ) {
 			$filters['actor'] = max( 0, (int) $_POST['actor'] );
 		}
-		foreach ( [ 'source', 'operation', 'outcome' ] as $key ) {
+		foreach ( [ 'source', 'type', 'transport', 'provider', 'model', 'operation', 'outcome' ] as $key ) {
 			if ( isset( $_POST[ $key ] ) && is_string( $_POST[ $key ] ) ) {
 				$value = sanitize_text_field( wp_unslash( $_POST[ $key ] ) );
 				if ( '' !== $value ) {
