@@ -26,8 +26,12 @@ final class CategoryRoutes {
 	public static function all(): array {
 		$terms = get_terms(
 			[
-				'taxonomy'   => 'category',
-				'hide_empty' => false,
+				'taxonomy'         => 'category',
+				'hide_empty'       => false,
+				// Route generation must see the canonical WordPress term set.
+				// Providers that honor the standard suppression contract should
+				// not scope this infrastructure query to a presentation context.
+				'suppress_filters' => true,
 			]
 		);
 
