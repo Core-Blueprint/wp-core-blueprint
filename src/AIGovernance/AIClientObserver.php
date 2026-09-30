@@ -236,7 +236,11 @@ final class AIClientObserver {
 					}
 				}
 				if ( [] !== $tokens ) {
-					$summary['token_usage'] = $tokens;
+					$counts = [];
+					foreach ( $tokens as $key => $value ) {
+						$counts[ $key . '_count' ] = $value;
+					}
+					$summary['usage_counts'] = $counts;
 				}
 			}
 		}
