@@ -236,9 +236,26 @@ final class CategoryRoutes {
 		}
 
 		$offset = count( $segments ) - count( $base );
+
+		// Never consume the site/language home path as though it were the
+		// category base. This matters for subdirectory installs and for language
+		// directories whose slug happens to equal the configured category base.
+		$home_path     = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+		$home_segments = self::segments( $home_path );
+		$protected     = 0;
 		if (
-			array_map( 'rawurldecode', array_slice( $segments, $offset ) )
-			=== array_map( 'rawurldecode', $base )
+			[] !== $home_segments
+			&& count( $segments ) >= count( $home_segments )
+			&& array_map( 'rawurldecode', array_slice( $segments, 0, count( $home_segments ) ) )
+				=== array_map( 'rawurldecode', $home_segments )
+		) {
+			$protected = count( $home_segments );
+		}
+
+		if (
+			$offset >= $protected
+			&& array_map( 'rawurldecode', array_slice( $segments, $offset ) )
+				=== array_map( 'rawurldecode', $base )
 		) {
 			return array_slice( $segments, 0, $offset );
 		}
