@@ -104,7 +104,6 @@ final class MCPEventProjector {
 			'prompt_name',
 			'resource_uri',
 			'error_category',
-			'params',
 		];
 		$out = [];
 		foreach ( $allowed as $key ) {
@@ -112,6 +111,12 @@ final class MCPEventProjector {
 				continue;
 			}
 			$out[ $key ] = $tags[ $key ];
+		}
+		if ( isset( $tags['params'] ) && is_array( $tags['params'] ) ) {
+			$params = self::safe_params( $tags['params'] );
+			if ( [] !== $params ) {
+				$out['params'] = $params;
+			}
 		}
 		if ( array_key_exists( 'request_id', $tags ) && is_scalar( $tags['request_id'] ) ) {
 			$request_id = (string) $tags['request_id'];
@@ -134,6 +139,40 @@ final class MCPEventProjector {
 				continue;
 			}
 			$out[ $target ] = self::fingerprint( (string) $tags[ $source ] );
+		}
+		return $out;
+	}
+
+	/** @param array<string,mixed> $params @return array<string,mixed> */
+	private static function safe_params( array $params ): array {
+		$out = [];
+		foreach ( [ 'name' => 190, 'protocolVersion' => 100, 'uri' => 500, 'client_name' => 190 ] as $key => $max ) {
+			if ( ! isset( $params[ $key ] ) || ! is_scalar( $params[ $key ] ) ) {
+				continue;
+			}
+			$value = trim( sanitize_text_field( (string) $params[ $key ] ) );
+			if ( '' !== $value ) {
+				$out[ $key ] = substr( $value, 0, $max );
+			}
+		}
+		if ( isset( $params['arguments_count'] ) && is_numeric( $params['arguments_count'] ) ) {
+			$out['arguments_count'] = min( 100000, max( 0, (int) $params['arguments_count'] ) );
+		}
+		if ( isset( $params['arguments_keys'] ) && is_array( $params['arguments_keys'] ) ) {
+			$keys = [];
+			foreach ( array_slice( $params['arguments_keys'], 0, 50 ) as $key ) {
+				if ( ! is_scalar( $key ) ) {
+					continue;
+				}
+				$value = substr( sanitize_text_field( (string) $key ), 0, 100 );
+				if ( 1 === preg_match( '/(?:pass(?:word)?|secret|token|api[_-]?key|credential|authorization|cookie|nonce)/i', $value ) ) {
+					$value = '[redacted]';
+				}
+				$keys[] = $value;
+			}
+			if ( [] !== $keys ) {
+				$out['arguments_keys'] = $keys;
+			}
 		}
 		return $out;
 	}
