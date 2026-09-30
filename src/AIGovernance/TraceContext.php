@@ -27,6 +27,12 @@ final class TraceContext {
 		];
 	}
 
+	public static function prepare_ability_open(): void {
+		if ( self::ability_execution_depth() <= 1 ) {
+			self::$frames = [];
+		}
+	}
+
 	public static function enter( string $activity_id, string $correlation_id, string $scope = 'generic' ): void {
 		if ( ! wp_is_uuid( $activity_id, 4 ) || ! wp_is_uuid( $correlation_id, 4 ) ) {
 			return;
@@ -74,12 +80,17 @@ final class TraceContext {
 	}
 
 	private static function ability_execution_active(): bool {
+		return self::ability_execution_depth() > 0;
+	}
+
+	private static function ability_execution_depth(): int {
+		$depth = 0;
 		foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 64 ) as $frame ) {
 			if ( 'WP_Ability' === ( $frame['class'] ?? null ) && 'execute' === ( $frame['function'] ?? null ) ) {
-				return true;
+				++$depth;
 			}
 		}
-		return false;
+		return $depth;
 	}
 
 	/** @internal */
