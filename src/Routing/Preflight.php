@@ -71,6 +71,16 @@ final class Preflight {
 				);
 			}
 
+			foreach ( self::public_pagination_content_collisions( $path ) as $collision_path => $collision ) {
+				$blockers[] = sprintf(
+					/* translators: 1: category name, 2: content label, 3: route path */
+					__( 'Category "%1$s" conflicts with existing public content "%2$s" at "/%3$s/".', 'core-blueprint' ),
+					$term->name,
+					$collision,
+					$collision_path
+				);
+			}
+
 			if ( isset( $cpt[ $path ] ) ) {
 				$blockers[] = sprintf(
 					/* translators: 1: category name, 2: post type label, 3: route path */
@@ -87,6 +97,16 @@ final class Preflight {
 					__( 'Category "%1$s" conflicts with the "%2$s" taxonomy route at "/%3$s/".', 'core-blueprint' ),
 					$term->name,
 					$tax[ $path ],
+					$path
+				);
+			}
+
+			foreach ( self::public_taxonomy_term_collisions( $path ) as $taxonomy_label ) {
+				$blockers[] = sprintf(
+					/* translators: 1: category name, 2: taxonomy label, 3: route path */
+					__( 'Category "%1$s" conflicts with the "%2$s" taxonomy route at "/%3$s/".', 'core-blueprint' ),
+					$term->name,
+					$taxonomy_label,
 					$path
 				);
 			}
@@ -183,21 +203,106 @@ final class Preflight {
 			}
 
 			if ( self::relative_public_path( $permalink ) === trim( $path, '/' ) ) {
-				$type  = get_post_type_object( $post->post_type );
-				$label = $type instanceof WP_Post_Type
-					? (string) $type->labels->singular_name
-					: (string) $post->post_type;
-				$collisions[] = sprintf(
-					/* translators: 1: content title, 2: content type */
-					__( '%1$s (%2$s)', 'core-blueprint' ),
-					get_the_title( $post ),
-					$label
-				);
+				$collisions[] = self::public_post_label( $post );
 			}
 		}
 
 		sort( $collisions, SORT_STRING );
 		return array_values( array_unique( $collisions ) );
+	}
+
+	/** @return array<string,string> public route path => content label */
+	private static function public_pagination_content_collisions( string $path ): array {
+		global $wpdb;
+
+		$post_types = array_values( get_post_types( [ 'public' => true ], 'names' ) );
+		if ( [] === $post_types || ! $wpdb instanceof \wpdb ) {
+			return [];
+		}
+
+		$placeholders = implode( ', ', array_fill( 0, count( $post_types ), '%s' ) );
+		$args         = array_merge( $post_types, [ '^p[0-9]+$' ] );
+		$sql          = $wpdb->prepare(
+			"SELECT ID
+			FROM {$wpdb->posts}
+			WHERE post_status = 'publish'
+				AND post_type IN ({$placeholders})
+				AND post_name REGEXP %s
+			LIMIT 500",
+			...$args
+		);
+		$ids = is_string( $sql ) ? $wpdb->get_col( $sql ) : [];
+
+		$prefix     = trim( $path, '/' );
+		$collisions = [];
+		foreach ( (array) $ids as $post_id ) {
+			$post = get_post( (int) $post_id );
+			if ( ! $post instanceof \WP_Post ) {
+				continue;
+			}
+
+			$permalink = get_permalink( $post );
+			if ( ! is_string( $permalink ) || '' === $permalink ) {
+				continue;
+			}
+
+			$public_path = self::relative_public_path( $permalink );
+			if ( 1 !== preg_match( '#^' . preg_quote( $prefix, '#' ) . '/p[0-9]+$#', $public_path ) ) {
+				continue;
+			}
+
+			$collisions[ $public_path ] = self::public_post_label( $post );
+		}
+
+		ksort( $collisions, SORT_STRING );
+		return $collisions;
+	}
+
+	/** @return string[] */
+	private static function public_taxonomy_term_collisions( string $path ): array {
+		$slug       = basename( trim( $path, '/' ) );
+		$collisions = [];
+
+		foreach ( get_taxonomies( [ 'public' => true ], 'objects' ) as $taxonomy ) {
+			if (
+				! $taxonomy instanceof WP_Taxonomy
+				|| 'category' === $taxonomy->name
+				|| false === $taxonomy->rewrite
+			) {
+				continue;
+			}
+
+			$term = get_term_by( 'slug', $slug, $taxonomy->name );
+			if ( ! $term instanceof \WP_Term ) {
+				continue;
+			}
+
+			$link = get_term_link( $term, $taxonomy->name );
+			if ( is_wp_error( $link ) || ! is_string( $link ) ) {
+				continue;
+			}
+
+			if ( self::relative_public_path( $link ) === trim( $path, '/' ) ) {
+				$collisions[] = (string) $taxonomy->labels->singular_name;
+			}
+		}
+
+		sort( $collisions, SORT_STRING );
+		return array_values( array_unique( $collisions ) );
+	}
+
+	private static function public_post_label( \WP_Post $post ): string {
+		$type  = get_post_type_object( $post->post_type );
+		$label = $type instanceof WP_Post_Type
+			? (string) $type->labels->singular_name
+			: (string) $post->post_type;
+
+		return sprintf(
+			/* translators: 1: content title, 2: content type */
+			__( '%1$s (%2$s)', 'core-blueprint' ),
+			get_the_title( $post ),
+			$label
+		);
 	}
 
 	private static function relative_public_path( string $url ): string {
