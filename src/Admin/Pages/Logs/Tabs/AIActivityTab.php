@@ -94,6 +94,10 @@ final class AIActivityTab {
 						<input type="text" name="source" value="<?php echo esc_attr( $raw['source'] ); ?>" placeholder="wordpress-mcp-adapter" />
 					</label>
 					<label class="cb-core-toolbar__field">
+						<span class="cb-core-toolbar__label"><?php esc_html_e( 'Correlation ID', 'core-blueprint' ); ?></span>
+						<input type="text" name="correlation" value="<?php echo esc_attr( $raw['correlation'] ); ?>" />
+					</label>
+					<label class="cb-core-toolbar__field">
 						<span class="cb-core-toolbar__label"><?php esc_html_e( 'Operation type', 'core-blueprint' ); ?></span>
 						<select name="type">
 							<option value=""><?php esc_html_e( 'Any', 'core-blueprint' ); ?></option>
@@ -285,6 +289,9 @@ final class AIActivityTab {
 		if ( '' !== $raw['actor'] ) {
 			$filters['actor'] = max( 0, (int) $raw['actor'] );
 		}
+		if ( '' !== $raw['correlation'] && wp_is_uuid( $raw['correlation'], 4 ) ) {
+			$filters['correlation'] = $raw['correlation'];
+		}
 		foreach ( [ 'source', 'type', 'transport', 'provider', 'model', 'operation', 'outcome' ] as $key ) {
 			if ( '' !== $raw[ $key ] ) {
 				$filters[ $key ] = $raw[ $key ];
@@ -293,7 +300,7 @@ final class AIActivityTab {
 		return $filters;
 	}
 
-	/** @return array{from:string,to:string,actor:string,source:string,type:string,transport:string,provider:string,model:string,operation:string,outcome:string} */
+	/** @return array{from:string,to:string,actor:string,source:string,correlation:string,type:string,transport:string,provider:string,model:string,operation:string,outcome:string} */
 	private static function raw_filter_values(): array {
 		$outcome = isset( $_GET['outcome'] ) ? sanitize_key( (string) wp_unslash( $_GET['outcome'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return [
@@ -301,6 +308,7 @@ final class AIActivityTab {
 			'to'        => isset( $_GET['to'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['to'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'actor'     => isset( $_GET['actor'] ) ? (string) max( 0, (int) $_GET['actor'] ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'source'    => isset( $_GET['source'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['source'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'correlation' => isset( $_GET['correlation'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['correlation'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'type'      => isset( $_GET['type'] ) ? sanitize_key( (string) wp_unslash( $_GET['type'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'transport' => isset( $_GET['transport'] ) ? sanitize_key( (string) wp_unslash( $_GET['transport'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'provider'  => isset( $_GET['provider'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['provider'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
