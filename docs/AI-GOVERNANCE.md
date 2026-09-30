@@ -151,9 +151,16 @@ For a completed generation Base records:
 - prompt, completion, total and thought token counts when available;
 - observed transport, duration and actor.
 
-The automatic observer does **not** retain prompt text, generated content, candidate payloads, provider response bodies, credentials or arbitrary `additionalData`.
+Base also registers forward-compatible listeners for the AI Client embedding lifecycle names produced by WordPress' generic event dispatcher:
 
-The current WordPress AI Client lifecycle has no common terminal action for provider exceptions that occur after the before-generation event. Such a record therefore remains `outcome=unknown` with `capture_state=generation-started`; Base does not guess that it failed.
+- `wp_ai_client_before_generate_embedding`;
+- `wp_ai_client_after_generate_embedding`.
+
+These hooks are inert on supported WordPress builds that do not yet bundle embedding lifecycle events. When the official AI Client emits them, Base records only embedding metadata such as input count, embedding count, vector dimensions and token usage. Embedding input values and vector values are never retained.
+
+The automatic observer does **not** retain prompt text, embedding input values, generated content, candidate payloads, embedding vectors, provider response bodies, credentials or arbitrary `additionalData`.
+
+The current WordPress AI Client lifecycle has no common terminal action for provider exceptions that occur after a before-generation or before-embedding event. Such a record therefore remains `outcome=unknown` with `capture_state=generation-started`; Base does not guess that it failed.
 
 ## WordPress MCP Adapter request observability
 
@@ -171,6 +178,8 @@ Base records the adapter's `mcp.request` completion event and its bounded reques
 - machine-readable failure reason and error category; free-text failure output is reduced to metadata shape only;
 - request duration;
 - the adapter's sanitized parameter summary.
+
+Only the documented `success` and `error` request statuses are mapped to succeeded/failed outcomes. An absent or unrecognized future status remains `outcome=unknown`; Base preserves the bounded status evidence instead of guessing a failure.
 
 Base does not turn generic REST traffic into MCP evidence. It also does not infer the identity of ChatGPT, Claude or another client from transport alone.
 
