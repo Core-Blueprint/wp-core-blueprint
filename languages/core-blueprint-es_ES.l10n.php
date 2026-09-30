@@ -14,6 +14,12 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        'Correlation ID' => 'ID de correlación',
+        'Parent activity ID' => 'ID de la actividad principal',
+        'Provider ID' => 'ID del proveedor',
+        'Provider' => 'Proveedor',
+        'Model ID' => 'ID del modelo',
+        'Model' => 'Modelo',
         '%1$d checks · %2$d configured · %3$d need review · %4$d attention · %5$d later · %6$d not applicable' => '%1$d comprobaciones · %2$d configuradas · %3$d requieren revisión · %4$d requieren atención · %5$d más adelante · %6$d no aplicables',
         '%1$s (%2$d)' => '%1$s (%2$d)',
         'A reason is required for Not applicable.' => 'Se requiere un motivo para No aplicable.',
