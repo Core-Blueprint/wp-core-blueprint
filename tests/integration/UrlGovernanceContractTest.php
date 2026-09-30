@@ -515,6 +515,30 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_category_base_name_does_not_consume_an_identical_site_subdirectory(): void {
+		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
+		$term    = get_term( $term_id, 'category' );
+		self::assertInstanceOf( WP_Term::class, $term );
+
+		$subdirectory_home = static function ( string $url, string $path ): string {
+			return '/' === $path ? 'https://example.test/category/' : $url;
+		};
+
+		add_filter( 'home_url', $subdirectory_home, 50, 2 );
+		try {
+			self::assertSame(
+				'https://example.test/category/blog/p3/',
+				CategoryRoutes::pagination_url(
+					'https://example.test/category/blog/page/2/',
+					$term,
+					3
+				)
+			);
+		} finally {
+			remove_filter( 'home_url', $subdirectory_home, 50 );
+		}
+	}
+
 	public function test_context_transform_fails_open_for_unknown_route_shapes(): void {
 		$term_id = self::factory()->category->create( [ 'name' => 'Blog', 'slug' => 'blog' ] );
 		$term    = get_term( $term_id, 'category' );
