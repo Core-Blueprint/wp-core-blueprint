@@ -22,58 +22,117 @@ defined( 'ABSPATH' ) || exit;
 
 final class CategoryRoutes {
 
-	/** @return array<string,WP_Term> Canonical category path => term. */
-	public static function all(): array {
-		$terms = get_terms(
+	/**
+	 * Return every raw WordPress category route entry.
+	 *
+	 * The query shape mirrors WordPress' hierarchy query. Multilingual systems
+	 * commonly leave that infrastructure query unscoped, while the plural
+	 * suppression flag gives query layers a provider-neutral opt-out signal.
+	 *
+	 * @return array<int,array{path:string,term:WP_Term}>
+	 */
+	public static function entries(): array {
+		$parents = get_terms(
 			[
-				'taxonomy'         => 'category',
-				'hide_empty'       => false,
-				// Route generation is infrastructure, not presentation. The
-				// singular core flag suppresses WordPress' final get_terms filter;
-				// the plural query flag is also retained for ecosystem query
-				// layers that honor WP_Query-style filter suppression.
-				'suppress_filter'  => true,
-				'suppress_filters' => true,
+				'taxonomy'               => 'category',
+				'hide_empty'             => false,
+				'get'                    => 'all',
+				'orderby'                => 'id',
+				'fields'                 => 'id=>parent',
+				'update_term_meta_cache' => false,
+				'suppress_filter'        => true,
+				'suppress_filters'       => true,
 			]
 		);
 
-		if ( is_wp_error( $terms ) || ! is_array( $terms ) ) {
+		if ( is_wp_error( $parents ) || ! is_array( $parents ) ) {
 			return [];
 		}
 
-		$routes = [];
-		foreach ( $terms as $term ) {
+		$entries = [];
+		foreach ( $parents as $term_id => $_parent_id ) {
+			$term = WP_Term::get_instance( (int) $term_id, 'category' );
 			if ( ! $term instanceof WP_Term ) {
 				continue;
 			}
 
 			$path = self::path( $term );
-			if ( '' !== $path ) {
-				$routes[ $path ] = $term;
+			if ( '' === $path ) {
+				continue;
+			}
+
+			$entries[] = [
+				'path' => $path,
+				'term' => $term,
+			];
+		}
+
+		usort(
+			$entries,
+			static function ( array $a, array $b ): int {
+				$path_order = strcmp( $a['path'], $b['path'] );
+				return 0 !== $path_order
+					? $path_order
+					: (int) $a['term']->term_id <=> (int) $b['term']->term_id;
+			}
+		);
+
+		return $entries;
+	}
+
+	/**
+	 * Compatibility map for callers that need one representative term per
+	 * structural route. Route generation should prefer paths() and collision
+	 * checks should prefer entries() so identical slugs in separate contexts do
+	 * not disappear from the catalog.
+	 *
+	 * @return array<string,WP_Term>
+	 */
+	public static function all(): array {
+		$routes = [];
+		foreach ( self::entries() as $entry ) {
+			if ( ! isset( $routes[ $entry['path'] ] ) ) {
+				$routes[ $entry['path'] ] = $entry['term'];
 			}
 		}
 
-		ksort( $routes, SORT_STRING );
 		return $routes;
 	}
 
+	/** @return string[] */
+	public static function paths(): array {
+		$paths = [];
+		foreach ( self::entries() as $entry ) {
+			$paths[ $entry['path'] ] = true;
+		}
+
+		$paths = array_keys( $paths );
+		sort( $paths, SORT_STRING );
+		return $paths;
+	}
+
 	public static function path( WP_Term $term ): string {
-		if ( 'category' !== $term->taxonomy ) {
+		if ( 'category' !== $term->taxonomy || '' === $term->slug ) {
 			return '';
 		}
 
-		$slugs     = [];
-		$ancestors = array_reverse( get_ancestors( (int) $term->term_id, 'category', 'taxonomy' ) );
+		$slugs = [ $term->slug ];
+		$seen  = [ (int) $term->term_id => true ];
+		$parent_id = (int) $term->parent;
 
-		foreach ( $ancestors as $ancestor_id ) {
-			$ancestor = get_term( (int) $ancestor_id, 'category' );
-			if ( $ancestor instanceof WP_Term && '' !== $ancestor->slug ) {
-				$slugs[] = $ancestor->slug;
+		while ( $parent_id > 0 ) {
+			if ( isset( $seen[ $parent_id ] ) ) {
+				return '';
 			}
-		}
+			$seen[ $parent_id ] = true;
 
-		if ( '' !== $term->slug ) {
-			$slugs[] = $term->slug;
+			$parent = WP_Term::get_instance( $parent_id, 'category' );
+			if ( ! $parent instanceof WP_Term || '' === $parent->slug ) {
+				return '';
+			}
+
+			array_unshift( $slugs, $parent->slug );
+			$parent_id = (int) $parent->parent;
 		}
 
 		return implode( '/', $slugs );
