@@ -16,6 +16,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Activity {
 	public const OUTCOMES = [ 'unknown', 'succeeded', 'failed', 'denied', 'invalid', 'short-circuited' ];
+	public const OPERATION_TYPES = [ 'ability', 'ai-client', 'mcp-request', 'operation' ];
 	public const TRANSPORTS = [ 'unknown', 'php', 'rest', 'cli', 'mcp-http', 'mcp-stdio', 'reported' ];
 
 	/**
