@@ -339,6 +339,22 @@ final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 		self::assertFalse( get_option( 'cb_core_routing_rewrite_dirty', false ) );
 	}
 
+	public function test_plugin_routing_invalidation_ignores_base_self_lifecycle(): void {
+		Settings::set_key(
+			Policy::SETTINGS_KEY,
+			[ Policy::CLEAN_ARCHIVE_URLS => true ],
+			'test:routing'
+		);
+		$this->reset_settings_cache();
+		delete_option( 'cb_core_routing_rewrite_dirty' );
+
+		Runtime::plugin_routing_structure_changed( CB_CORE_BASENAME );
+		self::assertFalse( get_option( 'cb_core_routing_rewrite_dirty', false ) );
+
+		Runtime::plugin_routing_structure_changed( 'example-plugin/example-plugin.php' );
+		self::assertSame( '1', get_option( 'cb_core_routing_rewrite_dirty' ) );
+	}
+
 	public function test_deactivation_cleanup_preserves_policy_and_removes_registered_rules(): void {
 		global $wp_rewrite;
 
