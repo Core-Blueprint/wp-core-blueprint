@@ -18,6 +18,7 @@ return [
         'No categories currently exist. New category routes will be added automatically while the policy is active.' => 'Er bestaan momenteel geen categorieën. Nieuwe categorieroutes worden automatisch toegevoegd zolang het beleid actief is.',
         'Enabling this policy changes canonical category URLs. Existing WordPress category URLs will redirect to the clean routes.' => 'Door dit beleid in te schakelen veranderen de canonieke categorie-URL\'s. Bestaande WordPress-categorie-URL\'s worden doorgestuurd naar de schone routes.',
         'The current post permalink structure contains %category%. Core Blueprint will reserve p{n} inside category paths for archive pagination.' => 'De huidige permalinkstructuur voor berichten bevat %category%. Core Blueprint reserveert p{n} binnen categoriepaden voor archiefpaginering.',
+        'Clean Archive URLs require a standard WordPress pretty permalink structure without index.php.' => 'Clean Archive URLs vereisen een standaard WordPress-permalinkstructuur zonder index.php.',
         '%1$s (%2$s)' => '%1$s (%2$s)',
         'Preflight passed. Review the findings below before enabling Clean Archive URLs.' => 'Preflight geslaagd. Controleer de bevindingen hieronder voordat je Schone archief-URL\'s inschakelt.',
         'Clean Archive URLs cannot be enabled until the reported route collisions are resolved.' => 'Schone archief-URL\'s kunnen niet worden ingeschakeld voordat de gemelde routeconflicten zijn opgelost.',
