@@ -40,8 +40,9 @@ final class Runtime {
 		add_action( 'edited_term', [ self::class, 'public_term_changed' ], 10, 3 );
 		add_action( 'delete_term', [ self::class, 'public_term_changed' ], 10, 3 );
 
-		add_action( 'save_post', [ self::class, 'public_content_changed' ], 10, 3 );
+		add_action( 'wp_after_insert_post', [ self::class, 'public_content_route_changed' ], 10, 4 );
 		add_action( 'before_delete_post', [ self::class, 'public_content_deleted' ], 10, 2 );
+		add_action( 'set_object_terms', [ self::class, 'category_relationship_changed' ], 10, 6 );
 		add_action( 'update_option_permalink_structure', [ self::class, 'routing_structure_changed' ], 10, 0 );
 		add_action( 'update_option_category_base', [ self::class, 'routing_structure_changed' ], 10, 0 );
 		add_action( 'activated_plugin', [ self::class, 'routing_structure_changed' ], 10, 0 );
@@ -294,19 +295,76 @@ final class Runtime {
 		}
 	}
 
-	public static function public_content_changed( int $post_id, \WP_Post $post, bool $update ): void {
-		unset( $update );
+	public static function public_content_route_changed(
+		int $post_id,
+		\WP_Post $post,
+		bool $update,
+		?\WP_Post $post_before
+	): void {
+		unset( $post_id );
 
-		if (
-			! Policy::enabled()
-			|| wp_is_post_revision( $post_id )
-			|| wp_is_post_autosave( $post_id )
-		) {
+		if ( ! Policy::enabled() ) {
+			return;
+		}
+
+		$public_statuses = array_values( get_post_stati( [ 'public' => true ], 'names' ) );
+		$current_type    = get_post_type_object( $post->post_type );
+		$previous_type   = $post_before instanceof \WP_Post
+			? get_post_type_object( $post_before->post_type )
+			: null;
+		$public_type     = ( $current_type instanceof \WP_Post_Type && $current_type->public )
+			|| ( $previous_type instanceof \WP_Post_Type && $previous_type->public );
+		$public_status   = in_array( $post->post_status, $public_statuses, true )
+			|| ( $post_before instanceof \WP_Post && in_array( $post_before->post_status, $public_statuses, true ) );
+
+		if ( ! $public_type || ! $public_status ) {
+			return;
+		}
+
+		if ( ! $update || ! $post_before instanceof \WP_Post ) {
+			self::mark_rewrite_dirty();
+			return;
+		}
+
+		foreach ( [ 'post_name', 'post_parent', 'post_type', 'post_status', 'post_date', 'post_author' ] as $field ) {
+			if ( $post->{$field} !== $post_before->{$field} ) {
+				self::mark_rewrite_dirty();
+				return;
+			}
+		}
+	}
+
+
+	public static function category_relationship_changed(
+		int $object_id,
+		array $terms,
+		array $term_taxonomy_ids,
+		string $taxonomy,
+		bool $append,
+		array $old_term_taxonomy_ids
+	): void {
+		unset( $terms, $append );
+
+		if ( ! Policy::enabled() || 'category' !== $taxonomy ) {
+			return;
+		}
+
+		$post = get_post( $object_id );
+		if ( ! $post instanceof \WP_Post ) {
 			return;
 		}
 
 		$type = get_post_type_object( $post->post_type );
-		if ( $type instanceof \WP_Post_Type && $type->public ) {
+		if ( ! $type instanceof \WP_Post_Type || ! $type->public ) {
+			return;
+		}
+
+		$current = array_map( 'intval', $term_taxonomy_ids );
+		$before  = array_map( 'intval', $old_term_taxonomy_ids );
+		sort( $current, SORT_NUMERIC );
+		sort( $before, SORT_NUMERIC );
+
+		if ( $current !== $before ) {
 			self::mark_rewrite_dirty();
 		}
 	}
