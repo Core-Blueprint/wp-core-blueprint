@@ -206,8 +206,10 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertSame( 'succeeded', $row->outcome );
 		$this->assertSame( 'completed', $row->capture_state );
 		$this->assertSame( 1, $row->evidence_decoded['message_count'] );
-		$this->assertSame( 18, $row->evidence_decoded['result']['token_usage']['total'] );
-		$this->assertSame( 2, $row->evidence_decoded['result']['token_usage']['thought'] );
+		$this->assertSame( 11, $row->evidence_decoded['result']['usage_counts']['prompt_count'] );
+		$this->assertSame( 7, $row->evidence_decoded['result']['usage_counts']['completion_count'] );
+		$this->assertSame( 18, $row->evidence_decoded['result']['usage_counts']['total_count'] );
+		$this->assertSame( 2, $row->evidence_decoded['result']['usage_counts']['thought_count'] );
 		$this->assertStringNotContainsString( 'never-store-this-prompt', (string) $row->evidence );
 	}
 
