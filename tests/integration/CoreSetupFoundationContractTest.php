@@ -17,7 +17,6 @@ final class CB_Base_Core_Setup_Foundation_Contract_Test extends WP_UnitTestCase 
 	private mixed $saved_core_settings;
 	private mixed $saved_setup_state;
 	private mixed $saved_mail_settings;
-	private mixed $saved_mail_enabled;
 	private mixed $saved_active_plugins;
 
 	public function set_up(): void {
@@ -26,7 +25,6 @@ final class CB_Base_Core_Setup_Foundation_Contract_Test extends WP_UnitTestCase 
 		$this->saved_core_settings  = get_option( CB_CORE_SETTINGS, '__cb_missing__' );
 		$this->saved_setup_state    = get_option( ReviewRepository::OPTION, '__cb_missing__' );
 		$this->saved_mail_settings  = get_option( MailSettings::OPTION, '__cb_missing__' );
-		$this->saved_mail_enabled   = get_option( MailSettings::ENABLED_OPTION, '__cb_missing__' );
 		$this->saved_active_plugins = get_option( 'active_plugins', '__cb_missing__' );
 
 		delete_option( ReviewRepository::OPTION );
@@ -38,7 +36,6 @@ final class CB_Base_Core_Setup_Foundation_Contract_Test extends WP_UnitTestCase 
 		$this->restore_option( CB_CORE_SETTINGS, $this->saved_core_settings );
 		$this->restore_option( ReviewRepository::OPTION, $this->saved_setup_state );
 		$this->restore_option( MailSettings::OPTION, $this->saved_mail_settings );
-		$this->restore_option( MailSettings::ENABLED_OPTION, $this->saved_mail_enabled );
 		$this->restore_option( 'active_plugins', $this->saved_active_plugins );
 		EnvironmentTypeTestShim::reset();
 		wp_set_current_user( 0 );

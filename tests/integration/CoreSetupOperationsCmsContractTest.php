@@ -25,7 +25,6 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 			CB_CORE_SETTINGS,
 			ReviewRepository::OPTION,
 			MailSettings::OPTION,
-			MailSettings::ENABLED_OPTION,
 			'active_plugins',
 			'admin_email',
 			AdminNavigationPolicy::OPTION,
