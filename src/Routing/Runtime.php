@@ -21,10 +21,11 @@ final class Runtime {
 	private const REWRITE_DIRTY_OPTION = 'cb_core_routing_rewrite_dirty';
 	private const RUNTIME_SUSPENDED_OPTION = 'cb_core_routing_runtime_suspended';
 	private static bool $deactivating = false;
+	private static ?bool $prepared_ready = null;
 
 	public static function boot(): void {
-		add_action( 'init', [ self::class, 'prepare_runtime' ], 4 );
-		add_action( 'init', [ self::class, 'register_rewrite_rules' ], 5 );
+		add_action( 'init', [ self::class, 'prepare_runtime' ], 90 );
+		add_action( 'init', [ self::class, 'register_rewrite_rules' ], 91 );
 		add_action( 'init', [ self::class, 'maybe_flush_rewrite_rules' ], 99 );
 		add_filter( 'rewrite_rules_array', [ self::class, 'filter_generated_rules' ], 999 );
 
@@ -52,8 +53,15 @@ final class Runtime {
 	}
 
 	public static function is_active(): bool {
-		return Policy::enabled()
-			&& '1' !== (string) get_option( self::RUNTIME_SUSPENDED_OPTION, '' );
+		if (
+			! Policy::enabled()
+			|| '1' === (string) get_option( self::RUNTIME_SUSPENDED_OPTION, '' )
+		) {
+			return false;
+		}
+
+		return '1' !== (string) get_option( self::REWRITE_DIRTY_OPTION, '' )
+			|| true === self::$prepared_ready;
 	}
 
 	/**
@@ -62,15 +70,17 @@ final class Runtime {
 	 */
 	public static function prepare_runtime(): void {
 		if ( ! Policy::enabled() ) {
+			self::$prepared_ready = false;
 			delete_option( self::RUNTIME_SUSPENDED_OPTION );
 			return;
 		}
 
 		if ( '1' !== (string) get_option( self::REWRITE_DIRTY_OPTION, '' ) ) {
+			self::$prepared_ready = null;
 			return;
 		}
 
-		self::apply_preflight_state();
+		self::$prepared_ready = self::apply_preflight_state();
 	}
 
 	public static function register_rewrite_rules(): void {
@@ -118,6 +128,7 @@ final class Runtime {
 			flush_rewrite_rules( false );
 		} finally {
 			self::$deactivating = false;
+			self::$prepared_ready = null;
 			delete_option( self::REWRITE_DIRTY_OPTION );
 			delete_option( self::RUNTIME_SUSPENDED_OPTION );
 		}
@@ -399,6 +410,7 @@ final class Runtime {
 	}
 
 	public static function mark_rewrite_dirty(): void {
+		self::$prepared_ready = null;
 		update_option( self::REWRITE_DIRTY_OPTION, '1', false );
 	}
 
@@ -423,6 +435,7 @@ final class Runtime {
 		}
 
 		$ready = self::apply_preflight_state();
+		self::$prepared_ready = $ready;
 		if ( ! $ready ) {
 			foreach ( array_keys( $definitions ) as $regex ) {
 				unset( $rules[ $regex ] );
