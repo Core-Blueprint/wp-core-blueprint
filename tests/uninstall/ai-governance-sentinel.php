@@ -83,7 +83,7 @@ try {
 	if ( 'seed' === $stage ) {
 		cb_ai_uninstall_expect( $table_exists, 'AI Activity table was not created before uninstall.' );
 		cb_ai_uninstall_expect(
-			'1.0' === cb_ai_uninstall_option( $db, $options_table, 'cb_core_ai_activity_db_version' ),
+			'1.1' === cb_ai_uninstall_option( $db, $options_table, 'cb_core_ai_activity_db_version' ),
 			'AI Activity schema marker was not established before uninstall.'
 		);
 
