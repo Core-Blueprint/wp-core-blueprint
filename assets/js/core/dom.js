@@ -10,7 +10,6 @@
  *   window.cbCore.qs( selector, root? )           // querySelector wrapper
  *   window.cbCore.qsa( selector, root? )          // querySelectorAll → Array
  *   window.cbCore.apiPost( action, nonce, data? ) // fetch → Promise<JSON>
- *   window.cbCore.copyToClipboard( text, fbEl? )  // clipboard with feedback
  *   window.cbCore.modal.show( opts )              // generic Promise-based modal
  *   window.cbCore.icon.create( name, opts? )      // shared Lucide icon element
  *                                                 //   (see core/modal.js)
@@ -26,7 +25,7 @@
  * Server-side data (ajaxUrl, i18n) is delivered via the official
  * `script_module_data_@cb-core/dom` filter - WP prints a JSON `<script>` tag
  * which this module reads at evaluation time. The cross-plugin runtime
- * surface (qs/qsa/apiPost/copyToClipboard/apiVersion) is then attached to
+ * surface (qs/qsa/apiPost/apiVersion) is then attached to
  * window.cbCore for downstream plugins to consume.
  *
  * @since   1.0.0
@@ -43,7 +42,6 @@ const CB_CORE_API_VERSION = '1.0';
 const dataEl  = document.getElementById( 'wp-script-module-data-@cb-core/dom' );
 const data    = dataEl ? JSON.parse( dataEl.textContent ) : {};
 const ajaxUrl = data.ajaxUrl || '';
-const i18n    = data.i18n    || {};
 
 // ─── DOM helpers ─────────────────────────────────────────────────────────────
 
@@ -129,55 +127,6 @@ export const apiPost = async ( action, nonce, data = {} ) => {
 	return response.json();
 };
 
-// ─── Clipboard helper ────────────────────────────────────────────────────────
-
-/**
- * Copy text to the clipboard, optionally flashing a feedback message inside
- * an element for 2 seconds. Falls back to the legacy textarea-select trick
- * in browsers/contexts without the async clipboard API (rare in admin, but
- * cheap insurance).
- *
- * @param {string}      text         Text to place on the clipboard.
- * @param {Element|null} [feedbackEl] Element whose text content briefly
- *                                    shows the i18n "Copied" message.
- * @returns {Promise<boolean>}        Resolves true on success.
- */
-export const copyToClipboard = async ( text, feedbackEl = null ) => {
-	const flash = () => {
-		if ( ! feedbackEl ) return;
-		const original = feedbackEl.textContent;
-		feedbackEl.textContent = i18n.copiedToClipboard || 'Copied';
-		setTimeout( () => { feedbackEl.textContent = original; }, 2000 );
-	};
-
-	if ( navigator.clipboard?.writeText ) {
-		try {
-			await navigator.clipboard.writeText( text );
-			flash();
-			return true;
-		} catch {
-			// Fall through to legacy path.
-		}
-	}
-
-	// Legacy fallback: invisible textarea + execCommand( 'copy' ).
-	const ta = document.createElement( 'textarea' );
-	ta.value = text;
-	ta.style.position = 'fixed';
-	ta.style.top = '-9999px';
-	document.body.appendChild( ta );
-	ta.select();
-	let ok = false;
-	try {
-		ok = document.execCommand( 'copy' );
-	} catch {
-		ok = false;
-	}
-	ta.remove();
-	if ( ok ) flash();
-	return ok;
-};
-
 // ─── Public API exposure ─────────────────────────────────────────────────────
 //
 // Each core module is responsible for ensuring window.cbCore exists before
@@ -193,4 +142,3 @@ window.cbCore.apiVersion      = CB_CORE_API_VERSION;
 window.cbCore.qs              = qs;
 window.cbCore.qsa             = qsa;
 window.cbCore.apiPost         = apiPost;
-window.cbCore.copyToClipboard = copyToClipboard;

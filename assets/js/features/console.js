@@ -17,6 +17,8 @@
  *
  */
 
+import { copy as copyToClipboard } from '../core/clipboard.js';
+
 const MODULE_ID = '@cb-core/console';
 
 function readModuleData() {
@@ -756,16 +758,10 @@ function buildSecretTokenModal(payload) {
 		class: 'button button-primary cb-console__secret-copy',
 		text: t('copyToClipboard', 'Copy URL'),
 		onclick: async () => {
-			try {
-				await navigator.clipboard.writeText(url);
-				copyBtn.textContent = t('copied', 'Copied!');
-				setTimeout(() => { copyBtn.textContent = t('copyToClipboard', 'Copy URL'); }, 2200);
-			} catch (e) {
-				// Fallback - select for manual copy
-				urlBox.select();
-				document.execCommand('copy');
-				copyBtn.textContent = t('copiedFallback', 'Copied (fallback)');
-			}
+			await copyToClipboard( url, {
+				successMessage: t('copied', 'Copied!'),
+				errorMessage: t('copyFailed', 'Could not copy URL.'),
+			} );
 		},
 	});
 

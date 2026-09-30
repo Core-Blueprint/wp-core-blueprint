@@ -22,6 +22,7 @@
  */
 
 import { qs, qsa } from '../core/dom.js';
+import { copy as copyToClipboard } from '../core/clipboard.js';
 
 const dataEl = document.getElementById( 'wp-script-module-data-@cb-core/core-scanner' );
 const data   = dataEl ? JSON.parse( dataEl.textContent ) : {};
@@ -800,36 +801,10 @@ async function copyPath( button ) {
 		return;
 	}
 
-	const fallbackCopy = () => {
-		const textarea = document.createElement( 'textarea' );
-		textarea.value = value;
-		textarea.setAttribute( 'readonly', '' );
-		textarea.style.position = 'fixed';
-		textarea.style.opacity = '0';
-		document.body.appendChild( textarea );
-		textarea.select();
-		const copied = document.execCommand( 'copy' );
-		textarea.remove();
-		if ( ! copied ) {
-			throw new Error( i18n.pathCopyFailed || 'Could not copy the filesystem path.' );
-		}
-	};
-
-	try {
-		if ( navigator.clipboard && window.isSecureContext ) {
-			await navigator.clipboard.writeText( value );
-		} else {
-			fallbackCopy();
-		}
-		toast( i18n.pathCopied || 'Filesystem path copied.', 'success' );
-	} catch ( error ) {
-		try {
-			fallbackCopy();
-			toast( i18n.pathCopied || 'Filesystem path copied.', 'success' );
-		} catch ( fallbackError ) {
-			toast( fallbackError.message || i18n.pathCopyFailed || 'Could not copy the filesystem path.', 'error' );
-		}
-	}
+	await copyToClipboard( value, {
+		successMessage: i18n.pathCopied || 'Filesystem path copied.',
+		errorMessage: i18n.pathCopyFailed || 'Could not copy the filesystem path.',
+	} );
 }
 
 
