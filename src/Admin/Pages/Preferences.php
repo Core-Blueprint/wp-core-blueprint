@@ -446,9 +446,12 @@ final class Preferences extends PageBase {
 			return;
 		}
 
-		$routing_enabled    = \CB\Core\Routing\Policy::enabled();
-		$routing_preflight = \CB\Core\Routing\Admin::stored_preflight();
-		$routing_state     = isset( $_GET['routing_state'] )
+		$routing_enabled        = \CB\Core\Routing\Policy::enabled();
+		$routing_runtime_active = \CB\Core\Routing\Runtime::is_active();
+		$routing_preflight     = $routing_enabled
+			? \CB\Core\Routing\Preflight::run()
+			: \CB\Core\Routing\Admin::stored_preflight();
+		$routing_state         = isset( $_GET['routing_state'] )
 			? sanitize_key( wp_unslash( (string) $_GET['routing_state'] ) )
 			: ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- redirect status only.
 
