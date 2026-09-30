@@ -91,16 +91,6 @@ final class Preflight {
 				);
 			}
 
-			if ( isset( $tax[ $path ] ) ) {
-				$blockers[] = sprintf(
-					/* translators: 1: category name, 2: taxonomy label, 3: route path */
-					__( 'Category "%1$s" conflicts with the "%2$s" taxonomy route at "/%3$s/".', 'core-blueprint' ),
-					$term->name,
-					$tax[ $path ],
-					$path
-				);
-			}
-
 			foreach ( self::public_taxonomy_term_collisions( $path ) as $taxonomy_label ) {
 				$blockers[] = sprintf(
 					/* translators: 1: category name, 2: taxonomy label, 3: route path */
