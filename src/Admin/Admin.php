@@ -154,7 +154,12 @@ final class Admin {
 			]
 		);
 
-		PageRegistry::register_base( new Preferences() );
+		PageRegistry::register_base(
+			new Preferences(),
+			[
+				'components' => [ 'cards', 'fields', 'form-controls', 'kv-table', 'notices', 'status' ],
+			]
+		);
 	}
 
 	/** Normalize the auto-generated parent submenu and remove obsolete theme UI. */

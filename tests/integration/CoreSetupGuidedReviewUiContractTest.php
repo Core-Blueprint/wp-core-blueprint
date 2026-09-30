@@ -44,7 +44,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'Start Core Setup', $html );
 		self::assertStringNotContainsString( 'Complete Core Setup', $html );
 		self::assertStringContainsString( 'Environment &amp; availability (3)', $html );
-		self::assertStringContainsString( 'Overview (29)', $html );
+		self::assertStringContainsString( 'Overview (30)', $html );
 		self::assertSame(
 			8,
 			preg_match_all( '/<a[^>]+class="nav-tab(?: nav-tab-active)?"/', $html )
@@ -79,7 +79,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'cb-core-status-strip', $html );
 		self::assertStringContainsString( 'cb-core-tab-cards', $html );
 		self::assertStringContainsString( 'cb-core-tab-card', $html );
-		self::assertStringContainsString( '29 checks', $html );
+		self::assertStringContainsString( '30 checks', $html );
 
 		$_GET['tab'] = 'mail';
 		$reopened = $this->render_setup();
@@ -119,7 +119,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 
 		$html = $this->render_setup();
 
-		self::assertStringContainsString( 'CMS tools (9)', $html );
+		self::assertStringContainsString( 'CMS tools (10)', $html );
 		self::assertStringContainsString( 'Open settings', $html );
 		self::assertStringContainsString( 'Mark reviewed', $html );
 		self::assertStringContainsString( 'Review later', $html );
@@ -156,9 +156,9 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 
 		$html = $this->render_setup();
 
-		self::assertStringContainsString( 'Overview (23)', $html );
-		self::assertStringContainsString( 'CMS tools (5)', $html );
-		self::assertStringNotContainsString( 'Overview (28)', $html );
+		self::assertStringContainsString( 'Overview (24)', $html );
+		self::assertStringContainsString( 'CMS tools (6)', $html );
+		self::assertStringNotContainsString( 'Overview (30)', $html );
 	}
 
 	private function render_setup(): string {

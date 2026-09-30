@@ -67,7 +67,7 @@ final class Preferences extends PageBase {
 		// Personal/site-wide preferences come first, followed by module-specific
 		// configuration that remains meaningful independently from activation, then
 		// meta-governance and reference tabs. Module on/off state lives on Dashboard.
-		$available_tabs = [ 'overview', 'privacy', 'notifications', 'language', 'appearance', 'floating-menu', 'admin-navigation', 'admin-notices', 'reports', 'notes', 'permissions', 'cli', 'about' ];
+		$available_tabs = [ 'overview', 'privacy', 'notifications', 'language', 'appearance', 'floating-menu', 'admin-navigation', 'admin-notices', 'routing', 'reports', 'notes', 'permissions', 'cli', 'about' ];
 		$tab_labels     = [
 			'overview'        => __( 'Overview',        'core-blueprint' ),
 			'privacy'         => __( 'Privacy',         'core-blueprint' ),
@@ -77,6 +77,7 @@ final class Preferences extends PageBase {
 			'floating-menu'   => __( 'Floating Menu',   'core-blueprint' ),
 			'admin-navigation'=> __( 'Admin Navigation','core-blueprint' ),
 			'admin-notices'   => __( 'Admin Notices',   'core-blueprint' ),
+			'routing'         => __( 'Routing & URLs',  'core-blueprint' ),
 			'reports'           => __( 'Reports',           'core-blueprint' ),
 			'notes'           => __( 'Notes',           'core-blueprint' ),
 			'permissions'     => __( 'Permissions',     'core-blueprint' ),
@@ -155,6 +156,7 @@ final class Preferences extends PageBase {
 			case 'floating-menu':   $this->render_floating_menu_tab( $tab, $tab_labels );   return;
 			case 'admin-navigation':$this->render_admin_navigation_tab( $tab, $tab_labels ); return;
 			case 'admin-notices':   $this->render_admin_notices_tab( $tab, $tab_labels );    return;
+			case 'routing':         $this->render_routing_tab( $tab, $tab_labels );          return;
 			case 'reports':           $this->render_reports_tab( $tab, $tab_labels );                            return;
 			case 'permissions':     $this->render_permissions_tab( $tab, $tab_labels );     return;
 			case 'notes':           $this->render_notes_tab( $tab, $tab_labels );           return;
@@ -252,6 +254,15 @@ final class Preferences extends PageBase {
 				'icon'  => 'triangle-alert',
 			];
 		}
+
+
+		$tab_cards[] = [
+			'slug'  => 'routing',
+			'url'   => add_query_arg( 'tab', 'routing', $base_url ),
+			'label' => __( 'Routing & URLs',  'core-blueprint' ),
+			'desc'  => __( 'Review public URL routing and optionally use clean category archive URLs with compact p{n} pagination.', 'core-blueprint' ),
+			'icon'  => 'settings',
+		];
 
 
 		// Reports card - visible to operators with branding OR reports cap.
@@ -492,6 +503,36 @@ final class Preferences extends PageBase {
 		$html = ob_get_clean();
 		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
+
+	/** Render site-wide public URL Governance policy. */
+	private function render_routing_tab( string $tab, array $tab_labels ): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			$this->render_subsystem_missing( __( 'You do not have permission to manage Routing & URLs.', 'core-blueprint' ) );
+			return;
+		}
+
+		$routing_enabled        = \CB\Core\Routing\Policy::enabled();
+		$routing_runtime_active = \CB\Core\Routing\Runtime::is_active();
+		$routing_preflight     = $routing_enabled
+			? \CB\Core\Routing\Preflight::run()
+			: \CB\Core\Routing\Admin::stored_preflight();
+		$routing_state         = isset( $_GET['routing_state'] )
+			? sanitize_key( wp_unslash( (string) $_GET['routing_state'] ) )
+			: ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- redirect status only.
+
+		$routes          = \CB\Core\Routing\CategoryRoutes::all();
+		$example_term    = [] !== $routes ? reset( $routes ) : null;
+		$routing_example = $example_term instanceof \WP_Term
+			? trim( \CB\Core\Routing\CategoryRoutes::path( $example_term ), '/' )
+			: 'blog';
+		$category_base   = \CB\Core\Routing\CategoryRoutes::category_base_path();
+
+		ob_start();
+		include CB_CORE_DIR . 'templates/preferences-routing.php';
+		$html = (string) ob_get_clean();
+		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
+	}
+
 
 	/**
 	 * Render the Notes tab - Notes preferences (modal defaults: type,

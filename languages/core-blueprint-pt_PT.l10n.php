@@ -14,12 +14,6 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
-        'Correlation ID' => 'ID de correlação',
-        'Parent activity ID' => 'ID da atividade principal',
-        'Provider ID' => 'ID do fornecedor',
-        'Provider' => 'Fornecedor',
-        'Model ID' => 'ID do modelo',
-        'Model' => 'Modelo',
         '%1$d checks · %2$d configured · %3$d need review · %4$d attention · %5$d later · %6$d not applicable' => '%1$d verificações · %2$d configuradas · %3$d requerem revisão · %4$d requerem atenção · %5$d mais tarde · %6$d não aplicáveis',
         '%1$s (%2$d)' => '%1$s (%2$d)',
         'A reason is required for Not applicable.' => 'É necessário indicar um motivo para Não aplicável.',
@@ -273,6 +267,12 @@ $catalog['messages'] = array_replace(
         'Verify' => 'Verificar',
         'Save your recovery codes' => 'Guarde os seus códigos de recuperação',
         'Two-factor authentication is active. Save these recovery codes now. Each code can be used once.' => 'A autenticação de dois fatores está ativa. Guarde estes códigos de recuperação agora. Cada código pode ser utilizado uma única vez.',
+        'Correlation ID' => 'ID de correlação',
+        'Parent activity ID' => 'ID da atividade principal',
+        'Provider ID' => 'ID do fornecedor',
+        'Provider' => 'Fornecedor',
+        'Model ID' => 'ID do modelo',
+        'Model' => 'Modelo',
     ]
 );
 
@@ -311,5 +311,11 @@ if ( ! is_array( $admin_notices ) || ! isset( $admin_notices['messages'] ) || ! 
     return [];
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $admin_notices['messages'] );
+
+$routing = require __DIR__ . '/routing/core-blueprint-pt_PT.php';
+if ( ! is_array( $routing ) || ! isset( $routing['messages'] ) || ! is_array( $routing['messages'] ) ) {
+    throw new RuntimeException( 'Invalid Core Blueprint routing locale catalog.' );
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $routing['messages'] );
 
 return $catalog;

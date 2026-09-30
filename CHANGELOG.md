@@ -11,6 +11,16 @@
 - Add evidence-based request-local correlation for directly nested governed operations, while refusing heuristic correlation across boundaries that do not expose a shared identifier.
 - Extend the dedicated AI Activity schema to v1.1 with indexed correlation, provider and model dimensions, matching filters and export fields while leaving the global Base database marker unchanged.
 
+### Routing & URLs Governance v1
+
+- Add opt-in clean category archive URLs that remove the WordPress category base while preserving WordPress as the routing source of truth.
+- Use compact archive pagination such as `/blog/p2/`, with explicit legacy redirects from WordPress category-base and `/page/{n}/` forms.
+- Require a collision preflight before activation and reserve category-scoped `p{n}` routes for pagination.
+- Detect known Page, public post type, taxonomy and compact-pagination route collisions, including collisions introduced after activation.
+- Fail open to WordPress default category routing when runtime safety drifts, while preserving the configured policy for recovery after the collision is resolved.
+- Reconcile rewrite rules across enable, disable, category/content changes, plugin/theme routing changes, Base deactivation and reactivation.
+- Add Preferences and Core Setup integration, six-locale administration copy and focused regression coverage for the original `/blog/page/2/` misparse.
+
 ### Reorder Foundation motion polish
 
 - Add Base-owned reduced-motion-aware FLIP settling for pointer, keyboard and programmatic reorder moves, including animated rollback after persistence failure.

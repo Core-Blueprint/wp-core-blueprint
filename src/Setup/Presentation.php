@@ -76,6 +76,7 @@ final class Presentation {
 			'admin-navigation'                 => __( 'Review whether the native WordPress admin menu and Toolbar need site-specific presentation rules.', 'core-blueprint' ),
 			'admin-columns'                    => __( 'Review whether WordPress list-table columns need site-wide ordering or visibility rules.', 'core-blueprint' ),
 			'admin-notices'                    => __( 'Review whether supported WordPress admin notice sources need audience rules for operators and client-facing roles.', 'core-blueprint' ),
+			'routing-urls'                     => __( 'Review public URL routing and optionally use clean category archive URLs with compact p{n} pagination.', 'core-blueprint' ),
 			default                            => __( 'Review the current Core Blueprint configuration for this check.', 'core-blueprint' ),
 		};
 	}

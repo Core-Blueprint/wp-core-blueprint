@@ -22,6 +22,7 @@ final class SettingsDefaults {
 			'site_mode'      => 'production',
 			'shield_enabled' => true,
 			'environment_governance' => \CB\Core\Environment\Governance::default_policy(),
+			'routing'        => \CB\Core\Routing\Policy::defaults(),
 			'modules'        => [],
 			'login_shield'   => \CB\Core\Security\LoginShield::default_config(),
 			'two_factor'     => \CB\Core\Security\TwoFactor\Policy::default_config(),

@@ -54,7 +54,7 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 		parent::tear_down();
 	}
 
-	public function test_oc1_registry_exposes_the_complete_29_check_v1_baseline(): void {
+	public function test_oc1_registry_exposes_the_complete_30_check_v1_baseline(): void {
 		self::assertSame(
 			[
 				'environment-identity',
@@ -86,6 +86,7 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 				'admin-navigation',
 				'admin-columns',
 				'admin-notices',
+				'routing-urls',
 			],
 			array_keys( Registry::all() )
 		);
@@ -109,8 +110,8 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 		self::assertCount( 3, $sections['operations'] );
 		self::assertCount( 3, $sections['mail'] );
 		self::assertCount( 3, $sections['privacy-governance'] );
-		self::assertCount( 9, $sections['cms-tools'] );
-		self::assertCount( 29, Registry::all() );
+		self::assertCount( 10, $sections['cms-tools'] );
+		self::assertCount( 30, Registry::all() );
 	}
 
 	public function test_oc2_mail_strategy_stays_a_decision_while_readiness_owns_transport_failures(): void {

@@ -152,6 +152,11 @@ final class Core {
 		// count drops to zero.
 		\CB\Core\Permissions\Bootstrap::boot();
 
+		// URL Governance owns the opt-in clean category routing contract. It
+		// remains disabled by default and registers only explicit category paths.
+		// Runtime drift fails open to native WordPress routing.
+		\CB\Core\Routing\Bootstrap::boot();
+
 		// Admin Notices Governance - audience-scoped presentation policy for
 		// WordPress admin-notice producers. Runtime is fail-open, never parses
 		// arbitrary notice HTML, and never suppresses notices from CB Operators.
@@ -355,6 +360,10 @@ final class Core {
 
 		OptionPolicy::sync_active();
 
+		// Deactivation removes URL Governance rewrite rules while preserving
+		// policy, so activation schedules safe reconciliation when enabled.
+		\CB\Core\Routing\Runtime::reconcile_activation();
+
 		Retention::schedule();
 
 		// Privileged Access Guard unattended reconciliation. The guard also
@@ -419,6 +428,10 @@ final class Core {
 		AuditLog::log( 'plugin.deactivated', 'warning', [
 			'version' => CB_CORE_VERSION,
 		] );
+
+		// Remove URL Governance rewrites before Base stops participating in
+		// WordPress routing. The policy remains stored for reactivation.
+		\CB\Core\Routing\Runtime::cleanup_deactivation();
 
 		// Clear bypass transient window. Persistent emergency-bypass option is
 		// intentionally left alone - deactivation must never silently re-enable
