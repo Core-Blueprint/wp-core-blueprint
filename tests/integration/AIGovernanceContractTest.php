@@ -5,12 +5,16 @@ use CB\Core\Admin\Admin;
 use CB\Core\Admin\Pages\Logs\TabRegistry;
 use CB\Core\Admin\Pages\Logs\Tabs\AIActivityTab;
 use CB\Core\AIGovernance\AbilityObserver;
+use CB\Core\AIGovernance\AIClientObserver;
 use CB\Core\AIGovernance\Activity;
 use CB\Core\AIGovernance\Bootstrap as AIGovernanceBootstrap;
 use CB\Core\AIGovernance\Exporter;
+use CB\Core\AIGovernance\MCPEventProjector;
+use CB\Core\AIGovernance\MCPIntegration;
 use CB\Core\AIGovernance\Privacy;
 use CB\Core\AIGovernance\Repository;
 use CB\Core\AIGovernance\Settings;
+use CB\Core\AIGovernance\TraceContext;
 use CB\Core\Governance\RetentionStoreRegistry;
 
 final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
@@ -18,6 +22,9 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 		AbilityObserver::reset_for_tests();
+		AIClientObserver::reset_for_tests();
+		MCPIntegration::reset_for_tests();
+		TraceContext::reset_for_tests();
 		global $wpdb;
 		$wpdb->query( 'DELETE FROM ' . Repository::table() ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		delete_option( Settings::RETENTION_OPTION );
@@ -25,12 +32,15 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 
 	public function tear_down(): void {
 		AbilityObserver::reset_for_tests();
+		AIClientObserver::reset_for_tests();
+		MCPIntegration::reset_for_tests();
+		TraceContext::reset_for_tests();
 		parent::tear_down();
 	}
 
 	public function test_ai_activity_schema_is_owned_independently_from_global_base_db_marker(): void {
 		$this->assertSame( '1.0', CB_CORE_DB_VERSION );
-		$this->assertSame( '1.0', Repository::DB_VERSION );
+		$this->assertSame( '1.1', Repository::DB_VERSION );
 		$this->assertSame( 'cb_core_ai_activity_db_version', Repository::SCHEMA_OPTION );
 		$this->assertSame( Repository::DB_VERSION, get_option( Repository::SCHEMA_OPTION ) );
 		$this->assertSame( Repository::table(), $GLOBALS['wpdb']->prefix . 'cb_core_ai_activity' );
@@ -104,6 +114,131 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertSame( 'Allowed bounded metadata', $row->context_decoded['customer_name'] );
 		$this->assertStringNotContainsString( 'do not persist this prompt', (string) $row->context );
 		$this->assertStringNotContainsString( 'do not persist this key', (string) $row->context );
+	}
+
+	public function test_consumer_activity_inherits_only_observed_trace_context(): void {
+		$parent_id = wp_generate_uuid4();
+		$correlation_id = wp_generate_uuid4();
+		TraceContext::enter( $parent_id, $correlation_id );
+
+		$id = Activity::record( [
+			'operation' => 'fixture/nested-operation',
+			'outcome'   => 'succeeded',
+		] );
+		TraceContext::leave( $parent_id );
+
+		$this->assertIsString( $id );
+		$row = Repository::get( $id );
+		$this->assertNotNull( $row );
+		$this->assertSame( $correlation_id, $row->correlation_id );
+		$this->assertSame( $parent_id, $row->parent_activity_id );
+	}
+
+	public function test_wordpress_ai_client_observer_records_provider_model_and_tokens_without_content(): void {
+		$provider_metadata = new class() {
+			public function getId(): string { return 'openai'; }
+			public function getName(): string { return 'OpenAI'; }
+		};
+		$model_metadata = new class() {
+			public function getId(): string { return 'fixture-model'; }
+			public function getName(): string { return 'Fixture Model'; }
+		};
+		$model = new class( $provider_metadata, $model_metadata ) {
+			public function __construct( private object $provider, private object $metadata ) {}
+			public function providerMetadata(): object { return $this->provider; }
+			public function metadata(): object { return $this->metadata; }
+		};
+		$capability = new class() {
+			public string $value = 'text_generation';
+			public function __toString(): string { return $this->value; }
+		};
+		$before = new class( $model, $capability ) {
+			public function __construct( private object $model, private object $capability ) {}
+			public function getModel(): object { return $this->model; }
+			public function getCapability(): object { return $this->capability; }
+			public function getMessages(): array { return [ 'never-store-this-prompt' ]; }
+		};
+		$usage = new class() {
+			public function getPromptTokens(): int { return 11; }
+			public function getCompletionTokens(): int { return 7; }
+			public function getTotalTokens(): int { return 18; }
+			public function getThoughtTokens(): ?int { return 2; }
+		};
+		$result = new class( $usage ) {
+			public function __construct( private object $usage ) {}
+			public function getCandidateCount(): int { return 1; }
+			public function getTokenUsage(): object { return $this->usage; }
+		};
+		$after = new class( $model, $capability, $result ) {
+			public function __construct( private object $model, private object $capability, private object $result ) {}
+			public function getModel(): object { return $this->model; }
+			public function getCapability(): object { return $this->capability; }
+			public function getMessages(): array { return [ 'never-store-this-prompt' ]; }
+			public function getResult(): object { return $this->result; }
+		};
+
+		AIClientObserver::on_before_generate_result( $before );
+		AIClientObserver::on_after_generate_result( $after );
+
+		$query = Repository::query( [
+			'type'     => 'ai-client',
+			'provider' => 'openai',
+			'model'    => 'fixture-model',
+		] );
+		$this->assertSame( 1, $query['total'] );
+		$row = $query['rows'][0];
+		$this->assertSame( 'wordpress-ai-client/text_generation', $row->operation );
+		$this->assertSame( 'wordpress-ai-client', $row->source_id );
+		$this->assertSame( 'openai', $row->provider_id );
+		$this->assertSame( 'fixture-model', $row->model_id );
+		$this->assertSame( 'succeeded', $row->outcome );
+		$this->assertSame( 'completed', $row->capture_state );
+		$this->assertSame( 1, $row->evidence_decoded['message_count'] );
+		$this->assertSame( 18, $row->evidence_decoded['result']['token_usage']['total'] );
+		$this->assertSame( 2, $row->evidence_decoded['result']['token_usage']['thought'] );
+		$this->assertStringNotContainsString( 'never-store-this-prompt', (string) $row->evidence );
+	}
+
+	public function test_mcp_observability_projection_records_request_evidence_without_argument_values(): void {
+		$id = MCPEventProjector::record( 'mcp.request', [
+			'status'         => 'success',
+			'method'         => 'tools/call',
+			'transport'      => 'http',
+			'server_id'      => 'mcp-adapter-default-server',
+			'request_id'     => 42,
+			'session_id'     => 'fixture-session',
+			'revision'       => '2025-11-25',
+			'component_type' => 'tool',
+			'tool_name'      => 'mcp-adapter/execute-ability',
+			'ability_name'   => 'fixture/write',
+			'params'         => [
+				'name'           => 'mcp-adapter/execute-ability',
+				'arguments_count' => 2,
+				'arguments_keys' => [ 'post_id', '[REDACTED]' ],
+			],
+		], 14.6 );
+
+		$this->assertIsString( $id );
+		$row = Repository::get( $id );
+		$this->assertNotNull( $row );
+		$this->assertSame( 'mcp-request', $row->operation_type );
+		$this->assertSame( 'mcp/tools/call', $row->operation );
+		$this->assertSame( 'mcp-http', $row->transport );
+		$this->assertSame( 'wordpress-mcp-adapter', $row->source_id );
+		$this->assertSame( 'ability', $row->target_type );
+		$this->assertSame( 'fixture/write', $row->target_id );
+		$this->assertSame( 15, (int) $row->duration_ms );
+		$this->assertSame( 'fixture-session', $row->evidence_decoded['mcp']['session_id'] );
+		$this->assertArrayNotHasKey( 'arguments', $row->evidence_decoded['mcp']['params'] );
+	}
+
+	public function test_mcp_default_server_integration_composes_existing_handler(): void {
+		$config = MCPIntegration::wrap_default_server( [
+			'observability_handler' => 'Fixture\\ExistingObservabilityHandler',
+		] );
+
+		$this->assertSame( 'Fixture\\ExistingObservabilityHandler', MCPIntegration::delegate_class() );
+		$this->assertSame( \CB\Core\AIGovernance\MCPObservabilityHandler::class, $config['observability_handler'] );
 	}
 
 	public function test_privacy_summary_never_copies_scalar_payload_values(): void {
