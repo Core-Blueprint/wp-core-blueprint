@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Reports Storage - schema and CRUD for immutable maintenance-report snapshots.
  *
- * Core Blueprint v2 stores report data, not generated PDF files. A PDF is a
+ * Reports stores report data, not generated PDF files. A PDF is a
  * transient presentation of the stored snapshot and is rendered only when an
  * authorised user requests it.
  *

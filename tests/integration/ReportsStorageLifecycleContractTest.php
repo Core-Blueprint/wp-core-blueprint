@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use CB\Core\DB;
 use CB\Core\Database\SchemaRegistry;
+use CB\Core\Reports\MaintenanceAggregator;
 use CB\Core\Reports\Storage;
 
 final class CB_Base_Reports_Storage_Lifecycle_Contract_Test extends WP_UnitTestCase {
@@ -29,7 +30,7 @@ final class CB_Base_Reports_Storage_Lifecycle_Contract_Test extends WP_UnitTestC
 				'period_end'   => '2026-09-30',
 				'generated_at' => '2026-09-30 12:00:00',
 				'generated_by' => null,
-				'report_data'  => wp_json_encode( [ 'snapshot_version' => 2, 'sentinel' => 'preserve-me' ] ),
+				'report_data'  => wp_json_encode( [ 'snapshot_version' => MaintenanceAggregator::SNAPSHOT_VERSION, 'sentinel' => 'preserve-me' ] ),
 				'status'       => 'generated',
 			],
 			[ '%s', '%s', '%s', '%d', '%s', '%s' ]

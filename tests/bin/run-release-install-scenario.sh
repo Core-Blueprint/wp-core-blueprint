@@ -169,12 +169,12 @@ wp_cli "$UPDATE_SITE" plugin install "$PREVIOUS_ZIP" --activate
 assert_active_version "$UPDATE_SITE" "$PREVIOUS_VERSION"
 assert_clean_debug_log "$UPDATE_SITE"
 
-REPORT_SENTINEL_ID="$(wp_cli "$UPDATE_SITE" eval 'echo (int) \\CB\\Core\\Reports\\Storage::save([
+REPORT_SENTINEL_ID="$(wp_cli "$UPDATE_SITE" eval 'echo (int) CB\Core\Reports\Storage::save([
     "period_start" => "2026-09-01",
     "period_end" => "2026-09-30",
     "generated_by" => 0,
     "report_data" => [
-        "snapshot_version" => \\CB\\Core\\Reports\\MaintenanceAggregator::SNAPSHOT_VERSION,
+        "snapshot_version" => CB\Core\Reports\MaintenanceAggregator::SNAPSHOT_VERSION,
         "sentinel" => "release-update-preserve-me",
     ],
     "status" => "generated",
@@ -187,7 +187,7 @@ fi
 wp_cli "$UPDATE_SITE" plugin install "$CANDIDATE_ZIP" --force
 assert_active_version "$UPDATE_SITE" "$CANDIDATE_VERSION"
 
-report_preserved="$(wp_cli "$UPDATE_SITE" eval "echo is_array(\\CB\\Core\\Reports\\Storage::find($REPORT_SENTINEL_ID)) && (\\CB\\Core\\Reports\\Storage::find($REPORT_SENTINEL_ID)['report_data']['sentinel'] ?? '') === 'release-update-preserve-me' ? 'yes' : 'no';")"
+report_preserved="$(wp_cli "$UPDATE_SITE" eval "echo is_array(CB\Core\Reports\Storage::find($REPORT_SENTINEL_ID)) && (CB\Core\Reports\Storage::find($REPORT_SENTINEL_ID)['report_data']['sentinel'] ?? '') === 'release-update-preserve-me' ? 'yes' : 'no';")"
 if [[ "$report_preserved" != "yes" ]]; then
   echo "[H] Existing Maintenance Report was not preserved across release update." >&2
   exit 1
