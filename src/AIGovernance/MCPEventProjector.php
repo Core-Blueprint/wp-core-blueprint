@@ -98,8 +98,6 @@ final class MCPEventProjector {
 			'method',
 			'server_id',
 			'request_id',
-			'session_id',
-			'new_session_id',
 			'revision',
 			'component_type',
 			'tool_name',
@@ -117,6 +115,16 @@ final class MCPEventProjector {
 			}
 			$out[ $key ] = $tags[ $key ];
 		}
+		foreach ( [ 'session_id' => 'session_fingerprint', 'new_session_id' => 'new_session_fingerprint' ] as $source => $target ) {
+			if ( ! isset( $tags[ $source ] ) || ! is_scalar( $tags[ $source ] ) || '' === (string) $tags[ $source ] ) {
+				continue;
+			}
+			$out[ $target ] = self::fingerprint( (string) $tags[ $source ] );
+		}
 		return $out;
+	}
+
+	private static function fingerprint( string $value ): string {
+		return hash_hmac( 'sha256', $value, wp_salt( 'auth' ) );
 	}
 }
