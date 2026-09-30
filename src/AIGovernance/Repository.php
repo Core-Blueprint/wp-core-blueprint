@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Repository {
 	public const TABLE = 'cb_core_ai_activity';
-	public const DB_VERSION = '1.0';
+	public const DB_VERSION = '1.1';
 	public const SCHEMA_OPTION = 'cb_core_ai_activity_db_version';
 
 	public static function register_schema(): void {
@@ -55,6 +55,8 @@ final class Repository {
 		$sql = "CREATE TABLE {$table} (
   id               BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   activity_id      CHAR(36)            NOT NULL,
+  correlation_id   CHAR(36)                     DEFAULT NULL,
+  parent_activity_id CHAR(36)                   DEFAULT NULL,
   actor_user_id    BIGINT(20) UNSIGNED          DEFAULT NULL,
   actor_user_login VARCHAR(60)                   DEFAULT NULL,
   operation_type   VARCHAR(30)          NOT NULL DEFAULT 'operation',
@@ -62,6 +64,10 @@ final class Repository {
   transport        VARCHAR(30)          NOT NULL DEFAULT 'unknown',
   source_id        VARCHAR(190)                  DEFAULT NULL,
   source_label     VARCHAR(190)                  DEFAULT NULL,
+  provider_id      VARCHAR(190)                  DEFAULT NULL,
+  provider_label   VARCHAR(190)                  DEFAULT NULL,
+  model_id         VARCHAR(190)                  DEFAULT NULL,
+  model_label      VARCHAR(190)                  DEFAULT NULL,
   outcome          VARCHAR(30)          NOT NULL DEFAULT 'unknown',
   capture_state    VARCHAR(30)          NOT NULL DEFAULT 'reported',
   target_type      VARCHAR(60)                   DEFAULT NULL,
@@ -75,9 +81,15 @@ final class Repository {
   completed_at     DATETIME                      DEFAULT NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY activity_id (activity_id),
+  KEY correlation_id (correlation_id),
+  KEY parent_activity_id (parent_activity_id),
   KEY actor_user_id (actor_user_id),
+  KEY operation_type (operation_type),
   KEY operation (operation),
+  KEY transport (transport),
   KEY source_id (source_id),
+  KEY provider_id (provider_id),
+  KEY model_id (model_id),
   KEY outcome (outcome),
   KEY created_at (created_at)
 ) {$charset};";
@@ -105,7 +117,9 @@ final class Repository {
 		$completed_at = self::sanitize_datetime( $row['completed_at'] ?? null );
 
 		$data = [
-			'activity_id'      => $activity_id,
+			'activity_id'       => $activity_id,
+			'correlation_id'    => self::nullable_uuid( $row['correlation_id'] ?? null ),
+			'parent_activity_id' => self::nullable_uuid( $row['parent_activity_id'] ?? null ),
 			'actor_user_id'    => $user_id > 0 ? $user_id : null,
 			'actor_user_login' => $user_login,
 			'operation_type'   => self::bounded_key( $row['operation_type'] ?? 'operation', 30, 'operation' ),
@@ -113,6 +127,10 @@ final class Repository {
 			'transport'        => self::bounded_key( $row['transport'] ?? 'unknown', 30, 'unknown' ),
 			'source_id'        => self::nullable_text( $row['source_id'] ?? null, 190 ),
 			'source_label'     => self::nullable_text( $row['source_label'] ?? null, 190 ),
+			'provider_id'      => self::nullable_text( $row['provider_id'] ?? null, 190 ),
+			'provider_label'   => self::nullable_text( $row['provider_label'] ?? null, 190 ),
+			'model_id'         => self::nullable_text( $row['model_id'] ?? null, 190 ),
+			'model_label'      => self::nullable_text( $row['model_label'] ?? null, 190 ),
 			'outcome'          => self::bounded_key( $row['outcome'] ?? 'unknown', 30, 'unknown' ),
 			'capture_state'    => self::bounded_key( $row['capture_state'] ?? 'reported', 30, 'reported' ),
 			'target_type'      => self::nullable_key( $row['target_type'] ?? null, 60 ),
@@ -132,7 +150,7 @@ final class Repository {
 		$result = $wpdb->insert(
 			self::table(),
 			$data,
-			[ '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s' ]
+			[ '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s' ]
 		);
 		return false === $result ? false : $activity_id;
 	}
@@ -210,6 +228,22 @@ final class Repository {
 			$where[] = 'source_id = %s';
 			$params[] = self::bounded_text( $args['source'], 190 );
 		}
+		foreach ( [ 'type' => 'operation_type', 'transport' => 'transport' ] as $key => $column ) {
+			if ( ! empty( $args[ $key ] ) ) {
+				$where[] = $column . ' = %s';
+				$params[] = self::bounded_key( $args[ $key ], 30, '' );
+			}
+		}
+		foreach ( [ 'provider' => 'provider_id', 'model' => 'model_id' ] as $key => $column ) {
+			if ( ! empty( $args[ $key ] ) ) {
+				$where[] = $column . ' = %s';
+				$params[] = self::bounded_text( $args[ $key ], 190 );
+			}
+		}
+		if ( ! empty( $args['correlation'] ) && wp_is_uuid( (string) $args['correlation'], 4 ) ) {
+			$where[] = 'correlation_id = %s';
+			$params[] = (string) $args['correlation'];
+		}
 		if ( ! empty( $args['operation'] ) ) {
 			$where[] = 'operation LIKE %s';
 			$params[] = '%' . $wpdb->esc_like( self::bounded_text( $args['operation'], 190 ) ) . '%';
@@ -277,6 +311,8 @@ final class Repository {
 	private static function export_row( object $row ): array {
 		return [
 			'activity_id' => (string) $row->activity_id,
+			'correlation_id' => $row->correlation_id,
+			'parent_activity_id' => $row->parent_activity_id,
 			'created_at' => (string) $row->created_at,
 			'completed_at' => $row->completed_at,
 			'actor_user_id' => $row->actor_user_id,
@@ -286,6 +322,10 @@ final class Repository {
 			'transport' => (string) $row->transport,
 			'source_id' => $row->source_id,
 			'source_label' => $row->source_label,
+			'provider_id' => $row->provider_id,
+			'provider_label' => $row->provider_label,
+			'model_id' => $row->model_id,
+			'model_label' => $row->model_label,
 			'outcome' => (string) $row->outcome,
 			'capture_state' => (string) $row->capture_state,
 			'target_type' => $row->target_type,
@@ -305,6 +345,11 @@ final class Repository {
 
 	private static function bounded_text( mixed $value, int $max ): string {
 		return substr( sanitize_text_field( (string) $value ), 0, $max );
+	}
+
+	private static function nullable_uuid( mixed $value ): ?string {
+		$value = is_string( $value ) ? trim( $value ) : '';
+		return '' !== $value && wp_is_uuid( $value, 4 ) ? $value : null;
 	}
 
 	private static function nullable_key( mixed $value, int $max ): ?string {
