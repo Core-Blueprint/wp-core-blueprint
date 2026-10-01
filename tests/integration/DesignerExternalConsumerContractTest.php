@@ -15,6 +15,10 @@ final class CB_Designer_External_Consumer_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( 'data-cb-design-shell-sidebar-role="inspector"', $fixture );
 		self::assertStringContainsString( 'data-cb-design-shell-sidebar-role="layers"', $fixture );
 		self::assertStringContainsString( 'data-cb-design-shell-sidebar-role="settings"', $fixture );
+		self::assertStringContainsString( 'cb-core-design-shell__inspector-identity', $fixture );
+		self::assertStringContainsString( 'cb-core-design-shell__inspector-title', $fixture );
+		self::assertStringContainsString( 'cb-core-design-shell__inspector-controls', $fixture );
+		self::assertStringContainsString( 'cb-core-design-shell__inspector-toggle', $fixture );
 		self::assertStringNotContainsString( 'cb-core-wrap', $fixture );
 	}
 
