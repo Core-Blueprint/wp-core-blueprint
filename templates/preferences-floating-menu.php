@@ -4,6 +4,7 @@ declare(strict_types=1);
  * Preferences → Floating Menu.
  *
  * @var array<string, array<string, mixed>> $sections
+ * @var bool                                $hud_enabled
  * @var array<string, mixed>                $config
  * @var array<string, bool>                 $hidden_sections
  * @var array<string, bool>                 $hidden_items
@@ -50,6 +51,14 @@ if ( 'saved' === $notice ) {
 			value="<?php echo esc_attr( (string) wp_json_encode( $config ) ); ?>"
 			data-cb-hud-menu-payload
 		/>
+
+		<section class="cb-core-preferences-section cb-hud-menu-editor__section" aria-labelledby="cb-hud-menu-enabled-title">
+			<h2 id="cb-hud-menu-enabled-title"><?php esc_html_e( 'Floating Menu', 'core-blueprint' ); ?></h2>
+			<label class="cb-core-field">
+				<input type="checkbox" name="cb_hud_enabled" value="1" <?php checked( $hud_enabled ); ?> />
+				<span><?php esc_html_e( 'Enabled', 'core-blueprint' ); ?></span>
+			</label>
+		</section>
 
 		<section class="cb-core-preferences-section cb-hud-menu-editor__section" aria-labelledby="cb-hud-menu-structure-title">
 			<h2 id="cb-hud-menu-structure-title"><?php esc_html_e( 'Menu structure', 'core-blueprint' ); ?></h2>

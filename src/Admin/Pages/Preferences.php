@@ -437,6 +437,7 @@ final class Preferences extends PageBase {
 		}
 
 		MenuPreferences::ensure_registry();
+		$hud_enabled     = \CB\Core\HUD\Settings::site_enabled();
 		$config          = MenuPreferences::get();
 		$hidden_sections = array_fill_keys( (array) $config['hidden_sections'], true );
 		$hidden_items    = array_fill_keys( (array) $config['hidden_items'], true );

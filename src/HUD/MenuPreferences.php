@@ -200,8 +200,15 @@ final class MenuPreferences {
 		}
 		check_admin_referer( self::NONCE_ACTION, self::NONCE_NAME );
 
-		$redirect = admin_url( 'admin.php?page=core-blueprint-preferences&tab=floating-menu' );
-		$is_reset = isset( $_POST['cb_hud_menu_reset'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['cb_hud_menu_reset'] ) );
+		$redirect    = admin_url( 'admin.php?page=core-blueprint-preferences&tab=floating-menu' );
+		$hud_enabled = isset( $_POST['cb_hud_enabled'] )
+			&& '1' === sanitize_text_field( wp_unslash( $_POST['cb_hud_enabled'] ) );
+		$is_reset    = isset( $_POST['cb_hud_menu_reset'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['cb_hud_menu_reset'] ) );
+
+		if ( ! Settings::set_site_enabled( $hud_enabled, wp_get_current_user()->user_login ) ) {
+			wp_safe_redirect( add_query_arg( 'hud_menu_notice', 'invalid', $redirect ) );
+			exit;
+		}
 
 		if ( $is_reset ) {
 			self::reset();

@@ -351,7 +351,43 @@ final class Core {
 		Failsafe::ensure_token();
 
 		if ( ! get_option( CB_CORE_SETTINGS, false ) ) {
-			update_option( CB_CORE_SETTINGS, Settings::defaults(), true );
+			$defaults = Settings::defaults();
+
+			// A genuine first installation starts quiet: optional workflows stay
+			// discoverable on the Dashboard but do not claim runtime ownership
+			// until the operator explicitly enables them. Established sites keep
+			// their existing/fallback state because this seed runs only while
+			// creating the Base settings document for the first time.
+			if ( $is_first_activation ) {
+				$defaults['integrity']['enabled'] = false;
+				$defaults['notes']['enabled']     = false;
+				$defaults['reports']['enabled']   = false;
+			}
+
+			update_option( CB_CORE_SETTINGS, $defaults, true );
+		}
+
+		if ( $is_first_activation ) {
+			// Optional modules with standalone state options historically use
+			// "missing means enabled" for upgrade continuity. Seed an explicit
+			// off state only on a genuine first install so public v1 starts with
+			// an intentionally minimal footprint without changing established sites.
+			foreach ( [
+				'cb_core_media_replace_enabled',
+				'cb_core_package_download_enabled',
+				'cb_core_user_roles_enabled',
+			] as $option ) {
+				if ( null === get_option( $option, null ) ) {
+					update_option( $option, '0', false );
+				}
+			}
+
+			// The Floating Menu is a power-user convenience, not part of the
+			// initial WordPress surface. New installations opt in explicitly;
+			// established installations retain the legacy enabled fallback.
+			if ( null === get_option( \CB\Core\HUD\Settings::OPTION_DISABLED, null ) ) {
+				update_option( \CB\Core\HUD\Settings::OPTION_DISABLED, '1', false );
+			}
 		}
 
 		// Core Setup origin is authoritative only at the activation boundary.
