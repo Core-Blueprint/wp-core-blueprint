@@ -9,6 +9,11 @@ import {
 	createDesignerLayerTree,
 } from './layers.js';
 import { createDesignerSelectionController } from './selection-controller.js';
+import {
+	createDesignerInspectorControls,
+	createDesignerInspectorIdentity,
+	createDesignerInspectorToggle,
+} from './inspector.js';
 
 const element = (root, selector) => root?.querySelector?.(selector) ?? null;
 const elements = (root, selector) => Array.from(root?.querySelectorAll?.(selector) ?? []);
@@ -563,6 +568,9 @@ export {
 	DESIGNER_ICON_NAMES,
 	DESIGNER_LAYER_ACTIONS,
 	createDesignerIcon,
+	createDesignerInspectorControls,
+	createDesignerInspectorIdentity,
+	createDesignerInspectorToggle,
 	createDesignerLayerRow,
 	createDesignerLayerTree,
 	createDesignerSelectionController,

@@ -5,6 +5,7 @@ use CB\Core\Reports\DesignerPreview;
 use CB\Core\Reports\MaintenanceFlowBranding;
 use CB\Core\Reports\ReportBranding;
 use CB\Core\Reports\ReportBrandingInput;
+use CB\Core\Settings;
 
 final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 
@@ -12,13 +13,25 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		return (string) file_get_contents( dirname( __DIR__, 2 ) . '/' . ltrim( $path, '/' ) );
 	}
 
+	public function test_report_branding_defaults_match_the_base_settings_schema(): void {
+		self::assertSame(
+			ReportBranding::settings_defaults(),
+			Settings::defaults()['reports']['branding']
+		);
+	}
+
 	public function test_branding_save_and_preview_share_one_domain_normalizer(): void {
 		self::assertSame(
 			[
 				'logo_attachment_id' => 0,
-				'provider_name'       => '',
-				'provider_contact'    => '',
-				'accent_color'        => ReportBranding::DEFAULT_ACCENT,
+				'show_logo'          => true,
+				'provider_name'      => '',
+				'provider_contact'   => '',
+				'accent_color'       => ReportBranding::DEFAULT_ACCENT,
+				'surface_style'      => 'cards',
+				'density'            => 'comfortable',
+				'corner_style'       => 'soft',
+				'text_scale'         => 'standard',
 			],
 			ReportBrandingInput::normalize( [] )
 		);
@@ -29,6 +42,17 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		] );
 		self::assertSame( str_repeat( 'é', 120 ), $unicode['provider_name'] );
 		self::assertSame( str_repeat( 'ø', 200 ), $unicode['provider_contact'] );
+
+		$bounded = ReportBrandingInput::normalize( [
+			'surface_style' => 'custom',
+			'density'       => 'arbitrary',
+			'corner_style'  => 'extreme',
+			'text_scale'    => 'huge',
+		] );
+		self::assertSame( 'cards', $bounded['surface_style'] );
+		self::assertSame( 'comfortable', $bounded['density'] );
+		self::assertSame( 'soft', $bounded['corner_style'] );
+		self::assertSame( 'standard', $bounded['text_scale'] );
 
 		$handler    = $this->source( 'src/Ajax/Handlers/Branding.php' );
 		$normalizer = $this->source( 'src/Reports/ReportBrandingInput.php' );
@@ -107,6 +131,16 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			'Maintenance Report',
 		] as $contract ) {
 			self::assertStringContainsString( $contract, $template );
+		}
+
+		foreach ( [
+			'cb-core-show-logo',
+			'cb-core-report-surface-style',
+			'cb-core-report-density',
+			'cb-core-report-corner-style',
+			'cb-core-report-text-scale',
+		] as $appearance_control ) {
+			self::assertStringContainsString( $appearance_control, $template );
 		}
 
 		self::assertStringNotContainsString( '@media', $template );
@@ -188,6 +222,11 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'renderElements', $runtime );
 		self::assertStringContainsString( 'renderLayers', $runtime );
 		self::assertStringContainsString( 'renderInspector', $runtime );
+		self::assertStringContainsString( 'normalizeBlockSettings', $runtime );
+		self::assertStringContainsString( "commands.setProperty( [ index ], [ 'settings', key ]", $runtime );
+		self::assertStringContainsString( 'cbReportBlockSetting', $runtime );
+
+
 		self::assertStringContainsString( "layerTree = createDesignerLayerTree", $runtime );
 		self::assertStringContainsString( "dataset: { cbReportLayer: block.type }", $runtime );
 		self::assertStringContainsString( 'createDesignerLayerTree', $runtime );

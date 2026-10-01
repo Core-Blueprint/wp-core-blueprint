@@ -68,16 +68,16 @@ final class CB_Reports_Composer_Compiler_Test extends WP_UnitTestCase {
 		);
 
 		self::assertSame(
-			[ 'columns', 'rule', 'heading', 'callout', 'callout', 'page_footer' ],
+			[ 'columns', 'rule', 'container', 'container', 'page_footer' ],
 			$types
 		);
 
 		self::assertSame(
 			[
 				BlockCatalog::HEADER => [ 0, 1 ],
-				BlockCatalog::NOTES  => [ 2, 3 ],
-				BlockCatalog::STATUS => [ 4 ],
-				BlockCatalog::FOOTER => [ 5 ],
+				BlockCatalog::NOTES  => [ 2 ],
+				BlockCatalog::STATUS => [ 3 ],
+				BlockCatalog::FOOTER => [ 4 ],
 			],
 			$document['preview_regions']
 		);
@@ -87,9 +87,37 @@ final class CB_Reports_Composer_Compiler_Test extends WP_UnitTestCase {
 		self::assertSame( 'Brand marker', $header['columns'][0][0]->payload() );
 		self::assertSame( 'heading', $header['columns'][0][1]->type() );
 		self::assertSame( 'Maintenance Report', $header['columns'][0][1]->payload()['text'] );
-		self::assertSame( 'Notes / Observations', $document['blocks'][2]->payload()['text'] );
-		self::assertSame( 'Note marker', $document['blocks'][3]->payload()['title'] );
-		self::assertSame( 'Status marker', $document['blocks'][4]->payload()['title'] );
+
+		/** @var list<RenderBlock> $notes */
+		$notes = $document['blocks'][2]->payload();
+		/** @var list<RenderBlock> $status */
+		$status = $document['blocks'][3]->payload();
+		self::assertSame( 'Notes / Observations', $notes[0]->payload()['text'] );
+		self::assertSame( 'Note marker', $notes[1]->payload()['title'] );
+		self::assertSame( 'Status marker', $status[0]->payload()['title'] );
+		self::assertSame( 0.0, $document['blocks'][2]->hints()['space_before'] );
+		self::assertSame( 5.0, $document['blocks'][3]->hints()['space_before'] );
+		self::assertSame( 0.0, $notes[0]->hints()['space_before'] );
+		self::assertSame( 0.0, $notes[1]->hints()['space_after'] );
+		self::assertSame( 0.0, $status[0]->hints()['space_before'] );
+		self::assertSame( 0.0, $status[0]->hints()['space_after'] );
+
+		$reordered = $template;
+		$reordered['blocks'] = [
+			[ 'type' => BlockCatalog::HEADER, 'enabled' => true ],
+			[ 'type' => BlockCatalog::STATUS, 'enabled' => true ],
+			[ 'type' => BlockCatalog::NOTES, 'enabled' => true ],
+			[ 'type' => BlockCatalog::KPIS, 'enabled' => false ],
+			[ 'type' => BlockCatalog::CURRENT_STATE, 'enabled' => false ],
+			[ 'type' => BlockCatalog::ACTIVITY, 'enabled' => false ],
+			[ 'type' => BlockCatalog::SUMMARY, 'enabled' => false ],
+			[ 'type' => BlockCatalog::FOOTER, 'enabled' => true ],
+		];
+		$reordered_document = ( new MaintenanceFlowCompiler() )->compile( $report, $snapshot, $branding, 'en_US', $reordered );
+		self::assertSame( [ 2 ], $reordered_document['preview_regions'][ BlockCatalog::STATUS ] );
+		self::assertSame( [ 3 ], $reordered_document['preview_regions'][ BlockCatalog::NOTES ] );
+		self::assertSame( 0.0, $reordered_document['blocks'][2]->hints()['space_before'] );
+		self::assertSame( 5.0, $reordered_document['blocks'][3]->hints()['space_before'] );
 	}
 
 	public function test_compiler_normalizes_untrusted_template_structure_before_dispatch(): void {

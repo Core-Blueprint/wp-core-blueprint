@@ -58,9 +58,14 @@ final class Branding {
 
 		AuditLog::log( 'reports.designer_updated', 'notice', [
 			'logo_attachment_id'  => $branding['logo_attachment_id'],
+			'show_logo'           => $branding['show_logo'],
 			'has_provider_name'    => '' !== $branding['provider_name'],
 			'has_provider_contact' => '' !== $branding['provider_contact'],
 			'accent_color'         => $branding['accent_color'],
+			'surface_style'        => $branding['surface_style'],
+			'density'              => $branding['density'],
+			'corner_style'         => $branding['corner_style'],
+			'text_scale'           => $branding['text_scale'],
 			'composer_version'     => $template['schema_version'],
 			'enabled_blocks'       => count( array_filter( $template['blocks'], static fn ( array $block ): bool => ! empty( $block['enabled'] ) ) ),
 			'by'                   => get_current_user_id(),
@@ -96,13 +101,10 @@ final class Branding {
 			'by' => get_current_user_id(),
 		] );
 
-		wp_send_json_success( [
+		wp_send_json_success( $defaults + [
 			'logo_attachment_id' => (int) ( $defaults['logo_attachment_id'] ?? 0 ),
 			'logo_url'           => '',
-			'provider_name'       => '',
-			'provider_contact'    => '',
-			'accent_color'        => (string) ( $defaults['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ),
-			'template'            => $template,
+			'template'           => $template,
 		] );
 	}
 
@@ -131,13 +133,18 @@ final class Branding {
 		wp_send_json_success( [ 'html' => $html ] );
 	}
 
-	/** @return array{logo_attachment_id:int,provider_name:string,provider_contact:string,accent_color:string} */
+	/** @return array<string,mixed> */
 	private static function normalized_request(): array {
 		return ReportBrandingInput::normalize( [
 			'logo_attachment_id' => Request::int( 'logo_attachment_id', 0 ),
-			'provider_name'       => Request::text( 'provider_name', '' ),
-			'provider_contact'    => Request::text( 'provider_contact', '' ),
-			'accent_color'        => Request::text( 'accent_color', '' ),
+			'show_logo'          => Request::text( 'show_logo', '1' ),
+			'provider_name'      => Request::text( 'provider_name', '' ),
+			'provider_contact'   => Request::text( 'provider_contact', '' ),
+			'accent_color'       => Request::text( 'accent_color', '' ),
+			'surface_style'      => Request::text( 'surface_style', 'cards' ),
+			'density'            => Request::text( 'density', 'comfortable' ),
+			'corner_style'       => Request::text( 'corner_style', 'soft' ),
+			'text_scale'         => Request::text( 'text_scale', 'standard' ),
 		] );
 	}
 

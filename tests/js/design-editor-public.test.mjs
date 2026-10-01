@@ -76,6 +76,12 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.create, 'function');
 	assert.equal(typeof publicEditor.createDesignerSelectionController, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.selection?.createController, 'function');
+	assert.equal(typeof publicEditor.createDesignerInspectorIdentity, 'function');
+	assert.equal(typeof publicEditor.createDesignerInspectorControls, 'function');
+	assert.equal(typeof publicEditor.createDesignerInspectorToggle, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createIdentity, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createControls, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createToggle, 'function');
 	assert.equal(typeof publicEditor.animateLayoutChange, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.motion?.animateLayoutChange, 'function');
 	assert.equal(typeof publicEditor.commands?.insertNode, 'function');
@@ -83,6 +89,50 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof publicEditor.profiles['document-flow'].normalizeFlowLayout, 'function');
 	assert.equal(typeof publicEditor.profiles['document-flow'].createFlowPreviewHost, 'function');
 	assert.equal(typeof publicEditor.profiles['document-fixed'].translateFrame, 'function');
+});
+
+test('canonical Inspector helpers own identity and one-row boolean control markup', () => {
+	const documentRef = {
+		createElement(tagName) {
+			return {
+				tagName,
+				className: '',
+				textContent: '',
+				type: '',
+				checked: false,
+				disabled: false,
+				dataset: {},
+				children: [],
+				append(...children) {
+					this.children.push(...children);
+				},
+			};
+		},
+	};
+
+	const identity = publicEditor.createDesignerInspectorIdentity({ label: 'Header', documentRef });
+	assert.equal(identity.element.className, 'cb-core-design-shell__inspector-identity');
+	assert.equal(identity.title.className, 'cb-core-design-shell__inspector-title');
+	assert.equal(identity.title.textContent, 'Header');
+	identity.setLabel('Footer');
+	assert.equal(identity.title.textContent, 'Footer');
+
+	const controls = publicEditor.createDesignerInspectorControls({ documentRef });
+	assert.equal(controls.className, 'cb-core-design-shell__inspector-controls');
+
+	const toggle = publicEditor.createDesignerInspectorToggle({
+		label: 'Visible',
+		checked: true,
+		documentRef,
+		dataset: { cbFixture: 'visible' },
+	});
+	assert.equal(toggle.element.className, 'cb-core-design-shell__inspector-toggle');
+	assert.equal(toggle.label.className, 'cb-core-design-shell__inspector-toggle-label');
+	assert.equal(toggle.label.textContent, 'Visible');
+	assert.equal(toggle.control.type, 'checkbox');
+	assert.equal(toggle.control.checked, true);
+	assert.equal(toggle.control.dataset.cbFixture, 'visible');
+	assert.deepEqual(toggle.element.children, [toggle.label, toggle.control]);
 });
 
 test('flow consumer session owns history while persistence remains consumer-controlled', () => {

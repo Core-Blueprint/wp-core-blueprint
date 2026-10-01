@@ -50,6 +50,8 @@ final class CB_Design_Foundation_R7_Flow_Semantic_Blocks_Test extends WP_UnitTes
 		);
 
 		self::assertStringContainsString( 'cb-flow-callout cb-flow-callout--success', $html );
+		self::assertStringContainsString( '<div class="cb-flow-block cb-flow-callout cb-flow-callout--success"', $html );
+		self::assertStringNotContainsString( '<div class="cb-flow-callout cb-flow-callout--success"', $html );
 		self::assertStringContainsString( 'Site status &lt;healthy&gt;', $html );
 		self::assertStringContainsString( 'No action required &lt;today&gt;.', $html );
 		self::assertStringContainsString( 'cb-flow-metrics-table', $html );

@@ -56,6 +56,9 @@ The stable shell helpers are:
 - `createDesignerShell(root, options)`
 - `configureDesignerSidebar(root, configuration)`
 - `configureDesignerViewports(root, options)`
+- `createDesignerInspectorIdentity(options)`
+- `createDesignerInspectorControls(options)`
+- `createDesignerInspectorToggle(options)`
 - `createDesignerLayerTree(options)`
 - `createDesignerLayerRow(options)`
 - `createDesignerSelectionController(options)`
@@ -65,6 +68,8 @@ The stable shell helpers are:
 The global facade exposes the same capabilities under `window.cbCore.designEditor.shell`.
 
 A shell controller returned by `createDesignerShell()` is idempotent per root/session pair and exposes `destroy()`. Consumers that dispose or replace a Designer instance must release their shell/selection controllers rather than layering a second controller over the same DOM root.
+
+Inspector identity is also Base-owned. Consumers must pass the same semantic element/block label they expose in Layers to `createDesignerInspectorIdentity()` rather than inventing product-local title markup. Boolean Inspector settings use `createDesignerInspectorToggle()` inside `createDesignerInspectorControls()`; this guarantees one setting per row and preserves the shared title/control hierarchy.
 
 ### Commands
 

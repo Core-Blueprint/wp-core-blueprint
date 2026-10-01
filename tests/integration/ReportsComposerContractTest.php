@@ -55,6 +55,33 @@ final class CB_Reports_Composer_Contract_Test extends WP_UnitTestCase {
 		self::assertFalse( $template['blocks'][1]['enabled'] );
 	}
 
+	public function test_normalizer_preserves_only_bounded_block_settings(): void {
+		$template = MaintenanceTemplate::normalize( [
+			'blocks' => [
+				[
+					'type' => BlockCatalog::CURRENT_STATE,
+					'enabled' => true,
+					'settings' => [
+						'show_notes' => false,
+						'arbitrary_css' => true,
+					],
+				],
+			],
+		] );
+
+		$current = null;
+		foreach ( $template['blocks'] as $block ) {
+			if ( BlockCatalog::CURRENT_STATE === $block['type'] ) {
+				$current = $block;
+				break;
+			}
+		}
+
+		self::assertIsArray( $current );
+		self::assertSame( [ 'show_notes' => false ], $current['settings'] );
+		self::assertArrayNotHasKey( 'arbitrary_css', $current['settings'] );
+	}
+
 	public function test_base_settings_publish_the_canonical_maintenance_template(): void {
 		$defaults = Settings::defaults();
 		$template = $defaults['reports']['composer']['maintenance'] ?? null;

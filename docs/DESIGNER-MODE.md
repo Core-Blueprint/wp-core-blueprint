@@ -232,6 +232,8 @@ For a sidebar field section, use the same panel grammar:
 
 Base owns panel inset, scroll behavior, section spacing/dividers, title/description hierarchy, field rhythm, action-row spacing and palette item visual states. Consumers supply the labels, domain controls, values, validation and behavior.
 
+For a selected Inspector item, the element/block identity is not a generic section title. Use the public `createDesignerInspectorIdentity()` helper with the **same semantic label used in Layers**. Place editable boolean settings in a `createDesignerInspectorControls()` stack and render each with `createDesignerInspectorToggle()`. Base owns the stronger selected-item title hierarchy and guarantees that separate settings remain separate full-width rows.
+
 **Form Control presentation is Base-owned inside Designer Mode.** `enqueue_designer_mode()` loads the canonical Base Form Controls Foundation and applies its safe form scope to the Designer shell itself. Consumers render semantic native controls inside the public field/panel primitives; they must not add `.cb-core-form-scope`, restyle inputs/selects/textareas locally or depend on an incidental Core Admin wrapper.
 
 The public panel primitives are:
@@ -242,6 +244,11 @@ The public panel primitives are:
 - `.cb-core-design-shell__panel-section`
 - `.cb-core-design-shell__panel-section-title`
 - `.cb-core-design-shell__panel-section-description`
+- `.cb-core-design-shell__inspector-identity`
+- `.cb-core-design-shell__inspector-title`
+- `.cb-core-design-shell__inspector-controls`
+- `.cb-core-design-shell__inspector-toggle`
+- `.cb-core-design-shell__inspector-toggle-label`
 - `.cb-core-design-shell__field`
 - `.cb-core-design-shell__field-label`
 - `.cb-core-design-shell__field-hint`
@@ -253,7 +260,7 @@ Existing `.cb-core-design-shell__tabs` / `__panel` and `.cb-core-design-shell__s
 
 Inspector, Layers and Settings remain capability-driven roles. A consumer without those capabilities may use an untabbed composed sidebar, but the absence of tabs does **not** permit a product-specific panel grammar.
 
-Consumers must not redefine panel padding, section dividers, field rhythm or palette item presentation locally.
+Consumers must not redefine panel padding, section dividers, Inspector identity/control rhythm, field rhythm or palette item presentation locally.
 
 ### Canvas
 

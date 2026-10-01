@@ -11,6 +11,9 @@
 import { qs, qsa, apiPost } from '../core/dom.js';
 import {
 	commands,
+	createDesignerInspectorControls,
+	createDesignerInspectorIdentity,
+	createDesignerInspectorToggle,
 	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerShell,
@@ -27,7 +30,8 @@ const dataEl      = document.getElementById( 'wp-script-module-data-@cb-core/rep
 const data        = dataEl ? JSON.parse( dataEl.textContent ) : {};
 const i18n        = data.i18n || {};
 const blockLabels = data.blockLabels || {};
-const composerUi  = data.composerUi || {};
+const composerUi    = data.composerUi || {};
+const blockSettings = data.blockSettings || {};
 
 const FLOW_LAYOUT = Object.freeze( {
 	mode: 'flow',
@@ -48,6 +52,11 @@ if ( FORM ) {
 	const providerContactEl = qs( '#cb-core-provider-contact', FORM );
 	const colorEl           = qs( '#cb-core-accent-color', FORM );
 	const colorHexEl        = qs( '#cb-core-accent-hex', FORM );
+	const showLogoEl        = qs( '#cb-core-show-logo', FORM );
+	const surfaceStyleEl    = qs( '#cb-core-report-surface-style', FORM );
+	const densityEl         = qs( '#cb-core-report-density', FORM );
+	const cornerStyleEl     = qs( '#cb-core-report-corner-style', FORM );
+	const textScaleEl       = qs( '#cb-core-report-text-scale', FORM );
 	const saveBtn           = qs( '#cb-core-save-branding', FORM );
 	const resetBtn          = qs( '#cb-core-reset-branding', FORM );
 	const previewFrame      = qs( '[data-cb-report-preview]', FORM );
@@ -55,6 +64,14 @@ if ( FORM ) {
 	const elementsBody      = qs( '[data-cb-report-elements]', FORM );
 	const layersBody        = qs( '[data-cb-report-layers]', FORM );
 	const inspectorBody     = qs( '[data-cb-report-inspector]', FORM );
+
+	const normalizeBlockSettings = ( type, raw ) => {
+		const definitions = blockSettings[ type ] || {};
+		const source = raw && typeof raw === 'object' && ! Array.isArray( raw ) ? raw : {};
+		return Object.fromEntries(
+			Object.keys( definitions ).map( ( key ) => [ key, source[ key ] !== false ] )
+		);
+	};
 
 	const normalizeClientTemplate = ( raw ) => ( {
 		schema_version: Number( raw?.schema_version ) || 1,
@@ -65,7 +82,7 @@ if ( FORM ) {
 					id: block.id || block.type,
 					type: block.type,
 					enabled: block.enabled !== false,
-					settings: {},
+					settings: normalizeBlockSettings( block.type, block.settings ),
 				} ) )
 			: [],
 	} );
@@ -84,6 +101,7 @@ if ( FORM ) {
 					id: block.id || block.type,
 					type: block.type,
 					enabled: block.enabled !== false,
+					settings: { ...( block.settings || {} ) },
 				},
 				children: [],
 			} ) ),
@@ -99,7 +117,7 @@ if ( FORM ) {
 					id: node.properties.id || node.properties.type,
 					type: node.properties.type,
 					enabled: node.properties.enabled !== false,
-					settings: {},
+					settings: normalizeBlockSettings( node.properties.type, node.properties.settings ),
 				} ) )
 			: [],
 	} );
@@ -111,8 +129,8 @@ if ( FORM ) {
 		: composer.blocks.map( ( block ) => block.type );
 
 	let layerTree = null;
-	let inspectorTitle = null;
-	let enabledControl = null;
+	let inspectorIdentity = null;
+	let inspectorControls = null;
 	let mediaFrame = null;
 	let previewTimer = null;
 	let previewSequence = 0;
@@ -215,20 +233,11 @@ if ( FORM ) {
 			section.className = 'cb-core-design-shell__panel-section';
 			section.dataset.cbReportBlockInspector = '';
 
-			inspectorTitle = document.createElement( 'h3' );
-			inspectorTitle.className = 'cb-core-design-shell__panel-section-title';
+			inspectorIdentity = createDesignerInspectorIdentity( { documentRef: document } );
+			inspectorControls = createDesignerInspectorControls( { documentRef: document } );
+			inspectorControls.dataset.cbReportBlockSettings = '';
 
-			const enabledField = document.createElement( 'label' );
-			enabledField.className = 'cb-core-design-shell__field';
-			const enabledLabel = document.createElement( 'span' );
-			enabledLabel.className = 'cb-core-design-shell__field-label';
-			enabledLabel.textContent = composerUi.visible || 'Visible';
-			enabledControl = document.createElement( 'input' );
-			enabledControl.type = 'checkbox';
-			enabledControl.dataset.cbReportBlockEnabled = '';
-			enabledField.append( enabledLabel, enabledControl );
-
-			section.append( inspectorTitle, enabledField );
+			section.append( inspectorIdentity.element, inspectorControls );
 			inspectorBody.append( section );
 		}
 	};
@@ -277,19 +286,44 @@ if ( FORM ) {
 
 	const renderInspector = () => {
 		const selected = selectedBlock();
+		inspectorControls?.replaceChildren();
+
 		if ( ! selected ) {
-			if ( inspectorTitle ) inspectorTitle.textContent = '';
-			if ( enabledControl ) {
-				enabledControl.checked = false;
-				enabledControl.disabled = true;
-			}
+			inspectorIdentity?.setLabel( '' );
 			return;
 		}
-		if ( inspectorTitle ) inspectorTitle.textContent = blockLabel( selected.type );
-		if ( enabledControl ) {
-			enabledControl.checked = selected.enabled !== false;
-			enabledControl.disabled = isStructuralBlock( selected );
-		}
+
+		inspectorIdentity?.setLabel( blockLabel( selected.type ) );
+		if ( ! inspectorControls ) return;
+
+		const index = selectedIndex();
+		const enabled = createDesignerInspectorToggle( {
+			label: composerUi.visible || 'Visible',
+			checked: selected.enabled !== false,
+			disabled: isStructuralBlock( selected ),
+			documentRef: document,
+			dataset: { cbReportBlockEnabled: '' },
+		} );
+		enabled.control.addEventListener( 'change', () => {
+			if ( index < 0 || isStructuralBlock( selected ) ) return;
+			session.execute( commands.setProperty( [ index ], [ 'enabled' ], enabled.control.checked ) );
+		} );
+		inspectorControls.append( enabled.element );
+
+		const definitions = blockSettings[ selected.type ] || {};
+		Object.entries( definitions ).forEach( ( [ key, label ] ) => {
+			const setting = createDesignerInspectorToggle( {
+				label,
+				checked: selected.settings?.[ key ] !== false,
+				documentRef: document,
+				dataset: { cbReportBlockSetting: key },
+			} );
+			setting.control.addEventListener( 'change', () => {
+				if ( index < 0 ) return;
+				session.execute( commands.setProperty( [ index ], [ 'settings', key ], setting.control.checked ) );
+			} );
+			inspectorControls.append( setting.element );
+		} );
 	};
 
 	const renderComposerControls = () => {
@@ -350,9 +384,14 @@ if ( FORM ) {
 
 	const brandingPayload = () => ( {
 		logo_attachment_id: logoIdEl?.value || 0,
+		show_logo: showLogoEl?.checked ?? true,
 		provider_name: providerNameEl?.value || '',
 		provider_contact: providerContactEl?.value || '',
 		accent_color: colorHexEl?.value || colorEl?.value || '',
+		surface_style: surfaceStyleEl?.value || 'cards',
+		density: densityEl?.value || 'comfortable',
+		corner_style: cornerStyleEl?.value || 'soft',
+		text_scale: textScaleEl?.value || 'standard',
 	} );
 
 	const reportsPayload = () => ( {
@@ -374,6 +413,13 @@ if ( FORM ) {
 			if ( colorEl ) colorEl.value = values.accent_color;
 			if ( colorHexEl ) colorHexEl.value = values.accent_color;
 		}
+		if ( showLogoEl && values.show_logo !== undefined ) {
+			showLogoEl.checked = values.show_logo !== false;
+		}
+		if ( surfaceStyleEl && values.surface_style ) surfaceStyleEl.value = values.surface_style;
+		if ( densityEl && values.density ) densityEl.value = values.density;
+		if ( cornerStyleEl && values.corner_style ) cornerStyleEl.value = values.corner_style;
+		if ( textScaleEl && values.text_scale ) textScaleEl.value = values.text_scale;
 		if ( values.logo_url !== undefined ) {
 			updateLogoPreview( values.logo_url || '' );
 		}
@@ -434,13 +480,6 @@ if ( FORM ) {
 	}
 	designerShell?.syncHistory();
 
-	enabledControl?.addEventListener( 'change', () => {
-		const selected = selectedBlock();
-		const index = selectedIndex();
-		if ( ! selected || index < 0 || isStructuralBlock( selected ) ) return;
-		session.execute( commands.setProperty( [ index ], [ 'enabled' ], enabledControl.checked ) );
-	} );
-
 	colorEl?.addEventListener( 'input', ( event ) => {
 		const hex = event.target.value;
 		if ( colorHexEl ) colorHexEl.value = hex;
@@ -457,6 +496,11 @@ if ( FORM ) {
 
 	providerNameEl?.addEventListener( 'input', schedulePreview );
 	providerContactEl?.addEventListener( 'input', schedulePreview );
+	showLogoEl?.addEventListener( 'change', schedulePreview );
+	surfaceStyleEl?.addEventListener( 'change', schedulePreview );
+	densityEl?.addEventListener( 'change', schedulePreview );
+	cornerStyleEl?.addEventListener( 'change', schedulePreview );
+	textScaleEl?.addEventListener( 'change', schedulePreview );
 
 	logoPick?.addEventListener( 'click', ( event ) => {
 		event.preventDefault();

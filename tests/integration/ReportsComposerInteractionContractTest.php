@@ -74,7 +74,10 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'syncPreviewSelection();', $runtime );
 		self::assertStringContainsString( "apiPost( 'cb_core_save_report_branding', nonce, reportsPayload() )", $runtime );
 		self::assertStringContainsString( 'cb-core-design-shell__panel-section', $runtime );
-		self::assertStringContainsString( 'cb-core-design-shell__field', $runtime );
+		self::assertStringContainsString( 'createDesignerInspectorIdentity', $runtime );
+		self::assertStringContainsString( 'createDesignerInspectorControls', $runtime );
+		self::assertStringContainsString( 'createDesignerInspectorToggle', $runtime );
+		self::assertStringNotContainsString( "field.className = 'cb-core-design-shell__field'", $runtime );
 		self::assertStringContainsString( 'cb-core-design-shell__palette-grid', $template );
 		self::assertStringContainsString( 'data-cb-report-elements', $template );
 		self::assertStringContainsString( 'data-cb-design-shell-context', $template );
