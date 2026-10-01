@@ -136,12 +136,13 @@ final class HtmlRenderer {
 		if ( 'callout' === $block->type() ) {
 			/** @var array{title:string,body:string,tone:string} $callout */
 			$callout = $block->payload();
-			$html = '<div class="cb-flow-callout cb-flow-callout--' . self::escape( $callout['tone'] ) . '">';
+			$html = '<div class="cb-flow-block cb-flow-callout cb-flow-callout--' . self::escape( $callout['tone'] ) . '"'
+				. $region_attribute . ' style="' . self::escape( $style ) . '">';
 			$html .= '<div class="cb-flow-callout__title">' . self::escape( $callout['title'] ) . '</div>';
 			if ( '' !== $callout['body'] ) {
 				$html .= '<div class="cb-flow-callout__body">' . nl2br( self::escape( $callout['body'] ), false ) . '</div>';
 			}
-			return $open . $html . '</div></div>';
+			return $html . '</div>';
 		}
 
 		if ( 'metrics' === $block->type() ) {
