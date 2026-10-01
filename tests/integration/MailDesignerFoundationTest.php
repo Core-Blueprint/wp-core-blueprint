@@ -108,6 +108,29 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( '<script>alert(1)</script>', $html );
 	}
 
+	public function test_mail_renderer_emits_email_client_compatibility_fallbacks(): void {
+		$project = $this->project( [
+			$this->node( 'mail.button', [
+				'label' => 'Open account',
+				'url' => 'https://example.test/account',
+				'background' => '#2563eb',
+				'color' => '#ffffff',
+				'radius' => 6,
+			] ),
+			$this->node( 'mail.spacer', [ 'height' => 24 ] ),
+		] );
+
+		$html = ( new HtmlRenderer() )->render( $project );
+
+		self::assertStringContainsString( '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">', $html );
+		self::assertStringContainsString( '<!--[if mso]><table role="presentation" width="600" align="center"', $html );
+		self::assertStringContainsString( 'mso-table-lspace:0pt;mso-table-rspace:0pt', $html );
+		self::assertStringContainsString( 'bgcolor="#ffffff"', $html );
+		self::assertStringContainsString( 'class="cb-mail-button-table"', $html );
+		self::assertStringContainsString( 'mso-padding-alt:12px 20px', $html );
+		self::assertStringContainsString( 'mso-line-height-rule:exactly', $html );
+	}
+
 	public function test_authoring_markers_are_preview_only(): void {
 		$project = $this->project( [
 			$this->node( 'mail.text', [ 'text' => 'Preview marker boundary' ] ),
