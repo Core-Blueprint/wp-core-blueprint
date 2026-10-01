@@ -39,48 +39,68 @@ final class ReportBranding {
 	public static function settings_defaults(): array {
 		return [
 			'logo_attachment_id' => 0,
-			'provider_name'       => '',
-			'provider_contact'    => '',
+			'show_logo'          => true,
+			'provider_name'      => '',
+			'provider_contact'   => '',
 			'accent_color'       => self::DEFAULT_ACCENT,
+			'surface_style'      => 'cards',
+			'density'            => 'comfortable',
+			'corner_style'       => 'soft',
+			'text_scale'         => 'standard',
 		];
 	}
 
 	/**
 	 * Resolved branding for the admin preview.
 	 *
-	 * @return array{logo_url:string,provider_name:string,provider_contact:string,accent_color:string,is_default:bool}
+	 * @return array<string,mixed>
 	 */
 	public static function current(): array {
 		$configured = Settings::get()['reports']['branding'] ?? [];
 		$configured = is_array( $configured ) ? $configured : [];
 		$fallback   = self::fallback();
 
-		$logo_id  = (int) ( $configured['logo_attachment_id'] ?? 0 );
-		$logo_url = self::is_supported_logo_attachment( $logo_id )
+		$logo_id   = (int) ( $configured['logo_attachment_id'] ?? 0 );
+		$show_logo = self::sanitize_bool( $configured['show_logo'] ?? true, true );
+		$logo_url  = $show_logo && self::is_supported_logo_attachment( $logo_id )
 			? self::attachment_url( $logo_id )
 			: '';
 
-		if ( '' === $logo_url ) {
+		if ( $show_logo && '' === $logo_url ) {
 			$logo_url = $fallback['logo_url'];
 		}
 
 		$provider_name    = trim( (string) ( $configured['provider_name'] ?? '' ) );
 		$provider_contact = trim( (string) ( $configured['provider_contact'] ?? '' ) );
-		$accent_raw   = trim( (string) ( $configured['accent_color'] ?? '' ) );
-		$accent_color = self::sanitize_hex( $accent_raw, self::DEFAULT_ACCENT );
+		$accent_raw       = trim( (string) ( $configured['accent_color'] ?? '' ) );
+		$accent_color     = self::sanitize_hex( $accent_raw, self::DEFAULT_ACCENT );
+		$surface_style    = self::sanitize_choice( $configured['surface_style'] ?? 'cards', [ 'cards', 'flat' ], 'cards' );
+		$density          = self::sanitize_choice( $configured['density'] ?? 'comfortable', [ 'compact', 'comfortable' ], 'comfortable' );
+		$corner_style     = self::sanitize_choice( $configured['corner_style'] ?? 'soft', [ 'square', 'soft', 'rounded' ], 'soft' );
+		$text_scale       = self::sanitize_choice( $configured['text_scale'] ?? 'standard', [ 'compact', 'standard', 'large' ], 'standard' );
 
 		$is_default = (
 			0 === $logo_id
+			&& $show_logo
 			&& '' === $provider_name
 			&& '' === $provider_contact
 			&& ( '' === $accent_raw || self::DEFAULT_ACCENT === strtolower( $accent_raw ) )
+			&& 'cards' === $surface_style
+			&& 'comfortable' === $density
+			&& 'soft' === $corner_style
+			&& 'standard' === $text_scale
 		);
 
 		return [
 			'logo_url'          => $logo_url,
-			'provider_name'    => $provider_name,
-			'provider_contact' => $provider_contact,
+			'show_logo'         => $show_logo,
+			'provider_name'     => $provider_name,
+			'provider_contact'  => $provider_contact,
 			'accent_color'      => $accent_color,
+			'surface_style'     => $surface_style,
+			'density'           => $density,
+			'corner_style'      => $corner_style,
+			'text_scale'        => $text_scale,
 			'is_default'        => $is_default,
 		];
 	}
@@ -103,11 +123,11 @@ final class ReportBranding {
 		// server reliably. The bundled fallback SVG is trusted plugin data.
 		$resolved['logo_url'] = '';
 
-		if ( self::is_supported_logo_attachment( $logo_id ) ) {
+		if ( ! empty( $resolved['show_logo'] ) && self::is_supported_logo_attachment( $logo_id ) ) {
 			$resolved['logo_url'] = self::attachment_data_uri( $logo_id );
 		}
 
-		if ( '' === $resolved['logo_url'] ) {
+		if ( ! empty( $resolved['show_logo'] ) && '' === $resolved['logo_url'] ) {
 			$fallback_path = CB_CORE_DIR . self::FALLBACK_LOGO_REL;
 			$resolved['logo_url'] = self::file_data_uri( $fallback_path, 'image/svg+xml', self::MAX_LOGO_BYTES );
 		}
@@ -123,9 +143,14 @@ final class ReportBranding {
 	public static function fallback(): array {
 		return [
 			'logo_url'          => CB_CORE_URL . self::FALLBACK_LOGO_REL,
-			'provider_name'    => '',
-			'provider_contact' => '',
+			'show_logo'         => true,
+			'provider_name'     => '',
+			'provider_contact'  => '',
 			'accent_color'      => self::DEFAULT_ACCENT,
+			'surface_style'     => 'cards',
+			'density'           => 'comfortable',
+			'corner_style'      => 'soft',
+			'text_scale'        => 'standard',
 			'is_default'        => true,
 		];
 	}
@@ -324,6 +349,20 @@ final class ReportBranding {
 
 		$url = wp_get_attachment_url( $attachment_id );
 		return false === $url ? '' : (string) $url;
+	}
+
+	/** @param mixed $value @param string[] $allowed */
+	private static function sanitize_choice( mixed $value, array $allowed, string $fallback ): string {
+		$value = sanitize_key( (string) $value );
+		return in_array( $value, $allowed, true ) ? $value : $fallback;
+	}
+
+	private static function sanitize_bool( mixed $value, bool $fallback ): bool {
+		if ( is_bool( $value ) ) {
+			return $value;
+		}
+		$parsed = filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+		return null === $parsed ? $fallback : (bool) $parsed;
 	}
 
 	private static function sanitize_hex( string $color, string $fallback_color ): string {
