@@ -76,6 +76,12 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.create, 'function');
 	assert.equal(typeof publicEditor.createDesignerSelectionController, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.selection?.createController, 'function');
+	assert.equal(typeof publicEditor.createDesignerInspectorIdentity, 'function');
+	assert.equal(typeof publicEditor.createDesignerInspectorControls, 'function');
+	assert.equal(typeof publicEditor.createDesignerInspectorToggle, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createIdentity, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createControls, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createToggle, 'function');
 	assert.equal(typeof publicEditor.animateLayoutChange, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.motion?.animateLayoutChange, 'function');
 	assert.equal(typeof publicEditor.commands?.insertNode, 'function');
