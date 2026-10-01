@@ -74,6 +74,20 @@ final class CB_Design_Foundation_R4_Flow_Contract_Test extends WP_UnitTestCase {
 		Presentation::from_values( '#0064c8', 'custom', 'comfortable', 'soft', 'standard' );
 	}
 
+	public function test_flow_blocks_can_replace_bounded_hints_without_mutating_semantics(): void {
+		$original = RenderBlock::text( 'Boundary', [ 'space_before' => 2.0, 'space_after' => 3.0, 'keep_together' => true ] );
+		$adjusted = $original->with_hints( [ 'space_before' => 5.0, 'space_after' => 0.0, 'keep_together' => true ] );
+
+		self::assertNotSame( $original, $adjusted );
+		self::assertSame( 'Boundary', $original->payload() );
+		self::assertSame( 'Boundary', $adjusted->payload() );
+		self::assertSame( 2.0, $original->hints()['space_before'] );
+		self::assertSame( 3.0, $original->hints()['space_after'] );
+		self::assertSame( 5.0, $adjusted->hints()['space_before'] );
+		self::assertSame( 0.0, $adjusted->hints()['space_after'] );
+		self::assertTrue( $adjusted->hints()['keep_together'] );
+	}
+
 	public function test_flow_render_boundary_rejects_unknown_layout_keys(): void {
 		$layout = $this->layout();
 		$layout['paper'] = 'A4';
