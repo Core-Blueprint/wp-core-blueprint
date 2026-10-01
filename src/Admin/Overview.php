@@ -1,5 +1,9 @@
 <?php
 declare(strict_types=1);
+namespace CB\Core\Admin;
+
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Overview - shared Overview-tab renderer for Core Blueprint admin pages.
  *
@@ -62,9 +66,6 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin;
-
-defined( 'ABSPATH' ) || exit;
 
 final class Overview {
 
