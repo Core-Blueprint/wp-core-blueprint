@@ -52,19 +52,7 @@ trait Tabbed {
 	}
 
 	private function build_tab_nav_html( string $page_slug, string $active_tab, array $tabs ): string {
-		$out = '<nav class="nav-tab-wrapper cb-core-tab-wrapper" aria-label="' . esc_attr__( 'Sections', 'core-blueprint' ) . '">';
-		foreach ( $tabs as $id => $label ) {
-			$url     = admin_url( 'admin.php?page=' . $page_slug . '&tab=' . $id );
-			$classes = 'nav-tab' . ( $id === $active_tab ? ' nav-tab-active' : '' );
-			$out    .= sprintf(
-				'<a href="%s" class="%s">%s</a>',
-				esc_url( $url ),
-				esc_attr( $classes ),
-				esc_html( $label )
-			);
-		}
-		$out .= '</nav>';
-		return $out;
+		return TabNav::build( $page_slug, $active_tab, $tabs );
 	}
 
 	/**
