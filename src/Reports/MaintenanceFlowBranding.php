@@ -30,9 +30,14 @@ final class MaintenanceFlowBranding {
 
 		return self::resolve_values( [
 			'logo_attachment_id' => (int) ( $configured['logo_attachment_id'] ?? 0 ),
-			'provider_name'       => (string) ( $resolved['provider_name'] ?? '' ),
-			'provider_contact'    => (string) ( $resolved['provider_contact'] ?? '' ),
-			'accent_color'        => (string) ( $resolved['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ),
+			'show_logo'          => (bool) ( $resolved['show_logo'] ?? true ),
+			'provider_name'      => (string) ( $resolved['provider_name'] ?? '' ),
+			'provider_contact'   => (string) ( $resolved['provider_contact'] ?? '' ),
+			'accent_color'       => (string) ( $resolved['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ),
+			'surface_style'      => (string) ( $resolved['surface_style'] ?? 'cards' ),
+			'density'            => (string) ( $resolved['density'] ?? 'comfortable' ),
+			'corner_style'       => (string) ( $resolved['corner_style'] ?? 'soft' ),
+			'text_scale'         => (string) ( $resolved['text_scale'] ?? 'standard' ),
 		] );
 	}
 
@@ -45,29 +50,44 @@ final class MaintenanceFlowBranding {
 	 */
 	public static function resolve_values( array $branding ): array {
 		$logo_id          = max( 0, (int) ( $branding['logo_attachment_id'] ?? 0 ) );
+		$show_logo        = (bool) ( $branding['show_logo'] ?? true );
 		$provider_name    = trim( (string) ( $branding['provider_name'] ?? '' ) );
 		$provider_contact = trim( (string) ( $branding['provider_contact'] ?? '' ) );
 		$accent_color     = strtolower( (string) ( $branding['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ) );
+		$surface_style    = (string) ( $branding['surface_style'] ?? 'cards' );
+		$density          = (string) ( $branding['density'] ?? 'comfortable' );
+		$corner_style     = (string) ( $branding['corner_style'] ?? 'soft' );
+		$text_scale       = (string) ( $branding['text_scale'] ?? 'standard' );
 		$logo             = '';
 
-		if ( ReportBranding::is_supported_logo_attachment( $logo_id ) ) {
+		if ( $show_logo && ReportBranding::is_supported_logo_attachment( $logo_id ) ) {
 			$logo = self::validated_document_image( ReportBranding::attachment_data_uri( $logo_id ) );
 		}
 
-		if ( '' === $logo ) {
+		if ( $show_logo && '' === $logo ) {
 			$logo = self::bundled_fallback_png();
 		}
 
 		return [
 			'logo_url'         => $logo,
-			'fallback_text'    => '' === $logo ? self::FALLBACK_TEXT : '',
+			'fallback_text'    => $show_logo && '' === $logo ? self::FALLBACK_TEXT : '',
+			'show_logo'        => $show_logo,
 			'provider_name'    => $provider_name,
 			'provider_contact' => $provider_contact,
 			'accent_color'     => $accent_color,
+			'surface_style'    => $surface_style,
+			'density'          => $density,
+			'corner_style'     => $corner_style,
+			'text_scale'       => $text_scale,
 			'is_default'       => 0 === $logo_id
+				&& $show_logo
 				&& '' === $provider_name
 				&& '' === $provider_contact
-				&& ReportBranding::DEFAULT_ACCENT === $accent_color,
+				&& ReportBranding::DEFAULT_ACCENT === $accent_color
+				&& 'cards' === $surface_style
+				&& 'comfortable' === $density
+				&& 'soft' === $corner_style
+				&& 'standard' === $text_scale,
 		];
 	}
 
