@@ -130,7 +130,7 @@ final class AdminModuleDefinitionsPreferences {
 								'show_heading' => __( 'Show section heading', 'core-blueprint' ),
 							],
 							'footer' => [
-								'show_page_number' => __( 'Show page number', 'core-blueprint' ),
+								'show_page_number' => __( 'Show page number in PDF', 'core-blueprint' ),
 							],
 						],
 						'i18n' => array_merge(
