@@ -735,6 +735,65 @@ final class Assets {
 	}
 
 	/**
+	 * Enqueue the shared Tile Foundation for an extension-owned admin screen.
+	 *
+	 * Tile markup is provided by CB\Core\UI\Tile. This helper exposes only
+	 * the canonical token and tile presentation required by that primitive;
+	 * it does not import page layouts, cards, dark-mode state or other Core
+	 * Admin presentation.
+	 */
+	public static function enqueue_tiles(): void {
+		if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+			wp_enqueue_style(
+				'cb-core-css-tokens',
+				CB_CORE_URL . 'assets/css/tokens.css',
+				[],
+				CB_CORE_VERSION
+			);
+		}
+
+		wp_enqueue_style(
+			'cb-core-css-tile-grid',
+			CB_CORE_URL . 'assets/css/components/tile-grid.css',
+			[ 'cb-core-css-tokens' ],
+			CB_CORE_VERSION
+		);
+	}
+
+
+	/**
+	 * Enqueue the shared Admin Navigation Foundation.
+	 *
+	 * This exposes canonical Level 1 tab presentation, Level 2 SectionNav
+	 * presentation and Navigation Stack rhythm without importing the broader
+	 * Core Admin Theme. Consumers keep ownership of routes and capabilities.
+	 */
+	public static function enqueue_admin_navigation(): void {
+		if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+			wp_enqueue_style(
+				'cb-core-css-tokens',
+				CB_CORE_URL . 'assets/css/tokens.css',
+				[],
+				CB_CORE_VERSION
+			);
+		}
+
+		wp_enqueue_style(
+			'cb-core-css-nav-tabs',
+			CB_CORE_URL . 'assets/css/components/nav-tabs.css',
+			[ 'cb-core-css-tokens' ],
+			CB_CORE_VERSION
+		);
+		wp_enqueue_style(
+			'cb-core-css-admin-navigation',
+			CB_CORE_URL . 'assets/css/components/admin-navigation.css',
+			[ 'cb-core-css-tokens', 'cb-core-css-nav-tabs' ],
+			CB_CORE_VERSION
+		);
+	}
+
+
+	/**
 	 * Enqueue standalone-safe Status presentation.
 	 *
 	 * Status markup continues to come from CB\Core\UI\Status. This helper
