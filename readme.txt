@@ -43,6 +43,8 @@ Some diagnostic tools can make server-side requests back to the site's own publi
 
 If the optional Brevo transport is configured, message data is sent to Brevo as described below.
 
+When Core Scanner is run, Core Blueprint may ask WordPress.org for official checksum manifests for WordPress Core, plugins, or themes so local files can be compared with their published versions. No Core Blueprint account is involved. See "External services" below.
+
 = Source code =
 
 The maintained source repository and build tooling are available at:
@@ -71,6 +73,17 @@ Terms of Service: https://www.brevo.com/legal/termsofuse/
 Privacy Policy: https://www.brevo.com/legal/privacypolicy/
 
 Brevo is an independent third-party service. Use of Brevo is subject to Brevo's own terms and privacy policy.
+
+= WordPress.org checksum services =
+
+Core Scanner can request official checksum manifests from WordPress.org when an administrator runs integrity scans for WordPress Core, plugins, or themes.
+
+The request identifies the software component, version, and where applicable the WordPress distribution locale needed to resolve the matching checksum manifest. Core Blueprint uses the returned manifest only to compare local files with the official published checksums.
+
+Service: https://wordpress.org/
+Privacy Policy: https://wordpress.org/about/privacy/
+
+These requests occur as part of an administrator-initiated or configured Core Scanner integrity scan.
 
 == Installation ==
 
