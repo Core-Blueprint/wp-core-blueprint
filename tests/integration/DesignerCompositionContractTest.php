@@ -194,7 +194,7 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'Base owns Designer Mode. Consumers own what is being designed.', $docs );
 		self::assertStringContainsString( 'A viewport switcher is **not** mandatory merely because Mail uses one', $docs );
 		self::assertStringContainsString( 'must not restyle the canonical rail locally', $docs );
-		self::assertStringContainsString( 'Consumers must not redefine panel padding, section dividers, field rhythm or palette item presentation locally.', $docs );
+		self::assertStringContainsString( 'Consumers must not redefine panel padding, section dividers, Inspector identity/control rhythm, field rhythm or palette item presentation locally.', $docs );
 		self::assertStringContainsString( 'Form Control presentation is Base-owned inside Designer Mode', $docs );
 	}
 }
