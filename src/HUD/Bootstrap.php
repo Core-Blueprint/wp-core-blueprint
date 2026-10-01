@@ -1,5 +1,13 @@
 <?php
 declare(strict_types=1);
+namespace CB\Core\HUD;
+
+use CB\Core\HUD\Brand\BrandRegistry;
+use CB\Core\HUD\Brand\CoreBlueprint;
+use CB\Core\HUD\Rest\HUDController;
+
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Bootstrap - wires the HUD subsystem into Core Blueprint.
  *
@@ -48,13 +56,6 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD;
-
-use CB\Core\HUD\Brand\BrandRegistry;
-use CB\Core\HUD\Brand\CoreBlueprint;
-use CB\Core\HUD\Rest\HUDController;
-
-defined( 'ABSPATH' ) || exit;
 
 final class Bootstrap {
 
