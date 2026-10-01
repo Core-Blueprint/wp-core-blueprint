@@ -126,6 +126,33 @@ final class CB_Reports_Modern_Flow_Composition_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'Maintenance note', $html );
 	}
 
+	public function test_bounded_appearance_presets_change_the_shared_flow_renderer(): void {
+		$branding = $this->branding() + [
+			'surface_style' => 'flat',
+			'density'       => 'compact',
+			'corner_style'  => 'square',
+			'text_scale'    => 'compact',
+		];
+
+		$document = ( new MaintenanceFlowCompiler() )->compile(
+			$this->report(),
+			$this->snapshot(),
+			$branding,
+			'en_US',
+			MaintenanceTemplate::defaults()
+		);
+		$html = ( new HtmlRenderer() )->render(
+			$document['layout'],
+			$document['blocks'],
+			$document['locale'],
+			$document['presentation']
+		);
+
+		self::assertStringContainsString( 'body{font-family:"DejaVu Sans",sans-serif;font-size:9.5pt;', $html );
+		self::assertStringContainsString( '.cb-flow-callout{padding:7pt 9pt;border:0;border-left:3pt solid #3455db;background:transparent;border-radius:0;}', $html );
+		self::assertStringContainsString( '.cb-flow-metric-card{min-height:42pt;padding:6pt;border:0;border-bottom:1px solid #dbe2ea;background:transparent;border-radius:0;}', $html );
+	}
+
 	public function test_modern_maintenance_document_still_renders_real_pdf(): void {
 		$document = ( new MaintenanceFlowCompiler() )->compile(
 			$this->report(),
