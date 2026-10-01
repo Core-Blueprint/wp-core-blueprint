@@ -17,7 +17,7 @@
  *
  */
 
-import { copy as copyToClipboard } from '../core/clipboard.js';
+import { copy as copyToClipboard } from '../core/clipboard-runtime.js';
 
 const MODULE_ID = '@cb-core/console';
 
