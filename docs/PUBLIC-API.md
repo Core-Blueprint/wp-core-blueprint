@@ -101,7 +101,7 @@ add_action( 'cb_core_register_extensions', static function (): void {
 
 `requires_api` is required and uses `major.minor`. Compatibility requires the same Core API major and a Base API minor greater than or equal to the requested minor. `requires_base` is optional and should be used only when a concrete Base product release is required beyond the API contract. No Composer-style range grammar is part of v1.
 
-`requires_api` expresses the minimum Core API contract a consumer needs; it is not a declaration of the currently installed Base API. A consumer that uses only Core API 1.0 contracts may continue to declare `1.0` under Base API 1.2, while a consumer of the Reorder Foundation must declare at least `1.1` and a consumer of the Secret Protection Foundation must declare at least `1.2`.
+`requires_api` expresses the minimum Core API contract a consumer needs; it is not a declaration of the currently installed Base API. A consumer that uses only Core API 1.0 contracts may continue to declare `1.0` under Base API 1.2. A consumer of the Reorder Foundation must declare at least `1.1`; a consumer of the Secret Protection Foundation must declare at least `1.2`; a consumer of native-screen semantic UI requirements must declare at least `1.2`.
 
 `status_id` is optional and references the separate `Modules\Status` registry. It is not an extension alias. Extension health remains the status vocabulary `ok|warn|err|off|unknown`; `off` is a deliberate state and is not collapsed to an unhealthy boolean.
 
@@ -211,7 +211,26 @@ Page slugs use strict lower-case kebab-case and must be globally unique. Base-ow
 
 A registered Core Admin page receives the semantic minimal Core Admin shell: Core Blueprint design tokens, baseline layout/typography and focus/accessibility behavior, standard Core Admin form/button geometry, and light/dark integration. This is a functional guarantee; CSS/JavaScript handles, filenames, bundle boundaries and enqueue order are implementation details.
 
-Additional shared UI is declared through semantic requirement identifiers. `foundations` currently supports `toast`, `modal`, `token-input`, `clipboard`, `time-picker`, `choice-group`, `icon-picker`, `capability-picker`, `object-picker`, `select-picker`, `interactive-grid`, `design-editor` and `icons`. `components` currently supports `nav-tabs`, `panels`, `cards`, `integration-grid`, `detail-rows`, `notices`, `fields`, `radio-cards`, `master-switch`, `disclosure`, `metric-tiles`, `badges`, `state-badges`, `status`, `empty-state`, `kv-table`, `form-controls` and `description-toggle`. Every component ID represents a documented Core Admin Design Foundation markup/behavior contract, not a stylesheet name; see `CORE-ADMIN-DESIGN-FOUNDATION.md`. `integration-grid` is the provider/integration-level readiness surface documented in `INTEGRATION-GRID-FOUNDATION.md`; `detail-rows` is the concrete object/target/resource-level surface documented in `DETAIL-ROWS-FOUNDATION.md`. `metric-tiles` exposes only the current generic KPI/value-card contract; navigation and status-navigation tiles are not part of that semantic requirement. Unknown requirement identifiers or groups reject the page registration safely, and raw asset handles are never interpreted as requirements. Additive requirement identifiers may be introduced during Base 1.x.
+Additional shared UI is declared through semantic requirement identifiers. `foundations` currently supports `toast`, `modal`, `token-input`, `clipboard`, `time-picker`, `choice-group`, `icon-picker`, `capability-picker`, `object-picker`, `select-picker`, `interactive-grid`, `design-editor` and `icons`. `components` currently supports `buttons`, `nav-tabs`, `panels`, `cards`, `integration-grid`, `detail-rows`, `notices`, `fields`, `radio-cards`, `master-switch`, `disclosure`, `metric-tiles`, `badges`, `state-badges`, `status`, `empty-state`, `kv-table`, `form-controls` and `description-toggle`. Every component ID represents a documented Core Admin Design Foundation markup/behavior contract, not a stylesheet name; see `CORE-ADMIN-DESIGN-FOUNDATION.md`. `integration-grid` is the provider/integration-level readiness surface documented in `INTEGRATION-GRID-FOUNDATION.md`; `detail-rows` is the concrete object/target/resource-level surface documented in `DETAIL-ROWS-FOUNDATION.md`. `metric-tiles` exposes only the current generic KPI/value-card contract; navigation and status-navigation tiles are not part of that semantic requirement. Unknown requirement identifiers or groups reject the page registration safely, and raw asset handles are never interpreted as requirements. Additive requirement identifiers may be introduced during Base 1.x.
+
+### Native WordPress admin screen UI requirements
+
+Core API `1.2` extends the public Admin Theme compatibility declaration for WordPress-owned screens such as post/CPT editors. A compatible native screen may request shared Base UI through `CB\Core\UI\AdminTheme::register_screen()`:
+
+```php
+use CB\Core\UI\AdminTheme;
+
+AdminTheme::register_screen(
+    $hook_suffix,
+    [
+        'components' => [ 'buttons', 'fields', 'form-controls' ],
+    ]
+);
+```
+
+The requirement vocabulary and validation rules are the same as `PageRegistry` / `SettingsRegistry`. Repeated registration for the same WordPress hook suffix unions semantic requirements rather than replacing an earlier declaration. Base owns private asset resolution; consumers never depend on Base handles or filenames.
+
+This contract is for composition inside an existing WordPress-owned admin screen. It does not turn that screen into a Core Admin page, does not change WordPress routing, and does not grant menu ownership. Registration should occur during `current_screen` or before `admin_enqueue_scripts` priority 5.
 
 `PageRegistry::hook_suffix( $slug )` is the supported way for an extension to scope its own CSS/JavaScript to its registered page after WordPress menu registration. Extensions remain free to enqueue their own assets. The current internal hook-suffix pattern fallback for unregistered sibling pages is transitional implementation behavior and **not** a public v1 guarantee; pages that want the Core Admin shell must register through `PageRegistry`.
 
