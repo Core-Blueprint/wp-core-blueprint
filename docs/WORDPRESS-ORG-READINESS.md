@@ -26,30 +26,35 @@ Current readiness work covers:
 - A non-conflicting name for the Core Blueprint clipboard runtime asset.
 - No HUD optimization that directly primes WordPress update-transient storage.
 
-## Open product blocker
+## Submission review risk
 
 ### Managed Snippets
 
-Base currently includes a managed Snippets module that allows authorized administrators to create and execute:
+Managed Snippets remains an intentional part of Core Blueprint Base. It is one
+optional administration capability inside a broader standalone governance,
+security and administration plugin, not the sole purpose of Base.
 
-- PHP
-- JavaScript
-- CSS
-- HTML
+The module allows authorized operators to manage PHP, JavaScript, CSS and HTML
+snippets, so it deserves explicit review during WordPress.org submission.
 
-PHP snippets are written to managed files and included at runtime. JavaScript, CSS and HTML snippets are rendered into configured runtime locations.
+The runtime is deliberately bounded:
 
-The current WordPress.org Plugin Developer FAQ states that new plugins allowing arbitrary code insertion or execution, including PHP or JavaScript editors, are generally not accepted.
+- the module is disabled by default;
+- `cb_manage_snippets` remains a privileged Core Blueprint capability;
+- executable-code mutations additionally require either a signed, approved
+  CB Operator or native WordPress `install_plugins` plus `unfiltered_html`
+  authority;
+- WordPress file-modification policy remains authoritative;
+- imported snippets remain disabled until reviewed;
+- PHP is syntax-validated before storage;
+- managed code is integrity-fingerprinted;
+- runtime errors auto-disable the affected snippet;
+- `CB_CORE_DISABLE_SNIPPETS` provides a server-side emergency stop;
+- snippet mutations are audit logged.
 
-This is not treated as a small compliance defect. A product decision is required before WordPress.org submission.
-
-Acceptable directions to evaluate include:
-
-1. Extract Managed Snippets from Base into a separate Core Blueprint extension that is not part of the WordPress.org Base package.
-2. Redesign the Base feature so it no longer permits arbitrary executable code.
-3. Remove the feature from Base before submission.
-
-Do not create a special WordPress.org-only Base build that silently differs in product scope from the canonical Base release. The canonical product boundary should be decided explicitly.
+WordPress.org review policy for arbitrary executable-code features can still
+require human review or a product discussion. Treat this as a submission review
+risk, not as a reason to silently remove or fork the canonical Base feature.
 
 ## Final submission gates
 
