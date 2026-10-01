@@ -2296,7 +2296,7 @@ Nous avons reçu une demande de réinitialisation du mot de passe de votre compt
         'Show security summary' => 'Afficher le résumé de sécurité',
         'Show backup summary' => 'Afficher le résumé des sauvegardes',
         'Show section heading' => 'Afficher le titre de section',
-        'Show page number' => 'Afficher le numéro de page',
+        'Show page number in PDF' => 'Afficher le numéro de page dans le PDF',
         'Reset report settings to defaults? Logo, report provider details, appearance, and report layout will be restored.' => 'Réinitialiser les paramètres du rapport aux valeurs par défaut ? Le logo, les informations du prestataire du rapport, l’apparence et la mise en page du rapport seront restaurés.',
         'Show logo' => 'Afficher le logo',
         'Show the configured logo or the Core Blueprint fallback mark in the report header.' => 'Afficher le logo configuré ou le logo Core Blueprint par défaut dans l’en-tête du rapport.',
