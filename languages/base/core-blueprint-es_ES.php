@@ -2296,7 +2296,7 @@ Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Si ha
         'Show security summary' => 'Mostrar resumen de seguridad',
         'Show backup summary' => 'Mostrar resumen de copias de seguridad',
         'Show section heading' => 'Mostrar encabezado de sección',
-        'Show page number' => 'Mostrar número de página',
+        'Show page number in PDF' => 'Mostrar número de página en el PDF',
         'Reset report settings to defaults? Logo, report provider details, appearance, and report layout will be restored.' => '¿Restablecer la configuración del informe a los valores predeterminados? Se restaurarán el logotipo, los datos del proveedor del informe, la apariencia y el diseño del informe.',
         'Show logo' => 'Mostrar logotipo',
         'Show the configured logo or the Core Blueprint fallback mark in the report header.' => 'Mostrar el logotipo configurado o la marca predeterminada de Core Blueprint en el encabezado del informe.',
