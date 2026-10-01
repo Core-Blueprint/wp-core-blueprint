@@ -131,7 +131,7 @@ final class AdminAssetCatalog {
 		foreach ( [
 			'activity-chart', 'maintenance-summary', 'tile-grid', 'kv-tables', 'badges', 'rack-modules', 'inert-text', 'meta-bar', 'panels', 'utility',
 			'policy-table', 'overview-framework', 'form-status', 'disclosure', 'hud', 'cards', 'modals', 'toasts',
-			'interactive-surfaces', 'state-badges', 'status-indicators', 'spinner', 'empty-state', 'nav-tabs',
+			'interactive-surfaces', 'state-badges', 'status-indicators', 'spinner', 'empty-state', 'nav-tabs', 'admin-navigation',
 			'table-cols', 'actions', 'log-table', 'field', 'radio-card', 'master-switch', 'choice-group',
 			'integration-grid', 'detail-rows', 'status-menu', 'notices',
 		] as $component ) {
@@ -181,6 +181,7 @@ final class AdminAssetCatalog {
 			'master-switch'      => [ 'component.master-switch' ],
 			'metric-tiles'       => [ 'component.tile-grid' ],
 			'nav-tabs'           => [ 'component.nav-tabs' ],
+			'admin-navigation'   => [ 'component.nav-tabs', 'component.admin-navigation' ],
 			'notices'            => [ 'foundation.icons', 'component.notices' ],
 			'overview'           => [ 'foundation.icons', 'component.overview-framework' ],
 			'panels'             => [ 'component.panels' ],
@@ -343,7 +344,7 @@ final class AdminAssetCatalog {
 			$allowed = [
 				'activity-chart', 'maintenance-summary', 'tile-grid', 'kv-tables', 'badges', 'rack-modules', 'inert-text', 'meta-bar', 'panels', 'utility',
 				'policy-table', 'overview-framework', 'form-status', 'disclosure', 'hud', 'cards', 'modals', 'toasts',
-				'interactive-surfaces', 'state-badges', 'status-indicators', 'spinner', 'empty-state', 'nav-tabs',
+				'interactive-surfaces', 'state-badges', 'status-indicators', 'spinner', 'empty-state', 'nav-tabs', 'admin-navigation',
 				'table-cols', 'actions', 'log-table', 'field', 'radio-card', 'master-switch', 'choice-group',
 				'integration-grid', 'detail-rows', 'status-menu', 'notices',
 			];
