@@ -85,6 +85,7 @@ final class PageRegistry {
 		'master-switch',
 		'metric-tiles',
 		'nav-tabs',
+		'admin-navigation',
 		'notices',
 		'overview',
 		'panels',
