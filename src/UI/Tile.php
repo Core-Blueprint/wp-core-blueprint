@@ -14,6 +14,14 @@ declare(strict_types=1);
  *               maintenance-report KPI strips and similar at-a-glance
  *               numerics.
  *
+ * Density:
+ *
+ *   default  standard tile spacing
+ *   compact  reduced spacing for operator summaries and dense dashboards
+ *
+ * Density changes presentation only. Variant, state, interaction and
+ * accessibility semantics remain unchanged.
+ *
  * State modifiers (apply to metric tiles and shared state helpers where meaningful):
  *
  *   active | ok       → green   (operational / on schedule)
@@ -47,6 +55,9 @@ final class Tile {
 	public const VARIANT_NAVIGATION = 'navigation';
 	public const VARIANT_STATUS_NAV = 'status-nav';
 	public const VARIANT_METRIC     = 'metric';
+
+	public const DENSITY_DEFAULT = 'default';
+	public const DENSITY_COMPACT = 'compact';
 
 	/**
 	 * Map semantic state → BEM modifier class. Aliases collapse onto
@@ -117,9 +128,13 @@ final class Tile {
 		$meta   = (string) ( $args['meta']   ?? '' );
 		$href   = (string) ( $args['href']   ?? '' );
 		$state  = $allow_state ? (string) ( $args['state'] ?? '' ) : '';
-		$extra  = (string) ( $args['class']  ?? '' );
+		$extra   = (string) ( $args['class'] ?? '' );
+		$density = (string) ( $args['density'] ?? self::DENSITY_DEFAULT );
 
 		$classes = [ 'cb-core-tile', $variant_class ];
+		if ( self::DENSITY_COMPACT === $density ) {
+			$classes[] = 'cb-core-tile--compact';
+		}
 		if ( '' !== $extra ) {
 			$classes[] = $extra;
 		}
@@ -176,10 +191,15 @@ final class Tile {
 		$state_text = (string) ( $args['state_text'] ?? '' );
 
 		$state_class = self::STATE_TO_CLASS[ $state ] ?? 'cb-core-tile--neutral';
+		$density     = (string) ( $args['density'] ?? self::DENSITY_DEFAULT );
+		$classes     = [ 'cb-core-tile', 'cb-core-tile--metric', $state_class ];
+		if ( self::DENSITY_COMPACT === $density ) {
+			$classes[] = 'cb-core-tile--compact';
+		}
 
 		$out  = sprintf(
-			'<div class="cb-core-tile cb-core-tile--metric %s">',
-			esc_attr( $state_class )
+			'<div class="%s">',
+			esc_attr( implode( ' ', $classes ) )
 		);
 		if ( '' !== $label ) {
 			$out .= '<span class="cb-core-tile__label">' . esc_html( $label ) . '</span>';
