@@ -59,6 +59,31 @@ AdminTheme::register_screen($hook);
 
 Registration is **not** required to receive Light/Dark theme state. The theme engine is global in `wp-admin`. Registration is a compatibility declaration and adds the `cb-admin-theme-compatible` body class on that screen.
 
+Native WordPress screens that need Core Blueprint shared UI may declare semantic requirements at the same boundary:
+
+```php
+use CB\Core\UI\AdminTheme;
+
+add_action('current_screen', function ($screen): void {
+    if (!$screen instanceof WP_Screen || 'my_post_type' !== $screen->post_type) {
+        return;
+    }
+
+    AdminTheme::register_screen(
+        $GLOBALS['hook_suffix'] ?? '',
+        [
+            'components' => [
+                'buttons',
+                'fields',
+                'form-controls',
+            ],
+        ]
+    );
+});
+```
+
+This uses the same public requirement vocabulary as `PageRegistry` and `SettingsRegistry`. Extensions must not enqueue Base private handles or depend on Base CSS filenames. Screen requirements should be registered during `current_screen`, or otherwise before `admin_enqueue_scripts` priority 5.
+
 ## Hooks
 
 ### Register partner themes
