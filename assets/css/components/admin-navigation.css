@@ -1,0 +1,78 @@
+/**
+ * components/admin-navigation.css - Core Blueprint Suite
+ *
+ * Canonical admin navigation composition:
+ *
+ *   Level 1 - workspace tabs (TabNav / nav-tab-wrapper)
+ *   Level 2 - quiet section links (SectionNav)
+ *   Level 3 - local view choice (Segmented Control, separate component)
+ *
+ * Navigation Stack owns the vertical rhythm from navigation to page content.
+ *
+ * @package CB\Core
+ * @since   1.0.0
+ */
+
+.cb-core-navigation-stack {
+	display: flex;
+	flex-direction: column;
+	margin: 0 0 var(--cb-space-5);
+	padding: 0;
+}
+
+.cb-core-navigation-stack > .nav-tab-wrapper,
+.cb-core-navigation-stack > .cb-core-tab-wrapper {
+	margin-bottom: 0;
+}
+
+.cb-core-navigation-stack > .cb-core-section-nav {
+	margin-top: var(--cb-space-3);
+}
+
+/* Level 2 section navigation. Separators are presentation, not markup. */
+.cb-core-section-nav {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	margin: 0;
+	padding: 0;
+	font-size: var(--cb-fs-md);
+	line-height: var(--cb-lh-normal);
+}
+
+.cb-core-section-nav__item {
+	display: inline-flex;
+	align-items: center;
+	min-height: 28px;
+	color: var(--cb-accent);
+	font-weight: var(--cb-fw-medium);
+	text-decoration: none;
+}
+
+.cb-core-section-nav__item + .cb-core-section-nav__item::before {
+	content: '';
+	display: inline-block;
+	width: 1px;
+	height: 1em;
+	margin: 0 var(--cb-space-2);
+	background: var(--cb-border);
+}
+
+.cb-core-section-nav__item:hover {
+	color: var(--cb-accent-strong);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.cb-core-section-nav__item.is-active,
+.cb-core-section-nav__item[aria-current="page"] {
+	color: var(--cb-text-strong);
+	font-weight: var(--cb-fw-semibold);
+	text-decoration: none;
+}
+
+.cb-core-section-nav__item:focus-visible {
+	border-radius: var(--cb-radius-sm);
+	outline: 2px solid var(--cb-interactive-focus);
+	outline-offset: 2px;
+}
