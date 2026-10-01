@@ -11,9 +11,9 @@ Governance, security, audit logging, permissions, administration tools, and shar
 
 == Description ==
 
-Core Blueprint is an open-source foundation for responsible WordPress administration.
+Core Blueprint is an open-source governance, security, and administration plugin for WordPress. It can be used independently without any other Core Blueprint plugin.
 
-It provides shared governance, defensive security controls, audit logging, access and maintenance modes, role and capability policy, administration foundations, media utilities, structured content infrastructure, and public contracts for optional Core Blueprint extensions.
+It provides defensive security controls, audit logging, access and maintenance modes, role and capability policy, administration tools, media utilities, structured content infrastructure, and shared public contracts that optional Core Blueprint extensions can use.
 
 Core Blueprint is designed around WordPress-native concepts and APIs. WordPress remains the canonical data and authorization layer. Builder integrations are optional, and Base can be used without a specific page builder.
 
@@ -95,6 +95,10 @@ These requests occur as part of an administrator-initiated or configured Core Sc
 Core Blueprint requires WordPress 7.0 or later and PHP 8.4 or later.
 
 == Frequently Asked Questions ==
+
+= Does Core Blueprint require other Core Blueprint plugins? =
+
+No. Base is a standalone WordPress plugin. Optional Core Blueprint extensions can use its shared public contracts, but they are not required for Base to function.
 
 = Does Core Blueprint require an account? =
 
