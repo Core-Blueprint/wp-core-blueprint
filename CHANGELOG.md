@@ -4,6 +4,13 @@
 
 ## 1.0.0-rc1 — 2026-09-09
 
+### Secret Protection Foundation v1
+
+- Publish `CB\Core\Security\SecretProtection` as a public Core API `1.2` service for authenticated protection of extension-owned credentials at rest.
+- Bind every protected payload to an exact consumer purpose and subject so ciphertext cannot be reused under another declared connection context.
+- Keep credential records, authorization, lifecycle and retention extension-owned; Base stores no credentials and provides no plaintext fallback.
+- Fail closed for malformed, unsupported, oversized or unauthenticated payloads and document WordPress salt rotation as an explicit reconnect boundary.
+
 ### AI Governance WordPress-native observability
 
 - Observe the WordPress 7.0 AI Client through its official generation lifecycle and retain provider, model, capability, duration and token-count metadata without storing prompts or generated content.
