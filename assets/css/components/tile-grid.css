@@ -97,6 +97,20 @@
 }
 
 
+/* Density modifier.
+ * Compact reduces geometry only. Variant semantics, state colour and
+ * interaction behaviour remain owned by the existing tile contracts. */
+.cb-core-tile--compact {
+	gap: var(--cb-space-1);
+	padding: var(--cb-space-3) var(--cb-space-4);
+}
+
+.cb-core-tile--compact .cb-core-tile__dot {
+	top: var(--cb-space-3);
+	right: var(--cb-space-3);
+}
+
+
 /* ═══════════════════════════════════════════════════════════════════════
  * VARIANTS - navigation / status-nav
  *
@@ -137,6 +151,16 @@
 	margin-top: var(--cb-space-2);
 }
 
+.cb-core-tile--navigation.cb-core-tile--compact .cb-core-tile__title,
+.cb-core-tile--status-nav.cb-core-tile--compact .cb-core-tile__title {
+	margin-top: 0;
+}
+
+.cb-core-tile--navigation.cb-core-tile--compact .cb-core-tile__meta,
+.cb-core-tile--status-nav.cb-core-tile--compact .cb-core-tile__meta {
+	margin-top: var(--cb-space-1);
+}
+
 .cb-core-tile--status-nav[data-state="inactive"] {
 	opacity: 0.55;
 }
@@ -175,6 +199,11 @@
 	padding: var(--cb-space-3) var(--cb-space-4);
 	border-left-width: 4px;
 	min-height: 96px;
+}
+
+.cb-core-tile--metric.cb-core-tile--compact {
+	min-height: 0;
+	padding: var(--cb-space-2) var(--cb-space-3);
 }
 
 .cb-core-tile--metric.cb-core-tile--ok      { border-left-color: var(--cb-success); }
