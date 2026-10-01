@@ -82,7 +82,10 @@ final class MaintenanceTemplate {
 				'id'       => $type,
 				'type'     => $type,
 				'enabled'  => ! empty( $known[ $type ]['required'] ) ? true : (bool) ( $raw['enabled'] ?? true ),
-				'settings' => [],
+				'settings' => BlockCatalog::normalize_settings(
+					$type,
+					is_array( $raw['settings'] ?? null ) ? $raw['settings'] : []
+				),
 			];
 		}
 
