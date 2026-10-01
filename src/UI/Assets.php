@@ -372,7 +372,7 @@ final class Assets {
 
 		wp_enqueue_script_module(
 			'@cb-core/clipboard',
-			CB_CORE_URL . 'assets/js/core/clipboard.js',
+			CB_CORE_URL . 'assets/js/core/clipboard-runtime.js',
 			[ '@cb-core/toast', '@cb-core/icon' ],
 			CB_CORE_VERSION
 		);
