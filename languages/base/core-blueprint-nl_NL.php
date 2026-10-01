@@ -2296,7 +2296,7 @@ We hebben een verzoek ontvangen om het wachtwoord van je account opnieuw in te s
         'Show security summary' => 'Beveiligingssamenvatting tonen',
         'Show backup summary' => 'Back-upsamenvatting tonen',
         'Show section heading' => 'Sectiekop tonen',
-        'Show page number' => 'Paginanummer tonen',
+        'Show page number in PDF' => 'Paginanummer in PDF tonen',
         'Reset report settings to defaults? Logo, report provider details, appearance, and report layout will be restored.' => 'Rapportinstellingen terugzetten naar standaardwaarden? Logo, gegevens van de rapportleverancier, vormgeving en rapportindeling worden hersteld.',
         'Show logo' => 'Logo tonen',
         'Show the configured logo or the Core Blueprint fallback mark in the report header.' => 'Toon het ingestelde logo of het Core Blueprint-standaardlogo in de rapportkop.',
