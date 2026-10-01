@@ -34,7 +34,7 @@ final class ReportBranding {
 	/**
 	 * Raw settings shape. Keep this distinct from resolved rendering data.
 	 *
-	 * @return array{logo_attachment_id:int,provider_name:string,provider_contact:string,accent_color:string}
+	 * @return array{logo_attachment_id:int,show_logo:bool,provider_name:string,provider_contact:string,accent_color:string,surface_style:string,density:string,corner_style:string,text_scale:string}
 	 */
 	public static function settings_defaults(): array {
 		return [
@@ -109,7 +109,7 @@ final class ReportBranding {
 	 * Resolved branding safe for the PDF renderer. Logos are embedded locally
 	 * as data URIs so Dompdf can keep all remote fetching disabled.
 	 *
-	 * @return array{logo_url:string,provider_name:string,provider_contact:string,accent_color:string,is_default:bool}
+	 * @return array{logo_url:string,show_logo:bool,provider_name:string,provider_contact:string,accent_color:string,surface_style:string,density:string,corner_style:string,text_scale:string,is_default:bool}
 	 */
 	public static function for_pdf(): array {
 		$resolved   = self::current();
@@ -138,7 +138,7 @@ final class ReportBranding {
 	/**
 	 * CB-default resolved branding.
 	 *
-	 * @return array{logo_url:string,provider_name:string,provider_contact:string,accent_color:string,is_default:bool}
+	 * @return array{logo_url:string,show_logo:bool,provider_name:string,provider_contact:string,accent_color:string,surface_style:string,density:string,corner_style:string,text_scale:string,is_default:bool}
 	 */
 	public static function fallback(): array {
 		return [
