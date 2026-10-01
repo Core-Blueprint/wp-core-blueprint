@@ -2296,7 +2296,7 @@ Recebemos um pedido para repor a palavra-passe da sua conta. Se foi você, utili
         'Show security summary' => 'Mostrar resumo de segurança',
         'Show backup summary' => 'Mostrar resumo de cópias de segurança',
         'Show section heading' => 'Mostrar título da secção',
-        'Show page number' => 'Mostrar número da página',
+        'Show page number in PDF' => 'Mostrar número da página no PDF',
         'Reset report settings to defaults? Logo, report provider details, appearance, and report layout will be restored.' => 'Repor as definições do relatório para os valores predefinidos? O logótipo, os dados do fornecedor do relatório, o aspeto e o esquema do relatório serão restaurados.',
         'Show logo' => 'Mostrar logótipo',
         'Show the configured logo or the Core Blueprint fallback mark in the report header.' => 'Mostrar o logótipo configurado ou a marca predefinida do Core Blueprint no cabeçalho do relatório.',
