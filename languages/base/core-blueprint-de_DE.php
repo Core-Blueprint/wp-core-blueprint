@@ -2296,7 +2296,7 @@ wir haben eine Anfrage zum Zurücksetzen des Passworts für Ihr Konto erhalten. 
         'Show security summary' => 'Sicherheitszusammenfassung anzeigen',
         'Show backup summary' => 'Backup-Zusammenfassung anzeigen',
         'Show section heading' => 'Abschnittsüberschrift anzeigen',
-        'Show page number' => 'Seitenzahl anzeigen',
+        'Show page number in PDF' => 'Seitenzahl im PDF anzeigen',
         'Reset report settings to defaults? Logo, report provider details, appearance, and report layout will be restored.' => 'Berichtseinstellungen auf Standardwerte zurücksetzen? Logo, Angaben zum Berichtsanbieter, Erscheinungsbild und Berichtslayout werden wiederhergestellt.',
         'Show logo' => 'Logo anzeigen',
         'Show the configured logo or the Core Blueprint fallback mark in the report header.' => 'Das konfigurierte Logo oder das Core-Blueprint-Standardlogo im Berichtskopf anzeigen.',
