@@ -74,7 +74,7 @@ final class Bootstrap {
 	}
 
 	public static function register_hud_quick_action( string $registry ): void {
-		if ( ! current_user_can( 'cb_manage_snippets' ) || ! class_exists( $registry ) ) {
+		if ( ! Authorization::can_mutate() || ! class_exists( $registry ) ) {
 			return;
 		}
 		$registry::add_item( [
