@@ -22,6 +22,11 @@ defined( 'ABSPATH' ) || exit;
 $provider_name       = (string) ( $branding['provider_name'] ?? '' );
 $provider_contact    = (string) ( $branding['provider_contact'] ?? '' );
 $accent_color        = (string) ( $branding['accent_color'] ?? $fallback['accent_color'] );
+$show_logo           = (bool) ( $branding['show_logo'] ?? $fallback['show_logo'] ?? true );
+$surface_style       = (string) ( $branding['surface_style'] ?? $fallback['surface_style'] ?? 'cards' );
+$density             = (string) ( $branding['density'] ?? $fallback['density'] ?? 'comfortable' );
+$corner_style        = (string) ( $branding['corner_style'] ?? $fallback['corner_style'] ?? 'soft' );
+$text_scale          = (string) ( $branding['text_scale'] ?? $fallback['text_scale'] ?? 'standard' );
 $is_enabled          = class_exists( '\\CB\\Core\\Reports\\State' ) ? \CB\Core\Reports\State::is_enabled() : true;
 $can_manage_branding = current_user_can( 'cb_manage_branding' );
 ?>
@@ -179,6 +184,12 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 										<?php esc_html_e( 'Logo and accent colour are applied when a report PDF is viewed or downloaded. Changing them does not change the stored report content.', 'core-blueprint' ); ?>
 									</p>
 
+									<label class="cb-core-design-shell__field">
+										<span class="cb-core-design-shell__field-label"><?php esc_html_e( 'Show logo', 'core-blueprint' ); ?></span>
+										<input type="checkbox" id="cb-core-show-logo" name="show_logo" value="1" <?php checked( $show_logo ); ?>>
+										<span class="cb-core-design-shell__field-hint"><?php esc_html_e( 'Show the configured logo or the Core Blueprint fallback mark in the report header.', 'core-blueprint' ); ?></span>
+									</label>
+
 									<div class="cb-core-design-shell__field">
 										<span class="cb-core-design-shell__field-label"><?php esc_html_e( 'Logo', 'core-blueprint' ); ?></span>
 										<input type="hidden" name="logo_attachment_id" id="cb-core-logo-id" value="<?php echo (int) $logo_attachment_id; ?>">
@@ -211,6 +222,41 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 											);
 											?>
 										</span>
+									</label>
+
+									<label class="cb-core-design-shell__field">
+										<span class="cb-core-design-shell__field-label"><?php esc_html_e( 'Surface style', 'core-blueprint' ); ?></span>
+										<select id="cb-core-report-surface-style" name="surface_style">
+											<option value="cards" <?php selected( $surface_style, 'cards' ); ?>><?php esc_html_e( 'Cards', 'core-blueprint' ); ?></option>
+											<option value="flat" <?php selected( $surface_style, 'flat' ); ?>><?php esc_html_e( 'Flat', 'core-blueprint' ); ?></option>
+										</select>
+										<span class="cb-core-design-shell__field-hint"><?php esc_html_e( 'Choose bordered cards or a lighter flat document presentation.', 'core-blueprint' ); ?></span>
+									</label>
+
+									<label class="cb-core-design-shell__field">
+										<span class="cb-core-design-shell__field-label"><?php esc_html_e( 'Density', 'core-blueprint' ); ?></span>
+										<select id="cb-core-report-density" name="density">
+											<option value="comfortable" <?php selected( $density, 'comfortable' ); ?>><?php esc_html_e( 'Comfortable', 'core-blueprint' ); ?></option>
+											<option value="compact" <?php selected( $density, 'compact' ); ?>><?php esc_html_e( 'Compact', 'core-blueprint' ); ?></option>
+										</select>
+									</label>
+
+									<label class="cb-core-design-shell__field">
+										<span class="cb-core-design-shell__field-label"><?php esc_html_e( 'Corners', 'core-blueprint' ); ?></span>
+										<select id="cb-core-report-corner-style" name="corner_style">
+											<option value="square" <?php selected( $corner_style, 'square' ); ?>><?php esc_html_e( 'Square', 'core-blueprint' ); ?></option>
+											<option value="soft" <?php selected( $corner_style, 'soft' ); ?>><?php esc_html_e( 'Soft', 'core-blueprint' ); ?></option>
+											<option value="rounded" <?php selected( $corner_style, 'rounded' ); ?>><?php esc_html_e( 'Rounded', 'core-blueprint' ); ?></option>
+										</select>
+									</label>
+
+									<label class="cb-core-design-shell__field">
+										<span class="cb-core-design-shell__field-label"><?php esc_html_e( 'Text size', 'core-blueprint' ); ?></span>
+										<select id="cb-core-report-text-scale" name="text_scale">
+											<option value="compact" <?php selected( $text_scale, 'compact' ); ?>><?php esc_html_e( 'Compact', 'core-blueprint' ); ?></option>
+											<option value="standard" <?php selected( $text_scale, 'standard' ); ?>><?php esc_html_e( 'Standard', 'core-blueprint' ); ?></option>
+											<option value="large" <?php selected( $text_scale, 'large' ); ?>><?php esc_html_e( 'Large', 'core-blueprint' ); ?></option>
+										</select>
 									</label>
 								</section>
 
