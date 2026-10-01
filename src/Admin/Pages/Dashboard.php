@@ -1,34 +1,5 @@
 <?php
 declare(strict_types=1);
-/**
- * Dashboard - the Core Blueprint landing page.
- *
- * The dashboard is the Core Blueprint navigation-and-health cockpit. It may
- * expose compact activation actions for optional Base modules, while detailed
- * configuration remains on the owning module or Preferences page. Sections:
- *
- *   1. Safeguards   - five Base health cards (Access Mode, Login Shield,
- *                     Core Shield, Core Scanner, Failsafe).
- *                     Each card shows live state + one factual line and
- *                     deeplinks to the relevant Safeguards tab.
- *   2. Operations   - Core Setup, Logs, Notes, Reports, Core Profiles.
- *   3. CMS Tools    - first-party CMS baseline modules such as User Roles,
- *                     Media Replace, and Package Downloads.
- *   4. Preferences  - navigation cards mirroring the available Preferences tabs,
- *                     each deeplinked to its tab.
- *   5. Extensions   - sibling CB plugins detected on the site, with
- *                     active/version state.
- *
- * Footer card: About - full-width, marks itself as suite-meta rather
- * than a regular preference.
- *
- * The page itself is a pure consumer. All status data comes from
- * \CB\Core\Modules\Status::many(); per-module logic lives in the
- * canonical status providers owned by their subsystems.
- *
- * @package Core_Blueprint
- */
-
 namespace CB\Core\Admin\Pages;
 
 use CB\Core\Admin\Admin;
@@ -64,6 +35,36 @@ use CB\Core\Setup\ReviewRepository as SetupReviewRepository;
 use CB\Core\UI\StatusMenu;
 
 defined( 'ABSPATH' ) || exit;
+
+/**
+ * Dashboard - the Core Blueprint landing page.
+ *
+ * The dashboard is the Core Blueprint navigation-and-health cockpit. It may
+ * expose compact activation actions for optional Base modules, while detailed
+ * configuration remains on the owning module or Preferences page. Sections:
+ *
+ *   1. Safeguards   - five Base health cards (Access Mode, Login Shield,
+ *                     Core Shield, Core Scanner, Failsafe).
+ *                     Each card shows live state + one factual line and
+ *                     deeplinks to the relevant Safeguards tab.
+ *   2. Operations   - Core Setup, Logs, Notes, Reports, Core Profiles.
+ *   3. CMS Tools    - first-party CMS baseline modules such as User Roles,
+ *                     Media Replace, and Package Downloads.
+ *   4. Preferences  - navigation cards mirroring the available Preferences tabs,
+ *                     each deeplinked to its tab.
+ *   5. Extensions   - sibling CB plugins detected on the site, with
+ *                     active/version state.
+ *
+ * Footer card: About - full-width, marks itself as suite-meta rather
+ * than a regular preference.
+ *
+ * The page itself is a pure consumer. All status data comes from
+ * \CB\Core\Modules\Status::many(); per-module logic lives in the
+ * canonical status providers owned by their subsystems.
+ *
+ * @package Core_Blueprint
+ */
+
 
 final class Dashboard extends PageBase {
 

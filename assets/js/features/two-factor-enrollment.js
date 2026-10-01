@@ -10,7 +10,7 @@
  */
 
 import qrcode from '../vendor/qrcode-generator-2.0.4.js';
-import clipboard from '../core/clipboard.js';
+import clipboard from '../core/clipboard-runtime.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const QUIET_ZONE = 4;

@@ -3,8 +3,28 @@
 declare(strict_types=1);
 
 $root = dirname(__DIR__);
+if ( ! defined( 'ABSPATH' ) ) {
+    define( 'ABSPATH', $root . '/' );
+}
 $domain = 'core-blueprint';
 $locales = [ 'nl_NL', 'de_DE', 'fr_FR', 'es_ES', 'it_IT', 'pt_PT' ];
+
+function fail_translation_check( string $message ): never {
+    fwrite( STDERR, "[translations] ERROR: {$message}\n" );
+    exit( 1 );
+}
+
+$pluginSource = (string) file_get_contents( $root . '/core-blueprint.php' );
+if ( ! preg_match( '/^\\s*\\*\\s*Version:\\s*([^\\s]+)\\s*$/m', $pluginSource, $headerVersion ) ) {
+    fail_translation_check( 'Could not resolve the plugin header version.' );
+}
+if ( ! preg_match( "/define\\(\\s*'CB_CORE_VERSION'\\s*,\\s*'([^']+)'\\s*\\);/", $pluginSource, $constantVersion ) ) {
+    fail_translation_check( 'Could not resolve CB_CORE_VERSION.' );
+}
+if ( $headerVersion[1] !== $constantVersion[1] ) {
+    fail_translation_check( 'Plugin header version and CB_CORE_VERSION differ.' );
+}
+$projectVersion = 'Core Blueprint ' . $headerVersion[1];
 
 $functions = [
     '__' => [ 'msg' => 0, 'domain' => 1 ],
@@ -22,11 +42,6 @@ $functions = [
     'translate' => [ 'msg' => 0, 'domain' => 1 ],
     'translate_with_gettext_context' => [ 'msg' => 0, 'context' => 1, 'domain' => 2 ],
 ];
-
-function fail_translation_check( string $message ): never {
-    fwrite( STDERR, "[translations] ERROR: {$message}\n" );
-    exit( 1 );
-}
 
 function literal_translation_value( array $tokens ): ?string {
     $expression = '';
@@ -212,7 +227,7 @@ foreach ( $locales as $locale ) {
     if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $catalog['messages'] ) ) {
         fail_translation_check( "Invalid {$locale} PHP catalog payload." );
     }
-    if ( 'Core Blueprint 1.0.0-rc1' !== ( $catalog['project-id-version'] ?? '' ) ) {
+    if ( $projectVersion !== ( $catalog['project-id-version'] ?? '' ) ) {
         fail_translation_check( "Unexpected {$locale} project version header." );
     }
     if ( $locale !== ( $catalog['language'] ?? '' ) ) {

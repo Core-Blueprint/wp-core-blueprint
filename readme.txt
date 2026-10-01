@@ -1,0 +1,132 @@
+=== Core Blueprint ===
+Tags: governance, security, audit-log, privacy, administration
+Requires at least: 7.0
+Tested up to: 7.1
+Requires PHP: 8.4
+Stable tag: 1.0.0-rc1
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+Governance, security, audit logging, permissions, administration tools, and shared foundations for WordPress.
+
+== Description ==
+
+Core Blueprint is an open-source governance, security, and administration plugin for WordPress. It can be used independently without any other Core Blueprint plugin.
+
+It provides defensive security controls, audit logging, access and maintenance modes, role and capability policy, administration tools, media utilities, structured content infrastructure, and shared public contracts that optional Core Blueprint extensions can use.
+
+Core Blueprint is designed around WordPress-native concepts and APIs. WordPress remains the canonical data and authorization layer. Builder integrations are optional, and Base can be used without a specific page builder.
+
+Core Blueprint does not claim to provide perfect security or privacy. It is a defensive and governance-oriented foundation intended to improve operational clarity, recovery paths, and administrative control.
+
+Core functionality does not require a Core Blueprint account or an external Core Blueprint service.
+
+= Optional modules =
+
+Base includes optional modules that can be enabled or disabled independently. This allows site owners to avoid overlapping responsibility when another plugin already manages the same area.
+
+Examples include Media Formats, Content Models, Mail Delivery, and related administration tooling.
+
+= Mail Delivery =
+
+Mail Delivery is optional. Sites may continue using the normal WordPress mail path or configure a supported transport.
+
+Generic SMTP uses the SMTP server configured by the site administrator.
+
+Brevo uses Brevo's transactional email API only after a site administrator enables Mail Delivery, selects Brevo, and provides a Brevo API key. See "External services" below.
+
+= Privacy =
+
+Core Blueprint does not include usage telemetry or advertising tracking.
+
+Some diagnostic tools can make server-side requests back to the site's own public URL to verify site behavior, such as response headers or a configured custom login route. Those requests target the same WordPress site.
+
+If the optional Brevo transport is configured, message data is sent to Brevo as described below.
+
+When Core Scanner is run, Core Blueprint may ask WordPress.org for official checksum manifests for WordPress Core, plugins, or themes so local files can be compared with their published versions. No Core Blueprint account is involved. See "External services" below.
+
+= Source code =
+
+The maintained source repository and build tooling are available at:
+
+https://github.com/Core-Blueprint/wp-core-blueprint
+
+Bundled third-party components and their license or provenance information are documented in the plugin's `licenses/` directory and alongside the relevant vendored source.
+
+== External services ==
+
+= Brevo =
+
+Core Blueprint can optionally send WordPress email through Brevo's transactional email API.
+
+Brevo is contacted only when all of the following are true:
+
+1. Core Blueprint Mail Delivery is enabled.
+2. Brevo is selected as the active mail transport.
+3. A Brevo API key has been configured.
+4. WordPress sends an email or the administrator deliberately sends a mail test.
+
+When Brevo is used, Core Blueprint sends the data needed to deliver that email. Depending on the message, this can include sender and recipient email addresses and names, subject, message body, CC/BCC and reply-to addresses, attachments, and the API key used to authenticate the request.
+
+Service: https://www.brevo.com/
+Terms of Service: https://www.brevo.com/legal/termsofuse/
+Privacy Policy: https://www.brevo.com/legal/privacypolicy/
+
+Brevo is an independent third-party service. Use of Brevo is subject to Brevo's own terms and privacy policy.
+
+= WordPress.org checksum services =
+
+Core Scanner can request official checksum manifests from WordPress.org when an administrator runs integrity scans for WordPress Core, plugins, or themes.
+
+The request identifies the software component, version, and where applicable the WordPress distribution locale needed to resolve the matching checksum manifest. Core Blueprint uses the returned manifest only to compare local files with the official published checksums.
+
+Service: https://wordpress.org/
+Privacy Policy: https://wordpress.org/about/privacy/
+
+These requests occur as part of an administrator-initiated or configured Core Scanner integrity scan.
+
+== Installation ==
+
+1. Upload the `core-blueprint` plugin directory to `/wp-content/plugins/`, or install the ZIP through Plugins > Add New > Upload Plugin.
+2. Activate Core Blueprint through the WordPress Plugins screen.
+3. Open Core Blueprint in WordPress Admin.
+4. Review Core Setup and enable only the modules and policies appropriate for the site.
+
+Core Blueprint requires WordPress 7.0 or later and PHP 8.4 or later.
+
+== Frequently Asked Questions ==
+
+= Does Core Blueprint require other Core Blueprint plugins? =
+
+No. Base is a standalone WordPress plugin. Optional Core Blueprint extensions can use its shared public contracts, but they are not required for Base to function.
+
+= Does Core Blueprint require an account? =
+
+No. Base can be installed and used without a Core Blueprint account.
+
+= Does Core Blueprint send telemetry? =
+
+No. Base does not include usage telemetry or advertising tracking.
+
+= Does Core Blueprint contact external services? =
+
+Only when a feature requires it. The optional Brevo mail transport contacts Brevo after the administrator deliberately configures that transport. Core diagnostic self-checks may request the site's own public URL.
+
+= Does Core Blueprint replace a dedicated security product? =
+
+Not necessarily. Core Blueprint provides defensive controls and governance infrastructure. Its modular design allows overlapping modules to remain disabled when another product owns the same responsibility.
+
+= Does Core Blueprint require a page builder? =
+
+No. Base is builder-agnostic. Builder-specific integrations are optional adapters and are not the canonical data model.
+
+= Where is the source code? =
+
+The public source repository is https://github.com/Core-Blueprint/wp-core-blueprint .
+
+== Changelog ==
+
+= 1.0.0-rc1 =
+
+* Release-candidate line for the Core Blueprint Base v1 quality and compatibility baseline.
+* WordPress.org submission metadata and automated readiness contracts are maintained before the stable v1 release.

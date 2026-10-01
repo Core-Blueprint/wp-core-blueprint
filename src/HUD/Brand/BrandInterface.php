@@ -1,5 +1,9 @@
 <?php
 declare(strict_types=1);
+namespace CB\Core\HUD\Brand;
+
+defined( 'ABSPATH' ) || exit;
+
 /**
  * BrandInterface - contract for HUD brand implementations.
  *
@@ -58,9 +62,6 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD\Brand;
-
-defined( 'ABSPATH' ) || exit;
 
 interface BrandInterface {
 
