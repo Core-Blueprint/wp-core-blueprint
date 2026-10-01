@@ -56,7 +56,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertLessThan( $first_section_position, $overview_position );
 		self::assertStringNotContainsString( 'tab=review', $html );
 		self::assertMatchesRegularExpression(
-			'/tab=overview[^"]*" class="nav-tab nav-tab-active"/',
+			'/<a(?=[^>]*href="[^"]*tab=overview)(?=[^>]*class="nav-tab nav-tab-active")(?=[^>]*aria-current="page")[^>]*>/',
 			$html
 		);
 		self::assertStringContainsString( 'cb-core-tab-cards', $html );
@@ -73,7 +73,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 
 		self::assertStringNotContainsString( 'Start Core Setup</h2>', $html );
 		self::assertMatchesRegularExpression(
-			'/tab=overview[^"]*" class="nav-tab nav-tab-active"/',
+			'/<a(?=[^>]*href="[^"]*tab=overview)(?=[^>]*class="nav-tab nav-tab-active")(?=[^>]*aria-current="page")[^>]*>/',
 			$html
 		);
 		self::assertStringContainsString( 'cb-core-status-strip', $html );
