@@ -168,6 +168,81 @@ dialog.cb-core-modal--core button.cb-core-button--compact.cb-core-button--icon-o
 	opacity: 0.55;
 }
 
+/* ─── Formal primary/secondary variants outside Core page wrappers ───────
+ *
+ * Native WordPress admin screens may consume the Button component through the
+ * AdminTheme semantic screen contract. Explicit .cb-core-button classes are a
+ * safe ownership boundary, so their semantic variants must not depend on a
+ * .cb-core-wrap ancestor. Legacy generic .button / .button-primary styling
+ * remains scoped further below.
+ */
+
+.button.cb-core-button--primary,
+button.cb-core-button--primary {
+	background: var(--cb-accent);
+	border-color: var(--cb-accent);
+	color: var(--cb-surface-0);
+	text-shadow: none;
+	box-shadow: 0 0 0 1px var(--cb-accent), 0 0 12px color-mix(in srgb, var(--cb-accent-strong) 25%, transparent);
+	transition: background 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.button.cb-core-button--primary:hover,
+button.cb-core-button--primary:hover {
+	background: var(--cb-accent-strong);
+	border-color: var(--cb-accent-strong);
+	box-shadow: 0 0 0 1px var(--cb-accent-strong), 0 0 18px color-mix(in srgb, var(--cb-accent-strong) 40%, transparent);
+}
+
+.button.cb-core-button--primary:focus,
+button.cb-core-button--primary:focus {
+	box-shadow: 0 0 0 2px var(--cb-accent-strong), 0 0 18px color-mix(in srgb, var(--cb-accent-strong) 35%, transparent);
+	outline: none;
+}
+
+.button.cb-core-button--primary:disabled,
+button.cb-core-button--primary:disabled {
+	background: var(--cb-surface-3);
+	border-color: var(--cb-surface-3);
+	color: var(--cb-text-muted);
+	box-shadow: none;
+	opacity: 0.6;
+}
+
+.button.cb-core-button--secondary,
+button.cb-core-button--secondary {
+	background: transparent;
+	border: 1px solid var(--cb-surface-3);
+	color: var(--cb-text-strong);
+	text-shadow: none;
+	box-shadow: none;
+	transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.button.cb-core-button--secondary:hover,
+button.cb-core-button--secondary:hover {
+	background: color-mix(in srgb, var(--cb-accent) 8%, transparent);
+	border-color: var(--cb-accent);
+	color: var(--cb-text-strong);
+}
+
+.button.cb-core-button--secondary:focus-visible,
+button.cb-core-button--secondary:focus-visible {
+	border-color: var(--cb-accent);
+	box-shadow: 0 0 0 2px var(--cb-accent);
+	outline: none;
+}
+
+.button.cb-core-button--secondary:disabled,
+button.cb-core-button--secondary:disabled {
+	background: transparent;
+	border-color: var(--cb-surface-3);
+	color: var(--cb-text-muted);
+	box-shadow: none;
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
  * .cb-core-button--danger - outlined destructive variant
  * ═══════════════════════════════════════════════════════════════════════ */
