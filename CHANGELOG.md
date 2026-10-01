@@ -11,6 +11,12 @@
 - Keep credential records, authorization, lifecycle and retention extension-owned; Base stores no credentials and provides no plaintext fallback.
 - Fail closed for malformed, unsupported, oversized or unauthenticated payloads and document WordPress salt rotation as an explicit reconnect boundary.
 
+### Core API 1.2 - shared admin navigation and tiles
+
+- Add canonical public Level 1 and Level 2 navigation primitives for Core Blueprint admin workspaces while keeping route, capability and domain behavior consumer-owned.
+- Add the semantic `admin-navigation` component and public narrow enqueue boundary so extensions do not depend on Base asset handles or filenames.
+- Publish shared Tile rendering and compact density as a cross-plugin UI contract without broadening the existing `metric-tiles` semantic requirement beyond generic KPI/value-card presentation.
+
 ### Core API 1.2 — native admin screen UI requirements
 
 - Extend `AdminTheme::register_screen()` so WordPress-owned admin screens can request semantic shared UI requirements without depending on Base asset handles or filenames.
