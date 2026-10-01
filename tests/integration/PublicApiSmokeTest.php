@@ -10,6 +10,7 @@ final class CB_Base_Public_API_Smoke_Test extends WP_UnitTestCase {
             \CB\Core\Modules\Status::class => [ 'get' ],
             \CB\Core\Admin\PageRegistry::class => [ 'register', 'hook_suffix' ],
             \CB\Core\Admin\SettingsRegistry::class => [ 'register', 'all', 'get', 'url' ],
+            \CB\Core\UI\AdminTheme::class => [ 'register_screen', 'is_registered_screen' ],
             \CB\Core\UI\IntegrationGrid::class => [ 'render' ],
             \CB\Core\UI\DetailRows::class => [ 'render' ],
             \CB\Core\Governance\Audit::class => [ 'record' ],
