@@ -1,5 +1,7 @@
 import {
 	commands,
+	createDesignerInspectorControls,
+	createDesignerInspectorIdentity,
 	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerShell,
@@ -74,6 +76,10 @@ if (root) {
 			(definition) => definition.node_type === node?.type && definition.provider === node?.provider
 		) || null;
 	};
+
+	const nodeLabel = (node, definition = definitionForNode(node)) => (
+		definition?.label || node?.type || 'Element'
+	);
 
 	const primarySection = () => {
 		const children = session.project()?.root?.children;
@@ -310,29 +316,33 @@ if (root) {
 			? target?.entries?.find((entry) => samePath(entry?.path, selectedPath))
 			: null;
 		if (!selectedPath) {
-			const heading = document.createElement('h3');
-			heading.className = 'cb-core-design-shell__panel-section-title';
-			heading.textContent = 'Element inspector';
+			const identity = createDesignerInspectorIdentity({
+				label: 'Element inspector',
+				documentRef: document,
+			});
 			const description = document.createElement('p');
 			description.className = 'cb-core-design-shell__panel-section-description';
 			description.textContent = 'Select an element on the canvas or in Layers to edit it.';
-			inspector.append(heading, description);
+			inspector.append(identity.element, description);
 			return;
 		}
 
 		const node = selectedEntry?.node ?? null;
 		if (!node) return;
 		const definition = definitionForNode(node);
-		const heading = document.createElement('h3');
-		heading.className = 'cb-core-design-shell__panel-section-title';
-		heading.textContent = definition?.label || node.type || 'Selected element';
-		inspector.append(heading);
+		const identity = createDesignerInspectorIdentity({
+			label: nodeLabel(node, definition),
+			documentRef: document,
+		});
+		inspector.append(identity.element);
 
 		if (definition && Array.isArray(definition.inspector) && definition.inspector.length) {
+			const controls = createDesignerInspectorControls({ documentRef: document });
 			definition.inspector.forEach((field) => {
 				const value = node.properties?.[field.key] ?? definition.defaults?.[field.key];
-				inspector.append(createInspectorField(field, value, selectedPath));
+				controls.append(createInspectorField(field, value, selectedPath));
 			});
+			inspector.append(controls);
 		} else {
 			const description = document.createElement('p');
 			description.className = 'cb-core-design-shell__panel-section-description';
@@ -367,7 +377,7 @@ if (root) {
 		return {
 			key: pathKey(path),
 			path: [...path],
-			label: definition?.label || (node.type === 'mail.section' ? 'Section' : node.type || 'Element'),
+			label: nodeLabel(node, definition),
 			meta: nodeSummary(node, definition),
 			selected: samePath(path, session.selection().primary),
 			actions: {
