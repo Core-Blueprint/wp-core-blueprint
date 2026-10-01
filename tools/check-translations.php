@@ -204,7 +204,7 @@ foreach ( $files as $file ) {
     }
 }
 
-if ( 3994 !== count( $source ) ) {
+if ( 4018 !== count( $source ) ) {
     fail_translation_check( 'Expected 3994 canonical source keys, found ' . count( $source ) . '.' );
 }
 
