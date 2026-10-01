@@ -84,7 +84,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		$_GET['tab'] = 'mail';
 		$reopened = $this->render_setup();
 		self::assertMatchesRegularExpression(
-			'/tab=mail[^"]*" class="nav-tab nav-tab-active"/',
+			'/<a(?=[^>]*href="[^"]*tab=mail)(?=[^>]*class="nav-tab nav-tab-active")(?=[^>]*aria-current="page")[^>]*>/',
 			$reopened
 		);
 		self::assertStringContainsString( 'Mail (3)', $reopened );
