@@ -168,6 +168,7 @@ final class AdminAssetCatalog {
 		$map = [
 			'actions'            => [ 'component.actions' ],
 			'badges'             => [ 'component.badges' ],
+			'buttons'            => [ 'shell.buttons' ],
 			'cards'              => [ 'component.cards' ],
 			'description-toggle' => [ 'component.disclosure', 'module.description-toggle' ],
 			'detail-rows'        => [ 'component.status-indicators', 'component.detail-rows', 'shell.buttons' ],
