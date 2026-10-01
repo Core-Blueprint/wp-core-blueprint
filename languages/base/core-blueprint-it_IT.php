@@ -2296,7 +2296,7 @@ Abbiamo ricevuto una richiesta di reimpostazione della password per il tuo accou
         'Show security summary' => 'Mostra riepilogo sicurezza',
         'Show backup summary' => 'Mostra riepilogo backup',
         'Show section heading' => 'Mostra titolo sezione',
-        'Show page number' => 'Mostra numero di pagina',
+        'Show page number in PDF' => 'Mostra numero di pagina nel PDF',
         'Reset report settings to defaults? Logo, report provider details, appearance, and report layout will be restored.' => 'Ripristinare le impostazioni del report ai valori predefiniti? Verranno ripristinati logo, dettagli del fornitore del report, aspetto e layout del report.',
         'Show logo' => 'Mostra logo',
         'Show the configured logo or the Core Blueprint fallback mark in the report header.' => 'Mostra il logo configurato o il marchio predefinito Core Blueprint nell’intestazione del report.',
