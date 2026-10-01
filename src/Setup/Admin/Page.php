@@ -80,6 +80,12 @@ final class Page extends PageBase {
 						<p class="cb-core-notice__message">
 							<?php esc_html_e( 'Work through the sections in your own order. Nothing is changed automatically, and you can return to this checklist later.', 'core-blueprint' ); ?>
 						</p>
+						<p class="cb-core-notice__message">
+							<?php esc_html_e( 'The account that activated Core Blueprint was assigned the CB Operator role to establish the initial trusted operator.', 'core-blueprint' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=core-blueprint-preferences&tab=permissions' ) ); ?>">
+								<?php esc_html_e( 'Permissions', 'core-blueprint' ); ?>
+							</a>
+						</p>
 					</div>
 				</div>
 			<?php endif; ?>
