@@ -5,11 +5,19 @@ use CB\Core\Reports\DesignerPreview;
 use CB\Core\Reports\MaintenanceFlowBranding;
 use CB\Core\Reports\ReportBranding;
 use CB\Core\Reports\ReportBrandingInput;
+use CB\Core\Settings;
 
 final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 
 	private function source( string $path ): string {
 		return (string) file_get_contents( dirname( __DIR__, 2 ) . '/' . ltrim( $path, '/' ) );
+	}
+
+	public function test_report_branding_defaults_match_the_base_settings_schema(): void {
+		self::assertSame(
+			ReportBranding::settings_defaults(),
+			Settings::defaults()['reports']['branding']
+		);
 	}
 
 	public function test_branding_save_and_preview_share_one_domain_normalizer(): void {
@@ -34,6 +42,17 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		] );
 		self::assertSame( str_repeat( 'é', 120 ), $unicode['provider_name'] );
 		self::assertSame( str_repeat( 'ø', 200 ), $unicode['provider_contact'] );
+
+		$bounded = ReportBrandingInput::normalize( [
+			'surface_style' => 'custom',
+			'density'       => 'arbitrary',
+			'corner_style'  => 'extreme',
+			'text_scale'    => 'huge',
+		] );
+		self::assertSame( 'cards', $bounded['surface_style'] );
+		self::assertSame( 'comfortable', $bounded['density'] );
+		self::assertSame( 'soft', $bounded['corner_style'] );
+		self::assertSame( 'standard', $bounded['text_scale'] );
 
 		$handler    = $this->source( 'src/Ajax/Handlers/Branding.php' );
 		$normalizer = $this->source( 'src/Reports/ReportBrandingInput.php' );
