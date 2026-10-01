@@ -7,6 +7,7 @@ use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Log\AuditLog;
 use CB\Core\Snippets\ImportExport\Exporter;
 use CB\Core\Snippets\ImportExport\Importer;
+use CB\Core\Snippets\Authorization;
 use CB\Core\Snippets\Repository;
 use CB\Core\Snippets\State;
 
@@ -222,10 +223,12 @@ final class Actions {
 	}
 
 	private static function guard( string $nonce_action, bool $requires_file_mods, bool $requires_enabled = true ): void {
-		if ( ! current_user_can( 'cb_manage_snippets' ) ) {
+		if ( ! Authorization::can_access() ) {
 			wp_die( esc_html__( 'You do not have permission to manage code snippets.', 'core-blueprint' ), esc_html__( 'Forbidden', 'core-blueprint' ), [ 'response' => 403 ] );
 		}
+
 		check_admin_referer( $nonce_action );
+
 		if ( $requires_enabled && ! State::is_enabled() ) {
 			wp_die(
 				esc_html__( 'Snippets is disabled. Enable it from the Dashboard before changing managed snippets.', 'core-blueprint' ),
@@ -233,7 +236,12 @@ final class Actions {
 				[ 'response' => 409 ]
 			);
 		}
-		if ( $requires_file_mods && function_exists( 'wp_is_file_mod_allowed' ) && ! wp_is_file_mod_allowed( 'capability_update_core' ) ) {
+
+		if ( $requires_file_mods && ! Authorization::has_code_authority() ) {
+			wp_die( esc_html__( 'You do not have permission to manage code snippets.', 'core-blueprint' ), esc_html__( 'Forbidden', 'core-blueprint' ), [ 'response' => 403 ] );
+		}
+
+		if ( $requires_file_mods && ! Authorization::file_modifications_allowed() ) {
 			wp_die( esc_html__( 'File modifications are disabled by this WordPress installation. Existing snippets can run, but managed snippet files cannot be changed.', 'core-blueprint' ), esc_html__( 'File modifications disabled', 'core-blueprint' ), [ 'response' => 403 ] );
 		}
 	}
