@@ -50,16 +50,11 @@ final class Settings {
 	}
 
 	/**
-	 * Resolve whether HUD should bootstrap on this request. False
-	 * short-circuits everything - no hooks, no enqueue, no rendering.
+	 * Resolve the persisted site-wide HUD preference.
 	 *
-	 * Two paths to disabled:
-	 *   1. `cb_core_hud_disabled` site option is truthy (set via
-	 *      Preferences › Appearance toggle - user-facing kill switch)
-	 *   2. `cb_core_hud_enabled` filter returns false (developer kill
-	 *      switch, e.g. mu-plugin override during incident response)
-	 *
-	 * Defaults to enabled. Both gates must clear for HUD to load.
+	 * A missing option keeps the historical enabled fallback for established
+	 * installations. Genuine first installs explicitly seed the disabled state
+	 * during activation.
 	 */
 	public static function site_enabled(): bool {
 		return ! (bool) get_option( self::OPTION_DISABLED, false );
@@ -95,6 +90,12 @@ final class Settings {
 		return true;
 	}
 
+	/**
+	 * Resolve whether HUD should bootstrap on this request. False
+	 * short-circuits everything - no hooks, no enqueue, no rendering.
+	 *
+	 * Both the site preference and developer filter must allow the HUD.
+	 */
 	public static function is_enabled(): bool {
 		if ( ! self::site_enabled() ) {
 			return false;

@@ -204,13 +204,13 @@ final class MenuPreferences {
 		$hud_enabled = isset( $_POST['cb_hud_enabled'] )
 			&& '1' === sanitize_text_field( wp_unslash( $_POST['cb_hud_enabled'] ) );
 		$is_reset    = isset( $_POST['cb_hud_menu_reset'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['cb_hud_menu_reset'] ) );
-
-		if ( ! Settings::set_site_enabled( $hud_enabled, wp_get_current_user()->user_login ) ) {
-			wp_safe_redirect( add_query_arg( 'hud_menu_notice', 'invalid', $redirect ) );
-			exit;
-		}
+		$actor       = wp_get_current_user()->user_login;
 
 		if ( $is_reset ) {
+			if ( ! Settings::set_site_enabled( $hud_enabled, $actor ) ) {
+				wp_safe_redirect( add_query_arg( 'hud_menu_notice', 'invalid', $redirect ) );
+				exit;
+			}
 			self::reset();
 			wp_safe_redirect( add_query_arg( 'hud_menu_notice', 'reset', $redirect ) );
 			exit;
@@ -224,7 +224,17 @@ final class MenuPreferences {
 		}
 
 		self::ensure_registry();
+		$previous_hud_enabled = Settings::site_enabled();
+		if ( ! Settings::set_site_enabled( $hud_enabled, $actor ) ) {
+			wp_safe_redirect( add_query_arg( 'hud_menu_notice', 'invalid', $redirect ) );
+			exit;
+		}
+
 		$saved = self::save_editor_payload( $decoded );
+		if ( ! $saved ) {
+			Settings::set_site_enabled( $previous_hud_enabled, $actor );
+		}
+
 		wp_safe_redirect( add_query_arg( 'hud_menu_notice', $saved ? 'saved' : 'invalid', $redirect ) );
 		exit;
 	}
