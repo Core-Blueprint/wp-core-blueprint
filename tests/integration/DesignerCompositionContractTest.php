@@ -69,6 +69,42 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_designer_foundation_owns_inspector_identity_and_vertical_control_rhythm(): void {
+		$css     = $this->source( 'assets/css/design/designer-composition.css' );
+		$forms   = $this->source( 'assets/css/components/form-controls.css' );
+		$editor  = $this->source( 'assets/js/design/editor.js' );
+		$reports = $this->source( 'assets/js/features/reports-preferences.js' );
+		$mail    = $this->source( 'assets/js/features/mail-designer.js' );
+
+		foreach ( [
+			'.cb-core-design-shell__inspector-identity',
+			'.cb-core-design-shell__inspector-title',
+			'.cb-core-design-shell__inspector-controls',
+			'.cb-core-design-shell__inspector-toggle',
+			'.cb-core-design-shell__inspector-toggle-label',
+		] as $selector ) {
+			self::assertStringContainsString( $selector, $css );
+		}
+
+		self::assertStringContainsString( 'grid-template-columns: minmax(0, 1fr) auto;', $css );
+		self::assertStringContainsString( ':not(.cb-core-design-shell__field):not(.cb-core-design-shell__inspector-toggle)', $forms );
+
+		foreach ( [
+			'createDesignerInspectorIdentity',
+			'createDesignerInspectorControls',
+			'createDesignerInspectorToggle',
+		] as $helper ) {
+			self::assertStringContainsString( $helper, $editor );
+			self::assertStringContainsString( $helper, $reports );
+		}
+
+		self::assertStringContainsString( 'createDesignerInspectorIdentity', $mail );
+		self::assertStringContainsString( 'createDesignerInspectorControls', $mail );
+		self::assertStringContainsString( 'label: nodeLabel(node, definition)', $mail );
+		self::assertStringContainsString( 'label: blockLabel( block.type )', $reports );
+		self::assertStringContainsString( 'inspectorIdentity?.setLabel( blockLabel( selected.type ) )', $reports );
+	}
+
 	public function test_composed_tab_panels_delegate_inset_to_panel_body(): void {
 		$css = $this->source( 'assets/css/design/designer-composition.css' );
 
