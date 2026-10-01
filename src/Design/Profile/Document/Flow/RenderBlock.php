@@ -238,6 +238,18 @@ final readonly class RenderBlock {
 	/** @return array{space_before:float,space_after:float,break_before:bool,break_after:bool,keep_together:bool} */
 	public function hints(): array { return $this->hints; }
 
+	/**
+	 * Return the same typed block with a new bounded Flow hint set.
+	 *
+	 * This lets composition owners normalize only outer layout boundaries
+	 * without rebuilding semantic payloads or exposing arbitrary CSS.
+	 *
+	 * @param array<string,mixed> $hints
+	 */
+	public function with_hints( array $hints ): self {
+		return new self( $this->type, $this->payload, self::normalize_hints( $hints ) );
+	}
+
 	/** @param array<string,mixed> $hints @return array{space_before:float,space_after:float,break_before:bool,break_after:bool,keep_together:bool} */
 	private static function normalize_hints( array $hints ): array {
 		$normalized = Hints::normalize( $hints );
