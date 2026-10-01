@@ -21,7 +21,7 @@ final class MaintenanceFlowBranding {
 	/**
 	 * Resolve the currently saved Reports branding for production rendering.
 	 *
-	 * @return array{logo_url:string,fallback_text:string,provider_name:string,provider_contact:string,accent_color:string,is_default:bool}
+	 * @return array{logo_url:string,fallback_text:string,show_logo:bool,provider_name:string,provider_contact:string,accent_color:string,surface_style:string,density:string,corner_style:string,text_scale:string,is_default:bool}
 	 */
 	public static function resolve(): array {
 		$resolved   = ReportBranding::current();
@@ -45,8 +45,8 @@ final class MaintenanceFlowBranding {
 	 * Resolve normalized, possibly unsaved branding into the typed Flow image
 	 * contract. This is the canonical bridge for Designer preview data.
 	 *
-	 * @param array{logo_attachment_id:int,provider_name:string,provider_contact:string,accent_color:string} $branding
-	 * @return array{logo_url:string,fallback_text:string,provider_name:string,provider_contact:string,accent_color:string,is_default:bool}
+	 * @param array{logo_attachment_id:int,show_logo:bool,provider_name:string,provider_contact:string,accent_color:string,surface_style:string,density:string,corner_style:string,text_scale:string} $branding
+	 * @return array{logo_url:string,fallback_text:string,show_logo:bool,provider_name:string,provider_contact:string,accent_color:string,surface_style:string,density:string,corner_style:string,text_scale:string,is_default:bool}
 	 */
 	public static function resolve_values( array $branding ): array {
 		$logo_id          = max( 0, (int) ( $branding['logo_attachment_id'] ?? 0 ) );
