@@ -11,6 +11,13 @@
 - Keep credential records, authorization, lifecycle and retention extension-owned; Base stores no credentials and provides no plaintext fallback.
 - Fail closed for malformed, unsupported, oversized or unauthenticated payloads and document WordPress salt rotation as an explicit reconnect boundary.
 
+### Core API 1.2 — native admin screen UI requirements
+
+- Extend `AdminTheme::register_screen()` so WordPress-owned admin screens can request semantic shared UI requirements without depending on Base asset handles or filenames.
+- Reuse the canonical PageRegistry requirement vocabulary and add the formal `buttons` component identifier alongside existing fields/form-controls contracts.
+- Union repeated declarations for shared WordPress hook suffixes so compatible consumers cannot silently erase one another's requirements.
+- Keep WordPress routing and screen ownership native; the contract only supplies Base-owned shared component presentation.
+
 ### AI Governance WordPress-native observability
 
 - Observe the WordPress 7.0 AI Client through its official generation lifecycle and retain provider, model, capability, duration and token-count metadata without storing prompts or generated content.
