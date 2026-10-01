@@ -72,6 +72,7 @@ final class PageRegistry {
 	private const COMPONENT_REQUIREMENTS = [
 		'actions',
 		'badges',
+		'buttons',
 		'cards',
 		'description-toggle',
 		'detail-rows',
