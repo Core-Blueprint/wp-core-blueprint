@@ -220,6 +220,53 @@ body.cb-admin-theme .edit-post-visual-editor__content-area {
 	border-color: var(--cb-border);
 }
 
+/* Gutenberg's post-publish flow is rendered in the editor actions region rather
+ * than the regular sidebar panel tree. Keep the Core-owned panel shell on the
+ * same semantic surfaces without changing its positioning, animation or layout. */
+body.cb-admin-theme .editor-post-publish-panel,
+body.cb-admin-theme .editor-post-publish-panel__header,
+body.cb-admin-theme .editor-post-publish-panel__content,
+body.cb-admin-theme .editor-post-publish-panel__footer {
+	background: var(--cb-surface-1);
+	border-color: var(--cb-border);
+	color: var(--cb-text);
+}
+
+body.cb-admin-theme .editor-post-publish-panel__header {
+	color: var(--cb-text-strong);
+}
+
+/* WordPress 7.x composes the Post summary with @wordpress/ui Text primitives.
+ * Generated Emotion/hash classes are intentionally not part of this adapter.
+ * Scope both WP Components/WPDS tokens and the public component marker to the
+ * semantic Post summary so excerpt and summary metadata remain readable. */
+body.cb-admin-theme .editor-post-summary {
+	--wp-components-color-foreground: var(--cb-text);
+	--wpds-color-foreground-content-neutral: var(--cb-text);
+	--wpds-color-foreground-content-neutral-weak: var(--cb-text-muted);
+	color: var(--cb-text);
+}
+
+body.cb-admin-theme .editor-post-summary [data-wp-component="Text"] {
+	color: var(--cb-text);
+}
+
+body.cb-admin-theme .editor-post-summary .editor-post-card-panel__title {
+	color: var(--cb-text-strong);
+}
+
+body.cb-admin-theme .editor-post-summary .editor-post-content-information [data-wp-component="Text"],
+body.cb-admin-theme .editor-post-summary .editor-post-last-edited-panel [data-wp-component="Text"] {
+	color: var(--cb-text-muted);
+}
+
+/* Core's block inspector uses an explicit white empty-state surface when there
+ * is no selected block. Adapt only that semantic empty state. */
+body.cb-admin-theme .block-editor-block-inspector__no-blocks {
+	background: var(--cb-surface-1);
+	color: var(--cb-text-muted);
+}
+
 /* Gutenberg's split meta-box view owns a separate white resizable presenter
  * outside .edit-post-meta-boxes-area. Normalize only that Core-owned chrome;
  * the resize interaction, dimensions and plugin meta-box layouts stay intact. */
