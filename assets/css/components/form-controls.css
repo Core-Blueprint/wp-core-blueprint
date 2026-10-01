@@ -332,8 +332,8 @@ html[data-cb-theme="core_blueprint_light"] :is(.cb-core-wrap, .cb-core-form-scop
 /* Plain inline labels use centered input/text alignment. Structured card
  * components own their own internal alignment and must not inherit this
  * convenience rule; card content is top-aligned suite-wide. */
-:is(.cb-core-wrap, .cb-core-form-scope) label:not(.cb-core-radio-card):not(.cb-core-check-row):not(.cb-core-choice-group__option):has( > input[type="checkbox"] ),
-:is(.cb-core-wrap, .cb-core-form-scope) label:not(.cb-core-radio-card):not(.cb-core-check-row):not(.cb-core-choice-group__option):has( > input[type="radio"] ) {
+:is(.cb-core-wrap, .cb-core-form-scope) label:not(.cb-core-radio-card):not(.cb-core-check-row):not(.cb-core-choice-group__option):not(.cb-core-design-shell__field):not(.cb-core-design-shell__inspector-toggle):has( > input[type="checkbox"] ),
+:is(.cb-core-wrap, .cb-core-form-scope) label:not(.cb-core-radio-card):not(.cb-core-check-row):not(.cb-core-choice-group__option):not(.cb-core-design-shell__field):not(.cb-core-design-shell__inspector-toggle):has( > input[type="radio"] ) {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--cb-space-2);
