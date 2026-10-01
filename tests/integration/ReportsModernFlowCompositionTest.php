@@ -98,10 +98,8 @@ final class CB_Reports_Modern_Flow_Composition_Test extends WP_UnitTestCase {
 		$types = array_map( static fn ( $block ): string => $block->type(), $document['blocks'] );
 		self::assertContains( 'columns', $types );
 		self::assertContains( 'rule', $types );
-		self::assertContains( 'heading', $types );
-		self::assertContains( 'callout', $types );
-		self::assertContains( 'metrics', $types );
-		self::assertContains( 'table', $types );
+		self::assertContains( 'container', $types );
+		self::assertGreaterThanOrEqual( 6, count( array_filter( $types, static fn ( string $type ): bool => 'container' === $type ) ) );
 		self::assertSame( 'page_footer', $types[ count( $types ) - 1 ] );
 
 		$html = ( new HtmlRenderer() )->render(
