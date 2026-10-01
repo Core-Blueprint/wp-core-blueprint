@@ -11,6 +11,9 @@
 import { qs, qsa, apiPost } from '../core/dom.js';
 import {
 	commands,
+	createDesignerInspectorControls,
+	createDesignerInspectorIdentity,
+	createDesignerInspectorToggle,
 	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerShell,
@@ -126,9 +129,8 @@ if ( FORM ) {
 		: composer.blocks.map( ( block ) => block.type );
 
 	let layerTree = null;
-	let inspectorTitle = null;
-	let enabledControl = null;
-	let inspectorSettings = null;
+	let inspectorIdentity = null;
+	let inspectorControls = null;
 	let mediaFrame = null;
 	let previewTimer = null;
 	let previewSequence = 0;
@@ -231,23 +233,11 @@ if ( FORM ) {
 			section.className = 'cb-core-design-shell__panel-section';
 			section.dataset.cbReportBlockInspector = '';
 
-			inspectorTitle = document.createElement( 'h3' );
-			inspectorTitle.className = 'cb-core-design-shell__panel-section-title';
+			inspectorIdentity = createDesignerInspectorIdentity( { documentRef: document } );
+			inspectorControls = createDesignerInspectorControls( { documentRef: document } );
+			inspectorControls.dataset.cbReportBlockSettings = '';
 
-			const enabledField = document.createElement( 'label' );
-			enabledField.className = 'cb-core-design-shell__field';
-			const enabledLabel = document.createElement( 'span' );
-			enabledLabel.className = 'cb-core-design-shell__field-label';
-			enabledLabel.textContent = composerUi.visible || 'Visible';
-			enabledControl = document.createElement( 'input' );
-			enabledControl.type = 'checkbox';
-			enabledControl.dataset.cbReportBlockEnabled = '';
-			enabledField.append( enabledLabel, enabledControl );
-
-			inspectorSettings = document.createElement( 'div' );
-			inspectorSettings.dataset.cbReportBlockSettings = '';
-
-			section.append( inspectorTitle, enabledField, inspectorSettings );
+			section.append( inspectorIdentity.element, inspectorControls );
 			inspectorBody.append( section );
 		}
 	};
@@ -296,45 +286,43 @@ if ( FORM ) {
 
 	const renderInspector = () => {
 		const selected = selectedBlock();
-		inspectorSettings?.replaceChildren();
+		inspectorControls?.replaceChildren();
 
 		if ( ! selected ) {
-			if ( inspectorTitle ) inspectorTitle.textContent = '';
-			if ( enabledControl ) {
-				enabledControl.checked = false;
-				enabledControl.disabled = true;
-			}
+			inspectorIdentity?.setLabel( '' );
 			return;
 		}
 
-		if ( inspectorTitle ) inspectorTitle.textContent = blockLabel( selected.type );
-		if ( enabledControl ) {
-			enabledControl.checked = selected.enabled !== false;
-			enabledControl.disabled = isStructuralBlock( selected );
-		}
+		inspectorIdentity?.setLabel( blockLabel( selected.type ) );
+		if ( ! inspectorControls ) return;
 
-		if ( ! inspectorSettings ) return;
 		const index = selectedIndex();
+		const enabled = createDesignerInspectorToggle( {
+			label: composerUi.visible || 'Visible',
+			checked: selected.enabled !== false,
+			disabled: isStructuralBlock( selected ),
+			documentRef: document,
+			dataset: { cbReportBlockEnabled: '' },
+		} );
+		enabled.control.addEventListener( 'change', () => {
+			if ( index < 0 || isStructuralBlock( selected ) ) return;
+			session.execute( commands.setProperty( [ index ], [ 'enabled' ], enabled.control.checked ) );
+		} );
+		inspectorControls.append( enabled.element );
+
 		const definitions = blockSettings[ selected.type ] || {};
 		Object.entries( definitions ).forEach( ( [ key, label ] ) => {
-			const field = document.createElement( 'label' );
-			field.className = 'cb-core-design-shell__field';
-
-			const fieldLabel = document.createElement( 'span' );
-			fieldLabel.className = 'cb-core-design-shell__field-label';
-			fieldLabel.textContent = label;
-
-			const control = document.createElement( 'input' );
-			control.type = 'checkbox';
-			control.checked = selected.settings?.[ key ] !== false;
-			control.dataset.cbReportBlockSetting = key;
-			control.addEventListener( 'change', () => {
-				if ( index < 0 ) return;
-				session.execute( commands.setProperty( [ index ], [ 'settings', key ], control.checked ) );
+			const setting = createDesignerInspectorToggle( {
+				label,
+				checked: selected.settings?.[ key ] !== false,
+				documentRef: document,
+				dataset: { cbReportBlockSetting: key },
 			} );
-
-			field.append( fieldLabel, control );
-			inspectorSettings.append( field );
+			setting.control.addEventListener( 'change', () => {
+				if ( index < 0 ) return;
+				session.execute( commands.setProperty( [ index ], [ 'settings', key ], setting.control.checked ) );
+			} );
+			inspectorControls.append( setting.element );
 		} );
 	};
 
@@ -491,13 +479,6 @@ if ( FORM ) {
 		selectionController.select( [ 0 ], { openInspector: false, source: 'initial' } );
 	}
 	designerShell?.syncHistory();
-
-	enabledControl?.addEventListener( 'change', () => {
-		const selected = selectedBlock();
-		const index = selectedIndex();
-		if ( ! selected || index < 0 || isStructuralBlock( selected ) ) return;
-		session.execute( commands.setProperty( [ index ], [ 'enabled' ], enabledControl.checked ) );
-	} );
 
 	colorEl?.addEventListener( 'input', ( event ) => {
 		const hex = event.target.value;
