@@ -76,6 +76,18 @@ final class CB_Admin_Theme_Screen_Requirements_Contract_Test extends WP_UnitTest
 		self::assertStringContainsString( '.cb-core-button--danger {', $css );
 	}
 
+	public function test_gutenberg_dark_adapter_uses_semantic_core_selectors(): void {
+		$css = file_get_contents( CB_CORE_DIR . 'assets/css/admin-theme/gutenberg.css' );
+
+		self::assertIsString( $css );
+		self::assertStringContainsString( 'body.cb-admin-theme .editor-post-publish-panel,', $css );
+		self::assertStringContainsString( 'body.cb-admin-theme .editor-post-summary {', $css );
+		self::assertStringContainsString( 'body.cb-admin-theme .editor-post-summary [data-wp-component="Text"] {', $css );
+		self::assertStringContainsString( 'body.cb-admin-theme .block-editor-block-inspector__no-blocks {', $css );
+		self::assertStringNotContainsString( '.css-w4lcwg', $css );
+		self::assertStringNotContainsString( '.d232bf8e2132288d__is-line-clamp', $css );
+	}
+
 	public function test_existing_zero_requirement_registration_remains_supported(): void {
 		$hook = 'legacy-compatible-screen.php';
 
