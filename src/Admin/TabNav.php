@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace CB\Core\Admin;
 
+use CB\Core\UI\PrimaryNav;
+
 defined( 'ABSPATH' ) || exit;
 
 final class TabNav {
@@ -45,19 +47,19 @@ final class TabNav {
 	 * nav explicitly instead of relying on post-hoc injection.
 	 */
 	public static function build( string $page_slug, string $active_tab, array $tabs ): string {
-		$out = '<nav class="nav-tab-wrapper cb-core-tab-wrapper" aria-label="' . esc_attr__( 'Sections', 'core-blueprint' ) . '">';
+		$items = [];
 		foreach ( $tabs as $id => $label ) {
-			$url     = admin_url( 'admin.php?page=' . $page_slug . '&tab=' . $id );
-			$classes = 'nav-tab' . ( $id === $active_tab ? ' nav-tab-active' : '' );
-			$out    .= sprintf(
-				'<a href="%s" class="%s">%s</a>',
-				esc_url( $url ),
-				esc_attr( $classes ),
-				esc_html( $label )
-			);
+			$items[ $id ] = [
+				'label' => $label,
+				'href'  => admin_url( 'admin.php?page=' . $page_slug . '&tab=' . $id ),
+			];
 		}
-		$out .= '</nav>';
-		return $out;
+
+		return PrimaryNav::render( [
+			'items'      => $items,
+			'active'     => $active_tab,
+			'aria_label' => __( 'Sections', 'core-blueprint' ),
+		] );
 	}
 
 	/**
