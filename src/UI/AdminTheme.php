@@ -10,7 +10,7 @@ declare(strict_types=1);
  *
  * Public integration surface:
  *   - AdminTheme::theme() / ::mode()
- *   - AdminTheme::register_screen( $hook_suffix ) for declared compatibility
+ *   - AdminTheme::register_screen( $hook_suffix, $requirements ) for declared compatibility and native-screen shared UI
  *   - `cb_admin_themes` to register partner themes (owned by Themes)
  *   - `cb_admin_theme_apply` as a developer safety valve for incompatible apps
  *   - `cb_admin_theme_enqueue` for theme-aware extension assets
@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace CB\Core\UI;
 
+use CB\Core\Admin\PageRegistry;
 use CB\Core\Themes;
 
 defined( 'ABSPATH' ) || exit;
@@ -30,7 +31,7 @@ final class AdminTheme {
 
 	private static bool $initialized = false;
 
-	/** @var array<string, true> */
+	/** @var array<string, array{foundations:string[],components:string[]}> */
 	private static array $registered_screens = [];
 
 	/** Boot the global wp-admin theme engine once per normal admin request. */
@@ -49,20 +50,46 @@ final class AdminTheme {
 		add_action( 'admin_head', [ self::class, 'emit_prepaint_hooks' ], 0 );
 		add_filter( 'admin_body_class', [ self::class, 'filter_admin_body_class' ], 5 );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_assets' ], 0 );
+		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_registered_screen_requirements' ], 5 );
 	}
 
 	/**
 	 * Declare an admin screen as intentionally compatible with the public Core
-	 * Blueprint theme contract. Registration is not required for theme state;
-	 * it is a compatibility declaration and hook point for extension tooling.
+	 * Blueprint theme contract.
+	 *
+	 * Native WordPress screens may also request shared Core Admin UI through the
+	 * same semantic requirement vocabulary used by PageRegistry/SettingsRegistry.
+	 * Callers never depend on Base asset handles or filenames.
+	 *
+	 * Registration is not required for theme state. It is a compatibility
+	 * declaration plus an optional shared-component request. Register during
+	 * current_screen or earlier than admin_enqueue_scripts priority 5.
+	 *
+	 * @param array{foundations?:string[],components?:string[]} $requirements
 	 */
-	public static function register_screen( string $hook_suffix ): void {
+	public static function register_screen( string $hook_suffix, array $requirements = [] ): void {
 		$hook_suffix = trim( $hook_suffix );
 		if ( '' === $hook_suffix ) {
 			return;
 		}
 
-		self::$registered_screens[ $hook_suffix ] = true;
+		$normalized = PageRegistry::normalize_semantic_requirements(
+			$requirements,
+			'admin-theme-screen:' . $hook_suffix
+		);
+		if ( null === $normalized ) {
+			return;
+		}
+
+		$existing = self::$registered_screens[ $hook_suffix ] ?? [
+			'foundations' => [],
+			'components'  => [],
+		];
+
+		self::$registered_screens[ $hook_suffix ] = [
+			'foundations' => array_values( array_unique( array_merge( $existing['foundations'], $normalized['foundations'] ) ) ),
+			'components'  => array_values( array_unique( array_merge( $existing['components'], $normalized['components'] ) ) ),
+		];
 
 		/**
 		 * Fires when an extension declares an admin screen compatible with the
@@ -80,6 +107,26 @@ final class AdminTheme {
 		}
 
 		return '' !== $hook_suffix && isset( self::$registered_screens[ $hook_suffix ] );
+	}
+
+	/**
+	 * Enqueue semantic requirements declared for one compatible native screen.
+	 *
+	 * @internal Hook callback; extensions only call register_screen().
+	 */
+	public static function enqueue_registered_screen_requirements( string $hook_suffix = '' ): void {
+		if ( '' === $hook_suffix ) {
+			$hook_suffix = self::current_hook_suffix();
+		}
+
+		if ( '' === $hook_suffix || ! isset( self::$registered_screens[ $hook_suffix ] ) ) {
+			return;
+		}
+
+		PageRegistry::enqueue_semantic_requirements(
+			self::$registered_screens[ $hook_suffix ],
+			$hook_suffix
+		);
 	}
 
 	/** Concrete active theme slug. */
