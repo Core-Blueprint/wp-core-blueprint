@@ -6,6 +6,7 @@ namespace CB\Core\Snippets\Admin;
 use CB\Core\Admin\MutationAcknowledgement;
 use CB\Core\Admin\PageBase;
 use CB\Core\Admin\TabNav;
+use CB\Core\Snippets\Authorization;
 use CB\Core\Snippets\ConflictDetector;
 use CB\Core\Snippets\Repository;
 use CB\Core\Snippets\SafeMode;
@@ -83,7 +84,9 @@ final class Page extends PageBase {
 			<div class="cb-snippets-toolbar__status">
 				<?php echo StatusUi::render( State::is_enabled() ? 'active' : 'idle', State::is_enabled() ? __( 'Runtime enabled', 'core-blueprint' ) : __( 'Runtime disabled', 'core-blueprint' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
-			<a class="button button-primary cb-core-button cb-core-button--primary" href="<?php echo esc_url( $add_url ); ?>"><?php esc_html_e( 'Add snippet', 'core-blueprint' ); ?></a>
+			<?php if ( Authorization::can_mutate() ) : ?>
+				<a class="button button-primary cb-core-button cb-core-button--primary" href="<?php echo esc_url( $add_url ); ?>"><?php esc_html_e( 'Add snippet', 'core-blueprint' ); ?></a>
+			<?php endif; ?>
 		</div>
 
 		<?php if ( empty( $snippets ) ) : ?>
@@ -156,6 +159,9 @@ final class Page extends PageBase {
 		$roles = wp_roles()->roles;
 		$this->render_header( '' !== $id ? __( 'Edit managed snippet code and execution rules.', 'core-blueprint' ) : __( 'Create a managed snippet. New snippets are disabled unless you explicitly enable them.', 'core-blueprint' ) );
 		?>
+		<?php if ( ! Authorization::can_mutate() ) : ?>
+			<div class="notice notice-warning inline"><p><?php esc_html_e( 'You do not have permission to manage code snippets.', 'core-blueprint' ); ?></p></div>
+		<?php endif; ?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cb-snippets-editor cb-core-form-scope">
 			<input type="hidden" name="action" value="cb_core_snippets_save" />
 			<input type="hidden" name="snippet_id" value="<?php echo esc_attr( $id ); ?>" />
@@ -228,7 +234,9 @@ final class Page extends PageBase {
 			</section>
 
 			<div class="cb-core-actions">
-				<button type="submit" class="button button-primary cb-core-button cb-core-button--primary"><?php esc_html_e( 'Save snippet', 'core-blueprint' ); ?></button>
+				<?php if ( Authorization::can_mutate() ) : ?>
+					<button type="submit" class="button button-primary cb-core-button cb-core-button--primary"><?php esc_html_e( 'Save snippet', 'core-blueprint' ); ?></button>
+				<?php endif; ?>
 				<a class="button cb-core-button cb-core-button--secondary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&tab=snippets' ) ); ?>"><?php esc_html_e( 'Back to snippets', 'core-blueprint' ); ?></a>
 			</div>
 		</form>
@@ -280,6 +288,7 @@ final class Page extends PageBase {
 			<section class="cb-snippets-section">
 				<h2><?php esc_html_e( 'Import', 'core-blueprint' ); ?></h2>
 				<p><?php esc_html_e( 'Accepted formats: Core Blueprint Snippets JSON and Fluent Snippets JSON. Imported code never becomes active automatically.', 'core-blueprint' ); ?></p>
+				<?php if ( Authorization::can_mutate() ) : ?>
 				<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cb-core-form-scope">
 					<input type="hidden" name="action" value="cb_core_snippets_import" />
 					<?php wp_nonce_field( 'cb_core_snippets_import' ); ?>
@@ -296,6 +305,9 @@ final class Page extends PageBase {
 					<div data-cb-snippets-restore-acknowledgement></div>
 					<button type="submit" class="button button-primary cb-core-button cb-core-button--primary"><?php esc_html_e( 'Import snippets', 'core-blueprint' ); ?></button>
 				</form>
+				<?php else : ?>
+					<p><?php esc_html_e( 'You do not have permission to manage code snippets.', 'core-blueprint' ); ?></p>
+				<?php endif; ?>
 			</section>
 		</div>
 		</div>
@@ -303,6 +315,9 @@ final class Page extends PageBase {
 	}
 
 	private function render_row_action( string $action, string $nonce, string $id, string $label, bool $danger = false, string $title = '' ): void {
+		if ( ! Authorization::can_mutate() ) {
+			return;
+		}
 		?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cb-snippets-inline-action" <?php echo $danger ? 'data-cb-snippet-delete="1" data-snippet-title="' . esc_attr( $title ) . '"' : ''; ?>>
 			<input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
