@@ -31,6 +31,22 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 		self::assertStringContainsString( 'Brevo is contacted only when all of the following are true', $readme );
 	}
 
+	public function test_wordpress_org_checksum_service_is_disclosed(): void {
+		$readme = file_get_contents( CB_CORE_DIR . 'readme.txt' );
+		$core   = file_get_contents( CB_CORE_DIR . 'src/Integrity/Scanner/CoreScanner.php' );
+		$plugin = file_get_contents( CB_CORE_DIR . 'src/Integrity/Scanner/PluginScanner.php' );
+		$theme  = file_get_contents( CB_CORE_DIR . 'src/Integrity/Scanner/ThemeScanner.php' );
+		self::assertIsString( $readme );
+		self::assertIsString( $core );
+		self::assertIsString( $plugin );
+		self::assertIsString( $theme );
+		self::assertStringContainsString( '= WordPress.org checksum services =', $readme );
+		self::assertStringContainsString( 'https://wordpress.org/about/privacy/', $readme );
+		self::assertStringContainsString( 'get_core_checksums', $core );
+		self::assertStringContainsString( 'get_plugin_checksums', $plugin );
+		self::assertStringContainsString( 'get_theme_checksums', $theme );
+	}
+
 	public function test_release_builder_requires_directory_readme(): void {
 		$builder = file_get_contents( CB_CORE_DIR . 'tools/build-release' );
 		self::assertIsString( $builder );
