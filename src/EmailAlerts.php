@@ -1,5 +1,11 @@
 <?php
 declare(strict_types=1);
+namespace CB\Core;
+
+use CB\Core\Log\AuditLog;
+
+defined( 'ABSPATH' ) || exit;
+
 /**
  * EmailAlerts
  *
@@ -46,11 +52,6 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core;
-
-use CB\Core\Log\AuditLog;
-
-defined( 'ABSPATH' ) || exit;
 
 final class EmailAlerts {
 
