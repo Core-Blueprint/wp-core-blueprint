@@ -91,13 +91,6 @@ final class Bootstrap {
 		// the brand picker UI has a complete list at render time.
 		add_action( 'init', [ self::class, 'register_brands' ], 5 );
 
-		// WordPress update state is consumed by the built-in HUD Updates stat
-		// during item registration below. Without a persistent object cache,
-		// bulk-prime the three canonical update site-transient options first so
-		// wp_get_update_data() can reuse one request-local cache fill instead of
-		// issuing three independent option queries.
-		add_action( 'init', [ self::class, 'prime_update_cache' ], 9 );
-
 		// Item registry - built-in sections live here; siblings register
 		// their items via cb_hud_register_items when they boot.
 		add_action( 'init', [ self::class, 'register_items' ], 10 );
@@ -141,33 +134,6 @@ final class Bootstrap {
 		 * provide their own brand implementation should hook here.
 		 */
 		do_action( 'cb_core_register_brands', BrandRegistry::class );
-	}
-
-	/**
-	 * Prime WordPress-owned update state before the HUD asks WordPress for its
-	 * aggregate Updates count.
-	 *
-	 * The three update transients are stored as site options when no persistent
-	 * object cache is active. WordPress can prime those option keys in one query,
-	 * after which wp_get_update_data() and the native admin bar both reuse the
-	 * request cache. With an external object cache, get_site_transient() already
-	 * reads the dedicated `site-transient` cache group, so a database prime would
-	 * be unnecessary and potentially slower.
-	 */
-	public static function prime_update_cache(): void {
-		if (
-			! current_user_can( 'update_core' )
-			|| wp_using_ext_object_cache()
-			|| ! function_exists( 'wp_prime_site_option_caches' )
-		) {
-			return;
-		}
-
-		wp_prime_site_option_caches( [
-			'_site_transient_update_plugins',
-			'_site_transient_update_themes',
-			'_site_transient_update_core',
-		] );
 	}
 
 	/**
