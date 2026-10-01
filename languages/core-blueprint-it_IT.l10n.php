@@ -102,6 +102,7 @@ $catalog['messages'] = array_replace(
         'Setup review updated.' => 'Revisione della configurazione aggiornata.',
         'Start Core Setup' => 'Avvia Core Setup',
         'Store setup-specific context for this section. This note does not change configuration and does not depend on the optional Notes module.' => 'Salva il contesto specifico della configurazione per questa sezione. Questa nota non modifica la configurazione e non dipende dal modulo opzionale Notes.',
+        'The account that activated Core Blueprint was assigned the CB Operator role to establish the initial trusted operator.' => 'All\'account che ha attivato Core Blueprint è stato assegnato il ruolo CB Operator per stabilire il primo operatore attendibile.',
         'The configuration changed since this check was last reviewed. Review the current settings again.' => 'La configurazione è cambiata dall\'ultima revisione di questo controllo. Rivedi nuovamente le impostazioni attuali.',
         'The current site state needs attention. Deferring this check does not hide or downgrade that warning.' => 'Lo stato attuale del sito richiede attenzione. Rimandare questo controllo non nasconde né riduce tale avviso.',
         'This Core Setup check cannot be deferred.' => 'Questo controllo di Core Setup non può essere rimandato.',
