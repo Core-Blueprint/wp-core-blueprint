@@ -17,6 +17,16 @@ defined( 'ABSPATH' ) || exit;
  * Flow blocks. It owns no collection, persistence, lifecycle or PDF backend.
  */
 final class MaintenanceFlowCompiler {
+	private const COMPOSER_CONTENT_GAP_MM = 5.0;
+	private const COMPOSER_CONTENT_TYPES  = [
+		BlockCatalog::STATUS,
+		BlockCatalog::KPIS,
+		BlockCatalog::CURRENT_STATE,
+		BlockCatalog::ACTIVITY,
+		BlockCatalog::SUMMARY,
+		BlockCatalog::NOTES,
+	];
+
 	private const SECTION_ORDER = [
 		'theme_updates'        => 'theme',
 		'plugin_updates'       => 'plugin',
@@ -40,6 +50,7 @@ final class MaintenanceFlowCompiler {
 			: MaintenanceTemplate::normalize( $template );
 		$blocks          = [];
 		$preview_regions = [];
+		$first_content   = true;
 
 		foreach ( $template['blocks'] as $definition ) {
 			if ( empty( $definition['enabled'] ) ) {
@@ -48,7 +59,11 @@ final class MaintenanceFlowCompiler {
 			$type     = (string) ( $definition['type'] ?? '' );
 			$settings = is_array( $definition['settings'] ?? null ) ? $definition['settings'] : [];
 			$compiled = $this->compile_block( $type, $report, $snapshot, $branding, $settings );
-			$indexes  = [];
+			if ( [] !== $compiled && self::is_composer_content_type( $type ) ) {
+				$compiled      = [ $this->composer_content_block( $compiled, $first_content ) ];
+				$first_content = false;
+			}
+			$indexes = [];
 			foreach ( $compiled as $block ) {
 				$indexes[] = count( $blocks );
 				$blocks[]  = $block;
@@ -71,6 +86,43 @@ final class MaintenanceFlowCompiler {
 			),
 			'preview_regions' => $preview_regions,
 		];
+	}
+
+	private static function is_composer_content_type( string $type ): bool {
+		return in_array( $type, self::COMPOSER_CONTENT_TYPES, true );
+	}
+
+	/**
+	 * Wrap one visible Composer element in a layout-neutral Flow boundary.
+	 *
+	 * The Composer owns spacing between reorderable elements. Individual report
+	 * blocks keep only their internal rhythm, so order and visibility cannot
+	 * accidentally create larger or smaller gaps.
+	 *
+	 * @param list<RenderBlock> $children
+	 */
+	private function composer_content_block( array $children, bool $first_content ): RenderBlock {
+		$last_index   = count( $children ) - 1;
+		$first_hints  = $children[0]->hints();
+		$break_before = $first_hints['break_before'];
+		$first_hints['space_before'] = 0.0;
+		$first_hints['break_before'] = false;
+		$children[0] = $children[0]->with_hints( $first_hints );
+
+		$last_hints  = $children[ $last_index ]->hints();
+		$break_after = $last_hints['break_after'];
+		$last_hints['space_after'] = 0.0;
+		$last_hints['break_after'] = false;
+		$children[ $last_index ] = $children[ $last_index ]->with_hints( $last_hints );
+
+		return RenderBlock::container(
+			$children,
+			[
+				'space_before' => $first_content ? 0.0 : self::COMPOSER_CONTENT_GAP_MM,
+				'break_before' => $break_before,
+				'break_after'  => $break_after,
+			]
+		);
 	}
 
 	/**
