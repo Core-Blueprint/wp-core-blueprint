@@ -46,7 +46,8 @@ final class MaintenanceFlowCompiler {
 				continue;
 			}
 			$type     = (string) ( $definition['type'] ?? '' );
-			$compiled = $this->compile_block( $type, $report, $snapshot, $branding );
+			$settings = is_array( $definition['settings'] ?? null ) ? $definition['settings'] : [];
+			$compiled = $this->compile_block( $type, $report, $snapshot, $branding, $settings );
 			$indexes  = [];
 			foreach ( $compiled as $block ) {
 				$indexes[] = count( $blocks );
@@ -61,7 +62,13 @@ final class MaintenanceFlowCompiler {
 			'layout'          => self::layout(),
 			'blocks'          => $blocks,
 			'locale'          => $locale,
-			'presentation'    => Presentation::from_accent( (string) ( $branding['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ) ),
+			'presentation'    => Presentation::from_values(
+				(string) ( $branding['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ),
+				(string) ( $branding['surface_style'] ?? 'cards' ),
+				(string) ( $branding['density'] ?? 'comfortable' ),
+				(string) ( $branding['corner_style'] ?? 'soft' ),
+				(string) ( $branding['text_scale'] ?? 'standard' )
+			),
 			'preview_regions' => $preview_regions,
 		];
 	}
@@ -74,25 +81,27 @@ final class MaintenanceFlowCompiler {
 	 * @param array<string,mixed> $branding
 	 * @return list<RenderBlock>
 	 */
-	private function compile_block( string $type, array $report, array $snapshot, array $branding ): array {
+	private function compile_block( string $type, array $report, array $snapshot, array $branding, array $settings ): array {
 		return match ( $type ) {
-			BlockCatalog::HEADER        => $this->header_blocks( $report, $snapshot, $branding ),
-			BlockCatalog::STATUS        => $this->status_blocks( $snapshot ),
-			BlockCatalog::KPIS          => $this->kpi_blocks( $snapshot ),
-			BlockCatalog::CURRENT_STATE => $this->current_state_blocks( $snapshot ),
-			BlockCatalog::ACTIVITY      => $this->maintenance_activity_blocks( $snapshot ),
-			BlockCatalog::SUMMARY       => $this->summary_blocks( $snapshot ),
-			BlockCatalog::NOTES         => $this->notes_blocks( $snapshot ),
-			BlockCatalog::FOOTER        => $this->footer_blocks( $snapshot ),
+			BlockCatalog::HEADER        => $this->header_blocks( $report, $snapshot, $branding, $settings ),
+			BlockCatalog::STATUS        => $this->status_blocks( $snapshot, $settings ),
+			BlockCatalog::KPIS          => $this->kpi_blocks( $snapshot, $settings ),
+			BlockCatalog::CURRENT_STATE => $this->current_state_blocks( $snapshot, $settings ),
+			BlockCatalog::ACTIVITY      => $this->maintenance_activity_blocks( $snapshot, $settings ),
+			BlockCatalog::SUMMARY       => $this->summary_blocks( $snapshot, $settings ),
+			BlockCatalog::NOTES         => $this->notes_blocks( $snapshot, $settings ),
+			BlockCatalog::FOOTER        => $this->footer_blocks( $snapshot, $settings ),
 			default                     => [],
 		};
 	}
 
 	/** @param array<string,mixed> $report @param array<string,mixed> $snapshot @param array<string,mixed> $branding @return list<RenderBlock> */
-	private function header_blocks( array $report, array $snapshot, array $branding ): array {
-		$site     = is_array( $snapshot['site'] ?? null ) ? $snapshot['site'] : [];
-		$identity = [];
-		$logo     = (string) ( $branding['logo_url'] ?? '' );
+	private function header_blocks( array $report, array $snapshot, array $branding, array $settings ): array {
+		$site          = is_array( $snapshot['site'] ?? null ) ? $snapshot['site'] : [];
+		$identity      = [];
+		$logo          = (string) ( $branding['logo_url'] ?? '' );
+		$show_site_url = self::setting( $settings, 'show_site_url', true );
+		$show_metadata = self::setting( $settings, 'show_metadata', true );
 
 		if ( '' !== $logo ) {
 			$identity[] = RenderBlock::image( $logo, [ 'space_after' => 3.0, 'keep_together' => true ] );
@@ -101,32 +110,36 @@ final class MaintenanceFlowCompiler {
 		}
 
 		$identity[] = RenderBlock::heading( __( 'Maintenance Report', 'core-blueprint' ), 'title', [ 'space_after' => 1.5 ] );
+		$site_lines = [ (string) ( $site['title'] ?? '' ) ];
+		if ( $show_site_url ) {
+			$site_lines[] = (string) ( $site['url'] ?? '' );
+		}
 		$site_lines = array_values( array_filter(
-			[
-				(string) ( $site['title'] ?? '' ),
-				(string) ( $site['url'] ?? '' ),
-			],
+			$site_lines,
 			static fn ( string $line ): bool => '' !== trim( $line )
 		) );
 		if ( [] !== $site_lines ) {
 			$identity[] = RenderBlock::text( implode( "\n", $site_lines ) );
 		}
 
-		return [
-			RenderBlock::columns(
+		$blocks = [];
+		if ( $show_metadata ) {
+			$blocks[] = RenderBlock::columns(
 				[
 					$identity,
 					[ RenderBlock::text( $this->metadata_text( $report, $branding ) ) ],
 				],
 				[ 1.6, 1.0 ],
 				[ 'space_after' => 3.0, 'keep_together' => true ]
-			),
-			RenderBlock::rule( [ 'space_after' => 5.0 ] ),
-		];
+			);
+		} else {
+			$blocks = $identity;
+		}
+		$blocks[] = RenderBlock::rule( [ 'space_after' => 5.0 ] );
+		return $blocks;
 	}
-
 	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
-	private function status_blocks( array $snapshot ): array {
+	private function status_blocks( array $snapshot, array $settings ): array {
 		$status = is_array( $snapshot['status'] ?? null ) ? $snapshot['status'] : [];
 		$level  = (string) ( $status['banner'] ?? 'ok' );
 		$title  = trim( (string) ( $status['headline'] ?? '' ) );
@@ -134,13 +147,14 @@ final class MaintenanceFlowCompiler {
 			$title = __( 'Status', 'core-blueprint' );
 		}
 
+		$body = [ strtoupper( $level ) ];
+		if ( self::setting( $settings, 'show_details', true ) ) {
+			$body[] = (string) ( $status['subline'] ?? '' );
+			$body[] = (string) ( $status['detail_headline'] ?? '' );
+			$body[] = (string) ( $status['detail_subline'] ?? '' );
+		}
 		$body = array_values( array_filter(
-			[
-				strtoupper( $level ),
-				(string) ( $status['subline'] ?? '' ),
-				(string) ( $status['detail_headline'] ?? '' ),
-				(string) ( $status['detail_subline'] ?? '' ),
-			],
+			$body,
 			static fn ( string $line ): bool => '' !== trim( $line )
 		) );
 
@@ -155,8 +169,8 @@ final class MaintenanceFlowCompiler {
 	}
 
 	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
-	private function kpi_blocks( array $snapshot ): array {
-		$metrics = $this->kpi_metrics( $snapshot );
+	private function kpi_blocks( array $snapshot, array $settings ): array {
+		$metrics = $this->kpi_metrics( $snapshot, self::setting( $settings, 'show_details', true ) );
 		if ( null === $metrics ) {
 			return [];
 		}
@@ -167,8 +181,8 @@ final class MaintenanceFlowCompiler {
 	}
 
 	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
-	private function current_state_blocks( array $snapshot ): array {
-		$state = $this->site_state_table( $snapshot );
+	private function current_state_blocks( array $snapshot, array $settings ): array {
+		$state = $this->site_state_table( $snapshot, self::setting( $settings, 'show_notes', true ) );
 		if ( null === $state ) {
 			return [];
 		}
@@ -179,33 +193,34 @@ final class MaintenanceFlowCompiler {
 	}
 
 	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
-	private function maintenance_activity_blocks( array $snapshot ): array {
-		return array_merge(
-			[
-				RenderBlock::heading(
-					__( 'Maintenance Details', 'core-blueprint' ),
-					'section',
-					[ 'break_before' => true, 'space_after' => 1.5 ]
-				),
-				RenderBlock::text(
-					__( 'Overview of all maintenance actions performed in this period.', 'core-blueprint' ),
-					[ 'space_after' => 3.0 ]
-				),
-			],
-			$this->activity_blocks( $snapshot )
-		);
+	private function maintenance_activity_blocks( array $snapshot, array $settings ): array {
+		$blocks = [
+			RenderBlock::heading(
+				__( 'Maintenance Details', 'core-blueprint' ),
+				'section',
+				[ 'break_before' => true, 'space_after' => 1.5 ]
+			),
+		];
+		if ( self::setting( $settings, 'show_intro', true ) ) {
+			$blocks[] = RenderBlock::text(
+				__( 'Overview of all maintenance actions performed in this period.', 'core-blueprint' ),
+				[ 'space_after' => 3.0 ]
+			);
+		}
+		return array_merge( $blocks, $this->activity_blocks( $snapshot ) );
 	}
 
 	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
-	private function notes_blocks( array $snapshot ): array {
+	private function notes_blocks( array $snapshot, array $settings ): array {
 		$notes = $snapshot['notes'] ?? [];
 		if ( ! is_array( $notes ) || [] === $notes ) {
 			return [];
 		}
 
-		$blocks = [
-			RenderBlock::heading( __( 'Notes / Observations', 'core-blueprint' ), 'section', [ 'space_before' => 5.0, 'space_after' => 2.0 ] ),
-		];
+		$blocks = [];
+		if ( self::setting( $settings, 'show_heading', true ) ) {
+			$blocks[] = RenderBlock::heading( __( 'Notes / Observations', 'core-blueprint' ), 'section', [ 'space_before' => 5.0, 'space_after' => 2.0 ] );
+		}
 		foreach ( $notes as $note ) {
 			if ( ! is_array( $note ) ) {
 				continue;
@@ -225,7 +240,7 @@ final class MaintenanceFlowCompiler {
 	}
 
 	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
-	private function footer_blocks( array $snapshot ): array {
+	private function footer_blocks( array $snapshot, array $settings ): array {
 		$site      = is_array( $snapshot['site'] ?? null ) ? $snapshot['site'] : [];
 		$site_url  = (string) ( $site['url'] ?? '' );
 		$site_host = wp_parse_url( $site_url, PHP_URL_HOST );
@@ -239,7 +254,8 @@ final class MaintenanceFlowCompiler {
 					__( 'Report generated for %s', 'core-blueprint' ),
 					$site_host
 				),
-				__( 'Page', 'core-blueprint' )
+				__( 'Page', 'core-blueprint' ),
+				self::setting( $settings, 'show_page_number', true )
 			),
 		];
 	}
@@ -274,7 +290,7 @@ final class MaintenanceFlowCompiler {
 	}
 
 	/** @param array<string,mixed> $snapshot */
-	private function kpi_metrics( array $snapshot ): ?RenderBlock {
+	private function kpi_metrics( array $snapshot, bool $show_details = true ): ?RenderBlock {
 		$kpis               = is_array( $snapshot['kpis'] ?? null ) ? $snapshot['kpis'] : [];
 		$security_available = is_array( $snapshot['security'] ?? null );
 		$order = [
@@ -299,14 +315,14 @@ final class MaintenanceFlowCompiler {
 			$items[] = [
 				'label'  => $label,
 				'value'  => (string) (int) ( $kpis[ $key ]['count'] ?? 0 ),
-				'detail' => implode( '; ', $breakdown ),
+				'detail' => $show_details ? implode( '; ', $breakdown ) : '',
 			];
 		}
 		return [] === $items ? null : RenderBlock::metrics( $items, [ 'space_after' => 2.0, 'keep_together' => true ] );
 	}
 
 	/** @param array<string,mixed> $snapshot */
-	private function site_state_table( array $snapshot ): ?RenderBlock {
+	private function site_state_table( array $snapshot, bool $show_notes = true ): ?RenderBlock {
 		$state = is_array( $snapshot['site_state'] ?? null ) ? $snapshot['site_state'] : [];
 		$rows  = [];
 		foreach ( [ 'wp_core', 'theme', 'plugins', 'php', 'database', 'website' ] as $key ) {
@@ -314,16 +330,20 @@ final class MaintenanceFlowCompiler {
 			if ( ! is_array( $item ) ) {
 				continue;
 			}
-			$rows[] = [
+			$row = [
 				(string) ( $item['label'] ?? '' ),
 				$this->status_glyph( (string) ( $item['status'] ?? 'ok' ) ) . ' ' . (string) ( $item['state'] ?? '' ),
-				(string) ( $item['detail'] ?? '' ),
 			];
+			if ( $show_notes ) {
+				$row[] = (string) ( $item['detail'] ?? '' );
+			}
+			$rows[] = $row;
 		}
-		return [] === $rows ? null : RenderBlock::table(
-			[ __( 'Component', 'core-blueprint' ), __( 'Status', 'core-blueprint' ), __( 'Notes', 'core-blueprint' ) ],
-			$rows
-		);
+		$headers = [ __( 'Component', 'core-blueprint' ), __( 'Status', 'core-blueprint' ) ];
+		if ( $show_notes ) {
+			$headers[] = __( 'Notes', 'core-blueprint' );
+		}
+		return [] === $rows ? null : RenderBlock::table( $headers, $rows );
 	}
 
 	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
@@ -399,10 +419,12 @@ final class MaintenanceFlowCompiler {
 	}
 
 	/** @param array<string,mixed> $snapshot @return list<RenderBlock> */
-	private function summary_blocks( array $snapshot ): array {
-		$blocks   = [];
-		$security = $snapshot['security'] ?? null;
-		if ( is_array( $security ) ) {
+	private function summary_blocks( array $snapshot, array $settings ): array {
+		$blocks        = [];
+		$show_security = self::setting( $settings, 'show_security', true );
+		$show_backups  = self::setting( $settings, 'show_backups', true );
+		$security      = $snapshot['security'] ?? null;
+		if ( $show_security && is_array( $security ) ) {
 			$security_lines = [];
 			$detected       = (int) ( $security['detected'] ?? 0 );
 			if ( 0 === $detected ) {
@@ -432,6 +454,10 @@ final class MaintenanceFlowCompiler {
 				$detected > 0 ? 'critical' : 'success',
 				[ 'space_before' => 5.0, 'space_after' => 2.0, 'keep_together' => true ]
 			);
+		}
+
+		if ( ! $show_backups ) {
+			return $blocks;
 		}
 
 		$backups      = is_array( $snapshot['backups'] ?? null ) ? $snapshot['backups'] : [];
@@ -465,6 +491,11 @@ final class MaintenanceFlowCompiler {
 			[ 'space_after' => 2.0, 'keep_together' => true ]
 		);
 		return $blocks;
+	}
+
+	/** @param array<string,mixed> $settings */
+	private static function setting( array $settings, string $key, bool $default ): bool {
+		return array_key_exists( $key, $settings ) ? (bool) $settings[ $key ] : $default;
 	}
 
 	private function tone_for_status( string $level ): string {
