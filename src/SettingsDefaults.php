@@ -76,9 +76,14 @@ final class SettingsDefaults {
 				],
 				'branding'           => [
 					'logo_attachment_id' => 0,
-					'provider_name'       => '',
-					'provider_contact'    => '',
-					'accent_color'        => '#0064c8',
+					'show_logo'          => true,
+					'provider_name'      => '',
+					'provider_contact'   => '',
+					'accent_color'       => '#0064c8',
+					'surface_style'      => 'cards',
+					'density'            => 'comfortable',
+					'corner_style'       => 'soft',
+					'text_scale'         => 'standard',
 				],
 				'composer'           => [
 					'maintenance' => \CB\Core\Reports\Composer\MaintenanceTemplate::defaults(),
