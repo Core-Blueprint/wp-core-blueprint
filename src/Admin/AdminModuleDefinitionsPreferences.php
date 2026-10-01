@@ -105,6 +105,34 @@ final class AdminModuleDefinitionsPreferences {
 							'moveUp'   => __( 'Move up' ),
 							'moveDown' => __( 'Move down' ),
 						],
+						'blockSettings' => [
+							'header' => [
+								'show_site_url' => __( 'Show site URL', 'core-blueprint' ),
+								'show_metadata' => __( 'Show report metadata', 'core-blueprint' ),
+							],
+							'status' => [
+								'show_details' => __( 'Show status details', 'core-blueprint' ),
+							],
+							'kpis' => [
+								'show_details' => __( 'Show metric details', 'core-blueprint' ),
+							],
+							'current_state' => [
+								'show_notes' => __( 'Show Notes column', 'core-blueprint' ),
+							],
+							'activity' => [
+								'show_intro' => __( 'Show introduction', 'core-blueprint' ),
+							],
+							'summary' => [
+								'show_security' => __( 'Show security summary', 'core-blueprint' ),
+								'show_backups'  => __( 'Show backup summary', 'core-blueprint' ),
+							],
+							'notes' => [
+								'show_heading' => __( 'Show section heading', 'core-blueprint' ),
+							],
+							'footer' => [
+								'show_page_number' => __( 'Show page number', 'core-blueprint' ),
+							],
+						],
 						'i18n' => array_merge(
 							$save_status,
 							[
@@ -119,7 +147,7 @@ final class AdminModuleDefinitionsPreferences {
 								'brandingInvalidHex'          => __( 'Hex colour must be in #RRGGBB form.', 'core-blueprint' ),
 								'brandingConfirmReset'        => sprintf(
 									'%1$s %2$s: %3$s.',
-									__( 'Reset report settings to defaults? Logo, report provider details, and accent colour will be cleared.', 'core-blueprint' ),
+									__( 'Reset report settings to defaults? Logo, report provider details, appearance, and report layout will be restored.', 'core-blueprint' ),
 									__( 'Blocks' ),
 									__( 'Reset to defaults', 'core-blueprint' )
 								),
