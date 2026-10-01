@@ -22,7 +22,10 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 	public function test_plugin_directory_description_stays_concise(): void {
 		$plugin = file_get_contents( CB_CORE_FILE );
 		self::assertIsString( $plugin );
-		self::assertMatchesRegularExpression( '/^\\s*\\*\\s*Description:\\s*(.+)$/m', $plugin, $matches );
+
+		$matched = preg_match( '/^\\s*\\*\\s*Description:\\s*(.+)$/m', $plugin, $matches );
+		self::assertSame( 1, $matched, 'Plugin header Description is missing.' );
+		self::assertArrayHasKey( 1, $matches );
 		self::assertLessThanOrEqual( 140, strlen( trim( (string) $matches[1] ) ) );
 	}
 
