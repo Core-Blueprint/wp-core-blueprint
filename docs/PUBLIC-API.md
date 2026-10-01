@@ -1,6 +1,6 @@
 # Core Blueprint Public API — v1
 
-`CB_CORE_API_VERSION` is `1.1`. Only the contracts documented here (and their linked Foundation documents) are considered stable public API throughout Core Blueprint Base 1.x. A PHP method being `public` does **not** by itself make it a supported third-party contract.
+`CB_CORE_API_VERSION` is `1.2`. Only the contracts documented here (and their linked Foundation documents) are considered stable public API throughout Core Blueprint Base 1.x. A PHP method being `public` does **not** by itself make it a supported third-party contract.
 
 ## Lifecycle
 
@@ -26,6 +26,7 @@
 - Capability catalog — `cb_core_capability_catalog`.
 - Access Mode request bypass — prefer `CB\Core\Security\AccessMode::register_bypass()`; advanced policy may use `cb_core_access_mode_bypass_request`.
 - AI Governance activity reporting — `CB\Core\AIGovernance\Activity::record()`; see `AI-GOVERNANCE.md` for the stable v1 evidence, privacy and attribution contract.
+- Secret Protection Foundation — `CB\Core\Security\SecretProtection`; authenticated, purpose/subject-bound protection for extension-owned credentials without Base-owned credential persistence; introduced in Core API `1.2`; see `SECRET-PROTECTION-FOUNDATION.md`.
 
 ## Canonical module identity and activation
 
@@ -100,7 +101,7 @@ add_action( 'cb_core_register_extensions', static function (): void {
 
 `requires_api` is required and uses `major.minor`. Compatibility requires the same Core API major and a Base API minor greater than or equal to the requested minor. `requires_base` is optional and should be used only when a concrete Base product release is required beyond the API contract. No Composer-style range grammar is part of v1.
 
-`requires_api` expresses the minimum Core API contract a consumer needs; it is not a declaration of the currently installed Base API. A consumer that uses only Core API 1.0 contracts may continue to declare `1.0` under Base API 1.1, while a consumer of the Reorder Foundation must declare at least `1.1`.
+`requires_api` expresses the minimum Core API contract a consumer needs; it is not a declaration of the currently installed Base API. A consumer that uses only Core API 1.0 contracts may continue to declare `1.0` under Base API 1.2, while a consumer of the Reorder Foundation must declare at least `1.1` and a consumer of the Secret Protection Foundation must declare at least `1.2`.
 
 `status_id` is optional and references the separate `Modules\Status` registry. It is not an extension alias. Extension health remains the status vocabulary `ok|warn|err|off|unknown`; `off` is a deliberate state and is not collapsed to an unhealthy boolean.
 
