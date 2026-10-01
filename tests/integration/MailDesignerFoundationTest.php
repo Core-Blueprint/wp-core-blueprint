@@ -5,6 +5,7 @@ use CB\Core\Admin\ScreenContext;
 use CB\Core\Design\Profile\Mail\HtmlRenderer;
 use CB\Core\Design\Profile\Mail\Validator;
 use CB\Core\Mail\Designer\BindingRegistry;
+use CB\Core\Mail\Designer\ComponentRegistry;
 use CB\Core\Mail\Designer\Renderer;
 use CB\Core\Mail\Designer\TemplateRegistry;
 use CB\Core\Mail\Designer\WordPressIntegration;
@@ -18,6 +19,7 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		$this->original_settings = get_option( MailSettings::OPTION, null );
 		TemplateRegistry::_reset_for_testing();
 		BindingRegistry::_reset_for_testing();
+		ComponentRegistry::_reset_for_testing();
 	}
 
 	public function tear_down(): void {
@@ -28,6 +30,7 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		}
 		TemplateRegistry::_reset_for_testing();
 		BindingRegistry::_reset_for_testing();
+		ComponentRegistry::_reset_for_testing();
 		parent::tear_down();
 	}
 
@@ -105,6 +108,29 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( '<script>alert(1)</script>', $html );
 	}
 
+	public function test_mail_renderer_emits_email_client_compatibility_fallbacks(): void {
+		$project = $this->project( [
+			$this->node( 'mail.button', [
+				'label' => 'Open account',
+				'url' => 'https://example.test/account',
+				'background' => '#2563eb',
+				'color' => '#ffffff',
+				'radius' => 6,
+			] ),
+			$this->node( 'mail.spacer', [ 'height' => 24 ] ),
+		] );
+
+		$html = ( new HtmlRenderer() )->render( $project );
+
+		self::assertStringContainsString( '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">', $html );
+		self::assertStringContainsString( '<!--[if mso]><table role="presentation" width="600" align="center"', $html );
+		self::assertStringContainsString( 'mso-table-lspace:0pt;mso-table-rspace:0pt', $html );
+		self::assertStringContainsString( 'bgcolor="#ffffff"', $html );
+		self::assertStringContainsString( 'class="cb-mail-button-table"', $html );
+		self::assertStringContainsString( 'mso-padding-alt:12px 20px', $html );
+		self::assertStringContainsString( 'mso-line-height-rule:exactly', $html );
+	}
+
 	public function test_authoring_markers_are_preview_only(): void {
 		$project = $this->project( [
 			$this->node( 'mail.text', [ 'text' => 'Preview marker boundary' ] ),
@@ -169,6 +195,20 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'data-cb-design-shell-viewport="desktop"', $template );
 		self::assertStringContainsString( 'data-cb-design-shell-viewport="tablet"', $template );
 		self::assertStringContainsString( 'data-cb-design-shell-viewport="mobile"', $template );
+	}
+
+	public function test_core_textual_components_use_content_label_for_editable_copy(): void {
+		$components = ComponentRegistry::all();
+
+		foreach ( [ 'heading', 'text' ] as $component_id ) {
+			self::assertArrayHasKey( $component_id, $components );
+			$fields = array_values( array_filter(
+				$components[ $component_id ]['inspector'],
+				static fn ( array $field ): bool => 'text' === ( $field['key'] ?? '' )
+			) );
+			self::assertCount( 1, $fields );
+			self::assertSame( __( 'Content', 'core-blueprint' ), $fields[0]['label'] );
+		}
 	}
 
 	public function test_mail_designer_uses_canonical_layers_and_selection_lifecycle(): void {

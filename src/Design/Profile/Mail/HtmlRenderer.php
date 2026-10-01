@@ -54,21 +54,25 @@ final class HtmlRenderer {
 		}
 
 		$preheader_html = '' === trim( $preheader ) ? '' : sprintf(
-			'<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;">%s</div>',
+			'<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px;mso-hide:all;">%s</div>',
 			esc_html( $preheader )
 		);
 		$editor_css = $editor_markers
 			? '[data-cb-mail-editor-node][data-cb-mail-selected="true"]>tr>td{outline:2px solid #2271b1;outline-offset:-2px}[data-cb-mail-editor-node][data-cb-mail-hovered="true"]>tr>td{outline:2px dashed #2271b1;outline-offset:-2px}'
 			: '';
 
-		return '<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-			. '<meta name="x-apple-disable-message-reformatting"><style>@media only screen and (max-width:640px){.cb-mail-container{width:100%!important}.cb-mail-pad{padding-left:20px!important;padding-right:20px!important}.cb-mail-button{display:block!important;width:100%!important;box-sizing:border-box!important}}' . $editor_css . '</style></head>'
+		return '<!doctype html><html><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+			. '<meta name="x-apple-disable-message-reformatting"><style>table{mso-table-lspace:0pt;mso-table-rspace:0pt}@media only screen and (max-width:640px){.cb-mail-container{width:100%!important}.cb-mail-pad{padding-left:20px!important;padding-right:20px!important}.cb-mail-button-table{width:100%!important}.cb-mail-button{display:block!important;width:100%!important;box-sizing:border-box!important}}' . $editor_css . '</style>'
+			. '<!--[if mso]><noscript><xml><o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office"><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]--></head>'
 			. '<body style="margin:0;padding:0;background:' . esc_attr( $background ) . ';font-family:' . esc_attr( $font ) . ';color:' . esc_attr( $text_color ) . ';">'
 			. $preheader_html
-			. '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:' . esc_attr( $background ) . ';border-collapse:collapse;"><tr><td align="center" style="padding:32px 12px;">'
-			. '<table role="presentation" class="cb-mail-container" width="' . esc_attr( (string) $width ) . '" cellspacing="0" cellpadding="0" border="0" style="width:' . esc_attr( (string) $width ) . 'px;max-width:100%;background:' . esc_attr( $content_background ) . ';border-collapse:collapse;">'
+			. '<table role="presentation" width="100%" bgcolor="' . esc_attr( $background ) . '" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:' . esc_attr( $background ) . ';border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td align="center" style="padding:32px 12px;">'
+			. '<!--[if mso]><table role="presentation" width="' . esc_attr( (string) $width ) . '" align="center" cellspacing="0" cellpadding="0" border="0"><tr><td><![endif]-->'
+			. '<table role="presentation" class="cb-mail-container" width="' . esc_attr( (string) $width ) . '" bgcolor="' . esc_attr( $content_background ) . '" cellspacing="0" cellpadding="0" border="0" style="width:' . esc_attr( (string) $width ) . 'px;max-width:100%;background:' . esc_attr( $content_background ) . ';border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">'
 			. $body
-			. '</table></td></tr></table></body></html>';
+			. '</table>'
+			. '<!--[if mso]></td></tr></table><![endif]-->'
+			. '</td></tr></table></body></html>';
 	}
 
 	/**
@@ -137,9 +141,9 @@ final class HtmlRenderer {
 				$content .= $this->render_node( $child, $bindings, $theme, [ ...$path, (int) $index ], $editor_markers );
 			}
 		}
-		return '<tr><td style="padding:0;background:' . esc_attr( $background ) . ';"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;">'
+		return '<tr><td bgcolor="' . esc_attr( $background ) . '" style="padding:0;background:' . esc_attr( $background ) . ';"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">'
 			. '<tr><td class="cb-mail-pad" style="padding:' . esc_attr( (string) $padding ) . 'px;">'
-			. '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;">' . $content . '</table>'
+			. '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">' . $content . '</table>'
 			. '</td></tr></table></td></tr>';
 	}
 
@@ -191,8 +195,10 @@ final class HtmlRenderer {
 			return '';
 		}
 		return '<tr><td align="' . esc_attr( $align ) . '" style="padding:0 0 ' . esc_attr( (string) $spacing ) . 'px;">'
-			. '<a class="cb-mail-button" href="' . $url . '" style="display:inline-block;padding:12px 20px;background:' . esc_attr( $background ) . ';border-radius:' . esc_attr( (string) $radius ) . 'px;color:' . esc_attr( $text_color ) . ';font-family:' . esc_attr( $theme['font'] ) . ';font-size:16px;line-height:1.2;font-weight:700;text-decoration:none;">'
-			. esc_html( $label ) . '</a></td></tr>';
+			. '<table role="presentation" class="cb-mail-button-table" align="' . esc_attr( $align ) . '" cellspacing="0" cellpadding="0" border="0" style="border-collapse:separate;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr>'
+			. '<td bgcolor="' . esc_attr( $background ) . '" style="background:' . esc_attr( $background ) . ';border-radius:' . esc_attr( (string) $radius ) . 'px;mso-padding-alt:12px 20px;">'
+			. '<a class="cb-mail-button" href="' . $url . '" style="display:inline-block;padding:12px 20px;background:' . esc_attr( $background ) . ';border-radius:' . esc_attr( (string) $radius ) . 'px;color:' . esc_attr( $text_color ) . ';font-family:' . esc_attr( $theme['font'] ) . ';font-size:16px;line-height:1.2;font-weight:700;text-decoration:none;mso-padding-alt:0;">'
+			. esc_html( $label ) . '</a></td></tr></table></td></tr>';
 	}
 
 	/** @param array<string,mixed> $properties @param array<string,scalar|null> $bindings */
@@ -220,7 +226,7 @@ final class HtmlRenderer {
 	/** @param array<string,mixed> $properties */
 	private function render_spacer( array $properties ): string {
 		$height = $this->int_range( $properties['height'] ?? 24, 0, 120, 24 );
-		return '<tr><td height="' . esc_attr( (string) $height ) . '" style="height:' . esc_attr( (string) $height ) . 'px;line-height:' . esc_attr( (string) $height ) . 'px;font-size:1px;">&nbsp;</td></tr>';
+		return '<tr><td height="' . esc_attr( (string) $height ) . '" style="height:' . esc_attr( (string) $height ) . 'px;line-height:' . esc_attr( (string) $height ) . 'px;font-size:1px;mso-line-height-rule:exactly;">&nbsp;</td></tr>';
 	}
 
 	private function color( mixed $value, string $fallback ): string {
