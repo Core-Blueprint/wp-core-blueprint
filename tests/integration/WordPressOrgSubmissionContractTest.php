@@ -19,6 +19,13 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 		self::assertStringContainsString( 'License: GPLv2 or later', $readme );
 	}
 
+	public function test_plugin_directory_description_stays_concise(): void {
+		$plugin = file_get_contents( CB_CORE_FILE );
+		self::assertIsString( $plugin );
+		self::assertMatchesRegularExpression( '/^\\s*\\*\\s*Description:\\s*(.+)$/m', $plugin, $matches );
+		self::assertLessThanOrEqual( 140, strlen( trim( (string) $matches[1] ) ) );
+	}
+
 	public function test_brevo_external_service_is_disclosed(): void {
 		$readme = file_get_contents( CB_CORE_DIR . 'readme.txt' );
 		$brevo  = file_get_contents( CB_CORE_DIR . 'src/Mail/Transport/BrevoTransport.php' );
