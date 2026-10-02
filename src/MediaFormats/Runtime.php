@@ -149,12 +149,7 @@ final class Runtime {
 		if ( ! is_file( $file ) || ! is_readable( $file ) ) {
 			return false;
 		}
-		$handle = fopen( $file, 'rb' );
-		if ( false === $handle ) {
-			return false;
-		}
-		$header = fread( $handle, 12 );
-		fclose( $handle );
+		$header = file_get_contents( $file, false, null, 0, 12 );
 		if ( ! is_string( $header ) ) {
 			return false;
 		}
