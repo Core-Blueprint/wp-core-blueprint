@@ -574,7 +574,9 @@ final class Assets {
 				static function ( array $existing ): array {
 					return array_merge( $existing, [
 						'i18n' => [
+							/* translators: 1: item label, 2: new position, 3: total number of items. */
 							'movedWithin' => __( '%1$s moved to position %2$d of %3$d.', 'core-blueprint' ),
+							/* translators: 1: item label, 2: destination group label, 3: new position, 4: total number of items in the destination group. */
 							'movedAcross' => __( '%1$s moved to %2$s, position %3$d of %4$d.', 'core-blueprint' ),
 							'rollback'    => __( 'Move could not be completed. The previous position was restored.', 'core-blueprint' ),
 							'cancelled'   => __( 'Move cancelled.', 'core-blueprint' ),
