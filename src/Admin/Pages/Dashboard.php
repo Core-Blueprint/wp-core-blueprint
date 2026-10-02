@@ -157,10 +157,11 @@ final class Dashboard extends PageBase {
 			];
 		}
 
-		$operations_cards[] = [
+		$operations_cards = array_merge( $operations_cards, [
+			[
 				'id'    => 'logs',
-				'title' => __( 'Logs',    'core-blueprint' ),
-				'meta'  => __( 'Audit trail of all CB events',    'core-blueprint' ),
+				'title' => __( 'Logs', 'core-blueprint' ),
+				'meta'  => __( 'Audit trail of all CB events', 'core-blueprint' ),
 				'url'   => admin_url( 'admin.php?page=' . $logs_slug . '&tab=audit' ),
 			],
 			[
@@ -193,7 +194,7 @@ final class Dashboard extends PageBase {
 				] ),
 				'url'   => admin_url( 'admin.php?page=' . $compliance_slug ),
 			],
-		];
+		] );
 
 		$dashboard_user = wp_get_current_user();
 		if (
