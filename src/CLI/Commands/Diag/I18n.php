@@ -56,7 +56,7 @@ final class I18n implements CommandInterface {
 
 		// Round-trip probe.
 		$probe_in  = 'Reports';
-		$probe_out = __( $probe_in, 'core-blueprint' );
+		$probe_out = __( 'Reports', 'core-blueprint' );
 		$lines[]   = '';
 		$lines[]   = 'Round-trip probe:';
 		$lines[]   = "  __( '" . $probe_in . "' )  →  '" . $probe_out . "'";
