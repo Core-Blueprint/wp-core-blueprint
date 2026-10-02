@@ -36,7 +36,7 @@
  *
  * Spacing         --cb-space-1..7              4 8 12 16 24 32 48 px
  *
- * Type            --cb-fs-{2xs..4xl}           10 11 12 13 14 16 20 24 28 px
+ * Type            --cb-fs-{2xs..4xl}           0.625 0.6875 0.75 0.8125 0.875 1 1.25 1.5 1.75 rem
  * Weight          --cb-fw-{regular,medium,semibold,bold}    400 500 600 700
  * Family          --cb-ff-{sans,mono}          HUD chrome + Console/CLI mono
  * Line-height     --cb-lh-{tight,normal,relaxed}            1.2 1.4 1.6
@@ -238,15 +238,15 @@ html[data-cb-theme="core_blueprint_light"] {
 	 * 9 steps. Maps to the values that appeared in the historical
 	 * admin.css after stap-6 split - outliers (15px, 18px, 22px, 30px)
 	 * round to the nearest step. */
-	--cb-fs-2xs:        10px;
-	--cb-fs-xs:         11px;
-	--cb-fs-sm:         12px;
-	--cb-fs-md:         13px;
-	--cb-fs-lg:         14px;
-	--cb-fs-xl:         16px;
-	--cb-fs-2xl:        20px;
-	--cb-fs-3xl:        24px;
-	--cb-fs-4xl:        28px;
+	--cb-fs-2xs:        0.625rem;
+	--cb-fs-xs:         0.6875rem;
+	--cb-fs-sm:         0.75rem;
+	--cb-fs-md:         0.8125rem;
+	--cb-fs-lg:         0.875rem;
+	--cb-fs-xl:         1rem;
+	--cb-fs-2xl:        1.25rem;
+	--cb-fs-3xl:        1.5rem;
+	--cb-fs-4xl:        1.75rem;
 
 	/* ─── Font weights ───────────────────────────────────────────────── */
 	--cb-fw-regular:    400;
