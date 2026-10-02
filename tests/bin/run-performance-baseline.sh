@@ -107,6 +107,7 @@ profile_as() {
   local require_hud_cap="${5:-0}"
   local query_trace="${6:-0}"
   local render_footer="${7:-0}"
+  local opt_in_modules="${8:-}"
   local output_file="$RESULTS_DIR/${output_scenario}.json"
   local trace_file="$TRACE_DIR/${output_scenario}.json"
 
@@ -134,6 +135,7 @@ profile_as() {
     $authenticated = "1" === $argv[4];
     $queryTrace = "1" === $argv[5];
     $rendered = "1" === $argv[6];
+    $optInModules = array_values(array_filter(array_map("trim", explode(",", (string) ($argv[7] ?? "")))));
     $raw = file_get_contents($path);
     $data = json_decode((string) $raw, true, 512, JSON_THROW_ON_ERROR);
     if (!is_array($data) || 1 !== ($data["schema"] ?? null) || !isset($data["metrics"])) {
@@ -147,12 +149,13 @@ profile_as() {
         "authenticated" => $authenticated,
         "query_trace" => $queryTrace,
         "rendered" => $rendered,
+        "opt_in_modules" => $optInModules,
     ];
     file_put_contents(
         $path,
         json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . PHP_EOL
     );
-  ' "$output_file" "$output_scenario" "$plugin_active" "$authenticated" "$query_trace" "$render_footer"
+  ' "$output_file" "$output_scenario" "$plugin_active" "$authenticated" "$query_trace" "$render_footer" "$opt_in_modules"
 
   if [[ "$query_trace" == "1" ]]; then
     php -r '
@@ -194,8 +197,13 @@ profile_as frontend operator_frontend_rendered 1 1 1 1 1
 profile_as admin admin 1 1 0 1
 profile_as dashboard dashboard 1 1
 profile_as logs logs 1 1
-profile_as reports reports 1 1
 profile_as safeguards safeguards 1 1
+
+# Reports is public-v1 default-off. Measure its admin surface only after an
+# explicit canonical opt-in so default footprint and opt-in footprint remain
+# distinguishable in the same baseline artifact.
+php "$REQUEST" enable_reports
+profile_as reports reports 1 1 0 0 0 reports
 
 # Verify that canonical disabled modules do not continue to execute their
 # active runtime paths on an otherwise identical authenticated admin request.
