@@ -106,17 +106,20 @@ final class Repository {
         $page     = max( 1, (int) ( $args['paged'] ?? 1 ) );
         $offset   = ( $page - 1 ) * $per_page;
 
-        $count_sql = "SELECT COUNT(*) FROM {$table} {$where_sql}";
-        $items_sql = "SELECT * FROM {$table} {$where_sql} {$order_sql} LIMIT %d OFFSET %d";
+        $count_sql = "SELECT COUNT(*) FROM %i {$where_sql}";
+        $items_sql = "SELECT * FROM %i {$where_sql} {$order_sql} LIMIT %d OFFSET %d";
 
-        $total = $values
-            ? (int) $wpdb->get_var( $wpdb->prepare( $count_sql, $values ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- query structure is fixed; values are bound here.
-            : (int) $wpdb->get_var( $count_sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- no placeholders exist in this branch; table and WHERE fragments are internal constants.
+        $total = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                $count_sql, // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE fragments are internal/allowlisted; identifier and values are bound below.
+                array_merge( [ $table ], $values )
+            )
+        );
 
         $items = $wpdb->get_results(
             $wpdb->prepare(
-                $items_sql, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- query structure is internal/allowlisted; all variable values are bound below.
-                array_merge( $values, [ $per_page, $offset ] )
+                $items_sql, // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE/ORDER fragments are internal/allowlisted; identifier and values are bound below.
+                array_merge( [ $table ], $values, [ $per_page, $offset ] )
             )
         );
 
@@ -360,9 +363,9 @@ final class Repository {
 
         if ( $ids ) {
             $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-            $notes = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE id IN ({$placeholders}) ORDER BY updated_at DESC", $ids ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- table is Base-owned; placeholder list contains only generated %d tokens; IDs are absint-normalized.
+            $notes = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE id IN ({$placeholders}) ORDER BY updated_at DESC", array_merge( [ $table ], $ids ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholder list contains only generated %d tokens; IDs are absint-normalized.
         } else {
-            $notes = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY updated_at DESC" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Base-owned table identifier; query has no dynamic values.
+            $notes = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY updated_at DESC', $table ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- identifier is bound via %i.
         }
 
         return array_map( [ self::class, 'note_to_export_array' ], $notes ?: [] );
