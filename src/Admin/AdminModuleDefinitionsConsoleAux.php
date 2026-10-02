@@ -35,11 +35,13 @@ final class AdminModuleDefinitionsConsoleAux {
 							'destructiveNote'    => __( 'This command is irreversible.', 'core-blueprint' ),
 							'required'           => __( 'required', 'core-blueprint' ),
 							'fieldRequired'      => __( 'This field is required.', 'core-blueprint' ),
+							/* translators: %d: command duration in milliseconds; substituted by the Console interface. */
 							'durationMs'         => __( '%d ms', 'core-blueprint' ),
 							'noOutput'           => __( '(no output)', 'core-blueprint' ),
 							'noOutputYet'        => __( 'Output will appear here after you run a command.', 'core-blueprint' ),
 							'errorPrefix'        => __( 'Error', 'core-blueprint' ),
 							'warningPrefix'      => __( 'Warning', 'core-blueprint' ),
+							/* translators: %s: network or server error message; substituted by the Console interface. */
 							'transportError'     => __( 'Network or server error: %s', 'core-blueprint' ),
 							'groupObserve'       => __( 'Read-only', 'core-blueprint' ),
 							'groupMutate'        => __( 'State-change', 'core-blueprint' ),
@@ -70,6 +72,7 @@ final class AdminModuleDefinitionsConsoleAux {
 							'secretTokenInfo1'   => __( 'Using this URL will:', 'core-blueprint' ),
 							'secretTokenAction1' => __( 'Disable restrictive features for 60 minutes.', 'core-blueprint' ),
 							'secretTokenAction2' => __( 'Rotate the token (single-use).', 'core-blueprint' ),
+							/* translators: %s: notification email address; substituted by the Console interface. */
 							'secretTokenAction3' => __( 'Send an email notification to %s.', 'core-blueprint' ),
 							'copyToClipboard'    => __( 'Copy URL', 'core-blueprint' ),
 							'copied'             => __( 'Copied!', 'core-blueprint' ),
@@ -79,11 +82,13 @@ final class AdminModuleDefinitionsConsoleAux {
 							'userSearchPlaceholder' => __( 'Search by login, email, or name…', 'core-blueprint' ),
 							'searching'             => __( 'Searching…', 'core-blueprint' ),
 							'noUsersFound'          => __( 'No users found.', 'core-blueprint' ),
+							/* translators: %s: user-search error message; substituted by the Console interface. */
 							'searchFailed'          => __( 'Search failed: %s', 'core-blueprint' ),
 							'runningTitle'         => __( 'Running…', 'core-blueprint' ),
 							'asyncScheduled'       => __( 'Async job scheduled.', 'core-blueprint' ),
 							'asyncPending'         => __( 'Waiting for cron to fire…', 'core-blueprint' ),
 							'asyncRunning'         => __( 'live polling', 'core-blueprint' ),
+							/* translators: %d: elapsed scan time in seconds; substituted by the Console interface. */
 							'elapsedSeconds'       => __( 'Elapsed: %ds', 'core-blueprint' ),
 							'stopProgress'         => __( 'Stop showing progress', 'core-blueprint' ),
 							'asyncStopped'         => __( 'Stopped tracking - the scan continues in the background. Refresh the page to resume tracking, or check Logs once it completes.', 'core-blueprint' ),
