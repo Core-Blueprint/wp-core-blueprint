@@ -89,12 +89,27 @@ final class ScreenAssetRegistry {
 
 	/** Cross-page Base features shared by every registered Core Admin screen. */
 	private static function cross_page_requirements(): array {
-		return [
+		$requirements = [
 			'foundation.icons',
-			'component.hud',
-			'component.mode-switcher',
-			'module.mode-switcher',
-			'module.hud',
+		];
+
+		// HUD presentation is a true opt-in runtime in public v1. Registered
+		// extension pages still receive the shared Core Admin shell, but must not
+		// enqueue HUD CSS/module data while the site-wide HUD preference is off.
+		// The Floating Menu Preferences editor owns its own lazy catalog bootstrap
+		// and therefore remains fully manageable while HUD presentation is disabled.
+		if ( \CB\Core\HUD\Settings::is_enabled() ) {
+			$requirements[] = 'component.hud';
+		}
+
+		$requirements[] = 'component.mode-switcher';
+		$requirements[] = 'module.mode-switcher';
+
+		if ( \CB\Core\HUD\Settings::is_enabled() ) {
+			$requirements[] = 'module.hud';
+		}
+
+		return array_merge( $requirements, [
 			'component.utility',
 			'component.notices',
 			'component.state-badges',
@@ -103,7 +118,7 @@ final class ScreenAssetRegistry {
 			'component.field',
 			'component.spinner',
 			'component.empty-state',
-		];
+		] );
 	}
 
 	/** @return string[] */
