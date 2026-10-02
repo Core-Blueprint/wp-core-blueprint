@@ -221,7 +221,7 @@ final class Core {
 
 		// HUD subsystem - the floating "front door" launcher. Renders on
 		// admin AND frontend for capable logged-in users; honours the
-		// cb_core_hud_enabled filter + Preferences › Appearance toggle as
+		// cb_core_hud_enabled filter + Preferences › Floating Menu toggle as
 		// a kill-switch. Brand abstraction (BrandRegistry, BrandInterface)
 		// provides the supported white-label extension boundary.
 		\CB\Core\HUD\Bootstrap::boot();
