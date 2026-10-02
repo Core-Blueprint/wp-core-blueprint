@@ -123,10 +123,15 @@ trait FieldGroupsView {
 		uasort( $term_taxonomies, static fn( $a, $b ): int => strnatcasecmp( (string) $a->labels->name, (string) $b->labels->name ) );
 		$roles = wp_roles();
 		$user_roles = $roles ? $roles->roles : [];
+		$duplicate_message = '';
+		if ( $duplicate ) {
+			/* translators: %d: number of fields being copied into the duplicated Field Group. */
+			$duplicate_message = sprintf( _n( '%d field will be copied with a new internal ID. Choose a location before creating the duplicate; overlapping locations with the same meta keys are blocked.', '%d fields will be copied with new internal IDs. Choose a location before creating the duplicate; overlapping locations with the same meta keys are blocked.', $duplicate_field_count, 'core-blueprint' ), $duplicate_field_count );
+		}
 		?>
 		<section class="cb-content-models-section cb-content-models-section--settings">
 			<h2><?php echo esc_html( $duplicate ? __( 'Duplicate Field Group', 'core-blueprint' ) : ( $is_edit ? __( 'Edit Field Group', 'core-blueprint' ) : __( 'Add Field Group', 'core-blueprint' ) ) ); ?></h2>
-			<?php if ( $duplicate ) : ?><div class="notice notice-info inline"><p><?php echo esc_html( sprintf( _n( '%d field will be copied with a new internal ID. Choose a location before creating the duplicate; overlapping locations with the same meta keys are blocked.', '%d fields will be copied with new internal IDs. Choose a location before creating the duplicate; overlapping locations with the same meta keys are blocked.', $duplicate_field_count, 'core-blueprint' ), $duplicate_field_count ) ); ?></p></div><?php endif; ?>
+			<?php if ( $duplicate ) : ?><div class="notice notice-info inline"><p><?php echo esc_html( $duplicate_message ); ?></p></div><?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cb-core-form-scope cb-content-models-group-form">
 				<input type="hidden" name="action" value="cb_core_content_models_save_field_group" />
 				<input type="hidden" name="original_id" value="<?php echo esc_attr( $is_edit ? (string) $group['id'] : '' ); ?>" />
