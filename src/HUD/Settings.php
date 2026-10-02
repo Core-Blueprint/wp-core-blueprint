@@ -40,7 +40,7 @@ final class Settings {
 	 */
 	public static function defaults(): array {
 		return [
-			'enabled'           => true,
+			'enabled'           => false,
 			'show_admin'        => true,
 			'show_frontend'     => true,
 			'default_position'  => 'bottom-right',
@@ -52,12 +52,10 @@ final class Settings {
 	/**
 	 * Resolve the persisted site-wide HUD preference.
 	 *
-	 * A missing option keeps the historical enabled fallback for established
-	 * installations. Genuine first installs explicitly seed the disabled state
-	 * during activation.
+	 * Missing state is intentionally disabled for the public v1 contract.
 	 */
 	public static function site_enabled(): bool {
-		return ! (bool) get_option( self::OPTION_DISABLED, false );
+		return ! (bool) get_option( self::OPTION_DISABLED, true );
 	}
 
 	/**
