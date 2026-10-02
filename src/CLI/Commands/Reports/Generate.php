@@ -53,10 +53,12 @@ final class Generate implements CommandInterface {
 			] );
 		} catch ( \InvalidArgumentException $e ) {
 			return Result::error(
+				/* translators: %s: validation exception message. */
 				sprintf( __( 'Invalid input: %s', 'core-blueprint' ), $e->getMessage() )
 			);
 		} catch ( \Throwable $e ) {
 			return Result::error(
+				/* translators: %s: exception message from report generation. */
 				sprintf( __( 'Unexpected error during generation: %s', 'core-blueprint' ), $e->getMessage() )
 			);
 		}
