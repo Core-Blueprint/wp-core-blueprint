@@ -180,11 +180,13 @@ final class OptionPages {
 				$value = FieldTypes::sanitize_value( $field, $raw );
 
 				if ( ! MetaBoxes::is_valid_submission( $field, $raw, $value ) ) {
-					$errors[] = sprintf( __( '%s contains an invalid value and was not changed.', 'core-blueprint' ), (string) ( $field['label'] ?? $name ) );
+					/* translators: %s: field label. */
+			$errors[] = sprintf( __( '%s contains an invalid value and was not changed.', 'core-blueprint' ), (string) ( $field['label'] ?? $name ) );
 					continue;
 				}
 				if ( ! empty( $field['required'] ) && MetaBoxes::is_empty_field_value( $field, $value ) ) {
-					$errors[] = sprintf( __( '%s is required and was not changed.', 'core-blueprint' ), (string) ( $field['label'] ?? $name ) );
+					/* translators: %s: field label. */
+			$errors[] = sprintf( __( '%s is required and was not changed.', 'core-blueprint' ), (string) ( $field['label'] ?? $name ) );
 					continue;
 				}
 
