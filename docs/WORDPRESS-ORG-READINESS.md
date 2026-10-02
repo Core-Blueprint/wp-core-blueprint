@@ -53,8 +53,31 @@ The runtime is deliberately bounded:
 - snippet mutations are audit logged.
 
 WordPress.org review policy for arbitrary executable-code features can still
-require human review or a product discussion. Treat this as a submission review
-risk, not as a reason to silently remove or fork the canonical Base feature.
+require human review or a product discussion. The product decision for Base v1
+is to submit the canonical plugin with Managed Snippets included rather than
+silently remove or fork the feature.
+
+Submission notes should call this out proactively. Explain that Snippets is one
+optional module inside a broader governance, security and administration
+plugin, that it is disabled by default, and that executable-code mutations are
+restricted by the controls above. If the Plugin Review Team requires a product
+change, handle that as an explicit review outcome rather than pre-emptively
+shipping a different WordPress.org build.
+
+## Suggested reviewer note
+
+Core Blueprint includes an optional Managed Snippets module for PHP, JavaScript,
+CSS and HTML. The module is disabled by default and is not required for the
+plugin's primary governance, security or administration functionality.
+
+Snippet mutation is restricted to trusted Core Blueprint operators or identities
+with WordPress code-management authority, respects WordPress file-modification
+policy, validates PHP before storage, integrity-checks managed code before
+runtime, imports snippets disabled by default, audit-logs mutations, and
+provides runtime auto-disable and an emergency server-side stop.
+
+We are highlighting this implementation explicitly so the Plugin Review Team can
+review the capability and its safeguards in context.
 
 ## Final submission gates
 
