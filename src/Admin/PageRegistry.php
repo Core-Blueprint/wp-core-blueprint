@@ -421,7 +421,7 @@ final class PageRegistry {
 
 	private static function diagnostic( string $message ): void {
 		if ( function_exists( '_doing_it_wrong' ) ) {
-			_doing_it_wrong( __METHOD__, $message, '1.0.0' );
+			_doing_it_wrong( __METHOD__, esc_html( $message ), '1.0.0' );
 			return;
 		}
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
