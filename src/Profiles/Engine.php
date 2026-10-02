@@ -106,6 +106,7 @@ final class Engine {
 				$attempted[] = $id;
 				$section->apply( $payload['data'], $actor );
 				if ( ! $section->verify( $payload['data'] ) ) {
+					/* translators: %s: profile section ID. */
 					throw new \RuntimeException( sprintf( __( 'Profile section %s did not verify after apply.', 'core-blueprint' ), $id ) );
 				}
 				$applied[] = $id;
@@ -170,11 +171,13 @@ final class Engine {
 		}
 		foreach ( $sections as $id => &$payload ) {
 			if ( ! isset( $registry[ $id ] ) ) {
+				/* translators: %s: profile section ID. */
 				throw new \InvalidArgumentException( sprintf( __( 'Profile section %s is not available on this site.', 'core-blueprint' ), (string) $id ) );
 			}
 			$section = $registry[ $id ];
 			$source_schema_version = (int) ( $payload['schema_version'] ?? 0 );
 			if ( ! $section->supports_schema_version( $source_schema_version ) ) {
+				/* translators: %s: profile section ID. */
 				throw new \InvalidArgumentException( sprintf( __( 'Profile section %s uses an unsupported schema version.', 'core-blueprint' ), (string) $id ) );
 			}
 			$data = $payload['data'] ?? null;
