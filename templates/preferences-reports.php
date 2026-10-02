@@ -100,7 +100,7 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 							class="button cb-core-button cb-core-button--secondary"
 							data-cb-design-shell-fullscreen
 							data-cb-design-shell-fullscreen-enter-label="<?php echo esc_attr__( 'Open Designer Mode', 'core-blueprint' ); ?>"
-							data-cb-design-shell-fullscreen-exit-label="<?php echo esc_attr__( 'Close', 'default' ); ?>"
+							data-cb-design-shell-fullscreen-exit-label="<?php echo esc_attr__( 'Close', 'core-blueprint' ); ?>"
 							aria-pressed="false"
 						><span data-cb-design-shell-fullscreen-label><?php echo esc_html__( 'Open Designer Mode', 'core-blueprint' ); ?></span></button>
 						<button
@@ -164,7 +164,7 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 					>
 						<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Designer panels', 'core-blueprint' ); ?>">
 							<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"><?php esc_html_e( 'Inspector', 'core-blueprint' ); ?></button>
-							<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="layers" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Layers', 'default' ); ?></button>
+							<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="layers" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Layers', 'core-blueprint' ); ?></button>
 							<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="settings" data-cb-design-shell-sidebar-role="settings"><?php esc_html_e( 'Settings', 'core-blueprint' ); ?></button>
 						</div>
 
