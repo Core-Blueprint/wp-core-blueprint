@@ -2,7 +2,7 @@
 
 This harness extends the F2 observation baseline with opt-in query tracing for the rendered logged-in operator frontend. The purpose is to identify where measured Base query overhead originates before any production optimization is considered.
 
-It measures fourteen isolated requests in one temporary WordPress installation.
+It measures fourteen isolated profile requests in one temporary WordPress installation, plus isolated setup/state-transition requests that are not included as profile records.
 
 **Before Base activation (WordPress-only controls):**
 
@@ -11,16 +11,24 @@ It measures fourteen isolated requests in one temporary WordPress installation.
 - logged-in administrator frontend with the footer/render phase executed and query tracing enabled;
 - generic WordPress admin dashboard.
 
-**After Base activation:**
+**After Base activation, while public-v1 default-off modules remain off:**
 
+- first authenticated WordPress admin request after activation;
 - anonymous frontend;
 - logged-in operator frontend (and verifies the user has `cb_core_hud_use`);
 - logged-in operator frontend with the footer/HUD render phase executed and query tracing enabled;
 - generic WordPress admin dashboard;
 - Core Blueprint Dashboard;
 - Logs;
-- Reports;
 - Safeguards.
+
+**Explicit opt-in observation:**
+
+- Reports, measured only after the harness enables the default-off Reports subsystem through its canonical state authority. The record is marked with `context.opt_in_modules: ["reports"]` so it is never mistaken for default Base footprint.
+
+**Disabled-module observation:**
+
+- generic WordPress admin dashboard after the harness disables every canonical optional module.
 
 Every normal scenario emits JSON with request memory, query count, classic/script-module asset counts, Core Blueprint local asset bytes, the WordPress autoload footprint and scheduled Core Blueprint cron hooks/events. Records include whether Base was active, whether the request was authenticated, whether query tracing was enabled and whether the footer/render phase was executed.
 
