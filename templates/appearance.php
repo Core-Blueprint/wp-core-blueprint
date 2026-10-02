@@ -95,7 +95,7 @@ $auto_option = [
 				aria-pressed="<?php echo $selected_user ? 'true' : 'false'; ?>">
 				<?php if ( $has_partner_svg ) : ?>
 					<span class="cb-core-theme-preview cb-core-theme-preview-partner">
-						<?php echo $theme['preview_svg']; // already wp_kses'd by \CB\Core\Themes::normalize() ?>
+						<?php echo \CB\Core\Themes::sanitize_preview_svg( (string) $theme['preview_svg'] ); ?>
 					</span>
 				<?php else : ?>
 					<span class="cb-core-theme-preview <?php echo esc_attr( $preview_class ); ?>" data-theme-preview="<?php echo esc_attr( $slug ); ?>">
