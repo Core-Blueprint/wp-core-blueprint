@@ -26,7 +26,7 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 		parent::tear_down();
 	}
 
-	public function test_first_activation_seeds_optional_workflows_off_and_hud_off(): void {
+	public function test_first_activation_starts_optional_workflows_off_and_hud_off(): void {
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		wp_set_current_user( $user_id );
 
@@ -42,19 +42,16 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 		self::assertTrue( Settings::shield_enabled(), 'Core Shield remains part of the Base safety foundation.' );
 	}
 
-	public function test_established_activation_preserves_legacy_enabled_fallbacks(): void {
-		update_option( 'cb_core_first_activated_at', '2026-01-01 00:00:00', false );
-		update_option( CB_CORE_SETTINGS, Settings::defaults(), true );
+	public function test_public_v1_optional_workflow_defaults_are_disabled(): void {
+		$defaults = Settings::defaults();
 
-		Core::activate();
-
-		self::assertTrue( IntegrityState::is_enabled() );
-		self::assertTrue( NotesState::is_enabled() );
-		self::assertTrue( ReportsState::is_enabled() );
-		self::assertTrue( MediaReplaceState::is_enabled() );
-		self::assertTrue( PackageDownloadState::is_enabled() );
-		self::assertTrue( UserRolesState::is_enabled() );
-		self::assertTrue( HudSettings::site_enabled() );
+		self::assertFalse( (bool) ( $defaults['integrity']['enabled'] ?? true ) );
+		self::assertFalse( (bool) ( $defaults['notes']['enabled'] ?? true ) );
+		self::assertFalse( (bool) ( $defaults['reports']['enabled'] ?? true ) );
+		self::assertFalse( MediaReplaceState::is_enabled() );
+		self::assertFalse( PackageDownloadState::is_enabled() );
+		self::assertFalse( UserRolesState::is_enabled() );
+		self::assertFalse( HudSettings::site_enabled() );
 	}
 
 	public function test_noninteractive_first_activation_does_not_mint_an_operator(): void {
@@ -74,11 +71,11 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 	}
 
 	public function test_hud_site_preference_can_be_explicitly_toggled(): void {
-		self::assertTrue( HudSettings::site_enabled() );
-		self::assertTrue( HudSettings::set_site_enabled( false, 'test' ) );
 		self::assertFalse( HudSettings::site_enabled() );
 		self::assertTrue( HudSettings::set_site_enabled( true, 'test' ) );
 		self::assertTrue( HudSettings::site_enabled() );
+		self::assertTrue( HudSettings::set_site_enabled( false, 'test' ) );
+		self::assertFalse( HudSettings::site_enabled() );
 	}
 
 	public function test_floating_menu_save_validates_before_visibility_mutation_and_restores_on_failure(): void {
@@ -102,6 +99,28 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 		self::assertLessThan( $persist, $previous );
 		self::assertLessThan( $menu_save, $persist );
 		self::assertLessThan( $rollback, $menu_save, 'A failed menu save must restore the prior HUD visibility state.' );
+	}
+
+	public function test_explicit_enabled_state_survives_reactivation(): void {
+		update_option( 'cb_core_first_activated_at', '2026-01-01 00:00:00', false );
+
+		IntegrityState::set_enabled( true, 'test' );
+		NotesState::set_enabled( true, 'test' );
+		ReportsState::set_enabled( true, 'test' );
+		MediaReplaceState::set_enabled( true, 'test' );
+		PackageDownloadState::set_enabled( true, 'test' );
+		UserRolesState::set_enabled( true, 'test' );
+		self::assertTrue( HudSettings::set_site_enabled( true, 'test' ) );
+
+		Core::activate();
+
+		self::assertTrue( IntegrityState::is_enabled() );
+		self::assertTrue( NotesState::is_enabled() );
+		self::assertTrue( ReportsState::is_enabled() );
+		self::assertTrue( MediaReplaceState::is_enabled() );
+		self::assertTrue( PackageDownloadState::is_enabled() );
+		self::assertTrue( UserRolesState::is_enabled() );
+		self::assertTrue( HudSettings::site_enabled() );
 	}
 
 	public function test_core_blueprint_menu_is_positioned_after_settings(): void {
