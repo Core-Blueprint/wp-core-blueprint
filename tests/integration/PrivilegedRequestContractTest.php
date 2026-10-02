@@ -89,6 +89,10 @@ final class CB_Base_Privileged_Request_Contract_Test extends WP_UnitTestCase {
         self::assertFalse( Request::bool( 'enabled' ) );
     }
 
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
     public function test_c1_ajax_permissions_request_contract(): void {
         PermissionsActions::init();
         self::assertNotFalse( has_action( 'wp_ajax_cb_core_save_permission_hide', [ PermissionsActions::class, 'save_hide' ] ) );
