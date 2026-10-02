@@ -1,13 +1,17 @@
 <?php
 declare(strict_types=1);
 
+use CB\Core\Notes\DB\Install;
 use CB\Core\Notes\Repository;
 
 final class CB_Base_Notes_Repository_Content_Contract_Test extends WP_UnitTestCase {
 
 	public function set_up(): void {
 		parent::set_up();
-		Repository::install_schema();
+		Install::install();
+
+		global $wpdb;
+		$wpdb->query( 'DELETE FROM ' . Install::table_name() ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- isolated integration-test fixture reset.
 	}
 
 	public function test_create_preserves_literal_backslashes_after_request_normalization(): void {
