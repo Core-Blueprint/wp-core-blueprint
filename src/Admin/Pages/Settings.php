@@ -129,6 +129,7 @@ final class Settings extends PageBase {
 						<?php echo esc_html( true === $provider['first_party'] ? __( 'Official Core Blueprint', 'core-blueprint' ) : __( 'Third-party extension', 'core-blueprint' ) ); ?>
 					</span>
 				</span>
+				<?php /* translators: %s: extension developer name. */ ?>
 				<span class="cb-core-tab-card__desc"><?php printf( esc_html__( 'Developer: %s', 'core-blueprint' ), esc_html( (string) $provider['developer_name'] ) ); ?></span>
 			</span>
 			<span class="cb-core-tab-card__arrow" aria-hidden="true"><?php echo Icon::render( 'chevron-right', [ 'size' => Icon::SIZE_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Icon::render() is escape-clean. ?></span>
@@ -165,6 +166,7 @@ final class Settings extends PageBase {
 		<?php if ( $first_party ) : ?>
 			<p><?php esc_html_e( 'This is an official Core Blueprint extension developed and supported by Core Blueprint.', 'core-blueprint' ); ?></p>
 		<?php else : ?>
+			<?php /* translators: %s: third-party extension developer name. */ ?>
 			<p><?php printf( esc_html__( 'This extension is developed and supported by %s, not by Core Blueprint.', 'core-blueprint' ), esc_html( $developer_name ) ); ?></p>
 		<?php endif; ?>
 		<?php if ( '' !== $support_url ) : ?>
