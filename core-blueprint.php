@@ -25,9 +25,9 @@ defined( 'ABSPATH' ) || exit;
 // The duplicate path is still written to the PHP error log so packaging mistakes
 // remain diagnosable without taking wp-admin down.
 if ( defined( 'CB_CORE_FILE' ) || defined( 'CB_CORE_VERSION' ) ) {
-	$loaded_file = defined( 'CB_CORE_FILE' ) ? (string) CB_CORE_FILE : '';
-	if ( '' !== $loaded_file && $loaded_file !== __FILE__ ) {
-		error_log( sprintf( '[Core Blueprint] Duplicate plugin load prevented. Active entrypoint: %s; skipped: %s', $loaded_file, __FILE__ ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- emergency bootstrap diagnostic.
+	$cb_core_loaded_file = defined( 'CB_CORE_FILE' ) ? (string) CB_CORE_FILE : '';
+	if ( '' !== $cb_core_loaded_file && $cb_core_loaded_file !== __FILE__ ) {
+		error_log( sprintf( '[Core Blueprint] Duplicate plugin load prevented. Active entrypoint: %s; skipped: %s', $cb_core_loaded_file, __FILE__ ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- emergency bootstrap diagnostic.
 	}
 	return;
 }
