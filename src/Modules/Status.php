@@ -148,7 +148,7 @@ final class Status {
 		try {
 			$raw = call_user_func( $definition['provider'] );
 		} catch ( \Throwable $e ) {
-			error_log( sprintf( 'CB Modules\\Status [%s]: %s', $id, $e->getMessage() ) );
+			error_log( sprintf( 'CB Modules\\Status [%s]: %s', $id, $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- last-resort provider failure diagnostic; status fallback must not depend on AuditLog.
 			return self::fallback( 'warn', self::unavailable_label(), $id, $definition );
 		}
 
