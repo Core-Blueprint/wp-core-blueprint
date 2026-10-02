@@ -462,7 +462,7 @@ final class Registry {
 
 	private static function diagnostic( string $message ): void {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[Core Blueprint Interoperability] ' . $message );
+			error_log( '[Core Blueprint Interoperability] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-only contract diagnostic.
 		}
 	}
 }
