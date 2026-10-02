@@ -46,6 +46,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'Review this site step by step and decide which Core Blueprint features belong here. Nothing is changed automatically.', $html );
 		self::assertStringContainsString( 'You can return to Core Setup at any time. Review statuses describe the current configuration, not an activation error.', $html );
 		self::assertStringContainsString( 'Start review', $html );
+		self::assertStringContainsString( 'button cb-core-button cb-core-button--primary', $html );
 		self::assertStringContainsString( 'tab=environment-availability', $html );
 		self::assertStringContainsString( 'The first authenticated activator was assigned the CB Operator role.', $html );
 		self::assertStringContainsString( 'tab=permissions', $html );
@@ -79,6 +80,14 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertMatchesRegularExpression(
 			"/'components'\\s*=>\\s*\\[[\\s\\S]*'buttons'/",
 			$source
+		);
+
+		$buttons = file_get_contents( CB_CORE_DIR . 'assets/css/components/buttons.css' );
+		self::assertIsString( $buttons );
+		self::assertStringContainsString(
+			'.cb-core-wrap .button.cb-core-button.cb-core-button--primary',
+			$buttons,
+			'Formal Core Blueprint primary buttons must outrank the generic admin-theme button selector.'
 		);
 	}
 
