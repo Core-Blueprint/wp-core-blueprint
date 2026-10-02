@@ -110,12 +110,12 @@ final class Repository {
         $items_sql = "SELECT * FROM {$table} {$where_sql} {$order_sql} LIMIT %d OFFSET %d";
 
         $total = $values
-            ? (int) $wpdb->get_var( $wpdb->prepare( $count_sql, $values ) )
-            : (int) $wpdb->get_var( $count_sql );
+            ? (int) $wpdb->get_var( $wpdb->prepare( $count_sql, $values ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- query structure is fixed; values are bound here.
+            : (int) $wpdb->get_var( $count_sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- no placeholders exist in this branch; table and WHERE fragments are internal constants.
 
         $items = $wpdb->get_results(
             $wpdb->prepare(
-                $items_sql,
+                $items_sql, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- query structure is internal/allowlisted; all variable values are bound below.
                 array_merge( $values, [ $per_page, $offset ] )
             )
         );
