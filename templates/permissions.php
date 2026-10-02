@@ -61,7 +61,7 @@ defined( 'ABSPATH' ) || exit;
 			// scanning the table.
 			$self_is_operator = in_array( (int) $current_user_id, $current_operator_ids, true );
 			?>
-			<div class="cb-core-permissions-self-state" data-is-operator="<?php echo $self_is_operator ? 'yes' : 'no'; ?>">
+			<div class="cb-core-permissions-self-state" data-is-operator="<?php echo esc_attr( $self_is_operator ? 'yes' : 'no' ); ?>">
 				<?php
 				echo \CB\Core\UI\Status::render(
 					$self_is_operator ? 'active' : 'warning',
