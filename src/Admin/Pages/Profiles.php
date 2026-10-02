@@ -134,6 +134,11 @@ final class Profiles extends PageBase {
 		</div>
 
 		<?php foreach ( (array) ( $preview['sections'] ?? [] ) as $id => $section ) : ?>
+			<?php
+			$section_change_count = (int) ( $section['count'] ?? 0 );
+			/* translators: %d: number of profile changes in this section. */
+			$section_change_label = sprintf( _n( '%d change', '%d changes', $section_change_count, 'core-blueprint' ), $section_change_count );
+			?>
 			<div class="cb-core-card cb-core-card--spacious">
 				<div class="cb-core-card__header">
 					<h3 class="cb-core-card__title"><?php echo esc_html( (string) ( $section['label'] ?? $id ) ); ?></h3>
