@@ -74,7 +74,7 @@ final class CB_Base_Performance_Baseline_Contract_Test extends WP_UnitTestCase {
 			$source
 		);
 		self::assertStringNotContainsString(
-			"self::$prepared_ready = false;\n\t\t\tdelete_option( self::RUNTIME_SUSPENDED_OPTION );",
+			'self::$prepared_ready = false;' . "\n\t\t\t" . 'delete_option( self::RUNTIME_SUSPENDED_OPTION );',
 			$source
 		);
 	}
