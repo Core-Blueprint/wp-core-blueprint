@@ -53,7 +53,8 @@ final class Failsafe {
 				'items'       => [
 					__( 'All restrictive Core Blueprint features are disabled for 60 minutes when the URL is used.', 'core-blueprint' ),
 					__( 'The token is rotated after use.', 'core-blueprint' ),
-					sprintf( __( 'An email notification is sent to %s.', 'core-blueprint' ), $admin_email ),
+					/* translators: %s: administrator email address. */
+				sprintf( __( 'An email notification is sent to %s.', 'core-blueprint' ), $admin_email ),
 					__( 'The event is recorded in the audit log.', 'core-blueprint' ),
 				],
 			],
