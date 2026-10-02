@@ -264,8 +264,8 @@ foreach ( $cb_snippets_runtime_files as $runtime_file ) {
 // Preserved deliberately: registry.php, code/* and direct-access guard files.
 
 // ─── Base-owned database tables ──────────────────────────────────────────────
-// Identifiers cannot be parameterised with $wpdb->prepare(). Validate the
-// complete generated identifier and quote it as an identifier instead.
+// Base requires WordPress 7.0+, so table identifiers use the native %i
+// placeholder rather than interpolating validated identifiers manually.
 
 $cb_base_tables = [
 	$wpdb->prefix . 'cb_core_audit_log',
