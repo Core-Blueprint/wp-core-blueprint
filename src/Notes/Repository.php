@@ -109,14 +109,14 @@ final class Repository {
         $count_sql = "SELECT COUNT(*) FROM %i {$where_sql}";
         $items_sql = "SELECT * FROM %i {$where_sql} {$order_sql} LIMIT %d OFFSET %d";
 
-        $total = (int) $wpdb->get_var(
+        $total = (int) $wpdb->get_var( // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- count SQL is internal; %i binds the table and all filter values are prepared below.
             $wpdb->prepare(
                 $count_sql, // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE fragments are internal/allowlisted; identifier and values are bound below.
                 array_merge( [ $table ], $values )
             )
         );
 
-        $items = $wpdb->get_results(
+        $items = $wpdb->get_results( // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- list SQL is internal; %i binds the table and all filter/pagination values are prepared below.
             $wpdb->prepare(
                 $items_sql, // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE/ORDER fragments are internal/allowlisted; identifier and values are bound below.
                 array_merge( [ $table ], $values, [ $per_page, $offset ] )
@@ -363,9 +363,9 @@ final class Repository {
 
         if ( $ids ) {
             $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-            $notes = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE id IN ({$placeholders}) ORDER BY updated_at DESC", array_merge( [ $table ], $ids ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholder list contains only generated %d tokens; IDs are absint-normalized.
+            $notes = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE id IN ({$placeholders}) ORDER BY updated_at DESC", array_merge( [ $table ], $ids ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,PluginCheck.Security.DirectDB.UnescapedDBParameter -- %i binds the table; placeholder list contains only generated %d tokens and IDs are absint-normalized.
         } else {
-            $notes = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY updated_at DESC', $table ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- identifier is bound via %i.
+            $notes = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY updated_at DESC', $table ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- identifier is bound via %i and there are no dynamic values.
         }
 
         return array_map( [ self::class, 'note_to_export_array' ], $notes ?: [] );
