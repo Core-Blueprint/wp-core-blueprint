@@ -703,7 +703,7 @@ class SystemLog {
 		// are registered with xgettext below via _register_translatable_strings()
 		// so translators can pick them up.
 		$translated = ( did_action( 'init' ) > 0 || doing_action( 'init' ) )
-			? __( $template, 'core-blueprint' )
+			? translate( $template, 'core-blueprint' ) // phpcs:ignore WordPress.WP.I18n.LowLevelTranslationFunction,WordPress.WP.I18n.NonSingularStringLiteralText -- Built-in templates are statically registered below; runtime selection is intentional.
 			: $template;
 
 		return preg_replace_callback(
