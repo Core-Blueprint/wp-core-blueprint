@@ -355,7 +355,8 @@ final class AuditLog {
 		for ( $batch = 0; $batch < $max_batches; $batch++ ) {
 			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
-					"SELECT id, event_type FROM {$table} WHERE created_at < %s AND id > %d ORDER BY id ASC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					'SELECT id, event_type FROM %i WHERE created_at < %s AND id > %d ORDER BY id ASC LIMIT %d',
+					$table,
 					$cutoff,
 					$last_id,
 					$batch_size
@@ -381,8 +382,8 @@ final class AuditLog {
 			if ( ! empty( $delete_ids ) ) {
 				$placeholders = implode( ', ', array_fill( 0, count( $delete_ids ), '%d' ) );
 				$sql = $wpdb->prepare(
-					"DELETE FROM {$table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Base-owned table; generated %d placeholders from integer IDs.
-					...$delete_ids
+					"DELETE FROM %i WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- generated %d placeholders from integer IDs.
+					array_merge( [ $table ], $delete_ids )
 				);
 				$deleted = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared
 				if ( false !== $deleted ) {
