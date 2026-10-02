@@ -190,11 +190,16 @@ trait PostTypesView {
 				$used_by[] = (string) ( $group['title'] ?? $group['id'] ?? '' );
 			}
 		}
+		$used_by_message = '';
+		if ( ! empty( $used_by ) ) {
+			/* translators: %s: comma-separated names of taxonomies or Field Groups using this post type. */
+			$used_by_message = sprintf( __( 'This post type is still used by: %s. Update or remove those taxonomies or field groups first.', 'core-blueprint' ), implode( ', ', $used_by ) );
+		}
 		?>
 		<h2><?php esc_html_e( 'Delete Post Type Definition', 'core-blueprint' ); ?></h2>
 		<div class="notice notice-warning inline"><p><strong><?php echo esc_html( (string) $model['plural_label'] ); ?></strong> — <?php esc_html_e( 'This removes only the Core Blueprint definition. Existing database content is not deleted, but WordPress will stop recognising it as this post type until an equivalent definition is restored.', 'core-blueprint' ); ?></p></div>
 		<?php if ( ! empty( $used_by ) ) : ?>
-			<div class="notice notice-error inline"><p><?php echo esc_html( sprintf( __( 'This post type is still used by: %s. Update or remove those taxonomies or field groups first.', 'core-blueprint' ), implode( ', ', $used_by ) ) ); ?></p></div>
+			<div class="notice notice-error inline"><p><?php echo esc_html( $used_by_message ); ?></p></div>
 		<?php else : ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="cb_core_content_models_delete_post_type" />
