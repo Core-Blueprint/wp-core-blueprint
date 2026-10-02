@@ -353,7 +353,7 @@ final class AuditLog {
 		$total       = 0;
 
 		for ( $batch = 0; $batch < $max_batches; $batch++ ) {
-			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery,PluginCheck.Security.DirectDB.UnescapedDBParameter -- %i binds the Base-owned table identifier; remaining values use typed placeholders.
 				$wpdb->prepare(
 					'SELECT id, event_type FROM %i WHERE created_at < %s AND id > %d ORDER BY id ASC LIMIT %d',
 					$table,
@@ -385,7 +385,7 @@ final class AuditLog {
 					"DELETE FROM %i WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- generated %d placeholders from integer IDs.
 					array_merge( [ $table ], $delete_ids )
 				);
-				$deleted = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared
+				$deleted = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- $sql is produced immediately above by prepare() with %i and generated %d placeholders.
 				if ( false !== $deleted ) {
 					$total += (int) $deleted;
 				}
