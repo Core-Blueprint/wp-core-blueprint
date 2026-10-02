@@ -133,7 +133,7 @@ final class AdminIntegration {
 			exit;
 		} catch ( \Throwable $e ) {
 			if ( '' !== $archive && is_file( $archive ) ) {
-				@unlink( $archive );
+				wp_delete_file( $archive );
 			}
 
 			self::audit_safely( 'package.download_failed', 'warning', [
