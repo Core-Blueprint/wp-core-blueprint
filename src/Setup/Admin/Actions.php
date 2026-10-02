@@ -33,7 +33,7 @@ final class Actions {
 
 		$check_id = isset( $_POST['check_id'] ) ? sanitize_key( wp_unslash( $_POST['check_id'] ) ) : '';
 		$disposition = isset( $_POST['disposition'] ) ? sanitize_key( wp_unslash( $_POST['disposition'] ) ) : '';
-		$reason = isset( $_POST['reason'] ) ? (string) wp_unslash( $_POST['reason'] ) : '';
+		$reason = isset( $_POST['reason'] ) ? sanitize_textarea_field( wp_unslash( $_POST['reason'] ) ) : '';
 		$return_tab = self::return_tab_from_request();
 
 		self::guard_check( $check_id );
@@ -81,7 +81,7 @@ final class Actions {
 		self::guard( 'cb_core_setup_note' );
 
 		$section_id = isset( $_POST['section_id'] ) ? sanitize_key( wp_unslash( $_POST['section_id'] ) ) : '';
-		$note = isset( $_POST['note'] ) ? (string) wp_unslash( $_POST['note'] ) : '';
+		$note = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '';
 		$return_tab = self::return_tab_from_request();
 
 		if ( ! SectionRegistry::is_known( $section_id ) || ! SectionRegistry::can_manage_note( $section_id ) ) {
