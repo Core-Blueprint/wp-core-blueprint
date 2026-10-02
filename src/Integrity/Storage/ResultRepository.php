@@ -509,7 +509,7 @@ final class ResultRepository {
 			$next['schedule'] = 'disabled';
 		}
 
-		$next['enabled']              = (bool) ( $next['enabled'] ?? true );
+		$next['enabled']              = (bool) ( $next['enabled'] ?? false );
 		$next['plugin_checksums']     = (bool) $next['plugin_checksums'];
 		$next['theme_checksums']      = (bool) $next['theme_checksums'];
 		$next['uploads_scan']         = (bool) $next['uploads_scan'];
@@ -527,7 +527,7 @@ final class ResultRepository {
 	 */
 	public static function settingsDefaults(): array {
 		return [
-			'enabled'              => true,
+			'enabled'              => false,
 			'schedule'             => 'disabled',
 			'plugin_checksums'     => true,
 			'theme_checksums'      => true,

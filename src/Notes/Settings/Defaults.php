@@ -10,7 +10,7 @@ final class Defaults {
 
 	public static function values(): array {
         return [
-            'enabled'               => true,
+            'enabled'               => false,
             'default_type'          => 'General',
             'default_status'        => 'Backlog',
             'default_assigned_to'   => 0,

@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace CB\Core\HUD;
 
+use CB\Core\Log\AuditLog;
+
 defined( 'ABSPATH' ) || exit;
 
 final class Settings {
@@ -38,7 +40,7 @@ final class Settings {
 	 */
 	public static function defaults(): array {
 		return [
-			'enabled'           => true,
+			'enabled'           => false,
 			'show_admin'        => true,
 			'show_frontend'     => true,
 			'default_position'  => 'bottom-right',
@@ -48,19 +50,52 @@ final class Settings {
 	}
 
 	/**
+	 * Resolve the persisted site-wide HUD preference.
+	 *
+	 * Missing state is intentionally disabled for the public v1 contract.
+	 */
+	public static function site_enabled(): bool {
+		return ! (bool) get_option( self::OPTION_DISABLED, true );
+	}
+
+	/**
+	 * Persist the site-wide user-facing HUD preference.
+	 *
+	 * The developer filter remains authoritative at runtime and is deliberately
+	 * not mutated here. This method changes only the site preference.
+	 */
+	public static function set_site_enabled( bool $enabled, string $actor = 'unknown' ): bool {
+		$before   = self::site_enabled();
+		$disabled = $enabled ? '0' : '1';
+		$stored   = get_option( self::OPTION_DISABLED, null );
+
+		if ( null !== $stored && (string) $stored === $disabled ) {
+			return true;
+		}
+
+		$updated = update_option( self::OPTION_DISABLED, $disabled, false );
+		if ( ! $updated && self::site_enabled() !== $enabled ) {
+			return false;
+		}
+
+		if ( $before !== $enabled && class_exists( AuditLog::class ) ) {
+			AuditLog::log( 'hud.visibility.changed', 'notice', [
+				'actor'   => $actor,
+				'enabled' => $enabled,
+			] );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Resolve whether HUD should bootstrap on this request. False
 	 * short-circuits everything - no hooks, no enqueue, no rendering.
 	 *
-	 * Two paths to disabled:
-	 *   1. `cb_core_hud_disabled` site option is truthy (set via
-	 *      Preferences › Appearance toggle - user-facing kill switch)
-	 *   2. `cb_core_hud_enabled` filter returns false (developer kill
-	 *      switch, e.g. mu-plugin override during incident response)
-	 *
-	 * Defaults to enabled. Both gates must clear for HUD to load.
+	 * Both the site preference and developer filter must allow the HUD.
 	 */
 	public static function is_enabled(): bool {
-		if ( get_option( self::OPTION_DISABLED, false ) ) {
+		if ( ! self::site_enabled() ) {
 			return false;
 		}
 

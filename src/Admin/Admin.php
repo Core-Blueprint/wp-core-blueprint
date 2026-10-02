@@ -79,7 +79,7 @@ final class Admin {
 			CB_CORE_PARENT_MENU,
 			[ __CLASS__, 'render_parent_landing' ],
 			self::get_menu_icon(),
-			3
+			81
 		);
 
 		if ( $hook && ! current_user_can( 'manage_options' ) && AdminNoticesAdmin::can_manage() ) {

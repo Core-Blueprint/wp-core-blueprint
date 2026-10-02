@@ -33,7 +33,7 @@ Core Blueprint does **not** promise perfect security, perfect privacy, or a flaw
 
 ## What Core Blueprint is
 
-Core Blueprint Base is the foundation plugin for every Core Blueprint site.
+Core Blueprint Base is the shared foundation plugin for the Core Blueprint suite.
 
 It provides shared infrastructure used by Base itself and by optional Core Blueprint extensions, including:
 
@@ -340,7 +340,7 @@ The project is still evolving toward its first public release, so APIs and archi
 
 Core Blueprint exposes documented public contracts so extensions can build on Base without depending on internal implementation details.
 
-- [**Extension Starter**](https://github.com/christiaanbruinsma/wp-core-blueprint-starter-plugin) — a minimal production-grade reference implementation for building a Core Blueprint extension.
+- [**Extension Starter**](https://github.com/Core-Blueprint/wp-core-blueprint-starter-plugin) — a minimal production-grade reference implementation for building a Core Blueprint extension.
 - [**Developer Documentation**](docs/PUBLIC-API.md) — the canonical entry point for supported public API contracts and extension boundaries.
 - [**Core Admin Design Foundation**](docs/CORE-ADMIN-DESIGN-FOUNDATION.md) — shared admin UI contracts, semantics, and component guidance.
 
@@ -354,8 +354,8 @@ Core Blueprint Base is the main open-source foundation, but it does not have to 
 
 Current public projects include:
 
-- [**Core Blueprint Base**](https://github.com/christiaanbruinsma/wp-core-blueprint) — the free and open-source WordPress foundation described in this README.
-- [**Core Blueprint Content Migrator**](https://github.com/christiaanbruinsma/wp-core-blueprint-content-migrator) — a free and open-source, safety-first utility for migrating registered post types and taxonomies on the same WordPress site. It can run standalone and optionally integrates with Core Blueprint governance when Base is available.
+- [**Core Blueprint Base**](https://github.com/Core-Blueprint/wp-core-blueprint) — the free and open-source WordPress foundation described in this README.
+- [**Core Blueprint Content Migrator**](https://github.com/Core-Blueprint/wp-core-blueprint-content-migrator) — a free and open-source, safety-first utility for migrating registered post types and taxonomies on the same WordPress site. It can run standalone and optionally integrates with Core Blueprint governance when Base is available.
 
 This list may grow over time as additional projects are released as open source.
 
@@ -411,9 +411,9 @@ Deleting Core Blueprint through WordPress runs the Base uninstall process.
 
 Base removes the configuration, scheduled events, capabilities, roles, user metadata, and database structures that it owns where removal is safe and intended.
 
-Data owned by separate extensions remains the responsibility of those extensions.
+User-authored content values written through Content Models are preserved for portability. Managed Snippets source files are also preserved while generated runtime state is neutralized. Quarantine evidence remains available for recovery and investigation instead of being silently destroyed.
 
-Security evidence that is deliberately designed to survive ordinary Base removal should not be silently destroyed by uninstall.
+Data owned by separate extensions remains the responsibility of those extensions.
 
 ---
 
@@ -504,7 +504,7 @@ More detailed contribution and development guidelines will be published as the p
 
 Security issues should not be disclosed through a public issue when doing so would expose users before a fix is available.
 
-A dedicated responsible-disclosure process should be documented before the first public stable release.
+The current private-reporting and coordinated-disclosure process is documented in [SECURITY.md](https://github.com/Core-Blueprint/wp-core-blueprint/blob/main/SECURITY.md).
 
 ---
 

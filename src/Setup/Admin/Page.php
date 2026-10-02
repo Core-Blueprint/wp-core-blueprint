@@ -74,11 +74,25 @@ final class Page extends PageBase {
 			</p>
 
 			<?php if ( $first_visit ) : ?>
-				<div class="cb-core-notice cb-core-notice--info">
+				<div class="cb-core-notice cb-core-notice--info cb-core-notice--hero">
 					<div class="cb-core-notice__content">
 						<h2 class="cb-core-notice__title"><?php esc_html_e( 'Start Core Setup', 'core-blueprint' ); ?></h2>
 						<p class="cb-core-notice__message">
-							<?php esc_html_e( 'Work through the sections in your own order. Nothing is changed automatically, and you can return to this checklist later.', 'core-blueprint' ); ?>
+							<?php esc_html_e( 'Review this site step by step and decide which Core Blueprint features belong here. Nothing is changed automatically.', 'core-blueprint' ); ?>
+						</p>
+						<p class="cb-core-notice__context">
+							<?php esc_html_e( 'You can return to Core Setup at any time. Review statuses describe the current configuration, not an activation error.', 'core-blueprint' ); ?>
+						</p>
+						<div class="cb-core-actions">
+							<a class="button cb-core-button cb-core-button--primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&tab=environment-availability' ) ); ?>">
+								<?php esc_html_e( 'Start review', 'core-blueprint' ); ?>
+							</a>
+						</div>
+						<p class="cb-core-notice__context">
+							<?php esc_html_e( 'The first authenticated activator was assigned the CB Operator role.', 'core-blueprint' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=core-blueprint-preferences&tab=permissions' ) ); ?>">
+								<?php esc_html_e( 'Review permissions', 'core-blueprint' ); ?>
+							</a>
 						</p>
 					</div>
 				</div>
@@ -187,9 +201,13 @@ final class Page extends PageBase {
 			<p><?php echo esc_html( self::count_line( $section ) ); ?></p>
 		</section>
 
-		<?php foreach ( (array) $section['checks'] as $check ) : ?>
-			<?php self::render_check( $section_id, (array) $check ); ?>
-		<?php endforeach; ?>
+		<?php
+		$checks      = array_values( (array) $section['checks'] );
+		$check_total = count( $checks );
+		foreach ( $checks as $check_index => $check ) :
+			self::render_check( $section_id, (array) $check, $check_index + 1, $check_total );
+		endforeach;
+		?>
 
 		<?php if ( ! empty( $section['note_access'] ) ) : ?>
 			<?php self::render_section_note( $section_id, $section ); ?>
@@ -198,7 +216,7 @@ final class Page extends PageBase {
 	}
 
 	/** @param array<string,mixed> $check */
-	private static function render_check( string $section_id, array $check ): void {
+	private static function render_check( string $section_id, array $check, int $step, int $step_total ): void {
 		$status          = (string) ( $check['status'] ?? StatusResolver::NEEDS_REVIEW );
 		$health          = (string) ( $check['evidence_health'] ?? Evidence::HEALTH_UNAVAILABLE );
 		$review          = is_array( $check['review'] ?? null ) ? $check['review'] : null;
@@ -209,9 +227,23 @@ final class Page extends PageBase {
 		$allows_na       = ! empty( $check['allows_not_applicable'] );
 		$can_mark_reviewed = Evidence::HEALTH_OK === $health;
 		?>
-		<article class="cb-core-card">
+		<article class="cb-core-card cb-core-card--review-step">
 			<div class="cb-core-card__header">
-				<h3 class="cb-core-card__title"><?php echo esc_html( (string) $check['label'] ); ?></h3>
+				<div class="cb-core-card__heading">
+					<span class="cb-core-card__step">
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: 1: current review step, 2: total review steps in this section */
+								__( 'Step %1$d of %2$d', 'core-blueprint' ),
+								$step,
+								$step_total
+							)
+						);
+						?>
+					</span>
+					<h3 class="cb-core-card__title"><?php echo esc_html( (string) $check['label'] ); ?></h3>
+				</div>
 				<span class="cb-core-state-badge cb-core-state-badge--compact cb-core-state-badge--<?php echo esc_attr( Presentation::status_badge_variant( $status ) ); ?>">
 					<?php echo esc_html( Presentation::status_label( $status ) ); ?>
 				</span>

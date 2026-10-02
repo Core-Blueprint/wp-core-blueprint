@@ -42,6 +42,15 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		$html = $this->render_setup();
 
 		self::assertStringContainsString( 'Start Core Setup', $html );
+		self::assertStringContainsString( 'cb-core-notice--hero', $html );
+		self::assertStringContainsString( 'Review this site step by step and decide which Core Blueprint features belong here. Nothing is changed automatically.', $html );
+		self::assertStringContainsString( 'You can return to Core Setup at any time. Review statuses describe the current configuration, not an activation error.', $html );
+		self::assertStringContainsString( 'Start review', $html );
+		self::assertStringContainsString( 'button cb-core-button cb-core-button--primary', $html );
+		self::assertStringContainsString( 'tab=environment-availability', $html );
+		self::assertStringContainsString( 'The first authenticated activator was assigned the CB Operator role.', $html );
+		self::assertStringContainsString( 'tab=permissions', $html );
+		self::assertStringContainsString( 'Review permissions', $html );
 		self::assertStringNotContainsString( 'Complete Core Setup', $html );
 		self::assertStringContainsString( 'Environment &amp; availability (3)', $html );
 		self::assertStringContainsString( 'Overview (30)', $html );
@@ -63,6 +72,36 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'cb-core-status-strip', $html );
 		self::assertStringNotContainsString( 'name="fingerprint"', $html );
 		self::assertGreaterThan( 0, ReviewRepository::lifecycle()['started_at'] );
+	}
+
+	public function test_ui1a_core_setup_declares_canonical_button_component(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'src/Setup/Bootstrap.php' );
+		self::assertIsString( $source );
+		self::assertMatchesRegularExpression(
+			"/'components'\\s*=>\\s*\\[[\\s\\S]*'buttons'/",
+			$source
+		);
+
+		$buttons = file_get_contents( CB_CORE_DIR . 'assets/css/components/buttons.css' );
+		self::assertIsString( $buttons );
+		self::assertStringContainsString(
+			'.cb-core-wrap .button.cb-core-button.cb-core-button--primary',
+			$buttons,
+			'Formal Core Blueprint primary buttons must outrank the generic admin-theme button selector.'
+		);
+	}
+
+	public function test_ui1b_first_run_hero_uses_canonical_typography_tokens(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'assets/css/components/notices.css' );
+		self::assertIsString( $source );
+
+		self::assertStringContainsString( '.cb-core-notice--hero', $source );
+		self::assertStringContainsString( 'font-size: var(--cb-fs-2xl);', $source );
+		self::assertStringContainsString( 'font-size: var(--cb-fs-xl);', $source );
+		self::assertStringContainsString( 'font-size: var(--cb-fs-lg);', $source );
+		self::assertStringNotContainsString( 'font-size: 20px', $source );
+		self::assertStringNotContainsString( 'font-size: 16px', $source );
+		self::assertStringNotContainsString( 'font-size: 14px', $source );
 	}
 
 	public function test_ui2_existing_site_opens_overview_by_default_and_sections_remain_reopenable(): void {
@@ -98,8 +137,14 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		( new Dashboard() )->render();
 		$before = (string) ob_get_clean();
 
+		self::assertStringContainsString( 'Get started', $before );
 		self::assertStringContainsString( 'Start Core Setup', $before );
 		self::assertStringNotContainsString( 'Complete Core Setup', $before );
+		$get_started_position = strpos( $before, 'Get started' );
+		$safeguards_position  = strpos( $before, 'Safeguards' );
+		self::assertIsInt( $get_started_position );
+		self::assertIsInt( $safeguards_position );
+		self::assertLessThan( $safeguards_position, $get_started_position );
 
 		Lifecycle::mark_started( $user_id );
 
@@ -107,6 +152,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		( new Dashboard() )->render();
 		$after = (string) ob_get_clean();
 
+		self::assertStringNotContainsString( 'Get started', $after );
 		self::assertStringContainsString( 'Review Core Setup', $after );
 		self::assertStringNotContainsString( 'Start Core Setup', $after );
 		self::assertStringContainsString( 'page=core-blueprint-setup', $after );
@@ -120,6 +166,10 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		$html = $this->render_setup();
 
 		self::assertStringContainsString( 'CMS tools (10)', $html );
+		self::assertStringContainsString( 'cb-core-card--review-step', $html );
+		self::assertStringContainsString( 'Step 1 of 10', $html );
+		self::assertStringContainsString( 'Step 10 of 10', $html );
+		self::assertSame( 10, preg_match_all( '/Step \\d+ of 10/', $html ) );
 		self::assertStringContainsString( 'Open settings', $html );
 		self::assertStringContainsString( 'Mark reviewed', $html );
 		self::assertStringContainsString( 'Review later', $html );
@@ -130,6 +180,19 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'cb-core-field cb-core-field--separated', $html );
 		self::assertStringContainsString( 'cb-core-field cb-core-field--inline', $html );
 		self::assertStringNotContainsString( '<hr', $html );
+	}
+
+	public function test_ui4b_review_steps_use_bounded_progress_and_stronger_heading_hierarchy(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'assets/css/components/cards.css' );
+		self::assertIsString( $source );
+
+		self::assertStringContainsString( '.cb-core-card--review-step .cb-core-card__step', $source );
+		self::assertStringContainsString( 'font-size: var(--cb-fs-sm);', $source );
+		self::assertMatchesRegularExpression(
+			'/\.cb-core-card--review-step \.cb-core-card__title\s*\{[^}]*font-size:\s*var\(--cb-fs-lg\);/s',
+			$source
+		);
+		self::assertStringContainsString( 'color: var(--cb-text-strong);', $source );
 	}
 
 	public function test_ui5_overview_uses_shared_overview_cards_and_status_badges(): void {

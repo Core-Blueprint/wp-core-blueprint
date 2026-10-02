@@ -36,6 +36,7 @@ final class SettingsDefaults {
 				],
 			],
 			'integrity'      => [
+				'enabled'                      => false,
 				'schedule'                     => 'disabled',
 				'email_recipient'              => '',
 				'email_alerts'                 => [
@@ -59,6 +60,7 @@ final class SettingsDefaults {
 				],
 			],
 			'notes'          => [
+				'enabled'               => false,
 				'default_type'          => 'General',
 				'default_status'        => 'Backlog',
 				'default_assigned_to'   => 0,
@@ -66,6 +68,7 @@ final class SettingsDefaults {
 				'default_layout'        => 'list',
 			],
 			'reports'        => [
+				'enabled'            => false,
 				'admin_can_generate' => [
 					'maintenance' => false,
 				],

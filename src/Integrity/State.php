@@ -45,13 +45,13 @@ defined( 'ABSPATH' ) || exit;
 final class State implements ModuleStateInterface {
 
 	/**
-	 * Whether the Core Scanner subsystem is currently active. Defaults
-	 * to true on missing/unset values so existing installations and
-	 * fresh activations both behave like they always have.
+	 * Whether the Core Scanner subsystem is currently active.
+	 *
+	 * Missing state is intentionally disabled for the public v1 contract.
 	 */
 	public static function is_enabled(): bool {
 		$settings = ResultRepository::settings();
-		return (bool) ( $settings['enabled'] ?? true );
+		return (bool) ( $settings['enabled'] ?? false );
 	}
 
 	/**

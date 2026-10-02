@@ -2,7 +2,7 @@
 
 This harness extends the F2 observation baseline with opt-in query tracing for the rendered logged-in operator frontend. The purpose is to identify where measured Base query overhead originates before any production optimization is considered.
 
-It measures twelve isolated requests in one temporary WordPress installation.
+It measures fourteen isolated requests in one temporary WordPress installation.
 
 **Before Base activation (WordPress-only controls):**
 

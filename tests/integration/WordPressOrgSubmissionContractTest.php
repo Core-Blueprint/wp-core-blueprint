@@ -19,6 +19,53 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 		self::assertStringContainsString( 'License: GPLv2 or later', $readme );
 	}
 
+	public function test_directory_identity_and_readme_presentation_contracts(): void {
+		$readme = file_get_contents( CB_CORE_DIR . 'readme.txt' );
+		$plugin = file_get_contents( CB_CORE_FILE );
+		self::assertIsString( $readme );
+		self::assertIsString( $plugin );
+
+		self::assertMatchesRegularExpression(
+			'/^\\s*\\*\\s*Plugin URI:\\s*https:\\/\\/coreblueprint\\.io\\/wordpress-suite\\/core-blueprint-base\\/\\s*$/m',
+			$plugin,
+			'Base must use its own unique product URL as Plugin URI.'
+		);
+
+		self::assertStringContainsString(
+			"Contributors: coreblueprint\n",
+			$readme,
+			'WordPress.org contributor identity must stay linked to the Core Blueprint publisher account.'
+		);
+
+		self::assertLessThanOrEqual( 10000, strlen( $readme ), 'WordPress.org readme should remain below 10 KB.' );
+
+		self::assertSame(
+			1,
+			preg_match( '/^Tags:\\s*(.+)$/m', $readme, $tag_matches ),
+			'WordPress.org Tags header is missing.'
+		);
+		$tags = array_values( array_filter( array_map( 'trim', explode( ',', (string) $tag_matches[1] ) ) ) );
+		self::assertLessThanOrEqual( 5, count( $tags ), 'WordPress.org uses at most five plugin tags.' );
+
+		self::assertSame(
+			1,
+			preg_match( '/^License URI:[^\\r\\n]+\\R\\R([^\\r\\n]+)$/m', $readme, $short_matches ),
+			'WordPress.org short description could not be resolved.'
+		);
+		self::assertLessThanOrEqual( 150, strlen( trim( (string) $short_matches[1] ) ) );
+
+		self::assertSame(
+			1,
+			preg_match( '/== Screenshots ==\\R(.*?)\\R== Changelog ==/s', $readme, $screenshot_matches ),
+			'WordPress.org Screenshots section is missing.'
+		);
+		self::assertSame(
+			5,
+			preg_match_all( '/^\\d+\\.\\s+.+$/m', (string) $screenshot_matches[1] ),
+			'Base v1 directory story should remain limited to five screenshots.'
+		);
+	}
+
 	public function test_plugin_directory_description_stays_concise(): void {
 		$plugin = file_get_contents( CB_CORE_FILE );
 		self::assertIsString( $plugin );
@@ -55,6 +102,66 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 		self::assertStringContainsString( 'get_core_checksums', $core );
 		self::assertStringContainsString( 'get_plugin_checksums', $plugin );
 		self::assertStringContainsString( 'get_theme_checksums', $theme );
+		self::assertStringContainsString(
+			'Core Scanner may request official checksum manifests from WordPress.org when integrity scans are run or scheduled.',
+			$readme,
+			'The external-services FAQ must disclose WordPress.org checksum requests as well as the detailed service section.'
+		);
+	}
+
+	public function test_uninstall_retention_is_disclosed_to_directory_users(): void {
+		$readme = file_get_contents( CB_CORE_DIR . 'readme.txt' );
+		self::assertIsString( $readme );
+		self::assertStringContainsString( '= What happens when Core Blueprint is deleted? =', $readme );
+		self::assertStringContainsString( 'User-authored site content written through Content Models is preserved.', $readme );
+		self::assertStringContainsString( 'Managed Snippets source files are also preserved', $readme );
+		self::assertStringContainsString( 'Quarantine evidence is retained', $readme );
+	}
+
+	public function test_stable_release_cannot_ship_pre_v1_public_copy(): void {
+		if ( str_contains( CB_CORE_VERSION, '-' ) ) {
+			self::assertNotSame( '', trim( CB_CORE_VERSION ) );
+			return;
+		}
+
+		$readme    = file_get_contents( CB_CORE_DIR . 'readme.txt' );
+		$readme_md = file_get_contents( CB_CORE_DIR . 'README.md' );
+		$changelog = file_get_contents( CB_CORE_DIR . 'CHANGELOG.md' );
+		self::assertIsString( $readme );
+		self::assertIsString( $readme_md );
+		self::assertIsString( $changelog );
+
+		foreach ( [
+			'pre-v1 development',
+			'evolving toward its first public release',
+			'Until the first stable public release',
+			'approaches its first public release',
+		] as $stale ) {
+			self::assertStringNotContainsString(
+				$stale,
+				$readme_md,
+				'Stable Base must not ship pre-v1 public README language.'
+			);
+		}
+
+		self::assertStringContainsString( '= ' . CB_CORE_VERSION . ' =', $readme );
+		self::assertStringContainsString( '## ' . CB_CORE_VERSION, $changelog );
+	}
+
+	public function test_public_security_reporting_path_is_current(): void {
+		$readme_md = file_get_contents( CB_CORE_DIR . 'README.md' );
+		$security  = file_get_contents( CB_CORE_DIR . 'SECURITY.md' );
+		self::assertIsString( $readme_md );
+		self::assertIsString( $security );
+		self::assertStringContainsString(
+			'https://github.com/Core-Blueprint/wp-core-blueprint/blob/main/SECURITY.md',
+			$readme_md
+		);
+		self::assertStringContainsString( '## Reporting a vulnerability', $security );
+		self::assertStringNotContainsString(
+			'A dedicated responsible-disclosure process should be documented',
+			$readme_md
+		);
 	}
 
 	public function test_release_builder_requires_directory_readme(): void {

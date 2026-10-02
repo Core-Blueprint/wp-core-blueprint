@@ -1,5 +1,6 @@
 === Core Blueprint ===
-Tags: governance, security, audit-log, privacy, administration
+Contributors: coreblueprint
+Tags: security, audit-log, permissions, user-roles, admin-tools
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.4
@@ -7,17 +8,27 @@ Stable tag: 1.0.0-rc1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Governance, security, audit logging, permissions, administration tools, and shared foundations for WordPress.
+A modular governance and operations foundation for WordPress with security controls, audit logging, permissions and administration tools.
 
 == Description ==
 
-Core Blueprint is an open-source governance, security, and administration plugin for WordPress. It can be used independently without any other Core Blueprint plugin.
+Core Blueprint is an open-source governance and operations foundation for WordPress. It brings defensive security controls, operational evidence, permissions and administration tools together in one modular plugin.
 
-It provides defensive security controls, audit logging, access and maintenance modes, role and capability policy, administration tools, media utilities, structured content infrastructure, and shared public contracts that optional Core Blueprint extensions can use.
+Use only the parts that belong in the site's workflow. Optional modules can remain disabled when WordPress itself or another plugin already owns that responsibility.
+
+= Control =
+
+Review safeguards, privileged access, roles and capabilities, environment-aware policies, access modes, recovery paths, and administration rules from one consistent governance layer.
+
+= Evidence =
+
+Audit logging, operational logs, reports, integrity checks, and review state help make important site changes and operational decisions visible without claiming perfect security.
+
+= Administration =
+
+Optional CMS and administration tools cover areas such as content models, media handling, mail, managed snippets, admin navigation, columns, notices, and package downloads.
 
 Core Blueprint is designed around WordPress-native concepts and APIs. WordPress remains the canonical data and authorization layer. Builder integrations are optional, and Base can be used without a specific page builder.
-
-Core Blueprint does not claim to provide perfect security or privacy. It is a defensive and governance-oriented foundation intended to improve operational clarity, recovery paths, and administrative control.
 
 Core functionality does not require a Core Blueprint account or an external Core Blueprint service.
 
@@ -26,6 +37,12 @@ Core functionality does not require a Core Blueprint account or an external Core
 Base includes optional modules that can be enabled or disabled independently. This allows site owners to avoid overlapping responsibility when another plugin already manages the same area.
 
 Examples include Media Formats, Content Models, Mail Delivery, and related administration tooling.
+
+= Managed Snippets =
+
+Managed Snippets is an optional module and is disabled by default. It allows authorized Core Blueprint operators to manage PHP, JavaScript, CSS, and HTML snippets when that workflow is appropriate for the site.
+
+Executable-code changes require explicit privileged authority and remain subject to WordPress file-modification policy. Imported snippets are disabled by default, PHP is validated before storage, managed code is integrity-checked before runtime, and runtime failures can automatically disable the affected snippet. Core Blueprint also provides a server-side emergency stop for the Snippets runtime.
 
 = Mail Delivery =
 
@@ -104,13 +121,17 @@ No. Base is a standalone WordPress plugin. Optional Core Blueprint extensions ca
 
 No. Base can be installed and used without a Core Blueprint account.
 
+= What is the CB Operator role? =
+
+When a genuine first activation is performed by an authenticated WordPress user, that account is assigned the CB Operator role. This establishes the initial trusted operator who can manage Core Blueprint governance and privileged settings. Activations without an authenticated WordPress user do not mint an operator automatically. Operator access can be reviewed or changed later under Core Blueprint > Preferences > Permissions.
+
 = Does Core Blueprint send telemetry? =
 
 No. Base does not include usage telemetry or advertising tracking.
 
 = Does Core Blueprint contact external services? =
 
-Only when a feature requires it. The optional Brevo mail transport contacts Brevo after the administrator deliberately configures that transport. Core diagnostic self-checks may request the site's own public URL.
+Only when a feature requires it. The optional Brevo mail transport contacts Brevo after the administrator deliberately configures that transport. Core Scanner may request official checksum manifests from WordPress.org when integrity scans are run or scheduled. Core diagnostic self-checks may also request the site's own public URL. See "External services" above for details.
 
 = Does Core Blueprint replace a dedicated security product? =
 
@@ -120,9 +141,21 @@ Not necessarily. Core Blueprint provides defensive controls and governance infra
 
 No. Base is builder-agnostic. Builder-specific integrations are optional adapters and are not the canonical data model.
 
+= What happens when Core Blueprint is deleted? =
+
+Base removes the configuration, scheduled events, roles and capabilities, user metadata, and database tables that it owns. User-authored site content written through Content Models is preserved. Managed Snippets source files are also preserved while generated Snippets runtime state is neutralized. Quarantine evidence is retained for recovery and investigation rather than silently destroyed.
+
 = Where is the source code? =
 
 The public source repository is https://github.com/Core-Blueprint/wp-core-blueprint .
+
+== Screenshots ==
+
+1. Dashboard brings safeguards, operations, CMS tools, and extensions into one modular overview.
+2. Core Setup guides site review across seven sections without changing configuration automatically.
+3. Safeguards brings access, hardening, scanner, and recovery controls into one governed workspace.
+4. Audit and Logs provide operational evidence for security, maintenance, login, and settings activity.
+5. Permissions separates WordPress Administrator access from trusted Core Blueprint Operator authority.
 
 == Changelog ==
 

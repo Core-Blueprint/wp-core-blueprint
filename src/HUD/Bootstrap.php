@@ -32,7 +32,7 @@ defined( 'ABSPATH' ) || exit;
  *   returns false the bootstrap returns silently before registering any
  *   hooks, REST routes, or render handlers. Equivalent to the subsystem
  *   not being loaded at all. Surfaces as a checkbox in Preferences ›
- *   Appearance via {@see Settings::is_enabled()}, which reads the
+ *   Floating Menu via {@see Settings::is_enabled()}, which reads the
  *   `cb_core_hud_disabled` option and short-circuits the filter.
  *
  *   This is the operator's safety valve: if HUD ever conflicts with
@@ -77,7 +77,7 @@ final class Bootstrap {
 
 		// Kill-switch - the universal escape hatch. Filter returns false
 		// → no init, no enqueue, no rendering. The user-facing toggle in
-		// Preferences › Appearance flips the underlying option which the
+		// Preferences › Floating Menu flips the underlying option which the
 		// filter reads.
 		if ( ! Settings::is_enabled() ) {
 			$booted = true; // mark booted-but-disabled so subsequent boot calls are also fast
