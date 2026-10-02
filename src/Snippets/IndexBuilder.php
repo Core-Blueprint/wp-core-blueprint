@@ -25,7 +25,7 @@ final class IndexBuilder {
 			}
 		}
 
-		$contents = "<?php\n\ndefined( 'ABSPATH' ) || exit;\nreturn " . var_export( $manifest, true ) . ";\n";
+		$contents = "<?php\n\ndefined( 'ABSPATH' ) || exit;\nreturn " . var_export( $manifest, true ) . ";\n"; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- deterministic PHP array serialization for the runtime manifest, not debug output.
 		return AtomicFile::write( Paths::runtime_index(), $contents );
 	}
 
@@ -38,7 +38,7 @@ final class IndexBuilder {
 		try {
 			$data = require $path;
 		} catch ( \Throwable $e ) {
-			error_log( 'Core Blueprint Snippets runtime index could not be loaded: ' . $e->getMessage() );
+			error_log( 'Core Blueprint Snippets runtime index could not be loaded: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- corrupted-runtime fallback must remain independent of the generated index.
 			return [];
 		}
 
