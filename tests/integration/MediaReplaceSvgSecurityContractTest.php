@@ -66,6 +66,21 @@ final class CB_Base_Media_Replace_Svg_Security_Contract_Test extends WP_UnitTest
 		self::assertStringContainsString( "'svg_sanitize_failed'", $validate_section );
 		self::assertStringContainsString( "'svg_type_changed'", $validate_section );
 		self::assertGreaterThanOrEqual( 2, substr_count( $validate_section, 'wp_check_filetype_and_ext' ) );
+
+		$stage_start = strpos( $source, 'private function stage_upload' );
+		$stage_end   = strpos( $source, 'private function create_backup_dir', (int) $stage_start );
+		self::assertIsInt( $stage_start );
+		self::assertIsInt( $stage_end );
+
+		$stage_section = substr( $source, $stage_start, $stage_end - $stage_start );
+		self::assertIsString( $stage_section );
+		self::assertStringContainsString( 'wp_handle_upload(', $stage_section );
+		self::assertStringContainsString( "add_filter( 'upload_dir'", $stage_section );
+		self::assertStringContainsString( "add_filter( 'wp_handle_upload_overrides'", $stage_section );
+		self::assertStringContainsString( "add_filter( 'wp_unique_filename'", $stage_section );
+		self::assertStringContainsString( 'hash_equals( $expected_hash, $staged_hash )', $stage_section );
+		self::assertStringNotContainsString( 'move_uploaded_file(', $stage_section );
+		self::assertStringContainsString( 'wp_is_writable( $target_dir )', $replace_section );
 	}
 
 	public function test_svg_sanitizer_removes_active_and_remote_content_used_by_replacement_guard(): void {
