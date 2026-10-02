@@ -128,7 +128,13 @@ final class Request {
 				'message' => sprintf( __( 'Missing required parameter: %s.', 'core-blueprint' ), $field ),
 			], 400 );
 		}
-		$parsed = filter_var( wp_unslash( $_POST[ $field ] ), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! is_scalar( $_POST[ $field ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce ownership belongs to the public handler.
+			wp_send_json_error( [
+				/* translators: %s: request field name. */
+				'message' => sprintf( __( 'Invalid boolean value for %s.', 'core-blueprint' ), $field ),
+			], 400 );
+		}
+		$parsed = filter_var( wp_unslash( (string) $_POST[ $field ] ), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce ownership belongs to the public handler.
 		if ( null === $parsed ) {
 			wp_send_json_error( [
 				/* translators: %s: request field name. */
