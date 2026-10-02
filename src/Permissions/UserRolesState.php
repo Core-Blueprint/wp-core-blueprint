@@ -3,8 +3,7 @@ declare(strict_types=1);
 /**
  * User Roles module master-switch state.
  *
- * Missing option means enabled so existing installations keep their current
- * behavior until an operator explicitly switches the module off.
+ * Missing state is intentionally disabled for the public v1 contract.
  *
  * @package Core_Blueprint
  * @since   1.0.0
@@ -21,7 +20,7 @@ final class UserRolesState implements ModuleStateInterface {
 	private const OPTION = 'cb_core_user_roles_enabled';
 
 	public static function is_enabled(): bool {
-		return '0' !== (string) get_option( self::OPTION, '1' );
+		return '0' !== (string) get_option( self::OPTION, '0' );
 	}
 
 	public static function set_enabled( bool $enabled, string $actor = 'unknown' ): void {
