@@ -57,12 +57,18 @@ trait ScannerGroupedFindingsView {
 				'theme'  => 'themes',
 				default  => (string) $component,
 			};
+			if ( $passed ) {
+				/* translators: %d: number of verified items in this component group. */
+				$group_count_label = sprintf( _n( '%d verified', '%d verified', $group_count, 'core-blueprint' ), $group_count );
+			} else {
+				/* translators: %d: number of integrity issues in this component group. */
+				$group_count_label = sprintf( _n( '%d issue', '%d issues', $group_count, 'core-blueprint' ), $group_count );
+			}
 			?>
 			<section class="cb-core-integrity-finding-group" data-cb-integrity-component-group="<?php echo esc_attr( $filter_key ); ?>">
 				<h3>
 					<span><?php echo esc_html( $component_label ); ?></span>
-					<!-- translators: %d: number of verified items or integrity issues in this component group. -->
-					<span class="cb-core-integrity-group-count" aria-label="<?php echo esc_attr( sprintf( $passed ? _n( '%d verified', '%d verified', $group_count, 'core-blueprint' ) : _n( '%d issue', '%d issues', $group_count, 'core-blueprint' ), $group_count ) ); ?>"><?php echo esc_html( (string) $group_count ); ?></span>
+					<span class="cb-core-integrity-group-count" aria-label="<?php echo esc_attr( $group_count_label ); ?>"><?php echo esc_html( (string) $group_count ); ?></span>
 				</h3>
 				<?php foreach ( $component_groups as $group ) : ?>
 					<?php
@@ -80,6 +86,18 @@ trait ScannerGroupedFindingsView {
 					$baseline = is_array( $group['baseline'] ?? null ) ? $group['baseline'] : [ 'exists' => false ];
 					$baseline_exists = ! empty( $baseline['exists'] );
 					$baseline_label = $baseline_exists ? __( 'Update Approved Baseline', 'core-blueprint' ) : __( 'Approve Baseline', 'core-blueprint' );
+					if ( $passed ) {
+						/* translators: %d: number of passed integrity checks in this group. */
+						$count_label = sprintf( _n( '%d passed check', '%d passed checks', $count, 'core-blueprint' ), $count );
+					} else {
+						/* translators: %d: number of integrity findings in this group. */
+						$count_label = sprintf( _n( '%d finding', '%d findings', $count, 'core-blueprint' ), $count );
+					}
+					$baseline_approved_label = '';
+					if ( $baseline_exists ) {
+						/* translators: %s: date/time when the integrity baseline was approved. */
+						$baseline_approved_label = sprintf( __( 'Approved on %s', 'core-blueprint' ), (string) ( $baseline['approved_at'] ?? $baseline['updated_at'] ?? $baseline['created_at'] ?? '' ) );
+					}
 					$candidate_id = ResultRepository::baselineCandidateId( $first );
 					$candidate_reviewed = '' !== $candidate_id && isset( $reviewed_candidate_ids[ $candidate_id ] );
 					$directory_recommendation = null;
@@ -98,8 +116,7 @@ trait ScannerGroupedFindingsView {
 							<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-interactive-row__icon' ] ); ?>
 							<span class="cb-core-integrity-component-title"><?php echo esc_html( $slug ); ?></span>
 							<?php echo StateBadge::render( str_replace( '_', ' ', $status ), [ 'variant' => self::state_badge_variant( $status ) ] ); ?>
-							<?php /* translators: %d: number of passed integrity checks or findings in this group. */ ?>
-							<span class="cb-core-integrity-muted"><?php echo esc_html( $passed ? sprintf( _n( '%d passed check', '%d passed checks', $count, 'core-blueprint' ), $count ) : sprintf( _n( '%d finding', '%d findings', $count, 'core-blueprint' ), $count ) ); ?></span>
+							<span class="cb-core-integrity-muted"><?php echo esc_html( $count_label ); ?></span>
 							<?php if ( is_array( $directory_recommendation ) ) : ?>
 								<button type="button" class="button cb-core-button cb-core-button--remediation cb-core-integrity-summary-action cb-core-integrity-quarantine-primary" data-cb-integrity-action="quarantine-finding" data-cb-integrity-finding-id="<?php echo esc_attr( (string) ( $directory_recommendation['id'] ?? '' ) ); ?>" data-cb-integrity-scope="directory"><?php echo Icon::render( 'quarantine', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Quarantine folder', 'core-blueprint' ); ?></span></button>
 							<?php endif; ?>
@@ -124,8 +141,7 @@ trait ScannerGroupedFindingsView {
 						<p class="cb-core-integrity-baseline-indicator <?php echo $baseline_exists ? 'is-approved' : 'is-missing'; ?>">
 							<span><?php echo esc_html__( 'Baseline:', 'core-blueprint' ); ?></span>
 							<?php if ( $baseline_exists ) : ?>
-								<?php /* translators: %s: date/time when the integrity baseline was approved. */ ?>
-								<?php echo esc_html( sprintf( __( 'Approved on %s', 'core-blueprint' ), (string) ( $baseline['approved_at'] ?? $baseline['updated_at'] ?? $baseline['created_at'] ?? '' ) ) ); ?>
+								<?php echo esc_html( $baseline_approved_label ); ?>
 							<?php else : ?>
 								<?php echo esc_html__( 'Not set', 'core-blueprint' ); ?>
 							<?php endif; ?>
@@ -169,6 +185,33 @@ trait ScannerGroupedFindingsView {
 									$last_changed       = self::format_finding_timestamp( (string) ( $lifecycle['last_changed_at'] ?? '' ) );
 									$observations       = max( 0, (int) ( $lifecycle['observations'] ?? 0 ) );
 									$state              = sanitize_key( (string) ( $lifecycle['state'] ?? '' ) );
+									$first_detected_label = '';
+									if ( '' !== $first_detected ) {
+										/* translators: %s: formatted first-detected timestamp. */
+										$first_detected_label = sprintf( __( 'First detected %s', 'core-blueprint' ), $first_detected );
+									}
+									$last_detected_label = '';
+									if ( '' !== $last_detected && $last_detected !== $first_detected ) {
+										/* translators: %s: formatted last-detected timestamp. */
+										$last_detected_label = sprintf( __( 'last seen %s', 'core-blueprint' ), $last_detected );
+									}
+									$last_changed_label = '';
+									if ( 'changed' === $state && '' !== $last_changed ) {
+										/* translators: %s: formatted timestamp when the finding last changed. */
+										$last_changed_label = sprintf( __( 'changed %s', 'core-blueprint' ), $last_changed );
+									}
+									$observations_label = '';
+									if ( $observations > 1 ) {
+										/* translators: %d: number of observations of this integrity finding. */
+										$observations_label = sprintf( _n( '%d observation', '%d observations', $observations, 'core-blueprint' ), $observations );
+									}
+									/* translators: %d: number of verified files represented by this finding. */
+									$verified_files_label = sprintf( _n( '%d verified file', '%d verified files', $verified_total, 'core-blueprint' ), $verified_total );
+									$shown_verified_files_label = '';
+									if ( $verified_total > count( $children ) ) {
+										/* translators: 1: number of displayed verified file paths, 2: total number of verified files. */
+										$shown_verified_files_label = sprintf( __( 'Showing %1$d of %2$d verified file paths to keep this result compact.', 'core-blueprint' ), count( $children ), $verified_total );
+									}
 									?>
 									<?php if ( is_array( $quarantine_item ) ) : ?>
 										<div class="cb-core-integrity-remediation-actions">
@@ -214,20 +257,18 @@ trait ScannerGroupedFindingsView {
 											<?php if ( '' !== $first_detected || '' !== $last_detected ) : ?>
 												<div class="cb-core-integrity-verification">
 													<span><?php echo esc_html__( 'Detection history:', 'core-blueprint' ); ?></span>
-													<?php if ( '' !== $first_detected ) : ?><?php /* translators: %s: formatted first-detected timestamp. */ ?><?php echo esc_html( sprintf( __( 'First detected %s', 'core-blueprint' ), $first_detected ) ); ?><?php endif; ?>
-													<?php if ( '' !== $last_detected && $last_detected !== $first_detected ) : ?> · <?php /* translators: %s: formatted last-detected timestamp. */ ?><?php echo esc_html( sprintf( __( 'last seen %s', 'core-blueprint' ), $last_detected ) ); ?><?php endif; ?>
-													<?php if ( 'changed' === $state && '' !== $last_changed ) : ?> · <?php /* translators: %s: formatted timestamp when the finding last changed. */ ?><?php echo esc_html( sprintf( __( 'changed %s', 'core-blueprint' ), $last_changed ) ); ?><?php endif; ?>
-													<?php if ( $observations > 1 ) : ?> · <?php /* translators: %d: number of observations of this integrity finding. */ ?><?php echo esc_html( sprintf( _n( '%d observation', '%d observations', $observations, 'core-blueprint' ), $observations ) ); ?><?php endif; ?>
+													<?php if ( '' !== $first_detected_label ) : ?><?php echo esc_html( $first_detected_label ); ?><?php endif; ?>
+													<?php if ( '' !== $last_detected_label ) : ?> · <?php echo esc_html( $last_detected_label ); ?><?php endif; ?>
+													<?php if ( '' !== $last_changed_label ) : ?> · <?php echo esc_html( $last_changed_label ); ?><?php endif; ?>
+													<?php if ( '' !== $observations_label ) : ?> · <?php echo esc_html( $observations_label ); ?><?php endif; ?>
 												</div>
 											<?php endif; ?>
 											<code class="cb-core-integrity-technical"><?php echo esc_html( trim( $type . ' ' . $file ) ); ?></code>
 											<?php if ( ! empty( $children ) ) : ?>
 												<details class="cb-core-integrity-audit-children">
-													<?php /* translators: %d: number of verified files represented by this finding. */ ?>
-													<summary><?php echo esc_html( sprintf( _n( '%d verified file', '%d verified files', $verified_total, 'core-blueprint' ), $verified_total ) ); ?></summary>
+													<summary><?php echo esc_html( $verified_files_label ); ?></summary>
 													<?php if ( $verified_total > count( $children ) ) : ?>
-														<?php /* translators: 1: number of displayed verified file paths, 2: total number of verified files. */ ?>
-														<p class="cb-core-integrity-muted"><?php echo esc_html( sprintf( __( 'Showing %1$d of %2$d verified file paths to keep this result compact.', 'core-blueprint' ), count( $children ), $verified_total ) ); ?></p>
+														<p class="cb-core-integrity-muted"><?php echo esc_html( $shown_verified_files_label ); ?></p>
 													<?php endif; ?>
 													<ul>
 														<?php foreach ( $children as $child ) : ?>
