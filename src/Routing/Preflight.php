@@ -306,7 +306,7 @@ final class Preflight {
 				AND post_name REGEXP %s",
 			...$args
 		);
-		$ids = is_string( $sql ) ? $wpdb->get_col( $sql ) : [];
+		$ids = is_string( $sql ) ? $wpdb->get_col( $sql ) : []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql is returned by $wpdb->prepare() immediately above.
 
 		$candidates = [];
 		foreach ( (array) $ids as $post_id ) {
