@@ -306,10 +306,10 @@ final class LoginFlow {
 		}
 
 		$method = isset( $_SERVER['REQUEST_METHOD'] )
-			? strtoupper( (string) wp_unslash( $_SERVER['REQUEST_METHOD'] ) )
+			? strtoupper( sanitize_key( wp_unslash( (string) $_SERVER['REQUEST_METHOD'] ) ) )
 			: '';
 		$script = isset( $_SERVER['SCRIPT_NAME'] )
-			? basename( (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) )
+			? basename( sanitize_text_field( wp_unslash( (string) $_SERVER['SCRIPT_NAME'] ) ) )
 			: '';
 
 		$is_ajax = wp_doing_ajax() || 'admin-ajax.php' === $script;
