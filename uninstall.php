@@ -238,7 +238,7 @@ $cb_uploads = wp_get_upload_dir();
 if ( ! empty( $cb_uploads['basedir'] ) ) {
 	$cb_media_replace_lock = trailingslashit( (string) $cb_uploads['basedir'] ) . '.core-blueprint-media-replace.lock';
 	if ( is_file( $cb_media_replace_lock ) ) {
-		@unlink( $cb_media_replace_lock );
+		wp_delete_file( $cb_media_replace_lock );
 	}
 }
 
@@ -257,7 +257,7 @@ $cb_snippets_runtime_files = [
 
 foreach ( $cb_snippets_runtime_files as $runtime_file ) {
 	if ( is_file( $runtime_file ) ) {
-		@unlink( $runtime_file );
+		wp_delete_file( $runtime_file );
 	}
 }
 
