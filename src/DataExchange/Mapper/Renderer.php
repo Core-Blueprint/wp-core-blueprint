@@ -159,17 +159,17 @@ final class Renderer {
 				<div class="cb-core-design-shell__toolbar">
 					<div class="cb-core-design-shell__toolbar-group">
 						<span data-cb-design-shell-group-label><?php echo esc_html__( 'History', 'core-blueprint' ); ?></span>
-						<button type="button" class="button cb-core-button" data-cb-design-shell-undo><?php echo esc_html__( 'Undo', 'default' ); ?></button>
-						<button type="button" class="button cb-core-button" data-cb-design-shell-redo><?php echo esc_html__( 'Redo', 'default' ); ?></button>
+						<button type="button" class="button cb-core-button" data-cb-design-shell-undo><?php echo esc_html__( 'Undo', 'core-blueprint' ); ?></button>
+						<button type="button" class="button cb-core-button" data-cb-design-shell-redo><?php echo esc_html__( 'Redo', 'core-blueprint' ); ?></button>
 					</div>
 					<span data-cb-design-shell-status aria-live="polite"></span>
 					<button
 						type="button"
 						class="button cb-core-button"
 						data-cb-design-shell-fullscreen
-						data-cb-design-shell-fullscreen-enter-label="<?php echo esc_attr__( 'Fullscreen mode', 'default' ); ?>"
-						data-cb-design-shell-fullscreen-exit-label="<?php echo esc_attr__( 'Exit fullscreen', 'default' ); ?>"
-					><?php echo esc_html__( 'Fullscreen mode', 'default' ); ?></button>
+						data-cb-design-shell-fullscreen-enter-label="<?php echo esc_attr__( 'Fullscreen mode', 'core-blueprint' ); ?>"
+						data-cb-design-shell-fullscreen-exit-label="<?php echo esc_attr__( 'Exit fullscreen', 'core-blueprint' ); ?>"
+					><?php echo esc_html__( 'Fullscreen mode', 'core-blueprint' ); ?></button>
 					<button type="button" class="button button-primary cb-core-button cb-core-button--primary" data-cb-design-shell-primary-action data-cb-data-mapper-primary><?php echo esc_html( $primary_label ); ?></button>
 				</div>
 
