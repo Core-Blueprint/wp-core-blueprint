@@ -202,7 +202,7 @@ final class Repository {
 
 				$path = Paths::code_file( $id );
 				if ( is_file( $path ) ) {
-					@unlink( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+					wp_delete_file( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				}
 				return true;
 			} );
@@ -250,7 +250,7 @@ final class Repository {
 	}
 
 	public static function health(): array {
-		$storage_ok  = Paths::ensure() && is_writable( Paths::base_dir() ) && is_writable( Paths::code_dir() );
+		$storage_ok  = Paths::ensure() && wp_is_writable( Paths::base_dir() ) && wp_is_writable( Paths::code_dir() );
 		$registry_ok = self::array_file_is_valid( Paths::registry() );
 		$index_ok    = self::array_file_is_valid( Paths::runtime_index() );
 		$code_ok     = $registry_ok ? self::managed_code_files_are_valid( self::read_registry() ) : false;
@@ -348,7 +348,7 @@ final class Repository {
 		if ( is_string( $old_code_file ) ) {
 			AtomicFile::write( $path, $old_code_file );
 		} elseif ( is_file( $path ) ) {
-			@unlink( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			wp_delete_file( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		}
 		self::write_registry( $old_registry );
 		IndexBuilder::rebuild_from_registry( $old_registry, State::is_enabled() );
