@@ -78,6 +78,7 @@ trait CommonView {
 	}
 
 	private function copy_label( string $label ): string {
+		/* translators: %s: source definition label. */
 		return sprintf( __( '%s Copy', 'core-blueprint' ), $label );
 	}
 
