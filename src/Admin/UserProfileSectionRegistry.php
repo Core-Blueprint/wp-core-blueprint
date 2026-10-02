@@ -215,7 +215,7 @@ final class UserProfileSectionRegistry {
 			return;
 		}
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[Core Blueprint UserProfileSectionRegistry] ' . $message );
+			error_log( '[Core Blueprint UserProfileSectionRegistry] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-only fallback when _doing_it_wrong() is unavailable.
 		}
 	}
 }
