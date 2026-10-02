@@ -376,7 +376,8 @@ final class AIActivityTab {
 			echo '<a class="button" href="' . esc_url( $prev ) . '">&larr; ' . esc_html__( 'Previous', 'core-blueprint' ) . '</a> ';
 		}
 		/* translators: 1: current page number, 2: total number of pages. */
-		printf( esc_html__( 'Page %1$d of %2$d', 'core-blueprint' ), $current, $total );
+		$pagination_label = sprintf( __( 'Page %1$d of %2$d', 'core-blueprint' ), $current, $total );
+		echo esc_html( $pagination_label );
 		if ( $current < $total ) {
 			$next = self::url( array_merge( $base_args, [ 'paged' => $current + 1 ] ) );
 			echo ' <a class="button" href="' . esc_url( $next ) . '">' . esc_html__( 'Next', 'core-blueprint' ) . ' &rarr;</a>';
