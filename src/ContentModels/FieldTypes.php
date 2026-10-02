@@ -514,7 +514,8 @@ final class FieldTypes {
 					$title = get_the_title( $post );
 					$items[] = [
 						'id'    => $id,
-						'label' => '' !== trim( (string) $title ) ? (string) $title : sprintf( __( '(no title) #%d', 'core-blueprint' ), $id ),
+						/* translators: %d: referenced WordPress object ID. */
+				'label' => '' !== trim( (string) $title ) ? (string) $title : sprintf( __( '(no title) #%d', 'core-blueprint' ), $id ),
 						'meta'  => sprintf( '%s · #%d', $post_type ? (string) $post_type->labels->singular_name : $post->post_type, $id ),
 					];
 					continue;
@@ -533,6 +534,7 @@ final class FieldTypes {
 					continue;
 				}
 			}
+			/* translators: %d: unavailable referenced object ID. */
 			$items[] = [ 'id' => $id, 'label' => sprintf( __( 'Unavailable item #%d', 'core-blueprint' ), $id ), 'meta' => __( 'The referenced object no longer exists or is no longer allowed.', 'core-blueprint' ) ];
 		}
 		return $items;
