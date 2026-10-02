@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use CB\Core\Ajax\Handlers\Permissions as PermissionsActions;
+use CB\Core\Ajax\Request;
 use CB\Core\ContentModels\Admin\MetaBoxes as ContentModelMetaBoxes;
 use CB\Core\ContentModels\Repository as ContentModelRepository;
 use CB\Core\ContentModels\State as ContentModelsState;
@@ -73,6 +74,21 @@ final class CB_Base_Privileged_Request_Contract_Test extends WP_UnitTestCase {
      * @runInSeparateProcess
      * @preserveGlobalState disabled
      */
+    public function test_c1_typed_boolean_request_rejects_invalid_shapes_and_values(): void {
+        foreach ( [ [ '1' ], 'not-a-boolean' ] as $value ) {
+            $this->set_post( [ 'enabled' => $value ] );
+            $result = $this->capture_termination( static fn() => Request::bool( 'enabled' ), true );
+            self::assertSame( 400, $this->response_code( $result['termination'] ) );
+            self::assertFalse( $this->json_payload( $result['output'] )['success'] );
+        }
+
+        $this->set_post( [ 'enabled' => '1' ] );
+        self::assertTrue( Request::bool( 'enabled' ) );
+
+        $this->set_post( [ 'enabled' => '0' ] );
+        self::assertFalse( Request::bool( 'enabled' ) );
+    }
+
     public function test_c1_ajax_permissions_request_contract(): void {
         PermissionsActions::init();
         self::assertNotFalse( has_action( 'wp_ajax_cb_core_save_permission_hide', [ PermissionsActions::class, 'save_hide' ] ) );
