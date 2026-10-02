@@ -59,7 +59,7 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 			echo \CB\Core\UI\Notice::render( [
 				'variant' => \CB\Core\UI\Notice::INFO,
 				'title'   => __( 'Reports', 'core-blueprint' ),
-				'message' => __( 'Sorry, you are not allowed to access this page.' ),
+				'message' => __( 'Sorry, you are not allowed to access this page.', 'core-blueprint' ),
 			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
 			?>
 		<?php else : ?>
@@ -147,7 +147,7 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 						<div class="cb-core-design-shell__canvas-workarea">
 							<div class="cb-core-reports__designer-preview-surface">
 								<div class="cb-core-design-shell__empty-state" data-cb-report-preview-state>
-									<?php esc_html_e( 'Loading…' ); ?>
+									<?php esc_html_e( 'Loading…', 'core-blueprint' ); ?>
 								</div>
 								<iframe
 									data-cb-report-preview
