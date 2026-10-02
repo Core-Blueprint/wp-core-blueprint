@@ -271,6 +271,6 @@ final class DB {
 	public static function drop_audit_log_table(): void {
 		global $wpdb;
 		$table = self::audit_log_table();
-		$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
 	}
 }
