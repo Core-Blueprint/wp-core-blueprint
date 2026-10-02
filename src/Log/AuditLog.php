@@ -381,7 +381,7 @@ final class AuditLog {
 			if ( ! empty( $delete_ids ) ) {
 				$placeholders = implode( ', ', array_fill( 0, count( $delete_ids ), '%d' ) );
 				$sql = $wpdb->prepare(
-					"DELETE FROM {$table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"DELETE FROM {$table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Base-owned table; generated %d placeholders from integer IDs.
 					...$delete_ids
 				);
 				$deleted = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared
