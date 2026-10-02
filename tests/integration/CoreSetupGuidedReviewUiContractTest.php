@@ -101,8 +101,14 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		( new Dashboard() )->render();
 		$before = (string) ob_get_clean();
 
+		self::assertStringContainsString( 'Get started', $before );
 		self::assertStringContainsString( 'Start Core Setup', $before );
 		self::assertStringNotContainsString( 'Complete Core Setup', $before );
+		$get_started_position = strpos( $before, 'Get started' );
+		$safeguards_position  = strpos( $before, 'Safeguards' );
+		self::assertIsInt( $get_started_position );
+		self::assertIsInt( $safeguards_position );
+		self::assertLessThan( $safeguards_position, $get_started_position );
 
 		Lifecycle::mark_started( $user_id );
 
@@ -110,6 +116,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		( new Dashboard() )->render();
 		$after = (string) ob_get_clean();
 
+		self::assertStringNotContainsString( 'Get started', $after );
 		self::assertStringContainsString( 'Review Core Setup', $after );
 		self::assertStringNotContainsString( 'Start Core Setup', $after );
 		self::assertStringContainsString( 'page=core-blueprint-setup', $after );
