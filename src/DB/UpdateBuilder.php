@@ -59,6 +59,7 @@ final class UpdateBuilder {
 	private bool $match_all_acknowledged = false;
 
 	public function __construct( string $table ) {
+		$this->validate_table( $table );
 		$this->table = $table;
 	}
 
@@ -144,6 +145,14 @@ final class UpdateBuilder {
 	private function validate_bare_column( string $column ): void {
 		if ( ! preg_match( '/^[A-Za-z_][A-Za-z0-9_]*$/', $column ) ) {
 			_doing_it_wrong( __METHOD__, 'Invalid column identifier in UPDATE SET: ' . esc_html( $column ), '1.0.16' );
+			throw new \InvalidArgumentException( 'Invalid SQL column identifier.' );
+		}
+	}
+
+	private function validate_table( string $table ): void {
+		if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
+			_doing_it_wrong( __METHOD__, 'Invalid UPDATE table identifier: ' . esc_html( $table ), '1.0.0' );
+			throw new \InvalidArgumentException( 'Invalid SQL table identifier.' );
 		}
 	}
 }
