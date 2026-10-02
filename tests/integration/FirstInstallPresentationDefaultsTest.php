@@ -64,6 +64,29 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 		self::assertTrue( HudSettings::site_enabled() );
 	}
 
+	public function test_floating_menu_save_validates_before_visibility_mutation_and_restores_on_failure(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'src/HUD/MenuPreferences.php' );
+		self::assertIsString( $source );
+
+		$invalid_guard = strpos( $source, 'if ( ! is_array( $decoded ) )' );
+		$previous      = strpos( $source, '$previous_hud_enabled = Settings::site_enabled();' );
+		$persist       = false !== $previous
+			? strpos( $source, 'Settings::set_site_enabled( $hud_enabled, $actor )', $previous )
+			: false;
+		$menu_save     = strpos( $source, '$saved = self::save_editor_payload( $decoded );' );
+		$rollback      = strpos( $source, 'Settings::set_site_enabled( $previous_hud_enabled, $actor );' );
+
+		self::assertNotFalse( $invalid_guard );
+		self::assertNotFalse( $previous );
+		self::assertNotFalse( $persist );
+		self::assertNotFalse( $menu_save );
+		self::assertNotFalse( $rollback );
+		self::assertLessThan( $previous, $invalid_guard, 'Invalid menu JSON must fail before normal-path HUD visibility mutation.' );
+		self::assertLessThan( $persist, $previous );
+		self::assertLessThan( $menu_save, $persist );
+		self::assertLessThan( $rollback, $menu_save, 'A failed menu save must restore the prior HUD visibility state.' );
+	}
+
 	public function test_core_blueprint_menu_is_positioned_after_settings(): void {
 		$source = file_get_contents( CB_CORE_DIR . 'src/Admin/Admin.php' );
 		self::assertIsString( $source );
