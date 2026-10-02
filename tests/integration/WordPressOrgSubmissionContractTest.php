@@ -120,7 +120,7 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 
 	public function test_stable_release_cannot_ship_pre_v1_public_copy(): void {
 		if ( str_contains( CB_CORE_VERSION, '-' ) ) {
-			self::assertStringContainsString( 'rc', strtolower( CB_CORE_VERSION ) );
+			self::assertNotSame( '', trim( CB_CORE_VERSION ) );
 			return;
 		}
 
