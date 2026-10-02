@@ -95,19 +95,24 @@ final class ValueCompatibility {
 		$sql = '';
 		if ( 'post' === $object_type && '' !== $subtype ) {
 			$sql = $wpdb->prepare(
-				"SELECT pm.post_id AS object_id, pm.meta_value FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_type = %s ORDER BY pm.post_id ASC, pm.meta_id ASC",
+				'SELECT pm.post_id AS object_id, pm.meta_value FROM %i pm INNER JOIN %i p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_type = %s ORDER BY pm.post_id ASC, pm.meta_id ASC',
+				$wpdb->postmeta,
+				$wpdb->posts,
 				$key,
 				$subtype
 			);
 		} elseif ( 'term' === $object_type && '' !== $subtype ) {
 			$sql = $wpdb->prepare(
-				"SELECT tm.term_id AS object_id, tm.meta_value FROM {$wpdb->termmeta} tm WHERE tm.meta_key = %s AND EXISTS (SELECT 1 FROM {$wpdb->term_taxonomy} tt WHERE tt.term_id = tm.term_id AND tt.taxonomy = %s) ORDER BY tm.term_id ASC, tm.meta_id ASC",
+				'SELECT tm.term_id AS object_id, tm.meta_value FROM %i tm WHERE tm.meta_key = %s AND EXISTS (SELECT 1 FROM %i tt WHERE tt.term_id = tm.term_id AND tt.taxonomy = %s) ORDER BY tm.term_id ASC, tm.meta_id ASC',
+				$wpdb->termmeta,
 				$key,
+				$wpdb->term_taxonomy,
 				$subtype
 			);
 		} elseif ( 'user' === $object_type ) {
 			$sql = $wpdb->prepare(
-				"SELECT um.user_id AS object_id, um.meta_value FROM {$wpdb->usermeta} um WHERE um.meta_key = %s ORDER BY um.user_id ASC, um.umeta_id ASC",
+				'SELECT um.user_id AS object_id, um.meta_value FROM %i um WHERE um.meta_key = %s ORDER BY um.user_id ASC, um.umeta_id ASC',
+				$wpdb->usermeta,
 				$key
 			);
 		}
