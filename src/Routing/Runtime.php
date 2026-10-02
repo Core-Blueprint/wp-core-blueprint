@@ -77,7 +77,9 @@ final class Runtime {
 	public static function prepare_runtime(): void {
 		if ( ! Policy::enabled() ) {
 			self::$prepared_ready = false;
-			delete_option( self::RUNTIME_SUSPENDED_OPTION );
+			if ( false !== get_option( self::RUNTIME_SUSPENDED_OPTION, false ) ) {
+				delete_option( self::RUNTIME_SUSPENDED_OPTION );
+			}
 			return;
 		}
 
