@@ -438,12 +438,9 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 						<?php endif; ?>
 						<span class="cb-core-separator">
 							<?php
-							printf(
-								/* translators: 1: current page, 2: total pages */
-								esc_html__( 'Page %1$d of %2$d', 'core-blueprint' ),
-								$current,
-								$total_pages
-							);
+							/* translators: 1: current page, 2: total pages */
+							$pagination_label = sprintf( __( 'Page %1$d of %2$d', 'core-blueprint' ), $current, $total_pages );
+							echo esc_html( $pagination_label );
 							?>
 						</span>
 						<?php if ( $current < $total_pages ) : ?>
