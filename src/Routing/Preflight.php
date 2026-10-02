@@ -130,6 +130,7 @@ final class Preflight {
 		}
 
 		if ( str_contains( $permalink_structure, '%category%' ) ) {
+			/* translators: %category% is the literal WordPress permalink token and must not be translated. */
 			$warnings[] = __( 'The current post permalink structure contains %category%. Core Blueprint will reserve p{n} inside category paths for archive pagination.', 'core-blueprint' );
 		}
 
