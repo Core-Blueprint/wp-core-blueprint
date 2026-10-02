@@ -95,9 +95,16 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 		self::assertNull( get_option( Onboarding::REDIRECT_OPTION, null ) );
 	}
 
-	public function test_plugins_screen_exposes_durable_core_setup_action_link(): void {
+	public function test_plugins_screen_exposes_durable_core_setup_action_link_for_trusted_activator(): void {
 		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		wp_set_current_user( $user_id );
+
+		// Model the real first-activation authority path. Privileged Access Guard
+		// may intentionally suppress manage_options for an unapproved administrator,
+		// while the genuine first activator is promoted and approved as trust root.
+		Core::activate();
+		self::assertTrue( current_user_can( 'manage_options' ) );
+		self::assertContains( Roles::OPERATOR_ROLE, (array) get_userdata( $user_id )->roles );
 
 		$links = Onboarding::plugin_action_links( [ '<a href="#">Deactivate</a>' ] );
 		self::assertStringContainsString( 'page=core-blueprint-setup', $links[0] );
