@@ -3,6 +3,7 @@
  * Template: Core Blueprint Dashboard (landing).
  *
  * Variables provided by \CB\Core\Admin\Pages\Dashboard::render():
+ *   $get_started_card    array|null - first-install Core Setup entry until review begins
  *   $safeguards          array - canonical Base safeguard status entries (ordered)
  *   $extensions          array - sibling CB plugins detected, enriched with status menus
  *   $operations_cards    array - Operations nav cards (Logs, Notes, Reports, Core Profiles)
@@ -33,6 +34,18 @@ use CB\Core\Modules\Status;
 	<p class="cb-core-intro">
 		<?php esc_html_e( 'Core Blueprint provides the base layer for security hardening, activity logging, and site governance.', 'core-blueprint' ); ?>
 	</p>
+
+	<?php if ( is_array( $get_started_card ) ) : ?>
+		<section class="cb-core-section cb-core-section--get-started">
+			<h2 class="cb-core-section-title"><?php esc_html_e( 'Get started', 'core-blueprint' ); ?></h2>
+			<div class="cb-core-tiles cb-core-tiles--get-started">
+				<a class="cb-core-tile cb-core-tile--navigation cb-core-tile--get-started" href="<?php echo esc_url( $get_started_card['url'] ); ?>">
+					<span class="cb-core-tile__title"><?php echo esc_html( $get_started_card['title'] ); ?></span>
+					<span class="cb-core-tile__meta"><?php echo esc_html( $get_started_card['meta'] ); ?></span>
+				</a>
+			</div>
+		</section>
+	<?php endif; ?>
 
 	<?php /* ─── Safeguards ─────────────────────────────────────────────── */ ?>
 	<section class="cb-core-section">
