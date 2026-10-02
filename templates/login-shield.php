@@ -110,10 +110,18 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 					data-url-base="<?php echo esc_attr( trailingslashit( home_url( '/' ) ) ); ?>">
 					<?php
 					if ( '' !== $config['slug'] ) {
-						printf(
-							/* translators: %s: full preview URL */
-							esc_html__( 'Preview: %s', 'core-blueprint' ),
+						$preview_html = sprintf(
+							/* translators: %s: full preview URL wrapped in a code element. */
+							__( 'Preview: %s', 'core-blueprint' ),
 							'<code data-cb-core-ls-preview-url>' . esc_html( $custom_url ) . '</code>'
+						);
+						echo wp_kses(
+							$preview_html,
+							[
+								'code' => [
+									'data-cb-core-ls-preview-url' => true,
+								],
+							]
 						);
 					} else {
 						echo '<code data-cb-core-ls-preview-url hidden></code>';
@@ -274,10 +282,18 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 
 	<p class="cb-core-ls-failsafe-hint">
 		<?php
-		printf(
-			/* translators: %s: HTML link to the Failsafe tab */
-			esc_html__( 'Locked out after changing your login URL? Use the %s to recover.', 'core-blueprint' ),
+		$failsafe_hint = sprintf(
+			/* translators: %s: HTML link to the Failsafe tab. */
+			__( 'Locked out after changing your login URL? Use the %s to recover.', 'core-blueprint' ),
 			'<a href="' . esc_url( $safeguards_url ) . '">' . esc_html__( 'Failsafe bypass URL', 'core-blueprint' ) . '</a>'
+		);
+		echo wp_kses(
+			$failsafe_hint,
+			[
+				'a' => [
+					'href' => true,
+				],
+			]
 		);
 		?>
 	</p>
