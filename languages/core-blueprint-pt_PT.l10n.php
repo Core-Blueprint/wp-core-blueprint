@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Composed catalog working state is local to the require scope and returns its payload.
 declare(strict_types=1);
 
 defined( 'ABSPATH' ) || exit;
