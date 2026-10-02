@@ -106,6 +106,7 @@ $catalog['messages'] = array_replace(
         'Review this site step by step and decide which Core Blueprint features belong here. Nothing is changed automatically.' => 'Esamina questo sito passo dopo passo e decidi quali funzionalità di Core Blueprint sono adatte. Nulla viene modificato automaticamente.',
         'You can return to Core Setup at any time. Review statuses describe the current configuration, not an activation error.' => 'Puoi tornare a Core Setup in qualsiasi momento. Gli stati di revisione descrivono la configurazione attuale, non un errore di attivazione.',
         'The first authenticated activator was assigned the CB Operator role.' => 'Al primo utente autenticato che ha attivato Core Blueprint è stato assegnato il ruolo CB Operator.',
+        'Step %1$d of %2$d' => 'Passaggio %1$d di %2$d',
         'Start Core Setup' => 'Avvia Core Setup',
         'Store setup-specific context for this section. This note does not change configuration and does not depend on the optional Notes module.' => 'Salva il contesto specifico della configurazione per questa sezione. Questa nota non modifica la configurazione e non dipende dal modulo opzionale Notes.',
                 'The configuration changed since this check was last reviewed. Review the current settings again.' => 'La configurazione è cambiata dall\'ultima revisione di questo controllo. Rivedi nuovamente le impostazioni attuali.',
