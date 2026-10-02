@@ -55,6 +55,69 @@ final class CB_Base_Option_Policy_Contract_Test extends WP_UnitTestCase {
 		self::assertFalse( get_option( self::VERSION_OPTION, false ) );
 	}
 
+	public function test_request_cache_priming_keeps_missing_defaults_absent_and_cached(): void {
+		global $wpdb;
+
+		$common = 'cb_core_user_roles_enabled';
+		$admin  = 'cb_core_admin_navigation_policy';
+
+		$common_snapshot = $this->snapshot_option( $common );
+		$admin_snapshot  = $this->snapshot_option( $admin );
+
+		try {
+			delete_option( $common );
+			delete_option( $admin );
+			$this->clear_option_runtime_cache( $common );
+			$this->clear_option_runtime_cache( $admin );
+
+			$before = $wpdb->num_queries;
+			OptionPolicy::prime_request_cache( false );
+			$after_prime = $wpdb->num_queries;
+
+			self::assertLessThanOrEqual( 1, $after_prime - $before );
+
+			$notoptions = wp_cache_get( 'notoptions', 'options' );
+			self::assertIsArray( $notoptions );
+			self::assertArrayHasKey( $common, $notoptions );
+			self::assertArrayNotHasKey( $admin, $notoptions );
+
+			self::assertSame( '__missing__', get_option( $common, '__missing__' ) );
+			self::assertSame( $after_prime, $wpdb->num_queries, 'Primed missing state must not issue another option query.' );
+
+			self::assertNull(
+				$wpdb->get_var( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name = %s", $common ) ),
+				'Priming must not persist a missing public-v1 default.'
+			);
+
+			$this->clear_option_runtime_cache( $common );
+			$this->clear_option_runtime_cache( $admin );
+			OptionPolicy::prime_request_cache( true );
+
+			$notoptions = wp_cache_get( 'notoptions', 'options' );
+			self::assertIsArray( $notoptions );
+			self::assertArrayHasKey( $common, $notoptions );
+			self::assertArrayHasKey( $admin, $notoptions );
+		} finally {
+			$this->restore_snapshot( $common, $common_snapshot );
+			$this->restore_snapshot( $admin, $admin_snapshot );
+		}
+	}
+
+	public function test_request_cache_prime_runs_before_subsystem_boot(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'src/Core.php' );
+		self::assertIsString( $source );
+
+		$prime = strpos( $source, 'OptionPolicy::prime_request_cache( RequestContext::is_admin_screen() );' );
+		$migration = strpos( $source, 'MigrationRecovery::boot();' );
+		$permissions = strpos( $source, '\\CB\\Core\\Permissions\\Bootstrap::boot();' );
+
+		self::assertIsInt( $prime );
+		self::assertIsInt( $migration );
+		self::assertIsInt( $permissions );
+		self::assertLessThan( $migration, $prime );
+		self::assertLessThan( $permissions, $prime );
+	}
+
 	public function test_option_policy_has_no_minimum_version_function_guard(): void {
 		$source = file_get_contents( CB_CORE_DIR . 'src/OptionPolicy.php' );
 		self::assertIsString( $source );
@@ -63,6 +126,44 @@ final class CB_Base_Option_Policy_Contract_Test extends WP_UnitTestCase {
 			$source
 		);
 		self::assertStringContainsString( 'wp_set_option_autoload_values( $values );', $source );
+		self::assertStringNotContainsString(
+			"function_exists( 'wp_prime_option_caches' )",
+			$source
+		);
+		self::assertStringContainsString( 'wp_prime_option_caches( $options );', $source );
+	}
+
+	/** @return array{exists:bool,value:mixed,autoload:bool} */
+	private function snapshot_option( string $name ): array {
+		$sentinel = new stdClass();
+		$value    = get_option( $name, $sentinel );
+
+		return [
+			'exists'   => $value !== $sentinel,
+			'value'    => $value,
+			'autoload' => array_key_exists( $name, wp_load_alloptions() ),
+		];
+	}
+
+	/** @param array{exists:bool,value:mixed,autoload:bool} $snapshot */
+	private function restore_snapshot( string $name, array $snapshot ): void {
+		delete_option( $name );
+		if ( $snapshot['exists'] ) {
+			add_option( $name, $snapshot['value'], '', $snapshot['autoload'] );
+		}
+		$this->clear_option_runtime_cache( $name );
+	}
+
+	private function clear_option_runtime_cache( string $name ): void {
+		wp_cache_delete( $name, 'options' );
+
+		$notoptions = wp_cache_get( 'notoptions', 'options' );
+		if ( is_array( $notoptions ) && array_key_exists( $name, $notoptions ) ) {
+			unset( $notoptions[ $name ] );
+			wp_cache_set( 'notoptions', $notoptions, 'options' );
+		}
+
+		$this->clear_alloptions_cache();
 	}
 
 	private function clear_alloptions_cache(): void {
