@@ -70,6 +70,11 @@ final class CB_Base_Option_Policy_Contract_Test extends WP_UnitTestCase {
 			$this->clear_option_runtime_cache( $common );
 			$this->clear_option_runtime_cache( $admin );
 
+			// wp_prime_option_caches() consults alloptions before issuing its
+			// bounded prime query. Load that shared WordPress cache first so
+			// this assertion measures only the option-prime operation itself.
+			wp_load_alloptions();
+
 			$before = $wpdb->num_queries;
 			OptionPolicy::prime_request_cache( false );
 			$after_prime = $wpdb->num_queries;
