@@ -83,11 +83,10 @@ final class DeleteBuilder {
 			? '1=1'
 			: implode( ' AND ', $this->where );
 
-		$sql = "DELETE FROM {$this->table} WHERE {$where_sql}";
+		$sql    = "DELETE FROM %i WHERE {$where_sql}";
+		$params = array_merge( [ $this->table ], $this->params );
 
-		$result = empty( $this->params )
-			? $wpdb->query( $sql ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			: $wpdb->query( $wpdb->prepare( $sql, $this->params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE shape is builder-owned and identifier-validated.
 
 		return false === $result ? 0 : (int) $result;
 	}
