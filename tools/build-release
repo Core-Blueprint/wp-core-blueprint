@@ -35,6 +35,9 @@ RUNTIME_DIRS = (
     "languages",
     "licenses",
 )
+PACKAGE_EXCLUDED_FILES = frozenset({
+    "src/PDF/lib/dompdf/autoload.inc.php",
+})
 FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
 DESIGN_MODULE_ROOT = Path("assets/js/design")
 DESIGN_IMPORT_RE = re.compile(
@@ -85,6 +88,9 @@ def collect_files(source: Path) -> list[Path]:
             if path.is_symlink():
                 fail(f"Release tree may not contain symlinks: {path.relative_to(source)}")
             if path.is_file():
+                relative_path = path.relative_to(source).as_posix()
+                if relative_path in PACKAGE_EXCLUDED_FILES:
+                    continue
                 files.append(path)
 
     if not files:
