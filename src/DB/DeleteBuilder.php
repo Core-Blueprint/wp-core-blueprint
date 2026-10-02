@@ -86,7 +86,7 @@ final class DeleteBuilder {
 		$sql    = "DELETE FROM %i WHERE {$where_sql}";
 		$params = array_merge( [ $this->table ], $this->params );
 
-		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE shape is builder-owned and identifier-validated.
+		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- %i binds the table identifier; WHERE fragments are builder-owned and identifier-validated.
 
 		return false === $result ? 0 : (int) $result;
 	}
