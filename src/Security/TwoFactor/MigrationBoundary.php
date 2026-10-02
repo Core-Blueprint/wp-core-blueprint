@@ -35,7 +35,7 @@ final class MigrationBoundary {
 		$placeholders = implode( ', ', array_fill( 0, count( $keys ), '%s' ) );
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key IN ({$placeholders})",
+				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- generated %s placeholders; keys are fixed internal meta constants.
 				...$keys
 			)
 		);
@@ -43,7 +43,7 @@ final class MigrationBoundary {
 
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ({$placeholders})",
+				"DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- generated %s placeholders; keys are fixed internal meta constants.
 				...$keys
 			)
 		);
@@ -57,7 +57,7 @@ final class MigrationBoundary {
 
 		$remaining = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key IN ({$placeholders})",
+				"SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- generated %s placeholders; keys are fixed internal meta constants.
 				...$keys
 			)
 		);
