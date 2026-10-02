@@ -514,7 +514,7 @@ final class AuditLog {
 			'192.168.0.0/16', // Private network
 		];
 
-		$remote_addr = $_SERVER['REMOTE_ADDR'] ?? '';
+		$remote_addr = sanitize_text_field( (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 		$candidates = [];
 
 		// Check if the request comes from a trusted proxy
