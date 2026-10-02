@@ -44,6 +44,7 @@ final class Renderer {
                 <strong>
                     <?php
                     printf(
+                        /* translators: %d: number of note search results. */
                         esc_html( _n( '%d result', '%d results', (int) $result['total'], 'core-blueprint' ) ),
                         (int) $result['total']
                     );
@@ -84,6 +85,7 @@ final class Renderer {
                     <strong data-cb-notes-selected-summary>
                         <?php
                         printf(
+                            /* translators: %d: number of selected notes; initialized to zero and updated by the interface. */
                             esc_html( _n( '%d note selected.', '%d notes selected.', 0, 'core-blueprint' ) ),
                             0
                         );
@@ -92,6 +94,7 @@ final class Renderer {
                     <button type="button" class="button-link cb-notes-select-visible" data-cb-notes-select-visible>
                         <?php
                         printf(
+                            /* translators: %d: number of notes currently visible in the list. */
                             esc_html__( 'Select all %d visible notes', 'core-blueprint' ),
                             count( $result['items'] )
                         );
@@ -208,6 +211,7 @@ final class Renderer {
                             <span>
                                 <?php
                                 printf(
+                                    /* translators: %d: number of tags on the note. */
                                     esc_html( _n( '%d tag', '%d tags', count( $tags ), 'core-blueprint' ) ),
                                     count( $tags )
                                 );
@@ -251,6 +255,7 @@ final class Renderer {
                 <p class="cb-notes-footnote">
                     <?php
                     printf(
+                        /* translators: 1: note author display name, 2: last editor display name. */
                         esc_html__( 'Created by %1$s. Last edited by %2$s.', 'core-blueprint' ),
                         esc_html( $author ? $author->display_name : '-' ),
                         esc_html( $editor ? $editor->display_name : '-' )
