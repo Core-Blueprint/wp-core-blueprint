@@ -366,7 +366,7 @@ final class LoginShield {
 			// surprising rewrites). home_url('/') is always a safe
 			// same-origin target.
 			nocache_headers();
-			wp_redirect( home_url( '/' ), 302 );
+			wp_redirect( home_url( '/' ), 302 ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- fixed same-origin target; wp_safe_redirect() would re-enter this module's own URL-governance filters.
 			exit;
 		}
 
