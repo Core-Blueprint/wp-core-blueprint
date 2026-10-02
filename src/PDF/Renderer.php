@@ -118,7 +118,7 @@ final class Renderer {
 			if ( null !== $font_cache ) {
 				// Dompdf's derived metric cache contains flat JSON files only.
 				foreach ( glob( $font_cache . '/*' ) ?: [] as $cache_file ) {
-					unlink( $cache_file );
+					wp_delete_file( $cache_file );
 				}
 				rmdir( $font_cache );
 			}
