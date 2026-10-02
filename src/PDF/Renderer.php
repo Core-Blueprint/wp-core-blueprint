@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Renderer {
 
-	const VENDOR_AUTOLOAD = '/src/PDF/lib/dompdf/autoload.inc.php';
+	const VENDOR_AUTOLOAD = '/src/PDF/lib/dompdf/vendor/autoload.php';
 
 	private const EXPECTED_DOMPDF_VERSION = '3.1.6';
 	private const REQUIRED_EXTENSIONS      = [ 'dom', 'mbstring' ];
