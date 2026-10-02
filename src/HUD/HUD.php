@@ -528,15 +528,13 @@ final class HUD {
 				<?php endif; ?>
 				<span class="cb-hud__link-label"><?php echo esc_html( $label ); ?></span>
 				<?php if ( '' !== $status_state ) : ?>
+					<?php
+					$status_value = '' !== $status_detail ? $status_detail : $status_state;
+					/* translators: %s: status detail or status state. */
+					$status_screen_reader = sprintf( __( 'Status: %s', 'core-blueprint' ), $status_value );
+					?>
 					<span class="cb-hud__link-dot cb-hud__link-dot--<?php echo esc_attr( $status_state ); ?>" aria-hidden="true"></span>
-					<span class="screen-reader-text">
-						<?php
-						/* translators: %s: status detail line */
-						echo '' !== $status_detail
-							? esc_html( sprintf( __( 'Status: %s', 'core-blueprint' ), $status_detail ) )
-							: esc_html( sprintf( __( 'Status: %s', 'core-blueprint' ), $status_state ) );
-						?>
-					</span>
+					<span class="screen-reader-text"><?php echo esc_html( $status_screen_reader ); ?></span>
 				<?php endif; ?>
 				<?php if ( '' !== $desc ) : ?>
 					<span class="cb-hud__link-desc"><?php echo esc_html( $desc ); ?></span>
