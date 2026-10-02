@@ -11,11 +11,17 @@ use CB\Core\Permissions\UserRolesState;
 use CB\Core\Reports\State as ReportsState;
 use CB\Core\Permissions\Roles;
 use CB\Core\Settings;
+use CB\Core\Setup\Onboarding;
+use CB\Core\Setup\ReviewRepository;
 
 final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTestCase {
 
+	private array $saved_request = [];
+
 	public function set_up(): void {
 		parent::set_up();
+		$this->saved_request = $_REQUEST;
+		$_REQUEST = [];
 		wp_set_current_user( 0 );
 		$this->clear_state();
 	}
@@ -23,6 +29,7 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 	public function tear_down(): void {
 		wp_set_current_user( 0 );
 		$this->clear_state();
+		$_REQUEST = $this->saved_request;
 		parent::tear_down();
 	}
 
@@ -40,6 +47,62 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 		self::assertFalse( UserRolesState::is_enabled() );
 		self::assertFalse( HudSettings::site_enabled() );
 		self::assertTrue( Settings::shield_enabled(), 'Core Shield remains part of the Base safety foundation.' );
+	}
+
+	public function test_single_plugin_first_activation_guides_activator_to_core_setup_once(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		wp_set_current_user( $user_id );
+		$_REQUEST = [
+			'action' => 'activate',
+			'plugin' => CB_CORE_BASENAME,
+		];
+
+		Core::activate();
+
+		$pending = get_option( Onboarding::REDIRECT_OPTION, null );
+		self::assertIsArray( $pending );
+		self::assertSame( $user_id, (int) ( $pending['user_id'] ?? 0 ) );
+
+		self::assertSame(
+			admin_url( 'admin.php?page=core-blueprint-setup&tab=overview' ),
+			Onboarding::consume_redirect_url()
+		);
+		self::assertNull( get_option( Onboarding::REDIRECT_OPTION, null ) );
+		self::assertSame( '', Onboarding::consume_redirect_url() );
+	}
+
+	public function test_bulk_reactivation_and_network_activation_do_not_queue_first_run_redirects(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		wp_set_current_user( $user_id );
+
+		$_REQUEST = [
+			'action' => 'activate-selected',
+			'plugin' => CB_CORE_BASENAME,
+		];
+		Core::activate();
+		self::assertNull( get_option( Onboarding::REDIRECT_OPTION, null ) );
+
+		update_option( 'cb_core_first_activated_at', '2026-01-01 00:00:00', false );
+		$_REQUEST = [
+			'action' => 'activate',
+			'plugin' => CB_CORE_BASENAME,
+		];
+		Core::activate();
+		self::assertNull( get_option( Onboarding::REDIRECT_OPTION, null ) );
+
+		delete_option( 'cb_core_first_activated_at' );
+		Core::activate( true );
+		self::assertNull( get_option( Onboarding::REDIRECT_OPTION, null ) );
+	}
+
+	public function test_plugins_screen_exposes_durable_core_setup_action_link(): void {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		wp_set_current_user( $user_id );
+
+		$links = Onboarding::plugin_action_links( [ '<a href="#">Deactivate</a>' ] );
+		self::assertStringContainsString( 'page=core-blueprint-setup', $links[0] );
+		self::assertStringContainsString( 'tab=overview', $links[0] );
+		self::assertStringContainsString( 'Core Setup', $links[0] );
 	}
 
 	public function test_public_v1_optional_workflow_defaults_are_disabled(): void {
@@ -140,6 +203,8 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 			'cb_core_package_download_enabled',
 			'cb_core_user_roles_enabled',
 			HudSettings::OPTION_DISABLED,
+			Onboarding::REDIRECT_OPTION,
+			ReviewRepository::OPTION,
 		] as $option ) {
 			delete_option( $option );
 		}
