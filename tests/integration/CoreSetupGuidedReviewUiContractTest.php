@@ -43,11 +43,11 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 
 		self::assertStringContainsString( 'Start Core Setup', $html );
 		self::assertStringContainsString( 'cb-core-notice--hero', $html );
-		self::assertStringContainsString( 'Review this site step by step and decide which Core Blueprint features belong here.', $html );
-		self::assertStringContainsString( 'Review statuses describe the current configuration', $html );
+		self::assertStringContainsString( 'Review this site step by step and decide which Core Blueprint features belong here. Nothing is changed automatically.', $html );
+		self::assertStringContainsString( 'You can return to Core Setup at any time. Review statuses describe the current configuration, not an activation error.', $html );
 		self::assertStringContainsString( 'Start review', $html );
 		self::assertStringContainsString( 'tab=environment-availability', $html );
-		self::assertStringContainsString( 'When Core Blueprint is first activated by an authenticated WordPress user', $html );
+		self::assertStringContainsString( 'The first authenticated activator was assigned the CB Operator role.', $html );
 		self::assertStringContainsString( 'tab=permissions', $html );
 		self::assertStringContainsString( 'Review permissions', $html );
 		self::assertStringNotContainsString( 'Complete Core Setup', $html );
@@ -71,6 +71,15 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'cb-core-status-strip', $html );
 		self::assertStringNotContainsString( 'name="fingerprint"', $html );
 		self::assertGreaterThan( 0, ReviewRepository::lifecycle()['started_at'] );
+	}
+
+	public function test_ui1a_core_setup_declares_canonical_button_component(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'src/Setup/Bootstrap.php' );
+		self::assertIsString( $source );
+		self::assertMatchesRegularExpression(
+			"/'components'\\s*=>\\s*\\[[\\s\\S]*'buttons'/",
+			$source
+		);
 	}
 
 	public function test_ui1b_first_run_hero_uses_canonical_typography_tokens(): void {
