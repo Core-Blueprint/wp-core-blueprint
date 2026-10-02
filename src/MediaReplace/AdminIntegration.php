@@ -275,7 +275,7 @@ final class AdminIntegration {
 			);
 		}
 
-		$attachment_id = isset( $_POST['attachment_id'] ) ? absint( $_POST['attachment_id'] ) : 0;
+		$attachment_id = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
 		$return_url     = isset( $_POST['return'] ) ? self::sanitize_return_url( wp_unslash( (string) $_POST['return'] ) ) : self::media_library_url();
 
 		if ( ! self::can_replace( $attachment_id ) ) {
@@ -288,8 +288,8 @@ final class AdminIntegration {
 		check_admin_referer( 'cb_core_replace_media_' . $attachment_id );
 
 		try {
-			$acknowledgement = isset( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
-				? wp_unslash( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+			$acknowledgement = isset( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] ) && is_scalar( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+				? sanitize_text_field( wp_unslash( (string) $_POST[ self::ACKNOWLEDGEMENT_FIELD ] ) )
 				: null;
 			MutationAcknowledgement::require_confirmed(
 				$acknowledgement, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above; strict literal confirmation only.
