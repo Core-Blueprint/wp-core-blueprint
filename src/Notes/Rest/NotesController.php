@@ -118,6 +118,7 @@ final class NotesController {
             $confirm_phrase = 'DELETE ALL NOTES';
             $typed = isset( $payload['confirm'] ) ? (string) $payload['confirm'] : '';
             if ( $typed !== $confirm_phrase ) {
+                /* translators: %s: confirmation phrase required for the destructive action. */
                 return new WP_REST_Response( [ 'success' => false, 'message' => sprintf( __( 'Confirmation phrase did not match. Type %s exactly to confirm.', 'core-blueprint' ), $confirm_phrase ) ], 400 );
             }
             $deleted = Repository::delete_all();
@@ -125,6 +126,7 @@ final class NotesController {
                 return self::write_failed_response( __( 'Notes could not be deleted.', 'core-blueprint' ) );
             }
             Audit::log( 'notes_bulk_deleted', [ 'count' => $deleted, 'user_id' => get_current_user_id() ] );
+            /* translators: %d: number of deleted notes. */
             return self::response_with_list( $filters, sprintf( _n( '%d note deleted.', '%d notes deleted.', $deleted, 'core-blueprint' ), $deleted ) );
         }
 
@@ -133,6 +135,7 @@ final class NotesController {
             $typed = isset( $payload['confirm'] ) ? (string) $payload['confirm'] : '';
             $ids = isset( $payload['ids'] ) && is_array( $payload['ids'] ) ? $payload['ids'] : [];
             if ( $typed !== $confirm_phrase ) {
+                /* translators: %s: confirmation phrase required for the destructive action. */
                 return new WP_REST_Response( [ 'success' => false, 'message' => sprintf( __( 'Confirmation phrase did not match. Type %s exactly to confirm.', 'core-blueprint' ), $confirm_phrase ) ], 400 );
             }
             $deleted = Repository::bulk_delete( $ids );
@@ -140,6 +143,7 @@ final class NotesController {
                 return self::write_failed_response( __( 'Selected notes could not be deleted.', 'core-blueprint' ) );
             }
             Audit::log( 'notes_bulk_deleted', [ 'count' => $deleted, 'ids' => array_map( 'absint', $ids ), 'user_id' => get_current_user_id() ] );
+            /* translators: %d: number of deleted notes. */
             return self::response_with_list( $filters, sprintf( _n( '%d note deleted.', '%d notes deleted.', $deleted, 'core-blueprint' ), $deleted ) );
         }
 
@@ -204,6 +208,7 @@ final class NotesController {
                 return new WP_REST_Response( [ 'success' => false, 'message' => $error->getMessage() ], 400 );
             }
             Audit::log( 'notes_imported', array_merge( $summary, [ 'user_id' => get_current_user_id() ] ) );
+            /* translators: 1: created note count, 2: overwritten note count, 3: copied note count, 4: skipped note count, 5: failed note count. */
             return self::response_with_list( $filters, sprintf( __( 'Import complete. Created: %1$d. Overwritten: %2$d. Copied: %3$d. Skipped: %4$d. Failed: %5$d.', 'core-blueprint' ), $summary['created'], $summary['overwritten'], $summary['copied'], $summary['skipped'], $summary['failed'] ) );
         }
 
