@@ -193,6 +193,37 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 		self::assertTrue( HudSettings::site_enabled() );
 	}
 
+	public function test_typography_scale_is_canonical_rem_based(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'assets/css/tokens.css' );
+		self::assertIsString( $source );
+
+		$expected = [
+			'--cb-fs-2xs' => '0.625rem',
+			'--cb-fs-xs'  => '0.6875rem',
+			'--cb-fs-sm'  => '0.75rem',
+			'--cb-fs-md'  => '0.8125rem',
+			'--cb-fs-lg'  => '0.875rem',
+			'--cb-fs-xl'  => '1rem',
+			'--cb-fs-2xl' => '1.25rem',
+			'--cb-fs-3xl' => '1.5rem',
+			'--cb-fs-4xl' => '1.75rem',
+		];
+
+		foreach ( $expected as $token => $value ) {
+			self::assertStringContainsString( $token . ':', $source );
+			self::assertMatchesRegularExpression(
+				'/'. preg_quote( $token, '/' ) . ':\\s*' . preg_quote( $value, '/' ) . '\\s*;/',
+				$source
+			);
+		}
+
+		self::assertDoesNotMatchRegularExpression(
+			'/--cb-fs-[a-z0-9-]+:\\s*[^;]*px\\s*;/i',
+			$source,
+			'Canonical Core Blueprint font-size tokens must not use px units.'
+		);
+	}
+
 	public function test_core_blueprint_menu_is_positioned_after_settings(): void {
 		$source = file_get_contents( CB_CORE_DIR . 'src/Admin/Admin.php' );
 		self::assertIsString( $source );
