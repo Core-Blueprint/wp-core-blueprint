@@ -55,6 +55,7 @@ final class InsertBuilder {
 	private array $batch = [];
 
 	public function __construct( string $table ) {
+		$this->validate_table( $table );
 		$this->table = $table;
 	}
 
@@ -194,6 +195,14 @@ final class InsertBuilder {
 	private function validate_bare_column( string $column ): void {
 		if ( ! preg_match( '/^[A-Za-z_][A-Za-z0-9_]*$/', $column ) ) {
 			_doing_it_wrong( __METHOD__, 'Invalid column identifier in INSERT: ' . esc_html( $column ), '1.0.16' );
+			throw new \InvalidArgumentException( 'Invalid SQL column identifier.' );
+		}
+	}
+
+	private function validate_table( string $table ): void {
+		if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
+			_doing_it_wrong( __METHOD__, 'Invalid INSERT table identifier: ' . esc_html( $table ), '1.0.0' );
+			throw new \InvalidArgumentException( 'Invalid SQL table identifier.' );
 		}
 	}
 }
