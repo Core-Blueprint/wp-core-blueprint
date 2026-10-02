@@ -163,7 +163,7 @@ final class Actions {
 	}
 
 	private static function guard(): void {
-		if ( 'POST' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) {
+		if ( 'POST' !== strtoupper( (string) wp_unslash( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) {
 			wp_die( esc_html__( 'Invalid request method.', 'core-blueprint' ), '', [ 'response' => 405 ] );
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
