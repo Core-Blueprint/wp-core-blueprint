@@ -29,7 +29,7 @@ final class Vault {
 		$canonical_abspath = realpath( ABSPATH );
 		$site_root = is_string( $canonical_abspath ) ? wp_normalize_path( $canonical_abspath ) : wp_normalize_path( ABSPATH );
 		$parent = dirname( rtrim( $site_root, '/' ) );
-		$document_root = isset( $_SERVER['DOCUMENT_ROOT'] ) ? realpath( (string) $_SERVER['DOCUMENT_ROOT'] ) : false;
+		$document_root = isset( $_SERVER['DOCUMENT_ROOT'] ) ? realpath( (string) wp_unslash( $_SERVER['DOCUMENT_ROOT'] ) ) : false;
 		$document_root = is_string( $document_root ) ? rtrim( wp_normalize_path( $document_root ), '/' ) : '';
 		if ( '' !== $document_root && ( $parent === $document_root || PathGuard::is_inside( $parent, $document_root ) ) ) {
 			$parent = dirname( $document_root );
