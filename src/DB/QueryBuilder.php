@@ -94,6 +94,7 @@ final class QueryBuilder {
 	 * @param string|null $alias Optional alias for use in SELECT/JOIN/WHERE.
 	 */
 	public function __construct( string $table, ?string $alias = null ) {
+		$this->validate_table( $table );
 		$this->table = $table;
 		if ( null !== $alias ) {
 			$this->validate_alias( $alias );
@@ -294,6 +295,7 @@ final class QueryBuilder {
 	}
 
 	private function add_join( string $type, string $table, string $alias, string $on_left, string $on_right ): self {
+		$this->validate_table( $table );
 		$this->validate_alias( $alias );
 		$this->validate_qualified_column( $on_left );
 		$this->validate_qualified_column( $on_right );
@@ -779,6 +781,7 @@ final class QueryBuilder {
 	private function validate_alias( string $alias ): void {
 		if ( ! preg_match( '/^[A-Za-z_][A-Za-z0-9_]*$/', $alias ) ) {
 			_doing_it_wrong( __METHOD__, 'Invalid table alias: ' . esc_html( $alias ), '1.0.16' );
+			throw new \InvalidArgumentException( 'Invalid SQL alias identifier.' );
 		}
 	}
 
@@ -789,6 +792,14 @@ final class QueryBuilder {
 	private function validate_qualified_column( string $column ): void {
 		if ( ! preg_match( '/^[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*$/', $column ) ) {
 			_doing_it_wrong( __METHOD__, 'JOIN ON columns must be qualified (alias.column): ' . esc_html( $column ), '1.0.16' );
+			throw new \InvalidArgumentException( 'Invalid qualified SQL column identifier.' );
+		}
+	}
+
+	private function validate_table( string $table ): void {
+		if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
+			_doing_it_wrong( __METHOD__, 'Invalid query table identifier: ' . esc_html( $table ), '1.0.0' );
+			throw new \InvalidArgumentException( 'Invalid SQL table identifier.' );
 		}
 	}
 }
