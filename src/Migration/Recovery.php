@@ -608,7 +608,8 @@ final class Recovery {
 		}
 
 		$sql = $wpdb->prepare(
-			'SELECT option_value FROM ' . $table . ' WHERE option_name = %s LIMIT 1',
+			'SELECT option_value FROM %i WHERE option_name = %s LIMIT 1',
+			$table,
 			$name
 		);
 		$value = $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
