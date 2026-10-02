@@ -313,8 +313,8 @@ final class EmailAlerts {
 			/* translators: %s: site name */
 			$subject = sprintf( __( '[Core Blueprint][SECURITY] Privileged account requires review - %s', 'core-blueprint' ), $site_name );
 		} else {
-			/* translators: 1: severity in uppercase, 2: site name */
 			$subject = sprintf(
+				/* translators: 1: severity in uppercase, 2: site name */
 				__( '[Core Blueprint][%1$s] %2$s', 'core-blueprint' ),
 				strtoupper( $severity ),
 				$site_name
