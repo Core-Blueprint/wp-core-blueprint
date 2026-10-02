@@ -467,17 +467,21 @@ class MaintenanceReport {
 		}
 		if ( $age_seconds < HOUR_IN_SECONDS ) {
 			$mins = max( 1, (int) round( $age_seconds / MINUTE_IN_SECONDS ) );
+			/* translators: %d: number of minutes. */
 			return sprintf( _n( '%d minute ago', '%d minutes ago', $mins, 'core-blueprint' ), $mins );
 		}
 		if ( $age_seconds < DAY_IN_SECONDS ) {
 			$hours = max( 1, (int) round( $age_seconds / HOUR_IN_SECONDS ) );
+			/* translators: %d: number of hours. */
 			return sprintf( _n( '%d hour ago', '%d hours ago', $hours, 'core-blueprint' ), $hours );
 		}
 		if ( $age_seconds < 30 * DAY_IN_SECONDS ) {
 			$days = max( 1, (int) round( $age_seconds / DAY_IN_SECONDS ) );
+			/* translators: %d: number of days. */
 			return sprintf( _n( '%d day ago', '%d days ago', $days, 'core-blueprint' ), $days );
 		}
 		$months = max( 1, (int) round( $age_seconds / ( 30 * DAY_IN_SECONDS ) ) );
+		/* translators: %d: number of months. */
 		return sprintf( _n( '%d month ago', '%d months ago', $months, 'core-blueprint' ), $months );
 	}
 
