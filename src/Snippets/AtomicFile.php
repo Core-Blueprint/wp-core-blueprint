@@ -42,7 +42,7 @@ final class AtomicFile {
 		}
 
 		if ( ! $ok || ! @rename( $tmp, $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			@unlink( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			wp_delete_file( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			return false;
 		}
 
