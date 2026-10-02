@@ -100,7 +100,10 @@ final class Page extends PageBase {
 				<?php if ( ResourceRegistry::BASE_OWNER === $owner ) : ?>
 					<?php esc_html_e( 'Base provides the standard roles below. You can assign or change their resources, but software-defined roles cannot be removed.', 'core-blueprint' ); ?>
 				<?php else : ?>
-					<?php printf( esc_html__( '%s contributes its own compliance roles. You can assign resources and add your own organisation-specific items in this section.', 'core-blueprint' ), esc_html( $owner_label ) ); ?>
+					<?php
+					/* translators: %s: extension or owner label. */
+					printf( esc_html__( '%s contributes its own compliance roles. You can assign resources and add your own organisation-specific items in this section.', 'core-blueprint' ), esc_html( $owner_label ) );
+					?>
 				<?php endif; ?>
 			</p>
 
