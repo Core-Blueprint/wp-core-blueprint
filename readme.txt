@@ -27,6 +27,12 @@ Base includes optional modules that can be enabled or disabled independently. Th
 
 Examples include Media Formats, Content Models, Mail Delivery, and related administration tooling.
 
+= Managed Snippets =
+
+Managed Snippets is an optional module and is disabled by default. It allows authorized Core Blueprint operators to manage PHP, JavaScript, CSS, and HTML snippets when that workflow is appropriate for the site.
+
+Executable-code changes require explicit privileged authority and remain subject to WordPress file-modification policy. Imported snippets are disabled by default, PHP is validated before storage, managed code is integrity-checked before runtime, and runtime failures can automatically disable the affected snippet. Core Blueprint also provides a server-side emergency stop for the Snippets runtime.
+
 = Mail Delivery =
 
 Mail Delivery is optional. Sites may continue using the normal WordPress mail path or configure a supported transport.
