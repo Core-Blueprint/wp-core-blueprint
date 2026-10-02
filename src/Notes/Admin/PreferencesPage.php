@@ -42,7 +42,7 @@ final class PreferencesPage {
 	 * @return array{type:string,message:string}|null
 	 */
 	public static function maybe_handle_post(): ?array {
-		if ( 'POST' !== (string) wp_unslash( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+		if ( 'POST' !== strtoupper( sanitize_key( wp_unslash( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) ) ) {
 			return null;
 		}
 
