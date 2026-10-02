@@ -422,19 +422,33 @@ final class ReplaceService {
 			'size'     => $expected_size,
 		];
 
+		$required_overrides = [
+			'test_form'                => false,
+			'test_size'                => true,
+			'test_type'                => true,
+			'mimes'                    => get_allowed_mime_types(),
+			'unique_filename_callback' => $unique_filename_callback,
+		];
+		$upload_overrides_filter = static function ( $overrides ) use ( $required_overrides ): array {
+			$overrides = is_array( $overrides ) ? $overrides : [];
+			return array_merge( $overrides, $required_overrides );
+		};
+		$unique_filename_filter = static function ( string $filename, string $extension, string $dir, $callback ) use ( $unique_filename_callback, $stage_basename, $directory ): string {
+			unset( $extension );
+			if ( $callback === $unique_filename_callback && wp_normalize_path( $dir ) === $directory ) {
+				return $stage_basename;
+			}
+			return $filename;
+		};
+
 		add_filter( 'upload_dir', $upload_dir_filter, PHP_INT_MAX );
+		add_filter( 'wp_handle_upload_overrides', $upload_overrides_filter, PHP_INT_MAX, 2 );
+		add_filter( 'wp_unique_filename', $unique_filename_filter, PHP_INT_MAX, 4 );
 		try {
-			$handled = wp_handle_upload(
-				$file,
-				[
-					'test_form'                => false,
-					'test_size'                => true,
-					'test_type'                => true,
-					'mimes'                    => get_allowed_mime_types(),
-					'unique_filename_callback' => $unique_filename_callback,
-				]
-			);
+			$handled = wp_handle_upload( $file, $required_overrides );
 		} finally {
+			remove_filter( 'wp_unique_filename', $unique_filename_filter, PHP_INT_MAX );
+			remove_filter( 'wp_handle_upload_overrides', $upload_overrides_filter, PHP_INT_MAX );
 			remove_filter( 'upload_dir', $upload_dir_filter, PHP_INT_MAX );
 		}
 
