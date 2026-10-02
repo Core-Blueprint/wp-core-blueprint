@@ -477,14 +477,14 @@ final class QueryBuilder {
 
 		$params = $this->effective_params();
 		if ( empty( $params ) && null === $this->limit ) {
-			$rows = $wpdb->get_results( $sql, $output ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$rows = $wpdb->get_results( $sql, $output ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL is emitted only by the closed builder grammar after strict identifier validation; this branch has no value placeholders.
 		} else {
 			if ( null !== $this->limit ) {
 				$sql     .= ' LIMIT %d OFFSET %d';
 				$params[] = $this->limit;
 				$params[] = (int) ( $this->offset ?? 0 );
 			}
-			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ), $output ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ), $output ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL shape is builder-owned; identifiers are regex-validated and every dynamic value is bound.
 		}
 
 		return is_array( $rows ) ? $rows : [];
@@ -524,9 +524,9 @@ final class QueryBuilder {
 
 		$params = $this->effective_params();
 		if ( empty( $params ) ) {
-			$col = $wpdb->get_col( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$col = $wpdb->get_col( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL is emitted only by the closed builder grammar after strict identifier validation; this branch has no value placeholders.
 		} else {
-			$col = $wpdb->get_col( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$col = $wpdb->get_col( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL shape is builder-owned; identifiers are regex-validated and every dynamic value is bound.
 		}
 
 		return is_array( $col ) ? $col : [];
@@ -767,9 +767,9 @@ final class QueryBuilder {
 
 		$params = $this->effective_params();
 		if ( empty( $params ) ) {
-			return $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL is emitted only by the closed builder grammar after strict identifier validation; this branch has no value placeholders.
 		}
-		return $wpdb->get_var( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $wpdb->get_var( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL shape is builder-owned; identifiers are regex-validated and every dynamic value is bound.
 	}
 
 	// ─── Validators ───────────────────────────────────────────────────────────
