@@ -110,8 +110,9 @@ final class Actions {
 		// Read-only portability remains intentionally available while Snippets is
 		// disabled so operators can recover/export stored code without re-enabling execution.
 		self::guard( 'cb_core_snippets_export', false, false );
-		$ids = isset( $_POST['snippet_ids'] ) && is_array( $_POST['snippet_ids'] )
-			? array_map( static fn( $id ) => sanitize_key( wp_unslash( $id ) ), $_POST['snippet_ids'] )
+		$raw_ids = isset( $_POST['snippet_ids'] ) ? wp_unslash( $_POST['snippet_ids'] ) : [];
+		$ids = is_array( $raw_ids )
+			? array_map( static fn( $id ) => sanitize_key( (string) $id ), $raw_ids )
 			: [];
 		$data = Exporter::build( $ids );
 		AuditLog::log( 'snippets_exported', 'notice', [ 'count' => (int) $data['snippets_count'] ] );
@@ -155,8 +156,11 @@ final class Actions {
 
 		if ( $preserve_ids ) {
 			try {
+				$acknowledgement = isset( $_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] )
+					? wp_unslash( $_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] )
+					: null;
 				MutationAcknowledgement::require_confirmed(
-					$_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
+					$acknowledgement, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
 					__( 'Confirm your responsibility for backup and recovery before restoring snippets with preserved IDs.', 'core-blueprint' )
 				);
 			} catch ( \InvalidArgumentException $error ) {
