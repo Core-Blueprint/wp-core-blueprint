@@ -369,10 +369,20 @@ final class Themes {
 				'family'      => (string) ( $def['family'] ?? 'partner' ),
 				'css_url'     => esc_url_raw( (string) ( $def['css_url'] ?? '' ) ),
 				'author'      => sanitize_text_field( (string) ( $def['author'] ?? '' ) ),
-				'preview_svg' => isset( $def['preview_svg'] ) ? wp_kses( (string) $def['preview_svg'], self::allowed_svg() ) : '',
+				'preview_svg' => isset( $def['preview_svg'] ) ? self::sanitize_preview_svg( (string) $def['preview_svg'] ) : '',
 			];
 		}
 		return $out;
+	}
+
+	/**
+	 * Sanitize partner-theme preview SVG at the trust boundary.
+	 *
+	 * Safe to call both when a theme is registered and immediately before
+	 * rendering so output remains escape-late even when data provenance changes.
+	 */
+	public static function sanitize_preview_svg( string $svg ): string {
+		return wp_kses( $svg, self::allowed_svg() );
 	}
 
 	/** Reset the cached registry - called after filter changes during tests. */
