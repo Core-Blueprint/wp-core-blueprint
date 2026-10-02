@@ -79,7 +79,7 @@ final class RolePolicy {
 				if ( ! is_scalar( $reason ) ) {
 					continue;
 				}
-				$reason = trim( (string) $reason );
+				$reason = trim( sanitize_text_field( (string) $reason ) );
 				if ( '' !== $reason && ! in_array( $reason, $delete_reasons, true ) ) {
 					$delete_reasons[] = $reason;
 				}
