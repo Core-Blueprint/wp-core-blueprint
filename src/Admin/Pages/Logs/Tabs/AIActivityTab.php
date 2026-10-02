@@ -61,7 +61,10 @@ final class AIActivityTab {
 
 			<ul class="cb-core-meta">
 				<li class="cb-core-meta__item">
-					<?php printf( esc_html__( 'Recorded activity: %s', 'core-blueprint' ), '<strong>' . esc_html( number_format_i18n( $total ) ) . '</strong>' ); ?>
+					<?php
+					/* translators: %s: formatted total number of recorded AI activity entries, wrapped in strong markup. */
+					printf( esc_html__( 'Recorded activity: %s', 'core-blueprint' ), '<strong>' . esc_html( number_format_i18n( $total ) ) . '</strong>' );
+					?>
 				</li>
 				<li class="cb-core-meta__item"><?php esc_html_e( 'Evidence model: metadata-first', 'core-blueprint' ); ?></li>
 				<li class="cb-core-meta__item"><?php esc_html_e( 'Visible to administrators only', 'core-blueprint' ); ?></li>
@@ -372,6 +375,7 @@ final class AIActivityTab {
 			$prev = self::url( array_merge( $base_args, [ 'paged' => $current - 1 ] ) );
 			echo '<a class="button" href="' . esc_url( $prev ) . '">&larr; ' . esc_html__( 'Previous', 'core-blueprint' ) . '</a> ';
 		}
+		/* translators: 1: current page number, 2: total number of pages. */
 		printf( esc_html__( 'Page %1$d of %2$d', 'core-blueprint' ), $current, $total );
 		if ( $current < $total ) {
 			$next = self::url( array_merge( $base_args, [ 'paged' => $current + 1 ] ) );
