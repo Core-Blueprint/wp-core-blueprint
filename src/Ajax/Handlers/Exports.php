@@ -40,7 +40,7 @@ final class Exports {
 		self::require_admin();
 
 		$format = LogExporter::sanitize_format(
-			isset( $_GET['format'] ) ? (string) wp_unslash( $_GET['format'] ) : 'csv'
+			isset( $_GET['format'] ) ? sanitize_key( wp_unslash( $_GET['format'] ) ) : 'csv'
 		);
 
 		$period = isset( $_GET['period'] ) ? TimeFilter::sanitize( sanitize_text_field( wp_unslash( $_GET['period'] ) ) ) : 'all';
@@ -71,7 +71,7 @@ final class Exports {
 		self::require_admin();
 
 		$format = LogExporter::sanitize_format(
-			isset( $_GET['format'] ) ? (string) wp_unslash( $_GET['format'] ) : 'csv'
+			isset( $_GET['format'] ) ? sanitize_key( wp_unslash( $_GET['format'] ) ) : 'csv'
 		);
 
 		$period = isset( $_GET['period'] ) ? TimeFilter::sanitize( sanitize_text_field( wp_unslash( $_GET['period'] ) ) ) : 'all';
@@ -106,7 +106,7 @@ final class Exports {
 		}
 
 		$format = LogExporter::sanitize_format(
-			isset( $_GET['format'] ) ? (string) wp_unslash( $_GET['format'] ) : 'csv'
+			isset( $_GET['format'] ) ? sanitize_key( wp_unslash( $_GET['format'] ) ) : 'csv'
 		);
 
 		$period = isset( $_GET['period'] ) ? TimeFilter::sanitize( sanitize_text_field( wp_unslash( $_GET['period'] ) ) ) : 'all';
