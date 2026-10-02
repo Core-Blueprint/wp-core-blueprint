@@ -50,6 +50,7 @@ final class DeleteBuilder {
 	private bool $match_all_acknowledged = false;
 
 	public function __construct( string $table ) {
+		$this->validate_table( $table );
 		$this->table = $table;
 	}
 
@@ -89,5 +90,12 @@ final class DeleteBuilder {
 			: $wpdb->query( $wpdb->prepare( $sql, $this->params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return false === $result ? 0 : (int) $result;
+	}
+
+	private function validate_table( string $table ): void {
+		if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
+			_doing_it_wrong( __METHOD__, 'Invalid DELETE table identifier: ' . esc_html( $table ), '1.0.0' );
+			throw new \InvalidArgumentException( 'Invalid SQL table identifier.' );
+		}
 	}
 }
