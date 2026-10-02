@@ -52,9 +52,7 @@ final class Actions {
 			'hierarchical'   => ! empty( $_POST['hierarchical'] ),
 			'rewrite_slug'   => isset( $_POST['rewrite_slug'] ) ? wp_unslash( $_POST['rewrite_slug'] ) : '',
 			'icon'           => isset( $_POST['icon'] ) ? wp_unslash( $_POST['icon'] ) : 'dashicons-admin-post',
-			'supports'       => isset( $_POST['supports'] ) && is_array( $_POST['supports'] )
-				? array_map( 'wp_unslash', $_POST['supports'] )
-				: [],
+			'supports'       => self::array_input( 'supports' ),
 		];
 
 		try {
@@ -132,9 +130,7 @@ final class Actions {
 
 		$original = isset( $_POST['original_key'] ) ? sanitize_key( wp_unslash( $_POST['original_key'] ) ) : '';
 		$duplicate_source = isset( $_POST['duplicate_source'] ) ? sanitize_key( wp_unslash( $_POST['duplicate_source'] ) ) : '';
-		$raw_objects = isset( $_POST['object_types'] ) && is_array( $_POST['object_types'] )
-			? array_map( 'wp_unslash', $_POST['object_types'] )
-			: [];
+		$raw_objects = self::array_input( 'object_types' );
 		$allowed_objects = array_fill_keys( get_post_types( [], 'names' ), true );
 		$objects = array_values( array_filter(
 			array_map( 'sanitize_key', $raw_objects ),
@@ -297,31 +293,25 @@ final class Actions {
 
 		$original = isset( $_POST['original_id'] ) ? sanitize_key( wp_unslash( $_POST['original_id'] ) ) : '';
 		$duplicate_source = isset( $_POST['duplicate_source'] ) ? sanitize_key( wp_unslash( $_POST['duplicate_source'] ) ) : '';
-		$raw_post_types = isset( $_POST['post_types'] ) && is_array( $_POST['post_types'] )
-			? array_map( 'wp_unslash', $_POST['post_types'] )
-			: [];
+		$raw_post_types = self::array_input( 'post_types' );
 		$allowed_post_types = array_fill_keys( get_post_types( [ 'show_ui' => true ], 'names' ), true );
 		$post_types = array_values( array_filter(
 			array_map( 'sanitize_key', $raw_post_types ),
 			static fn( string $post_type ): bool => isset( $allowed_post_types[ $post_type ] )
 		) );
-		$raw_option_pages = isset( $_POST['option_pages'] ) && is_array( $_POST['option_pages'] )
-			? array_map( 'wp_unslash', $_POST['option_pages'] )
-			: [];
+		$raw_option_pages = self::array_input( 'option_pages' );
 		$allowed_option_pages = array_fill_keys( array_keys( Repository::option_pages() ), true );
 		$option_pages = array_values( array_filter(
 			array_map( 'sanitize_key', $raw_option_pages ),
 			static fn( string $page_slug ): bool => isset( $allowed_option_pages[ $page_slug ] )
 		) );
-		$raw_term_taxonomies = isset( $_POST['term_taxonomies'] ) && is_array( $_POST['term_taxonomies'] )
-			? array_map( 'wp_unslash', $_POST['term_taxonomies'] )
-			: [];
+		$raw_term_taxonomies = self::array_input( 'term_taxonomies' );
 		$allowed_taxonomies = array_fill_keys( get_taxonomies( [ 'show_ui' => true ], 'names' ), true );
 		$term_taxonomies = array_values( array_filter(
 			array_map( 'sanitize_key', $raw_term_taxonomies ),
 			static fn( string $taxonomy ): bool => isset( $allowed_taxonomies[ $taxonomy ] )
 		) );
-		$raw_user_roles = isset( $_POST['user_roles'] ) && is_array( $_POST['user_roles'] ) ? array_map( 'wp_unslash', $_POST['user_roles'] ) : [];
+		$raw_user_roles = self::array_input( 'user_roles' );
 		$roles = wp_roles();
 		$allowed_roles = $roles ? array_fill_keys( array_keys( $roles->roles ), true ) : [];
 		$user_roles = array_values( array_filter(
@@ -505,13 +495,13 @@ final class Actions {
 			'step'          => isset( $_POST['step'] ) ? wp_unslash( $_POST['step'] ) : '',
 			'rows'                => isset( $_POST['rows'] ) ? wp_unslash( $_POST['rows'] ) : 5,
 			'relation_multiple'   => ! empty( $_POST['relation_multiple'] ),
-			'relation_post_types' => isset( $_POST['relation_post_types'] ) && is_array( $_POST['relation_post_types'] ) ? array_map( 'wp_unslash', $_POST['relation_post_types'] ) : [],
-			'relation_roles'      => isset( $_POST['relation_roles'] ) && is_array( $_POST['relation_roles'] ) ? array_map( 'wp_unslash', $_POST['relation_roles'] ) : [],
-			'relation_taxonomies' => isset( $_POST['relation_taxonomies'] ) && is_array( $_POST['relation_taxonomies'] ) ? array_map( 'wp_unslash', $_POST['relation_taxonomies'] ) : [],
-			'sub_fields'           => isset( $_POST['sub_fields'] ) && is_array( $_POST['sub_fields'] ) ? wp_unslash( $_POST['sub_fields'] ) : [],
+			'relation_post_types' => self::array_input( 'relation_post_types' ),
+			'relation_roles'      => self::array_input( 'relation_roles' ),
+			'relation_taxonomies' => self::array_input( 'relation_taxonomies' ),
+			'sub_fields'           => self::array_input( 'sub_fields' ),
 			'repeater_min'         => isset( $_POST['repeater_min'] ) ? wp_unslash( $_POST['repeater_min'] ) : 0,
 			'repeater_max'         => isset( $_POST['repeater_max'] ) ? wp_unslash( $_POST['repeater_max'] ) : 0,
-			'conditional_logic'    => isset( $_POST['conditional_logic'] ) && is_array( $_POST['conditional_logic'] ) ? wp_unslash( $_POST['conditional_logic'] ) : [],
+			'conditional_logic'    => self::array_input( 'conditional_logic' ),
 		];
 
 		$existing = '' !== $original_field_id ? Repository::field( $group_id, $original_field_id ) : null;
@@ -749,6 +739,15 @@ final class Actions {
 			);
 		}
 		check_admin_referer( $nonce_action );
+	}
+
+
+	private static function array_input( string $key ): array {
+		if ( ! isset( $_POST[ $key ] ) ) {
+			return [];
+		}
+		$value = wp_unslash( $_POST[ $key ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- public handlers verify a nonce before calling this helper; each caller applies domain-specific normalization.
+		return is_array( $value ) ? $value : [];
 	}
 
 	private static function require_enabled(): void {
