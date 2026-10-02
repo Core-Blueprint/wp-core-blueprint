@@ -235,7 +235,7 @@ final class Repository {
 				'error'      => sanitize_text_field( (string) ( $error['message'] ?? 'Runtime error' ) ),
 			] );
 		} catch ( \Throwable $e ) {
-			error_log( 'Core Blueprint Snippets could not auto-disable a failed snippet: ' . $e->getMessage() );
+			error_log( 'Core Blueprint Snippets could not auto-disable a failed snippet: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- emergency fallback when managed-code quarantine itself fails.
 		}
 	}
 
@@ -326,14 +326,14 @@ final class Repository {
 			$data = require $path;
 			return is_array( $data ) ? $data : [];
 		} catch ( \Throwable $e ) {
-			error_log( 'Core Blueprint Snippets registry could not be loaded: ' . $e->getMessage() );
+			error_log( 'Core Blueprint Snippets registry could not be loaded: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- corrupted-registry fallback cannot depend on the registry runtime.
 			return [];
 		}
 	}
 
 	private static function write_registry( array $registry ): bool {
 		ksort( $registry, SORT_STRING );
-		$contents = "<?php\n\ndefined( 'ABSPATH' ) || exit;\nreturn " . var_export( $registry, true ) . ";\n";
+		$contents = "<?php\n\ndefined( 'ABSPATH' ) || exit;\nreturn " . var_export( $registry, true ) . ";\n"; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- deterministic PHP array serialization for the managed registry, not debug output.
 		return AtomicFile::write( Paths::registry(), $contents );
 	}
 
