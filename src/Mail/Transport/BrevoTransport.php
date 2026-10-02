@@ -126,9 +126,11 @@ final class BrevoTransport implements TransportInterface {
 		$body   = is_array( $body ) ? $body : [];
 
 		if ( 201 !== $status ) {
+			/* translators: %d: HTTP status code returned by Brevo. */
+			$default_message = sprintf( __( 'Brevo returned HTTP %d.', 'core-blueprint' ), $status );
 			$message_text = isset( $body['message'] ) && is_string( $body['message'] )
 				? sanitize_text_field( $body['message'] )
-				: sprintf( __( 'Brevo returned HTTP %d.', 'core-blueprint' ), $status );
+				: $default_message;
 			return self::fail( 'brevo_http_' . $status, $message_text, $atts, $started );
 		}
 
@@ -173,6 +175,7 @@ final class BrevoTransport implements TransportInterface {
 			if ( ! is_file( $path ) || ! is_readable( $path ) ) {
 				return new WP_Error(
 					'mail_attachment_unreadable',
+					/* translators: %s: attachment file name. */
 					sprintf( __( 'Mail attachment is not readable: %s', 'core-blueprint' ), basename( $path ) )
 				);
 			}
@@ -180,6 +183,7 @@ final class BrevoTransport implements TransportInterface {
 			if ( false === $content ) {
 				return new WP_Error(
 					'mail_attachment_read_failed',
+					/* translators: %s: attachment file name. */
 					sprintf( __( 'Mail attachment could not be read: %s', 'core-blueprint' ), basename( $path ) )
 				);
 			}
