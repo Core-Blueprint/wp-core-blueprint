@@ -124,6 +124,7 @@ final class ScreenSettings {
 								data-source-key="<?php echo esc_attr( $source['key'] ); ?>"
 							<?php endif; ?>
 						>
+							<?php /* translators: %s: column label shown in the reorder control. */ ?>
 							<button
 								type="button"
 								class="button-link cb-core-icon-control cb-core-reorder-handle cb-admin-columns-governance__handle"
