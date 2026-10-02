@@ -114,6 +114,8 @@ final class ScreenSettings {
 						$source = $source_map[ $column_id ] ?? null;
 						$hidden = in_array( $column_id, $policy['hidden'], true );
 						$protected = in_array( $column_id, [ 'cb', 'title' ], true );
+						/* translators: %s: column label shown in the reorder control. */
+						$reorder_label = sprintf( __( 'Reorder %s', 'core-blueprint' ), $label );
 						?>
 						<div
 							class="cb-admin-columns-governance__item"
@@ -124,12 +126,11 @@ final class ScreenSettings {
 								data-source-key="<?php echo esc_attr( $source['key'] ); ?>"
 							<?php endif; ?>
 						>
-							<?php /* translators: %s: column label shown in the reorder control. */ ?>
 							<button
 								type="button"
 								class="button-link cb-core-icon-control cb-core-reorder-handle cb-admin-columns-governance__handle"
 								data-cb-core-reorder-handle
-								aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $label ) ); ?>"
+								aria-label="<?php echo esc_attr( $reorder_label ); ?>"
 								title="<?php esc_attr_e( 'Move', 'core-blueprint' ); ?>"
 								<?php disabled( 'cb' === $column_id ); ?>
 							><span class="dashicons dashicons-move" aria-hidden="true"></span></button>
