@@ -3,6 +3,23 @@ declare(strict_types=1);
 
 final class CB_Base_Performance_Baseline_Contract_Test extends WP_UnitTestCase {
 
+	public function test_wordpress_controls_are_warmed_before_measurement(): void {
+		$runner = file_get_contents( CB_CORE_DIR . 'tests/bin/run-performance-baseline.sh' );
+		self::assertIsString( $runner );
+
+		$warmup   = strpos( $runner, 'echo "[F3A] warming WordPress-only control state"' );
+		$frontend = strpos( $runner, 'profile_as frontend control_frontend 0 0' );
+		$admin    = strpos( $runner, 'profile_as admin control_admin 0 1 0 1' );
+
+		self::assertIsInt( $warmup );
+		self::assertIsInt( $frontend );
+		self::assertIsInt( $admin );
+		self::assertLessThan( $frontend, $warmup );
+		self::assertLessThan( $admin, $warmup );
+		self::assertStringContainsString( 'php "$REQUEST" frontend >/dev/null', $runner );
+		self::assertStringContainsString( 'php "$REQUEST" admin >/dev/null', $runner );
+	}
+
 	public function test_reports_profile_is_explicit_opt_in_after_default_state_scenarios(): void {
 		$runner = file_get_contents( CB_CORE_DIR . 'tests/bin/run-performance-baseline.sh' );
 		self::assertIsString( $runner );
