@@ -581,8 +581,10 @@ final class Recovery {
 	}
 
 	private static function request_ticket(): string {
-		$raw = isset( $_REQUEST[ self::PARAM ] ) ? wp_unslash( $_REQUEST[ self::PARAM ] ) : '';
-		return is_scalar( $raw ) ? sanitize_text_field( (string) $raw ) : '';
+		if ( ! isset( $_REQUEST[ self::PARAM ] ) || ! is_scalar( $_REQUEST[ self::PARAM ] ) ) {
+			return '';
+		}
+		return sanitize_text_field( wp_unslash( (string) $_REQUEST[ self::PARAM ] ) );
 	}
 
 	private static function is_management_identity( WP_User $user ): bool {
@@ -591,12 +593,12 @@ final class Recovery {
 	}
 
 	private static function is_login_request(): bool {
-		$script = isset( $_SERVER['SCRIPT_NAME'] ) ? basename( (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) ) : '';
+		$script = isset( $_SERVER['SCRIPT_NAME'] ) ? basename( sanitize_text_field( wp_unslash( (string) $_SERVER['SCRIPT_NAME'] ) ) ) : '';
 		return 'wp-login.php' === $script;
 	}
 
 	private static function is_admin_request(): bool {
-		$script = isset( $_SERVER['SCRIPT_NAME'] ) ? (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) : '';
+		$script = isset( $_SERVER['SCRIPT_NAME'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['SCRIPT_NAME'] ) ) : '';
 		return false !== strpos( wp_normalize_path( $script ), '/wp-admin/' );
 	}
 
