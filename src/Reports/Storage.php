@@ -85,7 +85,7 @@ final class Storage {
 	public static function drop_table(): void {
 		global $wpdb;
 		$table = self::table_name();
-		$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
 	}
 
 	public static function register_retention_store(): void {
