@@ -41,7 +41,7 @@ final class I18n implements CommandInterface {
 		$lines[] = '  exists: ' . ( $plugin_exists ? 'YES' : 'no' );
 		if ( $plugin_exists ) {
 			$lines[] = '  size:   ' . number_format( filesize( $mo_plugin ) ) . ' bytes';
-			$lines[] = '  mtime:  ' . date( 'Y-m-d H:i:s', filemtime( $mo_plugin ) );
+			$lines[] = '  mtime:  ' . gmdate( 'Y-m-d H:i:s', filemtime( $mo_plugin ) );
 		}
 		$lines[] = '';
 		$lines[] = 'MO file (WP_LANG_DIR/plugins/):';
@@ -49,7 +49,7 @@ final class I18n implements CommandInterface {
 		$lines[] = '  exists: ' . ( $wp_exists ? 'YES - this overrides the plugin-bundled MO' : 'no' );
 		if ( $wp_exists ) {
 			$lines[] = '  size:   ' . number_format( filesize( $mo_wp_languages ) ) . ' bytes';
-			$lines[] = '  mtime:  ' . date( 'Y-m-d H:i:s', filemtime( $mo_wp_languages ) );
+			$lines[] = '  mtime:  ' . gmdate( 'Y-m-d H:i:s', filemtime( $mo_wp_languages ) );
 		}
 		$lines[] = '';
 		$lines[] = "is_textdomain_loaded( 'core-blueprint' ): " . ( $loaded ? 'YES' : 'NO' );
