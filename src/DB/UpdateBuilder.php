@@ -131,9 +131,9 @@ final class UpdateBuilder {
 		$sql    = "UPDATE {$this->table} SET " . implode( ', ', $set_parts ) . " WHERE {$where_sql}";
 		$params = array_merge( $set_vals, $this->params );
 
-		$result = empty( $params )
-			? $wpdb->query( $sql ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			: $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// `set_values` is guaranteed non-empty above, so `$params` always
+		// contains at least one SET value and the query always has placeholders.
+		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return false === $result ? 0 : (int) $result;
 	}
