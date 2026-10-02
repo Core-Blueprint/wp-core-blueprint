@@ -581,8 +581,8 @@ final class Recovery {
 	}
 
 	private static function request_ticket(): string {
-		$raw = $_REQUEST[ self::PARAM ] ?? '';
-		return is_scalar( $raw ) ? sanitize_text_field( wp_unslash( (string) $raw ) ) : '';
+		$raw = isset( $_REQUEST[ self::PARAM ] ) ? wp_unslash( $_REQUEST[ self::PARAM ] ) : '';
+		return is_scalar( $raw ) ? sanitize_text_field( (string) $raw ) : '';
 	}
 
 	private static function is_management_identity( WP_User $user ): bool {
