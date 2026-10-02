@@ -163,6 +163,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 						$preview = array_slice( $users, 0, 2 );
 						$display = implode( ', ', $preview );
 						if ( count( $users ) > 2 ) {
+							/* translators: %d: number of additional active users not shown in the preview. */
 							$display .= sprintf( __( ' +%d more', 'core-blueprint' ), count( $users ) - 2 );
 						}
 						echo esc_html( $display );
