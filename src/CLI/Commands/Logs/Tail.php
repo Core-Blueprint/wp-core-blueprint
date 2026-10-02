@@ -30,7 +30,8 @@ final class Tail implements CommandInterface {
 			$since_ts = strtotime( (string) $args['since'] );
 			if ( false === $since_ts ) {
 				return Result::error(
-					sprintf( __( 'Could not parse "since" value: %s', 'core-blueprint' ), (string) $args['since'] )
+					/* translators: %s: invalid since value entered on the command line. */
+				sprintf( __( 'Could not parse "since" value: %s', 'core-blueprint' ), (string) $args['since'] )
 				);
 			}
 			$since = gmdate( 'Y-m-d H:i:s', $since_ts );
