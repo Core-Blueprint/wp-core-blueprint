@@ -699,7 +699,7 @@ final class LoginShield {
 			'info',
 			[
 				'path'   => substr( $path, 0, 120 ),
-				'method' => strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ),
+				'method' => strtoupper( (string) wp_unslash( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ),
 			]
 		);
 	}
