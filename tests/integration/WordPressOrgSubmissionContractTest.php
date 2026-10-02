@@ -31,6 +31,12 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 			'Base must use its own unique product URL as Plugin URI.'
 		);
 
+		self::assertStringContainsString(
+			"Contributors: coreblueprint\n",
+			$readme,
+			'WordPress.org contributor identity must stay linked to the Core Blueprint publisher account.'
+		);
+
 		self::assertLessThanOrEqual( 10000, strlen( $readme ), 'WordPress.org readme should remain below 10 KB.' );
 
 		self::assertSame(
