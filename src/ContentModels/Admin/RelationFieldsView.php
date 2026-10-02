@@ -88,6 +88,7 @@ trait RelationFieldsView {
 			];
 		}
 		foreach ( array_diff( $selected, array_map( 'strval', array_keys( $objects ) ) ) as $missing ) {
+			/* translators: %s: unavailable post type key. */
 			$options[] = [ 'name' => 'relation_post_types[]', 'value' => (string) $missing, 'label' => sprintf( __( 'Unavailable post type (%s)', 'core-blueprint' ), (string) $missing ), 'checked' => true ];
 		}
 		return $options;
@@ -108,6 +109,7 @@ trait RelationFieldsView {
 			];
 		}
 		foreach ( array_diff( $selected, array_map( 'strval', array_keys( $objects ) ) ) as $missing ) {
+			/* translators: %s: unavailable taxonomy key. */
 			$options[] = [ 'name' => 'relation_taxonomies[]', 'value' => (string) $missing, 'label' => sprintf( __( 'Unavailable taxonomy (%s)', 'core-blueprint' ), (string) $missing ), 'checked' => true ];
 		}
 		return $options;
@@ -129,6 +131,7 @@ trait RelationFieldsView {
 			];
 		}
 		foreach ( array_diff( $selected, array_map( 'strval', array_keys( $roles ) ) ) as $missing ) {
+			/* translators: %s: unavailable WordPress role key. */
 			$options[] = [ 'name' => 'relation_roles[]', 'value' => (string) $missing, 'label' => sprintf( __( 'Unavailable role (%s)', 'core-blueprint' ), (string) $missing ), 'checked' => true ];
 		}
 		return $options;
