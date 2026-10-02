@@ -237,22 +237,27 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 							if ( ! empty( $context ) ) {
 								$plain_parts = [];
 								if ( ! empty( $context['actor'] ) ) {
+									/* translators: %s: actor identifier from the log context. */
 									$plain_parts[] = sprintf( __( 'by %s', 'core-blueprint' ), (string) $context['actor'] );
 								}
 								if ( ! empty( $context['reason'] ) ) {
+									/* translators: %s: reason recorded in the log context. */
 									$plain_parts[] = sprintf( __( 'reason: %s', 'core-blueprint' ), (string) $context['reason'] );
 								}
 								if ( ! empty( $context['from'] ) && ! empty( $context['to'] ) ) {
-									/* translators: 1: previous value, 2: new value */
-					$plain_parts[] = sprintf( __( 'from %1$s to %2$s', 'core-blueprint' ), (string) $context['from'], (string) $context['to'] );
+									/* translators: 1: previous value, 2: new value. */
+									$plain_parts[] = sprintf( __( 'from %1$s to %2$s', 'core-blueprint' ), (string) $context['from'], (string) $context['to'] );
 								}
 								if ( ! empty( $context['changed'] ) ) {
+									/* translators: %s: changed value recorded in the log context. */
 									$plain_parts[] = sprintf( __( 'changed: %s', 'core-blueprint' ), (string) $context['changed'] );
 								}
 								if ( ! empty( $context['module'] ) ) {
+									/* translators: %s: module identifier recorded in the log context. */
 									$plain_parts[] = sprintf( __( 'module: %s', 'core-blueprint' ), (string) $context['module'] );
 								}
 								if ( ! empty( $context['feature'] ) ) {
+									/* translators: %s: feature identifier recorded in the log context. */
 									$plain_parts[] = sprintf( __( 'feature: %s', 'core-blueprint' ), (string) $context['feature'] );
 								}
 								$context_preview_plain = implode( ' · ', $plain_parts );
@@ -319,6 +324,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 						<span class="displaying-num">
 							<?php
 							printf(
+								/* translators: %s: formatted total number of log items. */
 								esc_html( _n( '%s item', '%s items', $total, 'core-blueprint' ) ),
 								esc_html( number_format_i18n( $total ) )
 							);
@@ -333,6 +339,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 							<span class="paging-input">
 								<?php
 								printf(
+									/* translators: 1: current page number, 2: total number of pages. */
 									esc_html__( '%1$s of %2$s', 'core-blueprint' ),
 									esc_html( (string) $current ),
 									esc_html( (string) $total_pages )
