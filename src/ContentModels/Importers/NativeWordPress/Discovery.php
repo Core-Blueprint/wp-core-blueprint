@@ -127,6 +127,7 @@ final class Discovery {
 		$supports = is_array( $supports ) ? $supports : [];
 		foreach ( $supports as $feature => $args ) {
 			if ( ! in_array( (string) $feature, self::POST_TYPE_SUPPORTS, true ) || ( true !== $args && [ true ] !== $args ) ) {
+				/* translators: %s: WordPress post-type support feature name. */
 				$reasons[] = sprintf( __( 'Post-type support “%s” cannot be represented exactly.', 'core-blueprint' ), (string) $feature );
 			}
 		}
@@ -355,6 +356,7 @@ final class Discovery {
 			default   => [],
 		};
 		if ( [] === $allowed ) {
+			/* translators: %s: registered WordPress metadata type. */
 			$reasons[] = sprintf( __( 'Registered metadata type “%s” has no exact scalar Content Models storage contract.', 'core-blueprint' ), $type ?: __( 'unknown', 'core-blueprint' ) );
 		}
 		if ( ! in_array( $object_type, [ 'post', 'term', 'user' ], true ) || ( in_array( $object_type, [ 'post', 'term' ], true ) && '' === $subtype ) ) {
@@ -493,16 +495,27 @@ final class Discovery {
 			'menu_name'             => $plural,
 			'name_admin_bar'         => $singular,
 			'add_new'               => __( 'Add New', 'core-blueprint' ),
+			/* translators: %s: singular post-type label. */
 			'add_new_item'          => sprintf( __( 'Add New %s', 'core-blueprint' ), $singular ),
+			/* translators: %s: singular post-type label. */
 			'edit_item'             => sprintf( __( 'Edit %s', 'core-blueprint' ), $singular ),
+			/* translators: %s: singular post-type label. */
 			'new_item'              => sprintf( __( 'New %s', 'core-blueprint' ), $singular ),
+			/* translators: %s: singular post-type label. */
 			'view_item'             => sprintf( __( 'View %s', 'core-blueprint' ), $singular ),
+			/* translators: %s: plural post-type label. */
 			'view_items'            => sprintf( __( 'View %s', 'core-blueprint' ), $plural ),
+			/* translators: %s: plural post-type label. */
 			'search_items'          => sprintf( __( 'Search %s', 'core-blueprint' ), $plural ),
+			/* translators: %s: lowercase plural post-type label. */
 			'not_found'             => sprintf( __( 'No %s found.', 'core-blueprint' ), strtolower( $plural ) ),
+			/* translators: %s: lowercase plural post-type label. */
 			'not_found_in_trash'    => sprintf( __( 'No %s found in Trash.', 'core-blueprint' ), strtolower( $plural ) ),
+			/* translators: %s: plural post-type label. */
 			'all_items'             => sprintf( __( 'All %s', 'core-blueprint' ), $plural ),
+			/* translators: %s: singular post-type label. */
 			'archives'              => sprintf( __( '%s Archives', 'core-blueprint' ), $singular ),
+			/* translators: %s: singular post-type label. */
 			'attributes'            => sprintf( __( '%s Attributes', 'core-blueprint' ), $singular ),
 			'featured_image'        => __( 'Featured image', 'core-blueprint' ),
 			'set_featured_image'    => __( 'Set featured image', 'core-blueprint' ),
@@ -516,11 +529,17 @@ final class Discovery {
 		$expected = [
 			'name'          => $plural,
 			'singular_name' => $singular,
+			/* translators: %s: plural taxonomy label. */
 			'search_items'  => sprintf( __( 'Search %s', 'core-blueprint' ), $plural ),
+			/* translators: %s: plural taxonomy label. */
 			'all_items'     => sprintf( __( 'All %s', 'core-blueprint' ), $plural ),
+			/* translators: %s: singular taxonomy label. */
 			'edit_item'     => sprintf( __( 'Edit %s', 'core-blueprint' ), $singular ),
+			/* translators: %s: singular taxonomy label. */
 			'update_item'   => sprintf( __( 'Update %s', 'core-blueprint' ), $singular ),
+			/* translators: %s: singular taxonomy label. */
 			'add_new_item'  => sprintf( __( 'Add New %s', 'core-blueprint' ), $singular ),
+			/* translators: %s: singular taxonomy label. */
 			'new_item_name' => sprintf( __( 'New %s Name', 'core-blueprint' ), $singular ),
 			'menu_name'     => $plural,
 		];
