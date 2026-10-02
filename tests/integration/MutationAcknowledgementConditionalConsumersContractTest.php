@@ -27,7 +27,7 @@ final class MutationAcknowledgementConditionalConsumersContractTest extends WP_U
 		self::assertStringContainsString( 'cb-snippets-restore-acknowledgement-template', $page );
 		self::assertStringContainsString( 'data-cb-snippets-preserve-ids', $page );
 		self::assertStringContainsString( "Exporter::FILE_TYPE === (string) ( \$document['file_type'] ?? '' )", $actions );
-		self::assertStringContainsString( "'1' === (string) wp_unslash( \$_POST['overwrite'] )", $actions );
+		self::assertStringContainsString( "'1' === sanitize_text_field( wp_unslash( (string) \$_POST['overwrite'] ) )", $actions );
 		self::assertStringContainsString( 'MutationAcknowledgement::require_confirmed(', $actions );
 		self::assertStringContainsString( "AuditLog::log( 'snippets.restore.acknowledged'", $actions );
 		self::assertStringContainsString( 'restoreAcknowledgementTemplate.content.cloneNode( true )', $script );
