@@ -402,6 +402,7 @@ final class MaintenanceAggregator {
 			$last_overall_ts = strtotime( (string) ( $backups['last_at_overall'] ?? '' ) . ' UTC' );
 			if ( $last_overall_ts ) {
 				$breakdown[] = sprintf(
+					/* translators: %s: formatted date and time of the last backup. */
 					__( 'Last backup: %s', 'core-blueprint' ),
 					wp_date( 'd-m-Y H:i', $last_overall_ts, wp_timezone() )
 				);
