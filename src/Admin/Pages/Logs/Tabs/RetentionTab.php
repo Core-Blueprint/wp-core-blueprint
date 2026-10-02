@@ -52,6 +52,7 @@ final class RetentionTab {
 						<tr><th><?php echo esc_html( $label ); ?></th><td>
 							<?php if ( $days > 0 ) : ?>
 								<?php echo esc_html( self::format_retention( $days ) ); ?>
+								<?php /* translators: %d: retention window in days. */ ?>
 								<span class="cb-core-muted" style="margin-left:8px;"><?php echo esc_html( sprintf( _n( '(%d day)', '(%d days)', $days, 'core-blueprint' ), $days ) ); ?></span>
 							<?php else : ?>
 								<?php echo \CB\Core\UI\StateBadge::render( __( 'Keep forever', 'core-blueprint' ), [ 'variant' => \CB\Core\UI\StateBadge::NEUTRAL ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -102,6 +103,10 @@ final class RetentionTab {
 			365 => __( '1 year', 'core-blueprint' ), 730 => __( '2 years', 'core-blueprint' ),
 			1095 => __( '3 years', 'core-blueprint' ),
 		];
-		return $labels[ $days ] ?? sprintf( _n( '%d day', '%d days', $days, 'core-blueprint' ), $days );
+		if ( isset( $labels[ $days ] ) ) {
+			return $labels[ $days ];
+		}
+		/* translators: %d: retention window in days. */
+		return sprintf( _n( '%d day', '%d days', $days, 'core-blueprint' ), $days );
 	}
 }
