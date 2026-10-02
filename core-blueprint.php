@@ -82,16 +82,6 @@ endif;
 $cb_core_errors = cb_core_get_requirement_errors();
 
 if ( ! empty( $cb_core_errors ) ) {
-	// Core::instance() is intentionally not reached on an unsupported host, so
-	// register the text-domain loader locally for this reduced bootstrap path.
-	add_action( 'init', static function (): void {
-		load_plugin_textdomain(
-			'core-blueprint',
-			false,
-			dirname( plugin_basename( CB_CORE_FILE ) ) . '/languages'
-		);
-	}, 0 );
-
 	add_action( 'admin_notices', static function () use ( $cb_core_errors ) {
 		$messages = [];
 		foreach ( $cb_core_errors as $error ) {
