@@ -309,7 +309,7 @@ final class Repository {
 
         $deleted = $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$wpdb->prefix}cb_core_notes WHERE id IN ({$placeholders})",
+                "DELETE FROM {$wpdb->prefix}cb_core_notes WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholder list contains only generated %d tokens; IDs are absint-normalized and bound below.
                 $ids
             )
         );
@@ -360,9 +360,9 @@ final class Repository {
 
         if ( $ids ) {
             $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-            $notes = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE id IN ({$placeholders}) ORDER BY updated_at DESC", $ids ) );
+            $notes = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE id IN ({$placeholders}) ORDER BY updated_at DESC", $ids ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- table is Base-owned; placeholder list contains only generated %d tokens; IDs are absint-normalized.
         } else {
-            $notes = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY updated_at DESC" );
+            $notes = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY updated_at DESC" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Base-owned table identifier; query has no dynamic values.
         }
 
         return array_map( [ self::class, 'note_to_export_array' ], $notes ?: [] );
