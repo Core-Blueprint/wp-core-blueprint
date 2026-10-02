@@ -641,7 +641,7 @@ final class LoginShield {
 		if ( empty( $_SERVER['SCRIPT_NAME'] ) ) {
 			return '';
 		}
-		return basename( (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) );
+		return basename( sanitize_text_field( wp_unslash( (string) $_SERVER['SCRIPT_NAME'] ) ) );
 	}
 
 	/**
@@ -699,7 +699,7 @@ final class LoginShield {
 			'info',
 			[
 				'path'   => substr( $path, 0, 120 ),
-				'method' => strtoupper( (string) wp_unslash( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ),
+				'method' => strtoupper( sanitize_key( wp_unslash( (string) ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ) ) ),
 			]
 		);
 	}
