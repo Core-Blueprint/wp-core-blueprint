@@ -189,15 +189,28 @@ final class Bootstrap {
 	private static function render_plan( array $plan ): void {
 		$summary = is_array( $plan['summary'] ?? null ) ? $plan['summary'] : [];
 		$expires = (int) ( $plan['expires_at'] ?? 0 );
+
+		$post_type_count = (int) ( $summary['post_types'] ?? 0 );
+		/* translators: %d: number of post types in the import plan. */
+		$post_type_count_label = sprintf( _n( '%d post type', '%d post types', $post_type_count, 'core-blueprint' ), $post_type_count );
+		$taxonomy_count = (int) ( $summary['taxonomies'] ?? 0 );
+		/* translators: %d: number of taxonomies in the import plan. */
+		$taxonomy_count_label = sprintf( _n( '%d taxonomy', '%d taxonomies', $taxonomy_count, 'core-blueprint' ), $taxonomy_count );
+		$field_group_count = (int) ( $summary['field_groups'] ?? 0 );
+		/* translators: %d: number of Field Groups in the import plan. */
+		$field_group_count_label = sprintf( _n( '%d Field Group', '%d Field Groups', $field_group_count, 'core-blueprint' ), $field_group_count );
+		$meta_field_count = (int) ( $summary['meta_fields'] ?? 0 );
+		/* translators: %d: number of registered metadata fields in the import plan. */
+		$meta_field_count_label = sprintf( _n( '%d registered metadata field', '%d registered metadata fields', $meta_field_count, 'core-blueprint' ), $meta_field_count );
 		?>
 		<div class="notice notice-warning inline"><p><strong><?php esc_html_e( 'Import plan ready.', 'core-blueprint' ); ?></strong> <?php esc_html_e( 'Before applying it, disable or remove the code that currently registers every selected post type, taxonomy and metadata key. Core Blueprint will refuse to apply while an original registration still exists.', 'core-blueprint' ); ?></p></div>
 		<p><strong><?php esc_html_e( 'Plan ID', 'core-blueprint' ); ?>:</strong> <code><?php echo esc_html( (string) ( $plan['plan_id'] ?? '' ) ); ?></code><br>
 		<strong><?php esc_html_e( 'Expires', 'core-blueprint' ); ?>:</strong> <?php echo esc_html( $expires > time() ? human_time_diff( time(), $expires ) : __( 'expired', 'core-blueprint' ) ); ?></p>
 		<ul class="ul-disc">
-			<li><?php $count = (int) ( $summary['post_types'] ?? 0 ); echo esc_html( sprintf( _n( '%d post type', '%d post types', $count, 'core-blueprint' ), $count ) ); ?></li>
-			<li><?php $count = (int) ( $summary['taxonomies'] ?? 0 ); echo esc_html( sprintf( _n( '%d taxonomy', '%d taxonomies', $count, 'core-blueprint' ), $count ) ); ?></li>
-			<li><?php $count = (int) ( $summary['field_groups'] ?? 0 ); echo esc_html( sprintf( _n( '%d Field Group', '%d Field Groups', $count, 'core-blueprint' ), $count ) ); ?></li>
-			<li><?php $count = (int) ( $summary['meta_fields'] ?? 0 ); echo esc_html( sprintf( _n( '%d registered metadata field', '%d registered metadata fields', $count, 'core-blueprint' ), $count ) ); ?></li>
+			<li><?php echo esc_html( $post_type_count_label ); ?></li>
+			<li><?php echo esc_html( $taxonomy_count_label ); ?></li>
+			<li><?php echo esc_html( $field_group_count_label ); ?></li>
+			<li><?php echo esc_html( $meta_field_count_label ); ?></li>
 		</ul>
 		<p class="description"><?php esc_html_e( 'The plan is user-scoped, short-lived and integrity-signed. Apply is all-or-nothing: any stale registration, Content Models change, field conflict or metadata-value change rejects the complete plan.', 'core-blueprint' ); ?></p>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
