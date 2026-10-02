@@ -182,7 +182,7 @@ final class Runtime {
 			return;
 		}
 
-		$method = strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) );
+		$method = strtoupper( (string) wp_unslash( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) );
 		if ( ! in_array( $method, [ 'GET', 'HEAD' ], true ) ) {
 			return;
 		}
