@@ -119,7 +119,7 @@ final class ValueCompatibility {
 		if ( '' === $sql ) {
 			return [];
 		}
-		$found = $wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql is produced exclusively by $wpdb->prepare() in the guarded branches above.
+		$found = $wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- $sql is produced exclusively by prepare() above with %i table identifiers and bound values.
 		$result = [];
 		foreach ( is_array( $found ) ? $found : [] as $row ) {
 			$result[] = [ 'id' => (int) ( $row['object_id'] ?? 0 ), 'raw' => (string) ( $row['meta_value'] ?? '' ) ];
