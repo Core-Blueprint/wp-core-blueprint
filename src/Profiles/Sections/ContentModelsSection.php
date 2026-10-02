@@ -102,6 +102,7 @@ final class ContentModelsSection implements SectionInterface {
 		}
 		$count = count( $analysis['conflicts'] );
 		return [ sprintf(
+			/* translators: %d: number of existing Content Model definitions that will be updated. */
 			_n( '%d existing Content Model definition will be updated.', '%d existing Content Model definitions will be updated.', $count, 'core-blueprint' ),
 			$count
 		) ];
