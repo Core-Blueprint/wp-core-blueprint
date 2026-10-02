@@ -117,13 +117,15 @@ final class Resolver {
 		}
 		if ( 'page' === $reference['type'] ) {
 			$title = get_the_title( $post );
-			return '' !== trim( (string) $title ) ? (string) $title : sprintf( __( 'Page #%d', 'core-blueprint' ), $post->ID );
+			/* translators: %d: WordPress page ID. */
+		return '' !== trim( (string) $title ) ? (string) $title : sprintf( __( 'Page #%d', 'core-blueprint' ), $post->ID );
 		}
 		$path = get_attached_file( $post->ID );
 		if ( is_string( $path ) && '' !== $path ) {
 			return wp_basename( $path );
 		}
 		$title = get_the_title( $post );
+		/* translators: %d: WordPress attachment ID. */
 		return '' !== trim( (string) $title ) ? (string) $title : sprintf( __( 'Document #%d', 'core-blueprint' ), $post->ID );
 	}
 
@@ -150,6 +152,7 @@ final class Resolver {
 
 		$post = get_post( $object_id );
 		if ( 'page' === $type ) {
+			/* translators: %d: WordPress page ID. */
 			$label = sprintf( __( 'Page #%d', 'core-blueprint' ), $object_id );
 			$meta  = __( 'Unavailable page', 'core-blueprint' );
 			if ( $post instanceof \WP_Post && 'page' === $post->post_type ) {
@@ -165,7 +168,8 @@ final class Resolver {
 						? trim( (string) $status->label )
 						: '';
 					$meta = '' !== $status_label
-						? sprintf( __( '%s page', 'core-blueprint' ), $status_label )
+						/* translators: %s: page status label. */
+				? sprintf( __( '%s page', 'core-blueprint' ), $status_label )
 						: __( 'Unavailable page', 'core-blueprint' );
 				}
 			}
@@ -176,6 +180,7 @@ final class Resolver {
 			];
 		}
 
+		/* translators: %d: WordPress attachment ID. */
 		$label = sprintf( __( 'Document #%d', 'core-blueprint' ), $object_id );
 		$meta  = __( 'Unavailable document', 'core-blueprint' );
 		if ( $post instanceof \WP_Post && 'attachment' === $post->post_type ) {
