@@ -86,6 +86,7 @@ final class Page extends PageBase {
 						<?php $this->render_protection_fact( __( 'Remote references', 'core-blueprint' ), __( 'Removed', 'core-blueprint' ) ); ?>
 						<?php $this->render_protection_fact( __( 'Upload permission', 'core-blueprint' ), Capabilities::UPLOAD_SVG, true ); ?>
 					</div>
+					<?php /* translators: %s: formatted default SVG sanitization size limit. */ ?>
 					<p class="description"><?php printf( esc_html__( 'The default sanitization limit is %s per SVG. The permission can be assigned to other trusted roles through Core Blueprint User Roles.', 'core-blueprint' ), esc_html( size_format( 5 * 1024 * 1024 ) ) ); ?></p>
 				</section>
 
