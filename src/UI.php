@@ -186,14 +186,13 @@ final class UI {
 			$container_classes .= ' ' . $extra_class;
 		}
 
-		$cycle_attr = $cycle ? ' data-cb-mode-cycle="1"' : '';
 		?>
 		<div
 			class="<?php echo esc_attr( $container_classes ); ?>"
 			role="radiogroup"
 			aria-label="<?php echo esc_attr( $aria_label ); ?>"
 			data-cb-mode-switcher
-			<?php echo $cycle_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — static safe string ?>
+			<?php if ( $cycle ) : ?>data-cb-mode-cycle="1"<?php endif; ?>
 		>
 			<?php foreach ( $modes as $slug => $labels ) : ?>
 				<button
