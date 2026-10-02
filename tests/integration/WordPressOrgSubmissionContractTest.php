@@ -109,6 +109,15 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 		);
 	}
 
+	public function test_uninstall_retention_is_disclosed_to_directory_users(): void {
+		$readme = file_get_contents( CB_CORE_DIR . 'readme.txt' );
+		self::assertIsString( $readme );
+		self::assertStringContainsString( '= What happens when Core Blueprint is deleted? =', $readme );
+		self::assertStringContainsString( 'User-authored site content written through Content Models is preserved.', $readme );
+		self::assertStringContainsString( 'Managed Snippets source files are also preserved', $readme );
+		self::assertStringContainsString( 'Quarantine evidence is retained', $readme );
+	}
+
 	public function test_release_builder_requires_directory_readme(): void {
 		$builder = file_get_contents( CB_CORE_DIR . 'tools/build-release' );
 		self::assertIsString( $builder );
