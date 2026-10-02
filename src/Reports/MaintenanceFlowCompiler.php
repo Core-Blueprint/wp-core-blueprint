@@ -527,6 +527,7 @@ final class MaintenanceFlowCompiler {
 		if ( '' !== $last ) {
 			$timestamp      = strtotime( $last . ' UTC' );
 			$display        = false === $timestamp ? $last : wp_date( 'd-m-Y H:i', $timestamp, wp_timezone() );
+			/* translators: %s: formatted date and time of the last backup. */
 			$backup_lines[] = sprintf( __( 'Last backup: %s', 'core-blueprint' ), $display );
 		}
 		$providers = array_values( array_filter( array_map( 'strval', (array) ( $backups['providers'] ?? [] ) ) ) );
