@@ -118,6 +118,52 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 		self::assertStringContainsString( 'Quarantine evidence is retained', $readme );
 	}
 
+	public function test_stable_release_cannot_ship_pre_v1_public_copy(): void {
+		if ( str_contains( CB_CORE_VERSION, '-' ) ) {
+			self::assertStringContainsString( 'rc', strtolower( CB_CORE_VERSION ) );
+			return;
+		}
+
+		$readme    = file_get_contents( CB_CORE_DIR . 'readme.txt' );
+		$readme_md = file_get_contents( CB_CORE_DIR . 'README.md' );
+		$changelog = file_get_contents( CB_CORE_DIR . 'CHANGELOG.md' );
+		self::assertIsString( $readme );
+		self::assertIsString( $readme_md );
+		self::assertIsString( $changelog );
+
+		foreach ( [
+			'pre-v1 development',
+			'evolving toward its first public release',
+			'Until the first stable public release',
+			'approaches its first public release',
+		] as $stale ) {
+			self::assertStringNotContainsString(
+				$stale,
+				$readme_md,
+				'Stable Base must not ship pre-v1 public README language.'
+			);
+		}
+
+		self::assertStringContainsString( '= ' . CB_CORE_VERSION . ' =', $readme );
+		self::assertStringContainsString( '## ' . CB_CORE_VERSION, $changelog );
+	}
+
+	public function test_public_security_reporting_path_is_current(): void {
+		$readme_md = file_get_contents( CB_CORE_DIR . 'README.md' );
+		$security  = file_get_contents( CB_CORE_DIR . 'SECURITY.md' );
+		self::assertIsString( $readme_md );
+		self::assertIsString( $security );
+		self::assertStringContainsString(
+			'https://github.com/Core-Blueprint/wp-core-blueprint/blob/main/SECURITY.md',
+			$readme_md
+		);
+		self::assertStringContainsString( '## Reporting a vulnerability', $security );
+		self::assertStringNotContainsString(
+			'A dedicated responsible-disclosure process should be documented',
+			$readme_md
+		);
+	}
+
 	public function test_release_builder_requires_directory_readme(): void {
 		$builder = file_get_contents( CB_CORE_DIR . 'tools/build-release' );
 		self::assertIsString( $builder );
