@@ -122,7 +122,7 @@ No. Base can be installed and used without a Core Blueprint account.
 
 = What is the CB Operator role? =
 
-On a genuine first activation, the WordPress account that activates Core Blueprint is assigned the CB Operator role. This establishes the initial trusted operator who can manage Core Blueprint governance and privileged settings. Operator access can be reviewed or changed later under Core Blueprint > Preferences > Permissions.
+When a genuine first activation is performed by an authenticated WordPress user, that account is assigned the CB Operator role. This establishes the initial trusted operator who can manage Core Blueprint governance and privileged settings. Activations without an authenticated WordPress user do not mint an operator automatically. Operator access can be reviewed or changed later under Core Blueprint > Preferences > Permissions.
 
 = Does Core Blueprint send telemetry? =
 
