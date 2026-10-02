@@ -177,6 +177,14 @@ echo "[F3A] preparing isolated performance site"
 php "$REQUEST" install
 write_auth_guard
 
+# Warm WordPress itself before recording controls. A fresh install performs
+# one-time frontend/admin scheduling and update-transient work on its earliest
+# requests; capturing that only on the control side would make the later
+# Base steady-state comparisons methodologically uneven.
+echo "[F3A] warming WordPress-only control state"
+php "$REQUEST" frontend >/dev/null
+php "$REQUEST" admin >/dev/null
+
 # WordPress-only controls. Base is present on disk but deliberately inactive.
 profile_as frontend control_frontend 0 0
 profile_as frontend control_operator_frontend 0 1
