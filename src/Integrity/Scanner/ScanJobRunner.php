@@ -269,6 +269,7 @@ final class ScanJobRunner {
 		} catch ( Throwable $throwable ) {
 			$job['components']['core'] = 'failed';
 			$job['coverage']['core']   = [ 'state' => 'failed', 'reason' => 'scanner_exception' ];
+			/* translators: %s: exception message from the core checksum scan. */
 			$job['checks'][] = self::error_finding( 'core', 'wordpress-core', __( 'WordPress Core', 'core-blueprint' ), './', sprintf( __( 'Core checksum scan failed: %s', 'core-blueprint' ), $throwable->getMessage() ) );
 		}
 
@@ -335,6 +336,7 @@ final class ScanJobRunner {
 				(string) ( $result['status'] ?? 'failed' )
 			);
 		} catch ( Throwable $throwable ) {
+			/* translators: 1: plugin file, 2: exception message from the checksum scan. */
 			$job['checks'][] = self::error_finding( 'plugin', $plugin_file, $plugin_file, 'wp-content/plugins/', sprintf( __( 'Plugin checksum scan failed for %1$s: %2$s', 'core-blueprint' ), $plugin_file, $throwable->getMessage() ) );
 			$job['coverage']['plugins'] = self::merge_coverage( (array) ( $job['coverage']['plugins'] ?? [] ), [ 'state' => 'incomplete', 'filesystem_errors' => 1 ] );
 		}
@@ -398,6 +400,7 @@ final class ScanJobRunner {
 				(string) ( $result['status'] ?? 'failed' )
 			);
 		} catch ( Throwable $throwable ) {
+			/* translators: 1: theme stylesheet, 2: exception message from the checksum scan. */
 			$job['checks'][] = self::error_finding( 'theme', $stylesheet, $stylesheet, 'wp-content/themes/', sprintf( __( 'Theme checksum scan failed for %1$s: %2$s', 'core-blueprint' ), $stylesheet, $throwable->getMessage() ) );
 			$job['coverage']['themes'] = self::merge_coverage( (array) ( $job['coverage']['themes'] ?? [] ), [ 'state' => 'incomplete', 'filesystem_errors' => 1 ] );
 		}
