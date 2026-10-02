@@ -61,6 +61,7 @@ trait ScannerGroupedFindingsView {
 			<section class="cb-core-integrity-finding-group" data-cb-integrity-component-group="<?php echo esc_attr( $filter_key ); ?>">
 				<h3>
 					<span><?php echo esc_html( $component_label ); ?></span>
+					<!-- translators: %d: number of verified items or integrity issues in this component group. -->
 					<span class="cb-core-integrity-group-count" aria-label="<?php echo esc_attr( sprintf( $passed ? _n( '%d verified', '%d verified', $group_count, 'core-blueprint' ) : _n( '%d issue', '%d issues', $group_count, 'core-blueprint' ), $group_count ) ); ?>"><?php echo esc_html( (string) $group_count ); ?></span>
 				</h3>
 				<?php foreach ( $component_groups as $group ) : ?>
@@ -97,6 +98,7 @@ trait ScannerGroupedFindingsView {
 							<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-interactive-row__icon' ] ); ?>
 							<span class="cb-core-integrity-component-title"><?php echo esc_html( $slug ); ?></span>
 							<?php echo StateBadge::render( str_replace( '_', ' ', $status ), [ 'variant' => self::state_badge_variant( $status ) ] ); ?>
+							<?php /* translators: %d: number of passed integrity checks or findings in this group. */ ?>
 							<span class="cb-core-integrity-muted"><?php echo esc_html( $passed ? sprintf( _n( '%d passed check', '%d passed checks', $count, 'core-blueprint' ), $count ) : sprintf( _n( '%d finding', '%d findings', $count, 'core-blueprint' ), $count ) ); ?></span>
 							<?php if ( is_array( $directory_recommendation ) ) : ?>
 								<button type="button" class="button cb-core-button cb-core-button--remediation cb-core-integrity-summary-action cb-core-integrity-quarantine-primary" data-cb-integrity-action="quarantine-finding" data-cb-integrity-finding-id="<?php echo esc_attr( (string) ( $directory_recommendation['id'] ?? '' ) ); ?>" data-cb-integrity-scope="directory"><?php echo Icon::render( 'quarantine', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Quarantine folder', 'core-blueprint' ); ?></span></button>
@@ -122,6 +124,7 @@ trait ScannerGroupedFindingsView {
 						<p class="cb-core-integrity-baseline-indicator <?php echo $baseline_exists ? 'is-approved' : 'is-missing'; ?>">
 							<span><?php echo esc_html__( 'Baseline:', 'core-blueprint' ); ?></span>
 							<?php if ( $baseline_exists ) : ?>
+								<?php /* translators: %s: date/time when the integrity baseline was approved. */ ?>
 								<?php echo esc_html( sprintf( __( 'Approved on %s', 'core-blueprint' ), (string) ( $baseline['approved_at'] ?? $baseline['updated_at'] ?? $baseline['created_at'] ?? '' ) ) ); ?>
 							<?php else : ?>
 								<?php echo esc_html__( 'Not set', 'core-blueprint' ); ?>
@@ -211,17 +214,19 @@ trait ScannerGroupedFindingsView {
 											<?php if ( '' !== $first_detected || '' !== $last_detected ) : ?>
 												<div class="cb-core-integrity-verification">
 													<span><?php echo esc_html__( 'Detection history:', 'core-blueprint' ); ?></span>
-													<?php if ( '' !== $first_detected ) : ?><?php echo esc_html( sprintf( __( 'First detected %s', 'core-blueprint' ), $first_detected ) ); ?><?php endif; ?>
-													<?php if ( '' !== $last_detected && $last_detected !== $first_detected ) : ?> · <?php echo esc_html( sprintf( __( 'last seen %s', 'core-blueprint' ), $last_detected ) ); ?><?php endif; ?>
-													<?php if ( 'changed' === $state && '' !== $last_changed ) : ?> · <?php echo esc_html( sprintf( __( 'changed %s', 'core-blueprint' ), $last_changed ) ); ?><?php endif; ?>
-													<?php if ( $observations > 1 ) : ?> · <?php echo esc_html( sprintf( _n( '%d observation', '%d observations', $observations, 'core-blueprint' ), $observations ) ); ?><?php endif; ?>
+													<?php if ( '' !== $first_detected ) : ?><?php /* translators: %s: formatted first-detected timestamp. */ ?><?php echo esc_html( sprintf( __( 'First detected %s', 'core-blueprint' ), $first_detected ) ); ?><?php endif; ?>
+													<?php if ( '' !== $last_detected && $last_detected !== $first_detected ) : ?> · <?php /* translators: %s: formatted last-detected timestamp. */ ?><?php echo esc_html( sprintf( __( 'last seen %s', 'core-blueprint' ), $last_detected ) ); ?><?php endif; ?>
+													<?php if ( 'changed' === $state && '' !== $last_changed ) : ?> · <?php /* translators: %s: formatted timestamp when the finding last changed. */ ?><?php echo esc_html( sprintf( __( 'changed %s', 'core-blueprint' ), $last_changed ) ); ?><?php endif; ?>
+													<?php if ( $observations > 1 ) : ?> · <?php /* translators: %d: number of observations of this integrity finding. */ ?><?php echo esc_html( sprintf( _n( '%d observation', '%d observations', $observations, 'core-blueprint' ), $observations ) ); ?><?php endif; ?>
 												</div>
 											<?php endif; ?>
 											<code class="cb-core-integrity-technical"><?php echo esc_html( trim( $type . ' ' . $file ) ); ?></code>
 											<?php if ( ! empty( $children ) ) : ?>
 												<details class="cb-core-integrity-audit-children">
+													<?php /* translators: %d: number of verified files represented by this finding. */ ?>
 													<summary><?php echo esc_html( sprintf( _n( '%d verified file', '%d verified files', $verified_total, 'core-blueprint' ), $verified_total ) ); ?></summary>
 													<?php if ( $verified_total > count( $children ) ) : ?>
+														<?php /* translators: 1: number of displayed verified file paths, 2: total number of verified files. */ ?>
 														<p class="cb-core-integrity-muted"><?php echo esc_html( sprintf( __( 'Showing %1$d of %2$d verified file paths to keep this result compact.', 'core-blueprint' ), count( $children ), $verified_total ) ); ?></p>
 													<?php endif; ?>
 													<ul>
