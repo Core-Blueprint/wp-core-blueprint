@@ -44,6 +44,7 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'Start Core Setup', $html );
 		self::assertStringContainsString( 'When Core Blueprint is first activated by an authenticated WordPress user', $html );
 		self::assertStringContainsString( 'tab=permissions', $html );
+		self::assertStringContainsString( 'Review permissions', $html );
 		self::assertStringNotContainsString( 'Complete Core Setup', $html );
 		self::assertStringContainsString( 'Environment &amp; availability (3)', $html );
 		self::assertStringContainsString( 'Overview (30)', $html );
