@@ -6,12 +6,12 @@
  */
 defined( 'ABSPATH' ) || exit;
 
-$card_url   = esc_url( (string) ( $card['url'] ?? '' ) );
+$card_url   = (string) ( $card['url'] ?? '' );
 $card_state = sanitize_key( (string) ( $card['state'] ?? '' ) );
 ?>
 <div class="cb-core-tile cb-core-tile--managed"<?php echo '' !== $card_state ? ' data-state="' . esc_attr( $card_state ) . '"' : ''; ?>>
 	<?php if ( '' !== $card_url ) : ?>
-		<a class="cb-core-tile__bodylink" href="<?php echo $card_url; ?>">
+		<a class="cb-core-tile__bodylink" href="<?php echo esc_url( $card_url ); ?>">
 			<span class="cb-core-tile__title"><?php echo esc_html( (string) ( $card['title'] ?? '' ) ); ?></span>
 			<span class="cb-core-tile__meta"><?php echo esc_html( (string) ( $card['meta'] ?? '' ) ); ?></span>
 		</a>
