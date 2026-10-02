@@ -211,6 +211,7 @@ final class Repository {
         $user_id = get_current_user_id();
 
         $row = [
+            /* translators: %s: source note title. */
             'title'          => self::clean_title( sprintf( __( '%s copy', 'core-blueprint' ), (string) $source->title ) ),
             'content'        => self::clean_content( (string) $source->content ),
             'content_format' => self::sanitize_format( (string) $source->content_format ),
@@ -476,6 +477,7 @@ final class Repository {
 
             if ( 'copy' === $decision || 'create' === $decision || ! $existing ) {
                 if ( 'copy' === $decision && $existing ) {
+                    /* translators: %s: imported note title. */
                     $incoming['title'] = sprintf( __( '%s imported copy', 'core-blueprint' ), $incoming['title'] );
                 }
                 if ( self::create( $incoming ) ) {
