@@ -63,6 +63,28 @@
 	color: var(--cb-text-muted);
 }
 
+.cb-core-card--review-step .cb-core-card__header {
+	justify-content: space-between;
+}
+
+.cb-core-card--review-step .cb-core-card__heading {
+	min-width: 0;
+}
+
+.cb-core-card--review-step .cb-core-card__step {
+	display: block;
+	margin-bottom: var(--cb-space-1);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-medium);
+	line-height: var(--cb-lh-normal);
+	color: var(--cb-text-muted);
+}
+
+.cb-core-card--review-step .cb-core-card__title {
+	font-size: var(--cb-fs-lg);
+	color: var(--cb-text-strong);
+}
+
 /* ─── Body ─────────────────────────────────────────────────────────────── */
 
 .cb-core-card__body {
