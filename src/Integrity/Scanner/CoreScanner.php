@@ -466,6 +466,7 @@ final class CoreScanner {
 				],
 				'status'       => 'ok',
 				'severity'     => 'ok',
+				/* translators: 1: component name (WordPress Core), 2: WordPress version. */
 				'message'      => sprintf( __( '%1$s matched the official WordPress.org checksum manifest for version %2$s.', 'core-blueprint' ), __( 'WordPress Core', 'core-blueprint' ), (string) ( $state['wp_version'] ?? '' ) ),
 				'verification' => [ 'method' => 'checksum', 'source' => 'wordpress.org_core_checksums', 'confidence' => 'high', 'label' => __( 'Checksum via WordPress.org', 'core-blueprint' ) ],
 				'children'     => $children,
