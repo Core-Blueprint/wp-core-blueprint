@@ -89,7 +89,7 @@ final class TraceContext {
 
 	private static function ability_execution_depth(): int {
 		$depth = 0;
-		foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 64 ) as $frame ) {
+		foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 64 ) as $frame ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- bounded call-stack inspection is the execution-depth mechanism, not debug output.
 			if ( 'WP_Ability' === ( $frame['class'] ?? null ) && 'execute' === ( $frame['function'] ?? null ) ) {
 				++$depth;
 			}
