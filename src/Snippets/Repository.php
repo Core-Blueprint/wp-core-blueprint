@@ -141,6 +141,7 @@ final class Repository {
 			return new \WP_Error( 'cb_snippets_code_invalid', __( 'The managed snippet code file is missing or invalid.', 'core-blueprint' ) );
 		}
 		unset( $meta['id'], $meta['created_at'], $meta['updated_at'] );
+		/* translators: %s: original managed snippet title. */
 		$meta['title']   = sprintf( __( '%s (copy)', 'core-blueprint' ), (string) $meta['title'] );
 		$meta['enabled'] = false;
 		$meta['shortcode'] = '';
