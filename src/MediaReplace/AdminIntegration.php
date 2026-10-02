@@ -288,8 +288,11 @@ final class AdminIntegration {
 		check_admin_referer( 'cb_core_replace_media_' . $attachment_id );
 
 		try {
+			$acknowledgement = isset( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+				? wp_unslash( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+				: null;
 			MutationAcknowledgement::require_confirmed(
-				$_POST[ self::ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above; strict literal confirmation only.
+				$acknowledgement, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above; strict literal confirmation only.
 				__( 'Confirm your responsibility for backup and recovery before replacing the media file.', 'core-blueprint' )
 			);
 		} catch ( \InvalidArgumentException $error ) {
