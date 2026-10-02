@@ -125,7 +125,7 @@ class MaintenanceReport {
 			} catch ( \Throwable $e ) {
 				// One faulty source must not break the whole report.
 				if ( WP_DEBUG ) {
-					error_log( "CB Maintenance Report source '{$id}' failed: " . $e->getMessage() );
+					error_log( "CB Maintenance Report source '{$id}' failed: " . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-only collector diagnostic.
 				}
 			}
 		}
