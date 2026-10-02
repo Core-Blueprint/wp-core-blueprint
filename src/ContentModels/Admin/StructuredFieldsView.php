@@ -50,11 +50,13 @@ trait StructuredFieldsView {
 		$type = (string) $sub_field['type'];
 		$atomic_groups = FieldTypes::grouped_labels();
 		unset( $atomic_groups[ __( 'Structured', 'core-blueprint' ) ] );
+		$reorder_label = '' !== (string) $sub_field['label'] ? (string) $sub_field['label'] : __( 'New subfield', 'core-blueprint' );
+		/* translators: %s: subfield label shown in the reorder control. */
+		$reorder_aria_label = sprintf( __( 'Reorder %s', 'core-blueprint' ), $reorder_label );
 		?>
-		<?php $reorder_label = '' !== (string) $sub_field['label'] ? (string) $sub_field['label'] : __( 'New subfield', 'core-blueprint' ); ?>
 		<div class="cb-content-models-subfield" data-cb-cm-subfield data-cb-core-reorder-item="subfield-<?php echo esc_attr( (string) $index ); ?>" data-cb-core-reorder-label="<?php echo esc_attr( $reorder_label ); ?>">
 			<div class="cb-content-models-subfield__header">
-				<button type="button" class="button-link cb-content-models-subfield__drag" data-cb-cm-subfield-handle data-cb-core-reorder-handle aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $reorder_label ) ); ?>"><span class="dashicons dashicons-move" aria-hidden="true"></span></button>
+				<button type="button" class="button-link cb-content-models-subfield__drag" data-cb-cm-subfield-handle data-cb-core-reorder-handle aria-label="<?php echo esc_attr( $reorder_aria_label ); ?>"><span class="dashicons dashicons-move" aria-hidden="true"></span></button>
 				<strong data-cb-cm-subfield-title><?php echo esc_html( $reorder_label ); ?></strong>
 				<button type="button" class="button-link-delete" data-cb-cm-remove-subfield><?php esc_html_e( 'Remove', 'core-blueprint' ); ?></button>
 			</div>
