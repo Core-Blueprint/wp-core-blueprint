@@ -30,14 +30,15 @@ It measures fourteen isolated profile requests in one temporary WordPress instal
 
 - generic WordPress admin dashboard after the harness disables every canonical optional module.
 
-Every normal scenario emits JSON with request memory, query count, classic/script-module asset counts, Core Blueprint local asset bytes, the WordPress autoload footprint and scheduled Core Blueprint cron hooks/events. Records include whether Base was active, whether the request was authenticated, whether query tracing was enabled and whether the footer/render phase was executed.
+Every normal scenario emits JSON with request memory, query count, classic/script-module asset counts, Core Blueprint local asset bytes, the WordPress autoload footprint and scheduled Core Blueprint cron hooks/events. Records include whether Base was active, whether the request was authenticated, whether query tracing was enabled, whether the footer/render phase was executed and which optional modules, if any, were explicitly enabled for that observation.
 
-`baseline.json` contains four direct control → Base comparisons:
+`baseline.json` contains five direct control → Base comparisons:
 
 - `anonymous_frontend`: WordPress-only anonymous frontend → Base-enabled anonymous frontend;
 - `operator_frontend`: WordPress-only logged-in frontend → Base-enabled logged-in operator frontend;
 - `operator_frontend_rendered`: the same comparison with `wp_footer` executed so actual HUD rendering is included;
-- `generic_admin`: WordPress-only admin dashboard → Base-enabled generic admin dashboard.
+- `generic_admin`: WordPress-only admin dashboard → Base-enabled generic admin dashboard;
+- `generic_admin_modules_disabled`: WordPress-only admin dashboard → Base-enabled generic admin dashboard after every canonical optional module is disabled.
 
 ## F3A query trace
 
