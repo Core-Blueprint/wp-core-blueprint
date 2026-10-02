@@ -23,7 +23,7 @@ final class Sanitizer {
 		if ( ! Environment::svg_supported() ) {
 			return new \WP_Error( 'cb_media_formats_svg_runtime_missing', __( 'SVG sanitization is unavailable because the required XML extensions are missing.', 'core-blueprint' ) );
 		}
-		if ( ! is_file( $path ) || ! is_readable( $path ) || ! is_writable( $path ) ) {
+		if ( ! is_file( $path ) || ! is_readable( $path ) || ! wp_is_writable( $path ) ) {
 			return new \WP_Error( 'cb_media_formats_svg_unreadable', __( 'The SVG upload could not be read safely.', 'core-blueprint' ) );
 		}
 
