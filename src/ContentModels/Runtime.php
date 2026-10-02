@@ -60,16 +60,27 @@ final class Runtime {
 				'menu_name'             => $plural,
 				'name_admin_bar'        => $singular,
 				'add_new'               => __( 'Add New', 'core-blueprint' ),
+				/* translators: %s: singular Content Model label. */
 				'add_new_item'          => sprintf( __( 'Add New %s', 'core-blueprint' ), $singular ),
+				/* translators: %s: singular Content Model label. */
 				'edit_item'             => sprintf( __( 'Edit %s', 'core-blueprint' ), $singular ),
+				/* translators: %s: singular Content Model label. */
 				'new_item'              => sprintf( __( 'New %s', 'core-blueprint' ), $singular ),
+				/* translators: %s: singular Content Model label. */
 				'view_item'             => sprintf( __( 'View %s', 'core-blueprint' ), $singular ),
+				/* translators: %s: plural Content Model label. */
 				'view_items'            => sprintf( __( 'View %s', 'core-blueprint' ), $plural ),
+				/* translators: %s: plural Content Model label. */
 				'search_items'          => sprintf( __( 'Search %s', 'core-blueprint' ), $plural ),
+				/* translators: %s: lowercase plural Content Model label. */
 				'not_found'             => sprintf( __( 'No %s found.', 'core-blueprint' ), strtolower( $plural ) ),
+				/* translators: %s: lowercase plural Content Model label. */
 				'not_found_in_trash'    => sprintf( __( 'No %s found in Trash.', 'core-blueprint' ), strtolower( $plural ) ),
+				/* translators: %s: plural Content Model label. */
 				'all_items'             => sprintf( __( 'All %s', 'core-blueprint' ), $plural ),
+				/* translators: %s: singular Content Model label. */
 				'archives'              => sprintf( __( '%s Archives', 'core-blueprint' ), $singular ),
+				/* translators: %s: singular Content Model label. */
 				'attributes'            => sprintf( __( '%s Attributes', 'core-blueprint' ), $singular ),
 				'featured_image'        => __( 'Featured image', 'core-blueprint' ),
 				'set_featured_image'    => __( 'Set featured image', 'core-blueprint' ),
@@ -121,11 +132,17 @@ final class Runtime {
 			'labels' => [
 				'name'                       => $plural,
 				'singular_name'              => $singular,
+				/* translators: %s: plural taxonomy label. */
 				'search_items'               => sprintf( __( 'Search %s', 'core-blueprint' ), $plural ),
+				/* translators: %s: plural taxonomy label. */
 				'all_items'                  => sprintf( __( 'All %s', 'core-blueprint' ), $plural ),
+				/* translators: %s: singular taxonomy label. */
 				'edit_item'                  => sprintf( __( 'Edit %s', 'core-blueprint' ), $singular ),
+				/* translators: %s: singular taxonomy label. */
 				'update_item'                => sprintf( __( 'Update %s', 'core-blueprint' ), $singular ),
+				/* translators: %s: singular taxonomy label. */
 				'add_new_item'               => sprintf( __( 'Add New %s', 'core-blueprint' ), $singular ),
+				/* translators: %s: singular taxonomy label. */
 				'new_item_name'              => sprintf( __( 'New %s Name', 'core-blueprint' ), $singular ),
 				'menu_name'                  => $plural,
 			],
@@ -174,12 +191,14 @@ final class Runtime {
 						continue;
 					}
 					if ( function_exists( 'registered_meta_key_exists' ) && registered_meta_key_exists( 'post', $name, $post_type ) ) {
+						/* translators: %s: WordPress post type key. */
 						self::error( 'field', $name, sprintf( __( 'This meta key is already registered for post type %s by WordPress or another plugin.', 'core-blueprint' ), $post_type ) );
 						continue;
 					}
 
 					$registered = register_post_meta( $post_type, $name, FieldTypes::meta_args( $field ) );
 					if ( false === $registered ) {
+						/* translators: %s: WordPress post type key. */
 						self::error( 'field', $name, sprintf( __( 'The field could not be registered for post type %s.', 'core-blueprint' ), $post_type ) );
 					}
 				}
@@ -205,10 +224,12 @@ final class Runtime {
 						continue;
 					}
 					if ( function_exists( 'registered_meta_key_exists' ) && registered_meta_key_exists( 'term', $name, $taxonomy ) ) {
+						/* translators: %s: WordPress taxonomy key. */
 						self::error( 'field', $name, sprintf( __( 'This meta key is already registered for taxonomy %s by WordPress or another plugin.', 'core-blueprint' ), $taxonomy ) );
 						continue;
 					}
 					if ( false === register_term_meta( $taxonomy, $name, FieldTypes::meta_args( $field, 'term' ) ) ) {
+						/* translators: %s: WordPress taxonomy key. */
 						self::error( 'field', $name, sprintf( __( 'The field could not be registered for taxonomy %s.', 'core-blueprint' ), $taxonomy ) );
 					}
 				}
