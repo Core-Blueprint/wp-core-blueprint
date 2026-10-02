@@ -122,7 +122,7 @@ final class Page extends PageBase {
 		} elseif ( 'templates' === $tab ) {
 			$templates = TemplateRegistry::all();
 			$template_ids = array_keys( $templates );
-			$template_id = isset( $_GET['template'] ) ? (string) wp_unslash( $_GET['template'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$template_id = isset( $_GET['template'] ) ? sanitize_text_field( wp_unslash( $_GET['template'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only template selector.
 			if ( ! isset( $templates[ $template_id ] ) ) {
 				$template_id = (string) ( $template_ids[0] ?? '' );
 			}
