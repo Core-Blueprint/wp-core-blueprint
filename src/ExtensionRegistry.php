@@ -251,7 +251,7 @@ final class ExtensionRegistry {
 
 	private static function diagnostic( string $message ): void {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[Core Blueprint ExtensionRegistry] ' . $message );
+			error_log( '[Core Blueprint ExtensionRegistry] ' . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-only registry diagnostic.
 		}
 	}
 }
