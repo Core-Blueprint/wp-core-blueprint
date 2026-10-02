@@ -117,23 +117,24 @@ final class UpdateBuilder {
 		// Single-row/single-WHERE cases can use $wpdb->update() with its
 		// auto-format detection. Multi-clause WHEREs need the manual
 		// compose path - we always take that path for predictability.
-		$set_parts = [];
-		$set_vals  = [];
+		$set_parts  = [];
+		$set_params = [];
 		foreach ( $this->set_values as $column => $value ) {
-			$set_parts[] = "{$column} = " . ( is_int( $value ) ? '%d' : '%s' );
-			$set_vals[]  = $value;
+			$set_parts[]  = '%i = ' . ( is_int( $value ) ? '%d' : '%s' );
+			$set_params[] = $column;
+			$set_params[] = $value;
 		}
 
 		$where_sql = empty( $this->where )
 			? '1=1'  // match_all() case - verified above.
 			: implode( ' AND ', $this->where );
 
-		$sql    = "UPDATE {$this->table} SET " . implode( ', ', $set_parts ) . " WHERE {$where_sql}";
-		$params = array_merge( $set_vals, $this->params );
+		$sql    = "UPDATE %i SET " . implode( ', ', $set_parts ) . " WHERE {$where_sql}";
+		$params = array_merge( [ $this->table ], $set_params, $this->params );
 
-		// `set_values` is guaranteed non-empty above, so `$params` always
-		// contains at least one SET value and the query always has placeholders.
-		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// The table and SET identifiers use WordPress's native %i placeholder;
+		// every SET/WHERE value remains bound through its typed placeholder.
+		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE shape is builder-owned and identifier-validated.
 
 		return false === $result ? 0 : (int) $result;
 	}
