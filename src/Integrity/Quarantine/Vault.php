@@ -57,7 +57,7 @@ final class Vault {
 		if ( file_exists( $dir ) ) {
 			throw new RuntimeException( __( 'Quarantine item already exists.', 'core-blueprint' ) );
 		}
-		if ( ! mkdir( $dir, 0700, true ) && ! is_dir( $dir ) ) {
+		if ( ! wp_mkdir_p( $dir ) && ! is_dir( $dir ) ) {
 			throw new RuntimeException( __( 'Could not create quarantine item directory.', 'core-blueprint' ) );
 		}
 		@chmod( $dir, 0700 );
@@ -105,7 +105,7 @@ final class Vault {
 			throw new RuntimeException( __( 'The original location is no longer empty. Restore was refused to avoid overwriting data.', 'core-blueprint' ) );
 		}
 		$parent = dirname( $destination );
-		if ( ! is_dir( $parent ) && ! mkdir( $parent, 0755, true ) && ! is_dir( $parent ) ) {
+		if ( ! is_dir( $parent ) && ! wp_mkdir_p( $parent ) && ! is_dir( $parent ) ) {
 			throw new RuntimeException( __( 'Could not recreate the original parent directory.', 'core-blueprint' ) );
 		}
 
@@ -166,7 +166,7 @@ final class Vault {
 	}
 
 	private static function ensure_root( string $root, string $site_root, string $document_root = '' ): void {
-		if ( ! is_dir( $root ) && ! mkdir( $root, 0700, true ) && ! is_dir( $root ) ) {
+		if ( ! is_dir( $root ) && ! wp_mkdir_p( $root ) && ! is_dir( $root ) ) {
 			throw new RuntimeException( __( 'Could not create the Core Scanner quarantine vault.', 'core-blueprint' ) );
 		}
 		@chmod( $root, 0700 );
@@ -215,7 +215,7 @@ final class Vault {
 
 	public static function remove_tree( string $path ): void {
 		if ( is_link( $path ) || is_file( $path ) ) {
-			@unlink( $path );
+			wp_delete_file( $path );
 			return;
 		}
 		if ( ! is_dir( $path ) ) {
@@ -227,7 +227,7 @@ final class Vault {
 		);
 		foreach ( $iterator as $entry ) {
 			if ( $entry->isLink() || $entry->isFile() ) {
-				@unlink( $entry->getPathname() );
+				wp_delete_file( $entry->getPathname() );
 			} else {
 				@rmdir( $entry->getPathname() );
 			}
