@@ -51,6 +51,7 @@ final class AdminModuleDefinitionsSecurity {
 							'shieldApplyDefaultsBody'     => __( 'This overwrites your current module and feature toggle configuration with the recommended defaults for the current site mode.', 'core-blueprint' ),
 							'shieldApplyDefaultsConfirm'  => __( 'Apply defaults', 'core-blueprint' ),
 							'headerTestError'             => __( 'Header test failed:', 'core-blueprint' ),
+							/* translators: 1: number of security headers present, 2: total security headers checked, 3: resulting grade. */
 							'headerScore'                 => __( '%1$d of %2$d security headers present - Grade %3$s', 'core-blueprint' ),
 							'headerPresent'               => __( 'Present', 'core-blueprint' ),
 							'headerMissing'               => __( 'Missing', 'core-blueprint' ),
