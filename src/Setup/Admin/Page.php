@@ -74,13 +74,21 @@ final class Page extends PageBase {
 			</p>
 
 			<?php if ( $first_visit ) : ?>
-				<div class="cb-core-notice cb-core-notice--info">
+				<div class="cb-core-notice cb-core-notice--info cb-core-notice--hero">
 					<div class="cb-core-notice__content">
 						<h2 class="cb-core-notice__title"><?php esc_html_e( 'Start Core Setup', 'core-blueprint' ); ?></h2>
 						<p class="cb-core-notice__message">
-							<?php esc_html_e( 'Work through the sections in your own order. Nothing is changed automatically, and you can return to this checklist later.', 'core-blueprint' ); ?>
+							<?php esc_html_e( 'Review this site step by step and decide which Core Blueprint features belong here. Nothing is changed automatically, and you can return to Core Setup at any time.', 'core-blueprint' ); ?>
 						</p>
-						<p class="cb-core-notice__message">
+						<p class="cb-core-notice__context">
+							<?php esc_html_e( 'Review statuses describe the current configuration; they do not mean Core Blueprint failed to activate.', 'core-blueprint' ); ?>
+						</p>
+						<div class="cb-core-actions">
+							<a class="button cb-core-button cb-core-button--primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&tab=environment-availability' ) ); ?>">
+								<?php esc_html_e( 'Start review', 'core-blueprint' ); ?>
+							</a>
+						</div>
+						<p class="cb-core-notice__context">
 							<?php esc_html_e( 'When Core Blueprint is first activated by an authenticated WordPress user, that account is assigned the CB Operator role to establish the initial trusted operator.', 'core-blueprint' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=core-blueprint-preferences&tab=permissions' ) ); ?>">
 								<?php esc_html_e( 'Review permissions', 'core-blueprint' ); ?>
