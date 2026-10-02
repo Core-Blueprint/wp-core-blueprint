@@ -42,6 +42,11 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		$html = $this->render_setup();
 
 		self::assertStringContainsString( 'Start Core Setup', $html );
+		self::assertStringContainsString( 'cb-core-notice--hero', $html );
+		self::assertStringContainsString( 'Review this site step by step and decide which Core Blueprint features belong here.', $html );
+		self::assertStringContainsString( 'Review statuses describe the current configuration', $html );
+		self::assertStringContainsString( 'Start review', $html );
+		self::assertStringContainsString( 'tab=environment-availability', $html );
 		self::assertStringContainsString( 'When Core Blueprint is first activated by an authenticated WordPress user', $html );
 		self::assertStringContainsString( 'tab=permissions', $html );
 		self::assertStringContainsString( 'Review permissions', $html );
@@ -66,6 +71,19 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'cb-core-status-strip', $html );
 		self::assertStringNotContainsString( 'name="fingerprint"', $html );
 		self::assertGreaterThan( 0, ReviewRepository::lifecycle()['started_at'] );
+	}
+
+	public function test_ui1b_first_run_hero_uses_canonical_typography_tokens(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'assets/css/components/notices.css' );
+		self::assertIsString( $source );
+
+		self::assertStringContainsString( '.cb-core-notice--hero', $source );
+		self::assertStringContainsString( 'font-size: var(--cb-fs-2xl);', $source );
+		self::assertStringContainsString( 'font-size: var(--cb-fs-xl);', $source );
+		self::assertStringContainsString( 'font-size: var(--cb-fs-lg);', $source );
+		self::assertStringNotContainsString( 'font-size: 20px', $source );
+		self::assertStringNotContainsString( 'font-size: 16px', $source );
+		self::assertStringNotContainsString( 'font-size: 14px', $source );
 	}
 
 	public function test_ui2_existing_site_opens_overview_by_default_and_sections_remain_reopenable(): void {
