@@ -20,6 +20,7 @@ final class Reset implements CommandInterface {
 		$ref = (string) ( $args['user'] ?? '' );
 		$user = self::resolve_user( $ref );
 		if ( null === $user ) {
+			/* translators: %s: user reference entered on the command line. */
 			return Result::error( sprintf( __( 'No user matches "%s" (tried ID, email, login).', 'core-blueprint' ), $ref ) );
 		}
 
