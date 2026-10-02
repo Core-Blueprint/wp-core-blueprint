@@ -107,11 +107,15 @@ $render_audience_picker = static function ( ?array $rule, string $kind, string $
 							data-cb-admin-navigation-menu-row
 							data-navigation-id="<?php echo esc_attr( $id ); ?>"
 						>
+							<?php
+							/* translators: %s: admin navigation item label. */
+							$reorder_aria_label = sprintf( __( 'Reorder %s', 'core-blueprint' ), $label );
+							?>
 							<button
 								type="button"
 								class="button-link cb-core-icon-control cb-core-reorder-handle cb-core-admin-navigation-row__drag"
 								data-cb-core-reorder-handle
-								aria-label="<?php echo esc_attr( sprintf( __( 'Reorder %s', 'core-blueprint' ), $label ) ); ?>"
+								aria-label="<?php echo esc_attr( $reorder_aria_label ); ?>"
 							>
 								<span class="dashicons dashicons-move" aria-hidden="true"></span>
 							</button>
