@@ -141,7 +141,7 @@ final class Page extends PageBase {
 
     private function handle_actions(): ?array {
         $request_method = isset( $_SERVER['REQUEST_METHOD'] )
-            ? strtoupper( (string) wp_unslash( $_SERVER['REQUEST_METHOD'] ) )
+            ? strtoupper( sanitize_key( wp_unslash( (string) $_SERVER['REQUEST_METHOD'] ) ) )
             : '';
         if ( 'POST' !== $request_method || empty( $_POST['cb_notes_action'] ) ) {
             return null;
