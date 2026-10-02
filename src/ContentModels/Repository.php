@@ -426,7 +426,8 @@ final class Repository {
 			$names[ $name ] = true;
 			$choices = in_array( $type, [ 'select', 'radio', 'checkbox' ], true ) ? FieldTypes::parse_choices( (string) ( $row['choices_text'] ?? '' ) ) : [];
 			if ( in_array( $type, [ 'select', 'radio', 'checkbox' ], true ) && empty( $choices ) ) {
-				throw new \InvalidArgumentException( sprintf( __( 'Subfield %s requires at least one choice.', 'core-blueprint' ), $label ) );
+				/* translators: %s: subfield label. */
+			throw new \InvalidArgumentException( sprintf( __( 'Subfield %s requires at least one choice.', 'core-blueprint' ), $label ) );
 			}
 			$relation_multiple = ! empty( $row['relation_multiple'] );
 			$relation_post_types = array_values( array_unique( array_filter( array_map(
@@ -442,10 +443,12 @@ final class Repository {
 				(array) ( $row['relation_taxonomies'] ?? [] )
 			) ) ) );
 			if ( 'post_relation' === $type && empty( $relation_post_types ) ) {
-				throw new \InvalidArgumentException( sprintf( __( 'Subfield %s requires at least one allowed post type.', 'core-blueprint' ), $label ) );
+				/* translators: %s: subfield label. */
+			throw new \InvalidArgumentException( sprintf( __( 'Subfield %s requires at least one allowed post type.', 'core-blueprint' ), $label ) );
 			}
 			if ( 'term_relation' === $type && empty( $relation_taxonomies ) ) {
-				throw new \InvalidArgumentException( sprintf( __( 'Subfield %s requires at least one allowed taxonomy.', 'core-blueprint' ), $label ) );
+				/* translators: %s: subfield label. */
+			throw new \InvalidArgumentException( sprintf( __( 'Subfield %s requires at least one allowed taxonomy.', 'core-blueprint' ), $label ) );
 			}
 			$sub = [
 				'id'                    => $id,
