@@ -105,8 +105,11 @@ final class Actions {
 			self::redirect_with_notice( 'error', __( 'The profile preview expired. Upload the profile again.', 'core-blueprint' ) );
 		}
 		try {
+			$acknowledgement = isset( $_POST[ self::APPLY_ACKNOWLEDGEMENT_FIELD ] )
+				? wp_unslash( $_POST[ self::APPLY_ACKNOWLEDGEMENT_FIELD ] )
+				: null;
 			MutationAcknowledgement::require_confirmed(
-				$_POST[ self::APPLY_ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above; strict literal confirmation only.
+				$acknowledgement, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above; strict literal confirmation only.
 				__( 'Confirm your responsibility for backup and recovery before applying the Profile.', 'core-blueprint' )
 			);
 		} catch ( \InvalidArgumentException $error ) {
