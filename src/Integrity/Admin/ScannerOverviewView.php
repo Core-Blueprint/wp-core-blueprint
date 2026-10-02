@@ -134,6 +134,26 @@ trait ScannerOverviewView {
 			(int) ( $lifecycle_counts['resolved'] ?? 0 ) > 0 ||
 			(int) ( $lifecycle_counts['unconfirmed'] ?? 0 ) > 0
 		);
+		$baseline_review_label = '';
+		if ( $baseline_candidates > 0 ) {
+			/* translators: %d: number of local baseline candidates awaiting review. */
+			$baseline_review_label = sprintf( _n( 'Review %d Local Baseline', 'Review %d Local Baselines', $baseline_candidates, 'core-blueprint' ), $baseline_candidates );
+		}
+		$duration_label = '';
+		if ( $duration > 0 ) {
+			/* translators: %s: formatted scan duration in seconds. */
+			$duration_label = sprintf( __( 'Completed in %ss', 'core-blueprint' ), number_format_i18n( $duration, 1 ) );
+		}
+		$review_findings_label = '';
+		if ( $review_count > 0 ) {
+			/* translators: %d: number of findings requiring review. */
+			$review_findings_label = sprintf( _n( 'Review %d finding', 'Review %d findings', $review_count, 'core-blueprint' ), $review_count );
+		}
+		$baseline_meta_label = __( 'No approved local baseline yet', 'core-blueprint' );
+		if ( ! empty( $baseline['exists'] ) ) {
+			/* translators: 1: number of approved baseline entries, 2: baseline creation timestamp. */
+			$baseline_meta_label = sprintf( __( '%1$d entries, created %2$s', 'core-blueprint' ), (int) $baseline['entry_count'], (string) $baseline['created_at'] );
+		}
 		?>
 		<div class="cb-core-integrity-actions" aria-label="<?php echo esc_attr__( 'Core Scanner actions', 'core-blueprint' ); ?>">
 			<?php if ( $is_enabled ) : ?>
@@ -143,7 +163,7 @@ trait ScannerOverviewView {
 			<?php endif; ?>
 			<?php if ( $is_enabled && self::can_manage_policy() && $baseline_candidates > 0 ) : ?>
 				<a class="button cb-core-button cb-core-button--secondary cb-core-integrity-secondary-action" href="<?php echo esc_url( self::scanner_view_url( 'findings', [ 'cb_integrity_baseline_candidate' => '1' ] ) ); ?>">
-					<?php echo esc_html( sprintf( _n( 'Review %d Local Baseline', 'Review %d Local Baselines', $baseline_candidates, 'core-blueprint' ), $baseline_candidates ) ); ?>
+					<?php echo esc_html( $baseline_review_label ); ?>
 				</a>
 			<?php endif; ?>
 			<?php if ( self::can_manage_policy() ) : ?>
@@ -171,13 +191,13 @@ trait ScannerOverviewView {
 					<?php
 					echo esc_html( $last_scan );
 					if ( $duration > 0 ) {
-						echo ' · ' . esc_html( sprintf( __( 'Completed in %ss', 'core-blueprint' ), number_format_i18n( $duration, 1 ) ) );
+						echo ' · ' . esc_html( $duration_label );
 					}
 					?>
 				</span>
 				<?php if ( $review_count > 0 ) : ?>
 					<a class="button cb-core-button cb-core-button--secondary cb-core-integrity-review-findings" href="<?php echo esc_url( self::scanner_view_url( 'findings' ) ); ?>">
-						<?php echo esc_html( sprintf( _n( 'Review %d finding', 'Review %d findings', $review_count, 'core-blueprint' ), $review_count ) ); ?>
+						<?php echo esc_html( $review_findings_label ); ?>
 					</a>
 				<?php endif; ?>
 			</div>
@@ -186,7 +206,7 @@ trait ScannerOverviewView {
 				<div><span><?php echo esc_html__( 'Warnings', 'core-blueprint' ); ?></span><strong id="cb-core-integrity-count-warning"><?php echo esc_html( (string) $warning ); ?></strong></div>
 				<div><span><?php echo esc_html__( 'Verified', 'core-blueprint' ); ?></span><strong id="cb-core-integrity-count-ok"><?php echo esc_html( (string) $ok ); ?></strong></div>
 				<div><span><?php echo esc_html__( 'Coverage', 'core-blueprint' ); ?></span><strong><?php echo esc_html( ucfirst( $completion ) ); ?></strong></div>
-				<div class="cb-core-integrity-baseline-metric"><span><?php echo esc_html__( 'Baseline', 'core-blueprint' ); ?></span><strong id="cb-core-integrity-baseline-status"><?php echo ! empty( $baseline['exists'] ) ? esc_html__( 'Approved', 'core-blueprint' ) : esc_html__( 'None', 'core-blueprint' ); ?></strong><small id="cb-core-integrity-baseline-meta"><?php echo ! empty( $baseline['exists'] ) ? esc_html( sprintf( __( '%1$d entries, created %2$s', 'core-blueprint' ), (int) $baseline['entry_count'], (string) $baseline['created_at'] ) ) : esc_html__( 'No approved local baseline yet', 'core-blueprint' ); ?></small></div>
+				<div class="cb-core-integrity-baseline-metric"><span><?php echo esc_html__( 'Baseline', 'core-blueprint' ); ?></span><strong id="cb-core-integrity-baseline-status"><?php echo ! empty( $baseline['exists'] ) ? esc_html__( 'Approved', 'core-blueprint' ) : esc_html__( 'None', 'core-blueprint' ); ?></strong><small id="cb-core-integrity-baseline-meta"><?php echo esc_html( $baseline_meta_label ); ?></small></div>
 			</div>
 		</section>
 
@@ -290,12 +310,14 @@ trait ScannerOverviewView {
 					$unexpected = (int) ( $component_coverage['unexpected_files'] ?? 0 );
 					$missing = (int) ( $component_coverage['missing_files'] ?? 0 );
 					$unreadable = (int) ( $component_coverage['unreadable_files'] ?? $component_coverage['unreadable'] ?? 0 );
+					/* translators: 1: checked file count, 2: unexpected file count, 3: missing file count, 4: unreadable file count. */
+					$coverage_label = sprintf( __( 'Checked %1$d · unexpected %2$d · missing %3$d · unreadable %4$d', 'core-blueprint' ), $checked, $unexpected, $missing, $unreadable );
 					?>
 					<?php $component_url = self::scanner_view_url( 'findings', [ 'cb_integrity_component' => $component ] ); ?>
 					<a class="cb-core-integrity-component cb-core-integrity-component-filter" href="<?php echo esc_url( $component_url ); ?>">
 						<span><?php echo esc_html( ucfirst( $component ) ); ?></span>
 						<?php echo StateBadge::render( strtoupper( $component_state ), [ 'variant' => self::state_badge_variant( $component_state ) ] ); ?>
-						<small class="cb-core-integrity-muted"><?php echo esc_html( sprintf( __( 'Checked %1$d · unexpected %2$d · missing %3$d · unreadable %4$d', 'core-blueprint' ), $checked, $unexpected, $missing, $unreadable ) ); ?></small>
+						<small class="cb-core-integrity-muted"><?php echo esc_html( $coverage_label ); ?></small>
 					</a>
 				<?php endforeach; ?>
 			</div>
