@@ -228,6 +228,7 @@ final class RunController {
 		if ( null === $cmd ) {
 			return new WP_Error(
 				'cb_console_unknown_command',
+				/* translators: %s: command ID. */
 				sprintf( __( 'Unknown command: %s', 'core-blueprint' ), $id ),
 				[ 'status' => 404 ]
 			);
@@ -240,6 +241,7 @@ final class RunController {
 		if ( '' !== $cap && 'cb_use_cli' !== $cap && ! current_user_can( $cap ) ) {
 			return new WP_Error(
 				'cb_console_capability_denied',
+				/* translators: %s: required WordPress capability. */
 				sprintf( __( 'You do not have the %s capability required to run this command.', 'core-blueprint' ), $cap ),
 				[ 'status' => 403 ]
 			);
@@ -338,6 +340,7 @@ final class RunController {
 		if ( null === $cmd ) {
 			return new WP_Error(
 				'cb_console_unknown_command',
+				/* translators: %s: command ID. */
 				sprintf( __( 'Unknown command: %s', 'core-blueprint' ), $id ),
 				[ 'status' => 404 ]
 			);
@@ -347,6 +350,7 @@ final class RunController {
 		if ( '' !== $cap && ! current_user_can( $cap ) ) {
 			return new WP_Error(
 				'cb_console_capability_denied',
+				/* translators: %s: required WordPress capability. */
 				sprintf( __( 'You do not have the %s capability required to confirm this command.', 'core-blueprint' ), $cap ),
 				[ 'status' => 403 ]
 			);
