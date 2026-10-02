@@ -47,8 +47,8 @@ final class Bootstrap {
 	public static function apply_plan(): void {
 		self::guard( 'cb_core_content_models_native_apply_plan' );
 		try {
-			$acknowledgement = isset( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
-				? wp_unslash( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+			$acknowledgement = isset( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] ) && is_scalar( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+				? sanitize_text_field( wp_unslash( (string) $_POST[ self::ACKNOWLEDGEMENT_FIELD ] ) )
 				: null;
 			MutationAcknowledgement::require_confirmed(
 				$acknowledgement, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
