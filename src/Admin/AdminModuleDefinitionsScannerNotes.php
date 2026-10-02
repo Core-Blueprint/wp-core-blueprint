@@ -125,7 +125,9 @@ final class AdminModuleDefinitionsScannerNotes {
 							? \CB\Core\Notes\Settings\SettingsRepository::all()
 							: [],
 						'i18n'     => [
+							/* translators: %d: number of selected notes; substituted by the Notes interface. */
 							'noteSelected'         => __( '%d note selected.', 'core-blueprint' ),
+							/* translators: %d: number of selected notes; substituted by the Notes interface. */
 							'notesSelected'        => __( '%d notes selected.', 'core-blueprint' ),
 							'note'                 => __( 'Note', 'core-blueprint' ),
 							'addNote'              => __( 'Add note', 'core-blueprint' ),
@@ -168,7 +170,9 @@ final class AdminModuleDefinitionsScannerNotes {
 							'systemRole'                    => __( 'System role', 'core-blueprint' ),
 							'wordpress'                     => __( 'WordPress', 'core-blueprint' ),
 							'defaultRole'                   => __( 'Default', 'core-blueprint' ),
+							/* translators: %d: number of users assigned to the role; substituted by the User Roles interface. */
 							'oneUser'                       => __( '%d user', 'core-blueprint' ),
+							/* translators: %d: number of users assigned to the role; substituted by the User Roles interface. */
 							'manyUsers'                     => __( '%d users', 'core-blueprint' ),
 							'protectedBecause'              => __( 'Protected', 'core-blueprint' ),
 							'roleName'                      => __( 'Role name', 'core-blueprint' ),
