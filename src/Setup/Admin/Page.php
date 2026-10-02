@@ -83,7 +83,7 @@ final class Page extends PageBase {
 						<p class="cb-core-notice__message">
 							<?php esc_html_e( 'When Core Blueprint is first activated by an authenticated WordPress user, that account is assigned the CB Operator role to establish the initial trusted operator.', 'core-blueprint' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=core-blueprint-preferences&tab=permissions' ) ); ?>">
-								<?php esc_html_e( 'Permissions', 'core-blueprint' ); ?>
+								<?php esc_html_e( 'Review permissions', 'core-blueprint' ); ?>
 							</a>
 						</p>
 					</div>
