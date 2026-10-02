@@ -210,7 +210,7 @@ final class Page extends PageBase {
 
         if ( 'delete_all' === $action ) {
             $confirm_phrase = 'DELETE ALL NOTES';
-            $typed = isset( $_POST['confirm'] ) ? (string) wp_unslash( $_POST['confirm'] ) : '';
+            $typed = isset( $_POST['confirm'] ) ? sanitize_text_field( wp_unslash( $_POST['confirm'] ) ) : '';
 
             if ( $typed !== $confirm_phrase ) {
                 return [ 'type' => 'error', 'message' => __( 'Confirmation phrase did not match.', 'core-blueprint' ) ];
