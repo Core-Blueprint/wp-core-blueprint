@@ -141,6 +141,10 @@ Not necessarily. Core Blueprint provides defensive controls and governance infra
 
 No. Base is builder-agnostic. Builder-specific integrations are optional adapters and are not the canonical data model.
 
+= What happens when Core Blueprint is deleted? =
+
+Base removes the configuration, scheduled events, roles and capabilities, user metadata, and database tables that it owns. User-authored site content written through Content Models is preserved. Managed Snippets source files are also preserved while generated Snippets runtime state is neutralized. Quarantine evidence is retained for recovery and investigation rather than silently destroyed.
+
 = Where is the source code? =
 
 The public source repository is https://github.com/Core-Blueprint/wp-core-blueprint .
