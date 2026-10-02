@@ -122,6 +122,7 @@ $foundation_options = [
 	'cb_core_role_policy_drift',
 	'cb_core_profiles_apply_lock',
 	'cb_core_setup_state',
+	'cb_core_setup_first_run_redirect',
 ];
 
 foreach ( $foundation_options as $opt ) {
