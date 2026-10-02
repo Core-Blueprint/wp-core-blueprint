@@ -61,6 +61,24 @@ final class CB_Base_Performance_Baseline_Contract_Test extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_disabled_routing_skips_redundant_suspension_delete(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'src/Routing/Runtime.php' );
+		self::assertIsString( $source );
+
+		self::assertStringContainsString(
+			"if ( false !== get_option( self::RUNTIME_SUSPENDED_OPTION, false ) ) {",
+			$source
+		);
+		self::assertStringContainsString(
+			"delete_option( self::RUNTIME_SUSPENDED_OPTION );",
+			$source
+		);
+		self::assertStringNotContainsString(
+			"self::$prepared_ready = false;\n\t\t\tdelete_option( self::RUNTIME_SUSPENDED_OPTION );",
+			$source
+		);
+	}
+
 	public function test_profile_records_identify_opt_in_modules(): void {
 		$runner = file_get_contents( CB_CORE_DIR . 'tests/bin/run-performance-baseline.sh' );
 		self::assertIsString( $runner );
