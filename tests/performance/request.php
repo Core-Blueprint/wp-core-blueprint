@@ -20,7 +20,7 @@ $profile_scenarios = [
     'reports'    => [ 'type' => 'admin', 'page' => 'core-blueprint-reports' ],
     'safeguards' => [ 'type' => 'admin', 'page' => 'core-blueprint-safeguards' ],
 ];
-$allowed_stages = array_merge([ 'install', 'activate', 'disable_modules', 'cleanup' ], array_keys($profile_scenarios));
+$allowed_stages = array_merge([ 'install', 'activate', 'enable_reports', 'disable_modules', 'cleanup' ], array_keys($profile_scenarios));
 
 if (!in_array($stage, $allowed_stages, true)) {
     fwrite(STDERR, "Usage: php tests/performance/request.php <" . implode('|', $allowed_stages) . ">\n");
@@ -361,6 +361,7 @@ if (1 !== preg_match('/^[A-Za-z0-9_]+$/D', $table_prefix)) {
 
 $is_install = 'install' === $stage;
 $is_activate = 'activate' === $stage;
+$is_enable_reports = 'enable_reports' === $stage;
 $is_disable_modules = 'disable_modules' === $stage;
 $is_profile = isset($profile_scenarios[$stage]);
 $is_admin = $is_profile && 'admin' === ($profile_scenarios[$stage]['type'] ?? '');
@@ -475,6 +476,30 @@ try {
         cb_f1_expect(is_plugin_active($plugin_basename), 'Core Blueprint did not become active in performance setup.');
 
         fwrite(STDOUT, "[F1] activate PASS\n");
+        exit(0);
+    }
+
+    if ($is_enable_reports) {
+        $admin = get_user_by('login', 'cbadmin');
+        cb_f1_expect($admin instanceof WP_User, 'Performance administrator is missing before Reports opt-in.');
+        wp_set_current_user((int) $admin->ID);
+
+        cb_f1_expect(
+            class_exists( '\\CB\\Core\\Reports\\State' ),
+            'Reports state authority is unavailable in performance setup.'
+        );
+        cb_f1_expect(
+            false === \CB\Core\Reports\State::is_enabled(),
+            'Reports must remain disabled before the explicit performance opt-in stage.'
+        );
+
+        \CB\Core\Reports\State::set_enabled(true, 'performance-harness');
+        cb_f1_expect(
+            true === \CB\Core\Reports\State::is_enabled(),
+            'Reports did not become enabled during the explicit performance opt-in stage.'
+        );
+
+        fwrite(STDOUT, "[F3A] reports opt-in PASS\n");
         exit(0);
     }
 

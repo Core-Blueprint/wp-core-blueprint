@@ -60,6 +60,11 @@ final class Core {
 	// ─── Hooks ────────────────────────────────────────────────────────────────
 
 	private function init_hooks(): void {
+		// Prime bounded request-hot Core Blueprint options before any subsystem
+		// boot reads them. Missing public-v1 defaults remain absent; WordPress
+		// records them in the request cache instead of issuing one query per key.
+		OptionPolicy::prime_request_cache( RequestContext::is_admin_screen() );
+
 		// Migration recovery must register its request-scoped failsafe boundary
 		// before Login Shield evaluates enforcement on plugins_loaded.
 		MigrationRecovery::boot();
