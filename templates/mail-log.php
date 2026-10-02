@@ -7,6 +7,11 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+
+/* translators: %s: formatted total number of stored mail log entries. */
+$mail_log_count_label = sprintf( _n( '%s entry', '%s entries', $total, 'core-blueprint' ), number_format_i18n( $total ) );
+/* translators: %d: mail log retention window in days. */
+$mail_log_retention_label = sprintf( _n( 'Retention: %d day', 'Retention: %d days', $retention, 'core-blueprint' ), $retention );
 ?>
 <div class="wrap cb-core-wrap cb-core-mail-wrap">
 	<h1 class="cb-core-title"><?php esc_html_e( 'Mail Log', 'core-blueprint' ); ?></h1>
@@ -22,8 +27,8 @@ defined( 'ABSPATH' ) || exit;
 	<?php endif; ?>
 
 	<div class="cb-core-meta">
-		<span class="cb-core-meta__item"><?php printf( esc_html( _n( '%s entry', '%s entries', $total, 'core-blueprint' ) ), esc_html( number_format_i18n( $total ) ) ); ?></span>
-		<span class="cb-core-meta__item"><?php printf( esc_html( _n( 'Retention: %d day', 'Retention: %d days', $retention, 'core-blueprint' ) ), $retention ); ?></span>
+		<span class="cb-core-meta__item"><?php echo esc_html( $mail_log_count_label ); ?></span>
+		<span class="cb-core-meta__item"><?php echo esc_html( $mail_log_retention_label ); ?></span>
 		<span class="cb-core-meta__item"><?php esc_html_e( 'Body logging: Off', 'core-blueprint' ); ?></span>
 	</div>
 
@@ -61,9 +66,17 @@ defined( 'ABSPATH' ) || exit;
 					<tbody>
 					<?php foreach ( $rows as $row ) :
 						$recipient = \CB\Core\Mail\Admin\LogsTab::format_addresses( $row->recipients_decoded ?? [] );
+						/* translators: %d: mail delivery duration in milliseconds. */
+						$duration_label = sprintf( __( '%d ms', 'core-blueprint' ), (int) $row->duration_ms );
 						$details = 'failed' === $row->status
 							? trim( (string) $row->error_code . ( $row->error_message ? ': ' . $row->error_message : '' ) )
-							: ( $row->provider_message_id ? 'ID: ' . $row->provider_message_id : sprintf( __( '%d ms', 'core-blueprint' ), (int) $row->duration_ms ) );
+							: ( $row->provider_message_id ? 'ID: ' . $row->provider_message_id : $duration_label );
+						$attachment_count = (int) $row->attachment_count;
+						/* translators: %d: number of attachments on the mail log entry. */
+						$attachment_label = sprintf( _n( '%d attachment', '%d attachments', $attachment_count, 'core-blueprint' ), $attachment_count );
+						$embed_count = (int) ( $row->embed_count ?? 0 );
+						/* translators: %d: number of inline embeds on the mail log entry. */
+						$embed_label = sprintf( _n( '%d inline embed', '%d inline embeds', $embed_count, 'core-blueprint' ), $embed_count );
 					?>
 						<tr>
 							<td class="cb-core-mail-log-col-time">
@@ -83,7 +96,7 @@ defined( 'ABSPATH' ) || exit;
 							<td class="cb-core-mail-log-col-provider"><?php echo esc_html( $providers[ $row->provider ] ?? $row->provider ); ?><br><span class="cb-core-muted"><?php echo esc_html( strtoupper( (string) $row->transport ) ); ?></span></td>
 							<td><span title="<?php echo esc_attr( $recipient ); ?>"><?php echo esc_html( $recipient ?: '-' ); ?></span></td>
 							<td><?php echo esc_html( $row->subject ?: '-' ); ?></td>
-							<td><span title="<?php echo esc_attr( $details ); ?>"><?php echo esc_html( $details ?: '-' ); ?></span><?php if ( (int) $row->attachment_count > 0 ) : ?><br><span class="cb-core-muted"><?php printf( esc_html( _n( '%d attachment', '%d attachments', (int) $row->attachment_count, 'core-blueprint' ) ), (int) $row->attachment_count ); ?></span><?php endif; ?><?php if ( (int) ( $row->embed_count ?? 0 ) > 0 ) : ?><br><span class="cb-core-muted"><?php printf( esc_html( _n( '%d inline embed', '%d inline embeds', (int) $row->embed_count, 'core-blueprint' ) ), (int) $row->embed_count ); ?></span><?php endif; ?></td>
+							<td><span title="<?php echo esc_attr( $details ); ?>"><?php echo esc_html( $details ?: '-' ); ?></span><?php if ( $attachment_count > 0 ) : ?><br><span class="cb-core-muted"><?php echo esc_html( $attachment_label ); ?></span><?php endif; ?><?php if ( $embed_count > 0 ) : ?><br><span class="cb-core-muted"><?php echo esc_html( $embed_label ); ?></span><?php endif; ?></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>
@@ -96,8 +109,12 @@ defined( 'ABSPATH' ) || exit;
 		$base = admin_url( 'admin.php?page=' . $page_slug . '&tab=' . $tab_slug );
 		$filters = array_filter( [ 'status' => $current_status, 'provider' => $current_provider, 'search' => $current_search, 'period' => $current_period ] );
 		if ( $filters ) { $base = add_query_arg( $filters, $base ); }
+		/* translators: %s: formatted total number of matching mail log items. */
+		$pagination_items_label = sprintf( _n( '%s item', '%s items', $total, 'core-blueprint' ), number_format_i18n( $total ) );
+		/* translators: 1: current page number, 2: total number of pages. */
+		$pagination_position_label = sprintf( __( '%1$s of %2$s', 'core-blueprint' ), (string) $current_page, (string) $total_pages );
 	?>
-		<div class="tablenav bottom"><div class="tablenav-pages"><span class="displaying-num"><?php printf( esc_html( _n( '%s item', '%s items', $total, 'core-blueprint' ) ), esc_html( number_format_i18n( $total ) ) ); ?></span><span class="pagination-links"><a class="button" href="<?php echo esc_url( add_query_arg( 'paged', max( 1, $current_page - 1 ), $base ) ); ?>">«</a><span class="paging-input"><?php printf( esc_html__( '%1$s of %2$s', 'core-blueprint' ), esc_html( (string) $current_page ), esc_html( (string) $total_pages ) ); ?></span><a class="button" href="<?php echo esc_url( add_query_arg( 'paged', min( $total_pages, $current_page + 1 ), $base ) ); ?>">»</a></span></div></div>
+		<div class="tablenav bottom"><div class="tablenav-pages"><span class="displaying-num"><?php echo esc_html( $pagination_items_label ); ?></span><span class="pagination-links"><a class="button" href="<?php echo esc_url( add_query_arg( 'paged', max( 1, $current_page - 1 ), $base ) ); ?>">«</a><span class="paging-input"><?php echo esc_html( $pagination_position_label ); ?></span><a class="button" href="<?php echo esc_url( add_query_arg( 'paged', min( $total_pages, $current_page + 1 ), $base ) ); ?>">»</a></span></div></div>
 	<?php endif; ?>
 
 	<?php if ( current_user_can( 'manage_options' ) && $total > 0 ) : ?>
