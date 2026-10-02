@@ -43,16 +43,18 @@ defined( 'ABSPATH' ) || exit;
  * expose compact activation actions for optional Base modules, while detailed
  * configuration remains on the owning module or Preferences page. Sections:
  *
- *   1. Safeguards   - five Base health cards (Access Mode, Login Shield,
+ *   1. Get Started  - first-install Core Setup entry until review begins.
+ *   2. Safeguards   - five Base health cards (Access Mode, Login Shield,
  *                     Core Shield, Core Scanner, Failsafe).
  *                     Each card shows live state + one factual line and
  *                     deeplinks to the relevant Safeguards tab.
- *   2. Operations   - Core Setup, Logs, Notes, Reports, Core Profiles.
- *   3. CMS Tools    - first-party CMS baseline modules such as User Roles,
+ *   3. Operations   - Core Setup after the first-run review has begun, plus
+ *                     Logs, Notes, Reports and Core Profiles.
+ *   4. CMS Tools    - first-party CMS baseline modules such as User Roles,
  *                     Media Replace, and Package Downloads.
- *   4. Preferences  - navigation cards mirroring the available Preferences tabs,
+ *   5. Preferences  - navigation cards mirroring the available Preferences tabs,
  *                     each deeplinked to its tab.
- *   5. Extensions   - sibling CB plugins detected on the site, with
+ *   6. Extensions   - sibling CB plugins detected on the site, with
  *                     active/version state.
  *
  * Footer card: About - full-width, marks itself as suite-meta rather
@@ -136,18 +138,26 @@ final class Dashboard extends PageBase {
 		$setup_first_unstarted = SetupReviewRepository::ORIGIN_FIRST_INSTALL === $setup_lifecycle['origin']
 			&& 0 === (int) $setup_lifecycle['started_at'];
 
-		$operations_cards = [
-			[
+		$get_started_card = $setup_first_unstarted
+			? [
 				'id'    => 'core-setup',
-				'title' => $setup_first_unstarted
-					? __( 'Start Core Setup', 'core-blueprint' )
-					: __( 'Review Core Setup', 'core-blueprint' ),
-				'meta'  => $setup_first_unstarted
-					? __( 'Review the Base configuration and record the choices for this site.', 'core-blueprint' )
-					: __( 'Reopen the setup checklist and review the current site configuration.', 'core-blueprint' ),
-				'url'   => admin_url( 'admin.php?page=' . $setup_slug ),
-			],
-			[
+				'title' => __( 'Start Core Setup', 'core-blueprint' ),
+				'meta'  => __( 'Review the Base configuration and record the choices for this site.', 'core-blueprint' ),
+				'url'   => admin_url( 'admin.php?page=' . $setup_slug . '&tab=overview' ),
+			]
+			: null;
+
+		$operations_cards = [];
+		if ( ! $setup_first_unstarted ) {
+			$operations_cards[] = [
+				'id'    => 'core-setup',
+				'title' => __( 'Review Core Setup', 'core-blueprint' ),
+				'meta'  => __( 'Reopen the setup checklist and review the current site configuration.', 'core-blueprint' ),
+				'url'   => admin_url( 'admin.php?page=' . $setup_slug . '&tab=overview' ),
+			];
+		}
+
+		$operations_cards[] = [
 				'id'    => 'logs',
 				'title' => __( 'Logs',    'core-blueprint' ),
 				'meta'  => __( 'Audit trail of all CB events',    'core-blueprint' ),
