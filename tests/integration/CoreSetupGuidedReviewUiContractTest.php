@@ -166,6 +166,10 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		$html = $this->render_setup();
 
 		self::assertStringContainsString( 'CMS tools (10)', $html );
+		self::assertStringContainsString( 'cb-core-card--review-step', $html );
+		self::assertStringContainsString( 'Step 1 of 10', $html );
+		self::assertStringContainsString( 'Step 10 of 10', $html );
+		self::assertSame( 10, preg_match_all( '/Step \\d+ of 10/', $html ) );
 		self::assertStringContainsString( 'Open settings', $html );
 		self::assertStringContainsString( 'Mark reviewed', $html );
 		self::assertStringContainsString( 'Review later', $html );
@@ -176,6 +180,19 @@ final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'cb-core-field cb-core-field--separated', $html );
 		self::assertStringContainsString( 'cb-core-field cb-core-field--inline', $html );
 		self::assertStringNotContainsString( '<hr', $html );
+	}
+
+	public function test_ui4b_review_steps_use_bounded_progress_and_stronger_heading_hierarchy(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'assets/css/components/cards.css' );
+		self::assertIsString( $source );
+
+		self::assertStringContainsString( '.cb-core-card--review-step .cb-core-card__step', $source );
+		self::assertStringContainsString( 'font-size: var(--cb-fs-sm);', $source );
+		self::assertMatchesRegularExpression(
+			'/\.cb-core-card--review-step \.cb-core-card__title\s*\{[^}]*font-size:\s*var\(--cb-fs-lg\);/s',
+			$source
+		);
+		self::assertStringContainsString( 'color: var(--cb-text-strong);', $source );
 	}
 
 	public function test_ui5_overview_uses_shared_overview_cards_and_status_badges(): void {
