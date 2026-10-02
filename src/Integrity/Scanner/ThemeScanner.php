@@ -210,6 +210,7 @@ final class ThemeScanner {
 
 		$hint = (string) ( $state['status_hint'] ?? 'baseline_required' );
 		$message = 'verification_failed' === $hint
+			/* translators: %s: theme name. */
 			? sprintf( __( '%s is installed from WordPress.org, but the official checksum could not be verified for this version. A complete local snapshot was captured for investigation or explicit baseline approval.', 'core-blueprint' ), (string) $state['name'] )
 			: __( 'Theme needs a local approved baseline because no official WordPress.org checksum is available.', 'core-blueprint' );
 		$findings[] = $this->finding( 'warning', (string) $state['slug'], $hint, '', $message, [
@@ -390,6 +391,7 @@ final class ThemeScanner {
 	}
 
 	private function ok_finding( string $slug, string $name, string $version, int $verified_count, array $children, string $relative_root ): array {
+		/* translators: 1: theme name, 2: theme version. */
 		return $this->finding( 'ok', $slug, 'ok', '', sprintf( __( '%1$s matched the official WordPress.org checksum manifest for version %2$s.', 'core-blueprint' ), $name, $version ), [
 			'name'                  => $name,
 			'version'               => $version,
@@ -448,6 +450,7 @@ final class ThemeScanner {
 			$findings[] = $this->finding( 'critical', $slug, 'path_escape', (string) $path, __( 'Theme filesystem entry resolved outside its component root and was skipped.', 'core-blueprint' ), [ 'name' => $name ], $relative_root );
 		}
 		if ( (int) ( $walker['error_count'] ?? 0 ) > 0 ) {
+			/* translators: %d: number of filesystem errors encountered while scanning the theme. */
 			$findings[] = $this->finding( 'warning', $slug, 'scan_incomplete', '', sprintf( __( 'Theme traversal encountered %d filesystem error(s). Coverage is incomplete.', 'core-blueprint' ), (int) $walker['error_count'] ), [ 'name' => $name ], $relative_root );
 		}
 	}
