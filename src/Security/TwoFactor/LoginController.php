@@ -144,7 +144,7 @@ final class LoginController {
 			: '';
 
 		$is_post = isset( $_SERVER['REQUEST_METHOD'] )
-			&& 'POST' === strtoupper( (string) wp_unslash( $_SERVER['REQUEST_METHOD'] ) );
+			&& 'POST' === strtoupper( sanitize_key( wp_unslash( (string) $_SERVER['REQUEST_METHOD'] ) ) );
 
 		if ( $is_post ) {
 			$candidate = isset( $_POST['cb_two_factor_code'] ) && is_scalar( $_POST['cb_two_factor_code'] )
