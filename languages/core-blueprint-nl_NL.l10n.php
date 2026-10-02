@@ -101,6 +101,7 @@ $catalog['messages'] = array_replace(
         'Setup review could not be updated from the current site state.' => 'De setupbeoordeling kon niet worden bijgewerkt vanuit de huidige sitestatus.',
         'Setup review is already current.' => 'De setupbeoordeling is al actueel.',
         'Setup review updated.' => 'Setup-beoordeling bijgewerkt.',
+        'Get started' => 'Aan de slag',
         'Start Core Setup' => 'Core Setup starten',
         'Store setup-specific context for this section. This note does not change configuration and does not depend on the optional Notes module.' => 'Sla setup-specifieke context voor deze sectie op. Deze notitie wijzigt geen configuratie en is niet afhankelijk van de optionele Notes-module.',
         'When Core Blueprint is first activated by an authenticated WordPress user, that account is assigned the CB Operator role to establish the initial trusted operator.' => 'Wanneer Core Blueprint voor het eerst wordt geactiveerd door een geauthenticeerde WordPress-gebruiker, krijgt dat account de rol CB Operator om de eerste vertrouwde operator vast te leggen.',
