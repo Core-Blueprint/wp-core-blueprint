@@ -338,14 +338,14 @@ trait WhereClauses {
 	 *   - Aliased identifier: `t.column_name` (one table alias prefix,
 	 *     same rules on both sides, exactly one dot).
 	 *
-	 * Everything else is rejected with `_doing_it_wrong()`. In a dev
-	 * build this surfaces as a PHP notice; in production the call falls
-	 * through without adding the clause (safer than attempting partial
-	 * sanitization).
+	 * Everything else is rejected with `_doing_it_wrong()` and an
+	 * `InvalidArgumentException`. Invalid identifiers must never fall through
+	 * into SQL assembly.
 	 */
 	protected function validate_column( string $column ): void {
 		if ( ! preg_match( '/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/', $column ) ) {
 			_doing_it_wrong( __METHOD__, 'Invalid column identifier: ' . esc_html( $column ), '1.0.16' );
+			throw new \InvalidArgumentException( 'Invalid SQL column identifier.' );
 		}
 	}
 }
