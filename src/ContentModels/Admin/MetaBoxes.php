@@ -161,11 +161,13 @@ final class MetaBoxes {
 				$value = FieldTypes::sanitize_value( $field, $raw );
 
 				if ( ! self::is_valid_submission( $field, $raw, $value ) ) {
-					self::$validation_errors[] = sprintf( __( '%s contains an invalid value and was not changed.', 'core-blueprint' ), (string) ( $field['label'] ?? $name ) );
+					/* translators: %s: field label. */
+			self::$validation_errors[] = sprintf( __( '%s contains an invalid value and was not changed.', 'core-blueprint' ), (string) ( $field['label'] ?? $name ) );
 					continue;
 				}
 				if ( ! empty( $field['required'] ) && self::is_empty_field_value( $field, $value ) ) {
-					self::$validation_errors[] = sprintf( __( '%s is required and was not changed.', 'core-blueprint' ), (string) ( $field['label'] ?? $name ) );
+					/* translators: %s: field label. */
+			self::$validation_errors[] = sprintf( __( '%s is required and was not changed.', 'core-blueprint' ), (string) ( $field['label'] ?? $name ) );
 					continue;
 				}
 
@@ -328,6 +330,7 @@ final class MetaBoxes {
 		while ( count( $rows ) < $minimum ) {
 			$rows[] = [];
 		}
+		/* translators: %d: row number placeholder replaced in the repeater interface. */
 		echo '<div id="' . esc_attr( $id ) . '" class="cb-cm-structured-field cb-cm-repeater-field" data-cb-cm-repeater data-min="' . esc_attr( (string) $minimum ) . '" data-max="' . esc_attr( (string) $maximum ) . '" data-row-label-template="' . esc_attr__( 'Row %d', 'core-blueprint' ) . '">';
 		echo '<div class="cb-cm-repeater-rows" data-cb-cm-repeater-rows>';
 		foreach ( $rows as $index => $row ) {
@@ -335,6 +338,7 @@ final class MetaBoxes {
 		}
 		echo '</div><button type="button" class="button" data-cb-cm-repeater-add>' . esc_html__( 'Add row', 'core-blueprint' ) . '</button>';
 		if ( $maximum > 0 ) {
+			/* translators: %d: maximum number of repeater rows. */
 			echo '<p class="description">' . esc_html( sprintf( __( 'Maximum %d rows.', 'core-blueprint' ), $maximum ) ) . '</p>';
 		}
 		echo '<template data-cb-cm-repeater-template>';
@@ -350,7 +354,8 @@ final class MetaBoxes {
 		}
 		echo '<div class="cb-cm-structured-row' . ( $repeater ? ' cb-cm-repeater-row' : '' ) . '"' . ( $repeater ? ' draggable="true" data-cb-cm-repeater-row' : '' ) . '>';
 		if ( $repeater ) {
-			echo '<div class="cb-cm-repeater-row-header"><span class="cb-cm-repeater-handle" data-cb-cm-repeater-handle aria-hidden="true">↕</span><strong data-cb-cm-repeater-row-label>' . esc_html( sprintf( __( 'Row %d', 'core-blueprint' ), max( 1, $index + 1 ) ) ) . '</strong><button type="button" class="button-link-delete" data-cb-cm-repeater-remove>' . esc_html__( 'Remove', 'core-blueprint' ) . '</button></div>';
+			/* translators: %d: one-based repeater row number. */
+		echo '<div class="cb-cm-repeater-row-header"><span class="cb-cm-repeater-handle" data-cb-cm-repeater-handle aria-hidden="true">↕</span><strong data-cb-cm-repeater-row-label>' . esc_html( sprintf( __( 'Row %d', 'core-blueprint' ), max( 1, $index + 1 ) ) ) . '</strong><button type="button" class="button-link-delete" data-cb-cm-repeater-remove>' . esc_html__( 'Remove', 'core-blueprint' ) . '</button></div>';
 			echo '<input type="hidden" name="' . esc_attr( $row_input_root . '[_cb_row_id]' ) . '" value="' . esc_attr( $row_id ) . '" data-cb-cm-row-id />';
 		}
 		echo '<div class="cb-cm-structured-row-fields">';
