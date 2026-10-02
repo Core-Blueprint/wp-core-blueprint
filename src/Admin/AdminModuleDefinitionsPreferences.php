@@ -89,21 +89,21 @@ final class AdminModuleDefinitionsPreferences {
 					'data' => [
 						'composer' => \CB\Core\Reports\Composer\MaintenanceTemplate::current(),
 						'blockLabels' => [
-							'header'        => __( 'Header' ),
+							'header'        => __( 'Header', 'core-blueprint' ),
 							'status'        => __( 'Status', 'core-blueprint' ),
 							'kpis'          => __( 'Maintenance summary', 'core-blueprint' ),
 							'current_state' => __( 'Current State', 'core-blueprint' ),
 							'activity'      => __( 'Maintenance Details', 'core-blueprint' ),
-							'summary'       => __( 'Summary' ),
+							'summary'       => __( 'Summary', 'core-blueprint' ),
 							'notes'         => __( 'Notes / Observations', 'core-blueprint' ),
-							'footer'        => __( 'Footer' ),
+							'footer'        => __( 'Footer', 'core-blueprint' ),
 						],
 						'composerUi' => [
-							'blocks'   => __( 'Blocks' ),
-							'visible'  => __( 'Visible' ),
-							'hidden'   => __( 'Hidden' ),
-							'moveUp'   => __( 'Move up' ),
-							'moveDown' => __( 'Move down' ),
+							'blocks'   => __( 'Blocks', 'core-blueprint' ),
+							'visible'  => __( 'Visible', 'core-blueprint' ),
+							'hidden'   => __( 'Hidden', 'core-blueprint' ),
+							'moveUp'   => __( 'Move up', 'core-blueprint' ),
+							'moveDown' => __( 'Move down', 'core-blueprint' ),
 						],
 						'blockSettings' => [
 							'header' => [
@@ -148,15 +148,15 @@ final class AdminModuleDefinitionsPreferences {
 								'brandingConfirmReset'        => sprintf(
 									'%1$s %2$s: %3$s.',
 									__( 'Reset report settings to defaults? Logo, report provider details, appearance, and report layout will be restored.', 'core-blueprint' ),
-									__( 'Blocks' ),
+									__( 'Blocks', 'core-blueprint' ),
 									__( 'Reset to defaults', 'core-blueprint' )
 								),
 								'brandingConfirmResetTitle'   => __( 'Reset report settings?', 'core-blueprint' ),
 								'brandingConfirmResetConfirm' => __( 'Reset to defaults', 'core-blueprint' ),
 								'brandingResetting'           => __( 'Resetting…', 'core-blueprint' ),
 								'brandingResetDone'           => __( 'Reset to defaults.', 'core-blueprint' ),
-								'previewLoading'              => __( 'Loading…' ),
-								'previewFailed'               => __( 'An error occurred.' ),
+								'previewLoading'              => __( 'Loading…', 'core-blueprint' ),
+								'previewFailed'               => __( 'An error occurred.', 'core-blueprint' ),
 							]
 						),
 					],
