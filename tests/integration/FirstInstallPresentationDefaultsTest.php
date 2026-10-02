@@ -9,6 +9,7 @@ use CB\Core\Notes\State as NotesState;
 use CB\Core\PackageDownload\State as PackageDownloadState;
 use CB\Core\Permissions\UserRolesState;
 use CB\Core\Reports\State as ReportsState;
+use CB\Core\Permissions\Roles;
 use CB\Core\Settings;
 
 final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTestCase {
@@ -54,6 +55,22 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 		self::assertTrue( PackageDownloadState::is_enabled() );
 		self::assertTrue( UserRolesState::is_enabled() );
 		self::assertTrue( HudSettings::site_enabled() );
+	}
+
+	public function test_noninteractive_first_activation_does_not_mint_an_operator(): void {
+		wp_set_current_user( 0 );
+		$before = Roles::operator_ids();
+		sort( $before, SORT_NUMERIC );
+
+		Core::activate();
+
+		$after = Roles::operator_ids();
+		sort( $after, SORT_NUMERIC );
+		self::assertSame(
+			$before,
+			$after,
+			'A first activation without an authenticated WordPress user must not manufacture CB Operator authority.'
+		);
 	}
 
 	public function test_hud_site_preference_can_be_explicitly_toggled(): void {
