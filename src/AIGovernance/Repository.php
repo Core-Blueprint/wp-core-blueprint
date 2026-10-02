@@ -268,10 +268,10 @@ final class Repository {
 		$table = self::table();
 		$count_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}";
 		$data_sql = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
-		$count_prepared = [] === $params ? $count_sql : $wpdb->prepare( $count_sql, ...$params );
+		$count_prepared = [] === $params ? $count_sql : $wpdb->prepare( $count_sql, ...$params ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- query structure is internally composed from fixed fragments; dynamic values are bound in $params.
 		$total = (int) $wpdb->get_var( $count_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$data_params = array_merge( $params, [ $per_page, ( $page - 1 ) * $per_page ] );
-		$data_prepared = $wpdb->prepare( $data_sql, ...$data_params );
+		$data_prepared = $wpdb->prepare( $data_sql, ...$data_params ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- query structure is internally composed from fixed fragments; dynamic values are bound in $data_params.
 		$rows = $wpdb->get_results( $data_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$rows = array_map( [ __CLASS__, 'decode_row' ], is_array( $rows ) ? $rows : [] );
 		return [
