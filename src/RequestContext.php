@@ -43,7 +43,7 @@ final class RequestContext {
 
 	private static function is_script( string $basename ): bool {
 		foreach ( [ 'SCRIPT_NAME', 'PHP_SELF', 'SCRIPT_FILENAME' ] as $key ) {
-			$value = wp_unslash( $_SERVER[ $key ] ?? '' );
+			$value = sanitize_text_field( wp_unslash( (string) ( $_SERVER[ $key ] ?? '' ) ) );
 			if ( ! is_string( $value ) || '' === $value ) {
 				continue;
 			}
