@@ -323,7 +323,7 @@ final class Repository {
     }
 
     private static function clean_content( string $content ): string {
-        return wp_kses_post( wp_unslash( $content ) );
+        return wp_kses_post( $content );
     }
 
     private static function clean_tags( string $tags ): string {
