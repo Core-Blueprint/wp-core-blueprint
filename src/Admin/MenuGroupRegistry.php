@@ -350,7 +350,7 @@ final class MenuGroupRegistry {
 	}
 
 	private static function diagnostic( string $message ): void {
-		_doing_it_wrong( self::class, $message, CB_CORE_VERSION );
+		_doing_it_wrong( self::class, esc_html( $message ), esc_html( CB_CORE_VERSION ) );
 	}
 
 	private function __construct() {}
