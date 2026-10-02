@@ -407,7 +407,7 @@ final class Recovery {
 		if ( self::is_management_identity( $user ) ) {
 			return $user;
 		}
-		return new WP_Error( 'cb_core_migration_recovery_identity', __( 'Sorry, you are not allowed to access this page.' ) );
+		return new WP_Error( 'cb_core_migration_recovery_identity', __( 'Sorry, you are not allowed to access this page.', 'core-blueprint' ) );
 	}
 
 	public static function complete_authenticated_login( string $user_login, WP_User $user ): void {
