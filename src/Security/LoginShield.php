@@ -633,7 +633,7 @@ final class LoginShield {
 			return '';
 		}
 		$uri  = (string) wp_unslash( $_SERVER['REQUEST_URI'] );
-		$path = parse_url( $uri, PHP_URL_PATH );
+		$path = wp_parse_url( $uri, PHP_URL_PATH );
 		return is_string( $path ) ? $path : '';
 	}
 
@@ -654,7 +654,7 @@ final class LoginShield {
 			return false;
 		}
 		$path      = self::request_path();
-		$home_path = parse_url( home_url( '/' ), PHP_URL_PATH );
+		$home_path = wp_parse_url( home_url( '/' ), PHP_URL_PATH );
 		$home_path = is_string( $home_path ) ? rtrim( $home_path, '/' ) : '';
 		if ( '' !== $home_path && 0 === strpos( $path, $home_path ) ) {
 			$path = substr( $path, strlen( $home_path ) );
@@ -672,7 +672,7 @@ final class LoginShield {
 		if ( '' === $slug || '' === $path ) {
 			return false;
 		}
-		$home_path = parse_url( home_url( '/' ), PHP_URL_PATH );
+		$home_path = wp_parse_url( home_url( '/' ), PHP_URL_PATH );
 		$home_path = is_string( $home_path ) ? rtrim( $home_path, '/' ) : '';
 		if ( '' !== $home_path && 0 === strpos( $path, $home_path ) ) {
 			$path = substr( $path, strlen( $home_path ) );
