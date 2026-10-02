@@ -141,15 +141,15 @@ final class Repository {
 
 		$where_sql = implode( ' AND ', $where );
 		$table     = self::table();
-		$count_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}";
-		$data_sql  = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
+		$count_sql = "SELECT COUNT(*) FROM %i WHERE {$where_sql}";
+		$data_sql  = "SELECT * FROM %i WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
 
-		$count_prepared = empty( $params ) ? $count_sql : $wpdb->prepare( $count_sql, ...$params ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- query structure is internally composed from fixed fragments; dynamic values are bound in $params.
-		$total = (int) $wpdb->get_var( $count_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$count_prepared = $wpdb->prepare( $count_sql, ...array_merge( [ $table ], $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE fragments are fixed; identifier and values are bound here.
+		$total = (int) $wpdb->get_var( $count_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- prepared immediately above.
 
-		$data_params   = array_merge( $params, [ $per_page, ( $page - 1 ) * $per_page ] );
-		$data_prepared = $wpdb->prepare( $data_sql, ...$data_params ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- query structure is internally composed from fixed fragments; dynamic values are bound in $data_params.
-		$rows          = $wpdb->get_results( $data_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$data_params   = array_merge( [ $table ], $params, [ $per_page, ( $page - 1 ) * $per_page ] );
+		$data_prepared = $wpdb->prepare( $data_sql, ...$data_params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE fragments are fixed; identifier and values are bound here.
+		$rows          = $wpdb->get_results( $data_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- prepared immediately above.
 
 		foreach ( $rows as $row ) {
 			$row->recipients_decoded = self::decode_addresses( $row->recipients ?? '' );
@@ -169,15 +169,15 @@ final class Repository {
 
 	public static function count(): int {
 		global $wpdb;
-		return (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . self::table() ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', self::table() ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- identifier is bound via %i.
 	}
 
 	public static function clear(): int {
 		global $wpdb;
 		$table = self::table();
-		$rows  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- identifier is bound via %i.
 		if ( $rows > 0 ) {
-			$wpdb->query( "DELETE FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $table ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- identifier is bound via %i.
 		}
 		return $rows;
 	}
@@ -190,7 +190,7 @@ final class Repository {
 		}
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
 		$table = self::table();
-		$result = $wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s", $cutoff ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$result = $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', $table, $cutoff ) );
 		return false === $result ? 0 : (int) $result;
 	}
 
