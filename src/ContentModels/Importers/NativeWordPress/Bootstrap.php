@@ -47,8 +47,11 @@ final class Bootstrap {
 	public static function apply_plan(): void {
 		self::guard( 'cb_core_content_models_native_apply_plan' );
 		try {
+			$acknowledgement = isset( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+				? wp_unslash( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+				: null;
 			MutationAcknowledgement::require_confirmed(
-				$_POST[ self::ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
+				$acknowledgement, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
 				__( 'Confirm your responsibility for backup and recovery before applying the WordPress import plan.', 'core-blueprint' )
 			);
 			$plan = PlanStore::plan();
