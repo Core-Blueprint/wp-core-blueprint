@@ -51,7 +51,9 @@ final class ObjectSearch {
 			$title = get_the_title( $page );
 			$items[] = [
 				'id'    => 'page:' . $page->ID,
+				/* translators: %d: WordPress page ID. */
 				'label' => '' !== trim( (string) $title ) ? (string) $title : sprintf( __( 'Page #%d', 'core-blueprint' ), $page->ID ),
+				/* translators: %s: page permalink path. */
 				'meta'  => sprintf( __( 'Published page · %s', 'core-blueprint' ), '/' . ltrim( (string) $page->post_name, '/' ) . '/' ),
 			];
 		}
@@ -78,6 +80,7 @@ final class ObjectSearch {
 			$items[] = [
 				'id'    => 'document:' . $attachment->ID,
 				'label' => Resolver::label_for_reference( $reference ),
+				/* translators: %s: document MIME type. */
 				'meta'  => sprintf( __( 'Document · %s', 'core-blueprint' ), $mime ),
 			];
 			$document_count++;
