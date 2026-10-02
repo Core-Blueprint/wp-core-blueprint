@@ -63,10 +63,8 @@ final class LoginShield {
 		$user    = wp_get_current_user();
 		$current = LoginShieldCore::config();
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing - Request::nonce() above.
-		$enabled = isset( $_POST['enabled'] )
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing
-			? ( ! empty( $_POST['enabled'] ) && 'false' !== (string) wp_unslash( $_POST['enabled'] ) )
+		$enabled = isset( $_POST['enabled'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Request::nonce() above.
+			? Request::bool( 'enabled' )
 			: ! empty( $current['enabled'] );
 
 		$incoming = [
