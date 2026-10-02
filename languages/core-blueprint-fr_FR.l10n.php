@@ -101,6 +101,7 @@ $catalog['messages'] = array_replace(
         'Setup review could not be updated from the current site state.' => 'L\'examen de configuration n\'a pas pu être mis à jour à partir de l\'état actuel du site.',
         'Setup review is already current.' => 'L\'examen de configuration est déjà à jour.',
         'Setup review updated.' => 'Examen de configuration mis à jour.',
+        'Get started' => 'Bien démarrer',
         'Start Core Setup' => 'Démarrer Core Setup',
         'Store setup-specific context for this section. This note does not change configuration and does not depend on the optional Notes module.' => 'Enregistrez le contexte propre à la configuration pour cette section. Cette note ne modifie pas la configuration et ne dépend pas du module Notes optionnel.',
         'When Core Blueprint is first activated by an authenticated WordPress user, that account is assigned the CB Operator role to establish the initial trusted operator.' => 'Lorsque Core Blueprint est activé pour la première fois par un utilisateur WordPress authentifié, ce compte reçoit le rôle CB Operator afin d’établir le premier opérateur de confiance.',
