@@ -66,15 +66,22 @@ trait ToolsView {
 			$counts = is_array( $analysis['counts'] ?? null ) ? $analysis['counts'] : [];
 			$conflicts = is_array( $analysis['conflicts'] ?? null ) ? $analysis['conflicts'] : [];
 			$locked = is_array( $analysis['locked'] ?? null ) ? $analysis['locked'] : [];
+			/* translators: 1: post type count, 2: taxonomy count, 3: Option Page count, 4: Field Group count. */
+			$validation_summary = sprintf( __( '%1$d post types, %2$d taxonomies, %3$d Option Pages and %4$d Field Groups passed schema validation.', 'core-blueprint' ), (int) ( $counts['post_types'] ?? 0 ), (int) ( $counts['taxonomies'] ?? 0 ), (int) ( $counts['option_pages'] ?? 0 ), (int) ( $counts['field_groups'] ?? 0 ) );
+			$conflict_summary = '';
+			if ( ! empty( $conflicts ) ) {
+				/* translators: %d: number of existing user-managed definitions sharing an imported key. */
+				$conflict_summary = sprintf( _n( '%d existing user-managed definition has the same key.', '%d existing user-managed definitions have the same key.', count( $conflicts ), 'core-blueprint' ), count( $conflicts ) );
+			}
 		?>
 			<section class="cb-core-section cb-content-models-import-preview">
 				<h2><?php esc_html_e( 'Import Preview', 'core-blueprint' ); ?></h2>
-				<p><?php echo esc_html( sprintf( __( '%1$d post types, %2$d taxonomies, %3$d Option Pages and %4$d Field Groups passed schema validation.', 'core-blueprint' ), (int) ( $counts['post_types'] ?? 0 ), (int) ( $counts['taxonomies'] ?? 0 ), (int) ( $counts['option_pages'] ?? 0 ), (int) ( $counts['field_groups'] ?? 0 ) ) ); ?></p>
+				<p><?php echo esc_html( $validation_summary ); ?></p>
 				<?php if ( ! empty( $locked ) ) : ?>
 					<div class="notice notice-error inline"><p><?php esc_html_e( 'Import is blocked because one or more matching definitions are owned and locked by another plugin.', 'core-blueprint' ); ?></p></div>
 					<ul><?php foreach ( $locked as $item ) : ?><li><code><?php echo esc_html( (string) ( $item['section'] ?? '' ) . ':' . (string) ( $item['key'] ?? '' ) ); ?></code> — <?php echo esc_html( (string) ( $item['owner'] ?? '' ) ); ?></li><?php endforeach; ?></ul>
 				<?php else : ?>
-					<?php if ( ! empty( $conflicts ) ) : ?><div class="notice notice-warning inline"><p><?php echo esc_html( sprintf( _n( '%d existing user-managed definition has the same key.', '%d existing user-managed definitions have the same key.', count( $conflicts ), 'core-blueprint' ), count( $conflicts ) ) ); ?></p></div><?php endif; ?>
+					<?php if ( ! empty( $conflicts ) ) : ?><div class="notice notice-warning inline"><p><?php echo esc_html( $conflict_summary ); ?></p></div><?php endif; ?>
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 						<input type="hidden" name="action" value="cb_core_content_models_apply_import" />
 						<?php wp_nonce_field( 'cb_core_content_models_apply_import' ); ?>
