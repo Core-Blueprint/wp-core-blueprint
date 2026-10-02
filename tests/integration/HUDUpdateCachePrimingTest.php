@@ -41,6 +41,24 @@ final class CB_Base_HUD_Update_Boundary_Test extends WP_UnitTestCase {
 		\CB\Core\HUD\Settings::set_site_enabled( false, 'test' );
 	}
 
+	public function test_extension_full_set_skips_hud_assets_when_runtime_is_disabled(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'src/Admin/AdminExtensionTabAssetProvider.php' );
+		self::assertIsString( $source );
+
+		self::assertStringContainsString(
+			'$hud_enabled = \\CB\\Core\\HUD\\Settings::is_enabled();',
+			$source
+		);
+		self::assertStringContainsString(
+			"! \$hud_enabled && in_array( \$asset_id, [ 'component.hud', 'module.hud' ], true )",
+			$source
+		);
+		self::assertStringContainsString(
+			"! \$hud_enabled && '@cb-core/hud' === \$module_id",
+			$source
+		);
+	}
+
 	public function test_hud_bootstrap_does_not_touch_wordpress_update_transient_storage(): void {
 		$source = file_get_contents( CB_CORE_DIR . 'src/HUD/Bootstrap.php' );
 		self::assertIsString( $source );
