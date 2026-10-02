@@ -68,8 +68,8 @@ trait ScannerFindingsView {
 		$search = isset( $_GET['cb_integrity_search'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter.
 			? sanitize_text_field( wp_unslash( $_GET['cb_integrity_search'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			: '';
-		$actionable_only = isset( $_GET['cb_integrity_actionable'] ) && '1' === (string) wp_unslash( $_GET['cb_integrity_actionable'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$baseline_only = isset( $_GET['cb_integrity_baseline_candidate'] ) && '1' === (string) wp_unslash( $_GET['cb_integrity_baseline_candidate'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$actionable_only = isset( $_GET['cb_integrity_actionable'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['cb_integrity_actionable'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter.
+		$baseline_only = isset( $_GET['cb_integrity_baseline_candidate'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['cb_integrity_baseline_candidate'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter.
 		$baseline_eligibility = ResultRepository::baselineApprovalEligibility( $latest );
 		$baseline_candidates = (int) ( $baseline_eligibility['candidates'] ?? 0 );
 		$baseline_review = BaselineReviewRepository::progress( $latest );
