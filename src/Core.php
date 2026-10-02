@@ -217,6 +217,7 @@ final class Core {
 		// Canonical subsystem settings remain owned by their modules; Setup stores
 		// only lifecycle, review intent and bounded section annotations.
 		\CB\Core\Setup\Bootstrap::boot();
+		\CB\Core\Setup\Onboarding::boot();
 
 
 		// HUD subsystem - the floating "front door" launcher. Renders on
@@ -325,7 +326,7 @@ final class Core {
 
 	// ─── Activation / Deactivation ────────────────────────────────────────────
 
-	public static function activate(): void {
+	public static function activate( bool $network_wide = false ): void {
 		// Capture first-install state before writing the marker. Only a genuine
 		// first activation may bootstrap the activating user as trust root; a
 		// later deactivate/reactivate cycle must never mint a new CB Operator.
@@ -417,6 +418,8 @@ final class Core {
 		if ( $is_first_activation ) {
 			\CB\Core\Permissions\TrustSchemaMigrator::mark_current();
 		}
+
+		\CB\Core\Setup\Onboarding::queue_first_activation_redirect( $is_first_activation, $network_wide );
 
 		AuditLog::log( 'plugin.activated', 'notice', [
 			'version' => CB_CORE_VERSION,
