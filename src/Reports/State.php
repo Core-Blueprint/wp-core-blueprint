@@ -13,8 +13,8 @@ declare(strict_types=1);
  *
  * The `enabled` flag lives directly under the existing
  * `cb_core_settings['reports']` array (sibling of `branding` and
- * `retention_days`). Defaults to `true` so installations predating
- * 1.3.26 silently inherit the prior behaviour - no migration needed.
+ * `retention_days`). Missing state resolves to disabled for the public v1
+ * contract.
  *
  * Suite philosophy reminder: every CB subsystem must be deactivatable
  * so operators can cover a given concern with their own tool of choice
@@ -46,14 +46,14 @@ defined( 'ABSPATH' ) || exit;
 final class State implements ModuleStateInterface {
 
 	/**
-	 * Whether the Reports subsystem is currently active. Defaults to
-	 * true on missing/unset values so existing installations and
-	 * fresh activations both behave like they always have.
+	 * Whether the Reports subsystem is currently active.
+	 *
+	 * Missing state is intentionally disabled for the public v1 contract.
 	 */
 	public static function is_enabled(): bool {
 		$cb_settings = Settings::get();
 		$reports     = is_array( $cb_settings['reports'] ?? null ) ? $cb_settings['reports'] : [];
-		return (bool) ( $reports['enabled'] ?? true );
+		return (bool) ( $reports['enabled'] ?? false );
 	}
 
 	/**
