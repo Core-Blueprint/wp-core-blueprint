@@ -1,4 +1,5 @@
 === Core Blueprint ===
+Contributors: coreblueprint
 Tags: security, audit-log, permissions, user-roles, admin-tools
 Requires at least: 7.0
 Tested up to: 7.1
