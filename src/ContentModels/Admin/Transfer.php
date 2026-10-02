@@ -80,8 +80,11 @@ final class Transfer {
 			self::redirect( [ 'cb_cm_import_error' => rawurlencode( __( 'The import preview expired. Upload the JSON file again.', 'core-blueprint' ) ) ] );
 		}
 		try {
+			$acknowledgement = isset( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+				? wp_unslash( $_POST[ self::ACKNOWLEDGEMENT_FIELD ] )
+				: null;
 			MutationAcknowledgement::require_confirmed(
-				$_POST[ self::ACKNOWLEDGEMENT_FIELD ] ?? null, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
+				$acknowledgement, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
 				__( 'Confirm your responsibility for backup and recovery before importing the Content Models schema.', 'core-blueprint' )
 			);
 			$overwrite = isset( $_POST['overwrite'] ) && '1' === (string) wp_unslash( $_POST['overwrite'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce.
