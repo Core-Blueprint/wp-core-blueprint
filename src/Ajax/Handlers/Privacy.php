@@ -48,8 +48,9 @@ final class Privacy {
 		// Verbosity - nested array keyed by category. Explicit $_POST access
 		// stays here because Request helpers are designed for scalar fields;
 		// nested structures are the caller's responsibility.
-		if ( isset( $_POST['verbosity'] ) && is_array( $_POST['verbosity'] ) ) {
-			foreach ( $_POST['verbosity'] as $category => $level ) {
+		$verbosity = isset( $_POST['verbosity'] ) ? wp_unslash( $_POST['verbosity'] ) : [];
+		if ( is_array( $verbosity ) ) {
+			foreach ( $verbosity as $category => $level ) {
 				$cat   = sanitize_key( $category );
 				$level = sanitize_key( (string) $level );
 				if ( in_array( $level, Verbosity::LEVELS, true ) ) {
@@ -59,10 +60,11 @@ final class Privacy {
 		}
 
 		// Retention - nested array keyed by category.
-		if ( isset( $_POST['retention'] ) && is_array( $_POST['retention'] ) ) {
+		$retention = isset( $_POST['retention'] ) ? wp_unslash( $_POST['retention'] ) : [];
+		if ( is_array( $retention ) ) {
 			$allowed = [ 30, 60, 90, 180, 365, 730, 1095 ];
 			$next = [];
-			foreach ( $_POST['retention'] as $category => $days ) {
+			foreach ( $retention as $category => $days ) {
 				$cat  = sanitize_key( (string) $category );
 				$days = (int) $days;
 				if ( RetentionPolicy::is_category( $cat ) && in_array( $days, $allowed, true ) ) {
