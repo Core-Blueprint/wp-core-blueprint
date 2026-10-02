@@ -5,10 +5,22 @@ use CB\Core\HUD\Bootstrap;
 
 final class CB_Base_HUD_Update_Boundary_Test extends WP_UnitTestCase {
 
-	public function test_hud_registers_items_without_update_cache_priming(): void {
+	public function test_hud_runtime_never_primes_update_cache_and_keeps_item_registration_behind_runtime_boot(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'src/HUD/Bootstrap.php' );
+		self::assertIsString( $source );
+
 		self::assertFalse( method_exists( Bootstrap::class, 'prime_update_cache' ) );
 		self::assertFalse( has_action( 'init', [ Bootstrap::class, 'prime_update_cache' ] ) );
-		self::assertSame( 10, has_action( 'init', [ Bootstrap::class, 'register_items' ] ) );
+		self::assertStringContainsString(
+			"add_action( 'init', [ self::class, 'register_items' ], 10 );",
+			$source,
+			'HUD item registration must remain part of enabled HUD runtime boot.'
+		);
+		self::assertStringContainsString(
+			'if ( ! Settings::is_enabled() )',
+			$source,
+			'Disabled HUD runtime must still short-circuit before presentation hooks are registered.'
+		);
 	}
 
 	public function test_hud_bootstrap_does_not_touch_wordpress_update_transient_storage(): void {
