@@ -18,13 +18,21 @@ defined( 'ABSPATH' ) || exit;
 final class AdminExtensionTabAssetProvider {
 
 	public static function enqueue( ScreenContext $context ): void {
+		$hud_enabled = \CB\Core\HUD\Settings::is_enabled();
+
 		foreach ( AdminAssetCatalog::extension_tab_full_set() as $asset_id ) {
+			if ( ! $hud_enabled && in_array( $asset_id, [ 'component.hud', 'module.hud' ], true ) ) {
+				continue;
+			}
 			AdminAssetCatalog::enqueue( $asset_id, $context );
 		}
 
 		PageRegistry::enqueue_requirements_for_hook( $context->hook() );
 
 		foreach ( AdminModuleCatalog::ids() as $module_id ) {
+			if ( ! $hud_enabled && '@cb-core/hud' === $module_id ) {
+				continue;
+			}
 			AdminModuleCatalog::enqueue( $module_id, $context );
 		}
 	}
