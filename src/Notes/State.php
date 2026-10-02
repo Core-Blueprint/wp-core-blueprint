@@ -11,10 +11,8 @@ declare(strict_types=1);
  *
  * The `enabled` flag lives inside the existing `cb_core_settings['notes']`
  * subkey alongside the per-feature defaults (default_type, default_status,
- * default_layout, etc.). This keeps everything Notes-related in one place
- * and makes migration on existing installations automatic - the merge in
- * {@see Settings\SettingsRepository::all()} silently fills in `enabled => true`
- * for stored settings predating 1.3.25.
+ * default_layout, etc.). Missing state resolves to disabled for the public v1
+ * contract.
  *
  * Suite philosophy reminder: every CB subsystem must be deactivatable so
  * operators can cover a given concern with their own tool of choice. For
@@ -38,13 +36,13 @@ defined( 'ABSPATH' ) || exit;
 final class State implements ModuleStateInterface {
 
 	/**
-	 * Whether the Notes subsystem is currently active. Defaults to true
-	 * on missing/unset values so existing installations and fresh
-	 * activations both behave like they always have.
+	 * Whether the Notes subsystem is currently active.
+	 *
+	 * Missing state is intentionally disabled for the public v1 contract.
 	 */
 	public static function is_enabled(): bool {
 		$settings = SettingsRepository::all();
-		return (bool) ( $settings['enabled'] ?? true );
+		return (bool) ( $settings['enabled'] ?? false );
 	}
 
 	/**
