@@ -9,7 +9,7 @@ final class CB_Base_Snippets_Uninstall_Ownership_Contract_Test extends WP_UnitTe
 		self::assertStringContainsString( "WP_CONTENT_DIR ) . 'cb-snippets'", $uninstall );
 		self::assertStringContainsString( "'/runtime-index.php'", $uninstall );
 		self::assertStringContainsString( "'/.lock'", $uninstall );
-		self::assertStringContainsString( '@unlink( $runtime_file )', $uninstall );
+		self::assertStringContainsString( 'wp_delete_file( $runtime_file )', $uninstall );
 
 		self::assertStringContainsString(
 			'Preserved deliberately: registry.php, code/* and direct-access guard files.',
