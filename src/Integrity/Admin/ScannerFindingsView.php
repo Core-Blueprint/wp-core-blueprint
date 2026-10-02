@@ -143,6 +143,33 @@ trait ScannerFindingsView {
 		if ( $baseline_only ) {
 			$more_args['cb_integrity_baseline_candidate'] = '1';
 		}
+
+		/* translators: %d: total number of matching findings. */
+		$findings_count_label = sprintf( _n( '%d finding', '%d findings', $total, 'core-blueprint' ), $total );
+		$review_progress_label = '';
+		if ( $baseline_only && $baseline_candidates > 0 ) {
+			/* translators: 1: reviewed baseline candidate count, 2: total baseline candidate count. */
+			$review_progress_label = sprintf( __( 'Reviewed %1$d of %2$d', 'core-blueprint' ), (int) $baseline_review['reviewed'], (int) $baseline_review['total'] );
+		}
+		$baseline_action_label = '';
+		if ( $baseline_only && State::is_enabled() && self::can_manage_policy() && $baseline_candidates > 0 ) {
+			if ( ! empty( $baseline['exists'] ) ) {
+				/* translators: %d: number of local baselines to update. */
+				$baseline_action_label = sprintf( _n( 'Update %d Local Baseline', 'Update %d Local Baselines', $baseline_candidates, 'core-blueprint' ), $baseline_candidates );
+			} else {
+				/* translators: %d: number of local baselines to approve. */
+				$baseline_action_label = sprintf( _n( 'Approve %d Local Baseline', 'Approve %d Local Baselines', $baseline_candidates, 'core-blueprint' ), $baseline_candidates );
+			}
+		}
+		/* translators: 1: displayed matching findings, 2: total matching findings, 3: total findings in the current scan. */
+		$findings_meta_label = sprintf( __( 'Showing %1$d of %2$d matching findings. %3$d findings exist in the current scan.', 'core-blueprint' ), count( $visible ), $total, count( $all_findings ) );
+		$show_more_label = '';
+		if ( $has_more ) {
+			/* translators: %d: maximum number of findings to show after expanding the list. */
+			$show_more_label = sprintf( __( 'Show more findings (up to %d)', 'core-blueprint' ), $next_limit );
+		}
+		/* translators: %d: number of passed integrity checks. */
+		$passed_count_label = sprintf( _n( '%d passed check', '%d passed checks', $passed_count, 'core-blueprint' ), $passed_count );
 		?>
 		<section class="cb-core-integrity-panel cb-core-integrity-findings-workspace">
 			<div class="cb-core-integrity-panel-head">
@@ -151,20 +178,13 @@ trait ScannerFindingsView {
 					<p class="cb-core-integrity-muted"><?php echo esc_html( $baseline_only ? __( 'Review every local-baseline candidate before trusting its current file state. Approval changes what future scans consider expected.', 'core-blueprint' ) : __( 'Review anomalies, narrow the investigation, and isolate actionable uploads without losing context.', 'core-blueprint' ) ); ?></p>
 				</div>
 				<div class="cb-core-integrity-findings-head-actions">
-					<?php echo StateBadge::render( sprintf( _n( '%d finding', '%d findings', $total, 'core-blueprint' ), $total ), [ 'variant' => $total > 0 ? StateBadge::WARNING : StateBadge::SUCCESS ] ); ?>
+					<?php echo StateBadge::render( $findings_count_label, [ 'variant' => $total > 0 ? StateBadge::WARNING : StateBadge::SUCCESS ] ); ?>
 					<?php if ( $baseline_only && $baseline_candidates > 0 ) : ?>
-						<span class="cb-core-integrity-review-progress"><?php echo esc_html( sprintf( __( 'Reviewed %1$d of %2$d', 'core-blueprint' ), (int) $baseline_review['reviewed'], (int) $baseline_review['total'] ) ); ?></span>
+						<span class="cb-core-integrity-review-progress"><?php echo esc_html( $review_progress_label ); ?></span>
 					<?php endif; ?>
 					<?php if ( $baseline_only && State::is_enabled() && self::can_manage_policy() && $baseline_candidates > 0 ) : ?>
 						<button type="button" class="button cb-core-button cb-core-button--primary cb-core-integrity-secondary-action" id="cb-core-integrity-approve-baseline" data-cb-integrity-action="approve-baseline" data-cb-integrity-baseline-candidates="<?php echo esc_attr( (string) $baseline_candidates ); ?>" <?php disabled( empty( $baseline_review['complete'] ) ); ?> title="<?php echo esc_attr( empty( $baseline_review['complete'] ) ? __( 'Review every baseline candidate before bulk approval.', 'core-blueprint' ) : '' ); ?>">
-							<?php
-							echo esc_html( sprintf(
-								! empty( $baseline['exists'] )
-									? _n( 'Update %d Local Baseline', 'Update %d Local Baselines', $baseline_candidates, 'core-blueprint' )
-									: _n( 'Approve %d Local Baseline', 'Approve %d Local Baselines', $baseline_candidates, 'core-blueprint' ),
-								$baseline_candidates
-							) );
-							?>
+							<?php echo esc_html( $baseline_action_label ); ?>
 						</button>
 					<?php endif; ?>
 				</div>
@@ -188,10 +208,10 @@ trait ScannerFindingsView {
 				</div>
 			</form>
 
-			<p class="cb-core-integrity-findings-meta"><?php echo esc_html( sprintf( __( 'Showing %1$d of %2$d matching findings. %3$d findings exist in the current scan.', 'core-blueprint' ), count( $visible ), $total, count( $all_findings ) ) ); ?></p>
+			<p class="cb-core-integrity-findings-meta"><?php echo esc_html( $findings_meta_label ); ?></p>
 			<div class="cb-core-integrity-findings" id="cb-core-integrity-findings"><?php self::render_grouped_findings( $groups, false, $reviewed_candidate_ids ); ?></div>
 			<?php if ( $has_more ) : ?>
-				<p class="cb-core-integrity-findings-more"><a class="button cb-core-button cb-core-button--secondary" href="<?php echo esc_url( self::scanner_view_url( 'findings', $more_args ) ); ?>"><?php echo esc_html( sprintf( __( 'Show more findings (up to %d)', 'core-blueprint' ), $next_limit ) ); ?></a><span class="cb-core-integrity-muted"><?php echo esc_html__( 'Filtering is applied before pagination, so search always covers the complete stored finding set.', 'core-blueprint' ); ?></span></p>
+				<p class="cb-core-integrity-findings-more"><a class="button cb-core-button cb-core-button--secondary" href="<?php echo esc_url( self::scanner_view_url( 'findings', $more_args ) ); ?>"><?php echo esc_html( $show_more_label ); ?></a><span class="cb-core-integrity-muted"><?php echo esc_html__( 'Filtering is applied before pagination, so search always covers the complete stored finding set.', 'core-blueprint' ); ?></span></p>
 			<?php endif; ?>
 		</section>
 
@@ -199,7 +219,7 @@ trait ScannerFindingsView {
 			<summary class="cb-core-disclosure__summary" aria-controls="cb-core-integrity-passed">
 				<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?>
 				<h2 class="cb-core-disclosure__title"><?php echo esc_html__( 'Verified / Passed Checks', 'core-blueprint' ); ?></h2>
-				<span class="cb-core-disclosure__meta cb-core-integrity-group-count" aria-label="<?php echo esc_attr( sprintf( _n( '%d passed check', '%d passed checks', $passed_count, 'core-blueprint' ), $passed_count ) ); ?>"><?php echo esc_html( (string) $passed_count ); ?></span>
+				<span class="cb-core-disclosure__meta cb-core-integrity-group-count" aria-label="<?php echo esc_attr( $passed_count_label ); ?>"><?php echo esc_html( (string) $passed_count ); ?></span>
 			</summary>
 			<div class="cb-core-disclosure__body">
 				<div class="cb-core-integrity-findings cb-core-integrity-passed" id="cb-core-integrity-passed"><?php self::render_grouped_findings( $passed, true ); ?></div>
@@ -266,6 +286,7 @@ trait ScannerFindingsView {
 		foreach ( $clusters as &$cluster ) {
 			$count = (int) $cluster['count'];
 			$cluster['message'] = sprintf(
+				/* translators: %d: number of scanner findings grouped under this uploads location. */
 				_n( '%d scanner finding is grouped under this uploads location.', '%d scanner findings are grouped under this uploads location.', $count, 'core-blueprint' ),
 				$count
 			);
