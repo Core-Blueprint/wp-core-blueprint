@@ -184,7 +184,7 @@ final class InsertBuilder {
 							 . implode( ', ', $row_placeholder_groups );
 		$params              = array_merge( [ $this->table ], $columns, $flat_params );
 
-		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- statement shape is builder-owned; identifiers and values are bound here.
+		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- statement shape is builder-owned; %i identifiers and typed values are bound here.
 		return false === $result ? 0 : (int) $result;
 	}
 
