@@ -130,7 +130,7 @@ No. Base does not include usage telemetry or advertising tracking.
 
 = Does Core Blueprint contact external services? =
 
-Only when a feature requires it. The optional Brevo mail transport contacts Brevo after the administrator deliberately configures that transport. Core diagnostic self-checks may request the site's own public URL.
+Only when a feature requires it. The optional Brevo mail transport contacts Brevo after the administrator deliberately configures that transport. Core Scanner may request official checksum manifests from WordPress.org when integrity scans are run or scheduled. Core diagnostic self-checks may also request the site's own public URL. See "External services" above for details.
 
 = Does Core Blueprint replace a dedicated security product? =
 
