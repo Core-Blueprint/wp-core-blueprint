@@ -149,15 +149,15 @@ final class Actions {
 		}
 
 		$document = json_decode( $json, true );
-		$preserve_requested = isset( $_POST['overwrite'] ) && '1' === (string) wp_unslash( $_POST['overwrite'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce.
+		$preserve_requested = isset( $_POST['overwrite'] ) && '1' === sanitize_text_field( wp_unslash( (string) $_POST['overwrite'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce.
 		$preserve_ids = $preserve_requested
 			&& is_array( $document )
 			&& Exporter::FILE_TYPE === (string) ( $document['file_type'] ?? '' );
 
 		if ( $preserve_ids ) {
 			try {
-				$acknowledgement = isset( $_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] )
-					? wp_unslash( $_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] )
+				$acknowledgement = isset( $_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] ) && is_scalar( $_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] )
+					? sanitize_text_field( wp_unslash( (string) $_POST[ self::RESTORE_ACKNOWLEDGEMENT_FIELD ] ) )
 					: null;
 				MutationAcknowledgement::require_confirmed(
 					$acknowledgement, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified the nonce; strict literal confirmation only.
