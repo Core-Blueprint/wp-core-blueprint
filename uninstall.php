@@ -279,7 +279,7 @@ foreach ( $cb_base_tables as $table ) {
 	if ( 1 !== preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
 		continue;
 	}
-	$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- validated SQL identifier; values are not interpolated.
+	$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
 }
 
 // ─── Cron ────────────────────────────────────────────────────────────────────
