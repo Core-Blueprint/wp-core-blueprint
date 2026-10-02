@@ -37,12 +37,14 @@ defined( 'ABSPATH' ) || exit;
 trait ScannerHistoryView {
 
     private static function render_history_panel( array $items, string $current_scan ): void {
+        /* translators: %d: number of stored scan history entries currently shown. */
+        $history_meta_label = sprintf( __( 'Showing the latest %d stored scans.', 'core-blueprint' ), count( $items ) );
         ?>
         <section class="cb-core-integrity-history-section">
             <div class="cb-core-integrity-panel-head">
                 <div>
                     <h2 class="cb-core-section-title"><?php echo esc_html__( 'Scan History', 'core-blueprint' ); ?></h2>
-                    <p id="cb-core-integrity-history-meta"><?php echo esc_html( sprintf( __( 'Showing the latest %d stored scans.', 'core-blueprint' ), count( $items ) ) ); ?></p>
+                    <p id="cb-core-integrity-history-meta"><?php echo esc_html( $history_meta_label ); ?></p>
                 </div>
             </div>
             <div class="cb-core-integrity-history" id="cb-core-integrity-history"><?php self::render_history( $items, $current_scan ); ?></div>
@@ -72,11 +74,13 @@ trait ScannerHistoryView {
 			$source      = (string) ( $item['source'] ?? '' );
 			$is_current  = '' !== $current_scan && $time === $current_scan;
 			$is_baseline = 'baseline' === $source || 'component_baseline' === $source;
+			/* translators: 1: verified count, 2: warning count, 3: critical count. */
+			$summary_label = sprintf( __( '%1$d OK, %2$d warnings, %3$d critical', 'core-blueprint' ), (int) ( $summary['ok'] ?? 0 ), (int) ( $summary['warning'] ?? 0 ), (int) ( $summary['critical'] ?? 0 ) );
 
 			echo '<tr class="' . esc_attr( ( $is_current ? 'is-current ' : '' ) . ( $is_baseline ? 'is-baseline' : '' ) ) . '">';
 			echo '<td>' . StateBadge::render( strtoupper( $status ), [ 'variant' => self::state_badge_variant( $status ) ] ) . '</td>';
 			echo '<td><strong>' . esc_html( $time ) . '</strong></td>';
-			echo '<td>' . esc_html( sprintf( __( '%1$d OK, %2$d warnings, %3$d critical', 'core-blueprint' ), (int) ( $summary['ok'] ?? 0 ), (int) ( $summary['warning'] ?? 0 ), (int) ( $summary['critical'] ?? 0 ) ) ) . '</td>';
+			echo '<td>' . esc_html( $summary_label ) . '</td>';
 			echo '<td><div class="cb-core-integrity-history-tags">';
 			if ( $is_current ) {
 				echo '<span class="cb-core-badge">' . esc_html__( 'Current', 'core-blueprint' ) . '</span>';
