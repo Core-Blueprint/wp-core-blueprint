@@ -161,7 +161,15 @@ defined( 'ABSPATH' ) || exit;
 							}
 
 							if ( ! empty( $actions ) ) {
-								echo '<span class="cb-core-row-actions">' . implode( ' <span class="cb-core-row-actions__sep" aria-hidden="true">|</span> ', $actions ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - each $actions entry is built with esc_url / esc_html / esc_attr above; only the literal separator markup is added inline.
+								$actions_html = '<span class="cb-core-row-actions">' . implode( ' <span class="cb-core-row-actions__sep" aria-hidden="true">|</span> ', $actions ) . '</span>';
+								echo wp_kses(
+									$actions_html,
+									[
+										'span'   => [ 'class' => true, 'aria-hidden' => true ],
+										'a'      => [ 'href' => true, 'target' => true, 'rel' => true, 'class' => true ],
+										'button' => [ 'type' => true, 'class' => true, 'data-report-id' => true ],
+									]
+								);
 							} else {
 								echo '<span class="description">-</span>';
 							}
