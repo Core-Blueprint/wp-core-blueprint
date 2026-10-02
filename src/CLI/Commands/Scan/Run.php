@@ -67,6 +67,7 @@ final class Run implements CommandInterface {
 		$user     = self::resolve_user( $user_ref );
 		if ( null === $user ) {
 			return Result::error(
+				/* translators: %s: user reference entered on the command line. */
 				sprintf( __( 'No user matches "%s" (tried ID, email, login).', 'core-blueprint' ), $user_ref )
 			);
 		}
