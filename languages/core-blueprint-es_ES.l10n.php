@@ -73,6 +73,7 @@ $catalog['messages'] = array_replace(
         'Review incomplete' => 'Revisión incompleta',
         'Review later' => 'Revisar más adelante',
         'Review optional modern image and SVG handling against the capabilities of this server.' => 'Revisa el manejo opcional de formatos de imagen modernos y SVG según las capacidades de este servidor.',
+        'Review permissions' => 'Revisar permisos',
         'Review reason:' => 'Motivo de la revisión:',
         'Review retention periods for security, maintenance, login, settings, and general audit data.' => 'Revisa los periodos de retención de los datos de auditoría de seguridad, mantenimiento, inicio de sesión, ajustes y generales.',
         'Review the Base configuration and record the choices for this site.' => 'Revisa la configuración de Base y registra las decisiones para este sitio.',
