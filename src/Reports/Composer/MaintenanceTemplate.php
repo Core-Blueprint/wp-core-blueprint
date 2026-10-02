@@ -33,17 +33,17 @@ final class MaintenanceTemplate {
 	 */
 	public static function from_json( string $json ): array {
 		if ( '' === trim( $json ) || strlen( $json ) > self::MAX_JSON_BYTES ) {
-			throw new \InvalidArgumentException( __( 'Invalid data.' ) );
+			throw new \InvalidArgumentException( __( 'Invalid data.', 'core-blueprint' ) );
 		}
 
 		try {
 			$decoded = json_decode( $json, true, 32, JSON_THROW_ON_ERROR );
 		} catch ( \JsonException $error ) {
-			throw new \InvalidArgumentException( __( 'Invalid data.' ), 0, $error );
+			throw new \InvalidArgumentException( __( 'Invalid data.', 'core-blueprint' ), 0, $error );
 		}
 
 		if ( ! is_array( $decoded ) ) {
-			throw new \InvalidArgumentException( __( 'Invalid data.' ) );
+			throw new \InvalidArgumentException( __( 'Invalid data.', 'core-blueprint' ) );
 		}
 
 		return self::normalize( $decoded );
