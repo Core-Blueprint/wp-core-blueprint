@@ -286,14 +286,20 @@ final class Dashboard extends PageBase {
 		}
 
 		if ( current_user_can( 'manage_options' ) ) {
+			$mail_meta = $disabled_meta;
+			if ( $mail_enabled ) {
+				if ( $mail_runtime_active ) {
+					/* translators: %s: active outbound mail provider label. */
+					$mail_meta = sprintf( __( 'Outbound delivery via %s', 'core-blueprint' ), MailSettings::provider_label() );
+				} else {
+					$mail_meta = __( 'Enabled - runtime requires attention', 'core-blueprint' );
+				}
+			}
+
 			$cms_tools_cards[] = [
 				'id'    => 'mail',
 				'title' => __( 'Mail', 'core-blueprint' ),
-				'meta'  => ! $mail_enabled
-					? $disabled_meta
-					: ( $mail_runtime_active
-						? sprintf( __( 'Outbound delivery via %s', 'core-blueprint' ), MailSettings::provider_label() )
-						: __( 'Enabled - runtime requires attention', 'core-blueprint' ) ),
+				'meta'  => $mail_meta,
 				'url'         => $mail_enabled ? admin_url( 'admin.php?page=' . $mail_slug ) : '',
 				'visit_url'   => admin_url( 'admin.php?page=' . $mail_slug ),
 				'enabled'     => $mail_enabled,
