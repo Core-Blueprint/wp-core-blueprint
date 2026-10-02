@@ -194,7 +194,7 @@ final class SectionTypeRegistry {
 
 	private static function diagnostic( string $method, string $message ): void {
 		if ( function_exists( '_doing_it_wrong' ) ) {
-			_doing_it_wrong( $method, $message, '1.0.0' );
+			_doing_it_wrong( esc_html( $method ), esc_html( $message ), '1.0.0' );
 		}
 	}
 }
