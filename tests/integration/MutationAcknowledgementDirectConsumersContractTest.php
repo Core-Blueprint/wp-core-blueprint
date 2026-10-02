@@ -54,7 +54,7 @@ final class MutationAcknowledgementDirectConsumersContractTest extends WP_UnitTe
 
 		$transfer = $this->source( 'src/ContentModels/Admin/Transfer.php' );
 		self::assertStringContainsString( 'MutationAcknowledgement::require_confirmed(', $transfer );
-		self::assertStringContainsString( "'1' === (string) wp_unslash( \$_POST['overwrite'] )", $transfer );
+		self::assertStringContainsString( "'1' === sanitize_text_field( wp_unslash( (string) \$_POST['overwrite'] ) )", $transfer );
 		self::assertStringContainsString( "AuditLog::log( 'content.models.schema.import.acknowledged'", $transfer );
 
 		$acknowledgement = strpos( $transfer, "AuditLog::log( 'content.models.schema.import.acknowledged'" );
