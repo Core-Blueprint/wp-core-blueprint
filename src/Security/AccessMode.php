@@ -157,7 +157,7 @@ final class AccessMode {
 		}
 
 		$script = isset( $_SERVER['SCRIPT_NAME'] )
-			? basename( (string) wp_unslash( $_SERVER['SCRIPT_NAME'] ) )
+			? basename( sanitize_text_field( wp_unslash( (string) $_SERVER['SCRIPT_NAME'] ) ) )
 			: '';
 		if ( 'wp-login.php' === $script ) {
 			return true;
