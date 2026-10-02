@@ -131,6 +131,7 @@ final class Request {
 		$parsed = filter_var( wp_unslash( $_POST[ $field ] ), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( null === $parsed ) {
 			wp_send_json_error( [
+				/* translators: %s: request field name. */
 				'message' => sprintf( __( 'Invalid boolean value for %s.', 'core-blueprint' ), $field ),
 			], 400 );
 		}
