@@ -197,7 +197,7 @@ final class UserRolesFields {
 		$old_base       = UserRoleAssignments::base_role( $old );
 		$old_additional = UserRoleAssignments::additional_roles( $old );
 		$requested_base = property_exists( $user, 'role' ) ? sanitize_key( (string) $user->role ) : $old_base;
-		$has_ui_payload = isset( $_POST[ self::FORM_MARKER ] ) && '1' === (string) wp_unslash( $_POST[ self::FORM_MARKER ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$has_ui_payload = isset( $_POST[ self::FORM_MARKER ] ) && '1' === sanitize_text_field( wp_unslash( $_POST[ self::FORM_MARKER ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- marker only; nonce is verified before accepting role changes.
 
 		// CB Operator is never a WordPress base role. WordPress' native
 		// set_role() semantics replace every existing role, so accepting
