@@ -343,8 +343,8 @@ final class PrivilegedAccessGuard {
 			}
 			echo ' ';
 			echo esc_html( sprintf(
-				/* translators: %d: WordPress user ID */
-				__( 'Use trusted server-side WP-CLI to verify and recover a known management identity: `wp cb operator status %d`, then `wp cb operator recover %d`.', 'core-blueprint' ),
+				/* translators: %1$d and %2$d: WordPress user ID used for the status and recovery commands. */
+				__( 'Use trusted server-side WP-CLI to verify and recover a known management identity: `wp cb operator status %1$d`, then `wp cb operator recover %2$d`.', 'core-blueprint' ),
 				(int) $user->ID,
 				(int) $user->ID
 			) );
