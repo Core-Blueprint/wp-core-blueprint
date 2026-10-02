@@ -73,6 +73,7 @@ $catalog['messages'] = array_replace(
         'Review incomplete' => 'Beoordeling onvolledig',
         'Review later' => 'Later beoordelen',
         'Review optional modern image and SVG handling against the capabilities of this server.' => 'Beoordeel de optionele verwerking van moderne afbeeldingsformaten en SVG aan de hand van de mogelijkheden van deze server.',
+        'Review permissions' => 'Permissies bekijken',
         'Review reason:' => 'Reden voor beoordeling:',
         'Review retention periods for security, maintenance, login, settings, and general audit data.' => 'Beoordeel de bewaartermijnen voor beveiligings-, onderhouds-, login-, instellingen- en algemene auditgegevens.',
         'Review the Base configuration and record the choices for this site.' => 'Beoordeel de Base-configuratie en leg de keuzes voor deze site vast.',
