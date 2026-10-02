@@ -201,7 +201,7 @@ final class Repository {
 			return null;
 		}
 		$table = self::table();
-		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE activity_id = %s LIMIT 1', $table, $activity_id ) );
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE activity_id = %s LIMIT 1', $table, $activity_id ) ); // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- %i binds the table and the UUID value uses %s.
 		return $row ? self::decode_row( $row ) : null;
 	}
 
@@ -269,10 +269,10 @@ final class Repository {
 		$count_sql = "SELECT COUNT(*) FROM %i WHERE {$where_sql}";
 		$data_sql = "SELECT * FROM %i WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
 		$count_prepared = $wpdb->prepare( $count_sql, ...array_merge( [ $table ], $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE fragments are fixed; identifier and values are bound here.
-		$total = (int) $wpdb->get_var( $count_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- prepared immediately above.
+		$total = (int) $wpdb->get_var( $count_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- prepared immediately above with %i and bound filter values.
 		$data_params = array_merge( [ $table ], $params, [ $per_page, ( $page - 1 ) * $per_page ] );
 		$data_prepared = $wpdb->prepare( $data_sql, ...$data_params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE fragments are fixed; identifier and values are bound here.
-		$rows = $wpdb->get_results( $data_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- prepared immediately above.
+		$rows = $wpdb->get_results( $data_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- prepared immediately above with %i and bound filter/pagination values.
 		$rows = array_map( [ __CLASS__, 'decode_row' ], is_array( $rows ) ? $rows : [] );
 		return [
 			'rows' => $rows,
@@ -303,7 +303,7 @@ final class Repository {
 		}
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
 		$table = self::table();
-		$result = $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', $table, $cutoff ) );
+		$result = $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', $table, $cutoff ) ); // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- %i binds the table and cutoff uses %s.
 		return false === $result ? 0 : (int) $result;
 	}
 
