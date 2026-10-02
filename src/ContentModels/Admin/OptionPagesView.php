@@ -144,7 +144,8 @@ trait OptionPagesView {
 		];
 		foreach ( Repository::option_pages() as $slug => $page ) {
 			if ( $slug !== $current_slug && '' === (string) ( $page['parent_slug'] ?? '' ) ) {
-				$choices[ (string) $slug ] = sprintf( __( 'Option Page: %s', 'core-blueprint' ), (string) ( $page['title'] ?? $slug ) );
+				/* translators: %s: option page title. */
+			$choices[ (string) $slug ] = sprintf( __( 'Option Page: %s', 'core-blueprint' ), (string) ( $page['title'] ?? $slug ) );
 			}
 		}
 		return $choices;
