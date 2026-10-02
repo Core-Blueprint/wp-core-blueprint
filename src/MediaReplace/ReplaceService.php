@@ -121,7 +121,7 @@ final class ReplaceService {
 				if ( $old_file === $target_file || ! is_file( $old_file ) ) {
 					continue;
 				}
-				if ( ! @unlink( $old_file ) ) {
+				if ( ! wp_delete_file( $old_file ) ) {
 					throw new ReplaceException( 'old_derivative_cleanup_failed', __( 'An old generated media file could not be removed safely.', 'core-blueprint' ) );
 				}
 			}
@@ -201,7 +201,7 @@ final class ReplaceService {
 			);
 		} finally {
 			if ( '' !== $stage_file && is_file( $stage_file ) ) {
-				@unlink( $stage_file );
+				wp_delete_file( $stage_file );
 			}
 			// If rollback itself failed, retain the private verified backup for
 			// emergency recovery instead of destroying the last known-good copy.
@@ -676,19 +676,19 @@ final class ReplaceService {
 		}
 
 		if ( is_wp_error( $saved ) || empty( $saved['path'] ) || ! is_string( $saved['path'] ) ) {
-			@unlink( $temp_file );
+			wp_delete_file( $temp_file );
 			throw new ReplaceException( 'orientation_save_failed', __( 'WordPress could not save the corrected replacement image safely.', 'core-blueprint' ) );
 		}
 
 		$saved_file = wp_normalize_path( $saved['path'] );
 		if ( ! is_file( $saved_file ) || filesize( $saved_file ) <= 0 ) {
-			@unlink( $saved_file );
+			wp_delete_file( $saved_file );
 			throw new ReplaceException( 'orientation_verify_failed', __( 'The corrected replacement image could not be verified.', 'core-blueprint' ) );
 		}
 
 		if ( ! @rename( $saved_file, $target_file ) ) {
 			if ( ! @unlink( $target_file ) || ! @rename( $saved_file, $target_file ) ) {
-				@unlink( $saved_file );
+				wp_delete_file( $saved_file );
 				throw new ReplaceException( 'orientation_swap_failed', __( 'The corrected replacement image could not be committed safely.', 'core-blueprint' ) );
 			}
 		}
@@ -839,7 +839,7 @@ final class ReplaceService {
 			if ( isset( $backups[ $generated ] ) || ! is_file( $generated ) ) {
 				continue;
 			}
-			@unlink( $generated );
+			wp_delete_file( $generated );
 		}
 
 		foreach ( $backups as $original => $backup ) {
@@ -889,7 +889,7 @@ final class ReplaceService {
 			if ( is_dir( $path ) && ! is_link( $path ) ) {
 				$this->remove_tree( $path );
 			} else {
-				@unlink( $path );
+				wp_delete_file( $path );
 			}
 		}
 		@rmdir( $directory );
