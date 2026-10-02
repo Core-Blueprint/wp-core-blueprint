@@ -66,6 +66,22 @@ class ReleaseBuilderTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 builder.run_gate(['fixture-gate'], self.source, 'fixture')
 
+    def test_dompdf_legacy_entrypoint_is_source_only(self):
+        legacy = self.source / 'src/PDF/lib/dompdf/autoload.inc.php'
+        composer = self.source / 'src/PDF/lib/dompdf/vendor/autoload.php'
+        composer.parent.mkdir(parents=True, exist_ok=True)
+        legacy.parent.mkdir(parents=True, exist_ok=True)
+        legacy.write_text("<?php require __DIR__ . '/vendor/autoload.php';\n")
+        composer.write_text("<?php // Composer autoloader fixture.\n")
+
+        collected = {
+            path.relative_to(self.source).as_posix()
+            for path in builder.collect_files(self.source)
+        }
+
+        self.assertNotIn('src/PDF/lib/dompdf/autoload.inc.php', collected)
+        self.assertIn('src/PDF/lib/dompdf/vendor/autoload.php', collected)
+
     def test_internal_changelog_history_is_source_only(self):
         history = self.source / 'CHANGELOG-HISTORY.md'
         history.write_text('internal pre-v1 history\n')
