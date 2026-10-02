@@ -48,8 +48,12 @@ defined( 'ABSPATH' ) || exit;
 
 			<div class="cb-core-field">
 				<label class="cb-core-field__label" for="cb-mail-test-sender"><?php esc_html_e( 'Sender', 'core-blueprint' ); ?></label>
+				<?php
+				/* translators: %s: default sender email address. */
+				$default_sender_label = sprintf( __( 'Default — %s', 'core-blueprint' ), (string) $settings['from_email'] );
+				?>
 				<select id="cb-mail-test-sender" name="sender_identity">
-					<option value=""><?php printf( esc_html__( 'Default — %s', 'core-blueprint' ), esc_html( (string) $settings['from_email'] ) ); ?></option>
+					<option value=""><?php echo esc_html( $default_sender_label ); ?></option>
 					<?php foreach ( $sender_identities as $identity_id => $identity ) : ?>
 						<option value="<?php echo esc_attr( $identity_id ); ?>"><?php echo esc_html( sprintf( '%s — %s', $identity['label'], $identity['email'] ) ); ?></option>
 					<?php endforeach; ?>
