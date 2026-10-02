@@ -36,6 +36,7 @@ final class Add implements CommandInterface {
 
 		if ( null === $user ) {
 			return Result::error(
+				/* translators: %s: user reference entered on the command line. */
 				sprintf( __( 'No user matches "%s" (tried ID, email, login).', 'core-blueprint' ), $ref )
 			);
 		}
@@ -63,8 +64,10 @@ final class Add implements CommandInterface {
 			}
 			return Result::warning(
 				$approved
-					? sprintf( __( '%1$s (#%2$d) is already a CB Operator with a valid approval.', 'core-blueprint' ), $user->user_login, $user->ID )
-					: sprintf( __( '%1$s (#%2$d) is already a CB Operator but does not have a valid approval. Use the Operator recovery command.', 'core-blueprint' ), $user->user_login, $user->ID ),
+					/* translators: 1: user login, 2: WordPress user ID. */
+			? sprintf( __( '%1$s (#%2$d) is already a CB Operator with a valid approval.', 'core-blueprint' ), $user->user_login, $user->ID )
+					/* translators: 1: user login, 2: WordPress user ID. */
+			: sprintf( __( '%1$s (#%2$d) is already a CB Operator but does not have a valid approval. Use the Operator recovery command.', 'core-blueprint' ), $user->user_login, $user->ID ),
 				$lines,
 				[ 'user_id' => (int) $user->ID, 'changed' => false, 'approved' => $approved ]
 			);
