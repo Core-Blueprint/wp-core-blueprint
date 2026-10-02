@@ -179,11 +179,12 @@ final class InsertBuilder {
 			$row_placeholder_groups[] = '(' . implode( ', ', $row_placeholders ) . ')';
 		}
 
-		$columns_sql = '`' . implode( '`, `', $columns ) . '`';
-		$sql         = "INSERT INTO {$this->table} ({$columns_sql}) VALUES "
-					 . implode( ', ', $row_placeholder_groups );
+		$column_placeholders = implode( ', ', array_fill( 0, count( $columns ), '%i' ) );
+		$sql                 = "INSERT INTO %i ({$column_placeholders}) VALUES "
+							 . implode( ', ', $row_placeholder_groups );
+		$params              = array_merge( [ $this->table ], $columns, $flat_params );
 
-		$result = $wpdb->query( $wpdb->prepare( $sql, $flat_params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- statement shape is builder-owned; identifiers and values are bound here.
 		return false === $result ? 0 : (int) $result;
 	}
 
