@@ -10,8 +10,11 @@
  */
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
-
-global $wpdb;
+// Keep uninstall working state private to this invocation. The file itself runs
+// in WordPress global scope, but no temporary teardown variables need to become
+// plugin globals.
+( static function (): void {
+	global $wpdb;
 
 // ─── Roles + capabilities ───────────────────────────────────────────────────
 // Core Blueprint owns the cb_operator role and its cb_* primitive
@@ -141,7 +144,8 @@ $cb_base_option_prefixes = [
 foreach ( $cb_base_option_prefixes as $prefix ) {
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+			'DELETE FROM %i WHERE option_name LIKE %s',
+			$wpdb->options,
 			$wpdb->esc_like( $prefix ) . '%'
 		)
 	);
@@ -178,7 +182,8 @@ foreach ( $cb_base_transient_prefixes as $prefix ) {
 	$like = $wpdb->esc_like( $prefix ) . '%';
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+			'DELETE FROM %i WHERE option_name LIKE %s OR option_name LIKE %s',
+			$wpdb->options,
 			'_transient_' . $like,
 			'_transient_timeout_' . $like
 		)
@@ -210,7 +215,8 @@ if ( isset( $wpdb->usermeta ) ) {
 	foreach ( $cb_base_user_meta as $meta_key ) {
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$wpdb->usermeta} WHERE meta_key = %s",
+				'DELETE FROM %i WHERE meta_key = %s',
+				$wpdb->usermeta,
 				$meta_key
 			)
 		);
@@ -226,7 +232,8 @@ if ( isset( $wpdb->usermeta ) ) {
 if ( isset( $wpdb->postmeta ) ) {
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->postmeta} WHERE meta_key IN (%s, %s, %s)",
+			'DELETE FROM %i WHERE meta_key IN (%s, %s, %s)',
+			$wpdb->postmeta,
 			'_cb_media_replaced_at',
 			'_cb_media_replaced_by',
 			'_cb_media_replace_revision'
@@ -295,3 +302,4 @@ $cb_base_cron_hooks = [
 foreach ( $cb_base_cron_hooks as $hook ) {
 	wp_unschedule_hook( $hook );
 }
+} )();
