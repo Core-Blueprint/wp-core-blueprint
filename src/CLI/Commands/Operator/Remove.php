@@ -39,6 +39,7 @@ final class Remove implements CommandInterface {
 
 		if ( null === $user ) {
 			return Result::error(
+				/* translators: %s: user reference entered on the command line. */
 				sprintf( __( 'No user matches "%s" (tried ID, email, login).', 'core-blueprint' ), $ref )
 			);
 		}
