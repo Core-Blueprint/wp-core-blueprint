@@ -222,7 +222,7 @@ final class Page extends PageBase {
 		$review          = is_array( $check['review'] ?? null ) ? $check['review'] : null;
 		$review_current  = ! empty( $check['review_current'] );
 		$reason          = is_array( $review ) ? trim( (string) ( $review['reason'] ?? '' ) ) : '';
-		$config_url      = esc_url( (string) ( $check['configuration_url'] ?? '' ) );
+		$config_url      = (string) ( $check['configuration_url'] ?? '' );
 		$allows_later    = ! empty( $check['allows_later'] );
 		$allows_na       = ! empty( $check['allows_not_applicable'] );
 		$can_mark_reviewed = Evidence::HEALTH_OK === $health;
@@ -288,7 +288,7 @@ final class Page extends PageBase {
 				<div class="cb-core-field cb-core-field--separated">
 					<div class="cb-core-actions">
 						<?php if ( '' !== $config_url ) : ?>
-							<a class="button" href="<?php echo $config_url; ?>">
+							<a class="button" href="<?php echo esc_url( $config_url ); ?>">
 								<?php esc_html_e( 'Open settings', 'core-blueprint' ); ?>
 							</a>
 						<?php endif; ?>
