@@ -48,7 +48,7 @@ final class RequestContext {
 				continue;
 			}
 
-			$path = parse_url( $value, PHP_URL_PATH );
+			$path = wp_parse_url( $value, PHP_URL_PATH );
 			if ( is_string( $path ) && $basename === basename( $path ) ) {
 				return true;
 			}
