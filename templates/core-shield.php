@@ -580,12 +580,16 @@ defined( 'ABSPATH' ) || exit;
 											<span class="screen-reader-text"><?php esc_html_e( 'Enabled', 'core-blueprint' ); ?></span>
 										</label>
 
+										<?php
+										/* translators: %s: security feature label. */
+										$feature_details_label = sprintf( __( 'Toggle details for %s', 'core-blueprint' ), $feature_label );
+										?>
 										<button
 											type="button"
 											class="cb-core-feature-details-toggle"
 											aria-expanded="false"
 											aria-controls="<?php echo esc_attr( $feature_detail_id ); ?>"
-											aria-label="<?php echo esc_attr( sprintf( __( 'Toggle details for %s', 'core-blueprint' ), $feature_label ) ); ?>"
+											aria-label="<?php echo esc_attr( $feature_details_label ); ?>"
 										>
 											<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Icon::render() returns escape-clean SVG. ?>
 											<?php echo \CB\Core\UI\Icon::render( 'expand', [ 'class' => 'cb-core-feature-chevron', 'size' => 'compact' ] ); ?>
