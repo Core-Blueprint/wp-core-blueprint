@@ -298,6 +298,7 @@ final class Preflight {
 		$type_placeholders   = implode( ', ', array_fill( 0, count( $post_types ), '%s' ) );
 		$status_placeholders = implode( ', ', array_fill( 0, count( $post_statuses ), '%s' ) );
 		$args                = array_merge( $post_types, $post_statuses, [ '^p[0-9]+$' ] );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- generated %s placeholder lists; all values are bound by prepare().
 		$sql                 = $wpdb->prepare(
 			"SELECT ID
 			FROM {$wpdb->posts}
@@ -306,6 +307,7 @@ final class Preflight {
 				AND post_name REGEXP %s",
 			...$args
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$ids = is_string( $sql ) ? $wpdb->get_col( $sql ) : []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql is returned by $wpdb->prepare() immediately above.
 
 		$candidates = [];
