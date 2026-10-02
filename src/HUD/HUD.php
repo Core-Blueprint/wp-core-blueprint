@@ -90,7 +90,7 @@ final class HUD {
 				title="<?php echo esc_attr( $brand->label() ); ?>"
 			>
 				<span class="cb-hud__toggle-mark" aria-hidden="true">
-					<?php echo self::sanitize_logo_svg( $brand->logo_svg() ); ?>
+					<?php echo wp_kses( self::sanitize_logo_svg( $brand->logo_svg() ), self::allowed_logo_svg() ); ?>
 				</span>
 			</button>
 
@@ -590,23 +590,229 @@ final class HUD {
 	 * g, defs, style (inline keyframes only), text, tspan, title.
 	 */
 	public static function sanitize_logo_svg( string $svg ): string {
-		// Hard cap on length - defends against runaway brand SVGs.
-		if ( strlen( $svg ) > 16384 ) {
+		if ( '' === $svg || strlen( $svg ) > 16384 ) {
 			return '';
 		}
 
-		// Strip script tags wholesale.
+		// Remove executable content before structural KSES processing so script
+		// bodies cannot survive as stray text after the tag itself is stripped.
 		$svg = preg_replace( '/<script\b[^>]*>.*?<\/script>/is', '', $svg ) ?? '';
 
-		// Strip on* event handlers.
-		$svg = preg_replace( '/\son[a-z]+\s*=\s*"[^"]*"/i', '', $svg ) ?? '';
-		$svg = preg_replace( "/\son[a-z]+\s*=\s*'[^']*'/i", '', $svg ) ?? '';
+		// Preserve the canonical mark's alpha-mask behaviour on WordPress 7.0.
+		// mask-type is a native SVG presentation attribute, so it does not need
+		// to remain in an inline style attribute.
+		$svg = preg_replace(
+			'/\sstyle\s*=\s*(["\'])\s*mask-type\s*:\s*(alpha|luminance)\s*;?\s*\1/i',
+			' mask-type="$2"',
+			$svg
+		) ?? '';
 
-		// Strip external references - no http(s) or javascript: protocols.
-		$svg = preg_replace( '/\bhref\s*=\s*"(https?:|javascript:)[^"]*"/i', '', $svg ) ?? '';
-		$svg = preg_replace( "/\bxlink:href\s*=\s*\"(https?:|javascript:)[^\"]*\"/i", '', $svg ) ?? '';
+		// Inline SVG styles are permitted only for brand-scoped class rules and
+		// brand-scoped keyframes. Remote references and document-wide selectors
+		// are rejected instead of attempting to repair them.
+		$svg = preg_replace_callback(
+			'#<style\b[^>]*>(.*?)</style>#is',
+			static function ( array $matches ): string {
+				$css = self::sanitize_logo_css( (string) ( $matches[1] ?? '' ) );
+				return '' === $css ? '' : '<style>' . $css . '</style>';
+			},
+			$svg
+		) ?? '';
 
-		return $svg;
+		// SVG paint/mask references may target definitions inside this same SVG.
+		// Any external or malformed url() reference is neutralised.
+		$svg = preg_replace_callback(
+			'/url\(\s*([^)]+)\)/i',
+			static function ( array $matches ): string {
+				$target = trim( (string) ( $matches[1] ?? '' ), " \t\n\r\0\x0B\"'" );
+				return 1 === preg_match( '/^#[A-Za-z][A-Za-z0-9_.:-]*$/D', $target )
+					? 'url(' . $target . ')'
+					: 'none';
+			},
+			$svg
+		) ?? '';
+
+		return wp_kses( $svg, self::allowed_logo_svg() );
+	}
+
+	/**
+	 * Constrain CSS embedded inside a brand SVG to the SVG's own cb-brand-*
+	 * classes and cb-brand-* keyframes.
+	 */
+	private static function sanitize_logo_css( string $css ): string {
+		if ( '' === trim( $css ) || strlen( $css ) > 4096 ) {
+			return '';
+		}
+
+		$css = preg_replace( '#/\*.*?\*/#s', '', $css ) ?? '';
+		if (
+			'' === trim( $css )
+			|| preg_match( '/(?:@import|url\s*\(|expression\s*\(|javascript\s*:|data\s*:|behavior\s*:|-moz-binding)/i', $css )
+			|| str_contains( $css, '<' )
+			|| str_contains( $css, '>' )
+		) {
+			return '';
+		}
+
+		$depth    = 0;
+		$header   = '';
+		$contexts = [];
+		$length   = strlen( $css );
+
+		for ( $offset = 0; $offset < $length; ++$offset ) {
+			$char = $css[ $offset ];
+			if ( '{' === $char ) {
+				$selector = trim( $header );
+				$header   = '';
+				if ( 0 === $depth ) {
+					if ( 1 === preg_match( '/^@keyframes\s+cb-brand-[A-Za-z0-9_-]+$/D', $selector ) ) {
+						$context = 'keyframes';
+					} elseif ( self::is_safe_logo_selector( $selector ) ) {
+						$context = 'rule';
+					} else {
+						return '';
+					}
+				} elseif ( 1 === $depth && 'keyframes' === ( $contexts[0] ?? '' ) ) {
+					if ( 1 !== preg_match( '/^(?:(?:from|to|(?:100|[0-9]{1,2})%)(?:\s*,\s*)?)+$/iD', $selector ) ) {
+						return '';
+					}
+					$context = 'frame';
+				} else {
+					return '';
+				}
+
+				$contexts[] = $context;
+				++$depth;
+				continue;
+			}
+
+			if ( '}' === $char ) {
+				if ( 0 === $depth ) {
+					return '';
+				}
+				array_pop( $contexts );
+				--$depth;
+				$header = '';
+				continue;
+			}
+
+			if ( 0 === $depth || ( 1 === $depth && 'keyframes' === ( $contexts[0] ?? '' ) ) ) {
+				$header .= $char;
+			}
+		}
+
+		return 0 === $depth ? trim( $css ) : '';
+	}
+
+	private static function is_safe_logo_selector( string $selector ): bool {
+		if ( '' === $selector ) {
+			return false;
+		}
+		foreach ( array_map( 'trim', explode( ',', $selector ) ) as $part ) {
+			if ( 1 !== preg_match( '/^\.cb-brand-[A-Za-z0-9_-]+$/D', $part ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** @return array<string,array<string,bool>> */
+	private static function allowed_logo_svg(): array {
+		$shape = [
+			'id'              => true,
+			'class'           => true,
+			'fill'            => true,
+			'fill-opacity'    => true,
+			'fill-rule'       => true,
+			'stroke'          => true,
+			'stroke-opacity'  => true,
+			'stroke-width'    => true,
+			'stroke-linecap'  => true,
+			'stroke-linejoin' => true,
+			'opacity'         => true,
+			'transform'       => true,
+			'mask'            => true,
+			'clip-path'       => true,
+			'clip-rule'       => true,
+			'style'           => true,
+		];
+
+		return [
+			'svg' => [
+				'xmlns'               => true,
+				'viewbox'             => true,
+				'width'               => true,
+				'height'              => true,
+				'fill'                => true,
+				'stroke'              => true,
+				'class'               => true,
+				'role'                => true,
+				'aria-hidden'         => true,
+				'focusable'           => true,
+				'preserveaspectratio' => true,
+			],
+			'path' => $shape + [ 'd' => true ],
+			'circle' => $shape + [ 'cx' => true, 'cy' => true, 'r' => true ],
+			'ellipse' => $shape + [ 'cx' => true, 'cy' => true, 'rx' => true, 'ry' => true ],
+			'rect' => $shape + [ 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'rx' => true, 'ry' => true ],
+			'line' => $shape + [ 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true ],
+			'polygon' => $shape + [ 'points' => true ],
+			'polyline' => $shape + [ 'points' => true ],
+			'g' => $shape,
+			'defs' => [],
+			'mask' => [
+				'id'               => true,
+				'x'                => true,
+				'y'                => true,
+				'width'            => true,
+				'height'           => true,
+				'maskunits'        => true,
+				'maskcontentunits' => true,
+				'mask-type'        => true,
+			],
+			'lineargradient' => [
+				'id'                => true,
+				'x1'                => true,
+				'y1'                => true,
+				'x2'                => true,
+				'y2'                => true,
+				'gradientunits'     => true,
+				'gradienttransform' => true,
+			],
+			'radialgradient' => [
+				'id'                => true,
+				'cx'                => true,
+				'cy'                => true,
+				'r'                 => true,
+				'fx'                => true,
+				'fy'                => true,
+				'fr'                => true,
+				'gradientunits'     => true,
+				'gradienttransform' => true,
+			],
+			'stop' => [
+				'offset'       => true,
+				'stop-color'   => true,
+				'stop-opacity' => true,
+			],
+			'clippath' => [
+				'id'            => true,
+				'clippathunits' => true,
+				'transform'     => true,
+			],
+			'text' => $shape + [
+				'x'           => true,
+				'y'           => true,
+				'dx'          => true,
+				'dy'          => true,
+				'text-anchor' => true,
+				'font-size'   => true,
+				'font-weight' => true,
+			],
+			'tspan' => $shape + [ 'x' => true, 'y' => true, 'dx' => true, 'dy' => true ],
+			'style' => [],
+			'title' => [],
+		];
 	}
 
 	/**
@@ -650,7 +856,7 @@ final class HUD {
 		printf(
 			"<style id=\"cb-hud-brand-palette-%1\$s\">html[data-cb-brand=\"%1\$s\"]{%2\$s}</style>\n",
 			esc_attr( $brand_id ),
-			$rules // sanitised above
+			esc_html( $rules )
 		);
 	}
 }
