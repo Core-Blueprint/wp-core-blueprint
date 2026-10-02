@@ -243,7 +243,8 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 									$plain_parts[] = sprintf( __( 'reason: %s', 'core-blueprint' ), (string) $context['reason'] );
 								}
 								if ( ! empty( $context['from'] ) && ! empty( $context['to'] ) ) {
-									$plain_parts[] = sprintf( __( 'from %s to %s', 'core-blueprint' ), (string) $context['from'], (string) $context['to'] );
+									/* translators: 1: previous value, 2: new value */
+					$plain_parts[] = sprintf( __( 'from %1$s to %2$s', 'core-blueprint' ), (string) $context['from'], (string) $context['to'] );
 								}
 								if ( ! empty( $context['changed'] ) ) {
 									$plain_parts[] = sprintf( __( 'changed: %s', 'core-blueprint' ), (string) $context['changed'] );
