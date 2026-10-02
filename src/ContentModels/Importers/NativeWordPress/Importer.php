@@ -186,13 +186,15 @@ final class Importer {
 			$key = (string) ( $target['key'] ?? '' );
 			if ( 'post_type' === $kind ) {
 				if ( post_type_exists( $key ) || null !== Repository::post_type( $key ) ) {
-					throw new \InvalidArgumentException( sprintf( __( 'Post type “%s” is still registered or now conflicts with Content Models. Disable its original registrar and create a fresh plan.', 'core-blueprint' ), $key ) );
+					/* translators: %s: post type key. */
+			throw new \InvalidArgumentException( sprintf( __( 'Post type “%s” is still registered or now conflicts with Content Models. Disable its original registrar and create a fresh plan.', 'core-blueprint' ), $key ) );
 				}
 				continue;
 			}
 			if ( 'taxonomy' === $kind ) {
 				if ( taxonomy_exists( $key ) || null !== Repository::taxonomy( $key ) ) {
-					throw new \InvalidArgumentException( sprintf( __( 'Taxonomy “%s” is still registered or now conflicts with Content Models. Disable its original registrar and create a fresh plan.', 'core-blueprint' ), $key ) );
+					/* translators: %s: taxonomy key. */
+			throw new \InvalidArgumentException( sprintf( __( 'Taxonomy “%s” is still registered or now conflicts with Content Models. Disable its original registrar and create a fresh plan.', 'core-blueprint' ), $key ) );
 				}
 				continue;
 			}
@@ -202,7 +204,8 @@ final class Importer {
 			$object_type = (string) ( $target['object_type'] ?? '' );
 			$subtype = (string) ( $target['object_subtype'] ?? '' );
 			if ( registered_meta_key_exists( $object_type, $key, $subtype ) ) {
-				throw new \InvalidArgumentException( sprintf( __( 'Registered metadata key “%s” is still owned by the original runtime registrar. Disable that registration before applying the plan.', 'core-blueprint' ), $key ) );
+				/* translators: %s: registered metadata key. */
+			throw new \InvalidArgumentException( sprintf( __( 'Registered metadata key “%s” is still owned by the original runtime registrar. Disable that registration before applying the plan.', 'core-blueprint' ), $key ) );
 			}
 			$compatibility = ValueCompatibility::inspect( $target, (string) ( $target['field_type'] ?? '' ) );
 			if ( empty( $compatibility['compatible'] ) || (int) ( $target['value_count'] ?? -1 ) !== (int) $compatibility['count'] || ! hash_equals( (string) ( $target['value_digest'] ?? '' ), (string) $compatibility['digest'] ) ) {
@@ -261,6 +264,7 @@ final class Importer {
 			if ( null !== Repository::post_type( $subtype ) || isset( $selected_post_types[ $subtype ] ) ) {
 				return;
 			}
+			/* translators: %s: required post type key. */
 			throw new \InvalidArgumentException( sprintf( __( 'Post type “%s” is a required context but is not WordPress-built-in, Content Models-managed or selected for adoption.', 'core-blueprint' ), $subtype ) );
 		}
 		if ( 'term' === $object_type ) {
@@ -271,6 +275,7 @@ final class Importer {
 			if ( null !== Repository::taxonomy( $subtype ) || isset( $selected_taxonomies[ $subtype ] ) ) {
 				return;
 			}
+			/* translators: %s: required taxonomy key. */
 			throw new \InvalidArgumentException( sprintf( __( 'Taxonomy “%s” is a required context but is not WordPress-built-in, Content Models-managed or selected for adoption.', 'core-blueprint' ), $subtype ) );
 		}
 	}
