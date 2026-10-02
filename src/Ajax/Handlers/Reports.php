@@ -123,7 +123,7 @@ final class Reports {
 			);
 		}
 
-		$nonce = isset( $_GET['_cb_dl_nonce'] ) ? (string) wp_unslash( $_GET['_cb_dl_nonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$nonce = isset( $_GET['_cb_dl_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_cb_dl_nonce'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'cb_core_download_report_' . $report_id ) ) {
 			wp_die(
 				esc_html__( 'Download link expired or invalid.', 'core-blueprint' ),
