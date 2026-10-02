@@ -99,7 +99,7 @@ final class ReplaceService {
 			}
 
 			$target_dir = dirname( $target_file );
-			if ( ! is_dir( $target_dir ) || ! is_writable( $target_dir ) ) {
+			if ( ! is_dir( $target_dir ) || ! wp_is_writable( $target_dir ) ) {
 				throw new ReplaceException( 'target_not_writable', __( 'The attachment directory is not writable.', 'core-blueprint' ) );
 			}
 
@@ -107,7 +107,7 @@ final class ReplaceService {
 			$old_metadata = is_array( $old_state['metadata'] ?? null ) ? $old_state['metadata'] : [];
 			$old_files    = $this->managed_files( $current_file, $old_metadata );
 
-			$stage_file = $this->stage_upload( $validated['tmp_name'], $target_file, $current_file );
+			$stage_file = $this->stage_upload( $validated, $target_file, $current_file );
 			$backup_dir = $this->create_backup_dir();
 			$backups    = $this->backup_files( $old_files, $backup_dir );
 
@@ -376,18 +376,96 @@ final class ReplaceService {
 		// requests to lock different inodes under the same pathname.
 	}
 
-	private function stage_upload( string $uploaded_tmp, string $target_file, string $current_file ): string {
-		$directory = dirname( $target_file );
-		$stage     = tempnam( $directory, '.cb-media-replace-' );
-		if ( false === $stage ) {
-			throw new ReplaceException( 'stage_create_failed', __( 'Could not create a staging file for the replacement.', 'core-blueprint' ) );
+	/** @param array{name:string,tmp_name:string,mime:string,size:int} $validated */
+	private function stage_upload( array $validated, string $target_file, string $current_file ): string {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+
+		$directory     = wp_normalize_path( dirname( $target_file ) );
+		$uploaded_tmp  = (string) $validated['tmp_name'];
+		$expected_mime = strtolower( (string) $validated['mime'] );
+		$expected_size = (int) $validated['size'];
+		$expected_hash = hash_file( 'sha256', $uploaded_tmp );
+		if ( ! is_string( $expected_hash ) || '' === $expected_hash || $expected_size <= 0 ) {
+			throw new ReplaceException( 'stage_verify_failed', __( 'The validated replacement upload could not be fingerprinted safely.', 'core-blueprint' ) );
 		}
 
-		// move_uploaded_file() verifies that the source came through PHP's upload
-		// mechanism and safely overwrites the unique tempnam placeholder.
-		if ( ! move_uploaded_file( $uploaded_tmp, $stage ) ) {
-			@unlink( $stage );
-			throw new ReplaceException( 'stage_move_failed', __( 'Could not move the uploaded file into the attachment directory.', 'core-blueprint' ) );
+		$uploads  = wp_get_upload_dir();
+		$base_dir = isset( $uploads['basedir'] ) ? untrailingslashit( wp_normalize_path( (string) $uploads['basedir'] ) ) : '';
+		$base_url = isset( $uploads['baseurl'] ) ? untrailingslashit( (string) $uploads['baseurl'] ) : '';
+		if ( '' === $base_dir || '' === $base_url || ( $directory !== $base_dir && ! str_starts_with( $directory, trailingslashit( $base_dir ) ) ) ) {
+			throw new ReplaceException( 'stage_directory_invalid', __( 'WordPress could not resolve the replacement staging directory safely.', 'core-blueprint' ) );
+		}
+
+		$subdir = $directory === $base_dir ? '' : substr( $directory, strlen( $base_dir ) );
+		$ext    = strtolower( (string) pathinfo( (string) $validated['name'], PATHINFO_EXTENSION ) );
+		do {
+			$stage_basename = '.cb-media-replace-' . wp_generate_uuid4() . ( '' !== $ext ? '.' . $ext : '' );
+			$stage          = wp_normalize_path( trailingslashit( $directory ) . $stage_basename );
+		} while ( file_exists( $stage ) );
+
+		$upload_dir_filter = static function ( array $upload_dir ) use ( $directory, $base_url, $subdir ): array {
+			$upload_dir['path']   = $directory;
+			$upload_dir['url']    = $base_url . $subdir;
+			$upload_dir['subdir'] = $subdir;
+			return $upload_dir;
+		};
+		$unique_filename_callback = static function ( string $dir, string $name, string $extension ) use ( $stage_basename ): string {
+			unset( $dir, $name, $extension );
+			return $stage_basename;
+		};
+
+		$file = [
+			'name'     => (string) $validated['name'],
+			'type'     => (string) $validated['mime'],
+			'tmp_name' => $uploaded_tmp,
+			'error'    => UPLOAD_ERR_OK,
+			'size'     => $expected_size,
+		];
+
+		add_filter( 'upload_dir', $upload_dir_filter, PHP_INT_MAX );
+		try {
+			$handled = wp_handle_upload(
+				$file,
+				[
+					'test_form'                => false,
+					'test_size'                => true,
+					'test_type'                => true,
+					'mimes'                    => get_allowed_mime_types(),
+					'unique_filename_callback' => $unique_filename_callback,
+				]
+			);
+		} finally {
+			remove_filter( 'upload_dir', $upload_dir_filter, PHP_INT_MAX );
+		}
+
+		$reported_file = is_array( $handled ) && isset( $handled['file'] ) && is_string( $handled['file'] )
+			? wp_normalize_path( $handled['file'] )
+			: '';
+		if (
+			! is_array( $handled )
+			|| ! empty( $handled['error'] )
+			|| $reported_file !== $stage
+			|| ! is_file( $stage )
+		) {
+			if ( is_file( $stage ) ) {
+				wp_delete_file( $stage );
+			}
+			throw new ReplaceException( 'stage_move_failed', __( 'WordPress could not move the uploaded file into the attachment directory safely.', 'core-blueprint' ) );
+		}
+
+		$staged_size = filesize( $stage );
+		$staged_hash = hash_file( 'sha256', $stage );
+		$checked     = wp_check_filetype_and_ext( $stage, (string) $validated['name'], get_allowed_mime_types() );
+		$staged_mime = isset( $checked['type'] ) && is_string( $checked['type'] ) ? strtolower( $checked['type'] ) : '';
+		if (
+			false === $staged_size
+			|| (int) $staged_size !== $expected_size
+			|| ! is_string( $staged_hash )
+			|| ! hash_equals( $expected_hash, $staged_hash )
+			|| $staged_mime !== $expected_mime
+		) {
+			wp_delete_file( $stage );
+			throw new ReplaceException( 'stage_verify_failed', __( 'The staged replacement file did not match the validated upload.', 'core-blueprint' ) );
 		}
 
 		$mode_source = is_file( $target_file ) ? $target_file : $current_file;
@@ -396,12 +474,7 @@ final class ReplaceService {
 			@chmod( $stage, $mode & 0777 );
 		}
 
-		if ( ! is_file( $stage ) || filesize( $stage ) <= 0 ) {
-			@unlink( $stage );
-			throw new ReplaceException( 'stage_verify_failed', __( 'The staged replacement file could not be verified.', 'core-blueprint' ) );
-		}
-
-		return wp_normalize_path( $stage );
+		return $stage;
 	}
 
 	private function create_backup_dir(): string {
