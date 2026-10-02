@@ -331,7 +331,7 @@ final class ArchiveService {
 
 	private function delete_if_exists( string $path ): void {
 		if ( '' !== $path && is_file( $path ) ) {
-			@unlink( $path );
+			wp_delete_file( $path );
 		}
 	}
 }
