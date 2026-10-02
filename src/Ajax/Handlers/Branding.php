@@ -126,7 +126,7 @@ final class Branding {
 			wp_send_json_error( [ 'message' => $error->getMessage() ], 400 );
 		} catch ( \Throwable $error ) {
 			wp_send_json_error( [
-				'message' => __( 'An error occurred.' ),
+				'message' => __( 'An error occurred.', 'core-blueprint' ),
 			], 500 );
 		}
 
@@ -161,7 +161,7 @@ final class Branding {
 
 		$raw = wp_unslash( $_POST['template'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce is verified by each public action before this helper.
 		if ( ! is_string( $raw ) ) {
-			throw new \InvalidArgumentException( __( 'Invalid data.' ) );
+			throw new \InvalidArgumentException( __( 'Invalid data.', 'core-blueprint' ) );
 		}
 
 		return MaintenanceTemplate::from_json( $raw );
