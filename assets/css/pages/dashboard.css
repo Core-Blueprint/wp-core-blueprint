@@ -37,6 +37,21 @@
 	margin: 0 0 var(--cb-space-3);
 }
 
+/* ─── First-run guidance ─────────────────────────────────────────────── */
+
+.cb-core-wrap.cb-core-dashboard .cb-core-tiles--get-started {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.cb-core-wrap.cb-core-dashboard .cb-core-tile--get-started {
+	min-height: 0;
+	padding: var(--cb-space-5);
+}
+
+.cb-core-wrap.cb-core-dashboard .cb-core-tile--get-started .cb-core-tile__meta {
+	max-width: 72ch;
+}
+
 /* ─── About card (full-width footer) ──────────────────────────────────── */
 
 .cb-core-wrap.cb-core-dashboard .cb-core-section--about {
