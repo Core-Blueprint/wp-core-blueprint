@@ -254,25 +254,22 @@ final class HeaderActions {
 			return;
 		}
 
-		$data_attrs = is_array( $action['data_attrs'] ?? null ) ? $action['data_attrs'] : [];
-		$attr_html  = '';
-		$active     = false;
+		$data_attrs      = is_array( $action['data_attrs'] ?? null ) ? $action['data_attrs'] : [];
+		$safe_data_attrs = [];
+		$active          = false;
 		foreach ( $data_attrs as $key => $value ) {
-			$attr_html .= sprintf(
-				' data-%s="%s"',
-				esc_attr( (string) $key ),
-				esc_attr( (string) $value )
-			);
-			// Generic state-reflection: any data-attr ending in "-state"
-			// with value "on"/"active"/"true" lights the button up.
 			$key_str = (string) $key;
+			if ( ! preg_match( '/^[A-Za-z0-9][A-Za-z0-9_-]*$/', $key_str ) ) {
+				continue;
+			}
+
+			$safe_data_attrs[ $key_str ] = (string) $value;
 			if ( str_ends_with( $key_str, '-state' ) && in_array( (string) $value, [ 'on', 'active', 'true' ], true ) ) {
 				$active = true;
 			}
 		}
 
 		$class = 'cb-hud__header-action';
-		// Add an id-derived modifier class for targeted styling.
 		$class .= ' cb-hud__header-action--' . sanitize_html_class( $id );
 		if ( $active ) {
 			$class .= ' is-active';
@@ -280,23 +277,58 @@ final class HeaderActions {
 
 		if ( '' !== $url ) {
 			printf(
-				'<a class="%1$s" href="%2$s" aria-label="%3$s" title="%3$s"%4$s>%5$s</a>',
+				'<a class="%1$s" href="%2$s" aria-label="%3$s" title="%3$s"',
 				esc_attr( $class ),
 				esc_url( $url ),
-				esc_attr( $label ),
-				$attr_html, // already escaped per-attr above
-				$icon_svg   // SVG output: trusted source, defaults() owns it
+				esc_attr( $label )
 			);
+			foreach ( $safe_data_attrs as $key => $value ) {
+				printf( ' data-%1$s="%2$s"', esc_attr( $key ), esc_attr( $value ) );
+			}
+			echo '>';
+			echo wp_kses( $icon_svg, self::allowed_icon_svg() );
+			echo '</a>';
 			return;
 		}
 
 		printf(
-			'<button type="button" class="%1$s" aria-label="%2$s" title="%2$s"%3$s>%4$s</button>',
+			'<button type="button" class="%1$s" aria-label="%2$s" title="%2$s"',
 			esc_attr( $class ),
-			esc_attr( $label ),
-			$attr_html,
-			$icon_svg
+			esc_attr( $label )
 		);
+		foreach ( $safe_data_attrs as $key => $value ) {
+			printf( ' data-%1$s="%2$s"', esc_attr( $key ), esc_attr( $value ) );
+		}
+		echo '>';
+		echo wp_kses( $icon_svg, self::allowed_icon_svg() );
+		echo '</button>';
+	}
+
+	/** Bounded markup contract for HUD action icons. */
+	private static function allowed_icon_svg(): array {
+		return [
+			'svg'      => [
+				'xmlns'           => true,
+				'viewbox'         => true,
+				'width'           => true,
+				'height'          => true,
+				'fill'            => true,
+				'stroke'          => true,
+				'stroke-width'    => true,
+				'stroke-linecap'  => true,
+				'stroke-linejoin' => true,
+				'aria-hidden'     => true,
+				'focusable'       => true,
+				'class'           => true,
+			],
+			'path'     => [ 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'opacity' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ],
+			'circle'   => [ 'cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'opacity' => true ],
+			'rect'     => [ 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'opacity' => true ],
+			'line'     => [ 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'stroke' => true, 'stroke-width' => true ],
+			'polyline' => [ 'points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true ],
+			'polygon'  => [ 'points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true ],
+			'g'        => [ 'fill' => true, 'stroke' => true, 'opacity' => true ],
+		];
 	}
 
 	/**
