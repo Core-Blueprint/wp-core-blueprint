@@ -126,16 +126,16 @@ trait ScannerSettingsView {
 		switch ( $mode ) {
 			case 'auto':
 				$status_label = '' !== $detected
-					? esc_html__( 'Auto', 'core-blueprint' )
-					: esc_html__( 'Auto (not yet detected)', 'core-blueprint' );
+					? __( 'Auto', 'core-blueprint' )
+					: __( 'Auto (not yet detected)', 'core-blueprint' );
 				break;
 			case 'override':
 				$status_label = '' !== $override
-					? esc_html__( 'Manual override', 'core-blueprint' )
-					: esc_html__( 'Manual override (not set)', 'core-blueprint' );
+					? __( 'Manual override', 'core-blueprint' )
+					: __( 'Manual override (not set)', 'core-blueprint' );
 				break;
 			default:
-				$status_label = esc_html__( 'Not detected yet - runs automatically on first checksum mismatch', 'core-blueprint' );
+				$status_label = __( 'Not detected yet - runs automatically on first checksum mismatch', 'core-blueprint' );
 		}
 
 		?>
@@ -165,7 +165,7 @@ trait ScannerSettingsView {
 				</dd>
 
 				<dt><?php echo esc_html__( 'Detection status', 'core-blueprint' ); ?></dt>
-				<dd><?php echo $status_label; // already escaped above ?></dd>
+				<dd><?php echo esc_html( $status_label ); ?></dd>
 
 				<?php if ( '' !== $last ) : ?>
 				<dt><?php echo esc_html__( 'Last detection', 'core-blueprint' ); ?></dt>
