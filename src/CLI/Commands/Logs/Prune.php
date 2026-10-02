@@ -23,6 +23,7 @@ final class Prune implements CommandInterface {
 			$lines[] = sprintf( '%s: %d', $name, $deleted );
 		}
 		return Result::success(
+			/* translators: %d: number of pruned audit entries. */
 			sprintf( _n( 'Pruned %d audit entry.', 'Pruned %d audit entries.', $result['total'], 'core-blueprint' ), $result['total'] ),
 			$lines,
 			$result
