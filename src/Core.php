@@ -74,9 +74,6 @@ final class Core {
 		// its request-scoped Failsafe authority before 2FA makes a decision.
 		\CB\Core\Security\TwoFactor\Bootstrap::boot();
 
-		// WP 6.7+ requires translations to load on `init` or later.
-		add_action( 'init', [ $this, 'load_textdomain' ], 0 );
-
 		// Request-hot option policy, then DB/settings migrations.
 		add_action( 'plugins_loaded', [ OptionPolicy::class, 'maybe_sync' ], 3 );
 		add_action( 'plugins_loaded', [ DB::class,               'maybe_upgrade' ], 5 );
@@ -317,16 +314,6 @@ final class Core {
 		}
 
 		return add_query_arg( 'cbv', (string) $modified, $src );
-	}
-
-	// ─── i18n ─────────────────────────────────────────────────────────────────
-
-	public function load_textdomain(): void {
-		load_plugin_textdomain(
-			'core-blueprint',
-			false,
-			dirname( plugin_basename( CB_CORE_FILE ) ) . '/languages'
-		);
 	}
 
 	// ─── Activation / Deactivation ────────────────────────────────────────────
