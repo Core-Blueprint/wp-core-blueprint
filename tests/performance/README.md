@@ -4,6 +4,8 @@ This harness extends the F2 observation baseline with opt-in query tracing for t
 
 It measures fourteen isolated profile requests in one temporary WordPress installation, plus isolated setup/state-transition requests that are not included as profile records.
 
+Before those controls are recorded, the harness performs one unrecorded anonymous frontend request and one unrecorded generic admin request. This settles WordPress's own first-request scheduling/update-transient work so steady-state control measurements are compared with steady-state Base measurements. These warm-up requests are not profile records and do not change the separate Base `admin_first_request` observation.
+
 **Before Base activation (WordPress-only controls):**
 
 - anonymous frontend;
