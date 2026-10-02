@@ -358,6 +358,7 @@ final class Actions {
 			$conflicts = Repository::field_group_conflicts( $definition, '' !== $original ? $original : null );
 			if ( ! empty( $conflicts ) ) {
 				throw new \InvalidArgumentException( sprintf(
+					/* translators: %s: comma-separated list of conflicting field locations. */
 					__( 'These locations would create duplicate field keys: %s.', 'core-blueprint' ),
 					implode( ', ', $conflicts )
 				) );
@@ -673,7 +674,8 @@ final class Actions {
 				$title = get_the_title( $post );
 				$items[] = [
 					'id'    => $post->ID,
-					'label' => '' !== trim( (string) $title ) ? (string) $title : sprintf( __( '(no title) #%d', 'core-blueprint' ), $post->ID ),
+					/* translators: %d: WordPress object ID. */
+				'label' => '' !== trim( (string) $title ) ? (string) $title : sprintf( __( '(no title) #%d', 'core-blueprint' ), $post->ID ),
 					'meta'  => sprintf( '%s · #%d', $post_type ? (string) $post_type->labels->singular_name : $post->post_type, $post->ID ),
 				];
 			}
