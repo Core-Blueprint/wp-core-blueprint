@@ -118,11 +118,9 @@ HOOK_RENAMES = {
     'cb_core_alert_recipient': 'core_blueprint_alert_recipient',
     'cb_core_audit_log_written': 'core_blueprint_audit_log_written',
     'cb_core_capability_catalog': 'core_blueprint_capability_catalog',
-    'cb_core_content_models_register': 'core_blueprint_content_models_register',
     'cb_core_csp_report_only': 'core_blueprint_csp_report_only',
     'cb_core_export_extensions': 'core_blueprint_export_extensions',
     'cb_core_export_mime_types': 'core_blueprint_export_mime_types',
-    'cb_core_header_test_sslverify': 'core_blueprint_header_test_sslverify',
     'cb_core_hud_default_brand': 'core_blueprint_hud_default_brand',
     'cb_core_hud_default_ghost': 'core_blueprint_hud_default_ghost',
     'cb_core_hud_enabled': 'core_blueprint_hud_enabled',
@@ -143,7 +141,6 @@ HOOK_RENAMES = {
     'cb_core_reports_tabs': 'core_blueprint_reports_tabs',
     'cb_core_role_delete_reasons': 'core_blueprint_role_delete_reasons',
     'cb_core_snippets_safe_mode': 'core_blueprint_snippets_safe_mode',
-    'cb_core_two_factor_authenticated': 'core_blueprint_two_factor_authenticated',
     'cb_admin_theme_apply': 'core_blueprint_admin_theme_apply',
     'cb_admin_theme_enqueue': 'core_blueprint_admin_theme_enqueue',
     'cb_admin_themes': 'core_blueprint_admin_themes',
@@ -158,6 +155,8 @@ HOOK_RENAMES = {
     'cb_hud_header_actions': 'core_blueprint_hud_header_actions',
     'cb_hud_register_items': 'core_blueprint_hud_register_items',
     'cb_hud_register_sections': 'core_blueprint_hud_register_sections',
+    'cb_core_hsts_max_age': 'core_blueprint_hsts_max_age',
+    'cb_core_logs_register_tabs': 'core_blueprint_logs_register_tabs',
 }
 
 IDENTIFIER_RENAMES = {
