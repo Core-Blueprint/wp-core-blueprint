@@ -11,6 +11,23 @@ declare(strict_types=1);
  */
 final class CB_Base_Public_Contract_Prefix_Contract_Test extends WP_UnitTestCase {
 
+	public function test_bootstrap_public_identifiers_use_canonical_prefix(): void {
+		$content = file_get_contents( CB_CORE_FILE );
+		self::assertIsString( $content );
+
+		foreach ( [
+			'cb_core_get_requirement_errors',
+			'$cb_core_loaded_file',
+			'$cb_core_errors',
+		] as $legacy ) {
+			self::assertStringNotContainsString(
+				$legacy,
+				$content,
+				'Legacy public bootstrap identifier returned: ' . $legacy
+			);
+		}
+	}
+
 	public function test_runtime_hook_contracts_do_not_use_legacy_cb_prefixes(): void {
 		$roots = [
 			CB_CORE_DIR . 'core-blueprint.php',
