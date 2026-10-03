@@ -142,7 +142,9 @@ function source_keys( string $root, string $domain, array $functions ): array {
 }
 
 function export_catalog( array $catalog ): string {
-	return "<?php\ndeclare(strict_types=1);\n\nreturn " . var_export( $catalog, true ) . ";\n";
+	$export = var_export( $catalog, true );
+	$export = preg_replace( '/[ \\t]+$/m', '', $export ) ?? $export;
+	return "<?php\ndeclare(strict_types=1);\n\nreturn " . $export . ";\n";
 }
 
 $source = source_keys( $root, $domain, $functions );
@@ -167,11 +169,15 @@ foreach ( $iterator as $file ) {
 	}
 	$before = $catalog['messages'];
 	$after = array_intersect_key( $before, $source );
-	if ( $before === $after ) {
+	$catalog['messages'] = $after;
+
+	$canonical = export_catalog( $catalog );
+	$current   = (string) file_get_contents( $path );
+	if ( $current === $canonical ) {
 		continue;
 	}
-	$catalog['messages'] = $after;
-	file_put_contents( $path, export_catalog( $catalog ) );
+
+	file_put_contents( $path, $canonical );
 	$files_changed++;
 	$messages_removed += count( $before ) - count( $after );
 }
