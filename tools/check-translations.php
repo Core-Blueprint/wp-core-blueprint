@@ -204,8 +204,13 @@ foreach ( $files as $file ) {
     }
 }
 
-if ( 4037 !== count( $source ) ) {
-    fail_translation_check( 'Expected 4037 canonical source keys, found ' . count( $source ) . '.' );
+$count_file = $root . '/tools/canonical-i18n-count.txt';
+if ( ! is_file( $count_file ) ) {
+    fail_translation_check( 'Missing canonical i18n count file.' );
+}
+$expected_source_count = (int) trim( (string) file_get_contents( $count_file ) );
+if ( $expected_source_count < 1 || $expected_source_count !== count( $source ) ) {
+    fail_translation_check( 'Expected ' . $expected_source_count . ' canonical source keys, found ' . count( $source ) . '.' );
 }
 
 if ( in_array( '--export-source', $argv ?? [], true ) ) {
