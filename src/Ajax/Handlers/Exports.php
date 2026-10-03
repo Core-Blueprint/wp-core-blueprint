@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Three endpoints: audit log, system log, maintenance report. Each reads
  * a `format` query param (default 'csv') and dispatches to LogExporter.
  * Adding a new format (e.g. 'pdf' via a CB Report plugin) requires no
- * changes here - the dispatcher fires `do_action( 'cb_core_export_{format}' )`
+ * changes here - the dispatcher fires `do_action( 'core_blueprint_export_{format}' )`
  * for any format CB Base doesn't handle natively.
  *
  * Endpoints kept separate per log type because their filter-arg shapes
@@ -59,7 +59,9 @@ final class Exports {
 				'period'   => $period,
 			] );
 			LogExporter::dispatch( $format, $handle, AuditLog::rows_iterator( $args ), AuditLog::columns(), $meta );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://output export delivery requires a native response stream handle.
 			fclose( $handle );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 		}
 
 		AuditLog::log( 'audit.exported', 'notice', [ 'format' => $format ] );
@@ -90,7 +92,9 @@ final class Exports {
 				'period'   => $period,
 			] );
 			LogExporter::dispatch( $format, $handle, AuditLog::rows_iterator( $args ), AuditLog::columns(), $meta );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://output export delivery requires a native response stream handle.
 			fclose( $handle );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 		}
 
 		AuditLog::log( 'system_log.exported', 'notice', [ 'format' => $format ] );
@@ -126,7 +130,9 @@ final class Exports {
 				'period'   => $period,
 			] );
 			LogExporter::dispatch( $format, $handle, MaintenanceReport::rows_iterator( $args ), MaintenanceReport::columns(), $meta );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://output export delivery requires a native response stream handle.
 			fclose( $handle );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 		}
 
 		AuditLog::log( 'maintenance_report.exported', 'notice', [ 'format' => $format ] );

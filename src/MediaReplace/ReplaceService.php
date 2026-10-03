@@ -194,11 +194,13 @@ final class ReplaceService {
 					throw $rollback_error;
 				}
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException(
 				'unexpected_error',
 				__( 'The media replacement failed and the original attachment was restored.', 'core-blueprint' ),
 				$e
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		} finally {
 			if ( '' !== $stage_file && is_file( $stage_file ) ) {
 				wp_delete_file( $stage_file );
@@ -222,26 +224,36 @@ final class ReplaceService {
 	private function validate_upload( array $upload, \WP_Post $attachment, string $current_file ): array {
 		$error = isset( $upload['error'] ) ? (int) $upload['error'] : UPLOAD_ERR_NO_FILE;
 		if ( UPLOAD_ERR_OK !== $error ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'upload_failed', $this->upload_error_message( $error ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$tmp_name = isset( $upload['tmp_name'] ) ? (string) $upload['tmp_name'] : '';
 		$name     = isset( $upload['name'] ) ? sanitize_file_name( (string) $upload['name'] ) : '';
 
 		if ( '' === $tmp_name || '' === $name || ! is_uploaded_file( $tmp_name ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'invalid_upload', __( 'WordPress could not verify the uploaded replacement file.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( ! is_file( $tmp_name ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'empty_upload', __( 'The uploaded replacement file is empty.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$actual_size = filesize( $tmp_name );
 		if ( false === $actual_size || $actual_size <= 0 ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'empty_upload', __( 'The uploaded replacement file is empty.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$size = (int) $actual_size;
 		if ( $size > wp_max_upload_size() ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'upload_too_large', __( 'The uploaded replacement exceeds the site upload limit.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$allowed = get_allowed_mime_types();
@@ -250,7 +262,9 @@ final class ReplaceService {
 		$ext     = isset( $checked['ext'] ) && is_string( $checked['ext'] ) ? $checked['ext'] : '';
 
 		if ( '' === $mime || '' === $ext ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'file_type_not_allowed', __( 'WordPress rejected the replacement file type.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$current_mime = (string) $attachment->post_mime_type;
@@ -260,19 +274,23 @@ final class ReplaceService {
 		}
 
 		if ( '' === $current_mime || strtolower( $current_mime ) !== strtolower( $mime ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException(
 				'mime_mismatch',
 				__( 'For now, the replacement must use the same file type as the existing media item.', 'core-blueprint' )
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( 'image/svg+xml' === strtolower( $mime ) ) {
 			$sanitized = SvgSanitizer::sanitize_file( $tmp_name );
 			if ( is_wp_error( $sanitized ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new ReplaceException(
 					'svg_sanitize_failed',
 					__( 'The SVG replacement could not be sanitized safely.', 'core-blueprint' )
 				);
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 
 			// The sanitizer rewrites the upload in place. Re-run WordPress' type
@@ -282,15 +300,19 @@ final class ReplaceService {
 			$mime    = isset( $checked['type'] ) && is_string( $checked['type'] ) ? $checked['type'] : '';
 			$ext     = isset( $checked['ext'] ) && is_string( $checked['ext'] ) ? $checked['ext'] : '';
 			if ( 'image/svg+xml' !== strtolower( $mime ) || 'svg' !== strtolower( $ext ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new ReplaceException(
 					'svg_type_changed',
 					__( 'The sanitized SVG replacement no longer matches the expected file type.', 'core-blueprint' )
 				);
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 
 			$sanitized_size = filesize( $tmp_name );
 			if ( false === $sanitized_size || $sanitized_size <= 0 ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new ReplaceException( 'svg_sanitize_failed', __( 'The SVG replacement could not be sanitized safely.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$size = (int) $sanitized_size;
 		}
@@ -307,7 +329,9 @@ final class ReplaceService {
 		$uploads = wp_get_upload_dir();
 		$base    = isset( $uploads['basedir'] ) ? (string) $uploads['basedir'] : '';
 		if ( '' === $base ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'uploads_unavailable', __( 'WordPress could not resolve the uploads directory.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$base_real = realpath( $base );
@@ -323,14 +347,18 @@ final class ReplaceService {
 		}
 
 		if ( false === $base_real || false === $path_real ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'uploads_unavailable', __( 'WordPress could not resolve the local media path safely.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$base_check  = untrailingslashit( wp_normalize_path( $base_real ) );
 		$path_check  = wp_normalize_path( $path_real );
 		$base_prefix = trailingslashit( $base_check );
 		if ( $path_check !== $base_check && ! str_starts_with( $path_check, $base_prefix ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'outside_uploads', __( 'Core Blueprint only replaces files stored in the local WordPress uploads directory.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -348,18 +376,30 @@ final class ReplaceService {
 		$lock_file = '' !== $base ? wp_normalize_path( trailingslashit( $base ) . '.core-blueprint-media-replace.lock' ) : '';
 
 		if ( '' === $lock_file ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'lock_create_failed', __( 'Core Blueprint could not resolve the media replacement lock path.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 		$handle = @fopen( $lock_file, 'c' );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 		if ( false === $handle ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'lock_create_failed', __( 'Core Blueprint could not create the media replacement lock.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 		@chmod( $lock_file, 0600 );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 
 		if ( ! @flock( $handle, LOCK_EX | LOCK_NB ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 			@fclose( $handle );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'replacement_in_progress', __( 'Another media replacement is already in progress. Try again after that operation finishes.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		return $handle;
@@ -369,7 +409,9 @@ final class ReplaceService {
 	private function release_lock( $handle ): void {
 		if ( is_resource( $handle ) ) {
 			@flock( $handle, LOCK_UN );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 			@fclose( $handle );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 		}
 
 		// Keep the zero-byte lock file. Removing it after unlock can allow two
@@ -386,14 +428,18 @@ final class ReplaceService {
 		$expected_size = (int) $validated['size'];
 		$expected_hash = hash_file( 'sha256', $uploaded_tmp );
 		if ( ! is_string( $expected_hash ) || '' === $expected_hash || $expected_size <= 0 ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'stage_verify_failed', __( 'The validated replacement upload could not be fingerprinted safely.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$uploads  = wp_get_upload_dir();
 		$base_dir = isset( $uploads['basedir'] ) ? untrailingslashit( wp_normalize_path( (string) $uploads['basedir'] ) ) : '';
 		$base_url = isset( $uploads['baseurl'] ) ? untrailingslashit( (string) $uploads['baseurl'] ) : '';
 		if ( '' === $base_dir || '' === $base_url || ( $directory !== $base_dir && ! str_starts_with( $directory, trailingslashit( $base_dir ) ) ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'stage_directory_invalid', __( 'WordPress could not resolve the replacement staging directory safely.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$subdir = $directory === $base_dir ? '' : substr( $directory, strlen( $base_dir ) );
@@ -464,7 +510,9 @@ final class ReplaceService {
 			if ( is_file( $stage ) ) {
 				wp_delete_file( $stage );
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'stage_move_failed', __( 'WordPress could not move the uploaded file into the attachment directory safely.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$staged_size = filesize( $stage );
@@ -479,13 +527,17 @@ final class ReplaceService {
 			|| $staged_mime !== $expected_mime
 		) {
 			wp_delete_file( $stage );
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'stage_verify_failed', __( 'The staged replacement file did not match the validated upload.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$mode_source = is_file( $target_file ) ? $target_file : $current_file;
 		$mode        = @fileperms( $mode_source );
 		if ( false !== $mode ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 			@chmod( $stage, $mode & 0777 );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 		}
 
 		return $stage;
@@ -495,12 +547,16 @@ final class ReplaceService {
 		$base = trailingslashit( get_temp_dir() );
 		$dir  = $base . 'cb-media-replace-' . wp_generate_uuid4();
 		if ( ! wp_mkdir_p( $dir ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'backup_dir_failed', __( 'Could not create a temporary backup directory.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		// Backups can contain private media. Keep them owner-only regardless of
 		// a permissive server umask.
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 		@chmod( $dir, 0700 );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 		return wp_normalize_path( $dir );
 	}
 
@@ -518,14 +574,20 @@ final class ReplaceService {
 			}
 			$backup = trailingslashit( $backup_dir ) . sprintf( '%03d-%s', ++$index, wp_basename( $file ) );
 			if ( ! @copy( $file, $backup ) || ! $this->files_match( $file, $backup ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new ReplaceException( 'backup_failed', __( 'The original media files could not be backed up safely.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 			@chmod( $backup, 0600 );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			$manifest[ $file ] = wp_normalize_path( $backup );
 		}
 
 		if ( ! isset( $manifest[ $files[0] ?? '' ] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'backup_source_missing', __( 'The original attachment could not be backed up.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		return $manifest;
@@ -535,18 +597,26 @@ final class ReplaceService {
 		// A future rename strategy must resolve a free target. Never overwrite an
 		// unrelated sibling merely because the uploaded filename collides.
 		if ( $target_file !== $current_file && file_exists( $target_file ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'target_exists', __( 'The replacement target filename is already in use.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		// POSIX rename replaces the current destination atomically. Filesystems
 		// that refuse replacement get an unlink+rename fallback only for the
 		// preserve-filename case, and only after verified backups exist.
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 		if ( @rename( $stage_file, $target_file ) ) {
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 			return;
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 		if ( $target_file !== $current_file || ! @unlink( $target_file ) || ! @rename( $stage_file, $target_file ) ) {
+		// phpcs:enable WordPress.WP.AlternativeFunctions
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'swap_failed', __( 'Could not swap the replacement file into place.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -607,7 +677,9 @@ final class ReplaceService {
 		$metadata = is_array( $metadata ) ? $metadata : [];
 		if ( $is_image ) {
 			if ( empty( $metadata['width'] ) || empty( $metadata['height'] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new ReplaceException( 'metadata_failed', __( 'WordPress could not regenerate image metadata for the replacement.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 
 			$expected_relative = wp_normalize_path( _wp_relative_upload_path( $target_file ) );
@@ -615,10 +687,12 @@ final class ReplaceService {
 				? wp_normalize_path( $metadata['file'] )
 				: '';
 			if ( $expected_relative !== $metadata_file ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new ReplaceException(
 					'filename_invariant_failed',
 					__( 'WordPress image processing tried to change the attachment filename, so the replacement was rolled back.', 'core-blueprint' )
 				);
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 
@@ -638,12 +712,16 @@ final class ReplaceService {
 
 		$editor = wp_get_image_editor( $target_file );
 		if ( is_wp_error( $editor ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'orientation_editor_failed', __( 'WordPress could not open the replacement image for orientation correction.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$rotated = $editor->maybe_exif_rotate();
 		if ( is_wp_error( $rotated ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'orientation_failed', __( 'WordPress could not correct the replacement image orientation safely.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( true !== $rotated ) {
 			// Respect sites that intentionally disable WordPress EXIF rotation.
@@ -677,28 +755,42 @@ final class ReplaceService {
 
 		if ( is_wp_error( $saved ) || empty( $saved['path'] ) || ! is_string( $saved['path'] ) ) {
 			wp_delete_file( $temp_file );
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'orientation_save_failed', __( 'WordPress could not save the corrected replacement image safely.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$saved_file = wp_normalize_path( $saved['path'] );
 		if ( ! is_file( $saved_file ) || filesize( $saved_file ) <= 0 ) {
 			wp_delete_file( $saved_file );
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'orientation_verify_failed', __( 'The corrected replacement image could not be verified.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 		if ( ! @rename( $saved_file, $target_file ) ) {
+		// phpcs:enable WordPress.WP.AlternativeFunctions
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 			if ( ! @unlink( $target_file ) || ! @rename( $saved_file, $target_file ) ) {
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 				wp_delete_file( $saved_file );
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new ReplaceException( 'orientation_swap_failed', __( 'The corrected replacement image could not be committed safely.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 		if ( false !== $target_mode ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 			@chmod( $target_file, $target_mode & 0777 );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 		}
 
 		$checked = wp_check_filetype_and_ext( $target_file, wp_basename( $target_file ), get_allowed_mime_types() );
 		if ( empty( $checked['type'] ) || 'image/jpeg' !== strtolower( (string) $checked['type'] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException( 'orientation_mime_changed', __( 'Image processing changed the replacement file type, so the replacement was rolled back.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -854,10 +946,12 @@ final class ReplaceService {
 		}
 
 		if ( ! $rollback_ok ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ReplaceException(
 				'rollback_failed',
 				__( 'Media replacement failed and Core Blueprint could not fully restore the original files and attachment state. A private recovery backup was retained on the server.', 'core-blueprint' )
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -892,7 +986,9 @@ final class ReplaceService {
 				wp_delete_file( $path );
 			}
 		}
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: media replacement requires verified backups, locks, atomic swaps, rollback, and mode preservation.
 		@rmdir( $directory );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 	}
 
 	private function upload_error_message( int $error ): string {

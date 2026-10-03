@@ -90,20 +90,26 @@ final class Engine {
 			return $records;
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 		$stream = fopen( 'php://temp', 'w+b' );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 		if ( false === $stream ) {
 			return new WP_Error( 'cb_core_data_exchange_csv_failed', 'Could not open the Data Exchange CSV transport.' );
 		}
 
 		$headers = [ 'cb_row_type', 'cb_format', 'cb_format_version', 'cb_extension_id', 'cb_entity', 'cb_schema_version', ...$columns ];
 		if ( false === fputcsv( $stream, $headers, ',', '"', '' ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_exchange_csv_failed', 'Could not encode the Data Exchange CSV header.' );
 		}
 		$metadata = [ 'meta', Foundation::FORMAT_ID, (string) Foundation::FORMAT_VERSION, $extension_id, $entity_id, (string) $schema_version ];
 		$metadata = [ ...$metadata, ...array_fill( 0, count( $columns ), '' ) ];
 		if ( false === fputcsv( $stream, $metadata, ',', '"', '' ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_exchange_csv_failed', 'Could not encode the Data Exchange CSV metadata.' );
 		}
 
@@ -112,16 +118,22 @@ final class Engine {
 				$row = $entity->to_csv_row( $record );
 			} catch ( Throwable $throwable ) {
 				unset( $throwable );
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_exchange_provider_failed', 'Data Exchange provider failed while mapping a CSV record.' );
 			}
 			if ( is_wp_error( $row ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return self::bounded_provider_error( $row );
 			}
 			$normalized = self::normalize_csv_export_row( $row, $columns );
 			if ( is_wp_error( $normalized ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return $normalized;
 			}
 			$values = [ 'data', '', '', '', '', '' ];
@@ -129,14 +141,18 @@ final class Engine {
 				$values[] = self::protect_csv_cell( $normalized[ $column ] );
 			}
 			if ( false === fputcsv( $stream, $values, ',', '"', '' ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_exchange_csv_failed', 'Could not encode a Data Exchange CSV record.' );
 			}
 		}
 
 		rewind( $stream );
 		$output = stream_get_contents( $stream );
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 		fclose( $stream );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 		if ( ! is_string( $output ) ) {
 			return new WP_Error( 'cb_core_data_exchange_csv_failed', 'Could not read the Data Exchange CSV transport.' );
 		}
@@ -534,10 +550,16 @@ final class Engine {
 		if ( is_wp_error( $input ) ) {
 			return $input;
 		}
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 		$stream = fopen( 'php://temp', 'w+b' );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 		if ( false === $stream || false === fwrite( $stream, $input ) ) {
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 			if ( is_resource( $stream ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 			}
 			return new WP_Error( 'cb_core_data_exchange_csv_failed', 'Could not open the Data Exchange CSV transport.' );
 		}
@@ -545,12 +567,16 @@ final class Engine {
 		$header = fgetcsv( $stream, 0, ',', '"', '' );
 		$meta   = fgetcsv( $stream, 0, ',', '"', '' );
 		if ( ! is_array( $header ) || ! is_array( $meta ) || count( $header ) !== count( $meta ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_exchange_invalid_csv', 'Data Exchange CSV header or metadata row is missing.' );
 		}
 		$reserved = [ 'cb_row_type', 'cb_format', 'cb_format_version', 'cb_extension_id', 'cb_entity', 'cb_schema_version' ];
 		if ( count( $header ) < count( $reserved ) || array_slice( $header, 0, count( $reserved ) ) !== $reserved ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_exchange_invalid_csv', 'Data Exchange CSV reserved columns are invalid.' );
 		}
 		if (
@@ -560,7 +586,9 @@ final class Engine {
 			|| ! isset( $meta[3], $meta[4], $meta[5] )
 			|| 1 !== preg_match( '/^[1-9][0-9]*$/D', (string) $meta[5] )
 		) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_exchange_invalid_csv', 'Data Exchange CSV metadata is invalid.' );
 		}
 		$extension_id   = (string) $meta[3];
@@ -568,39 +596,53 @@ final class Engine {
 		$schema_version = (int) $meta[5];
 		foreach ( array_slice( $meta, count( $reserved ) ) as $value ) {
 			if ( '' !== (string) $value ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_exchange_invalid_csv', 'Data Exchange CSV metadata row must not contain entity data.' );
 			}
 		}
 
 		$resolved = self::resolve_entity( $extension_id, $entity_id, Foundation::SUPPORT_IMPORT, Foundation::SUPPORT_CSV, $context, true );
 		if ( is_wp_error( $resolved ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return $resolved;
 		}
 		[ , $entity ] = $resolved;
 		if ( ! $entity instanceof CsvEntityInterface ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_exchange_csv_contract', 'Data Exchange entity declares CSV support without implementing the CSV contract.' );
 		}
 		try {
 			$supported = $entity->supports_schema_version( $schema_version );
 		} catch ( Throwable $throwable ) {
 			unset( $throwable );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_exchange_provider_failed', 'Data Exchange provider failed while checking the source schema version.' );
 		}
 		if ( ! $supported ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_exchange_unsupported_schema', 'Data Exchange source schema version is not supported by this entity.' );
 		}
 		$columns = self::csv_columns( $entity, $schema_version );
 		if ( is_wp_error( $columns ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return $columns;
 		}
 		if ( array_slice( $header, count( $reserved ) ) !== $columns ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_exchange_invalid_csv', 'Data Exchange CSV entity columns do not match the declared schema.' );
 		}
 
@@ -611,17 +653,23 @@ final class Engine {
 				continue;
 			}
 			if ( count( $row ) !== count( $header ) || 'data' !== ( $row[0] ?? null ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_exchange_invalid_csv', 'Data Exchange CSV contains an invalid data row.' );
 			}
 			foreach ( array_slice( $row, 1, count( $reserved ) - 1 ) as $reserved_value ) {
 				if ( '' !== (string) $reserved_value ) {
+					// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 					fclose( $stream );
+					// phpcs:enable WordPress.WP.AlternativeFunctions
 					return new WP_Error( 'cb_core_data_exchange_invalid_csv', 'Data Exchange CSV data rows must not override metadata.' );
 				}
 			}
 			if ( count( $records ) >= Foundation::MAX_RECORDS ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_exchange_too_many_records', 'Data Exchange record count exceeds the transport limit.' );
 			}
 			$mapped = [];
@@ -632,30 +680,42 @@ final class Engine {
 				$record = $entity->from_csv_row( $mapped, $schema_version );
 			} catch ( Throwable $throwable ) {
 				unset( $throwable );
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_exchange_provider_failed', 'Data Exchange provider failed while decoding a CSV record.' );
 			}
 			if ( is_wp_error( $record ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return self::bounded_provider_error( $record );
 			}
 			if ( ! is_array( $record ) || [] === $record || array_is_list( $record ) || ! self::transport_safe( $record ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_exchange_csv_contract', 'Data Exchange CSV provider returned an invalid canonical record.' );
 			}
 			$encoded_record = self::encode_json( $record );
 			if ( is_wp_error( $encoded_record ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return $encoded_record;
 			}
 			$record_bytes += strlen( $encoded_record );
 			if ( $record_bytes > Foundation::MAX_INPUT_BYTES ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_exchange_output_too_large', 'Data Exchange provider output exceeds the transport limit.' );
 			}
 			$records[] = $record;
 		}
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV parsing requires native seekable stream handles.
 		fclose( $stream );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 
 		return [
 			'format'         => Foundation::FORMAT_ID,

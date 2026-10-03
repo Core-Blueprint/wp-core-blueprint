@@ -12,7 +12,9 @@ use RuntimeException;
 
 use function basename;
 use function bin2hex;
+// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: quarantine metadata restoration requires explicit timestamps and permission modes.
 use function chmod;
+// phpcs:enable WordPress.WP.AlternativeFunctions
 use function count;
 use function current_time;
 use function dirname;
@@ -39,7 +41,9 @@ use function str_contains;
 use function strlen;
 use function strtolower;
 use function substr;
+// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: quarantine metadata restoration requires explicit timestamps and permission modes.
 use function touch;
+// phpcs:enable WordPress.WP.AlternativeFunctions
 use function wp_get_upload_dir;
 use function wp_normalize_path;
 
@@ -78,12 +82,16 @@ final class Service {
 	public static function quarantine( string $finding_id, string $scope = 'file' ): array {
 		$finding = self::current_finding( $finding_id );
 		if ( null === $finding || ! self::can_quarantine_finding( $finding ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'This finding is no longer actionable. Run a fresh Core Scanner scan and try again.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$scope = 'directory' === $scope ? 'directory' : 'file';
 		if ( 'directory' === $scope && ! self::directory_action_available( $finding ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'This directory is too broad or is not a safe top-level uploads folder. Quarantine the individual file instead.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$uploads = self::uploads_root();
@@ -92,18 +100,24 @@ final class Service {
 		$file_path = wp_normalize_path( (string) $context['filesystem_path'] );
 		$resolved_file = realpath( $file_path );
 		if ( ! is_string( $resolved_file ) || is_link( $file_path ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The finding path no longer resolves to a normal file. Quarantine was refused.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$resolved_file = wp_normalize_path( $resolved_file );
 		if ( ! PathGuard::is_inside( $resolved_file, $uploads ) || ! is_file( $resolved_file ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The finding path is outside the uploads root or is no longer a file.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$probe = FileHashProbe::probe( $resolved_file, [ 'sha256' ] );
 		$probe_hashes = is_array( $probe['hashes'] ?? null ) ? $probe['hashes'] : [];
 		$actual_hash = strtolower( (string) ( $probe_hashes['sha256'] ?? '' ) );
 		if ( empty( $probe['ok'] ) || '' === $actual_hash || ! hash_equals( $expected_hash, $actual_hash ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The file changed since the scan. Quarantine was refused; run Core Scanner again before taking action.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$source = $resolved_file;
@@ -113,7 +127,9 @@ final class Service {
 			$kind = 'directory';
 		}
 		if ( is_link( $source ) || ! PathGuard::existing_path_is_inside( $source, $uploads ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The quarantine target did not pass canonical uploads containment checks.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$manifest = self::build_manifest( $source, $kind );
@@ -121,7 +137,9 @@ final class Service {
 			$relative_evidence = ltrim( substr( $resolved_file, strlen( $source ) ), '/' );
 			$manifest_hash = strtolower( (string) ( $manifest['files'][ $relative_evidence ]['sha256'] ?? '' ) );
 			if ( '' === $manifest_hash || ! hash_equals( $expected_hash, $manifest_hash ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'The directory evidence no longer matches the scanned finding. Quarantine was refused.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 
@@ -160,7 +178,9 @@ final class Service {
 			} catch ( \Throwable $rollback_error ) {
 				Audit::log( 'integrity_quarantine_rollback_failed', 'critical', [ 'quarantine_id' => $id, 'original_path' => $source, 'error' => $rollback_error->getMessage() ] );
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The quarantine evidence could not be persisted safely. The filesystem action was rolled back where possible.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		Audit::log( 'integrity_quarantine_item_quarantined', 'warning', self::audit_context( $item ) );
@@ -171,7 +191,9 @@ final class Service {
 	public static function restore( string $id ): array {
 		return self::with_item_lock( $id, static function ( array $item, string $canonical_id ): array {
 			if ( in_array( (string) $item['status'], [ 'restored', 'deleted', 'deleting', 'restoring' ], true ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'This quarantine item cannot be restored in its current state.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			self::validate_payload( $item );
 			$uploads = self::uploads_root();
@@ -180,7 +202,9 @@ final class Service {
 			$transition = Repository::append_event( $item, 'restore_started' );
 			$transition['status'] = 'restoring';
 			if ( ! Repository::save( $transition ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Could not record the restore transition. No filesystem changes were made.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 
 			try {
@@ -200,7 +224,9 @@ final class Service {
 			$transition = Repository::append_event( $transition, 'restored' );
 			if ( ! Repository::save( $transition ) ) {
 				Audit::log( 'integrity_quarantine_restore_state_failed', 'critical', self::audit_context( $transition ) );
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'The file was restored, but Core Blueprint could not persist the final workspace state. Review the audit log before taking further action.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			Audit::log( 'integrity_quarantine_item_restored', 'warning', self::audit_context( $transition ) );
 			return $transition;
@@ -211,14 +237,18 @@ final class Service {
 	public static function delete_permanently( string $id ): array {
 		return self::with_item_lock( $id, static function ( array $item, string $canonical_id ): array {
 			if ( in_array( (string) $item['status'], [ 'restored', 'deleted', 'restoring' ], true ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'This quarantine item no longer has a deletable payload.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			self::validate_payload( $item );
 
 			$item['status'] = 'deleting';
 			$item = Repository::append_event( $item, 'delete_started' );
 			if ( ! Repository::save( $item ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Could not record the permanent-delete transition. The payload was not deleted.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 
 			try {
@@ -239,7 +269,9 @@ final class Service {
 				// The preceding persisted state remains `deleting`; importantly it does
 				// not claim the payload is restorable after irreversible deletion.
 				Audit::log( 'integrity_quarantine_delete_state_failed', 'critical', self::audit_context( $item ) );
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'The payload was permanently deleted, but Core Blueprint could not persist the final workspace state. The previous deleting state remains as an attention item.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			Audit::log( 'integrity_quarantine_item_deleted', 'warning', self::audit_context( $item ) + [ 'permanent' => true ] );
 			return $item;
@@ -251,14 +283,18 @@ final class Service {
 		return self::with_item_lock( $id, static function ( array $item ) use ( $note ): array {
 			$clean_note = trim( sanitize_textarea_field( $note ) );
 			if ( '' === $clean_note ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Note cannot be empty.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$notes = is_array( $item['notes'] ?? null ) ? $item['notes'] : [];
 			$notes[] = [ 'text' => $clean_note, 'at' => current_time( 'mysql' ), 'by_user_id' => get_current_user_id() ];
 			$item['notes'] = $notes;
 			$item = Repository::append_event( $item, 'note_added' );
 			if ( ! Repository::save( $item ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Could not save the quarantine note.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			Audit::log( 'integrity_quarantine_note_added', 'notice', self::audit_context( $item ) );
 			return $item;
@@ -270,16 +306,22 @@ final class Service {
 		return self::with_item_lock( $id, static function ( array $item ) use ( $state ): array {
 			$clean_state = sanitize_key( $state );
 			if ( ! in_array( $clean_state, self::REVIEW_STATES, true ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Unsupported quarantine review state.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( in_array( (string) ( $item['status'] ?? '' ), [ 'restored', 'deleted', 'deleting', 'restoring' ], true ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'This quarantine item can no longer change review state.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$previous = (string) ( $item['status'] ?? '' );
 			$item['status'] = $clean_state;
 			$item = Repository::append_event( $item, 'review_state_changed', [ 'from' => $previous, 'to' => $clean_state ] );
 			if ( ! Repository::save( $item ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Could not update the quarantine review state.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			Audit::log( 'integrity_quarantine_review_state_changed', 'notice', self::audit_context( $item ) + [ 'from' => $previous, 'to' => $clean_state ] );
 			return $item;
@@ -312,7 +354,9 @@ final class Service {
 			}
 			$target = wp_normalize_path( $payload . '/' . $file );
 			if ( ! PathGuard::existing_path_is_inside( $target, $payload ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Preview path failed quarantine containment checks.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$response['preview_file'] = $file;
 		} else {
@@ -370,7 +414,9 @@ final class Service {
 		$root = wp_normalize_path( (string) ( $uploads['basedir'] ?? '' ) );
 		$resolved = realpath( $root );
 		if ( ! is_string( $resolved ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Uploads root could not be resolved.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return rtrim( wp_normalize_path( $resolved ), '/' );
 	}
@@ -378,7 +424,9 @@ final class Service {
 	/** @return array<string,mixed> */
 	private static function build_manifest( string $path, string $kind ): array {
 		if ( is_link( $path ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Symlinks cannot be quarantined.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$files = [];
 		$dirs = [];
@@ -387,7 +435,9 @@ final class Service {
 		if ( 'file' === $kind ) {
 			$probe = FileHashProbe::probe( $path, [ 'sha256' ] );
 			if ( empty( $probe['ok'] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'The file could not be hashed reliably for quarantine.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$probe_hashes = is_array( $probe['hashes'] ?? null ) ? $probe['hashes'] : [];
 			$hash = (string) ( $probe_hashes['sha256'] ?? '' );
@@ -406,21 +456,29 @@ final class Service {
 			$absolute = wp_normalize_path( $entry->getPathname() );
 			$relative = ltrim( substr( $absolute, strlen( $root ) ), '/' );
 			if ( $entry->isLink() ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Directory quarantine was refused because the directory contains a symlink:', 'core-blueprint' ) . ' ' . $relative );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( ! PathGuard::existing_path_is_inside( $absolute, $root ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Directory quarantine encountered a path outside the selected directory.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( $entry->isDir() ) {
 				$dirs[ $relative ] = [ 'mode' => $entry->getPerms() & 0777, 'mtime' => $entry->getMTime() ];
 				continue;
 			}
 			if ( ! $entry->isFile() ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'Directory quarantine encountered an unsupported filesystem entry:', 'core-blueprint' ) . ' ' . $relative );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$probe = FileHashProbe::probe( $absolute, [ 'sha256' ] );
 			if ( empty( $probe['ok'] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new RuntimeException( __( 'A directory file could not be hashed reliably:', 'core-blueprint' ) . ' ' . $relative );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$size = (int) ( $probe['size'] ?? $entry->getSize() );
 			$files[ $relative ] = [
@@ -440,12 +498,16 @@ final class Service {
 		$kind = (string) ( $item['kind'] ?? '' );
 		$payload = Vault::payload_path( (string) $item['id'], $kind );
 		if ( ! file_exists( $payload ) || is_link( $payload ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The quarantine payload is missing or no longer trustworthy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$current = self::build_manifest( $payload, $kind );
 		$expected = is_array( $item['manifest'] ?? null ) ? $item['manifest'] : [];
 		if ( ! self::manifest_content_matches( $expected, $current ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The quarantine payload changed after it was isolated. Restore/delete was refused pending manual review.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -468,23 +530,35 @@ final class Service {
 	private static function apply_manifest_metadata( string $path, string $kind, array $manifest ): void {
 		if ( 'file' === $kind ) {
 			$meta = (array) ( $manifest['files'][''] ?? [] );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: quarantine metadata restoration requires explicit timestamps and permission modes.
 			@chmod( $path, (int) ( $meta['mode'] ?? 0644 ) );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: quarantine metadata restoration requires explicit timestamps and permission modes.
 			if ( ! empty( $meta['mtime'] ) ) { @touch( $path, (int) $meta['mtime'] ); }
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return;
 		}
 		$files = is_array( $manifest['files'] ?? null ) ? $manifest['files'] : [];
 		foreach ( $files as $relative => $meta ) {
 			$target = wp_normalize_path( rtrim( $path, '/' ) . '/' . $relative );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: quarantine metadata restoration requires explicit timestamps and permission modes.
 			@chmod( $target, (int) ( $meta['mode'] ?? 0644 ) );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: quarantine metadata restoration requires explicit timestamps and permission modes.
 			if ( ! empty( $meta['mtime'] ) ) { @touch( $target, (int) $meta['mtime'] ); }
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 		}
 		$dirs = is_array( $manifest['directories'] ?? null ) ? $manifest['directories'] : [];
 		// Deepest first so child mtimes are not disturbed after parent metadata.
 		uksort( $dirs, static fn( string $a, string $b ): int => substr_count( $b, '/' ) <=> substr_count( $a, '/' ) );
 		foreach ( $dirs as $relative => $meta ) {
 			$target = '' === $relative ? $path : wp_normalize_path( rtrim( $path, '/' ) . '/' . $relative );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: quarantine metadata restoration requires explicit timestamps and permission modes.
 			@chmod( $target, (int) ( $meta['mode'] ?? 0755 ) );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: quarantine metadata restoration requires explicit timestamps and permission modes.
 			if ( ! empty( $meta['mtime'] ) ) { @touch( $target, (int) $meta['mtime'] ); }
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 		}
 	}
 
@@ -511,17 +585,23 @@ final class Service {
 		$stored = wp_normalize_path( (string) ( $item['original_path'] ?? '' ) );
 		$uploads = rtrim( wp_normalize_path( $uploads ), '/' );
 		if ( '' === $stored || ! PathGuard::is_inside( $stored, $uploads ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The stored restore destination no longer passes uploads containment checks.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$relative = ltrim( substr( $stored, strlen( $uploads ) ), '/' );
 		$relative = PathGuard::normalise_relative( $relative );
 		if ( null === $relative ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The stored restore destination contains an unsafe relative path.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$destination = PathGuard::join( $uploads, $relative );
 		if ( null === $destination ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The stored restore destination could not be reconstructed safely.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$ancestor = dirname( $destination );
@@ -533,7 +613,9 @@ final class Service {
 			$ancestor = $parent;
 		}
 		if ( is_link( $ancestor ) || ! PathGuard::existing_path_is_inside( $ancestor, $uploads ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'The restore parent path no longer passes canonical uploads containment checks.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $destination;
 	}
@@ -541,7 +623,9 @@ final class Service {
 	private static function require_item( string $id ): array {
 		$item = Repository::get( $id );
 		if ( null === $item ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Quarantine item not found.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $item;
 	}

@@ -111,14 +111,18 @@ final class Repository {
 
         $total = (int) $wpdb->get_var( // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- count SQL is internal; %i binds the table and all filter values are prepared below.
             $wpdb->prepare(
+                // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: internal allowlisted fragments are passed through $wpdb->prepare() with %i table binding and bound filter/pagination values.
                 $count_sql, // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE fragments are internal/allowlisted; identifier and values are bound below.
+                // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
                 array_merge( [ $table ], $values )
             )
         );
 
         $items = $wpdb->get_results( // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- list SQL is internal; %i binds the table and all filter/pagination values are prepared below.
             $wpdb->prepare(
+                // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: internal allowlisted fragments are passed through $wpdb->prepare() with %i table binding and bound filter/pagination values.
                 $items_sql, // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE/ORDER fragments are internal/allowlisted; identifier and values are bound below.
+                // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
                 array_merge( [ $table ], $values, [ $per_page, $offset ] )
             )
         );
@@ -449,7 +453,9 @@ final class Repository {
             $existing = self::find_import_match( $incoming );
 
             if ( 'overwrite' === $decision && $existing && ! $overwrite_acknowledged ) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
                 throw new \InvalidArgumentException( __( 'Confirm your responsibility for backup and recovery before overwriting existing Notes.', 'core-blueprint' ) );
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             $prepared[] = [

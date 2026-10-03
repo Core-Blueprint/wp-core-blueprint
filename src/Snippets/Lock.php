@@ -11,7 +11,9 @@ final class Lock {
 			throw new \RuntimeException( 'Core Blueprint Snippets storage is not writable.' );
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: managed snippets require a native flock-compatible file handle.
 		$handle = @fopen( Paths::lock_file(), 'c+' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 		if ( false === $handle ) {
 			throw new \RuntimeException( 'Could not open Core Blueprint Snippets storage lock.' );
 		}
@@ -23,7 +25,9 @@ final class Lock {
 			return $callback();
 		} finally {
 			flock( $handle, LOCK_UN );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: managed snippets require a native flock-compatible file handle.
 			fclose( $handle );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 		}
 	}
 }

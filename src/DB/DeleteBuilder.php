@@ -86,7 +86,9 @@ final class DeleteBuilder {
 		$sql    = "DELETE FROM %i WHERE {$where_sql}";
 		$params = array_merge( [ $this->table ], $this->params );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: builder-owned SQL is passed to $wpdb->prepare() with %i identifiers and bound WHERE values.
 		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- %i binds the table identifier; WHERE fragments are builder-owned and identifier-validated.
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 
 		return false === $result ? 0 : (int) $result;
 	}

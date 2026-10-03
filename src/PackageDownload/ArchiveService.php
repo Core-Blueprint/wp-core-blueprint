@@ -40,7 +40,9 @@ final class ArchiveService {
 			if ( $e instanceof \RuntimeException ) {
 				throw $e;
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Blueprint could not create the package archive.', 'core-blueprint' ), 0, $e );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -81,7 +83,9 @@ final class ArchiveService {
 			if ( $e instanceof \RuntimeException ) {
 				throw $e;
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Blueprint could not create the package archive.', 'core-blueprint' ), 0, $e );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -94,16 +98,22 @@ final class ArchiveService {
 	public function stream_and_delete( string $archive, string $download_filename ): int {
 		$archive_real = realpath( $archive );
 		if ( false === $archive_real || ! is_file( $archive_real ) || ! is_readable( $archive_real ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The generated package archive is not readable.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( ! $this->is_valid_temp_archive( $archive_real ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The generated package archive is outside WordPress temporary storage.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$size = filesize( $archive_real );
 		if ( false === $size ) {
 			$this->delete_if_exists( $archive_real );
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Blueprint could not determine the package archive size.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		while ( ob_get_level() > 0 ) {
@@ -114,6 +124,7 @@ final class ArchiveService {
 
 		if ( headers_sent( $sent_file, $sent_line ) ) {
 			$this->delete_if_exists( $archive_real );
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException(
 				sprintf(
 					/* translators: 1: PHP filename, 2: line number */
@@ -122,6 +133,7 @@ final class ArchiveService {
 					(int) $sent_line
 				)
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$filename = sanitize_file_name( $download_filename );
@@ -136,7 +148,9 @@ final class ArchiveService {
 			header( 'Content-Disposition: attachment; filename="' . $filename . '"; filename*=UTF-8\'\'' . rawurlencode( $filename ) );
 			header( 'Content-Length: ' . (string) $size );
 
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: archive delivery streams bytes directly to the response without buffering the file.
 			$streamed = readfile( $archive_real );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			if ( false === $streamed ) {
 				throw new \RuntimeException( __( 'Core Blueprint could not stream the package archive.', 'core-blueprint' ) );
 			}
@@ -153,7 +167,9 @@ final class ArchiveService {
 		$zip    = new \ZipArchive();
 		$result = $zip->open( $archive, \ZipArchive::CREATE | \ZipArchive::OVERWRITE );
 		if ( true !== $result ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Blueprint could not open the temporary ZIP archive.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$zip->addEmptyDir( $slug );
@@ -185,12 +201,16 @@ final class ArchiveService {
 			}
 			if ( $item->isFile() && ! $zip->addFile( $item_real, $zip_path ) ) {
 				$zip->close();
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( __( 'Core Blueprint could not add a package file to the ZIP archive.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 
 		if ( ! $zip->close() ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Blueprint could not finalize the ZIP archive.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -200,7 +220,9 @@ final class ArchiveService {
 
 		$files = $this->safe_file_list( $source_real );
 		if ( empty( $files ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The requested package directory does not contain any readable files.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$zip    = new \PclZip( $archive );
@@ -212,7 +234,9 @@ final class ArchiveService {
 			wp_basename( $source_real )
 		);
 		if ( 0 === $result ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Blueprint could not create the package ZIP with the WordPress fallback archiver.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -228,7 +252,9 @@ final class ArchiveService {
 			$slug
 		);
 		if ( 0 === $result ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Blueprint could not create the plugin ZIP with the WordPress fallback archiver.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -242,7 +268,9 @@ final class ArchiveService {
 			require_once $file;
 		}
 		if ( ! class_exists( '\\PclZip' ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'ZIP support is unavailable. Enable PHP ZipArchive or the WordPress PclZip fallback.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -253,7 +281,9 @@ final class ArchiveService {
 		}
 		$path = wp_tempnam( 'cb-' . $slug . '.zip' );
 		if ( ! is_string( $path ) || '' === $path ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'WordPress could not allocate a temporary file for the package archive.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $path;
 	}
@@ -292,16 +322,24 @@ final class ArchiveService {
 		$path_real = realpath( $path );
 
 		if ( false === $root_real || false === $path_real || ! $this->path_is_within( $path_real, $root_real ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The requested package path is outside its allowed WordPress directory.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( $directory && ! is_dir( $path_real ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The requested package directory does not exist.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( ! $directory && ! is_file( $path_real ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The requested plugin file does not exist.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( ! is_readable( $path_real ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The requested package is not readable.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		return wp_normalize_path( $path_real );
@@ -317,7 +355,9 @@ final class ArchiveService {
 	private function validated_archive_segment( string $segment ): string {
 		$segment = trim( str_replace( '\\', '/', $segment ), '/' );
 		if ( '' === $segment || '.' === $segment || '..' === $segment || str_contains( $segment, '/' ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The requested package has an invalid archive name.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $segment;
 	}

@@ -7,10 +7,16 @@ use Throwable;
 
 use function array_values;
 use function clearstatcache;
+// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 use function fclose;
+// phpcs:enable WordPress.WP.AlternativeFunctions
 use function feof;
+// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 use function fopen;
+// phpcs:enable WordPress.WP.AlternativeFunctions
+// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 use function fread;
+// phpcs:enable WordPress.WP.AlternativeFunctions
 use function fstat;
 use function hash_final;
 use function hash_init;
@@ -47,14 +53,18 @@ final class FileHashProbe {
 			return self::failure( 'no_algorithm' );
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 		$handle = @fopen( $path, 'rb' );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 		if ( ! is_resource( $handle ) ) {
 			return self::failure( 'open_failed' );
 		}
 
 		$before = @fstat( $handle );
 		if ( ! is_array( $before ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 			@fclose( $handle );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return self::failure( 'stat_failed' );
 		}
 
@@ -64,21 +74,29 @@ final class FileHashProbe {
 				$contexts[ $algorithm ] = hash_init( $algorithm );
 			}
 		} catch ( Throwable ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 			@fclose( $handle );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return self::failure( 'algorithm_unavailable' );
 		}
 
 		while ( ! feof( $handle ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 			$chunk = @fread( $handle, self::READ_CHUNK_BYTES );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			if ( false === $chunk ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 				@fclose( $handle );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return self::failure( 'read_failed', $before );
 			}
 			if ( '' === $chunk ) {
 				if ( feof( $handle ) ) {
 					break;
 				}
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 				@fclose( $handle );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return self::failure( 'read_stalled', $before );
 			}
 			foreach ( $contexts as $context ) {
@@ -87,7 +105,9 @@ final class FileHashProbe {
 		}
 
 		$after = @fstat( $handle );
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: integrity hashing requires one stable open handle for fstat/read race detection.
 		@fclose( $handle );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 		if ( ! is_array( $after ) ) {
 			return self::failure( 'stat_failed_after_read', $before );
 		}

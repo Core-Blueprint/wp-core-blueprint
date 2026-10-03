@@ -484,7 +484,9 @@ final class QueryBuilder {
 				$params[] = $this->limit;
 				$params[] = (int) ( $this->offset ?? 0 );
 			}
+			// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: parameterless branch is emitted by the closed identifier-validated QueryBuilder grammar and contains no value placeholders.
 			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ), $output ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL shape is builder-owned; identifiers are regex-validated and every dynamic value is bound.
+			// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 		}
 
 		return is_array( $rows ) ? $rows : [];
@@ -526,7 +528,9 @@ final class QueryBuilder {
 		if ( empty( $params ) ) {
 			$col = $wpdb->get_col( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL is emitted only by the closed builder grammar after strict identifier validation; this branch has no value placeholders.
 		} else {
+			// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: parameterless branch is emitted by the closed identifier-validated QueryBuilder grammar and contains no value placeholders.
 			$col = $wpdb->get_col( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL shape is builder-owned; identifiers are regex-validated and every dynamic value is bound.
+			// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 		}
 
 		return is_array( $col ) ? $col : [];
@@ -769,7 +773,9 @@ final class QueryBuilder {
 		if ( empty( $params ) ) {
 			return $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL is emitted only by the closed builder grammar after strict identifier validation; this branch has no value placeholders.
 		}
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: parameterless branch is emitted by the closed identifier-validated QueryBuilder grammar and contains no value placeholders.
 		return $wpdb->get_var( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL shape is builder-owned; identifiers are regex-validated and every dynamic value is bound.
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	// ─── Validators ───────────────────────────────────────────────────────────

@@ -172,17 +172,25 @@ final class Mapper {
 			return $delimiter;
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV inspection requires native seekable stream handles.
 		$stream = fopen( 'php://temp', 'w+b' );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV inspection requires native seekable stream handles.
 		if ( false === $stream || false === fwrite( $stream, $input ) ) {
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 			if ( is_resource( $stream ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV inspection requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 			}
 			return new WP_Error( 'cb_core_data_mapper_csv_failed', 'Could not open the Data Mapper CSV transport.' );
 		}
 		rewind( $stream );
 		$header = fgetcsv( $stream, 0, $delimiter, '"', '' );
 		if ( ! is_array( $header ) || [] === $header || count( $header ) > Foundation::MAX_CSV_COLUMNS ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV inspection requires native seekable stream handles.
 			fclose( $stream );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return new WP_Error( 'cb_core_data_mapper_invalid_csv', 'Data Mapper CSV header is invalid.' );
 		}
 
@@ -191,7 +199,9 @@ final class Mapper {
 		foreach ( $header as $raw ) {
 			$key = is_string( $raw ) ? self::field_key( $raw ) : null;
 			if ( null === $key || isset( $seen[ $key ] ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV inspection requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_mapper_invalid_csv', 'Data Mapper CSV headers must be non-empty and unique.' );
 			}
 			$headers[]  = $key;
@@ -204,25 +214,33 @@ final class Mapper {
 				continue;
 			}
 			if ( count( $row ) !== count( $headers ) ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV inspection requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_mapper_invalid_csv', 'Data Mapper CSV contains a row with a different column count.' );
 			}
 			if ( count( $records ) >= Foundation::MAX_RECORDS ) {
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV inspection requires native seekable stream handles.
 				fclose( $stream );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'cb_core_data_mapper_too_many_records', 'Data Mapper record count exceeds the transport limit.' );
 			}
 			$record = [];
 			foreach ( $headers as $offset => $key ) {
 				$value = (string) $row[ $offset ];
 				if ( str_contains( $value, "\0" ) ) {
+					// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV inspection requires native seekable stream handles.
 					fclose( $stream );
+					// phpcs:enable WordPress.WP.AlternativeFunctions
 					return new WP_Error( 'cb_core_data_mapper_invalid_csv', 'Data Mapper CSV contains invalid null bytes.' );
 				}
 				$record[ $key ] = $value;
 			}
 			$records[] = $record;
 		}
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://temp CSV inspection requires native seekable stream handles.
 		fclose( $stream );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 
 		$fields = [];
 		foreach ( $headers as $header_key ) {

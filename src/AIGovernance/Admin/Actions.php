@@ -43,7 +43,9 @@ final class Actions {
 			wp_die( esc_html__( 'Unable to open the AI activity export stream.', 'core-blueprint' ), '', [ 'response' => 500 ] );
 		}
 		$written = Exporter::write( $format, $handle, $filters );
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: php://output export delivery requires a native response stream handle.
 		fclose( $handle );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 		AuditLog::log( 'ai.activity.exported', 'notice', [
 			'format' => $format,
 			'rows'   => $written,

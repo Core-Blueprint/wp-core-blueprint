@@ -144,11 +144,15 @@ final class Repository {
 		$count_sql = "SELECT COUNT(*) FROM %i WHERE {$where_sql}";
 		$data_sql  = "SELECT * FROM %i WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
 
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: fixed WHERE fragments are passed through $wpdb->prepare() with %i table binding and bound values.
 		$count_prepared = $wpdb->prepare( $count_sql, ...array_merge( [ $table ], $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE fragments are fixed; identifier and values are bound here.
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 		$total = (int) $wpdb->get_var( $count_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- prepared immediately above with %i and bound filter values.
 
 		$data_params   = array_merge( [ $table ], $params, [ $per_page, ( $page - 1 ) * $per_page ] );
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: fixed WHERE fragments are passed through $wpdb->prepare() with %i table binding and bound values.
 		$data_prepared = $wpdb->prepare( $data_sql, ...$data_params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WHERE fragments are fixed; identifier and values are bound here.
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 		$rows          = $wpdb->get_results( $data_prepared ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- prepared immediately above with %i and bound filter/pagination values.
 
 		foreach ( $rows as $row ) {

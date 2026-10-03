@@ -97,7 +97,9 @@ final class Renderer {
 			// Dompdf otherwise writes derived font metrics into its vendor tree.
 			// Keep each render's cache private and outside the installed plugin.
 			$cache_directory = rtrim( get_temp_dir(), "/\\" ) . '/cb-pdf-fonts-' . bin2hex( random_bytes( 16 ) );
+			// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: PDF rendering uses a private per-render 0700 temporary cache with explicit cleanup.
 			if ( ! mkdir( $cache_directory, 0700 ) ) {
+			// phpcs:enable WordPress.WP.AlternativeFunctions
 				throw new RendererException( 'Could not create the PDF font cache.' );
 			}
 			$font_cache = $cache_directory;
@@ -109,18 +111,22 @@ final class Renderer {
 			$dompdf->render();
 			$output = $dompdf->output();
 		} catch ( \Throwable $e ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RendererException(
 				'PDF rendering failed: ' . $e->getMessage(),
 				(int) $e->getCode(),
 				$e
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		} finally {
 			if ( null !== $font_cache ) {
 				// Dompdf's derived metric cache contains flat JSON files only.
 				foreach ( glob( $font_cache . '/*' ) ?: [] as $cache_file ) {
 					wp_delete_file( $cache_file );
 				}
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: PDF rendering uses a private per-render 0700 temporary cache with explicit cleanup.
 				rmdir( $font_cache );
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 			}
 		}
 
@@ -137,9 +143,11 @@ final class Renderer {
 			static fn ( string $extension ): bool => ! extension_loaded( $extension )
 		) );
 		if ( ! empty( $missing_extensions ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RendererException(
 				'Dompdf requires the following PHP extensions: ' . implode( ', ', $missing_extensions )
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( class_exists( '\Dompdf\Dompdf', false ) ) {
@@ -150,10 +158,12 @@ final class Renderer {
 		}
 
 		if ( ! self::is_available() ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RendererException(
 				'Dompdf vendor library is missing. Expected at: '
 				. CB_CORE_DIR . ltrim( self::VENDOR_AUTOLOAD, '/' )
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		require_once CB_CORE_DIR . ltrim( self::VENDOR_AUTOLOAD, '/' );

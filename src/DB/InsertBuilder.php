@@ -184,7 +184,9 @@ final class InsertBuilder {
 							 . implode( ', ', $row_placeholder_groups );
 		$params              = array_merge( [ $this->table ], $columns, $flat_params );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: builder-owned batch SQL is passed to $wpdb->prepare() with %i identifiers and typed value placeholders.
 		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- statement shape is builder-owned; %i identifiers and typed values are bound here.
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 		return false === $result ? 0 : (int) $result;
 	}
 

@@ -11,11 +11,11 @@ declare(strict_types=1);
  *   - export_meta( $args ): array        - envelope metadata (filters, total, etc.)
  *
  * The exporter turns that into CSV or JSON on an open stream handle. A
- * `do_action( 'cb_core_export_{format}', ... )` hook lets sibling plugins
+ * `do_action( 'core_blueprint_export_{format}', ... )` hook lets sibling plugins
  * (e.g. a future CB Report plugin for PDF) register their own renderers
  * against unknown formats without touching this class.
  *
- * Format registry: `apply_filters( 'cb_core_export_formats', ['csv' => 'CSV', 'json' => 'JSON'] )`
+ * Format registry: `apply_filters( 'core_blueprint_export_formats', ['csv' => 'CSV', 'json' => 'JSON'] )`
  * is the canonical list the UI reads to build the dropdown. Extensions
  * add to this filter AND to the matching do_action hook.
  *
@@ -29,12 +29,12 @@ defined( 'ABSPATH' ) || exit;
 
 final class LogExporter {
 
-	/** Supported built-in formats - extended via `cb_core_export_formats` filter. */
+	/** Supported built-in formats - extended via `core_blueprint_export_formats` filter. */
 	const BUILTIN_FORMATS = [ 'csv', 'json' ];
 
 	/**
 	 * Return the registered export formats as format-slug => label.
-	 * Extensions add entries via the `cb_core_export_formats` filter.
+	 * Extensions add entries via the `core_blueprint_export_formats` filter.
 	 *
 	 * @return array<string,string>
 	 */
@@ -45,16 +45,16 @@ final class LogExporter {
 		];
 
 		/**
-		 * Filter: cb_core_export_formats
+		 * Filter: core_blueprint_export_formats
 		 *
 		 * Allows extension plugins (CB Report etc.) to register additional
 		 * export formats. The key is the format slug (used in URLs and in
-		 * the do_action hook `cb_core_export_{slug}`); the value is the
+		 * the do_action hook `core_blueprint_export_{slug}`); the value is the
 		 * human-readable label shown in the UI dropdown.
 		 *
 		 * @param array<string,string> $formats
 		 */
-		return apply_filters( 'cb_core_export_formats', $formats );
+		return apply_filters( 'core_blueprint_export_formats', $formats );
 	}
 
 	/**
@@ -69,10 +69,10 @@ final class LogExporter {
 	/**
 	 * MIME type for a format slug. Falls back to application/octet-stream
 	 * for unknown formats - extensions that add custom formats should
-	 * filter `cb_core_export_mime_types` to register theirs.
+	 * filter `core_blueprint_export_mime_types` to register theirs.
 	 */
 	public static function mime_type( string $format ): string {
-		$types = apply_filters( 'cb_core_export_mime_types', [
+		$types = apply_filters( 'core_blueprint_export_mime_types', [
 			'csv'  => 'text/csv; charset=UTF-8',
 			'json' => 'application/json; charset=UTF-8',
 		] );
@@ -83,7 +83,7 @@ final class LogExporter {
 	 * File extension for a format slug. Defaults to the slug itself.
 	 */
 	public static function extension( string $format ): string {
-		$extensions = apply_filters( 'cb_core_export_extensions', [
+		$extensions = apply_filters( 'core_blueprint_export_extensions', [
 			'csv'  => 'csv',
 			'json' => 'json',
 		] );
@@ -93,7 +93,7 @@ final class LogExporter {
 	/**
 	 * Dispatch an export to the requested format. Built-in formats
 	 * (csv, json) are handled inline; unknown formats fire
-	 * `cb_core_export_{format}` for extension plugins to handle.
+	 * `core_blueprint_export_{format}` for extension plugins to handle.
 	 *
 	 * @param string   $format   Format slug (already sanitised by caller).
 	 * @param resource $handle   Open output stream.
@@ -116,7 +116,7 @@ final class LogExporter {
 				$count = 0;
 
 				/**
-				 * Action: cb_core_export_{format}
+				 * Action: core_blueprint_export_{format}
 				 *
 				 * Fired when a request asks for an export format that CB Base
 				 * doesn't handle natively. Extension plugins register a
@@ -128,7 +128,7 @@ final class LogExporter {
 				 * @param array    $meta
 				 * @param int      $count   By-reference - handler increments as rows are written.
 				 */
-				do_action_ref_array( "cb_core_export_{$format}", [ $handle, $rows, $columns, $meta, &$count ] );
+				do_action_ref_array( "core_blueprint_export_{$format}", [ $handle, $rows, $columns, $meta, &$count ] );
 
 				return $count;
 		}
@@ -222,7 +222,9 @@ final class LogExporter {
 			return 0;
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Core Blueprint audited filesystem boundary: export writers receive an already-open native response stream handle.
 		fwrite( $handle, $json );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 		return count( $collected );
 	}
 

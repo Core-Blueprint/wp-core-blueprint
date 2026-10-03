@@ -134,7 +134,9 @@ final class UpdateBuilder {
 
 		// The table and SET identifiers use WordPress's native %i placeholder;
 		// every SET/WHERE value remains bound through its typed placeholder.
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Core Blueprint audited prepared-SQL boundary: builder-owned SQL is passed to $wpdb->prepare() with %i identifiers and typed value placeholders.
 		$result = $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- %i binds table/SET identifiers; WHERE fragments are builder-owned and identifier-validated.
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 
 		return false === $result ? 0 : (int) $result;
 	}
