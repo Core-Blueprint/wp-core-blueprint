@@ -144,11 +144,24 @@ def annotate_lines(
                 )
             continue
 
-        updated[start:end + 1] = [
-            indent + DISABLE,
-            *updated[start:end + 1],
-            indent + ENABLE,
-        ]
+        translator_index = None
+        if start > 0 and "translators:" in updated[start - 1]:
+            translator_index = start - 1
+
+        if translator_index is not None:
+            translator_line = updated[translator_index]
+            updated[translator_index:end + 1] = [
+                indent + DISABLE,
+                translator_line,
+                *updated[start:end + 1],
+                indent + ENABLE,
+            ]
+        else:
+            updated[start:end + 1] = [
+                indent + DISABLE,
+                *updated[start:end + 1],
+                indent + ENABLE,
+            ]
 
     return updated
 
@@ -162,13 +175,79 @@ def count_current_annotations(lines: list[str]) -> int:
     )
 
 
+def repair_applied_translator_boundaries() -> tuple[int, int]:
+    """Move E2 PHPCS disables before existing translators comments.
+
+    The first E2 apply inserted the exception-boundary disable immediately
+    before each throw statement. For sprintf(__()) calls with an existing
+    translators comment, this separated the comment from its translation call.
+    Repair only the exact adjacent comment/disable pattern and require the
+    audited count of ten.
+    """
+    matches: list[tuple[Path, int]] = []
+    excluded = {".git", "vendor", "node_modules", "dist", "build"}
+
+    for path in ROOT.rglob("*.php"):
+        rel = path.relative_to(ROOT)
+        if any(part in excluded for part in rel.parts):
+            continue
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for index in range(len(lines) - 1):
+            if (
+                "translators:" in lines[index]
+                and "phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped"
+                in lines[index + 1]
+            ):
+                matches.append((path, index))
+
+    if 10 != len(matches):
+        details = [
+            f"{path.relative_to(ROOT).as_posix()}:{index + 1}"
+            for path, index in matches
+        ]
+        raise RuntimeError(
+            "Expected exactly 10 applied translator/exception boundary pairs, "
+            f"found {len(matches)}: {details!r}"
+        )
+
+    by_path: dict[Path, list[int]] = {}
+    for path, index in matches:
+        by_path.setdefault(path, []).append(index)
+
+    for path, indexes in by_path.items():
+        text = path.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        for index in sorted(indexes, reverse=True):
+            translator_line = lines[index]
+            disable_line = lines[index + 1]
+            lines[index:index + 2] = [disable_line, translator_line]
+        suffix = "\n" if text.endswith("\n") else ""
+        path.write_text("\n".join(lines) + suffix, encoding="utf-8")
+
+    print(f"REPAIRED FILES: {len(by_path)}")
+    print(f"REPAIRED TRANSLATOR BOUNDARIES: {len(matches)}")
+    print(
+        "PASS: exception PHPCS disables now precede translators comments "
+        "without changing runtime statements."
+    )
+    return (len(by_path), len(matches))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scan-json", required=True)
+    parser.add_argument("--scan-json")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--apply", action="store_true")
     mode.add_argument("--check", action="store_true")
+    mode.add_argument("--repair-translators", action="store_true")
     args = parser.parse_args()
+
+    if args.repair_translators:
+        repair_applied_translator_boundaries()
+        return 0
+
+    if not args.scan_json:
+        parser.error("--scan-json is required unless --repair-translators is used")
 
     scan_path = Path(args.scan_json).expanduser().resolve()
     if not scan_path.is_file():
