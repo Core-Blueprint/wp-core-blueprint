@@ -169,15 +169,12 @@ foreach ( $iterator as $file ) {
 	}
 	$before = $catalog['messages'];
 	$after = array_intersect_key( $before, $source );
-	$catalog['messages'] = $after;
-
-	$canonical = export_catalog( $catalog );
-	$current   = (string) file_get_contents( $path );
-	if ( $current === $canonical ) {
+	if ( $before === $after ) {
 		continue;
 	}
 
-	file_put_contents( $path, $canonical );
+	$catalog['messages'] = $after;
+	file_put_contents( $path, export_catalog( $catalog ) );
 	$files_changed++;
 	$messages_removed += count( $before ) - count( $after );
 }
