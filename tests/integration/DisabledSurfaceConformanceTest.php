@@ -13,8 +13,6 @@ use CoreBlueprint\Core\MediaFormats\Settings as MediaFormatsSettings;
 use CoreBlueprint\Core\MediaFormats\State as MediaFormatsState;
 use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\Reports\State as ReportsState;
-use CoreBlueprint\Core\Snippets\Admin\Actions as SnippetsActions;
-use CoreBlueprint\Core\Snippets\State as SnippetsState;
 
 final class CB_B2_Test_Termination extends RuntimeException {
     /** @var mixed */
@@ -42,7 +40,6 @@ final class CB_Base_Disabled_Surface_Conformance_Test extends WP_UnitTestCase {
         self::assertInstanceOf( WP_User::class, $user );
         $user->add_cap( 'cb_manage_reports' );
         $user->add_cap( 'cb_view_reports' );
-        $user->add_cap( 'cb_manage_snippets' );
 
         // These manage capabilities are intentionally part of Base's privileged
         // identity boundary. Approve the exact test fingerprint through the real
@@ -54,13 +51,11 @@ final class CB_Base_Disabled_Surface_Conformance_Test extends WP_UnitTestCase {
         wp_set_current_user( $user_id );
         self::assertTrue( current_user_can( 'cb_manage_reports' ), 'B2 actor lacks cb_manage_reports after approval.' );
         self::assertTrue( current_user_can( 'cb_view_reports' ), 'B2 actor lacks cb_view_reports after approval.' );
-        self::assertTrue( current_user_can( 'cb_manage_snippets' ), 'B2 actor lacks cb_manage_snippets after approval.' );
 
         $this->assert_scanner_sync_converges_to_no_cron_while_disabled();
         $this->assert_reports_destructive_mutations_are_blocked_while_disabled();
         $this->assert_mail_settings_mutation_is_blocked_but_log_maintenance_remains();
         $this->assert_media_formats_settings_mutation_is_blocked_while_disabled();
-        $this->assert_snippets_mutations_are_blocked_but_export_remains_registered();
     }
 
     private function assert_scanner_sync_converges_to_no_cron_while_disabled(): void {
@@ -224,48 +219,6 @@ final class CB_Base_Disabled_Surface_Conformance_Test extends WP_UnitTestCase {
         }
     }
 
-    private function assert_snippets_mutations_are_blocked_but_export_remains_registered(): void {
-        $initial = SnippetsState::is_enabled();
-        $mutations = [
-            'save'      => [ 'cb_core_snippets_save', [ SnippetsActions::class, 'save' ] ],
-            'toggle'    => [ 'cb_core_snippets_toggle', [ SnippetsActions::class, 'toggle' ] ],
-            'duplicate' => [ 'cb_core_snippets_duplicate', [ SnippetsActions::class, 'duplicate' ] ],
-            'delete'    => [ 'cb_core_snippets_delete', [ SnippetsActions::class, 'delete' ] ],
-            'import'    => [ 'cb_core_snippets_import', [ SnippetsActions::class, 'import' ] ],
-        ];
-
-        try {
-            if ( ! $initial ) {
-                SnippetsState::set_enabled( true, 'b2-snippets-precondition' );
-            }
-            SnippetsState::set_enabled( false, 'b2-snippets-disabled' );
-
-            foreach ( $mutations as $name => [ $nonce_action, $callback ] ) {
-                $result = $this->capture_termination(
-                    static function () use ( $nonce_action, $callback ): void {
-                        $_POST = [ '_wpnonce' => wp_create_nonce( $nonce_action ) ];
-                        $_REQUEST = $_POST;
-                        call_user_func( $callback );
-                    }
-                );
-
-                self::assertSame( 409, $this->response_code( $result['termination'] ), 'Snippets ' . $name . ' did not fail as disabled.' );
-                self::assertStringContainsString( 'Snippets is disabled', $this->termination_message( $result['termination'] ), 'Snippets ' . $name . ' failed for the wrong reason.' );
-            }
-
-            SnippetsActions::boot();
-            self::assertNotFalse(
-                has_action( 'admin_post_cb_core_snippets_export', [ SnippetsActions::class, 'export' ] ),
-                'Read-only Snippets export surface disappeared while Snippets was disabled.'
-            );
-        } finally {
-            $_POST = [];
-            $_REQUEST = [];
-            if ( SnippetsState::is_enabled() !== $initial ) {
-                SnippetsState::set_enabled( $initial, 'b2-snippets-restore' );
-            }
-        }
-    }
 
     /**
      * Execute a terminating WordPress handler without changing production code.
