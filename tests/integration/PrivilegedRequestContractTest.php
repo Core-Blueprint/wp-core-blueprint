@@ -89,6 +89,17 @@ final class CB_Base_Privileged_Request_Contract_Test extends WP_UnitTestCase {
         self::assertFalse( Request::bool( 'enabled' ) );
     }
 
+    public function test_c1_typed_integer_request_rejects_non_scalar_shapes_without_changing_scalar_casts(): void {
+        $this->set_post( [ 'report_id' => [ 'unexpected' ] ] );
+        self::assertSame( 7, Request::int( 'report_id', 7 ) );
+
+        $this->set_post( [ 'report_id' => '42' ] );
+        self::assertSame( 42, Request::int( 'report_id', 7 ) );
+
+        $this->set_post( [ 'report_id' => '-3' ] );
+        self::assertSame( -3, Request::int( 'report_id', 7 ) );
+    }
+
     /**
      * @runInSeparateProcess
      * @preserveGlobalState disabled
