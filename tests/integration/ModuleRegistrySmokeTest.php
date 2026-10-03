@@ -19,7 +19,6 @@ final class CB_Base_Module_Registry_Smoke_Test extends WP_UnitTestCase {
             'media-formats',
             'package-downloads',
             'user-roles',
-            'snippets',
         ];
 
         $actual = ActivationRegistry::slugs();
