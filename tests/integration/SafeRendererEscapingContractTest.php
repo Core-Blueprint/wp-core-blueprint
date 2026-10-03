@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Slot renderers such as Field and Card are intentionally excluded because
  * they accept caller-provided HTML and require per-callsite auditing.
  */
-final class CB_Base_Safe_Renderer_Escaping_Contract_Test extends WP_UnitTestCase {
+final class SafeRendererEscapingContractTest extends WP_UnitTestCase {
 
 	private const PAYLOAD = '<script>alert("cb-xss")</script>';
 
