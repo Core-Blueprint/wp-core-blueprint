@@ -90,101 +90,146 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
 
 
 def patch_login_shield(text: str) -> str:
-    old = """				echo \\CoreBlueprint\\Core\\UI\\Field::render( [
-					'variant'   => 'separated',
-					'label'     => __( 'Block response', 'core-blueprint' ),
-					'label_sub' => __( 'What blocked requests receive. 404 hides the endpoint from automated fingerprinting; 403 is explicit and useful for audit trails; a homepage redirect is the friendliest option for real visitors who bookmarked /wp-login.php.', 'core-blueprint' ),
-					'control'   => \\CoreBlueprint\\Core\\UI\\RadioGroup::render( [
-						'variant' => 'compact',
-						'name'    => 'block_response_code',
-						'value'   => $ls_response_code,
-						'options' => [
-							[
-								'value' => \\CoreBlueprint\\Core\\Security\\LoginShield::RESPONSE_CODE_404,
-								'label' => '404 Not Found',
-								'desc'  => __( 'Recommended', 'core-blueprint' ),
-							],
-							[
-								'value' => \\CoreBlueprint\\Core\\Security\\LoginShield::RESPONSE_CODE_403,
-								'label' => '403 Forbidden',
-							],
-							[
-								'value' => \\CoreBlueprint\\Core\\Security\\LoginShield::RESPONSE_CODE_302,
-								'label' => __( 'Redirect to homepage', 'core-blueprint' ),
-								'desc'  => __( '302', 'core-blueprint' ),
-							],
-						],
-					] ),
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
-"""
-    new = """				""" + DISABLE + """Field escapes its text fields; RadioGroup owns context-specific escaping for the complete raw control slot.
-				echo \\CoreBlueprint\\Core\\UI\\Field::render( [
-					'variant'   => 'separated',
-					'label'     => __( 'Block response', 'core-blueprint' ),
-					'label_sub' => __( 'What blocked requests receive. 404 hides the endpoint from automated fingerprinting; 403 is explicit and useful for audit trails; a homepage redirect is the friendliest option for real visitors who bookmarked /wp-login.php.', 'core-blueprint' ),
-					'control'   => \\CoreBlueprint\\Core\\UI\\RadioGroup::render( [
-						'variant' => 'compact',
-						'name'    => 'block_response_code',
-						'value'   => $ls_response_code,
-						'options' => [
-							[
-								'value' => \\CoreBlueprint\\Core\\Security\\LoginShield::RESPONSE_CODE_404,
-								'label' => '404 Not Found',
-								'desc'  => __( 'Recommended', 'core-blueprint' ),
-							],
-							[
-								'value' => \\CoreBlueprint\\Core\\Security\\LoginShield::RESPONSE_CODE_403,
-								'label' => '403 Forbidden',
-							],
-							[
-								'value' => \\CoreBlueprint\\Core\\Security\\LoginShield::RESPONSE_CODE_302,
-								'label' => __( 'Redirect to homepage', 'core-blueprint' ),
-								'desc'  => __( '302', 'core-blueprint' ),
-							],
-						],
-					] ),
-				] );
-				""" + ENABLE + """
-"""
-    return replace_once(text, old, new, "Login Shield Field boundary")
+    lines = text.splitlines()
+
+    labels = [
+        i
+        for i, line in enumerate(lines)
+        if "'label'     => __( 'Block response', 'core-blueprint' )" in line
+    ]
+    if 1 != len(labels):
+        raise RuntimeError(
+            f"Login Shield: expected one Block response label, found {len(labels)}."
+        )
+    label_index = labels[0]
+
+    start = next(
+        (
+            i
+            for i in range(label_index, max(-1, label_index - 12), -1)
+            if "Field::render( [" in lines[i] and "echo " in lines[i]
+        ),
+        None,
+    )
+    if start is None:
+        raise RuntimeError("Login Shield: Field::render() start not found.")
+
+    end = next(
+        (
+            i
+            for i in range(label_index, min(len(lines), label_index + 40))
+            if "] );" in lines[i]
+            and "phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped" in lines[i]
+        ),
+        None,
+    )
+    if end is None:
+        raise RuntimeError("Login Shield: documented Field::render() end not found.")
+
+    indent = re.match(r"^\s*", lines[start]).group(0)
+    clean_end = lines[end].split("// phpcs:ignore", 1)[0].rstrip()
+
+    lines[start:end + 1] = [
+        indent + DISABLE
+        + "Field escapes its text fields; RadioGroup owns context-specific escaping for the complete raw control slot.",
+        *lines[start:end],
+        clean_end,
+        indent + ENABLE,
+    ]
+
+    updated = "\n".join(lines)
+    if text.endswith("\n"):
+        updated += "\n"
+    return updated
 
 
 def patch_settings(text: str) -> str:
-    old_empty = """				echo Card::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Card::render() escapes structured empty-state content.
-					'title' => __( 'Extension settings', 'core-blueprint' ),
-					'body'  => '',
-					'empty' => [
-						'title'       => __( 'No extension settings registered yet', 'core-blueprint' ),
-						'description' => __( 'Installed extensions will appear here after they adopt the Core Blueprint Settings Hub contract.', 'core-blueprint' ),
-					],
-				] );
-"""
-    new_empty = """				""" + DISABLE + """Card receives no raw HTML slot here and escapes the complete structured empty-state payload.
-				echo Card::render( [
-					'title' => __( 'Extension settings', 'core-blueprint' ),
-					'body'  => '',
-					'empty' => [
-						'title'       => __( 'No extension settings registered yet', 'core-blueprint' ),
-						'description' => __( 'Installed extensions will appear here after they adopt the Core Blueprint Settings Hub contract.', 'core-blueprint' ),
-					],
-				] );
-				""" + ENABLE + """
-"""
-    text = replace_once(text, old_empty, new_empty, "Settings empty-state Card boundary")
+    lines = text.splitlines()
 
-    old_identity = """			<?php echo Card::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- identity_html is escaped above.
-				'title' => __( 'Extension information', 'core-blueprint' ),
-				'body'  => $identity_html,
-			] ); ?>
-"""
-    new_identity = """			<?php """ + DISABLE + """identity_html is composed locally from esc_html/esc_url output before entering Card's raw body slot. ?>
-			<?php echo Card::render( [
-				'title' => __( 'Extension information', 'core-blueprint' ),
-				'body'  => $identity_html,
-			] ); ?>
-			<?php """ + ENABLE + """ ?>
-"""
-    return replace_once(text, old_identity, new_identity, "Settings identity Card boundary")
+    def unique_index(needle: str, label: str) -> int:
+        matches = [i for i, line in enumerate(lines) if needle in line]
+        if 1 != len(matches):
+            raise RuntimeError(
+                f"{label}: expected one matching source line, found {len(matches)}."
+            )
+        return matches[0]
+
+    # Structured empty state: body is empty and Card escapes title/description.
+    empty_anchor = unique_index(
+        "No extension settings registered yet",
+        "Settings empty-state anchor",
+    )
+    empty_start = next(
+        (
+            i
+            for i in range(empty_anchor, max(-1, empty_anchor - 12), -1)
+            if "Card::render( [" in lines[i] and "echo " in lines[i]
+        ),
+        None,
+    )
+    if empty_start is None:
+        raise RuntimeError("Settings empty-state Card start not found.")
+    empty_end = next(
+        (
+            i
+            for i in range(empty_anchor, min(len(lines), empty_anchor + 12))
+            if "] );" in lines[i]
+        ),
+        None,
+    )
+    if empty_end is None:
+        raise RuntimeError("Settings empty-state Card end not found.")
+
+    empty_indent = re.match(r"^\s*", lines[empty_start]).group(0)
+    empty_first = lines[empty_start].split("// phpcs:ignore", 1)[0].rstrip()
+    lines[empty_start:empty_end + 1] = [
+        empty_indent + DISABLE
+        + "Card receives no raw HTML slot here and escapes the complete structured empty-state payload.",
+        empty_first,
+        *lines[empty_start + 1:empty_end + 1],
+        empty_indent + ENABLE,
+    ]
+
+    # Re-resolve after the first rewrite changed line numbers.
+    identity_anchor = unique_index(
+        "'body'  => $identity_html",
+        "Settings identity Card anchor",
+    )
+    identity_start = next(
+        (
+            i
+            for i in range(identity_anchor, max(-1, identity_anchor - 8), -1)
+            if "Card::render( [" in lines[i] and "echo " in lines[i]
+        ),
+        None,
+    )
+    if identity_start is None:
+        raise RuntimeError("Settings identity Card start not found.")
+    identity_end = next(
+        (
+            i
+            for i in range(identity_anchor, min(len(lines), identity_anchor + 8))
+            if "] ); ?>" in lines[i]
+        ),
+        None,
+    )
+    if identity_end is None:
+        raise RuntimeError("Settings identity Card end not found.")
+
+    identity_indent = re.match(r"^\s*", lines[identity_start]).group(0)
+    identity_first = lines[identity_start].split("// phpcs:ignore", 1)[0].rstrip()
+    lines[identity_start:identity_end + 1] = [
+        identity_indent + "<?php " + DISABLE
+        + "identity_html is composed locally from esc_html/esc_url output before entering Card's raw body slot. ?>",
+        identity_first,
+        *lines[identity_start + 1:identity_end + 1],
+        identity_indent + "<?php " + ENABLE + " ?>",
+    ]
+
+    updated = "\n".join(lines)
+    if text.endswith("\n"):
+        updated += "\n"
+    return updated
 
 
 def patch_core_shield(text: str) -> str:
@@ -290,21 +335,29 @@ def patch_core_shield(text: str) -> str:
     return updated
 
 def patch_appearance(text: str) -> str:
-    old = """						<?php echo \\CoreBlueprint\\Core\\Themes::sanitize_preview_svg( (string) $theme['preview_svg'] ); ?>
-"""
-    new = """						<?php """ + DISABLE + """sanitize_preview_svg() applies wp_kses() with Core Blueprint's bounded SVG allowlist immediately before output. ?>
-						<?php echo \\CoreBlueprint\\Core\\Themes::sanitize_preview_svg( (string) $theme['preview_svg'] ); ?>
-						<?php """ + ENABLE + """ ?>
-"""
-    return replace_once(text, old, new, "Appearance SVG sanitizer boundary")
+    lines = text.splitlines()
+    matches = [
+        i for i, line in enumerate(lines)
+        if "Themes::sanitize_preview_svg(" in line and "echo " in line
+    ]
+    if 1 != len(matches):
+        raise RuntimeError(
+            f"Appearance SVG boundary: expected one sanitizer output, found {len(matches)}."
+        )
 
+    index = matches[0]
+    indent = re.match(r"^\s*", lines[index]).group(0)
+    lines[index:index + 1] = [
+        indent + "<?php " + DISABLE
+        + "sanitize_preview_svg() applies wp_kses() with Core Blueprint's bounded SVG allowlist immediately before output. ?>",
+        lines[index],
+        indent + "<?php " + ENABLE + " ?>",
+    ]
 
-PATCHERS = {
-    "src/Admin/Pages/Settings.php": patch_settings,
-    "templates/core-shield.php": patch_core_shield,
-    "templates/login-shield.php": patch_login_shield,
-    "templates/appearance.php": patch_appearance,
-}
+    updated = "\n".join(lines)
+    if text.endswith("\n"):
+        updated += "\n"
+    return updated
 
 
 def secure_action_callers() -> list[tuple[str, int, str]]:
@@ -347,7 +400,6 @@ def main() -> int:
 
     found = load_scan(scan_path)
     verify_scan(found)
-    updated = prepare()
     callers = secure_action_callers()
 
     print("AUDITED BASELINE: 24 OutputNotEscaped findings in 5 files")
@@ -361,6 +413,8 @@ def main() -> int:
             print(f"  {path}:{line_no}: {line}")
     else:
         print("  NONE FOUND")
+
+    updated = prepare()
 
     if not args.apply:
         print("DRY RUN: no files changed.")
