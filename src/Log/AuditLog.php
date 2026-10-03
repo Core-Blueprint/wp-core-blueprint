@@ -315,7 +315,7 @@ final class AuditLog {
 	public static function get( int $id ): ?object {
 		global $wpdb;
 		$table = DB::audit_log_table();
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ) ); // phpcs:ignore
+		$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $table, $id ) ); // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- %i binds the Base-owned table identifier and the row ID uses %d.
 
 		if ( $row && ! empty( $row->context ) ) {
 			$decoded = json_decode( $row->context, true );
