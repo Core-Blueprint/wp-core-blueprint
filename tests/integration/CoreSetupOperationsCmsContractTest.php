@@ -34,7 +34,6 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 			'cb_core_media_replace_enabled',
 			'cb_core_package_download_enabled',
 			'cb_core_media_formats',
-			'cb_core_snippets_settings',
 		] as $option ) {
 			$this->saved_options[ $option ] = get_option( $option, '__cb_missing__' );
 		}
@@ -53,7 +52,7 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 		parent::tear_down();
 	}
 
-	public function test_oc1_registry_exposes_the_complete_30_check_v1_baseline(): void {
+	public function test_oc1_registry_exposes_the_complete_29_check_base_v1_baseline(): void {
 		self::assertSame(
 			[
 				'environment-identity',
@@ -77,7 +76,6 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 				'audit-retention',
 				'audit-verbosity',
 				'content-models',
-				'snippets',
 				'user-roles',
 				'media-replace',
 				'media-formats',
@@ -109,8 +107,8 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 		self::assertCount( 3, $sections['operations'] );
 		self::assertCount( 3, $sections['mail'] );
 		self::assertCount( 3, $sections['privacy-governance'] );
-		self::assertCount( 10, $sections['cms-tools'] );
-		self::assertCount( 30, Registry::all() );
+		self::assertCount( 9, $sections['cms-tools'] );
+		self::assertCount( 29, Registry::all() );
 	}
 
 	public function test_oc2_mail_strategy_stays_a_decision_while_readiness_owns_transport_failures(): void {
@@ -307,18 +305,15 @@ final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestC
 		self::assertSame( StatusResolver::NEEDS_REVIEW, StatusResolver::resolve( $check ) );
 	}
 
-	public function test_oc10_disabled_media_formats_and_snippets_are_valid_optional_choices(): void {
+	public function test_oc10_disabled_media_formats_are_a_valid_optional_choice(): void {
 		update_option( 'cb_core_media_formats', [ 'enabled' => false ], false );
-		update_option( 'cb_core_snippets_settings', [ 'enabled' => false ], true );
 
-		foreach ( [ 'media-formats', 'snippets' ] as $id ) {
-			$check = Registry::get( $id );
-			self::assertInstanceOf( CheckInterface::class, $check );
-			$evidence = $check->evidence();
+		$check = Registry::get( 'media-formats' );
+		self::assertInstanceOf( CheckInterface::class, $check );
+		$evidence = $check->evidence();
 
-			self::assertSame( Evidence::HEALTH_OK, $evidence->health(), $id );
-			self::assertTrue( $check->allows_not_applicable( $evidence ), $id );
-		}
+		self::assertSame( Evidence::HEALTH_OK, $evidence->health() );
+		self::assertTrue( $check->allows_not_applicable( $evidence ) );
 	}
 
 	private function reset_settings_cache(): void {
