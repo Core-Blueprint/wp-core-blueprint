@@ -622,7 +622,7 @@ final class Dashboard extends PageBase {
 
 		return StatusMenu::render( [
 			'id'      => 'cb-dashboard-status-' . sanitize_html_class( (string) ( $extension['id'] ?? 'extension' ) ),
-			'state'   => $state,
+			'state'   => $active ? 'active' : 'inactive',
 			'label'   => $active ? __( 'Active' ) : __( 'Inactive' ),
 			'detail'  => self::extension_status_line( $extension ),
 			'actions' => $actions,
