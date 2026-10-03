@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,11 +55,10 @@ TEXT_SUFFIXES = {
     ".py",
 }
 
-# Escaped representation first, then normal PHP namespace representation.
-REPLACEMENTS = (
-    (r"CB\\Core", r"CoreBlueprint\\Core"),
-    (r"CB\Core", r"CoreBlueprint\Core"),
-)
+# Match the namespace root with any level of textual escaping. This covers
+# normal PHP namespaces (CB\Core), escaped string literals (CB\\Core), and
+# deeper escaped contract fixtures without hard-coding every representation.
+LEGACY_NAMESPACE_PATTERN = re.compile(r"CB(?P<slashes>\\+)Core")
 
 
 def candidate_files() -> list[Path]:
@@ -83,16 +83,15 @@ def candidate_files() -> list[Path]:
 
 
 def transform(text: str) -> tuple[str, int]:
-    total = 0
-    updated = text
+    matches = list(LEGACY_NAMESPACE_PATTERN.finditer(text))
+    if not matches:
+        return text, 0
 
-    for old, new in REPLACEMENTS:
-        count = updated.count(old)
-        if count:
-            updated = updated.replace(old, new)
-            total += count
-
-    return updated, total
+    updated = LEGACY_NAMESPACE_PATTERN.sub(
+        lambda match: f"CoreBlueprint{match.group('slashes')}Core",
+        text,
+    )
+    return updated, len(matches)
 
 
 def inspect() -> tuple[list[tuple[Path, int]], int]:
