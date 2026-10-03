@@ -78,11 +78,12 @@ final class DatabaseIdentifierHardeningContractTest extends WP_UnitTestCase {
 
 	public function test_builders_reject_unsafe_table_identifiers(): void {
 		foreach ( [
-			QueryBuilder::class,
-			InsertBuilder::class,
-			UpdateBuilder::class,
-			DeleteBuilder::class,
-		] as $builder_class ) {
+			QueryBuilder::class  => QueryBuilder::class . '::validate_table',
+			InsertBuilder::class => InsertBuilder::class . '::validate_table',
+			UpdateBuilder::class => UpdateBuilder::class . '::validate_table',
+			DeleteBuilder::class => DeleteBuilder::class . '::validate_table',
+		] as $builder_class => $incorrect_usage ) {
+			$this->setExpectedIncorrectUsage( $incorrect_usage );
 			try {
 				new $builder_class( 'wp_fixture; DROP TABLE wp_users' );
 				self::fail( $builder_class . ' accepted an unsafe table identifier.' );
@@ -93,6 +94,7 @@ final class DatabaseIdentifierHardeningContractTest extends WP_UnitTestCase {
 	}
 
 	public function test_write_builders_reject_unsafe_column_identifiers(): void {
+		$this->setExpectedIncorrectUsage( InsertBuilder::class . '::validate_bare_column' );
 		try {
 			( new InsertBuilder( $this->table ) )->values( [ 'name) VALUES ("x"); --' => 'bad' ] );
 			self::fail( 'InsertBuilder accepted an unsafe column identifier.' );
@@ -100,6 +102,7 @@ final class DatabaseIdentifierHardeningContractTest extends WP_UnitTestCase {
 			self::assertSame( 'Invalid SQL column identifier.', $error->getMessage() );
 		}
 
+		$this->setExpectedIncorrectUsage( UpdateBuilder::class . '::validate_bare_column' );
 		try {
 			( new UpdateBuilder( $this->table ) )->set( [ 'status = "closed"; --' => 'bad' ] );
 			self::fail( 'UpdateBuilder accepted an unsafe column identifier.' );
