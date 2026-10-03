@@ -567,28 +567,10 @@ final class Dashboard extends PageBase {
 	/** Build the Base-owned lifecycle/status menu for a sibling extension card. */
 	private static function extension_status_menu( array $extension ): string {
 		$active       = ! empty( $extension['active'] );
-		$state        = self::extension_dashboard_state( $extension );
 		$extension_id = sanitize_key( (string) ( $extension['id'] ?? '' ) );
 		$capability   = '' !== $extension_id ? ExtensionLifecycle::capability( $extension_id ) : null;
-		$status_id    = sanitize_key( (string) ( $extension['status_id'] ?? '' ) );
-		$definition   = $active && '' !== $status_id ? ActivationRegistry::definition( $status_id ) : null;
 		$actions      = [];
 
-		// Status-aware extensions may expose a feature/runtime master switch in
-		// addition to the WordPress plugin lifecycle. Keep both authorities
-		// separate: module state never activates/deactivates the plugin itself.
-		if ( is_array( $definition ) && current_user_can( $definition['capability'] ) ) {
-			$module_enabled = ActivationRegistry::is_enabled( $status_id );
-			$actions[] = [
-				'type'    => 'button',
-				'label'   => $module_enabled ? __( 'Turn off', 'core-blueprint' ) : __( 'Turn on', 'core-blueprint' ),
-				'variant' => $module_enabled ? 'danger' : 'default',
-				'attrs'   => [
-					'data-cb-core-module-action'  => $status_id,
-					'data-cb-core-module-enabled' => $module_enabled ? '0' : '1',
-				],
-			];
-		}
 
 		if ( null !== $capability && current_user_can( $capability ) ) {
 			$actions[] = [
