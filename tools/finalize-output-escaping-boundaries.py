@@ -246,13 +246,15 @@ def patch_core_shield(text: str) -> str:
     def canonicalize_icon(needle: str, label: str) -> None:
         index = unique_index(needle, label)
         line = lines[index]
-        indent = re.match(r"^\\s*", line).group(0)
+        indent = re.match(r"^\s*", line).group(0)
         echo_only = line.split("?>", 1)[0].rstrip() + " ?>"
 
-        # E1B2a may have left both a preceding legacy ignore and an inline
-        # same-line ignore. Remove only those tool-owned PHPCS lines.
         start = index
-        if index > 0 and "phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped" in lines[index - 1]:
+        if (
+            index > 0
+            and "phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped"
+            in lines[index - 1]
+        ):
             start = index - 1
 
         lines[start:index + 1] = [
@@ -271,7 +273,6 @@ def patch_core_shield(text: str) -> str:
         "Core Shield feature icon boundary",
     )
 
-    # Re-resolve indexes after the icon rewrites changed physical line numbers.
     badge_index = unique_index(
         "UI::render_badges( $feature_badges )",
         "Core Shield feature badges boundary",
@@ -284,9 +285,6 @@ def patch_core_shield(text: str) -> str:
     if state_index <= badge_index:
         raise RuntimeError("Core Shield badge/state boundary order is unexpected.")
 
-    # The earlier mechanical passes left a recognizable PHPCS-only tangle
-    # around these two calls. Assert that every extra PHP-only line in the
-    # replacement window is one of our PHPCS markers or an empty PHP tag.
     start = badge_index
     while start > 0 and (
         "phpcs:" in lines[start - 1]
@@ -294,9 +292,13 @@ def patch_core_shield(text: str) -> str:
     ):
         start -= 1
 
-    end = state_index
-    if "phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped" not in lines[state_index]:
-        raise RuntimeError("Core Shield StateBadge line is not the audited pre-patch form.")
+    if (
+        "phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped"
+        not in lines[state_index]
+    ):
+        raise RuntimeError(
+            "Core Shield StateBadge line is not the audited pre-patch form."
+        )
 
     between = lines[start:state_index]
     if_line = next(
@@ -308,14 +310,16 @@ def patch_core_shield(text: str) -> str:
         None,
     )
     if if_line is None or div_line is None:
-        raise RuntimeError("Core Shield delegated wrapper was not found in the audited window.")
+        raise RuntimeError(
+            "Core Shield delegated wrapper was not found in the audited window."
+        )
 
-    badge_indent = re.match(r"^\\s*", lines[badge_index]).group(0)
-    state_indent = re.match(r"^\\s*", lines[state_index]).group(0)
+    badge_indent = re.match(r"^\s*", lines[badge_index]).group(0)
+    state_indent = re.match(r"^\s*", lines[state_index]).group(0)
     badge_echo = lines[badge_index].split("// phpcs:ignore", 1)[0].rstrip()
     state_echo = lines[state_index].split("?>", 1)[0].rstrip() + " ?>"
 
-    lines[start:end + 1] = [
+    lines[start:state_index + 1] = [
         badge_indent + "<?php " + DISABLE
         + "UI::render_badges() escapes URLs, attributes, and visible labels for every supported badge type. ?>",
         badge_indent + badge_echo.lstrip(),
@@ -329,9 +333,9 @@ def patch_core_shield(text: str) -> str:
         state_indent + "<?php " + ENABLE + " ?>",
     ]
 
-    updated = "\\n".join(lines)
-    if text.endswith("\\n"):
-        updated += "\\n"
+    updated = "\n".join(lines)
+    if text.endswith("\n"):
+        updated += "\n"
     return updated
 
 def patch_appearance(text: str) -> str:
