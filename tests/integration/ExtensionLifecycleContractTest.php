@@ -72,6 +72,7 @@ final class CB_Base_Extension_Lifecycle_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "__( 'Activate' )", $dashboard );
 		self::assertStringContainsString( "__( 'Active' )", $dashboard );
 		self::assertStringContainsString( "__( 'Inactive' )", $dashboard );
+		self::assertStringContainsString( "'state'   => \$active ? 'active' : 'inactive'", $dashboard );
 	}
 
 	private function create_fixture(): void {
