@@ -207,12 +207,13 @@ def apply_boundaries(
         source = after[index]
         indent = source[: len(source) - len(source.lstrip())]
 
-        # Fail closed if an identical boundary is somehow already present.
-        previous = after[index - 1] if index > 0 else ""
-        following = after[index + 1] if index + 1 < len(after) else ""
-        if MARKER in previous or MARKER in following:
+        # Adjacent audited callsites are valid. Applying from bottom to top can
+        # therefore place a newly inserted marker directly beside the next
+        # source line. Only refuse when the scan target itself is no longer the
+        # original runtime/import source line.
+        if MARKER in source or source.lstrip().startswith("// phpcs:"):
             raise RuntimeError(
-                f"{rel}:{line_no}: filesystem boundary already appears adjacent."
+                f"{rel}:{line_no}: filesystem scan target is already annotated."
             )
 
         after[index:index + 1] = [
