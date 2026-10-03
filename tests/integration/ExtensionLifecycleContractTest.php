@@ -61,12 +61,11 @@ final class CB_Base_Extension_Lifecycle_Contract_Test extends WP_UnitTestCase {
 	}
 
 
-	public function test_d1_status_aware_extension_keeps_plugin_and_runtime_controls_separate(): void {
+	public function test_d1_extension_card_exposes_one_plugin_lifecycle_control(): void {
 		$dashboard = (string) file_get_contents( CB_CORE_DIR . 'src/Admin/Pages/Dashboard.php' );
 
-		self::assertStringContainsString( "\$extension['status_id']", $dashboard );
-		self::assertStringContainsString( 'ActivationRegistry::definition( $status_id )', $dashboard );
-		self::assertStringContainsString( "'data-cb-core-module-action'  => \$status_id", $dashboard );
+		self::assertStringNotContainsString( "'data-cb-core-module-action'  => \$status_id", $dashboard );
+		self::assertStringNotContainsString( 'ActivationRegistry::definition( $status_id )', $dashboard );
 		self::assertStringContainsString( "'data-cb-core-extension-action' => \$extension_id", $dashboard );
 		self::assertStringContainsString( "__( 'Deactivate' )", $dashboard );
 		self::assertStringContainsString( "__( 'Activate' )", $dashboard );
