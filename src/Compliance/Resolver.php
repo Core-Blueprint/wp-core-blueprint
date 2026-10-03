@@ -26,7 +26,7 @@ final class Resolver {
 		];
 
 		/** Filter public document MIME types accepted by Compliance Resources. */
-		$filtered = apply_filters( 'cb_core_compliance_document_mime_types', $mimes );
+		$filtered = apply_filters( 'core_blueprint_compliance_document_mime_types', $mimes );
 		if ( ! is_array( $filtered ) ) {
 			return $mimes;
 		}

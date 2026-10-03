@@ -39,7 +39,7 @@ final class Admin {
 		MenuGroupRegistry::init();
 		add_action( 'admin_menu', [ __CLASS__, 'register_parent_menu' ], 5 );
 		add_action( 'admin_menu', [ __CLASS__, 'remove_duplicate_submenu' ], 999 );
-		add_action( 'cb_core_register_pages', [ __CLASS__, 'register_foundation_pages' ] );
+		add_action( 'core_blueprint_register_pages', [ __CLASS__, 'register_foundation_pages' ] );
 	}
 
 	/** Register the Core Blueprint top-level menu if no sibling already did. */
@@ -61,7 +61,7 @@ final class Admin {
 		}
 
 		$menu_capability = (string) apply_filters(
-			'cb_core_menu_capability',
+			'core_blueprint_menu_capability',
 			self::parent_menu_capability()
 		);
 
@@ -69,7 +69,7 @@ final class Admin {
 			'Core Blueprint',
 			'Core Blueprint',
 			/**
-			 * Filter: cb_core_menu_capability
+			 * Filter: core_blueprint_menu_capability
 			 *
 			 * The capability required to see the Core Blueprint parent menu.
 			 * Defaults to manage_options, or the delegated Admin Notices capability

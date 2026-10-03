@@ -34,13 +34,13 @@ final class CB_Base_Automation_Invocation_Contract_Test extends WP_UnitTestCase 
 		$this->action_context = null;
 		$this->state_context = null;
 
-		add_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extension' ] );
-		add_action( 'cb_core_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
+		add_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extension' ] );
+		add_action( 'core_blueprint_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
 	}
 
 	public function tear_down(): void {
-		remove_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extension' ] );
-		remove_action( 'cb_core_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
+		remove_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extension' ] );
+		remove_action( 'core_blueprint_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
 		wp_set_current_user( 0 );
 		ExtensionRegistry::reset();
 		TriggerRegistry::_reset_for_testing();

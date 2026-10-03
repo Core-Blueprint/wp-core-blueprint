@@ -18,7 +18,7 @@ The Foundation never turns `profile.php` or `user-edit.php` into a Core Admin su
 Register sections only during:
 
 ```php
-cb_core_register_user_profile_sections
+core_blueprint_register_user_profile_sections
 ```
 
 Use the public registry:
@@ -26,7 +26,7 @@ Use the public registry:
 ```php
 use CoreBlueprint\Core\Admin\UserProfileSectionRegistry;
 
-add_action( 'cb_core_register_user_profile_sections', static function (): void {
+add_action( 'core_blueprint_register_user_profile_sections', static function (): void {
     UserProfileSectionRegistry::register(
         'vendor-profile-preferences',
         [
@@ -130,7 +130,7 @@ Consumers remain responsible for:
 Public:
 
 - `CoreBlueprint\Core\Admin\UserProfileSectionRegistry`
-- `cb_core_register_user_profile_sections`
+- `core_blueprint_register_user_profile_sections`
 - `CONTEXT_SELF`
 - `CONTEXT_EDIT`
 - the definition contract documented above

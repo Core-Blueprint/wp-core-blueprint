@@ -23,8 +23,8 @@ declare(strict_types=1);
  *   capability      Required capability for clicking Run. Defaults to
  *                   'cb_use_cli'; future commands may require more.
  * *
- * Sibling plugins extend the runner via the `cb_console_register_commands`
- * filter - same pattern as `cb_core_cli_register_commands` but flat.
+ * Sibling plugins extend the runner via the `core_blueprint_console_register_commands`
+ * filter - same pattern as `core_blueprint_cli_register_commands` but flat.
  *
  * @package Core_Blueprint
  */
@@ -39,7 +39,7 @@ defined( 'ABSPATH' ) || exit;
 final class Registry {
 
 	/**
-	 * Build the full command list. Filter `cb_console_register_commands`
+	 * Build the full command list. Filter `core_blueprint_console_register_commands`
 	 * lets siblings append; built-in entries cannot be removed.
 	 *
 	 * @return array<int, array{
@@ -55,14 +55,14 @@ final class Registry {
 		$commands = self::builtin();
 
 		/**
-		 * Filter: cb_console_register_commands
+		 * Filter: core_blueprint_console_register_commands
 		 *
 		 * Lets sibling plugins register their own atomic commands in the
 		 * Console runner. Each entry must declare an `id`, `name`,
 		 * `class` (implementing the Console command contract), and
 		 * `description`; `group` and `capability` are optional.
 		 */
-		$commands = (array) apply_filters( 'cb_console_register_commands', $commands );
+		$commands = (array) apply_filters( 'core_blueprint_console_register_commands', $commands );
 
 		// Normalise - drop malformed entries silently, default missing
 		// optional fields.

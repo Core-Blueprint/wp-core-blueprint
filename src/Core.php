@@ -92,7 +92,7 @@ final class Core {
 
 
 		// Built-in module registration filter.
-		add_filter( 'cb_core_modules', [ $this, 'register_builtin_modules' ] );
+		add_filter( 'core_blueprint_modules', [ $this, 'register_builtin_modules' ] );
 
 		// Module registry boots at priority 20, after all CB plugins had a
 		// chance to register.
@@ -224,13 +224,13 @@ final class Core {
 
 		// HUD subsystem - the floating "front door" launcher. Renders on
 		// admin AND frontend for capable logged-in users; honours the
-		// cb_core_hud_enabled filter + Preferences › Floating Menu toggle as
+		// core_blueprint_hud_enabled filter + Preferences › Floating Menu toggle as
 		// a kill-switch. Brand abstraction (BrandRegistry, BrandInterface)
 		// provides the supported white-label extension boundary.
 		\CoreBlueprint\Core\HUD\Bootstrap::boot();
 
 		// Per-subsystem HUD-item registration. Each Bootstrap below only
-		// hooks the cb_hud_register_items action - no other side effects.
+		// hooks the core_blueprint_hud_register_items action - no other side effects.
 		// Conditional registrations (Notes/Reports check their master
 		// switch) live inside the per-subsystem callback. Boot order is
 		// alphabetical and inconsequential - items sort by their `order`
@@ -254,14 +254,14 @@ final class Core {
 
 		// Signal that Core Blueprint is fully booted. Extension plugins may hook here.
 		add_action( 'plugins_loaded', static function () {
-			do_action( 'cb_core_booted' );
+			do_action( 'core_blueprint_booted' );
 		}, 25 );
 	}
 
 	/**
 	 * Collect built-in Core Shield modules (Fingerprint, Headers).
 	 *
-	 * Registered directly here rather than via the cb_core_modules filter
+	 * Registered directly here rather than via the core_blueprint_modules filter
 	 * because Core owns its own built-ins - no filter roundtrip needed.
 	 *
 	 * Core Scanner is intentionally not a Core Shield module. It owns its

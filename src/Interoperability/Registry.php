@@ -74,11 +74,11 @@ final class Registry {
 			}
 
 			self::$collecting_contracts = true;
-			do_action( 'cb_core_register_interoperability_contracts' );
+			do_action( 'core_blueprint_register_interoperability_contracts' );
 			self::$collecting_contracts = false;
 
 			self::$collecting_implementations = true;
-			do_action( 'cb_core_register_interoperability_implementations' );
+			do_action( 'core_blueprint_register_interoperability_implementations' );
 		} finally {
 			self::$collecting_contracts       = false;
 			self::$collecting_implementations = false;
@@ -97,7 +97,7 @@ final class Registry {
 		if (
 			self::$frozen
 			|| ! self::$collecting_contracts
-			|| ! doing_action( 'cb_core_register_interoperability_contracts' )
+			|| ! doing_action( 'core_blueprint_register_interoperability_contracts' )
 		) {
 			self::diagnostic( 'Contract registration refused outside the controlled interoperability lifecycle.' );
 			return false;
@@ -118,7 +118,7 @@ final class Registry {
 		if (
 			self::$frozen
 			|| ! self::$collecting_implementations
-			|| ! doing_action( 'cb_core_register_interoperability_implementations' )
+			|| ! doing_action( 'core_blueprint_register_interoperability_implementations' )
 		) {
 			self::diagnostic( 'Implementation registration refused outside the controlled interoperability lifecycle.' );
 			return false;

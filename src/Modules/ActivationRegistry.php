@@ -104,7 +104,7 @@ final class ActivationRegistry {
 		 *
 		 * @param array<string,array{state:class-string,capability:string}> $definitions
 		 */
-		$filtered = apply_filters( 'cb_core_module_activation_definitions', $built_ins );
+		$filtered = apply_filters( 'core_blueprint_module_activation_definitions', $built_ins );
 		if ( ! is_array( $filtered ) ) {
 			$filtered = $built_ins;
 		}

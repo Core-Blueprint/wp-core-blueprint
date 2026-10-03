@@ -8,7 +8,7 @@ defined( 'ABSPATH' ) || exit;
 final class Paths {
 	public static function base_dir(): string {
 		$default = trailingslashit( WP_CONTENT_DIR ) . 'cb-snippets';
-		return untrailingslashit( (string) apply_filters( 'cb_core_snippets_storage_dir', $default ) );
+		return untrailingslashit( (string) apply_filters( 'core_blueprint_snippets_storage_dir', $default ) );
 	}
 
 	public static function code_dir(): string {

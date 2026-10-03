@@ -236,7 +236,7 @@ final class LoginFlow {
 		} else {
 			Audit::authenticated( (int) $user->ID, $method );
 		}
-		do_action( 'cb_core_two_factor_authenticated', $user, $method );
+		do_action( 'core_blueprint_two_factor_authenticated', $user, $method );
 
 		$safe = wp_validate_redirect( $redirect_to, admin_url() );
 		return (string) apply_filters( 'login_redirect', $safe, $safe, $user );
@@ -326,7 +326,7 @@ final class LoginFlow {
 		 * @param array{method:string,script:string,doing_ajax:bool} $context
 		 */
 		return (bool) apply_filters(
-			'cb_core_two_factor_interactive_login_request',
+			'core_blueprint_two_factor_interactive_login_request',
 			$interactive,
 			[
 				'method'     => $method,

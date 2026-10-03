@@ -120,10 +120,10 @@ final class MigrationRecoveryTwoFactorBoundaryContractTest extends WP_UnitTestCa
 
 		$other = get_userdata( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
 		self::assertInstanceOf( WP_User::class, $other );
-		do_action( 'cb_core_two_factor_authenticated', $other, 'totp' );
+		do_action( 'core_blueprint_two_factor_authenticated', $other, 'totp' );
 		self::assertSame( 'pending_two_factor', Recovery::status( $ticket )['status'] ?? '' );
 
-		do_action( 'cb_core_two_factor_authenticated', $actor, 'totp' );
+		do_action( 'core_blueprint_two_factor_authenticated', $actor, 'totp' );
 
 		$status = Recovery::status( $ticket );
 		self::assertSame( 'authenticated', $status['status'] ?? '' );

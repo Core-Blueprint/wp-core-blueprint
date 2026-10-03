@@ -26,13 +26,13 @@ final class CB_Base_Automation_State_Capability_Contract_Test extends WP_UnitTes
 		$this->registration_results = [];
 		$this->collection_count = 0;
 
-		add_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extension' ] );
-		add_action( 'cb_core_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
+		add_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extension' ] );
+		add_action( 'core_blueprint_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
 	}
 
 	public function tear_down(): void {
-		remove_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extension' ] );
-		remove_action( 'cb_core_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
+		remove_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extension' ] );
+		remove_action( 'core_blueprint_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
 		ExtensionRegistry::reset();
 		StateRegistry::_reset_for_testing();
 		$this->remove_fixture();

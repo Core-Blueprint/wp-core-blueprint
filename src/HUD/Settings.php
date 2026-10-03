@@ -10,7 +10,7 @@ declare(strict_types=1);
  * Kill-switch:
  *
  *   `is_enabled()` resolves to `false` when EITHER the site option
- *   `cb_core_hud_disabled` is truthy OR the `cb_core_hud_enabled` filter
+ *   `cb_core_hud_disabled` is truthy OR the `core_blueprint_hud_enabled` filter
  *   returns false. This is the single boot gate - checked once in
  *   Bootstrap::boot() and never again. To re-enable mid-session, the
  *   page must reload (acceptable: kill-switch is a recovery path, not
@@ -100,7 +100,7 @@ final class Settings {
 		}
 
 		/**
-		 * Filter: cb_core_hud_enabled
+		 * Filter: core_blueprint_hud_enabled
 		 *
 		 * Developer-level kill-switch. Useful for mu-plugins during
 		 * conflict-debugging, or for staging environments that want HUD
@@ -109,17 +109,17 @@ final class Settings {
 		 *
 		 * @param bool $enabled  Whether HUD is enabled. Default true.
 		 */
-		return (bool) apply_filters( 'cb_core_hud_enabled', true );
+		return (bool) apply_filters( 'core_blueprint_hud_enabled', true );
 	}
 
 	/**
 	 * Default position for new users / unconfigured installations.
-	 * Filter `cb_core_hud_default_position` lets white-label plugins
+	 * Filter `core_blueprint_hud_default_position` lets white-label plugins
 	 * change the out-of-box default.
 	 */
 	public static function default_position(): string {
 		$default = self::defaults()['default_position'];
-		return (string) apply_filters( 'cb_core_hud_default_position', $default );
+		return (string) apply_filters( 'core_blueprint_hud_default_position', $default );
 	}
 
 	/**
@@ -129,7 +129,7 @@ final class Settings {
 	 */
 	public static function default_ghost(): bool {
 		$default = (bool) self::defaults()['default_ghost'];
-		return (bool) apply_filters( 'cb_core_hud_default_ghost', $default );
+		return (bool) apply_filters( 'core_blueprint_hud_default_ghost', $default );
 	}
 
 	/**
@@ -140,6 +140,6 @@ final class Settings {
 	 */
 	public static function default_brand(): string {
 		$default = (string) self::defaults()['default_brand'];
-		return (string) apply_filters( 'cb_core_hud_default_brand', $default );
+		return (string) apply_filters( 'core_blueprint_hud_default_brand', $default );
 	}
 }

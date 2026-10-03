@@ -6,9 +6,9 @@ Core Blueprint Base owns HUD placement, rendering, sanitization, lifecycle, styl
 
 HUD registration runs on `init` in three phases:
 
-1. `cb_hud_register_section_types`
-2. `cb_hud_register_sections`
-3. `cb_hud_register_items`
+1. `core_blueprint_hud_register_section_types`
+2. `core_blueprint_hud_register_sections`
+3. `core_blueprint_hud_register_items`
 
 Register translated presentation metadata during these hooks or another WordPress lifecycle point where translations are available.
 
@@ -36,10 +36,10 @@ Prefer an existing section unless a separate group is genuinely useful.
 
 Custom types use a namespaced lower-case ID such as `vendor/metrics`. They are deliberately restricted to Base-owned presentation primitives. Extensions do not provide arbitrary PHP render callbacks or raw HUD markup.
 
-Hook `cb_hud_register_section_types`. The callback receives the `CoreBlueprint\Core\HUD\SectionTypeRegistry` class name.
+Hook `core_blueprint_hud_register_section_types`. The callback receives the `CoreBlueprint\Core\HUD\SectionTypeRegistry` class name.
 
 ```php
-add_action( 'cb_hud_register_section_types', static function ( string $types ): void {
+add_action( 'core_blueprint_hud_register_section_types', static function ( string $types ): void {
     $types::register( [
         'id'                  => 'vendor/metrics',
         'presentation'        => 'metrics',
@@ -64,10 +64,10 @@ Malformed, duplicate or Base-reserved type registrations are rejected safely.
 
 ## Register a section
 
-Hook `cb_hud_register_sections`. The callback receives the `CoreBlueprint\Core\HUD\Registry` class name. Section IDs use strict lower-case kebab-case and must be unique.
+Hook `core_blueprint_hud_register_sections`. The callback receives the `CoreBlueprint\Core\HUD\Registry` class name. Section IDs use strict lower-case kebab-case and must be unique.
 
 ```php
-add_action( 'cb_hud_register_sections', static function ( string $registry ): void {
+add_action( 'core_blueprint_hud_register_sections', static function ( string $registry ): void {
     $registry::register_section( [
         'id'                => 'vendor-fleet',
         'label'             => __( 'Fleet', 'vendor-plugin' ),
@@ -87,10 +87,10 @@ The referenced type must already exist. Unknown types, malformed IDs, duplicate 
 
 ## Register an item
 
-Hook `cb_hud_register_items`. The callback receives the `CoreBlueprint\Core\HUD\Registry` class name.
+Hook `core_blueprint_hud_register_items`. The callback receives the `CoreBlueprint\Core\HUD\Registry` class name.
 
 ```php
-add_action( 'cb_hud_register_items', static function ( string $registry ): void {
+add_action( 'core_blueprint_hud_register_items', static function ( string $registry ): void {
     $registry::add_item( [
         'id'         => 'core-blueprint-example-overview',
         'label'      => __( 'Example', 'core-blueprint-example' ),

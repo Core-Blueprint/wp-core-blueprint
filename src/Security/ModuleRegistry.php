@@ -4,7 +4,7 @@ declare(strict_types=1);
  * ModuleRegistry
  *
  * Central registry for Core Blueprint feature modules. Modules
- * are collected via the `cb_core_modules` filter on `plugins_loaded` priority
+ * are collected via the `core_blueprint_modules` filter on `plugins_loaded` priority
  * 20, giving sibling CB plugins a chance to register their own modules.
  *
  * In Milestone 1 the registry ships empty - no built-in modules are bundled
@@ -48,18 +48,18 @@ final class ModuleRegistry {
 		self::$booted = true;
 
 		/**
-		 * Filter: cb_core_modules
+		 * Filter: core_blueprint_modules
 		 *
 		 * Register additional modules by appending to the array. Each entry
 		 * must implement Module.
 		 *
 		 * Example:
-		 *   add_filter( 'cb_core_modules', function( $modules ) {
+		 *   add_filter( 'core_blueprint_modules', function( $modules ) {
 		 *     $modules[] = new My_Custom_Module();
 		 *     return $modules;
 		 *   });
 		 */
-		$modules = apply_filters( 'cb_core_modules', [] );
+		$modules = apply_filters( 'core_blueprint_modules', [] );
 
 		foreach ( $modules as $module ) {
 			if ( ! ( $module instanceof Module ) ) {

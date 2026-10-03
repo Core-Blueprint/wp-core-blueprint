@@ -21,7 +21,7 @@ final class Bootstrap {
 		add_action( 'init', [ __CLASS__, 'register_i18n_filters' ], 1 );
 
 		if ( RequestContext::is_admin_screen() ) {
-			add_action( 'cb_core_register_pages', static function (): void {
+			add_action( 'core_blueprint_register_pages', static function (): void {
 				if ( ! State::is_enabled() ) {
 					return;
 				}

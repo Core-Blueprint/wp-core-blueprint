@@ -124,7 +124,7 @@ final class LoginShield {
 		$response = wp_safe_remote_get( $url, [
 			'timeout'     => 5,
 			'redirection' => 2,
-			'sslverify'   => (bool) apply_filters( 'cb_core_login_shield_test_sslverify', true ),
+			'sslverify'   => (bool) apply_filters( 'core_blueprint_login_shield_test_sslverify', true ),
 			'cookies'     => [],
 		] );
 

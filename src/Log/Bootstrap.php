@@ -38,7 +38,7 @@ final class Bootstrap {
 		$booted = true;
 
 
-		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
+		add_action( 'core_blueprint_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
 	}
 
 	/**

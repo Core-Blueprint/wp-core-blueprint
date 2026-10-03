@@ -152,10 +152,10 @@ final class AccessModeAdmin {
 		}
 
 		if ( $mode_changed ) {
-			do_action( 'cb_core_access_mode_changed', $requested, $previous );
+			do_action( 'core_blueprint_access_mode_changed', $requested, $previous );
 		}
 		if ( $config_changed ) {
-			do_action( 'cb_core_access_mode_settings_changed', $config, $before );
+			do_action( 'core_blueprint_access_mode_settings_changed', $config, $before );
 		}
 
 		wp_send_json_success( [

@@ -54,7 +54,7 @@ final class Bootstrap {
 		if ( UserRolesState::is_enabled() ) {
 			add_action( 'rest_api_init', [ RolesController::class, 'register' ] );
 		}
-		add_action( 'cb_core_register_pages', static function (): void {
+		add_action( 'core_blueprint_register_pages', static function (): void {
 			if ( ! UserRolesState::is_enabled() ) {
 				return;
 			}

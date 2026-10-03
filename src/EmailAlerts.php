@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
  * EmailAlerts
  *
  * Sends administrator email notifications when audit events of selected
- * severity levels are written. Consumes the 'cb_core_audit_log_written'
+ * severity levels are written. Consumes the 'core_blueprint_audit_log_written'
  * action fired by AuditLog::log().
  *
  * Design decisions:
@@ -25,7 +25,7 @@ defined( 'ABSPATH' ) || exit;
  *       2. UI OVERRIDE: the 'audit.email_recipient' settings key, set from
  *          Preferences > Notifications. Comma-separated list supported.
  *          Empty falls back to the default.
- *       3. DEVELOPER FILTER: 'cb_core_alert_recipient' runs last on the
+ *       3. DEVELOPER FILTER: 'core_blueprint_alert_recipient' runs last on the
  *          resolved value, so integrators can still override the UI choice
  *          (multi-admin routing, external ticketing forwarders, etc.).
  *      See ::resolve_recipients() for the canonical implementation.
@@ -82,14 +82,14 @@ final class EmailAlerts {
 	// ─── Bootstrap ───────────────────────────────────────────────────────────
 
 	public static function init(): void {
-		add_action( 'cb_core_audit_log_written', [ __CLASS__, 'maybe_alert' ], 10, 4 );
+		add_action( 'core_blueprint_audit_log_written', [ __CLASS__, 'maybe_alert' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'flush_pending' ], 2 );
 	}
 
 	// ─── Handler ─────────────────────────────────────────────────────────────
 
 	/**
-	 * Consumer of cb_core_audit_log_written. Decides whether to send a mail
+	 * Consumer of core_blueprint_audit_log_written. Decides whether to send a mail
 	 * based on severity config and throttle state.
 	 *
 	 * @param int    $insert_id
@@ -373,7 +373,7 @@ final class EmailAlerts {
 	 *      "general CB recipient" field - applies to any group that has no
 	 *      override of its own.
 	 *   3. **DEFAULT**: `admin_email` (WP core "site administrator").
-	 *   4. **FILTER**: `cb_core_alert_recipient` runs last so integrators can
+	 *   4. **FILTER**: `core_blueprint_alert_recipient` runs last so integrators can
 	 *      still override the UI choice (signature unchanged from 1.0.20).
 	 *
 	 * Returns a comma-separated string suitable for wp_mail() - wp_mail()
@@ -416,7 +416,7 @@ final class EmailAlerts {
 		// Layer 3: developer filter. Passes through whether the caller
 		// wants a single address or a comma-joined string.
 		/** This filter predates the 1.0.20 UI and is preserved verbatim. */
-		$filtered = apply_filters( 'cb_core_alert_recipient', $clean );
+		$filtered = apply_filters( 'core_blueprint_alert_recipient', $clean );
 
 		return is_string( $filtered ) ? $filtered : '';
 	}

@@ -62,7 +62,7 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 			unset( $id );
 			$events[] = $event;
 		};
-		add_action( 'cb_core_audit_log_written', $listener, 10, 2 );
+		add_action( 'core_blueprint_audit_log_written', $listener, 10, 2 );
 
 		try {
 			$policy = Policy::defaults();
@@ -87,7 +87,7 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 			$reset_after_noop = count( array_filter( $events, static fn( string $event ): bool => 'ui_admin_navigation_reset' === $event ) );
 			self::assertSame( $reset_after_first, $reset_after_noop );
 		} finally {
-			remove_action( 'cb_core_audit_log_written', $listener, 10 );
+			remove_action( 'core_blueprint_audit_log_written', $listener, 10 );
 		}
 	}
 

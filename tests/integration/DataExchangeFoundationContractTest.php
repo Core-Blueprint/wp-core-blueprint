@@ -157,13 +157,13 @@ final class CB_Base_Data_Exchange_Foundation_Contract_Test extends WP_UnitTestCa
 		CB_Data_Exchange_Fixture_Entity::$oversized_csv_record     = false;
 		CB_Data_Exchange_Fixture_Entity::$provider_error          = false;
 
-		add_action( 'cb_core_register_extensions', [ $this, 'register_extension' ] );
-		add_action( 'cb_core_register_interoperability_implementations', [ $this, 'register_entity' ] );
+		add_action( 'core_blueprint_register_extensions', [ $this, 'register_extension' ] );
+		add_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_entity' ] );
 	}
 
 	public function tear_down(): void {
-		remove_action( 'cb_core_register_extensions', [ $this, 'register_extension' ] );
-		remove_action( 'cb_core_register_interoperability_implementations', [ $this, 'register_entity' ] );
+		remove_action( 'core_blueprint_register_extensions', [ $this, 'register_extension' ] );
+		remove_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_entity' ] );
 		ExtensionRegistry::reset();
 		Registry::_reset_for_testing();
 		$this->remove_fixture();

@@ -5,7 +5,7 @@ declare(strict_types=1);
  * top-level product menus.
  *
  * Extensions register one MenuGroup plus its Page implementations during the
- * existing cb_core_register_pages lifecycle. Base validates declarations,
+ * existing core_blueprint_register_pages lifecycle. Base validates declarations,
  * wires WordPress menus/hooks and resolves shared semantic UI requirements.
  *
  * A product-group slug is menu identity only. Page slugs are distinct screen
@@ -67,7 +67,7 @@ final class MenuGroupRegistry {
 	 */
 	public static function register( MenuGroup $group, array $pages, array $requirements = [] ): bool {
 		if ( self::$finalized ) {
-			self::diagnostic( 'Top-level product menus must be registered during cb_core_register_pages before menu wiring is finalized.' );
+			self::diagnostic( 'Top-level product menus must be registered during core_blueprint_register_pages before menu wiring is finalized.' );
 			return false;
 		}
 

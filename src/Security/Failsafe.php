@@ -84,7 +84,7 @@ final class Failsafe {
 		 * Allow a Base-owned, request-scoped recovery authority to suspend
 		 * restrictive features without opening a global failsafe window.
 		 */
-		return (bool) apply_filters( 'cb_core_failsafe_is_bypassed', false );
+		return (bool) apply_filters( 'core_blueprint_failsafe_is_bypassed', false );
 	}
 
 	/**

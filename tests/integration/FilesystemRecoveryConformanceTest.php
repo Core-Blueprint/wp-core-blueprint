@@ -76,7 +76,7 @@ final class CB_Base_Filesystem_Recovery_Conformance_Test extends WP_UnitTestCase
             unset( $parent, $site_root, $document_root );
             return $this->vault_parent;
         };
-        add_filter( 'cb_core_quarantine_vault_parent', $this->vault_filter, PHP_INT_MAX, 3 );
+        add_filter( 'core_blueprint_quarantine_vault_parent', $this->vault_filter, PHP_INT_MAX, 3 );
     }
 
     public function tear_down(): void {
@@ -86,7 +86,7 @@ final class CB_Base_Filesystem_Recovery_Conformance_Test extends WP_UnitTestCase
         $_REQUEST = [];
 
         if ( null !== $this->vault_filter ) {
-            remove_filter( 'cb_core_quarantine_vault_parent', $this->vault_filter, PHP_INT_MAX );
+            remove_filter( 'core_blueprint_quarantine_vault_parent', $this->vault_filter, PHP_INT_MAX );
         }
 
         ChunkedOptionStore::delete( 'cb_core_quarantine_workspace' );

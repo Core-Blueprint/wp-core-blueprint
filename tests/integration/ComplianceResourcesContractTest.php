@@ -25,15 +25,15 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 
 		ExtensionRegistry::reset();
 		ResourceRegistry::_reset_for_testing();
-		add_action( 'cb_core_register_extensions', [ $this, 'register_extension' ] );
-		add_action( 'cb_core_register_compliance_resources', [ $this, 'register_resources' ] );
+		add_action( 'core_blueprint_register_extensions', [ $this, 'register_extension' ] );
+		add_action( 'core_blueprint_register_compliance_resources', [ $this, 'register_resources' ] );
 		ExtensionRegistry::collect();
 		ResourceRegistry::collect();
 	}
 
 	public function tear_down(): void {
-		remove_action( 'cb_core_register_extensions', [ $this, 'register_extension' ] );
-		remove_action( 'cb_core_register_compliance_resources', [ $this, 'register_resources' ] );
+		remove_action( 'core_blueprint_register_extensions', [ $this, 'register_extension' ] );
+		remove_action( 'core_blueprint_register_compliance_resources', [ $this, 'register_resources' ] );
 		delete_option( Repository::OPTION_ASSIGNMENTS );
 		delete_option( Repository::OPTION_CUSTOM );
 		delete_option( 'wp_page_for_privacy_policy' );
@@ -215,9 +215,9 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 				[ 'label' => 'Reserved custom namespace' ]
 			);
 		};
-		add_action( 'cb_core_register_compliance_resources', $probe, 20 );
-		do_action( 'cb_core_register_compliance_resources' );
-		remove_action( 'cb_core_register_compliance_resources', $probe, 20 );
+		add_action( 'core_blueprint_register_compliance_resources', $probe, 20 );
+		do_action( 'core_blueprint_register_compliance_resources' );
+		remove_action( 'core_blueprint_register_compliance_resources', $probe, 20 );
 
 		self::assertFalse( $results['unknown_owner'] );
 		self::assertFalse( $results['duplicate'] );
@@ -293,9 +293,9 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 		self::assertNotNull( Resolver::resolve( $key, 'nl_NL' ) );
 
 		$deny_pdf = static fn( array $mimes ): array => [ 'text/plain' ];
-		add_filter( 'cb_core_compliance_document_mime_types', $deny_pdf );
+		add_filter( 'core_blueprint_compliance_document_mime_types', $deny_pdf );
 		self::assertNull( Resolver::resolve( $key, 'nl_NL' ) );
-		remove_filter( 'cb_core_compliance_document_mime_types', $deny_pdf );
+		remove_filter( 'core_blueprint_compliance_document_mime_types', $deny_pdf );
 
 		wp_delete_attachment( $document, true );
 		self::assertNull( Resolver::resolve( $key, 'nl_NL' ) );

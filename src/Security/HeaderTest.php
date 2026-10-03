@@ -88,7 +88,7 @@ final class HeaderTest {
 		$response = wp_safe_remote_get( $url, [
 			'timeout'     => 10,
 			'redirection' => 5,
-			'sslverify'   => apply_filters( 'cb_core_header_test_sslverify', true ),
+			'sslverify'   => apply_filters( 'core_blueprint_header_test_sslverify', true ),
 			'user-agent'  => 'CoreBlueprint/' . CB_CORE_VERSION . ' (header-test)',
 			'headers'     => [
 				// Ensure we get a representative HTML response, not a conditional 304.

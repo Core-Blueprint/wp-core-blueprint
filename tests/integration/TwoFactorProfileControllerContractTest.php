@@ -35,7 +35,7 @@ final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitT
 	}
 
 	public function test_tu1_controller_registers_only_profile_registry_and_admin_post_surfaces(): void {
-		self::assertNotFalse( has_action( 'cb_core_register_user_profile_sections', [ ProfileController::class, 'register_profile_section' ] ) );
+		self::assertNotFalse( has_action( 'core_blueprint_register_user_profile_sections', [ ProfileController::class, 'register_profile_section' ] ) );
 		self::assertNotFalse( has_action( 'admin_enqueue_scripts', [ ProfileController::class, 'enqueue_profile_assets' ] ) );
 		self::assertFalse( has_action( 'show_user_profile', [ ProfileController::class, 'render' ] ) );
 		self::assertFalse( has_action( 'edit_user_profile', [ ProfileController::class, 'render' ] ) );

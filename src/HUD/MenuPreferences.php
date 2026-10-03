@@ -35,7 +35,7 @@ final class MenuPreferences {
 
 	/** Capability required to change the site-wide HUD menu. */
 	public static function manage_capability(): string {
-		return (string) apply_filters( 'cb_core_hud_menu_manage_capability', 'manage_options' );
+		return (string) apply_filters( 'core_blueprint_hud_menu_manage_capability', 'manage_options' );
 	}
 
 	/** @return array<string, mixed> */

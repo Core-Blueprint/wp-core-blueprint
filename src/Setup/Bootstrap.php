@@ -23,7 +23,7 @@ final class Bootstrap {
 		add_action( 'init', [ __CLASS__, 'register_event_labels' ], 1 );
 
 		if ( RequestContext::is_admin_screen() ) {
-			add_action( 'cb_core_register_pages', [ __CLASS__, 'register_admin_page' ] );
+			add_action( 'core_blueprint_register_pages', [ __CLASS__, 'register_admin_page' ] );
 		}
 
 		if ( RequestContext::is_admin_post() ) {

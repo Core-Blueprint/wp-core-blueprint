@@ -11,7 +11,7 @@ declare(strict_types=1);
  * and a palette without re-implementing the boilerplate.
  *
  * The built-in CoreBlueprint brand extends this class. Third-party Brand classes registered through
- * `cb_core_register_brands` may extend it too, or implement
+ * `core_blueprint_register_brands` may extend it too, or implement
  * BrandInterface directly when they need full control over every method.
  *
  * @package Core_Blueprint
@@ -29,10 +29,10 @@ abstract class AbstractBrand implements BrandInterface {
 	/**
 	 * Default theme list - one light + one dark variant. Subclasses can
 	 * override to provide their own slugs (must be registered through
-	 * `cb_admin_themes` so the global theme system recognises them).
+	 * `core_blueprint_admin_themes` so the global theme system recognises them).
 	 *
 	 * The returned array is run through the
-	 * `cb_core_brand_themes_{brand_id}` filter so white-label plugins
+	 * `core_blueprint_brand_themes_{brand_id}` filter so white-label plugins
 	 * can replace a brand's theme list without subclassing - useful for
 	 * shipping a "Theme Pack" extension that adds custom themes to an
 	 * existing brand.
@@ -54,14 +54,14 @@ abstract class AbstractBrand implements BrandInterface {
 		];
 
 		/**
-		 * Filter: cb_core_brand_themes_{brand_id}
+		 * Filter: core_blueprint_brand_themes_{brand_id}
 		 *
 		 * Replace or extend the theme list for this brand without
 		 * subclassing it. Useful for white-label theme packs.
 		 *
 		 * Example - replacing CB's themes with two custom ones:
 		 *
-		 *     add_filter( 'cb_core_brand_themes_core-blueprint', function (): array {
+		 *     add_filter( 'core_blueprint_brand_themes_core-blueprint', function (): array {
 		 *         return [
 		 *             [ 'slug' => 'vendor_light', 'label' => 'Cream', 'mode' => 'light' ],
 		 *             [ 'slug' => 'vendor_dark', 'label' => 'Slate', 'mode' => 'dark' ],
@@ -70,7 +70,7 @@ abstract class AbstractBrand implements BrandInterface {
 		 *
 		 * @param array<int, array{slug: string, label: string, mode: string}> $default
 		 */
-		return (array) apply_filters( 'cb_core_brand_themes_' . $this->id(), $default );
+		return (array) apply_filters( 'core_blueprint_brand_themes_' . $this->id(), $default );
 	}
 
 	/**

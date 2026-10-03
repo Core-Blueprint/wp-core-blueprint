@@ -57,7 +57,7 @@ Declaring CSV support additionally requires `CoreBlueprint\Core\DataExchange\Csv
 Example registration:
 
 ```php
-add_action( 'cb_core_register_interoperability_implementations', static function (): void {
+add_action( 'core_blueprint_register_interoperability_implementations', static function (): void {
     \CoreBlueprint\Core\Interoperability\Registry::register_implementation( [
         'provider'         => 'core-blueprint-example',
         'id'               => 'thing',

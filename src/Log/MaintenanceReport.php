@@ -148,7 +148,7 @@ class MaintenanceReport {
 		self::$sources['system_log'] = [ __CLASS__, 'collect_system_rows' ];
 
 		/**
-		 * Filter: cb_core_maintenance_sources
+		 * Filter: core_blueprint_maintenance_sources
 		 *
 		 * Contribute additional activity sources to the Maintenance Report.
 		 * Each callable must accept an int $since_ts and return an array
@@ -156,7 +156,7 @@ class MaintenanceReport {
 		 *
 		 * @param array<string, callable> $sources
 		 */
-		$filtered = apply_filters( 'cb_core_maintenance_sources', self::$sources );
+		$filtered = apply_filters( 'core_blueprint_maintenance_sources', self::$sources );
 		if ( is_array( $filtered ) ) {
 			self::$sources = $filtered;
 		}

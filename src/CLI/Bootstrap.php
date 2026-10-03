@@ -14,7 +14,7 @@ declare(strict_types=1);
  *
  *   2. Each `wp cb <name>` subcommand from {@see Registry::commands()} -
  *      built-in CB Base commands plus any registered through the public
- *      `cb_core_cli_register_commands` filter.
+ *      `core_blueprint_cli_register_commands` filter.
  *
  * Sibling plugins (Hub, Invoice, etc.) extend the command surface by
  * hooking the filter rather than calling WP_CLI::add_command directly -
@@ -109,7 +109,7 @@ final class Bootstrap {
 	 * frontend) so the HUD picker shows the entry to operators.
 	 */
 	public static function boot(): void {
-		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
+		add_action( 'core_blueprint_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
 	}
 
 	/**

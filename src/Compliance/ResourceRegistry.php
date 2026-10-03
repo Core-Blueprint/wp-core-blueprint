@@ -34,7 +34,7 @@ final class ResourceRegistry {
 	/**
 	 * Register one extension-owned compliance resource role.
 	 *
-	 * Registration is accepted only during cb_core_register_compliance_resources
+	 * Registration is accepted only during core_blueprint_register_compliance_resources
 	 * and only for a currently registered Core Blueprint extension identity.
 	 *
 	 * @param string              $owner      ExtensionRegistry id.
@@ -42,8 +42,8 @@ final class ResourceRegistry {
 	 * @param array<string,mixed> $definition Resource metadata.
 	 */
 	public static function register( string $owner, string $id, array $definition ): bool {
-		if ( ! doing_action( 'cb_core_register_compliance_resources' ) ) {
-			self::diagnostic( 'Compliance resource registration refused outside cb_core_register_compliance_resources.' );
+		if ( ! doing_action( 'core_blueprint_register_compliance_resources' ) ) {
+			self::diagnostic( 'Compliance resource registration refused outside core_blueprint_register_compliance_resources.' );
 			return false;
 		}
 		if ( self::BASE_OWNER === $owner || null === ExtensionRegistry::definition( $owner ) ) {
@@ -96,7 +96,7 @@ final class ResourceRegistry {
 		 *
 		 * Extensions call ResourceRegistry::register() inside this action.
 		 */
-		do_action( 'cb_core_register_compliance_resources' );
+		do_action( 'core_blueprint_register_compliance_resources' );
 	}
 
 	/** @return array<string,array{key:string,owner:string,id:string,label:string,description:string,custom:bool}> */

@@ -84,7 +84,7 @@ final class Add implements CommandInterface {
 			'by'         => self::execution_origin(),
 		] );
 
-		do_action( 'cb_permissions_operator_added', (int) $user->ID, 0 );
+		do_action( 'core_blueprint_permissions_operator_added', (int) $user->ID, 0 );
 
 		$total = Roles::operator_count();
 		$lines = [

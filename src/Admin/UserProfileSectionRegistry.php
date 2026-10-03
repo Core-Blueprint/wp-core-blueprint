@@ -47,7 +47,7 @@ final class UserProfileSectionRegistry {
 	}
 
 	/**
-	 * Register one profile section during cb_core_register_user_profile_sections.
+	 * Register one profile section during core_blueprint_register_user_profile_sections.
 	 *
 	 * Supported keys:
 	 * - title: caller-localized heading
@@ -59,8 +59,8 @@ final class UserProfileSectionRegistry {
 	 * @param array<string,mixed> $definition
 	 */
 	public static function register( string $id, array $definition ): bool {
-		if ( ! doing_action( 'cb_core_register_user_profile_sections' ) ) {
-			self::diagnostic( 'User profile section registration refused outside cb_core_register_user_profile_sections.' );
+		if ( ! doing_action( 'core_blueprint_register_user_profile_sections' ) ) {
+			self::diagnostic( 'User profile section registration refused outside core_blueprint_register_user_profile_sections.' );
 			return false;
 		}
 
@@ -137,7 +137,7 @@ final class UserProfileSectionRegistry {
 			return;
 		}
 		self::$collected = true;
-		do_action( 'cb_core_register_user_profile_sections' );
+		do_action( 'core_blueprint_register_user_profile_sections' );
 	}
 
 	/** @return array<string,array<string,mixed>> */

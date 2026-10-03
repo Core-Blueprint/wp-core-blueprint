@@ -15,10 +15,10 @@ defined( 'ABSPATH' ) || exit;
  * Permissions, Integrity, and Notes bootstraps. Registers:
  *
  *   - Brand registry (built-in CoreBlueprint brand, plus the action hook
- *     `cb_core_register_brands` that lets sibling/white-label plugins
+ *     `core_blueprint_register_brands` that lets sibling/white-label plugins
  *     register their own brand implementations)
  *   - Default item registry (sections + items hook for siblings via the
- *     `cb_hud_register_items` action)
+ *     `core_blueprint_hud_register_items` action)
  *   - REST routes for state mutation (brand/position/ghost/visibility
  *     under `core-blueprint/v1/hud/*`)
  *   - Render hooks on `admin_footer` and `wp_footer` so the HUD chrome
@@ -28,7 +28,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * Kill-switch:
  *
- *   The entire bootstrap honours an `cb_core_hud_enabled` filter - if it
+ *   The entire bootstrap honours an `core_blueprint_hud_enabled` filter - if it
  *   returns false the bootstrap returns silently before registering any
  *   hooks, REST routes, or render handlers. Equivalent to the subsystem
  *   not being loaded at all. Surfaces as a checkbox in Preferences ›
@@ -92,7 +92,7 @@ final class Bootstrap {
 		add_action( 'init', [ self::class, 'register_brands' ], 5 );
 
 		// Item registry - built-in sections live here; siblings register
-		// their items via cb_hud_register_items when they boot.
+		// their items via core_blueprint_hud_register_items when they boot.
 		add_action( 'init', [ self::class, 'register_items' ], 10 );
 
 		// REST routes - HUDController owns brand/position/ghost mutation
@@ -120,20 +120,20 @@ final class Bootstrap {
 
 	/**
 	 * Populate the brand registry with built-in brands. White-label and
-	 * sibling plugins extend via the cb_core_register_brands action.
+	 * sibling plugins extend via the core_blueprint_register_brands action.
 	 */
 	public static function register_brands(): void {
 		BrandRegistry::register( new CoreBlueprint() );
 
 		/**
-		 * Action: cb_core_register_brands
+		 * Action: core_blueprint_register_brands
 		 *
 		 * Fired after built-in brands register. Receives the BrandRegistry
 		 * class name as the action arg so handlers can call
 		 * BrandRegistry::register() directly. White-label plugins that
 		 * provide their own brand implementation should hook here.
 		 */
-		do_action( 'cb_core_register_brands', BrandRegistry::class );
+		do_action( 'core_blueprint_register_brands', BrandRegistry::class );
 	}
 
 	/**
@@ -149,19 +149,19 @@ final class Bootstrap {
 		SectionTypeRegistry::register_builtins();
 
 		/**
-		 * Action: cb_hud_register_section_types
+		 * Action: core_blueprint_hud_register_section_types
 		 *
 		 * Public extension point for controlled custom HUD section types. Custom
 		 * types are declarative and may only use Base-owned presentation primitives;
 		 * arbitrary render callbacks/markup are not accepted. Receives the
 		 * SectionTypeRegistry class name.
 		 */
-		do_action( 'cb_hud_register_section_types', SectionTypeRegistry::class );
+		do_action( 'core_blueprint_hud_register_section_types', SectionTypeRegistry::class );
 
 		Registry::register_default_sections();
 
 		/**
-		 * Action: cb_hud_register_sections
+		 * Action: core_blueprint_hud_register_sections
 		 *
 		 * Fires before built-in items are registered. Partners that need
 		 * to introduce their own section hook here and call the declarative
@@ -173,12 +173,12 @@ final class Bootstrap {
 		 * can call Registry::register_section() directly without
 		 * importing the class.
 		 */
-		do_action( 'cb_hud_register_sections', Registry::class );
+		do_action( 'core_blueprint_hud_register_sections', Registry::class );
 
 		Registry::register_builtin_items();
 
 		/**
-		 * Action: cb_hud_register_items
+		 * Action: core_blueprint_hud_register_items
 		 *
 		 * Public extension point for sibling plugins to register their
 		 * own HUD items. Receives the Registry class name as the action
@@ -186,7 +186,7 @@ final class Bootstrap {
 		 *
 		 * Example sibling usage:
 		 *
-		 *     add_action( 'cb_hud_register_items', function ( string $registry ): void {
+		 *     add_action( 'core_blueprint_hud_register_items', function ( string $registry ): void {
 		 *         $registry::add_item( [
 		 *             'id'       => 'cb-hub-add-site',
 		 *             'label'    => __( 'Add Website', 'core-blueprint-hub' ),
@@ -196,7 +196,7 @@ final class Bootstrap {
 		 *         ] );
 		 *     } );
 		 */
-		do_action( 'cb_hud_register_items', Registry::class );
+		do_action( 'core_blueprint_hud_register_items', Registry::class );
 
 		// Administrator-defined links are data, not a competing registry. Layer
 		// them in after built-ins/extensions so they pass through the same

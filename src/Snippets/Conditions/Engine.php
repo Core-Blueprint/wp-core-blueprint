@@ -28,7 +28,7 @@ final class Engine {
 		}
 
 		$result = 'or' === $relation ? in_array( true, $results, true ) : ! in_array( false, $results, true );
-		return (bool) apply_filters( 'cb_core_snippets_conditions_match', $result, $conditions );
+		return (bool) apply_filters( 'core_blueprint_snippets_conditions_match', $result, $conditions );
 	}
 
 	private static function match_rule( array $rule ): bool {
@@ -57,7 +57,7 @@ final class Engine {
 				$actual = (string) wp_parse_url( $uri, PHP_URL_PATH );
 				break;
 			default:
-				return (bool) apply_filters( 'cb_core_snippets_condition_rule', true, $rule, null );
+				return (bool) apply_filters( 'core_blueprint_snippets_condition_rule', true, $rule, null );
 		}
 
 		if ( is_array( $actual ) ) {
@@ -72,6 +72,6 @@ final class Engine {
 			$match = ! $match;
 		}
 
-		return (bool) apply_filters( 'cb_core_snippets_condition_rule', $match, $rule, $actual );
+		return (bool) apply_filters( 'core_blueprint_snippets_condition_rule', $match, $rule, $actual );
 	}
 }

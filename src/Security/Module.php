@@ -5,7 +5,7 @@ declare(strict_types=1);
  *
  * Contract that every Core Blueprint feature module implements.
  *
- * Modules are registered via the `cb_core_modules` filter. The registry
+ * Modules are registered via the `core_blueprint_modules` filter. The registry
  * collects them on `plugins_loaded` priority 20 and calls ::boot() on each
  * after all registrations have been gathered.
  *

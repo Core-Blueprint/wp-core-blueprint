@@ -12,12 +12,12 @@ Core Blueprint Base owns outbound mail transport, credentials, delivery logging 
 
 ## Registration lifecycle
 
-Attach a callback during extension bootstrap. Base fires `cb_core_register_mail_sender_identities` on `init` priority `5`, after the normal translation lifecycle has started.
+Attach a callback during extension bootstrap. Base fires `core_blueprint_register_mail_sender_identities` on `init` priority `5`, after the normal translation lifecycle has started.
 
 ```php
 use CoreBlueprint\Core\Mail\SenderIdentityRegistry;
 
-add_action( 'cb_core_register_mail_sender_identities', static function (): void {
+add_action( 'core_blueprint_register_mail_sender_identities', static function (): void {
     SenderIdentityRegistry::register( [
         'id'          => 'core-blueprint-helpdesk',
         'label'       => __( 'Helpdesk', 'core-blueprint-helpdesk' ),

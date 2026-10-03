@@ -31,15 +31,15 @@ defined( 'ABSPATH' ) || exit;
 final class Bootstrap {
 
 	public static function boot(): void {
-		add_action( 'cb_core_register_pages', [ __CLASS__, 'register_page' ] );
+		add_action( 'core_blueprint_register_pages', [ __CLASS__, 'register_page' ] );
 		add_action( 'rest_api_init',          [ __CLASS__, 'register_rest_routes' ] );
-		add_action( 'cb_hud_register_items',  [ __CLASS__, 'register_hud_item' ] );
+		add_action( 'core_blueprint_hud_register_items',  [ __CLASS__, 'register_hud_item' ] );
 		add_action( 'init',                  [ __CLASS__, 'register_i18n_filters' ], 1 );
 	}
 
 	/**
 	 * Register the Console page with the central PageRegistry. Hooked on
-	 * the `cb_core_register_pages` action - same pattern Foundation pages
+	 * the `core_blueprint_register_pages` action - same pattern Foundation pages
 	 * use; the action fires from PageRegistry::on_admin_menu() during the
 	 * admin_menu pass so submenus can be added.
 	 */

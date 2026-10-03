@@ -604,12 +604,12 @@ final class CoreScanner {
 			$integrity['distribution_locale_mode']     = 'auto';
 
 			Settings::set_key( 'integrity', $integrity, 'integrity_scan' );
-			do_action( 'cb_core_integrity_locale_detected', $detection['detected'], $detection );
+			do_action( 'core_blueprint_integrity_locale_detected', $detection['detected'], $detection );
 			return;
 		}
 
 		Settings::set_key( 'integrity', $integrity, 'integrity_scan' );
-		do_action( 'cb_core_integrity_locale_detection_inconclusive', $detection );
+		do_action( 'core_blueprint_integrity_locale_detection_inconclusive', $detection );
 	}
 
 	/**

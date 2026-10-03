@@ -182,7 +182,7 @@ final class AccessMode {
 		 * @param bool   $bypass Current decision.
 		 * @param string $mode   Effective Access Mode.
 		 */
-		return (bool) apply_filters( 'cb_core_access_mode_bypass_request', false, $mode );
+		return (bool) apply_filters( 'core_blueprint_access_mode_bypass_request', false, $mode );
 	}
 
 	// ─── Front-end enforcement ────────────────────────────────────────────

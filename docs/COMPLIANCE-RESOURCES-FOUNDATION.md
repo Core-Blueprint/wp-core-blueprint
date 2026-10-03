@@ -37,7 +37,7 @@ Extensions register roles during the controlled collection action:
 ```php
 use CoreBlueprint\Core\Compliance\ResourceRegistry;
 
-add_action( 'cb_core_register_compliance_resources', static function (): void {
+add_action( 'core_blueprint_register_compliance_resources', static function (): void {
     ResourceRegistry::register(
         'core-blueprint-bookings',
         'cancellation-policy',
@@ -49,7 +49,7 @@ add_action( 'cb_core_register_compliance_resources', static function (): void {
 } );
 ```
 
-The owner must already be a valid `ExtensionRegistry` identity. Registration outside `cb_core_register_compliance_resources` is refused. Duplicate roles and unknown metadata are refused rather than overwritten or repaired.
+The owner must already be a valid `ExtensionRegistry` identity. Registration outside `core_blueprint_register_compliance_resources` is refused. Duplicate roles and unknown metadata are refused rather than overwritten or repaired.
 
 Extensions own the business meaning of their roles. Base owns the registry, central UI, storage and resource resolution.
 
@@ -60,7 +60,7 @@ Every role may reference one of two WordPress-native resource types:
 - a **published WordPress Page**;
 - a **Media Library document**.
 
-The default v1 document allow-list contains PDF, DOC, DOCX, ODT, RTF and plain-text documents. It can be extended with the `cb_core_compliance_document_mime_types` filter.
+The default v1 document allow-list contains PDF, DOC, DOCX, ODT, RTF and plain-text documents. It can be extended with the `core_blueprint_compliance_document_mime_types` filter.
 
 Assignments store WordPress object IDs rather than copied URLs. Resolution therefore follows the current permalink or attachment URL and detects when a Page is unpublished or a document is removed.
 

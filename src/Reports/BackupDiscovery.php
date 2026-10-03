@@ -7,7 +7,7 @@ declare(strict_types=1);
  * reporting does not depend on the optional Hub/Beacon extension. Core
  * Blueprint ships a native All-in-One WP Migration reader because it is a
  * common full-site recovery source; extensions may contribute additional
- * read-only sources through `cb_core_reports_backup_sources`.
+ * read-only sources through `core_blueprint_reports_backup_sources`.
  *
  * Source shape:
  *   [
@@ -47,7 +47,7 @@ final class BackupDiscovery {
 		 *
 		 * @param array<int,array<string,mixed>> $sources Current sources.
 		 */
-		$filtered = apply_filters( 'cb_core_reports_backup_sources', $sources );
+		$filtered = apply_filters( 'core_blueprint_reports_backup_sources', $sources );
 		if ( ! is_array( $filtered ) ) {
 			return $sources;
 		}

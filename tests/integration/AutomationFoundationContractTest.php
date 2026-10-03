@@ -29,13 +29,13 @@ final class CB_Base_Automation_Foundation_Contract_Test extends WP_UnitTestCase 
 		$this->registration_results = [];
 		$this->capability_collection_count = 0;
 
-		add_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extension' ] );
-		add_action( 'cb_core_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
+		add_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extension' ] );
+		add_action( 'core_blueprint_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
 	}
 
 	public function tear_down(): void {
-		remove_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extension' ] );
-		remove_action( 'cb_core_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
+		remove_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extension' ] );
+		remove_action( 'core_blueprint_register_automation_capabilities', [ $this, 'register_fixture_capabilities' ] );
 		ExtensionRegistry::reset();
 		TriggerRegistry::_reset_for_testing();
 		$this->remove_fixture();
@@ -112,7 +112,7 @@ final class CB_Base_Automation_Foundation_Contract_Test extends WP_UnitTestCase 
 		$listener = static function ( TriggerEvent $event ) use ( &$received ): void {
 			$received = $event;
 		};
-		add_action( 'cb_core_automation_trigger_emitted', $listener );
+		add_action( 'core_blueprint_automation_trigger_emitted', $listener );
 
 		$payload = [
 			'contract_id'   => 42,
@@ -122,7 +122,7 @@ final class CB_Base_Automation_Foundation_Contract_Test extends WP_UnitTestCase 
 		];
 		$result = Emitter::emit( self::PROVIDER, 'contract.signed', $payload, 'contract:42:signed:1' );
 
-		remove_action( 'cb_core_automation_trigger_emitted', $listener );
+		remove_action( 'core_blueprint_automation_trigger_emitted', $listener );
 
 		self::assertInstanceOf( TriggerEvent::class, $result );
 		self::assertSame( $result, $received );

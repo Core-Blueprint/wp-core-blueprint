@@ -51,13 +51,13 @@ final class SectionRegistry {
 	/**
 	 * Register one Profile section owned by an official first-party extension.
 	 *
-	 * Registration is accepted only during cb_core_register_profile_sections.
+	 * Registration is accepted only during core_blueprint_register_profile_sections.
 	 * The section ID must be namespaced below the canonical extension ID so Base
 	 * can reserve its own section IDs and reject ambiguous ownership.
 	 */
 	public static function register( string $extension_id, SectionInterface $section ): bool {
-		if ( ! self::$collecting || ! doing_action( 'cb_core_register_profile_sections' ) ) {
-			self::diagnostic( 'Profile section registration refused outside cb_core_register_profile_sections.' );
+		if ( ! self::$collecting || ! doing_action( 'core_blueprint_register_profile_sections' ) ) {
+			self::diagnostic( 'Profile section registration refused outside core_blueprint_register_profile_sections.' );
 			return false;
 		}
 
@@ -120,7 +120,7 @@ final class SectionRegistry {
 
 		self::$collecting = true;
 		try {
-			do_action( 'cb_core_register_profile_sections' );
+			do_action( 'core_blueprint_register_profile_sections' );
 			ksort( self::$extension_sections, SORT_STRING );
 			self::$collected = true;
 		} finally {

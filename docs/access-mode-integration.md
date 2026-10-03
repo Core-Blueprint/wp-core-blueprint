@@ -29,7 +29,7 @@ The callback is evaluated for the current request only. Return `true` only when 
 For backwards-compatible/advanced policy, Base also exposes:
 
 ```php
-apply_filters( 'cb_core_access_mode_bypass_request', false, $mode );
+apply_filters( 'core_blueprint_access_mode_bypass_request', false, $mode );
 ```
 
 New integrations should prefer `AccessMode::register_bypass()` because it creates a stable named boundary and avoids anonymous filter coupling.

@@ -86,7 +86,7 @@ final class Emitter {
 		 *
 		 * @param TriggerEvent $event
 		 */
-		do_action( 'cb_core_automation_trigger_emitted', $event );
+		do_action( 'core_blueprint_automation_trigger_emitted', $event );
 
 		return $event;
 	}

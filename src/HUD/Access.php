@@ -41,7 +41,7 @@ final class Access {
 	 */
 	public static function capability(): string {
 		/**
-		 * Filter: cb_core_hud_capability
+		 * Filter: core_blueprint_hud_capability
 		 *
 		 * Override the cap required to see and use HUD. Default
 		 * cb_core_hud_use. The canonical Role Policy grants it explicitly to
@@ -49,7 +49,7 @@ final class Access {
 		 *
 		 * @param string $capability Default cb_core_hud_use.
 		 */
-		return (string) apply_filters( 'cb_core_hud_capability', self::CAPABILITY );
+		return (string) apply_filters( 'core_blueprint_hud_capability', self::CAPABILITY );
 	}
 
 	/**
@@ -115,12 +115,12 @@ final class Access {
 	/**
 	 * Frontend context exclusion check. Empty by default - most
 	 * operators want HUD reachable everywhere, including the public
-	 * site. Filter `cb_core_hud_excluded_post_types` accepts an array
+	 * site. Filter `core_blueprint_hud_excluded_post_types` accepts an array
 	 * of post-type slugs to suppress HUD for.
 	 */
 	private static function is_excluded_frontend_context(): bool {
 		/**
-		 * Filter: cb_core_hud_excluded_post_types
+		 * Filter: core_blueprint_hud_excluded_post_types
 		 *
 		 * Array of post-type slugs that suppress HUD rendering on
 		 * frontend singular views. Default empty - HUD is reachable
@@ -128,7 +128,7 @@ final class Access {
 		 *
 		 * @param array<int, string> $excluded Post-type slugs.
 		 */
-		$excluded = (array) apply_filters( 'cb_core_hud_excluded_post_types', [] );
+		$excluded = (array) apply_filters( 'core_blueprint_hud_excluded_post_types', [] );
 		$excluded = array_map( 'sanitize_key', $excluded );
 
 		if ( empty( $excluded ) || ! is_singular() ) {

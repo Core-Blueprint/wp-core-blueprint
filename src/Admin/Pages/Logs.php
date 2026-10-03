@@ -65,7 +65,7 @@ final class Logs extends PageBase {
 		// (hypothetically) get a last chance to register a tab. Most
 		// subsystems register during their own boot - this is belt-and-
 		// braces for late-arrival extension plugins.
-		do_action( 'cb_core_logs_register_tabs' );
+		do_action( 'core_blueprint_logs_register_tabs' );
 
 		$visible = TabRegistry::visible();
 		if ( empty( $visible ) ) {

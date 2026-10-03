@@ -9,7 +9,7 @@ declare(strict_types=1);
  * to Core Blueprint - Dark when the user has no explicit preference).
  *
  * Partners and sibling CB plugins may register their own themes via the
- * brand-level filter `cb_admin_themes`.
+ * brand-level filter `core_blueprint_admin_themes`.
  *
  * Resolution chain (first match wins):
  *   1. user_meta 'cb_core_theme'       (empty = inherit site default)
@@ -58,7 +58,7 @@ final class Themes {
 
 	/** Action hook fired on site-default change. See trait docs. */
 	public static function site_changed_action(): string {
-		return 'cb_core_admin_theme_changed';
+		return 'core_blueprint_admin_theme_changed';
 	}
 
 	// ─── Registry ─────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ final class Themes {
 		}
 
 		// Built-in themes. Partner/third-party themes register via the
-		// `cb_admin_themes` filter below.
+		// `core_blueprint_admin_themes` filter below.
 		$themes = [
 			self::SLUG_CB_DARK => [
 				'label'       => __( 'Core Blueprint - Dark', 'core-blueprint' ),
@@ -104,13 +104,13 @@ final class Themes {
 		];
 
 		/**
-		 * Filter: cb_admin_themes (brand-level)
+		 * Filter: core_blueprint_admin_themes (brand-level)
 		 *
 		 * Register custom admin themes for the Core Blueprint suite.
 		 *
 		 * @param array<string, array> $themes Registered themes keyed by slug.
 		 */
-		$themes = apply_filters( 'cb_admin_themes', $themes );
+		$themes = apply_filters( 'core_blueprint_admin_themes', $themes );
 
 		self::$cache = self::normalize( $themes );
 		return self::$cache;

@@ -45,16 +45,16 @@ final class Bootstrap {
 		// The Mail configuration surface is always reachable. This is required to
 		// enable Designer on sites that intentionally use WordPress/host/third-party
 		// delivery instead of Core Blueprint Delivery.
-		add_action( 'cb_core_register_pages', static function (): void {
+		add_action( 'core_blueprint_register_pages', static function (): void {
 			PageRegistry::register_base( new Page(), [
 				'components' => [ 'panels', 'state-badges', 'notices' ],
 			] );
 		} );
-		add_action( 'cb_core_logs_register_tabs', [ LogsTab::class, 'register' ] );
+		add_action( 'core_blueprint_logs_register_tabs', [ LogsTab::class, 'register' ] );
 
 		add_action( 'init', [ __CLASS__, 'register_i18n_filters' ], 1 );
 		add_action( 'init', [ __CLASS__, 'register_sender_identities' ], 5 );
-		add_filter( 'cb_core_system_log_event_types', [ __CLASS__, 'register_system_events' ] );
+		add_filter( 'core_blueprint_system_log_event_types', [ __CLASS__, 'register_system_events' ] );
 
 		if ( RequestContext::is_admin_post() ) {
 			Actions::boot();
@@ -78,7 +78,7 @@ final class Bootstrap {
 
 	/** Public registration lifecycle for extension-owned sender identity slots. */
 	public static function register_sender_identities(): void {
-		do_action( 'cb_core_register_mail_sender_identities' );
+		do_action( 'core_blueprint_register_mail_sender_identities' );
 	}
 
 	public static function register_event_labels( array $labels ): array {

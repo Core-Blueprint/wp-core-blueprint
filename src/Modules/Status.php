@@ -83,7 +83,7 @@ final class Status {
 	 * Return the validated status-provider map.
 	 *
 	 * Extensions may append their own definitions through
-	 * `cb_core_module_status_definitions`. Base-owned IDs are reserved.
+	 * `core_blueprint_module_status_definitions`. Base-owned IDs are reserved.
 	 *
 	 * @return array<string,array{provider:callable,label:string,url:string}>
 	 */
@@ -95,7 +95,7 @@ final class Status {
 		 *
 		 * @param array<string,array{provider:callable,label:string,url?:string}> $definitions
 		 */
-		$filtered = apply_filters( 'cb_core_module_status_definitions', $built_ins );
+		$filtered = apply_filters( 'core_blueprint_module_status_definitions', $built_ins );
 		if ( ! is_array( $filtered ) ) {
 			$filtered = $built_ins;
 		}

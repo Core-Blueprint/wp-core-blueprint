@@ -25,9 +25,9 @@ defined( 'ABSPATH' ) || exit;
 // The duplicate path is still written to the PHP error log so packaging mistakes
 // remain diagnosable without taking wp-admin down.
 if ( defined( 'CB_CORE_FILE' ) || defined( 'CB_CORE_VERSION' ) ) {
-	$cb_core_loaded_file = defined( 'CB_CORE_FILE' ) ? (string) CB_CORE_FILE : '';
-	if ( '' !== $cb_core_loaded_file && $cb_core_loaded_file !== __FILE__ ) {
-		error_log( sprintf( '[Core Blueprint] Duplicate plugin load prevented. Active entrypoint: %s; skipped: %s', $cb_core_loaded_file, __FILE__ ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- emergency bootstrap diagnostic.
+	$core_blueprint_loaded_file = defined( 'CB_CORE_FILE' ) ? (string) CB_CORE_FILE : '';
+	if ( '' !== $core_blueprint_loaded_file && $core_blueprint_loaded_file !== __FILE__ ) {
+		error_log( sprintf( '[Core Blueprint] Duplicate plugin load prevented. Active entrypoint: %s; skipped: %s', $core_blueprint_loaded_file, __FILE__ ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- emergency bootstrap diagnostic.
 	}
 	return;
 }
@@ -54,13 +54,13 @@ define( 'CB_CORE_PARENT_MENU', 'core-blueprint' );
 
 // ─── Requirements check ───────────────────────────────────────────────────────
 
-if ( ! function_exists( 'cb_core_get_requirement_errors' ) ) :
+if ( ! function_exists( 'core_blueprint_get_requirement_errors' ) ) :
 /**
  * Return bootstrap-safe requirement descriptors, or an empty array when satisfied.
  *
  * @return array<int,array{type:string,value?:string}>
  */
-function cb_core_get_requirement_errors(): array {
+function core_blueprint_get_requirement_errors(): array {
 	$errors = [];
 
 	// Keep bootstrap diagnostics translation-free. WordPress 6.7+ forbids
@@ -79,12 +79,12 @@ function cb_core_get_requirement_errors(): array {
 }
 endif;
 
-$cb_core_errors = cb_core_get_requirement_errors();
+$core_blueprint_errors = core_blueprint_get_requirement_errors();
 
-if ( ! empty( $cb_core_errors ) ) {
-	add_action( 'admin_notices', static function () use ( $cb_core_errors ) {
+if ( ! empty( $core_blueprint_errors ) ) {
+	add_action( 'admin_notices', static function () use ( $core_blueprint_errors ) {
 		$messages = [];
-		foreach ( $cb_core_errors as $error ) {
+		foreach ( $core_blueprint_errors as $error ) {
 			$type = (string) ( $error['type'] ?? '' );
 			if ( 'php_version' === $type ) {
 				$messages[] = sprintf(
@@ -116,7 +116,7 @@ if ( ! empty( $cb_core_errors ) ) {
 	return;
 }
 
-unset( $cb_core_errors );
+unset( $core_blueprint_errors );
 
 // ─── PSR-4 autoloader for CoreBlueprint\Core\ ────────────────────────────────────────────
 // Registered before any Core Blueprint code runs so class references resolve

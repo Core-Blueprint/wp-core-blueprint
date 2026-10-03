@@ -104,13 +104,13 @@ final class Version implements CommandInterface {
 		];
 
 		/**
-		 * Filter: cb_core_cli_version_components
+		 * Filter: core_blueprint_cli_version_components
 		 *
 		 * Lets sibling plugins surface their own version under
 		 * `wp cb version`.
 		 *
 		 * @param array<string, string> $components
 		 */
-		return (array) apply_filters( 'cb_core_cli_version_components', $components );
+		return (array) apply_filters( 'core_blueprint_cli_version_components', $components );
 	}
 }

@@ -27,7 +27,7 @@ final class Bootstrap {
 		add_action( 'plugins_loaded', [ Repository::class, 'register_schema' ], 4 );
 		add_action( 'init', [ Repository::class, 'register_retention_store' ], 2 );
 		add_action( 'init', [ __CLASS__, 'register_event_metadata' ], 5 );
-		add_action( 'cb_core_logs_register_tabs', [ __CLASS__, 'register_log_tab' ] );
+		add_action( 'core_blueprint_logs_register_tabs', [ __CLASS__, 'register_log_tab' ] );
 
 		AbilityObserver::boot();
 		AIClientObserver::boot();

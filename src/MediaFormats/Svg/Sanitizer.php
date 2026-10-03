@@ -28,7 +28,7 @@ final class Sanitizer {
 		}
 
 		$size = filesize( $path );
-		$max  = (int) apply_filters( 'cb_core_media_formats_svg_max_bytes', self::DEFAULT_MAX_BYTES );
+		$max  = (int) apply_filters( 'core_blueprint_media_formats_svg_max_bytes', self::DEFAULT_MAX_BYTES );
 		if ( false === $size || $size <= 0 || $size > max( 1, $max ) ) {
 			return new \WP_Error( 'cb_media_formats_svg_size', __( 'The SVG file is empty or exceeds the SVG sanitization limit.', 'core-blueprint' ) );
 		}

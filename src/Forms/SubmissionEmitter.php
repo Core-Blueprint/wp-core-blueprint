@@ -135,7 +135,7 @@ final class SubmissionEmitter {
 		 *
 		 * @param SubmissionEvent $event
 		 */
-		do_action( 'cb_core_forms_submission_emitted', $event );
+		do_action( 'core_blueprint_forms_submission_emitted', $event );
 
 		return $event;
 	}

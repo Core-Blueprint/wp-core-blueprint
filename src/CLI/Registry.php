@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Filter-driven registration helper for `wp cb` subcommands. Lives parallel
  * to {@see \CoreBlueprint\Core\HUD\Registry} but for the command line: built-in CB Base
  * commands register here on bootstrap, and sibling plugins (Hub, Invoice,
- * etc.) hook the `cb_core_cli_register_commands` filter to add their own.
+ * etc.) hook the `core_blueprint_cli_register_commands` filter to add their own.
  *
  * Each registered command is a child of the top-level `cb` namespace -
  * registration takes a sub-name plus a class-name string (or [class, method]
@@ -41,7 +41,7 @@ final class Registry {
 	 *
 	 * Sibling plugins hook the filter and append their own entries:
 	 *
-	 *     add_filter( 'cb_core_cli_register_commands', function ( array $commands ): array {
+	 *     add_filter( 'core_blueprint_cli_register_commands', function ( array $commands ): array {
 	 *         $commands[] = [
 	 *             'name'  => 'hub',
 	 *             'class' => '\\CB\\Hub\\CLI\\HubCommand',
@@ -58,13 +58,13 @@ final class Registry {
 		$commands = self::builtin_commands();
 
 		/**
-		 * Filter: cb_core_cli_register_commands
+		 * Filter: core_blueprint_cli_register_commands
 		 *
 		 * Lets sibling plugins register their own `wp cb <name>` subcommands.
 		 *
 		 * @param array<int, array{name: string, class: string, description?: string}> $commands
 		 */
-		$commands = (array) apply_filters( 'cb_core_cli_register_commands', $commands );
+		$commands = (array) apply_filters( 'core_blueprint_cli_register_commands', $commands );
 
 		$normalised = [];
 		foreach ( $commands as $entry ) {

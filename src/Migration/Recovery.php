@@ -50,12 +50,12 @@ final class Recovery {
 		}
 		self::$booted = true;
 
-		add_filter( 'cb_core_failsafe_is_bypassed', [ self::class, 'filter_failsafe_bypass' ], 10, 1 );
+		add_filter( 'core_blueprint_failsafe_is_bypassed', [ self::class, 'filter_failsafe_bypass' ], 10, 1 );
 		add_action( 'init', [ self::class, 'maybe_reconcile_login_request' ], -100 );
 		add_action( 'login_form', [ self::class, 'render_login_ticket_field' ] );
 		add_filter( 'wp_authenticate_user', [ self::class, 'require_management_identity' ], 100, 2 );
 		add_action( 'wp_login', [ self::class, 'complete_authenticated_login' ], 100, 2 );
-		add_action( 'cb_core_two_factor_authenticated', [ self::class, 'complete_two_factor_login' ], 10, 2 );
+		add_action( 'core_blueprint_two_factor_authenticated', [ self::class, 'complete_two_factor_login' ], 10, 2 );
 		add_filter( 'login_message', [ self::class, 'login_message' ] );
 	}
 

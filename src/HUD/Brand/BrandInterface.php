@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
  * {@see \CoreBlueprint\Core\HUD\Brand} and are registered automatically by
  * {@see \CoreBlueprint\Core\HUD\Bootstrap::register_brands()}. White-label and
  * sibling plugins implement this interface and register their brand on
- * the `cb_core_register_brands` action - see Bootstrap docblock for the
+ * the `core_blueprint_register_brands` action - see Bootstrap docblock for the
  * canonical usage example.
  *
  * Status states:
@@ -113,10 +113,10 @@ interface BrandInterface {
 	 * Default contract: each brand provides exactly two themes, one
 	 * with mode 'light' and one with mode 'dark'. White-label brands
 	 * override this to register their own theme slugs (which must also
-	 * be registered through the global `cb_admin_themes` filter so the
+	 * be registered through the global `core_blueprint_admin_themes` filter so the
 	 * theme system itself recognises them).
 	 *
-	 * Filter `cb_core_brand_themes_{$brand_id}` wraps the return value
+	 * Filter `core_blueprint_brand_themes_{$brand_id}` wraps the return value
 	 * so a white-label plugin can replace a brand's theme list without
 	 * subclassing the Brand class.
 	 *

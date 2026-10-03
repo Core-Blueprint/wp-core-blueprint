@@ -60,8 +60,8 @@ final class CB_Base_Profiles_Extension_Registry_Contract_Test extends WP_UnitTes
 		$this->extension_results = [];
 		$this->profile_results = [];
 
-		add_action( 'cb_core_register_extensions', [ $this, 'register_extensions' ] );
-		add_action( 'cb_core_register_profile_sections', [ $this, 'register_profile_sections' ] );
+		add_action( 'core_blueprint_register_extensions', [ $this, 'register_extensions' ] );
+		add_action( 'core_blueprint_register_profile_sections', [ $this, 'register_profile_sections' ] );
 
 		delete_option( 'cb_profiles_extension_alpha' );
 		delete_option( 'cb_profiles_extension_zeta' );
@@ -72,9 +72,9 @@ final class CB_Base_Profiles_Extension_Registry_Contract_Test extends WP_UnitTes
 	}
 
 	public function tear_down(): void {
-		remove_action( 'cb_core_register_extensions', [ $this, 'register_extensions' ] );
-		remove_action( 'cb_core_register_profile_sections', [ $this, 'register_profile_sections' ] );
-		remove_action( 'cb_core_register_profile_sections', [ $this, 'register_late_profile_section' ] );
+		remove_action( 'core_blueprint_register_extensions', [ $this, 'register_extensions' ] );
+		remove_action( 'core_blueprint_register_profile_sections', [ $this, 'register_profile_sections' ] );
+		remove_action( 'core_blueprint_register_profile_sections', [ $this, 'register_late_profile_section' ] );
 
 		ExtensionRegistry::reset();
 		SectionRegistry::_reset_for_testing();
@@ -147,7 +147,7 @@ final class CB_Base_Profiles_Extension_Registry_Contract_Test extends WP_UnitTes
 		$id = self::FIRST_PARTY . '-alpha';
 		$document = Engine::export_document( 'Missing extension', '', [ $id ] );
 
-		remove_action( 'cb_core_register_profile_sections', [ $this, 'register_profile_sections' ] );
+		remove_action( 'core_blueprint_register_profile_sections', [ $this, 'register_profile_sections' ] );
 		SectionRegistry::_reset_for_testing();
 
 		try {
@@ -163,8 +163,8 @@ final class CB_Base_Profiles_Extension_Registry_Contract_Test extends WP_UnitTes
 	public function test_per4_registry_freezes_after_canonical_collection(): void {
 		SectionRegistry::collect();
 
-		add_action( 'cb_core_register_profile_sections', [ $this, 'register_late_profile_section' ] );
-		do_action( 'cb_core_register_profile_sections' );
+		add_action( 'core_blueprint_register_profile_sections', [ $this, 'register_late_profile_section' ] );
+		do_action( 'core_blueprint_register_profile_sections' );
 
 		self::assertFalse( $this->profile_results['late'] ?? true );
 		self::assertNull( SectionRegistry::get( self::FIRST_PARTY . '-late' ) );

@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Public registry for Mail Designer template providers.
  *
  * Extensions register template definitions during
- * `cb_core_register_mail_templates`. Base owns editor/render/persistence; the
+ * `core_blueprint_register_mail_templates`. Base owns editor/render/persistence; the
  * provider owns template semantics and runtime context.
  *
  * @package Core_Blueprint
@@ -33,7 +33,7 @@ final class TemplateRegistry {
 		ComponentRegistry::boot();
 		WordPressTemplates::register();
 		/** Fires once so extensions can register Mail Designer templates. */
-		do_action( 'cb_core_register_mail_templates' );
+		do_action( 'core_blueprint_register_mail_templates' );
 	}
 
 	/**

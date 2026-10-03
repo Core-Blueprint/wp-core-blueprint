@@ -8,9 +8,9 @@ declare(strict_types=1);
  * validated against the controlled presentation contract of their section type.
  *
  * Three-phase population on init:
- *   1. Section types: Base built-ins, then `cb_hud_register_section_types`.
- *   2. Sections: Base defaults, then `cb_hud_register_sections`.
- *   3. Items: Base defaults, then `cb_hud_register_items`.
+ *   1. Section types: Base built-ins, then `core_blueprint_hud_register_section_types`.
+ *   2. Sections: Base defaults, then `core_blueprint_hud_register_sections`.
+ *   3. Items: Base defaults, then `core_blueprint_hud_register_items`.
  *
  * Item visibility and capability gating live in the registry itself -
  * an item with a capability the current user lacks never makes it into
@@ -281,9 +281,9 @@ final class Registry {
 	 * straight to creation without passing through the index page first.
 	 *
 	 * Sibling plugins (Hub, Invoice, etc.) layer their own items on top
-	 * via cb_hud_register_items - they typically place items in cb-core
+	 * via core_blueprint_hud_register_items - they typically place items in cb-core
 	 * (operator-only) or register their own section via the
-	 * cb_hud_register_sections action for plugin-specific content
+	 * core_blueprint_hud_register_sections action for plugin-specific content
 	 * collections.
 	 */
 	public static function register_builtin_items(): void {
@@ -334,7 +334,7 @@ final class Registry {
 		//   - any existing comments in any state
 		//   - any pending moderation queue
 		//
-		// Filter `cb_core_hud_show_comments` allows explicit override
+		// Filter `core_blueprint_hud_show_comments` allows explicit override
 		// for sites that want to force-show or force-hide regardless
 		// of detection (e.g. a multisite where some installs need a
 		// uniform answer).
@@ -425,7 +425,7 @@ final class Registry {
 		// Two values that always exist on every WP install. Renders as
 		// the canonical header status-strip presentation. Hub / Invoice / siblings layer richer status items
 		// (Beacon connect-state, sync recency, fleet health) via
-		// cb_hud_register_items without HUD itself needing to know.
+		// core_blueprint_hud_register_items without HUD itself needing to know.
 
 		global $wp_version;
 		self::add_item( [
@@ -606,7 +606,7 @@ final class Registry {
 	 * the link declutters HUD without losing functionality (operators
 	 * can still reach edit-comments.php via wp-admin sidebar).
 	 *
-	 * Filter `cb_core_hud_show_comments` overrides the detection in
+	 * Filter `core_blueprint_hud_show_comments` overrides the detection in
 	 * either direction - return true to force-show, false to force-hide.
 	 * Useful for multisite-uniformity or for sites that disable
 	 * comments via plugin (where default_comment_status may still be
@@ -630,7 +630,7 @@ final class Registry {
 		}
 
 		/**
-		 * Filter: cb_core_hud_show_comments
+		 * Filter: core_blueprint_hud_show_comments
 		 *
 		 * Override the auto-detection result for the Comments item.
 		 * Return true to force-show, false to force-hide. Default is
@@ -638,6 +638,6 @@ final class Registry {
 		 *
 		 * @param bool $show Whether to register the Comments item.
 		 */
-		return (bool) apply_filters( 'cb_core_hud_show_comments', $show );
+		return (bool) apply_filters( 'core_blueprint_hud_show_comments', $show );
 	}
 }

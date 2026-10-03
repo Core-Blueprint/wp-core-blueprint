@@ -42,17 +42,17 @@ final class CB_Base_Forms_Foundation_Contract_Test extends WP_UnitTestCase {
 		$this->results = [];
 		$this->events  = [];
 
-		add_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extensions' ] );
-		add_action( 'cb_core_register_interoperability_contracts', [ $this, 'attempt_base_owner_spoof' ], 20 );
-		add_action( 'cb_core_register_interoperability_implementations', [ $this, 'register_fixture_implementations' ] );
-		add_action( 'cb_core_forms_submission_emitted', [ $this, 'capture_event' ] );
+		add_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extensions' ] );
+		add_action( 'core_blueprint_register_interoperability_contracts', [ $this, 'attempt_base_owner_spoof' ], 20 );
+		add_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_fixture_implementations' ] );
+		add_action( 'core_blueprint_forms_submission_emitted', [ $this, 'capture_event' ] );
 	}
 
 	public function tear_down(): void {
-		remove_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extensions' ] );
-		remove_action( 'cb_core_register_interoperability_contracts', [ $this, 'attempt_base_owner_spoof' ], 20 );
-		remove_action( 'cb_core_register_interoperability_implementations', [ $this, 'register_fixture_implementations' ] );
-		remove_action( 'cb_core_forms_submission_emitted', [ $this, 'capture_event' ] );
+		remove_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extensions' ] );
+		remove_action( 'core_blueprint_register_interoperability_contracts', [ $this, 'attempt_base_owner_spoof' ], 20 );
+		remove_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_fixture_implementations' ] );
+		remove_action( 'core_blueprint_forms_submission_emitted', [ $this, 'capture_event' ] );
 
 		ExtensionRegistry::reset();
 		Registry::_reset_for_testing();

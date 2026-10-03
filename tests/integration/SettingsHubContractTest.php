@@ -21,15 +21,15 @@ final class CB_Base_Settings_Hub_Contract_Test extends WP_UnitTestCase {
 
 		ExtensionRegistry::reset();
 		SettingsRegistry::_reset_for_testing();
-		add_action( 'cb_core_register_extensions', [ $this, 'register_extensions' ] );
-		add_action( 'cb_core_register_settings', [ $this, 'register_settings' ] );
+		add_action( 'core_blueprint_register_extensions', [ $this, 'register_extensions' ] );
+		add_action( 'core_blueprint_register_settings', [ $this, 'register_settings' ] );
 		ExtensionRegistry::collect();
 		$_GET = [];
 	}
 
 	public function tear_down(): void {
-		remove_action( 'cb_core_register_extensions', [ $this, 'register_extensions' ] );
-		remove_action( 'cb_core_register_settings', [ $this, 'register_settings' ] );
+		remove_action( 'core_blueprint_register_extensions', [ $this, 'register_extensions' ] );
+		remove_action( 'core_blueprint_register_settings', [ $this, 'register_settings' ] );
 		SettingsRegistry::_reset_for_testing();
 		ExtensionRegistry::reset();
 		wp_set_current_user( 0 );

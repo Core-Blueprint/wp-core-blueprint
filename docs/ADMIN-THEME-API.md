@@ -35,7 +35,7 @@ Do not detect a built-in theme slug in extension CSS. Use semantic tokens instea
 }
 ```
 
-This keeps extensions compatible with Light, Dark, and partner themes registered through `cb_admin_themes`.
+This keeps extensions compatible with Light, Dark, and partner themes registered through `core_blueprint_admin_themes`.
 
 ## PHP API
 
@@ -88,14 +88,14 @@ This uses the same public requirement vocabulary as `PageRegistry` and `Settings
 
 ### Register partner themes
 
-The existing `cb_admin_themes` filter remains the canonical registry. Partner themes must provide the same semantic color-token contract as Base.
+The existing `core_blueprint_admin_themes` filter remains the canonical registry. Partner themes must provide the same semantic color-token contract as Base.
 
 ### Safety valve for self-contained admin applications
 
 The theme state applies to all normal `wp-admin` screens by default. A developer that owns a self-contained application and knows the Base WordPress presentation adapter is incompatible may opt that screen out:
 
 ```php
-add_filter('cb_admin_theme_apply', function (bool $apply, $screen): bool {
+add_filter('core_blueprint_admin_theme_apply', function (bool $apply, $screen): bool {
     if ($screen && 'my_app_page' === $screen->id) {
         return false;
     }
@@ -110,7 +110,7 @@ This is a developer compatibility boundary, not a user-facing presentation mode.
 
 ```php
 add_action(
-    'cb_admin_theme_enqueue',
+    'core_blueprint_admin_theme_enqueue',
     function (string $hookSuffix, string $theme, string $mode, bool $registered): void {
         // Enqueue extension-owned theme-aware assets when needed.
     },
@@ -121,8 +121,8 @@ add_action(
 
 Additional hooks:
 
-- `cb_admin_theme_screen_registered`
-- `cb_admin_theme_body_classes`
+- `core_blueprint_admin_theme_screen_registered`
+- `core_blueprint_admin_theme_body_classes`
 
 ## Internal adapter layers
 

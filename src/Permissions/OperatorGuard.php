@@ -148,7 +148,7 @@ final class OperatorGuard {
 		 *
 		 * @param string $reason Machine-readable reason code.
 		 */
-		do_action( 'cb_permissions_operator_guard_triggered', 'zero_operators_with_hide_active' );
+		do_action( 'core_blueprint_permissions_operator_guard_triggered', 'zero_operators_with_hide_active' );
 	}
 
 }

@@ -91,7 +91,7 @@ Design ownership does not imply universal loading. The minimal Core Admin shell 
 
 `CoreBlueprint\Core\Admin\SettingsRegistry` is the public v1 boundary for extension configuration contributed to **Core Blueprint → Extensions**. The Settings Hub keeps extension configuration centralized without adding one flat Core Blueprint submenu item per extension. **Extensions** is the final Base-owned submenu item and remains distinct from Base's separate **Preferences** surface. Operational extension administration remains in the extension's own appropriate workspace.
 
-A provider registers during `cb_core_register_settings` and refers to an existing `ExtensionRegistry` ID. Base owns routing, capability filtering, developer/provenance attribution, grouping, shell presentation and semantic shared-UI requirements. The extension owns its settings fields, save/validation logic, domain semantics and inner renderer.
+A provider registers during `core_blueprint_register_settings` and refers to an existing `ExtensionRegistry` ID. Base owns routing, capability filtering, developer/provenance attribution, grouping, shell presentation and semantic shared-UI requirements. The extension owns its settings fields, save/validation logic, domain semantics and inner renderer.
 
 Developer identity is always visible. Base derives it from the registered plugin identity; providers cannot submit their own developer identity or first-party/official flag. First-party provenance uses the reserved `core-blueprint-*` ExtensionRegistry invariant. Every other provider is presented as third-party, and the individual settings surface explicitly states that support belongs to that developer rather than Core Blueprint.
 

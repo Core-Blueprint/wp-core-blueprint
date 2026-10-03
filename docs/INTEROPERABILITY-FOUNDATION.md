@@ -19,8 +19,8 @@ CoreBlueprint\Core\Interoperability\Registry
 Registration occurs through two controlled lifecycles:
 
 ```text
-cb_core_register_interoperability_contracts
-cb_core_register_interoperability_implementations
+core_blueprint_register_interoperability_contracts
+core_blueprint_register_interoperability_implementations
 ```
 
 Base-owned platform contracts are loaded privately before the public contract lifecycle. Extension-owned contracts are then collected before implementations. Registration outside the corresponding public collection lifecycle is rejected.
@@ -43,12 +43,12 @@ An unknown public owner or implementation provider is rejected.
 
 ## Define a contract
 
-A domain extension defines a versioned contract during `cb_core_register_interoperability_contracts`.
+A domain extension defines a versioned contract during `core_blueprint_register_interoperability_contracts`.
 
 ```php
 use CoreBlueprint\Core\Interoperability\Registry;
 
-add_action( 'cb_core_register_interoperability_contracts', static function (): void {
+add_action( 'core_blueprint_register_interoperability_contracts', static function (): void {
     Registry::register_contract( [
         'owner'       => 'acme-domain',
         'id'          => 'resource-provider',
@@ -91,12 +91,12 @@ Specialized Base-owned contracts are documented by their own Foundation document
 
 ## Register an implementation
 
-An extension implements a previously collected contract during `cb_core_register_interoperability_implementations`.
+An extension implements a previously collected contract during `core_blueprint_register_interoperability_implementations`.
 
 ```php
 use CoreBlueprint\Core\Interoperability\Registry;
 
-add_action( 'cb_core_register_interoperability_implementations', static function (): void {
+add_action( 'core_blueprint_register_interoperability_implementations', static function (): void {
     Registry::register_implementation( [
         'provider'         => 'acme-adapter',
         'id'               => 'default',
@@ -243,9 +243,9 @@ ExtensionRegistry collection
     ↓
 Base private read-only contract catalog
     ↓
-cb_core_register_interoperability_contracts
+core_blueprint_register_interoperability_contracts
     ↓
-cb_core_register_interoperability_implementations
+core_blueprint_register_interoperability_implementations
     ↓
 registry frozen for the remainder of the request
 ```

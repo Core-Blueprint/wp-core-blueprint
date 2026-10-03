@@ -10,7 +10,7 @@ declare(strict_types=1);
  * Plan §7.1 reserves the inline tab approach (rather than the TabRegistry
  * indirection that Logs uses) because Reports' tab list is short and stable
  * - extension plugins that want to add report types use the
- * cb_core_reports_tabs filter instead of a separate registry class.
+ * core_blueprint_reports_tabs filter instead of a separate registry class.
  *
  * Capability: cb_view_reports for the page itself; manage caps gate the
  * generate buttons inside each tab template.
@@ -66,7 +66,7 @@ final class Reports extends PageBase {
 		];
 
 		/**
-		 * Filter: cb_core_reports_tabs
+		 * Filter: core_blueprint_reports_tabs
 		 *
 		 * Allows Reports addons to add their own tabs to the Reports page.
 		 * Map of slug → translated label. Slugs must match the value
@@ -74,7 +74,7 @@ final class Reports extends PageBase {
 		 *
 		 * @param array<string, string> $tab_labels
 		 */
-		$tab_labels = (array) apply_filters( 'cb_core_reports_tabs', $tab_labels );
+		$tab_labels = (array) apply_filters( 'core_blueprint_reports_tabs', $tab_labels );
 
 		$active = $this->active_tab(
 			array_keys( $tab_labels ),
@@ -93,14 +93,14 @@ final class Reports extends PageBase {
 				break;
 			default:
 				/**
-				 * Action: cb_core_reports_render_tab_{slug}
+				 * Action: core_blueprint_reports_render_tab_{slug}
 				 *
 				 * Allows Reports addons to render their own tab body when the
 				 * dispatcher hits an unknown slug. The trailing slug is the
 				 * sanitised tab key - addons hook the specific name they
-				 * registered via cb_core_reports_tabs.
+				 * registered via core_blueprint_reports_tabs.
 				 */
-				do_action( 'cb_core_reports_render_tab_' . $active );
+				do_action( 'core_blueprint_reports_render_tab_' . $active );
 				break;
 		}
 		$body = (string) ob_get_clean();
@@ -172,7 +172,7 @@ final class Reports extends PageBase {
 		];
 
 		/**
-		 * Filter: cb_core_reports_available_types
+		 * Filter: core_blueprint_reports_available_types
 		 *
 		 * Reports addons add report types here. Each entry is a tab-slug map
 		 * with label, description, and the tab to navigate to when the user
@@ -180,7 +180,7 @@ final class Reports extends PageBase {
 		 *
 		 * @param array<string, array> $types
 		 */
-		return (array) apply_filters( 'cb_core_reports_available_types', $types );
+		return (array) apply_filters( 'core_blueprint_reports_available_types', $types );
 	}
 
 	/**

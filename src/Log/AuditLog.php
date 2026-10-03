@@ -239,7 +239,7 @@ final class AuditLog {
 		$insert_id = false === $result ? false : (int) $wpdb->insert_id;
 
 		if ( false !== $insert_id ) {
-			do_action( 'cb_core_audit_log_written', $insert_id, $event_type, $severity, $context );
+			do_action( 'core_blueprint_audit_log_written', $insert_id, $event_type, $severity, $context );
 		}
 
 		return $insert_id;

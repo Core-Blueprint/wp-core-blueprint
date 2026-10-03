@@ -33,13 +33,13 @@ final class ExtensionRegistry {
 	}
 
 	/**
-	 * Register one extension during `cb_core_register_extensions`.
+	 * Register one extension during `core_blueprint_register_extensions`.
 	 *
 	 * @param array<string,mixed> $definition
 	 */
 	public static function register( array $definition ): bool {
-		if ( ! doing_action( 'cb_core_register_extensions' ) ) {
-			self::diagnostic( 'Extension registration refused outside cb_core_register_extensions.' );
+		if ( ! doing_action( 'core_blueprint_register_extensions' ) ) {
+			self::diagnostic( 'Extension registration refused outside core_blueprint_register_extensions.' );
 			return false;
 		}
 
@@ -144,7 +144,7 @@ final class ExtensionRegistry {
 			return;
 		}
 		self::$collected = true;
-		do_action( 'cb_core_register_extensions' );
+		do_action( 'core_blueprint_register_extensions' );
 	}
 
 	public static function is_valid_id( string $id ): bool {

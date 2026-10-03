@@ -11,9 +11,9 @@ declare(strict_types=1);
  * Public integration surface:
  *   - AdminTheme::theme() / ::mode()
  *   - AdminTheme::register_screen( $hook_suffix, $requirements ) for declared compatibility and native-screen shared UI
- *   - `cb_admin_themes` to register partner themes (owned by Themes)
- *   - `cb_admin_theme_apply` as a developer safety valve for incompatible apps
- *   - `cb_admin_theme_enqueue` for theme-aware extension assets
+ *   - `core_blueprint_admin_themes` to register partner themes (owned by Themes)
+ *   - `core_blueprint_admin_theme_apply` as a developer safety valve for incompatible apps
+ *   - `core_blueprint_admin_theme_enqueue` for theme-aware extension assets
  *   - browser event `cb:admin-theme-change`
  *
  * @package Core_Blueprint
@@ -97,7 +97,7 @@ final class AdminTheme {
 		 *
 		 * @param string $hook_suffix WordPress admin hook suffix.
 		 */
-		do_action( 'cb_admin_theme_screen_registered', $hook_suffix );
+		do_action( 'core_blueprint_admin_theme_screen_registered', $hook_suffix );
 	}
 
 	/** Is the supplied/current admin screen explicitly registered? */
@@ -198,7 +198,7 @@ final class AdminTheme {
 		 * @param bool   $registered  Whether the screen declared compatibility.
 		 */
 		do_action(
-			'cb_admin_theme_enqueue',
+			'core_blueprint_admin_theme_enqueue',
 			$hook_suffix,
 			$slug,
 			self::mode(),
@@ -289,7 +289,7 @@ final class AdminTheme {
 		 * @param string $theme   Active theme slug.
 		 * @param string $mode    Server-resolved mode.
 		 */
-		$classes = (string) apply_filters( 'cb_admin_theme_body_classes', $classes, self::theme(), self::mode() );
+		$classes = (string) apply_filters( 'core_blueprint_admin_theme_body_classes', $classes, self::theme(), self::mode() );
 		return trim( $classes );
 	}
 
@@ -312,7 +312,7 @@ final class AdminTheme {
 		 * @param \WP_Screen|null $screen      Current screen when available.
 		 * @param string          $hook_suffix Current WordPress admin hook suffix.
 		 */
-		return (bool) apply_filters( 'cb_admin_theme_apply', true, $screen, $hook_suffix );
+		return (bool) apply_filters( 'core_blueprint_admin_theme_apply', true, $screen, $hook_suffix );
 	}
 
 	private static function current_hook_suffix(): string {

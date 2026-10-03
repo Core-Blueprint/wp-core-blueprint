@@ -112,7 +112,7 @@ The source-level `tools/conformance.php` check runs first. It remains supplement
 4. normal subsequent runtime request;
 5. simulated wp-admin request.
 
-The harness never calls Starter registration methods directly. The normal `plugins_loaded`, `init`, `cb_core_register_extensions`, `admin_menu` and `cb_core_register_pages` lifecycles must produce the registrations.
+The harness never calls Starter registration methods directly. The normal `plugins_loaded`, `init`, `core_blueprint_register_extensions`, `admin_menu` and `core_blueprint_register_pages` lifecycles must produce the registrations.
 
 The runtime assertions cover the Core API 1.0 dependency gate, extension inventory/compatibility, module health and Governance `EventRegistry`/`Audit` write path. The admin assertions prove the registered page receives a WordPress hook suffix, scopes its own asset to that hook and renders the documented Base `panels` and `Notice` contracts through its registered page callback.
 

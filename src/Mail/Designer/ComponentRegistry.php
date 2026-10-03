@@ -26,9 +26,9 @@ final class ComponentRegistry {
 		self::$booted = true;
 
 		self::register_core();
-		add_filter( 'cb_core_design_mail_node_types', [ __CLASS__, 'contribute_node_types' ] );
+		add_filter( 'core_blueprint_design_mail_node_types', [ __CLASS__, 'contribute_node_types' ] );
 		/** Fires once so extensions can add blocks to the shared Mail Designer. */
-		do_action( 'cb_core_register_mail_components' );
+		do_action( 'core_blueprint_register_mail_components' );
 	}
 
 	/**

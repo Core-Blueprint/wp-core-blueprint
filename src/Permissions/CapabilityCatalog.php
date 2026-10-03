@@ -8,7 +8,7 @@ declare(strict_types=1);
  * metadata. The User Roles editor uses this catalog to group and explain
  * capabilities without hard-coding knowledge of sibling plugins.
  *
- * Sibling plugins can enrich the catalog with the `cb_core_capability_catalog`
+ * Sibling plugins can enrich the catalog with the `core_blueprint_capability_catalog`
  * filter. Capabilities already present on a WordPress role are discovered
  * automatically and receive inferred metadata when no explicit registration
  * exists.
@@ -72,7 +72,7 @@ final class CapabilityCatalog {
 		}
 
 		/**
-		 * Filter: cb_core_capability_catalog
+		 * Filter: core_blueprint_capability_catalog
 		 *
 		 * Lets sibling plugins register labels, descriptions and grouping for
 		 * their primitive capabilities. Array keys are capability names.
@@ -80,7 +80,7 @@ final class CapabilityCatalog {
 		 *
 		 * @param array<string,array<string,mixed>> $catalog
 		 */
-		$catalog = (array) apply_filters( 'cb_core_capability_catalog', $catalog );
+		$catalog = (array) apply_filters( 'core_blueprint_capability_catalog', $catalog );
 
 		$normalized = [];
 		foreach ( $catalog as $cap => $meta ) {

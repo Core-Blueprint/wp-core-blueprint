@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Public Automation Foundation trigger registration and discovery boundary.
  *
- * Extensions register during cb_core_register_automation_capabilities. Base-owned
+ * Extensions register during core_blueprint_register_automation_capabilities. Base-owned
  * subsystems use register_base(); external code must never claim Base ownership.
  *
  * @package Core_Blueprint

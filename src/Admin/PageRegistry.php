@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * PageRegistry - public registration boundary for Core Blueprint admin pages.
  *
- * Extensions register Page implementations during cb_core_register_pages.
+ * Extensions register Page implementations during core_blueprint_register_pages.
  * Base owns menu wiring, hook suffixes, the minimal Core Admin shell and
  * semantic shared-UI requirements. Asset handles and filenames are internal.
  *
@@ -228,7 +228,7 @@ final class PageRegistry {
 	/** admin_menu handler. */
 	public static function on_admin_menu(): void {
 		/** Fires once so Core Blueprint extensions can register admin pages. */
-		do_action( 'cb_core_register_pages' );
+		do_action( 'core_blueprint_register_pages' );
 
 		foreach ( self::all() as $page ) {
 			$suffix = add_submenu_page(

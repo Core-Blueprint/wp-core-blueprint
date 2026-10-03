@@ -48,13 +48,13 @@ final class Bootstrap {
 		// PageRegistry fires this hook during admin_menu, so the page
 		// shows up in the Core Blueprint sidebar between Logs (20) and
 		// Safeguards (30).
-		add_action( 'cb_core_register_pages', [ __CLASS__, 'register_admin_page' ] );
+		add_action( 'core_blueprint_register_pages', [ __CLASS__, 'register_admin_page' ] );
 
 		// HUD items - the ActivationRegistry gate (via the `module` field) drops
 		// these items if Reports is disabled. No separate State::is_enabled
 		// check needed in the registration callbacks.
-		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
-		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_quick_action' ] );
+		add_action( 'core_blueprint_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
+		add_action( 'core_blueprint_hud_register_items', [ __CLASS__, 'register_hud_quick_action' ] );
 
 		// Designer Mode is deliberately route-scoped. Reports may consume the
 		// public Golden shell on its own Preferences tab without turning the
@@ -91,7 +91,7 @@ final class Bootstrap {
 	}
 
 	/**
-	 * Register the Reports admin page. Hooked on cb_core_register_pages
+	 * Register the Reports admin page. Hooked on core_blueprint_register_pages
 	 * so registration is sequenced correctly relative to admin_menu.
 	 *
 	 * Master-switch gate (1.3.26-dev): only register the menu item when

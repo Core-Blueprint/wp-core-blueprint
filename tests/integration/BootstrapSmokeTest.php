@@ -16,11 +16,11 @@ final class CB_Base_Bootstrap_Smoke_Test extends WP_UnitTestCase {
     }
 
     public function test_bootstrap_requirements_are_satisfied_in_ci(): void {
-        self::assertSame( [], cb_core_get_requirement_errors() );
+        self::assertSame( [], core_blueprint_get_requirement_errors() );
         self::assertTrue( function_exists( 'sodium_crypto_secretbox' ) );
     }
 
     public function test_core_booted_lifecycle_has_fired(): void {
-        self::assertGreaterThanOrEqual( 1, did_action( 'cb_core_booted' ) );
+        self::assertGreaterThanOrEqual( 1, did_action( 'core_blueprint_booted' ) );
     }
 }

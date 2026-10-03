@@ -40,7 +40,7 @@ final class CB_Base_User_Profile_Section_Registry_Contract_Test extends WP_UnitT
 				]
 			);
 		};
-		add_action( 'cb_core_register_user_profile_sections', $register, 99 );
+		add_action( 'core_blueprint_register_user_profile_sections', $register, 99 );
 		try {
 			$ids = array_keys( UserProfileSectionRegistry::all() );
 			self::assertLessThan(
@@ -48,7 +48,7 @@ final class CB_Base_User_Profile_Section_Registry_Contract_Test extends WP_UnitT
 				array_search( 'test-profile-earlier', $ids, true )
 			);
 		} finally {
-			remove_action( 'cb_core_register_user_profile_sections', $register, 99 );
+			remove_action( 'core_blueprint_register_user_profile_sections', $register, 99 );
 		}
 	}
 
@@ -74,7 +74,7 @@ final class CB_Base_User_Profile_Section_Registry_Contract_Test extends WP_UnitT
 				]
 			);
 		};
-		add_action( 'cb_core_register_user_profile_sections', $register, 99 );
+		add_action( 'core_blueprint_register_user_profile_sections', $register, 99 );
 
 		$user_id = self::factory()->user->create( [ 'role' => 'subscriber' ] );
 		$user = get_userdata( $user_id );
@@ -91,7 +91,7 @@ final class CB_Base_User_Profile_Section_Registry_Contract_Test extends WP_UnitT
 			self::assertStringNotContainsString( 'Edit only', $html );
 			self::assertStringNotContainsString( 'edit-renderer', $html );
 		} finally {
-			remove_action( 'cb_core_register_user_profile_sections', $register, 99 );
+			remove_action( 'core_blueprint_register_user_profile_sections', $register, 99 );
 		}
 	}
 

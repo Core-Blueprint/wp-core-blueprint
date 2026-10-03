@@ -44,16 +44,16 @@ final class CB_Base_Interoperability_Foundation_Contract_Test extends WP_UnitTes
 		$this->contract_collection_count = 0;
 		$this->implementation_collection_count = 0;
 
-		add_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extensions' ] );
-		add_action( 'cb_core_register_interoperability_contracts', [ $this, 'register_fixture_contracts' ] );
-		add_action( 'cb_core_register_interoperability_implementations', [ $this, 'register_fixture_implementations' ] );
+		add_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extensions' ] );
+		add_action( 'core_blueprint_register_interoperability_contracts', [ $this, 'register_fixture_contracts' ] );
+		add_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_fixture_implementations' ] );
 	}
 
 	public function tear_down(): void {
-		remove_action( 'cb_core_register_extensions', [ $this, 'register_fixture_extensions' ] );
-		remove_action( 'cb_core_register_interoperability_contracts', [ $this, 'register_fixture_contracts' ] );
-		remove_action( 'cb_core_register_interoperability_implementations', [ $this, 'register_fixture_implementations' ] );
-		remove_action( 'cb_core_register_interoperability_implementations', [ $this, 'register_late_implementation' ] );
+		remove_action( 'core_blueprint_register_extensions', [ $this, 'register_fixture_extensions' ] );
+		remove_action( 'core_blueprint_register_interoperability_contracts', [ $this, 'register_fixture_contracts' ] );
+		remove_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_fixture_implementations' ] );
+		remove_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_late_implementation' ] );
 
 		ExtensionRegistry::reset();
 		Registry::_reset_for_testing();
@@ -139,8 +139,8 @@ final class CB_Base_Interoperability_Foundation_Contract_Test extends WP_UnitTes
 	public function test_if1_registry_freezes_after_canonical_collection(): void {
 		self::assertCount( 3, Registry::implementations() );
 
-		add_action( 'cb_core_register_interoperability_implementations', [ $this, 'register_late_implementation' ] );
-		do_action( 'cb_core_register_interoperability_implementations' );
+		add_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_late_implementation' ] );
+		do_action( 'core_blueprint_register_interoperability_implementations' );
 
 		self::assertFalse( $this->results['late'] ?? true, 'A late implementation bypassed the frozen registry.' );
 		self::assertCount( 3, Registry::implementations(), 'Frozen registry mutated after canonical collection.' );

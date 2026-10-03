@@ -122,7 +122,7 @@ final class Permissions {
 					'by'         => $current_user_id,
 				] );
 				/** @see Generator hook docblock for parameter contract. */
-				do_action( 'cb_permissions_operator_added', (int) $user_id, $current_user_id );
+				do_action( 'core_blueprint_permissions_operator_added', (int) $user_id, $current_user_id );
 			}
 		}
 
@@ -142,7 +142,7 @@ final class Permissions {
 					'user_login' => $user->user_login,
 					'by'         => $current_user_id,
 				] );
-				do_action( 'cb_permissions_operator_removed', (int) $user_id, $current_user_id );
+				do_action( 'core_blueprint_permissions_operator_removed', (int) $user_id, $current_user_id );
 			}
 		}
 

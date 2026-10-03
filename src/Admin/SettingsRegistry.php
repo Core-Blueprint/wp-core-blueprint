@@ -46,7 +46,7 @@ final class SettingsRegistry {
 	private static bool $collected = false;
 
 	/**
-	 * Register one extension settings provider during `cb_core_register_settings`.
+	 * Register one extension settings provider during `core_blueprint_register_settings`.
 	 *
 	 * Supported definition keys:
 	 * - label          required caller-localized label
@@ -65,8 +65,8 @@ final class SettingsRegistry {
 	 * @param array<string,mixed> $definition   Provider metadata.
 	 */
 	public static function register( string $extension_id, array $definition ): bool {
-		if ( ! doing_action( 'cb_core_register_settings' ) ) {
-			self::diagnostic( 'Settings provider registration refused outside cb_core_register_settings.' );
+		if ( ! doing_action( 'core_blueprint_register_settings' ) ) {
+			self::diagnostic( 'Settings provider registration refused outside core_blueprint_register_settings.' );
 			return false;
 		}
 
@@ -171,7 +171,7 @@ final class SettingsRegistry {
 			return;
 		}
 		self::$collected = true;
-		do_action( 'cb_core_register_settings' );
+		do_action( 'core_blueprint_register_settings' );
 	}
 
 	/** @return array<string,array<string,mixed>> */

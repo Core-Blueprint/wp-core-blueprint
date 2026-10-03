@@ -172,7 +172,7 @@ final class HUD {
 					// between mode-pills and the fixed Preferences/Close
 					// buttons. Theme-toggle is registered as the default
 					// entry; partner plugins extend or replace via the
-					// `cb_hud_header_actions` filter.
+					// `core_blueprint_hud_header_actions` filter.
 					HeaderActions::render();
 					?>
 

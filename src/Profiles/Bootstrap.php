@@ -15,7 +15,7 @@ final class Bootstrap {
 	public static function boot(): void {
 		SectionRegistry::init();
 		add_action( 'init', [ self::class, 'register_events' ], 1 );
-		add_action( 'cb_core_register_pages', [ self::class, 'register_page' ] );
+		add_action( 'core_blueprint_register_pages', [ self::class, 'register_page' ] );
 		if ( RequestContext::is_admin_post() ) {
 			Actions::boot();
 		}

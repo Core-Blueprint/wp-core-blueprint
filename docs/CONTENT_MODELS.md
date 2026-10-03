@@ -95,7 +95,7 @@ Plugins can register runtime-owned Content Models through `CoreBlueprint\Core\Co
 Registration is intended during the public registration hook, before Content Models runtime registration:
 
 ```php
-add_action( 'cb_core_content_models_register', static function ( string $api ): void {
+add_action( 'core_blueprint_content_models_register', static function ( string $api ): void {
     $api::register_field_group( [
         'id'         => 'field_group_example',
         'title'      => 'Example',

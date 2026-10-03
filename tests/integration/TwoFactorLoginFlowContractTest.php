@@ -273,12 +273,12 @@ final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase 
 		self::assertSame( 'cb_core_two_factor_interactive_required', $blocked->get_error_code() );
 
 		$adapter = static fn ( bool $interactive ): bool => true;
-		add_filter( 'cb_core_two_factor_interactive_login_request', $adapter, 10, 1 );
+		add_filter( 'core_blueprint_two_factor_interactive_login_request', $adapter, 10, 1 );
 		try {
 			self::assertSame( $user, LoginFlow::filter_authenticate( $user ) );
 			self::assertTrue( LoginFlow::is_password_stage_pending( (int) $user->ID ) );
 		} finally {
-			remove_filter( 'cb_core_two_factor_interactive_login_request', $adapter, 10 );
+			remove_filter( 'core_blueprint_two_factor_interactive_login_request', $adapter, 10 );
 		}
 	}
 

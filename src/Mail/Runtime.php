@@ -28,7 +28,7 @@ final class Runtime {
 			return;
 		}
 
-		$transports = apply_filters( 'cb_core_mail_transports', [
+		$transports = apply_filters( 'core_blueprint_mail_transports', [
 			BrevoTransport::slug() => BrevoTransport::class,
 			SmtpTransport::slug()  => SmtpTransport::class,
 		] );

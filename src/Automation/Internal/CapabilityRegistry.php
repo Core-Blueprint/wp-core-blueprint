@@ -61,14 +61,14 @@ final class CapabilityRegistry {
 		// Calling collect() again is idempotent and protects tests/manual contexts
 		// without changing normal runtime timing.
 		ExtensionRegistry::collect();
-		do_action( 'cb_core_register_automation_capabilities' );
+		do_action( 'core_blueprint_register_automation_capabilities' );
 		return true;
 	}
 
 	/** @param array<string,mixed> $definition */
 	public static function register_trigger( array $definition, bool $base_owned ): bool {
-		if ( ! $base_owned && ! doing_action( 'cb_core_register_automation_capabilities' ) ) {
-			self::diagnostic( 'Trigger registration refused outside cb_core_register_automation_capabilities.' );
+		if ( ! $base_owned && ! doing_action( 'core_blueprint_register_automation_capabilities' ) ) {
+			self::diagnostic( 'Trigger registration refused outside core_blueprint_register_automation_capabilities.' );
 			return false;
 		}
 
@@ -89,8 +89,8 @@ final class CapabilityRegistry {
 
 	/** @param array<string,mixed> $definition */
 	public static function register_action( array $definition, bool $base_owned ): bool {
-		if ( ! $base_owned && ! doing_action( 'cb_core_register_automation_capabilities' ) ) {
-			self::diagnostic( 'Action registration refused outside cb_core_register_automation_capabilities.' );
+		if ( ! $base_owned && ! doing_action( 'core_blueprint_register_automation_capabilities' ) ) {
+			self::diagnostic( 'Action registration refused outside core_blueprint_register_automation_capabilities.' );
 			return false;
 		}
 
@@ -111,8 +111,8 @@ final class CapabilityRegistry {
 
 	/** @param array<string,mixed> $definition */
 	public static function register_state( array $definition, bool $base_owned ): bool {
-		if ( ! $base_owned && ! doing_action( 'cb_core_register_automation_capabilities' ) ) {
-			self::diagnostic( 'State registration refused outside cb_core_register_automation_capabilities.' );
+		if ( ! $base_owned && ! doing_action( 'core_blueprint_register_automation_capabilities' ) ) {
+			self::diagnostic( 'State registration refused outside core_blueprint_register_automation_capabilities.' );
 			return false;
 		}
 

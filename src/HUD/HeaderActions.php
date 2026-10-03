@@ -5,7 +5,7 @@ declare(strict_types=1);
  *
  * Renders between the mode-pills and the fixed ⚙ Preferences icon. The
  * theme-toggle is registered into this slot as a default entry; partner
- * plugins can add their own buttons via the `cb_hud_header_actions`
+ * plugins can add their own buttons via the `core_blueprint_hud_header_actions`
  * filter (e.g. Hub adding a "sync now" button, white-label brand-picker
  * eventually replacing the theme-toggle).
  *
@@ -51,7 +51,7 @@ final class HeaderActions {
 		$actions = self::defaults();
 
 		/**
-		 * Filter: cb_hud_header_actions
+		 * Filter: core_blueprint_hud_header_actions
 		 *
 		 * Modify the list of buttons shown between the mode-pills and the
 		 * fixed ⚙ Preferences icon in the HUD header. Each action is an
@@ -71,7 +71,7 @@ final class HeaderActions {
 		 *
 		 * @param array<int, array<string, mixed>> $actions Default list.
 		 */
-		$actions = apply_filters( 'cb_hud_header_actions', $actions );
+		$actions = apply_filters( 'core_blueprint_hud_header_actions', $actions );
 
 		// Defensive: filter callbacks might return non-array.
 		if ( ! is_array( $actions ) ) {

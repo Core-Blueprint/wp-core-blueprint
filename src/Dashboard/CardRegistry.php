@@ -77,7 +77,7 @@ final class CardRegistry {
 	 * Resolve visible shortcuts for a card.
 	 *
 	 * Registration is lazy: the first read fires
-	 * `cb_core_dashboard_register_cards`, giving sibling plugins a predictable
+	 * `core_blueprint_dashboard_register_cards`, giving sibling plugins a predictable
 	 * hook regardless of plugin load order. Filters then allow request-specific
 	 * additions or adjustments.
 	 *
@@ -102,18 +102,18 @@ final class CardRegistry {
 		 * @param string $card_id   Stable dashboard card ID.
 		 * @param array  $context   Read-only card/runtime context.
 		 */
-		$shortcuts = apply_filters( 'cb_core_dashboard_card_shortcuts', $shortcuts, $card_id, $context );
+		$shortcuts = apply_filters( 'core_blueprint_dashboard_card_shortcuts', $shortcuts, $card_id, $context );
 
 		/**
 		 * Filter shortcuts for a specific dashboard card.
 		 *
 		 * Example for LMS:
-		 * `cb_core_dashboard_card_shortcuts_core-blueprint-lms`.
+		 * `core_blueprint_dashboard_card_shortcuts_core-blueprint-lms`.
 		 *
 		 * @param array $shortcuts Shortcut declarations.
 		 * @param array $context   Read-only card/runtime context.
 		 */
-		$shortcuts = apply_filters( "cb_core_dashboard_card_shortcuts_{$card_id}", $shortcuts, $context );
+		$shortcuts = apply_filters( "core_blueprint_dashboard_card_shortcuts_{$card_id}", $shortcuts, $context );
 		if ( ! is_array( $shortcuts ) ) {
 			return [];
 		}
@@ -158,7 +158,7 @@ final class CardRegistry {
 		 * Sibling plugins should call CardRegistry::register_shortcut(s) from
 		 * this hook. Do not render markup here.
 		 */
-		do_action( 'cb_core_dashboard_register_cards' );
+		do_action( 'core_blueprint_dashboard_register_cards' );
 	}
 
 	private static function normalize_card_id( string $card_id ): string {

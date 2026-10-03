@@ -89,7 +89,7 @@ function cb_b3_assert_all_states(bool $enabled): void {
 /** @return string[] */
 function cb_b3_registered_pages(): array {
     \CoreBlueprint\Core\Admin\PageRegistry::_reset_for_testing();
-    do_action('cb_core_register_pages');
+    do_action('core_blueprint_register_pages');
     return array_map(static fn($page): string => (string) $page->slug(), \CoreBlueprint\Core\Admin\PageRegistry::all());
 }
 

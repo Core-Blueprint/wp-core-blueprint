@@ -46,7 +46,7 @@ CoreBlueprint\Core\Forms\SubmissionEvent
 and the in-request event hook:
 
 ```text
-cb_core_forms_submission_emitted
+core_blueprint_forms_submission_emitted
 ```
 
 The only Forms v1 support token is:
@@ -67,7 +67,7 @@ use CoreBlueprint\Core\Forms\Foundation;
 use CoreBlueprint\Core\Forms\ProviderInterface;
 use CoreBlueprint\Core\Interoperability\Registry;
 
-add_action( 'cb_core_register_extensions', static function (): void {
+add_action( 'core_blueprint_register_extensions', static function (): void {
     ExtensionRegistry::register( [
         'id'            => 'acme-forms',
         'plugin_file'   => plugin_basename( ACME_FORMS_FILE ),
@@ -78,7 +78,7 @@ add_action( 'cb_core_register_extensions', static function (): void {
     ] );
 } );
 
-add_action( 'cb_core_register_interoperability_implementations', static function (): void {
+add_action( 'core_blueprint_register_interoperability_implementations', static function (): void {
     Registry::register_implementation( [
         'provider'         => 'acme-forms',
         'id'               => 'default',
@@ -208,7 +208,7 @@ Forms v1 defines no attachment semantics, field-schema discovery, form catalog/d
 A successful emission creates one immutable `CoreBlueprint\Core\Forms\SubmissionEvent` and dispatches it on:
 
 ```text
-cb_core_forms_submission_emitted
+core_blueprint_forms_submission_emitted
 ```
 
 The event exposes:
@@ -282,7 +282,7 @@ cb_core_forms_unsupported
 cb_core_forms_provider_unavailable
 ```
 
-A rejected emission does not dispatch `cb_core_forms_submission_emitted`.
+A rejected emission does not dispatch `core_blueprint_forms_submission_emitted`.
 
 Provider-resolution failures and exceptions from provider availability checks are normalized to `cb_core_forms_provider_unavailable`; internal exception details are not part of the Forms v1 return contract.
 

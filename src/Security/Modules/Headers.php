@@ -40,7 +40,7 @@ final class Headers extends AbstractModule {
 	 * enough to run alongside most themes without breaking them, strict enough
 	 * that real XSS payloads generate violation events in the browser console.
 	 *
-	 * Users who want to tighten this further can filter 'cb_core_csp_report_only'.
+	 * Users who want to tighten this further can filter 'core_blueprint_csp_report_only'.
 	 */
 	const CSP_REPORT_ONLY_DEFAULT = "default-src 'self' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; object-src 'none'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'";
 
@@ -265,7 +265,7 @@ final class Headers extends AbstractModule {
 			// Only send HSTS on HTTPS requests. Sending it over plain HTTP is ignored
 			// by browsers but signals misconfiguration; skip it defensively.
 			if ( is_ssl() ) {
-				$max_age = (int) apply_filters( 'cb_core_hsts_max_age', 31536000 ); // 1 year
+				$max_age = (int) apply_filters( 'core_blueprint_hsts_max_age', 31536000 ); // 1 year
 				header( 'Strict-Transport-Security: max-age=' . $max_age );
 			}
 		}
@@ -283,7 +283,7 @@ final class Headers extends AbstractModule {
 		}
 
 		if ( $this->feature( 'csp_report_only' ) ) {
-			$policy = (string) apply_filters( 'cb_core_csp_report_only', self::CSP_REPORT_ONLY_DEFAULT );
+			$policy = (string) apply_filters( 'core_blueprint_csp_report_only', self::CSP_REPORT_ONLY_DEFAULT );
 			if ( '' !== $policy ) {
 				header( 'Content-Security-Policy-Report-Only: ' . $policy );
 			}
@@ -297,7 +297,7 @@ final class Headers extends AbstractModule {
 	 * denied with an empty allowlist; third-party embedded iframes cannot
 	 * request them without a separate allowlist being set by the site owner.
 	 *
-	 * Filter 'cb_core_permissions_policy' lets advanced users extend or override.
+	 * Filter 'core_blueprint_permissions_policy' lets advanced users extend or override.
 	 */
 	private function permissions_policy_value(): string {
 		$default = [
@@ -328,7 +328,7 @@ final class Headers extends AbstractModule {
 			'xr-spatial-tracking'             => '()',
 		];
 
-		$policy = apply_filters( 'cb_core_permissions_policy', $default );
+		$policy = apply_filters( 'core_blueprint_permissions_policy', $default );
 
 		$parts = [];
 		foreach ( $policy as $directive => $allowlist ) {

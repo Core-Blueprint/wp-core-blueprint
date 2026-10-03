@@ -26,7 +26,7 @@ final class BindingRegistry {
 
 		self::register_core();
 		/** Fires once so extensions can register Mail Designer bindings. */
-		do_action( 'cb_core_register_mail_bindings' );
+		do_action( 'core_blueprint_register_mail_bindings' );
 	}
 
 	/**

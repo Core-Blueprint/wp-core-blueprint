@@ -16,14 +16,14 @@ final class Bootstrap {
 		// may still target plugins_loaded. State + safe-mode gates fail closed.
 		Runtime::boot();
 
-		add_action( 'cb_core_register_pages', static function (): void {
+		add_action( 'core_blueprint_register_pages', static function (): void {
 			if ( ! State::is_enabled() ) {
 				return;
 			}
 			PageRegistry::register_base( new Page() );
 		} );
-		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
-		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_quick_action' ] );
+		add_action( 'core_blueprint_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
+		add_action( 'core_blueprint_hud_register_items', [ __CLASS__, 'register_hud_quick_action' ] );
 		add_action( 'init', [ __CLASS__, 'register_i18n_filters' ], 1 );
 
 		if ( RequestContext::is_admin_post() ) {
@@ -92,7 +92,7 @@ final class Bootstrap {
 	/** Register translation-bearing metadata filters after the textdomain is loaded. */
 	public static function register_i18n_filters(): void {
 		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
-		add_filter( 'cb_core_capability_catalog', [ __CLASS__, 'register_capability' ] );
+		add_filter( 'core_blueprint_capability_catalog', [ __CLASS__, 'register_capability' ] );
 	}
 
 	public static function register_event_labels( array $labels ): array {

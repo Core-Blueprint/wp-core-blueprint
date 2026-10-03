@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Structural validator for Design Foundation Mail projects.
  *
  * Domain extensions may register additional node type/provider pairs through
- * `cb_core_design_mail_node_types`. The Mail profile remains authoritative for
+ * `core_blueprint_design_mail_node_types`. The Mail profile remains authoritative for
  * tree/envelope safety while extension code owns its domain-specific semantics.
  *
  * @package Core_Blueprint
@@ -68,7 +68,7 @@ final class Validator {
 		 *
 		 * @param array<string,string> $allowed
 		 */
-		$filtered = apply_filters( 'cb_core_design_mail_node_types', $allowed );
+		$filtered = apply_filters( 'core_blueprint_design_mail_node_types', $allowed );
 		$filtered = is_array( $filtered ) ? $filtered : $allowed;
 		$allowed = array_merge( $filtered, $allowed );
 		if ( ! isset( $allowed[ $type ] ) || (string) $allowed[ $type ] !== $provider ) {

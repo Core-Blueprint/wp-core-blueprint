@@ -81,7 +81,7 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 				$events[] = $context;
 			}
 		};
-		add_action( 'cb_core_audit_log_written', $listener, 10, 4 );
+		add_action( 'core_blueprint_audit_log_written', $listener, 10, 4 );
 		try {
 			self::assertFalse( PolicyRepository::replace( PolicyRepository::empty_policy(), 'test:no-op' ) );
 			self::assertSame( [], $events );
@@ -99,7 +99,7 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 			self::assertArrayNotHasKey( 'policy', $events[0] );
 			self::assertArrayHasKey( 'mutation_id', $events[0] );
 		} finally {
-			remove_action( 'cb_core_audit_log_written', $listener, 10 );
+			remove_action( 'core_blueprint_audit_log_written', $listener, 10 );
 		}
 	}
 

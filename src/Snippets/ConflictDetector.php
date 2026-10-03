@@ -26,7 +26,7 @@ final class ConflictDetector {
 		$network = is_array( $network ) ? array_keys( $network ) : [];
 
 		$active = array_values( array_unique( array_merge( $active, $network ) ) );
-		$known  = (array) apply_filters( 'cb_core_snippets_conflicting_plugins', self::KNOWN );
+		$known  = (array) apply_filters( 'core_blueprint_snippets_conflicting_plugins', self::KNOWN );
 		$out    = [];
 
 		foreach ( $known as $basename => $label ) {

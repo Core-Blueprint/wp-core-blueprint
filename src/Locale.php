@@ -59,7 +59,7 @@ final class Locale {
 
 	/** Action hook fired on site-default change. See trait docs. */
 	public static function site_changed_action(): string {
-		return 'cb_core_locale_default_changed';
+		return 'core_blueprint_locale_default_changed';
 	}
 
 	// ─── Allowlist ────────────────────────────────────────────────────────────
@@ -68,14 +68,14 @@ final class Locale {
 	public static function allowed(): array {
 		$defaults = [ self::AUTO_MODE, 'en_US', 'nl_NL', 'de_DE', 'fr_FR', 'es_ES', 'it_IT', 'pt_PT' ];
 		/**
-		 * Filter: cb_core_locale_allowed
+		 * Filter: core_blueprint_locale_allowed
 		 *
 		 * Extend the locale allowlist. Each entry must be either 'auto' or a
 		 * valid WordPress locale code (language_COUNTRY).
 		 *
 		 * @param string[] $allowed
 		 */
-		$allowed = apply_filters( 'cb_core_locale_allowed', $defaults );
+		$allowed = apply_filters( 'core_blueprint_locale_allowed', $defaults );
 		$allowed = array_values( array_filter( array_map( 'strval', (array) $allowed ), static fn( $v ) => '' !== $v ) );
 		return array_unique( $allowed );
 	}
@@ -188,11 +188,11 @@ final class Locale {
 			'pt_PT'         => 'Português',
 		];
 		/**
-		 * Filter: cb_core_locale_labels
+		 * Filter: core_blueprint_locale_labels
 		 *
 		 * Extend the code → endonym map.
 		 */
-		$labels = apply_filters( 'cb_core_locale_labels', $labels );
+		$labels = apply_filters( 'core_blueprint_locale_labels', $labels );
 		return (string) ( $labels[ $code ] ?? $code );
 	}
 }

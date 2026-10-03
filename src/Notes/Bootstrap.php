@@ -54,8 +54,8 @@ final class Bootstrap {
 		// add_item visibility chain. When Notes is disabled, the items
 		// drop out before render — no separate State::is_enabled() check
 		// needed here.
-		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
-		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_quick_action' ] );
+		add_action( 'core_blueprint_hud_register_items', [ __CLASS__, 'register_hud_item' ] );
+		add_action( 'core_blueprint_hud_register_items', [ __CLASS__, 'register_hud_quick_action' ] );
 
 		// Top-level Notes page registered via the existing PageRegistry
 		// channel - same hook every other CB page uses, so menu position
@@ -66,7 +66,7 @@ final class Bootstrap {
 		// admin sidebar entirely; the Dashboard status menu remains the
 		// activation surface. Stored notes are not touched - re-enabling
 		// brings the page right back with all data intact.
-		add_action( 'cb_core_register_pages', static function (): void {
+		add_action( 'core_blueprint_register_pages', static function (): void {
 			if ( ! State::is_enabled() ) {
 				return;
 			}

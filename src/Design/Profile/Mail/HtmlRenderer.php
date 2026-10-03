@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Rendering is deterministic and transport-independent. Values are escaped at
  * their output context; no arbitrary raw HTML component is provided by Base.
  * Extensions may render their own registered node types through the documented
- * `cb_core_design_mail_render_node` filter.
+ * `core_blueprint_design_mail_render_node` filter.
  *
  * @package Core_Blueprint
  */
@@ -101,7 +101,7 @@ final class HtmlRenderer {
 			 * @param array{editor_preview:bool,path:list<int>} $render_context
 			 */
 			$html = apply_filters(
-				'cb_core_design_mail_render_node',
+				'core_blueprint_design_mail_render_node',
 				'',
 				$node,
 				$bindings,

@@ -45,7 +45,7 @@ class SystemLog {
 	private static array $event_types = [];
 
 	/**
-	 * True once the built-in types + the cb_core_system_log_event_types
+	 * True once the built-in types + the core_blueprint_system_log_event_types
 	 * filter have run. Lazy - we only pay the cost on first access.
 	 */
 	private static bool $types_initialized = false;
@@ -183,7 +183,7 @@ class SystemLog {
 		}
 
 		/**
-		 * Filter: cb_core_system_log_event_types
+		 * Filter: core_blueprint_system_log_event_types
 		 *
 		 * Third-party plugins can contribute event types here. The returned
 		 * array is keyed by slug. Each value must contain at least a
@@ -191,7 +191,7 @@ class SystemLog {
 		 *
 		 * @param array<string, array<string, mixed>> $types
 		 */
-		$filtered = apply_filters( 'cb_core_system_log_event_types', self::$event_types );
+		$filtered = apply_filters( 'core_blueprint_system_log_event_types', self::$event_types );
 		if ( is_array( $filtered ) ) {
 			self::$event_types = $filtered;
 		}
@@ -266,7 +266,7 @@ class SystemLog {
 		// ─── Login events (new in m4.12.2) ────────────────────────────────
 		// Successful logins - queued, non-critical, high-volume.
 		add_action( 'wp_login',                    [ __CLASS__, 'on_login' ],              10, 2 );
-		add_action( 'cb_core_two_factor_authenticated', [ __CLASS__, 'on_two_factor_authenticated' ], 10, 2 );
+		add_action( 'core_blueprint_two_factor_authenticated', [ __CLASS__, 'on_two_factor_authenticated' ], 10, 2 );
 		// Failed logins - logged directly, security-relevant. warning severity
 		// so they bypass dedup and always reach the audit log.
 		add_action( 'wp_login_failed',             [ __CLASS__, 'on_login_failed' ],       10, 1 );

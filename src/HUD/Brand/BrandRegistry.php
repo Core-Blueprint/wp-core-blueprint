@@ -5,7 +5,7 @@ declare(strict_types=1);
  *
  * Storage layer is in-memory only - brands register themselves on every
  * request via {@see \CoreBlueprint\Core\HUD\Bootstrap::register_brands()} (built-ins)
- * and the `cb_core_register_brands` action (siblings + white-label). The
+ * and the `core_blueprint_register_brands` action (siblings + white-label). The
  * registry is rebuilt each load; no persistence beyond the active brand
  * id (which lives in {@see \CoreBlueprint\Core\HUD\Storage} as user_meta).
  *

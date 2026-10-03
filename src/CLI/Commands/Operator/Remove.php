@@ -89,7 +89,7 @@ final class Remove implements CommandInterface {
 			'forced'     => $force,
 		] );
 
-		do_action( 'cb_permissions_operator_removed', (int) $user->ID, 0 );
+		do_action( 'core_blueprint_permissions_operator_removed', (int) $user->ID, 0 );
 
 		$total = Roles::operator_count();
 		$lines = [

@@ -34,13 +34,13 @@ Do not target cards by translated title, plugin basename, or dashboard markup. T
 
 ## Register shortcuts
 
-Register from the public `cb_core_dashboard_register_cards` hook so plugin load
+Register from the public `core_blueprint_dashboard_register_cards` hook so plugin load
 order does not matter:
 
 ```php
 use CoreBlueprint\Core\Dashboard\CardRegistry;
 
-add_action( 'cb_core_dashboard_register_cards', static function (): void {
+add_action( 'core_blueprint_dashboard_register_cards', static function (): void {
     CardRegistry::register_shortcuts( 'core-blueprint-lms', [
         [
             'id'         => 'courses',
@@ -85,8 +85,8 @@ entry instead of producing a duplicate.
 For request-specific shortcuts use either filter:
 
 ```php
-cb_core_dashboard_card_shortcuts
-cb_core_dashboard_card_shortcuts_{card-id}
+core_blueprint_dashboard_card_shortcuts
+core_blueprint_dashboard_card_shortcuts_{card-id}
 ```
 
 The global filter receives `($shortcuts, $card_id, $context)`. The card-specific

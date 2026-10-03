@@ -238,7 +238,7 @@ try {
     cb_a3_consumer_expect(function_exists('cb_starter_base_ready') && cb_starter_base_ready(), 'Starter dependency gate is not satisfied on a normal subsequent request.');
 
     $definition = \CoreBlueprint\Core\ExtensionRegistry::definition('core-blueprint-starter-plugin');
-    cb_a3_consumer_expect(is_array($definition), 'Starter was not collected through cb_core_register_extensions.');
+    cb_a3_consumer_expect(is_array($definition), 'Starter was not collected through core_blueprint_register_extensions.');
     cb_a3_consumer_expect('1.0' === ($definition['requires_api'] ?? ''), 'Starter registration does not require Core API 1.0.');
     cb_a3_consumer_expect($starter_basename === ($definition['plugin_file'] ?? ''), 'Starter registration exposes the wrong plugin basename.');
     cb_a3_consumer_expect('core-blueprint-starter-plugin' === ($definition['status_id'] ?? ''), 'Starter registration exposes the wrong status ID.');

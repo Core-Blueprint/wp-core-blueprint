@@ -12,6 +12,6 @@ final class SafeMode {
 	 */
 	public static function is_active(): bool {
 		$constant = defined( 'CB_CORE_DISABLE_SNIPPETS' ) && true === CB_CORE_DISABLE_SNIPPETS;
-		return (bool) apply_filters( 'cb_core_snippets_safe_mode', $constant );
+		return (bool) apply_filters( 'core_blueprint_snippets_safe_mode', $constant );
 	}
 }

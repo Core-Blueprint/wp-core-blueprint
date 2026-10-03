@@ -23,7 +23,7 @@ final class Bootstrap {
 			Runtime::boot();
 		}
 
-		add_action( 'cb_core_register_pages', static function (): void {
+		add_action( 'core_blueprint_register_pages', static function (): void {
 			if ( State::is_enabled() ) {
 				PageRegistry::register_base( new Page() );
 			}
@@ -35,7 +35,7 @@ final class Bootstrap {
 	}
 
 	public static function register_i18n_filters(): void {
-		add_filter( 'cb_core_capability_catalog', [ Capabilities::class, 'register_catalog' ] );
+		add_filter( 'core_blueprint_capability_catalog', [ Capabilities::class, 'register_catalog' ] );
 		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
 	}
 

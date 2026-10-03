@@ -4,27 +4,27 @@
 
 ## Lifecycle
 
-- `cb_core_booted` — fired on `plugins_loaded` priority 25 after Base has registered its first-party subsystems.
+- `core_blueprint_booted` — fired on `plugins_loaded` priority 25 after Base has registered its first-party subsystems.
 - Lightweight technical/dependency registration may occur during plugin bootstrap. Translation-bearing presentation metadata should be registered on `init` or later, following WordPress' normal i18n lifecycle.
 
 ## Declarative extension surfaces
 
-- Dashboard Card API — `cb_core_dashboard_register_cards`, `cb_core_dashboard_card_shortcuts`; see `DASHBOARD-CARD-API.md`.
-- HUD Menu API — `cb_hud_register_section_types`, `cb_hud_register_sections`, `cb_hud_register_items`; see `HUD-MENU-API.md`.
-- Content Models — `CoreBlueprint\Core\ContentModels\Api` and `cb_core_content_models_register`; see `CONTENT_MODELS.md`.
+- Dashboard Card API — `core_blueprint_dashboard_register_cards`, `core_blueprint_dashboard_card_shortcuts`; see `DASHBOARD-CARD-API.md`.
+- HUD Menu API — `core_blueprint_hud_register_section_types`, `core_blueprint_hud_register_sections`, `core_blueprint_hud_register_items`; see `HUD-MENU-API.md`.
+- Content Models — `CoreBlueprint\Core\ContentModels\Api` and `core_blueprint_content_models_register`; see `CONTENT_MODELS.md`.
 - Content Models JSON Schema v1 — `format: core-blueprint-content-models` + `format_version: 1` is the stable schema portability document described in `CONTENT_MODELS.md`; Native WordPress discovery/import classes are internal Base tooling.
-- Module activation — `cb_core_module_activation_definitions`; state classes must implement `CoreBlueprint\Core\Modules\ModuleStateInterface`.
-- Module health/status — `cb_core_module_status_definitions`; providers return the canonical `ok|warn|err|off` status shape.
-- Extension registry — `CoreBlueprint\Core\ExtensionRegistry` via `cb_core_register_extensions`; canonical identity/inventory/compatibility boundary.
-- Interoperability Foundation — `CoreBlueprint\Core\Interoperability\Registry` via `cb_core_register_interoperability_contracts` and `cb_core_register_interoperability_implementations`; canonical versioned cross-extension contract registration, discovery and runtime resolution boundary; see `INTEROPERABILITY-FOUNDATION.md`.
+- Module activation — `core_blueprint_module_activation_definitions`; state classes must implement `CoreBlueprint\Core\Modules\ModuleStateInterface`.
+- Module health/status — `core_blueprint_module_status_definitions`; providers return the canonical `ok|warn|err|off` status shape.
+- Extension registry — `CoreBlueprint\Core\ExtensionRegistry` via `core_blueprint_register_extensions`; canonical identity/inventory/compatibility boundary.
+- Interoperability Foundation — `CoreBlueprint\Core\Interoperability\Registry` via `core_blueprint_register_interoperability_contracts` and `core_blueprint_register_interoperability_implementations`; canonical versioned cross-extension contract registration, discovery and runtime resolution boundary; see `INTEROPERABILITY-FOUNDATION.md`.
 - Forms Foundation — `CoreBlueprint\Core\Forms\ProviderInterface`, `CoreBlueprint\Core\Forms\SubmissionEmitter`, `CoreBlueprint\Core\Forms\SubmissionEvent` and the public contract constants on `CoreBlueprint\Core\Forms\Foundation`; Base-owned normalized form-submission interoperability boundary using Generic Interoperability provider admission; see `FORMS-FOUNDATION.md`.
 - Data Exchange Foundation — `CoreBlueprint\Core\DataExchange\EntityInterface`, optional `CsvEntityInterface`, `CoreBlueprint\Core\DataExchange\Engine` and the public contract/transport constants on `CoreBlueprint\Core\DataExchange\Foundation`; Base-owned bounded import/export infrastructure using Generic Interoperability while extension providers retain authorization, identity resolution, validation and canonical mutations; see `DATA-EXCHANGE-FOUNDATION.md`.
 - Data Mapper Foundation — `CoreBlueprint\Core\DataExchange\MappingEntityInterface`, `CoreBlueprint\Core\DataExchange\Mapper`, `CoreBlueprint\Core\DataExchange\Mapper\Renderer` and the documented `window.cbCore.dataMapper` browser/controller boundary; provider-neutral schema mapping and shared Designer Shell workspace with server-side provider validation remaining authoritative; see `DATA-MAPPER.md`. Asset handles, filenames and internal Designer composition details are not public API.
 - Designer Foundation: semantic Foundation requirement `design-editor`, script-module identifier `@cb-core/design-editor` and the frozen browser facade documented in `DESIGNER-FOUNDATION-API.md`; Base owns session/history/shell mechanics while consumers retain domain semantics, validation and persistence. Private files below `assets/js/design/` are not public API.
-- Settings Hub — `CoreBlueprint\Core\Admin\SettingsRegistry` via `cb_core_register_settings`; canonical extension-configuration directory and routing boundary; see `SETTINGS-HUB-FOUNDATION.md`.
-- User Profile Surface — `CoreBlueprint\Core\Admin\UserProfileSectionRegistry` via `cb_core_register_user_profile_sections`; ordered, WordPress-native contribution boundary for Profile/Edit User sections; see `USER-PROFILE-SURFACE-FOUNDATION.md`.
-- Capability catalog — `cb_core_capability_catalog`.
-- Access Mode request bypass — prefer `CoreBlueprint\Core\Security\AccessMode::register_bypass()`; advanced policy may use `cb_core_access_mode_bypass_request`.
+- Settings Hub — `CoreBlueprint\Core\Admin\SettingsRegistry` via `core_blueprint_register_settings`; canonical extension-configuration directory and routing boundary; see `SETTINGS-HUB-FOUNDATION.md`.
+- User Profile Surface — `CoreBlueprint\Core\Admin\UserProfileSectionRegistry` via `core_blueprint_register_user_profile_sections`; ordered, WordPress-native contribution boundary for Profile/Edit User sections; see `USER-PROFILE-SURFACE-FOUNDATION.md`.
+- Capability catalog — `core_blueprint_capability_catalog`.
+- Access Mode request bypass — prefer `CoreBlueprint\Core\Security\AccessMode::register_bypass()`; advanced policy may use `core_blueprint_access_mode_bypass_request`.
 - AI Governance activity reporting — `CoreBlueprint\Core\AIGovernance\Activity::record()`; see `AI-GOVERNANCE.md` for the stable v1 evidence, privacy and attribution contract.
 - Secret Protection Foundation — `CoreBlueprint\Core\Security\SecretProtection`; authenticated, purpose/subject-bound protection for extension-owned credentials without Base-owned credential persistence; introduced in Core API `1.2`; see `SECRET-PROTECTION-FOUNDATION.md`.
 
@@ -32,10 +32,10 @@
 
 Public module IDs are lower-case **kebab-case**, for example `core-scanner`, `login-shield` or `vendor-feature`. Snake-case aliases are not part of the v1 contract.
 
-Extensions append activation definitions through `cb_core_module_activation_definitions`:
+Extensions append activation definitions through `core_blueprint_module_activation_definitions`:
 
 ```php
-add_filter( 'cb_core_module_activation_definitions', static function ( array $definitions ): array {
+add_filter( 'core_blueprint_module_activation_definitions', static function ( array $definitions ): array {
     $definitions['vendor-feature'] = [
         'state'      => Vendor\Feature\State::class,
         'capability' => 'manage_options',
@@ -50,10 +50,10 @@ Activation answers only whether a module is enabled. Health/status is a separate
 
 ## Canonical module health/status
 
-Extensions append status definitions through `cb_core_module_status_definitions`:
+Extensions append status definitions through `core_blueprint_module_status_definitions`:
 
 ```php
-add_filter( 'cb_core_module_status_definitions', static function ( array $definitions ): array {
+add_filter( 'core_blueprint_module_status_definitions', static function ( array $definitions ): array {
     $definitions['vendor-feature'] = [
         'provider' => [ Vendor\Feature\Health::class, 'status' ],
         'label'    => __( 'Vendor Feature', 'vendor-feature' ),
@@ -81,12 +81,12 @@ Status registration is presentation metadata. Register translated labels at `ini
 
 `CoreBlueprint\Core\ExtensionRegistry` is the public v1 boundary for Core Blueprint extension registration and discovery. Registration is controlled by the registry; mutating an arbitrary discovery array is not a supported v1 extension mechanism.
 
-Attach the registration callback during plugin bootstrap. Base fires the explicit `cb_core_register_extensions` lifecycle on `init` priority `5`:
+Attach the registration callback during plugin bootstrap. Base fires the explicit `core_blueprint_register_extensions` lifecycle on `init` priority `5`:
 
 ```php
 use CoreBlueprint\Core\ExtensionRegistry;
 
-add_action( 'cb_core_register_extensions', static function (): void {
+add_action( 'core_blueprint_register_extensions', static function (): void {
     ExtensionRegistry::register( [
         'id'           => 'vendor-security',
         'plugin_file'  => plugin_basename( VENDOR_SECURITY_FILE ),
@@ -137,12 +137,12 @@ The `core-blueprint-*` ID namespace is reserved for first-party plugins. A regis
 
 `CoreBlueprint\Core\Admin\SettingsRegistry` is the public v1 boundary for extension configuration contributed to **Core Blueprint → Settings**. Configuration-only extension pages should use this registry instead of registering one flat extension submenu item below Core Blueprint.
 
-A provider must reference an extension that is already valid through `ExtensionRegistry`. Register during the explicit `cb_core_register_settings` lifecycle:
+A provider must reference an extension that is already valid through `ExtensionRegistry`. Register during the explicit `core_blueprint_register_settings` lifecycle:
 
 ```php
 use CoreBlueprint\Core\Admin\SettingsRegistry;
 
-add_action( 'cb_core_register_settings', static function (): void {
+add_action( 'core_blueprint_register_settings', static function (): void {
     SettingsRegistry::register(
         'vendor-security',
         [
@@ -193,7 +193,7 @@ HUD section and item IDs use strict lower-case kebab-case and duplicates are rej
 
 `CoreBlueprint\Core\Admin\Page` plus `CoreBlueprint\Core\Admin\PageRegistry` is the public v1 boundary for genuine pages contributed beneath the Core Blueprint admin menu. Configuration-only extension surfaces should use `SettingsRegistry` so adding extensions does not expand the WordPress submenu indefinitely. `PageBase` is an internal convenience implementation for Base-owned pages and is not a supported inheritance contract.
 
-Extensions register genuine Core Admin pages during `cb_core_register_pages`:
+Extensions register genuine Core Admin pages during `core_blueprint_register_pages`:
 
 ```php
 use CoreBlueprint\Core\Admin\PageRegistry;

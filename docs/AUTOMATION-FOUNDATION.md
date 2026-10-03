@@ -26,7 +26,7 @@ Attach the extension registration callback during normal plugin loading:
 ```php
 use CoreBlueprint\Core\ExtensionRegistry;
 
-add_action( 'cb_core_register_extensions', static function (): void {
+add_action( 'core_blueprint_register_extensions', static function (): void {
     ExtensionRegistry::register( [
         'id'            => 'acme-reservations',
         'plugin_file'   => plugin_basename( __FILE__ ),
@@ -50,7 +50,7 @@ use CoreBlueprint\Core\Automation\InvocationContext;
 use CoreBlueprint\Core\Automation\StateRegistry;
 use CoreBlueprint\Core\Automation\TriggerRegistry;
 
-add_action( 'cb_core_register_automation_capabilities', static function (): void {
+add_action( 'core_blueprint_register_automation_capabilities', static function (): void {
     TriggerRegistry::register( [
         'provider'       => 'acme-reservations',
         'id'             => 'reservation.confirmed',
@@ -259,7 +259,7 @@ The optional event ID should be a stable domain-event identifier when one exists
 A successful emission dispatches one immutable `CoreBlueprint\Core\Automation\TriggerEvent` on:
 
 ```text
-cb_core_automation_trigger_emitted
+core_blueprint_automation_trigger_emitted
 ```
 
 The event exposes:

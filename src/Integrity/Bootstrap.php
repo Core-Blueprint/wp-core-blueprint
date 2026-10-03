@@ -25,7 +25,7 @@ declare(strict_types=1);
  *
  * Scanner policy is surfaced through
  * {@see \CoreBlueprint\Core\Core::register_builtin_modules()} alongside Fingerprint
- * and Headers - directly, not via the cb_core_modules filter, since
+ * and Headers - directly, not via the core_blueprint_modules filter, since
  * Core owns its own built-ins.
  *
  * @package Core_Blueprint
@@ -63,7 +63,7 @@ final class Bootstrap {
 
 		// HUD quick-action. The canonical activation registry drops this item
 		// when Core Scanner is disabled.
-		add_action( 'cb_hud_register_items', [ __CLASS__, 'register_hud_quick_action' ] );
+		add_action( 'core_blueprint_hud_register_items', [ __CLASS__, 'register_hud_quick_action' ] );
 	}
 
 	/**

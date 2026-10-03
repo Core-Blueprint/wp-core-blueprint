@@ -16,15 +16,15 @@ declare(strict_types=1);
  *   ✔ kpis.updates_pending   - point-in-time, derived from update transients
  *   ✔ backups (3.3)          - available full-site recovery providers
  *   ✔ kpis.backups_created   - derived from backups
- *   ✔ notes (3.4)            - hardcoded if-rules + cb_core_report_notes filter
+ *   ✔ notes (3.4)            - hardcoded if-rules + core_blueprint_report_notes filter
  *   ✔ status (3.4)           - derived from notes severity precedence
- *   ○ kpis.security_issues   - addon-provided via cb_core_report_security filter
- *   ○ security (block)       - addon-provided via cb_core_report_security filter
+ *   ○ kpis.security_issues   - addon-provided via core_blueprint_report_security filter
+ *   ○ security (block)       - addon-provided via core_blueprint_report_security filter
  *
  * The ○ rows are NOT unfinished Base work. CB Base ships a maintenance-only
  * report by design; full security reporting is the separate CB Reports addon
  * (which uses its own PDF/A-capable library). When no addon hooks
- * cb_core_report_security the security block is omitted and the KPI strip shows
+ * core_blueprint_report_security the security block is omitted and the KPI strip shows
  * 4 tiles instead of 5 - intended behaviour, not a gap.
  *
  * Design constraints
@@ -370,7 +370,7 @@ final class MaintenanceAggregator {
 	 * Two KPIs are sourced outside the audit-log path:
 	 *
 	 *   - security_issues   - not produced by Base; filled by the CB Reports
-	 *                         addon via cb_core_report_security, else omitted.
+	 *                         addon via core_blueprint_report_security, else omitted.
 	 *   - backups_created   - derived from the Beacon backup providers (3.3).
 	 */
 	/**
@@ -485,7 +485,7 @@ final class MaintenanceAggregator {
 
 		// Build the KPI strip. The security_issues tile is conditional -
 		// CB Base ships without a security data source, so without an
-		// addon hooking cb_core_report_security the strip shows 4 tiles
+		// addon hooking core_blueprint_report_security the strip shows 4 tiles
 		// instead of 5 rather than fake numbers.
 		$kpis = [
 			'updates_performed' => [
@@ -768,7 +768,7 @@ final class MaintenanceAggregator {
 		}
 
 		// 4. Security issues detected - only meaningful when a security
-		//    addon has supplied numbers via cb_core_report_security. CB
+		//    addon has supplied numbers via core_blueprint_report_security. CB
 		//    Base alone returns null and this rule never fires.
 		if ( null !== ( $context['security'] ?? null ) ) {
 			$sec_count = (int) ( $context['security']['detected'] ?? 0 );
@@ -860,7 +860,7 @@ final class MaintenanceAggregator {
 		 *                       site_state, sections, security, backups).
 		 */
 		if ( function_exists( 'apply_filters' ) ) {
-			$notes = (array) apply_filters( 'cb_core_report_notes', $notes, $context );
+			$notes = (array) apply_filters( 'core_blueprint_report_notes', $notes, $context );
 		}
 
 		return $notes;
@@ -977,7 +977,7 @@ final class MaintenanceAggregator {
 		 * @param int        $end_ts    Period end (UTC unix timestamp).
 		 */
 		$security = function_exists( 'apply_filters' )
-			? apply_filters( 'cb_core_report_security', null, $start_ts, $end_ts )
+			? apply_filters( 'core_blueprint_report_security', null, $start_ts, $end_ts )
 			: null;
 
 		// Defensive normalisation: only accept a properly-shaped array.
