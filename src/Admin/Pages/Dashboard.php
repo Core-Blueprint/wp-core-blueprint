@@ -28,8 +28,6 @@ use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
 use CoreBlueprint\Core\Permissions\UserRolesState;
 use CoreBlueprint\Core\Modules\Status;
 use CoreBlueprint\Core\Security\AccessMode;
-use CoreBlueprint\Core\Snippets\Admin\Page as SnippetsPage;
-use CoreBlueprint\Core\Snippets\State as SnippetsState;
 use CoreBlueprint\Core\Setup\Admin\Page as SetupPage;
 use CoreBlueprint\Core\Setup\ReviewRepository as SetupReviewRepository;
 use CoreBlueprint\Core\UI\StatusMenu;
@@ -113,7 +111,6 @@ final class Dashboard extends PageBase {
 		$media_formats_slug    = MediaFormatsPage::SLUG;
 		$mail_slug             = MailPage::SLUG;
 		$package_download_slug = PackageDownloadPage::SLUG;
-		$snippets_slug         = SnippetsPage::SLUG;
 		$content_models_slug    = ContentModelsPage::SLUG;
 		$setup_slug             = SetupPage::SLUG;
 
@@ -127,7 +124,6 @@ final class Dashboard extends PageBase {
 		$media_replace_enabled    = MediaReplaceState::is_enabled();
 		$media_formats_enabled    = MediaFormatsState::is_enabled();
 		$package_download_enabled = PackageDownloadState::is_enabled();
-		$snippets_enabled         = SnippetsState::is_enabled();
 		$content_models_enabled    = ContentModelsState::is_enabled();
 		$mail_enabled              = MailState::is_enabled();
 		$mail_runtime_active       = MailRuntime::is_active();
@@ -226,20 +222,6 @@ final class Dashboard extends PageBase {
 				'visit_url' => admin_url( 'admin.php?page=' . $content_models_slug ),
 				'enabled'   => $content_models_enabled,
 				'state'     => $content_models_enabled ? 'ok' : 'off',
-			];
-		}
-
-		if ( current_user_can( 'cb_manage_snippets' ) ) {
-			$cms_tools_cards[] = [
-				'id'    => 'snippets',
-				'title' => __( 'Snippets', 'core-blueprint' ),
-				'meta'  => $snippets_enabled
-					? __( 'Managed PHP, CSS, JavaScript and HTML snippets', 'core-blueprint' )
-					: $disabled_meta,
-				'url'       => $snippets_enabled ? admin_url( 'admin.php?page=' . $snippets_slug ) : '',
-				'visit_url' => admin_url( 'admin.php?page=' . $snippets_slug ),
-				'enabled'   => $snippets_enabled,
-				'state'     => $snippets_enabled ? 'ok' : 'off',
 			];
 		}
 
