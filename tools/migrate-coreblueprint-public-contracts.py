@@ -37,6 +37,20 @@ EXCLUDED_DIRS = {
 
 EXCLUDED_FILES = {
     Path("CHANGELOG-HISTORY.md"),
+    # This regression test intentionally contains legacy identifiers as negative
+    # fixtures. Do not treat those fixture literals as migration candidates.
+    Path("tests/integration/PublicContractPrefixContractTest.php"),
+}
+
+CATALOG_FILES = tuple(
+    Path("languages/base") / f"core-blueprint-{locale}.php"
+    for locale in ("nl_NL", "de_DE", "fr_FR", "es_ES", "it_IT", "pt_PT")
+)
+
+CATALOG_IDENTIFIER_RENAMES = {
+    "cb_core_modules": "core_blueprint_modules",
+    "cb_core_alert_recipient": "core_blueprint_alert_recipient",
+    "cb_admin_themes": "core_blueprint_admin_themes",
 }
 
 TEXT_SUFFIXES = {
@@ -248,6 +262,18 @@ def transform(text: str, relative: Path) -> tuple[str, dict[str, int]]:
     return updated, counts
 
 
+def transform_catalog(text: str) -> tuple[str, dict[str, int]]:
+    updated = text
+    counts: dict[str, int] = {}
+
+    for old, new in CATALOG_IDENTIFIER_RENAMES.items():
+        updated, count = replace_exact_token(updated, old, new)
+        if count:
+            counts[old] = count
+
+    return updated, counts
+
+
 def inspect() -> tuple[list[tuple[Path, dict[str, int]]], int]:
     affected: list[tuple[Path, dict[str, int]]] = []
     total = 0
@@ -263,6 +289,16 @@ def inspect() -> tuple[list[tuple[Path, dict[str, int]]], int]:
             affected.append((path, counts))
             total += sum(counts.values())
 
+    for relative in CATALOG_FILES:
+        path = ROOT / relative
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        _updated, counts = transform_catalog(text)
+        if counts:
+            affected.append((path, counts))
+            total += sum(counts.values())
+
     return affected, total
 
 
@@ -272,7 +308,11 @@ def apply() -> tuple[int, int]:
 
     for path, _counts in affected:
         text = path.read_text(encoding="utf-8")
-        updated, counts = transform(text, path.relative_to(ROOT))
+        relative = path.relative_to(ROOT)
+        if relative in CATALOG_FILES:
+            updated, counts = transform_catalog(text)
+        else:
+            updated, counts = transform(text, relative)
         count = sum(counts.values())
         if not count:
             continue
