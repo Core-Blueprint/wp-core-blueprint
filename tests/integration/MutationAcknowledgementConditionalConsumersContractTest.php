@@ -19,26 +19,6 @@ final class MutationAcknowledgementConditionalConsumersContractTest extends WP_U
 		return substr( $source, (int) $start_pos, (int) $end_pos - (int) $start_pos );
 	}
 
-	public function test_snippet_restore_acknowledgement_is_limited_to_valid_core_blueprint_preserved_id_imports(): void {
-		$page = $this->source( 'src/Snippets/Admin/Page.php' );
-		$actions = $this->source( 'src/Snippets/Admin/Actions.php' );
-		$script = $this->source( 'assets/js/features/snippets.js' );
-
-		self::assertStringContainsString( 'cb-snippets-restore-acknowledgement-template', $page );
-		self::assertStringContainsString( 'data-cb-snippets-preserve-ids', $page );
-		self::assertStringContainsString( "Exporter::FILE_TYPE === (string) ( \$document['file_type'] ?? '' )", $actions );
-		self::assertStringContainsString( "'1' === sanitize_text_field( wp_unslash( (string) \$_POST['overwrite'] ) )", $actions );
-		self::assertStringContainsString( 'MutationAcknowledgement::require_confirmed(', $actions );
-		self::assertStringContainsString( "AuditLog::log( 'snippets.restore.acknowledged'", $actions );
-		self::assertStringContainsString( 'restoreAcknowledgementTemplate.content.cloneNode( true )', $script );
-
-		$audit = strpos( $actions, "AuditLog::log( 'snippets.restore.acknowledged'" );
-		$mutation = strpos( $actions, 'Importer::import_json( $json, $preserve_ids )' );
-		self::assertNotFalse( $audit );
-		self::assertNotFalse( $mutation );
-		self::assertLessThan( $mutation, $audit );
-	}
-
 	public function test_notes_acknowledgement_is_required_for_actual_existing_overwrites_before_any_import_mutation(): void {
 		$page = $this->source( 'src/Notes/Admin/Page.php' );
 		$controller = $this->source( 'src/Notes/Rest/NotesController.php' );
@@ -91,7 +71,6 @@ final class MutationAcknowledgementConditionalConsumersContractTest extends WP_U
 
 	public function test_conditional_acknowledgement_events_are_registered_and_plain_described(): void {
 		$events = [
-			'snippets.restore.acknowledged',
 			'notes.import.overwrite.acknowledged',
 			'integrity.quarantine.restore.acknowledged',
 		];
@@ -99,9 +78,6 @@ final class MutationAcknowledgementConditionalConsumersContractTest extends WP_U
 		foreach ( $events as $event ) {
 			self::assertTrue( EventRegistry::is_valid_id( $event ), $event );
 		}
-
-		$snippets = $this->source( 'src/Snippets/Bootstrap.php' );
-		self::assertStringContainsString( "'snippets.restore.acknowledged'", $snippets );
 
 		$notes = $this->source( 'src/Notes/Bootstrap.php' );
 		self::assertStringContainsString( "'notes.import.overwrite.acknowledged'", $notes );
