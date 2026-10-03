@@ -13,11 +13,13 @@ final class SchemaGuard {
 		sort( $actual, SORT_STRING );
 		sort( $expected, SORT_STRING );
 		if ( $actual !== $expected ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( sprintf(
 				/* translators: %s: profile configuration domain */
 				__( 'The profile contains an incomplete or unsupported %s payload.', 'core-blueprint' ),
 				$context
 			) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -51,19 +53,23 @@ final class SchemaGuard {
 	}
 
 	public static function invalid_value( string $context ): never {
+		// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 		throw new \InvalidArgumentException( sprintf(
 			/* translators: %s: profile field or configuration domain */
 			__( 'The profile contains an invalid value for %s.', 'core-blueprint' ),
 			$context
 		) );
+		// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 	}
 
 	private static function invalid_type( string $context ): never {
+		// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 		throw new \InvalidArgumentException( sprintf(
 			/* translators: %s: profile field or configuration domain */
 			__( 'The profile contains an invalid value type for %s.', 'core-blueprint' ),
 			$context
 		) );
+		// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 	}
 
 	private function __construct() {}

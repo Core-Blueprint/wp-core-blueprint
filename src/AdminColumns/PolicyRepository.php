@@ -55,19 +55,27 @@ final class PolicyRepository {
 	public static function normalize( array $policy ): array {
 		self::assert_exact_keys( $policy, [ 'schema_version', 'screens' ] );
 		if ( self::SCHEMA_VERSION !== ( $policy['schema_version'] ?? null ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The Admin Columns policy schema version is not supported.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( ! is_array( $policy['screens'] ?? null ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The Admin Columns screens policy is invalid.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( count( $policy['screens'] ) > self::MAX_SCREENS ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The Admin Columns policy contains too many screens.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$screens = [];
 		foreach ( $policy['screens'] as $screen_id => $screen_policy ) {
 			if ( ! is_string( $screen_id ) || ! self::valid_screen_id( $screen_id ) || ! is_array( $screen_policy ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The Admin Columns screen policy is invalid.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$normalized = self::normalize_screen_policy( $screen_policy );
 			if ( self::screen_policy_is_empty( $normalized ) ) {
@@ -92,7 +100,9 @@ final class PolicyRepository {
 	public static function normalize_screen_policy( array $screen_policy ): array {
 		$unknown = array_diff( array_keys( $screen_policy ), [ 'order', 'hidden', 'taxonomies', 'meta' ] );
 		if ( [] !== $unknown || ! array_key_exists( 'order', $screen_policy ) || ! array_key_exists( 'hidden', $screen_policy ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The Admin Columns screen policy contains unsupported fields.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$hidden = self::normalize_column_ids( $screen_policy['hidden'] ?? null );
@@ -102,10 +112,14 @@ final class PolicyRepository {
 
 		foreach ( $hidden as $column_id ) {
 			if ( in_array( $column_id, self::PROTECTED_VISIBILITY_COLUMNS, true ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Structural WordPress columns cannot be hidden by Admin Columns Governance.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( ! in_array( $column_id, $order, true ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Hidden Admin Columns identities must also exist in the governed order.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 
@@ -143,10 +157,14 @@ final class PolicyRepository {
 		$changed_screens = self::changed_screen_ids( $current, $next );
 		if ( [] === $next['screens'] ) {
 			if ( ! delete_option( self::OPTION ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( __( 'The Admin Columns policy could not be reset.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		} elseif ( ! update_option( self::OPTION, $next, false ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The Admin Columns policy could not be saved.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		AuditLog::log( 'settings.changed', 'notice', [
@@ -166,7 +184,9 @@ final class PolicyRepository {
 	/** @param array{order:list<string>,hidden:list<string>,taxonomies?:list<string>,meta?:list<string>} $screen_policy */
 	public static function replace_screen( string $screen_id, array $screen_policy, string $actor ): bool {
 		if ( ! self::valid_screen_id( $screen_id ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The Admin Columns screen identity is invalid.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$normalized = self::normalize_screen_policy( $screen_policy );
 		$policy = self::get();
@@ -180,7 +200,9 @@ final class PolicyRepository {
 
 	public static function reset_screen( string $screen_id, string $actor ): bool {
 		if ( ! self::valid_screen_id( $screen_id ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The Admin Columns screen identity is invalid.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$policy = self::get();
 		unset( $policy['screens'][ $screen_id ] );
@@ -208,7 +230,9 @@ final class PolicyRepository {
 	/** @return list<string> */
 	private static function normalize_byte_id_list( mixed $value, string $error ): array {
 		if ( ! is_array( $value ) || ( [] !== $value && ! array_is_list( $value ) ) || count( $value ) > self::MAX_COLUMNS_PER_SCREEN ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( $error );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$normalized = [];
 		foreach ( $value as $id ) {
@@ -220,7 +244,9 @@ final class PolicyRepository {
 				|| 1 === preg_match( '/[\x00-\x1F\x7F]/', $id )
 				|| in_array( $id, $normalized, true )
 			) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( $error );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$normalized[] = $id;
 		}
@@ -230,7 +256,9 @@ final class PolicyRepository {
 	/** @return list<string> */
 	private static function normalize_taxonomies( mixed $value ): array {
 		if ( ! is_array( $value ) || ( [] !== $value && ! array_is_list( $value ) ) || count( $value ) > self::MAX_COLUMNS_PER_SCREEN ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The Admin Columns taxonomy source list is invalid.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$normalized = [];
 		foreach ( $value as $taxonomy ) {
@@ -241,7 +269,9 @@ final class PolicyRepository {
 				|| sanitize_key( $taxonomy ) !== $taxonomy
 				|| in_array( $taxonomy, $normalized, true )
 			) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The Admin Columns taxonomy source list is invalid.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$normalized[] = $taxonomy;
 		}
@@ -280,7 +310,9 @@ final class PolicyRepository {
 		sort( $actual, SORT_STRING );
 		sort( $expected, SORT_STRING );
 		if ( $actual !== $expected ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The Admin Columns policy contains unsupported fields.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 

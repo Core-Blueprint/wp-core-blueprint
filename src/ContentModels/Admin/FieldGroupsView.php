@@ -152,11 +152,13 @@ trait FieldGroupsView {
 							'checked' => in_array( $post_type->name, (array) $group['post_types'], true ),
 						];
 					}
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 					echo ChoiceGroup::render( [
 						'aria_label' => __( 'Post Types', 'core-blueprint' ),
 						'options' => $location_post_type_options,
 						'scrollable' => true,
-					] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output.
+					] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 					<strong class="cb-content-models-location-title cb-content-models-location-title--secondary"><?php esc_html_e( 'Options Pages', 'core-blueprint' ); ?></strong>
 					<?php if ( empty( $option_pages ) ) : ?>
@@ -172,10 +174,12 @@ trait FieldGroupsView {
 								'checked' => in_array( (string) $page_slug, (array) $group['option_pages'], true ),
 							];
 						}
+						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 						echo ChoiceGroup::render( [
 							'aria_label' => __( 'Options Pages', 'core-blueprint' ),
 							'options' => $location_option_page_options,
-						] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output.
+						] );
+						// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 						?>
 					<?php endif; ?>
 					<strong class="cb-content-models-location-title cb-content-models-location-title--secondary"><?php esc_html_e( 'Taxonomy Terms', 'core-blueprint' ); ?></strong>
@@ -189,7 +193,9 @@ trait FieldGroupsView {
 							'checked' => in_array( $taxonomy->name, (array) $group['term_taxonomies'], true ),
 						];
 					}
-					echo ChoiceGroup::render( [ 'aria_label' => __( 'Taxonomy Terms', 'core-blueprint' ), 'options' => $location_taxonomy_options, 'scrollable' => true ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+					echo ChoiceGroup::render( [ 'aria_label' => __( 'Taxonomy Terms', 'core-blueprint' ), 'options' => $location_taxonomy_options, 'scrollable' => true ] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 					<strong class="cb-content-models-location-title cb-content-models-location-title--secondary"><?php esc_html_e( 'User Profiles', 'core-blueprint' ); ?></strong>
 					<div class="cb-core-stack cb-core-stack--compact">
@@ -199,7 +205,9 @@ trait FieldGroupsView {
 						foreach ( $user_roles as $role_key => $role_data ) {
 							$location_user_role_options[] = [ 'name' => 'user_roles[]', 'value' => (string) $role_key, 'label' => (string) ( $role_data['name'] ?? $role_key ) . ' (' . $role_key . ')', 'checked' => in_array( (string) $role_key, (array) $group['user_roles'], true ) ];
 						}
-						echo ChoiceGroup::render( [ 'aria_label' => __( 'Limit user profiles by role', 'core-blueprint' ), 'options' => $location_user_role_options, 'compact' => true ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+						echo ChoiceGroup::render( [ 'aria_label' => __( 'Limit user profiles by role', 'core-blueprint' ), 'options' => $location_user_role_options, 'compact' => true ] );
+						// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 						?>
 					</div>
 					<p class="description"><?php esc_html_e( 'A group may target Post Meta, Options API, Term Meta, User Meta, or any combination. Leaving all user roles unchecked means all user profiles.', 'core-blueprint' ); ?></p>

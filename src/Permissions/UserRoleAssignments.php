@@ -202,6 +202,7 @@ final class UserRoleAssignments {
 			return;
 		}
 
+		// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 		throw new \RuntimeException(
 			sprintf(
 				/* translators: %s: role slug */
@@ -209,6 +210,7 @@ final class UserRoleAssignments {
 				$role_slug
 			)
 		);
+		// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 	}
 
 	/**

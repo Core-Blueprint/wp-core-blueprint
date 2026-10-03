@@ -129,15 +129,18 @@ trait TaxonomiesView {
 						'checked' => in_array( $post_type->name, (array) $model['object_types'], true ),
 					];
 				}
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo ChoiceGroup::render( [
 					'aria_label' => __( 'Assigned post types', 'core-blueprint' ),
 					'options' => $object_type_options,
 					'scrollable' => true,
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output.
+				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			</td></tr>
 			<tr><th scope="row"><?php esc_html_e( 'Behaviour', 'core-blueprint' ); ?></th><td>
 				<?php
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo ChoiceGroup::render( [
 					'aria_label' => __( 'Taxonomy behaviour', 'core-blueprint' ),
 					'options' => [
@@ -146,7 +149,8 @@ trait TaxonomiesView {
 						[ 'name' => 'hierarchical', 'label' => __( 'Hierarchical (category-like)', 'core-blueprint' ), 'checked' => ! empty( $model['hierarchical'] ) ],
 						[ 'name' => 'show_admin_column', 'label' => __( 'Show taxonomy column in post lists', 'core-blueprint' ), 'checked' => ! empty( $model['show_admin_column'] ) ],
 					],
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output.
+				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			</td></tr>
 			</tbody></table>

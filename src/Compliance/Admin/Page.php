@@ -75,10 +75,12 @@ final class Page extends PageBase {
 			<?php $this->render_feedback(); ?>
 
 			<?php
-			echo Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() escapes structured content.
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+			echo Notice::render( [
 				'variant' => Notice::INFO,
 				'message' => __( 'Core Blueprint checks whether configured resources are available. It does not decide which documents your organisation is legally required to publish.', 'core-blueprint' ),
 			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 
 			<?php foreach ( $groups as $owner => $resources ) : ?>
@@ -335,7 +337,8 @@ final class Page extends PageBase {
 		}
 		$selected = null === $item ? [] : [ $item ];
 
-		echo ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- shared renderer escapes structured content.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+		echo ObjectPicker::render( [
 			'id'            => $id,
 			'name'          => $name,
 			'multiple'      => false,
@@ -347,6 +350,7 @@ final class Page extends PageBase {
 			'empty_message' => __( 'No matching published pages or documents found.', 'core-blueprint' ),
 			'show_hint'     => false,
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	private function requested_resource_key(): string {
@@ -385,9 +389,11 @@ final class Page extends PageBase {
 		if ( ! isset( $errors[ $status ] ) ) {
 			return;
 		}
-		echo Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() escapes structured content.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+		echo Notice::render( [
 			'variant' => Notice::ERROR,
 			'message' => $errors[ $status ],
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }

@@ -29,7 +29,9 @@ final class PolicyMutation {
 			return;
 		}
 		if ( Failsafe::is_bypassed() ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Two-factor enforcement cannot be enabled while Failsafe bypass is active.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		self::assert_enrolled_operator( $actor );
 	}
@@ -80,7 +82,9 @@ final class PolicyMutation {
 			return true;
 		}
 		if ( $current !== $expected_current_mode ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Two-factor policy changed during rollback and was not overwritten.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		self::assert_can_restore_mode( $mode, $actor );
@@ -101,7 +105,9 @@ final class PolicyMutation {
 			'two_factor:' . $source
 		);
 		if ( ! $saved && Policy::mode() !== $mode ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Could not persist the two-factor policy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		Audit::policy_changed( (int) $actor->ID, $before, $mode, $source );
@@ -111,20 +117,26 @@ final class PolicyMutation {
 	private static function normalize_mode( string $mode ): string {
 		$mode = sanitize_key( $mode );
 		if ( ! Policy::is_valid_mode( $mode ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new InvalidArgumentException( __( 'Invalid two-factor policy mode.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $mode;
 	}
 
 	private static function assert_trusted_operator( WP_User $actor ): void {
 		if ( $actor->ID <= 0 || ! PrivilegedAccessGuard::is_trusted_operator( $actor ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Two-factor policy changes require a trusted CB Operator.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
 	private static function assert_enrolled_operator( WP_User $actor ): void {
 		if ( ! CredentialStore::is_enrolled( (int) $actor->ID ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Two-factor enforcement requires the acting CB Operator to be enrolled in Base two-factor authentication.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 }

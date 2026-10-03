@@ -477,7 +477,9 @@ final class Actions {
 	private static function persist_field_from_post( string $group_id, string $original_field_id, string $duplicate_source_field = '' ): array {
 		$group = Repository::field_group( $group_id );
 		if ( null === $group ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Field group not found.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$input = [
@@ -507,10 +509,14 @@ final class Actions {
 		$existing = '' !== $original_field_id ? Repository::field( $group_id, $original_field_id ) : null;
 		$duplicate_from = '' !== $duplicate_source_field ? Repository::field( $group_id, $duplicate_source_field ) : null;
 		if ( '' !== $original_field_id && null === $existing ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Field not found.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( '' !== $duplicate_source_field && null === $duplicate_from ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The source field for this duplicate no longer exists.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( null !== $existing && ! isset( $_POST['sub_fields'] ) ) {
 			$input['sub_fields'] = is_array( $existing['sub_fields'] ?? null ) ? $existing['sub_fields'] : [];
@@ -529,10 +535,14 @@ final class Actions {
 			unset( $sub_field );
 		}
 		if ( null !== $existing && isset( $_POST['name'] ) && sanitize_key( (string) wp_unslash( $_POST['name'] ) ) !== (string) ( $existing['name'] ?? '' ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Field names are immutable after creation. Use a schema migration when a stored meta key must change.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( null !== $existing && isset( $_POST['type'] ) && sanitize_key( (string) wp_unslash( $_POST['type'] ) ) !== (string) ( $existing['type'] ?? '' ) && empty( $_POST['confirm_type_change'] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Changing a field type requires explicit confirmation because existing WordPress metadata may be interpreted differently.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$saved = Repository::save_field( $group_id, $input, '' !== $original_field_id ? $original_field_id : null );

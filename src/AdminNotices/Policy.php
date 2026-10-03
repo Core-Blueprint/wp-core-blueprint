@@ -168,7 +168,9 @@ final class Policy {
 		sort( $actual, SORT_STRING );
 		sort( $expected, SORT_STRING );
 		if ( $actual !== $expected ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( sprintf( 'Admin Notices %s has an invalid schema.', $name ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 

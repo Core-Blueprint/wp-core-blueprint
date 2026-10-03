@@ -24,15 +24,19 @@ $is_non_production       = 'production' !== $environment_type;
 
 	<?php
 	if ( 'success' === $save_state ) {
-		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::SUCCESS,
 			'title'   => __( 'Environment Governance saved.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	} elseif ( 'error' === $save_state ) {
-		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::ERROR,
 			'title'   => __( 'Environment Governance could not be saved.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 	?>
 
@@ -40,10 +44,12 @@ $is_non_production       = 'production' !== $environment_type;
 		<h2 id="cb-core-wordpress-environment-title"><?php esc_html_e( 'WordPress Environment', 'core-blueprint' ); ?></h2>
 		<p>
 			<?php
-			echo \CoreBlueprint\Core\UI\Status::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+			echo \CoreBlueprint\Core\UI\Status::render(
 				$is_non_production ? 'ready' : 'active',
 				\CoreBlueprint\Core\Environment\Admin::environment_label( $environment_type )
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		</p>
 		<p class="description">
@@ -55,7 +61,8 @@ $is_non_production       = 'production' !== $environment_type;
 		<h2 id="cb-core-environment-governance-title"><?php esc_html_e( 'Environment Governance', 'core-blueprint' ); ?></h2>
 
 		<?php
-		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'items'   => [
 				__( 'Environment and Access Mode are separate. A staging environment can still use Public Access Mode.', 'core-blueprint' ),
@@ -63,6 +70,7 @@ $is_non_production       = 'production' !== $environment_type;
 				__( 'On production this policy is stored for portability but has no search-indexing runtime effect.', 'core-blueprint' ),
 			],
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">

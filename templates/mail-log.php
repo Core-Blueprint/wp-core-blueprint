@@ -20,10 +20,12 @@ $mail_log_retention_label = sprintf( _n( 'Retention: %d day', 'Retention: %d day
 
 	<?php if ( is_array( $result_notice ) && ! empty( $result_notice['message'] ) ) : ?>
 		<?php
-		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() returns escape-clean HTML.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => 'error' === ( $result_notice['type'] ?? '' ) ? \CoreBlueprint\Core\UI\Notice::ERROR : \CoreBlueprint\Core\UI\Notice::SUCCESS,
 			'message' => (string) $result_notice['message'],
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 	<?php endif; ?>
 
@@ -88,10 +90,12 @@ $mail_log_retention_label = sprintf( _n( 'Retention: %d day', 'Retention: %d day
 							</td>
 							<td class="cb-core-mail-log-col-status">
 								<?php
-								echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- StateBadge::render() returns escape-clean HTML.
+								// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+								echo \CoreBlueprint\Core\UI\StateBadge::render(
 									'failed' === $row->status ? __( 'Failed', 'core-blueprint' ) : __( 'Sent', 'core-blueprint' ),
 									[ 'variant' => 'failed' === $row->status ? \CoreBlueprint\Core\UI\StateBadge::ERROR : \CoreBlueprint\Core\UI\StateBadge::SUCCESS ]
 								);
+								// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 								?>
 							</td>
 							<td class="cb-core-mail-log-col-provider"><?php echo esc_html( $providers[ $row->provider ] ?? $row->provider ); ?><br><span class="cb-core-muted"><?php echo esc_html( strtoupper( (string) $row->transport ) ); ?></span></td>

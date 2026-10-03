@@ -27,26 +27,38 @@ final class ReviewManager {
 			$evidence = Evidence::unavailable( 'setup.provider-unavailable' );
 		}
 		if ( Evidence::HEALTH_UNAVAILABLE === $evidence->health() ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Setup evidence is unavailable.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$reason = trim( sanitize_textarea_field( $reason ) );
 		if ( ReviewRepository::LATER === $disposition ) {
 			if ( ! $check->allows_later() ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'This Core Setup check cannot be deferred.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( '' === $reason ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'A reason is required when deferring a Core Setup check.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		} elseif ( ReviewRepository::NOT_APPLICABLE === $disposition ) {
 			if ( ! $check->allows_not_applicable( $evidence ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'This Core Setup check is currently applicable.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( '' === $reason ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'A reason is required for Not applicable.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		} elseif ( ReviewRepository::REVIEWED !== $disposition ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Invalid Core Setup review disposition.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$before = ReviewRepository::check( $check_id );
@@ -56,7 +68,9 @@ final class ReviewManager {
 			ReviewRepository::NOT_APPLICABLE => ReviewRepository::mark_not_applicable( $check_id, $evidence, $reason, $user_id ),
 		};
 		if ( ! $saved ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Setup review metadata could not be saved.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$after = ReviewRepository::check( $check_id );
@@ -86,7 +100,9 @@ final class ReviewManager {
 			return false;
 		}
 		if ( ! ReviewRepository::clear_check( $check_id ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Setup review metadata could not be cleared.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		AuditLog::log( 'core.setup.review.cleared', 'notice', [
@@ -97,15 +113,21 @@ final class ReviewManager {
 
 	public static function save_section_note( string $section_id, string $note, int $user_id = 0 ): bool {
 		if ( ! SectionRegistry::is_known( $section_id ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Unknown Core Setup section.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( ! SectionRegistry::can_manage_note( $section_id ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Setup section access denied.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$before = ReviewRepository::section_note( $section_id );
 		if ( ! ReviewRepository::save_section_note( $section_id, $note, $user_id ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Setup section note could not be saved.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$after = ReviewRepository::section_note( $section_id );
 
@@ -125,15 +147,21 @@ final class ReviewManager {
 
 	private static function authorized_check( string $check_id ): CheckInterface {
 		if ( ! current_user_can( 'manage_options' ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Setup access denied.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$check = Registry::get( $check_id );
 		if ( ! $check instanceof CheckInterface ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Unknown Core Setup check.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( ! current_user_can( $check->capability() ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Setup check access denied.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		return $check;

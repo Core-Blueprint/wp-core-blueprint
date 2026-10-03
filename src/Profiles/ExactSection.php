@@ -14,7 +14,9 @@ abstract class ExactSection implements SectionInterface {
 
 	public function migrate( array $incoming, int $source_schema_version ): array {
 		if ( ! $this->supports_schema_version( $source_schema_version ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'This profile section schema version is not supported.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $this->normalize( $incoming );
 	}
@@ -39,7 +41,9 @@ abstract class ExactSection implements SectionInterface {
 	public function restore( array $snapshot, array $incoming, string $actor ): void {
 		$current = $this->snapshot();
 		if ( ! StateGuard::is_between( $current, $snapshot, $incoming ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Configuration changed during Profile rollback and was not overwritten.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$this->apply( $snapshot, $actor );
 	}

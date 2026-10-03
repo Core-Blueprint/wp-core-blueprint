@@ -243,11 +243,13 @@ foreach ( $cb_cli_commands as $entry ) {
 		<p><?php esc_html_e( 'For SSH-based hosts, log in over SSH first, then cd into the WordPress directory before running the commands. For Docker-based local development, prefix commands with the appropriate exec invocation for your container.', 'core-blueprint' ); ?></p>
 
 		<?php
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'title'   => __( 'Cloud86 users:', 'core-blueprint' ),
 			'message' => __( 'Cloud86 ships WP-CLI pre-installed on every shared and Managed WordPress plan. SSH access is included by default; activate it from the control panel under "Hosting → SSH" and use the wp command from the home directory of your account. The shared executable already understands which install you are in based on the working directory.', 'core-blueprint' ),
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 	</section>
 </div>

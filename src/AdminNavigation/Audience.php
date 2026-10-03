@@ -64,16 +64,22 @@ final class Audience {
 	/** @return list<string> */
 	private static function normalize_references( mixed $references, string $type ): array {
 		if ( ! is_array( $references ) || ! array_is_list( $references ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( sprintf( 'Admin Navigation audience %s references must be a list.', $type ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( count( $references ) > self::MAX_REFERENCES ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( sprintf( 'Admin Navigation audience contains too many %s references.', $type ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$normalized = [];
 		foreach ( $references as $reference ) {
 			if ( ! is_string( $reference ) || '' === $reference || strlen( $reference ) > self::MAX_REFERENCE_BYTES || sanitize_key( $reference ) !== $reference ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( sprintf( 'Admin Navigation audience contains an invalid %s reference.', $type ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$normalized[ $reference ] = $reference;
 		}

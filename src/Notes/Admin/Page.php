@@ -112,7 +112,9 @@ final class Page extends PageBase {
 				<?php
 				$notice_variant = 'success' === $notice['type'] ? Notice::SUCCESS : Notice::ERROR;
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() returns escape-clean HTML.
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo Notice::render( [ 'variant' => $notice_variant, 'message' => (string) $notice['message'], 'class' => 'cb-notes-page-notice' ] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			<?php endif; ?>
 

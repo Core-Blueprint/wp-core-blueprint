@@ -24,28 +24,34 @@ $current_mode = (string) ( $policy['mode'] ?? \CoreBlueprint\Core\Security\TwoFa
 
 	<?php
 	if ( $bypassed ) {
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 			'title'   => __( 'Failsafe bypass is active.', 'core-blueprint' ),
 			'message' => __( 'Two-factor enforcement is temporarily bypassed. A new enforce policy cannot be enabled until Failsafe is closed.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	if ( ! $can_manage ) {
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'title'   => __( 'Policy is read-only for this account.', 'core-blueprint' ),
 			'message' => __( 'Only a signed and approved CB Operator can change the site-wide two-factor policy.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	} elseif ( ! $base_enrolled && \CoreBlueprint\Core\Security\TwoFactor\Policy::MODE_ENFORCE !== $current_mode ) {
 		$message = [] !== $providers
 			? __( 'The acting CB Operator must have Base two-factor authentication enrolled before this site can switch to Enforce. Your account is currently owned by a supported external provider. Use another trusted Base-enrolled Operator, or move your own account to Base two-factor authentication first.', 'core-blueprint' )
 			: __( 'The acting CB Operator must have Base two-factor authentication enrolled before this site can switch to Enforce. Configure Base two-factor authentication on your WordPress profile first.', 'core-blueprint' );
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 			'title'   => __( 'Enroll Base two-factor authentication before enforcing.', 'core-blueprint' ),
 			'message' => $message,
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 	?>
 
@@ -78,15 +84,19 @@ $current_mode = (string) ( $policy['mode'] ?? \CoreBlueprint\Core\Security\TwoFa
 				] )
 				. '</div>';
 
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe.
 			echo \CoreBlueprint\Core\UI\Field::render( [
 				'control' => $policy_control,
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		<?php else : ?>
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe.
 			echo \CoreBlueprint\Core\UI\Field::render( [
 				'control' => '<strong>' . esc_html( \CoreBlueprint\Core\Security\TwoFactor\Policy::MODE_ENFORCE === $current_mode ? __( 'Enforce', 'core-blueprint' ) : __( 'Optional', 'core-blueprint' ) ) . '</strong>',
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		<?php endif; ?>
 	</section>
@@ -123,8 +133,10 @@ $current_mode = (string) ( $policy['mode'] ?? \CoreBlueprint\Core\Security\TwoFa
 	<?php
 	$authentication_state = (string) ob_get_clean();
 
+	// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe.
 	echo \CoreBlueprint\Core\UI\Field::render( [
 		'control' => $authentication_state,
-	] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	] );
+	// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	?>
 </div>

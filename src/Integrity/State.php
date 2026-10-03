@@ -82,7 +82,9 @@ final class State implements ModuleStateInterface {
 		// canonical state before emitting a transition audit or touching runtime
 		// side effects so a refused/failed write cannot masquerade as success.
 		if ( self::is_enabled() !== $enabled ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Scanner state could not be persisted.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( class_exists( Audit::class ) ) {

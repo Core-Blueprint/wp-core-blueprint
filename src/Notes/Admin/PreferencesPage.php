@@ -80,12 +80,14 @@ final class PreferencesPage {
 		?>
 		<?php if ( ! $is_enabled ) : ?>
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 			echo \CoreBlueprint\Core\UI\Notice::render( [
 				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'title'   => __( 'Notes is disabled.', 'core-blueprint' ),
 				'message' => __( 'Existing notes are preserved and these defaults remain editable. Enable Notes from the Dashboard when you want to use the module again.', 'core-blueprint' ),
 				'class'   => 'cb-notes-disabled-notice',
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		<?php endif; ?>
 

@@ -42,9 +42,11 @@ final class ReportBrandingInput {
 				|| 'attachment' !== $post->post_type
 				|| ! ReportBranding::is_supported_logo_attachment( $logo_id )
 			) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException(
 					__( 'Logo must be a local JPEG, PNG or SVG image no larger than 2 MB. Raster logos may be at most 4096 x 4096 pixels.', 'core-blueprint' )
 				);
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 

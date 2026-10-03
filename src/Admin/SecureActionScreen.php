@@ -106,14 +106,18 @@ final class SecureActionScreen {
 		echo CoreBlueprintLockup::html( 'cb-core-secure-action__brand' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper owns escaping.
 		echo '<h1 class="cb-core-title">' . esc_html( $title ) . '</h1>';
 		if ( '' !== $status_label ) {
-			echo Status::render( $status_variant, $status_label ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Status owns escaping.
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+			echo Status::render( $status_variant, $status_label );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 		echo '</header>';
 
-		echo Card::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Card owns frame escaping; body is component-owned escaped HTML.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Both internal callers construct body from static markup, escaped dynamic values, and audited UI components before entering Card's caller-owned raw body slot.
+		echo Card::render( [
 			'variant' => Card::VARIANT_SPACIOUS,
 			'body'    => $body,
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 
 		echo '</div>';
 

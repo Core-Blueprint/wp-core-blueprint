@@ -102,7 +102,9 @@ final class Registry {
 		foreach ( $checks as $check ) {
 			self::assert_valid( $check );
 			if ( isset( $out[ $check->id() ] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \LogicException( 'Duplicate Core Setup check ID: ' . $check->id() );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$out[ $check->id() ] = $check;
 		}

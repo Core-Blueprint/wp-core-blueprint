@@ -40,6 +40,7 @@ defined( 'ABSPATH' ) || exit;
 			<div class="cb-core-radio-grid cb-core-radio-grid--columns-4">
 				<?php foreach ( $preset_definitions as $slug => $def ) : ?>
 					<?php
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 					echo \CoreBlueprint\Core\UI\RadioCard::render( [
 						'name'    => 'preset',
 						'value'   => $slug,
@@ -47,7 +48,8 @@ defined( 'ABSPATH' ) || exit;
 						'desc'    => $def['description'],
 						'checked' => $active_preset === $slug,
 						'active'  => $active_preset === $slug && $preset_actually_matches,
-					] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+					] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 				<?php endforeach; ?>
 			</div>
@@ -63,20 +65,24 @@ defined( 'ABSPATH' ) || exit;
 						$ref
 					);
 				}
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo \CoreBlueprint\Core\UI\Notice::render( [
 					'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 					'message' => $custom_message,
 					'class'   => 'cb-core-privacy-custom-notice',
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			<?php endif; ?>
 
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 			echo \CoreBlueprint\Core\UI\Notice::render( [
 				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'message' => __( 'Presets are starting points. Core Blueprint does not replace a full AVG/GDPR processor agreement. For organizations handling special-category data, consult a data protection officer.', 'core-blueprint' ),
 				'class'   => 'cb-core-privacy-guidance',
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 
 			<button type="button" class="button button-primary cb-core-button cb-core-button--primary cb-core-privacy-apply-preset">
@@ -94,6 +100,7 @@ defined( 'ABSPATH' ) || exit;
 			</p>
 
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 			echo \CoreBlueprint\Core\UI\RadioGroup::render( [
 				'name'    => 'ip_mode',
 				'value'   => $current_ip_mode,
@@ -116,7 +123,8 @@ defined( 'ABSPATH' ) || exit;
 						'desc'  => __( 'No IP stored at all. Maximum privacy; loses forensic value.', 'core-blueprint' ),
 					],
 				],
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		</section>
 
@@ -213,7 +221,9 @@ defined( 'ABSPATH' ) || exit;
 			<button type="button" class="button button-primary cb-core-button cb-core-button--primary cb-core-privacy-save">
 				<?php esc_html_e( 'Save changes', 'core-blueprint' ); ?>
 			</button>
-			<?php echo \CoreBlueprint\Core\UI\FormStatus::render(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+			<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output ?>
+			<?php echo \CoreBlueprint\Core\UI\FormStatus::render(); ?>
+			<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		</div>
 	</form>
 </div>

@@ -36,10 +36,12 @@ defined( 'ABSPATH' ) || exit;
 
 	<?php if ( ! $can_manage ) : ?>
 		<?php
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'message' => __( 'You can view this page but not modify it. Only Core Blueprint operators may change permissions.', 'core-blueprint' ),
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 	<?php endif; ?>
 
@@ -64,10 +66,12 @@ defined( 'ABSPATH' ) || exit;
 			?>
 			<div class="cb-core-permissions-self-state" data-is-operator="<?php echo esc_attr( $self_is_operator ? 'yes' : 'no' ); ?>">
 				<?php
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo \CoreBlueprint\Core\UI\Status::render(
 					$self_is_operator ? 'active' : 'warning',
 					$self_is_operator ? __( 'CB Operator', 'core-blueprint' ) : __( 'Administrator', 'core-blueprint' )
-				); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+				);
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 				<p class="description">
 					<?php if ( $self_is_operator ) : ?>
@@ -115,7 +119,9 @@ defined( 'ABSPATH' ) || exit;
 										name="operator_ids[]"
 										value="<?php echo (int) $user->ID; ?>"
 										<?php checked( $is_operator ); ?>
-										<?php echo $disabled_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+										<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe. ?>
+										<?php echo $disabled_attr; ?>
+										<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 									>
 								</td>
 								<td>
@@ -151,7 +157,9 @@ defined( 'ABSPATH' ) || exit;
 					>
 						<?php esc_html_e( 'Save operators', 'core-blueprint' ); ?>
 					</button>
-					<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'target' => 'operators' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe. ?>
+					<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'target' => 'operators' ] ); ?>
+					<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</div>
 			<?php endif; ?>
 		</section>
@@ -188,7 +196,9 @@ defined( 'ABSPATH' ) || exit;
 				>
 					<?php esc_html_e( 'Save visibility', 'core-blueprint' ); ?>
 				</button>
-				<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'target' => 'hide' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe. ?>
+				<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'target' => 'hide' ] ); ?>
+				<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
 		</section>
 
@@ -232,7 +242,9 @@ defined( 'ABSPATH' ) || exit;
 				>
 					<?php esc_html_e( 'Save admin capabilities', 'core-blueprint' ); ?>
 				</button>
-				<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'target' => 'admin-caps' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe. ?>
+				<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'target' => 'admin-caps' ] ); ?>
+				<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
 		</section>
 

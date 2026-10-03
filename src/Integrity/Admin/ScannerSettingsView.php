@@ -70,14 +70,18 @@ trait ScannerSettingsView {
                     <button type="button" class="button cb-core-button cb-core-button--primary" id="cb-core-integrity-save-settings" data-cb-integrity-action="save-settings"><?php echo esc_html__( 'Save Settings', 'core-blueprint' ); ?></button>
                     <?php
                     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- FormStatus::render() returns escape-clean HTML.
+                    // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
                     echo FormStatus::render( [ 'id' => 'cb-core-integrity-settings-status', 'tight' => true ] );
+                    // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                     ?>
                 </div>
             <?php else : ?>
                 <?php
                 // Keep the canonical live region present for JS/runtime symmetry, even on read-only views.
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- FormStatus::render() returns escape-clean HTML.
+                // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
                 echo FormStatus::render( [ 'id' => 'cb-core-integrity-settings-status', 'block' => true ] );
+                // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                 ?>
             <?php endif; ?>
         </section>

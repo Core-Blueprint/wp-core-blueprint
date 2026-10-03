@@ -127,7 +127,9 @@ final class ChunkedOptionStore {
 		try {
 			return bin2hex( random_bytes( 8 ) );
 		} catch ( \Throwable $throwable ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( 'Could not create a Scanner storage generation.', 0, $throwable );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 

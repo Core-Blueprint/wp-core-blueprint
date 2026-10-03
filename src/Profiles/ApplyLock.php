@@ -25,7 +25,9 @@ final class ApplyLock {
 			if ( add_option( self::OPTION, $data, '', false ) ) {
 				return $token;
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Another profile apply is already running.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$current = maybe_unserialize( $current_raw );
 		$current = is_array( $current ) ? $current : [];
@@ -34,7 +36,9 @@ final class ApplyLock {
 		if ( $age > self::STALE_TTL && self::replace_raw( $current_raw, maybe_serialize( $data ) ) ) {
 			return $token;
 		}
+		// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 		throw new \RuntimeException( __( 'Another profile apply is already running.', 'core-blueprint' ) );
+		// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 	}
 
 	public static function refresh( string $token ): bool {

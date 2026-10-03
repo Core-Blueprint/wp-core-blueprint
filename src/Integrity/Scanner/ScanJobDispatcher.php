@@ -52,9 +52,11 @@ final class ScanJobDispatcher {
 			if ( $progress_enabled ) {
 				TransientProgressReporter::clear( $job_id );
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException(
 				__( 'Core Scanner could not schedule its first scan batch. No partial result was published. Verify WordPress cron or the server cron runner and try again.', 'core-blueprint' )
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		self::kick_cron_if_allowed();

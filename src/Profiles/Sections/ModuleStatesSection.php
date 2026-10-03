@@ -61,12 +61,16 @@ final class ModuleStatesSection extends ExactSection {
 		$incoming = $this->normalize( $incoming );
 		foreach ( array_keys( $incoming['states'] ) as $id ) {
 			if ( null === ActivationRegistry::definition( $id ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( __( 'A profile module is no longer available.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 
 		if ( ! empty( $incoming['states']['login-shield'] ) && '' === LoginShield::sanitize_slug( (string) ( LoginShield::config()['slug'] ?? '' ) ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Login Shield cannot be enabled by this profile until a valid custom login slug is configured.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if (
@@ -76,7 +80,9 @@ final class ModuleStatesSection extends ExactSection {
 		) {
 			$job = ScanJobRepository::get();
 			if ( is_array( $job ) && 'running' === (string) ( $job['status'] ?? '' ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( __( 'Core Scanner cannot be disabled by a profile while a scan is running.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 	}
@@ -101,7 +107,9 @@ final class ModuleStatesSection extends ExactSection {
 		foreach ( $incoming['states'] as $id => $enabled ) {
 			$definition = ActivationRegistry::definition( $id );
 			if ( null === $definition ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( __( 'A profile module is no longer available.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$state = $definition['state'];
 			if ( (bool) $state::is_enabled() === $enabled ) {

@@ -23,7 +23,9 @@ final class ContentModelsSection implements SectionInterface {
 	public function supports_schema_version( int $schema_version ): bool { return 1 === $schema_version; }
 	public function migrate( array $incoming, int $source_schema_version ): array {
 		if ( ! $this->supports_schema_version( $source_schema_version ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'This Content Models Profile section schema version is not supported.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $this->normalize( $incoming );
 	}
@@ -43,7 +45,9 @@ final class ContentModelsSection implements SectionInterface {
 		SchemaGuard::exact_keys( $incoming, [ 'content_models_schema_version', 'post_types', 'taxonomies', 'option_pages', 'field_groups' ], 'Content Models' );
 		$schema_version = SchemaGuard::int( $incoming['content_models_schema_version'] ?? null, 'Content Models schema version' );
 		if ( Repository::SCHEMA_VERSION !== $schema_version ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The Content Models schema version in this profile is not supported by this Base version.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$portable = [
 			'content_models_schema_version' => $schema_version,
@@ -85,7 +89,9 @@ final class ContentModelsSection implements SectionInterface {
 			'field_groups' => $incoming['field_groups'],
 		] );
 		if ( ! empty( $analysis['locked'] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The profile contains Content Models definitions owned and locked by another plugin.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 

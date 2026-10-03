@@ -78,7 +78,7 @@ trait ScannerHistoryView {
 			$summary_label = sprintf( __( '%1$d OK, %2$d warnings, %3$d critical', 'core-blueprint' ), (int) ( $summary['ok'] ?? 0 ), (int) ( $summary['warning'] ?? 0 ), (int) ( $summary['critical'] ?? 0 ) );
 
 			echo '<tr class="' . esc_attr( ( $is_current ? 'is-current ' : '' ) . ( $is_baseline ? 'is-baseline' : '' ) ) . '">';
-			echo '<td>' . StateBadge::render( strtoupper( $status ), [ 'variant' => self::state_badge_variant( $status ) ] ) . '</td>';
+			echo '<td>' . StateBadge::render( strtoupper( $status ), [ 'variant' => self::state_badge_variant( $status ) ] ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 			echo '<td><strong>' . esc_html( $time ) . '</strong></td>';
 			echo '<td>' . esc_html( $summary_label ) . '</td>';
 			echo '<td><div class="cb-core-integrity-history-tags">';

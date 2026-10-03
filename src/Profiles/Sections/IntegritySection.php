@@ -37,7 +37,9 @@ final class IntegritySection extends ExactSection {
 		SchemaGuard::exact_keys( $incoming, [ 'schedule', 'plugin_checksums', 'theme_checksums', 'uploads_scan', 'max_visible_findings', 'email_alerts' ], 'Core Scanner' );
 		$schedule = SchemaGuard::string( $incoming['schedule'] ?? null, 'Core Scanner schedule' );
 		if ( ! in_array( $schedule, [ 'disabled', 'daily', 'weekly' ], true ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The profile contains an invalid Core Scanner schedule.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$alerts = SchemaGuard::object( $incoming['email_alerts'] ?? null, 'Core Scanner email alerts' );
 		SchemaGuard::exact_keys( $alerts, [ 'critical_anomaly', 'warning_anomaly', 'resolved' ], 'Core Scanner email alerts' );

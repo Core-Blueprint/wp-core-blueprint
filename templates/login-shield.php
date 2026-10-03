@@ -44,30 +44,39 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 
 	<?php
 	if ( ! $shield_on ) {
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'title'   => __( 'Core Shield is off.', 'core-blueprint' ),
 			'message' => __( 'Login Shield stands down while the global Core Shield master switch is disabled. Your settings here are saved but not enforced.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	} elseif ( $bypassed ) {
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 			'title'   => __( 'Failsafe bypass is active.', 'core-blueprint' ),
 			'message' => __( 'While the bypass window is open, Login Shield does not enforce - this is the lockout-recovery guarantee. Enforcement resumes automatically when the bypass ends.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	} elseif ( ! empty( $config['enabled'] ) && '' === $config['slug'] ) {
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 			'title'   => __( 'Login Shield is enabled but no custom URL is set.', 'core-blueprint' ),
 			'message' => __( 'Choose a custom URL below and save to activate.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	} elseif ( empty( $config['enabled'] ) && '' !== $config['slug'] ) {
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'title'   => __( 'Login Shield is disabled.', 'core-blueprint' ),
 			'message' => __( 'Your settings are saved but not enforced. Enable Login Shield from the Core Blueprint Dashboard when you are ready to apply them.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	} elseif ( $enforcing ) {
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::SUCCESS,
 			'title'   => __( 'Login Shield is active.', 'core-blueprint' ),
@@ -77,6 +86,7 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 				$custom_url
 			),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 	?>
 
@@ -131,18 +141,21 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 					?>
 				</p>
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output
 			echo \CoreBlueprint\Core\UI\Field::render( [
 				'variant'   => 'separated',
 				'label'     => __( 'Custom login URL', 'core-blueprint' ),
 				'label_sub' => __( 'Letters, numbers, and hyphens only. Pick something memorable to you but not guessable - avoid obvious choices like "login" or "admin".', 'core-blueprint' ),
 				'label_for' => 'cb-core-ls-slug',
 				'control'   => ob_get_clean(),
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 
 			<!-- 2. Protection mode -->
 
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output
 			echo \CoreBlueprint\Core\UI\Field::render( [
 				'variant' => 'separated',
 				'label'   => __( 'Protection mode', 'core-blueprint' ),
@@ -164,7 +177,8 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 						],
 					],
 				] ),
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 
 			<!-- 3. Redirect after login -->
@@ -195,25 +209,30 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 						autocomplete="off" />
 				</div>
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output
 			echo \CoreBlueprint\Core\UI\Field::render( [
 				'variant'   => 'separated',
 				'label'     => __( 'Redirect after login', 'core-blueprint' ),
 				'label_sub' => __( 'Fallback destination - used only when no other rule claims the target. Form-level redirects always win: if a Bricks, BricksForge, Elementor, or standard WP login form sends a redirect_to value, that is honoured. Plugin-level role redirects also win: WooCommerce routing customers to My Account, membership plugins routing members to their dashboard, LMS plugins routing students to their course overview - all take precedence over this setting.', 'core-blueprint' ),
 				'label_for' => 'cb-core-ls-redirect',
 				'control'   => ob_get_clean(),
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 
 			<!-- 4. Advanced - response code -->
 
 			<details class="cb-core-disclosure cb-core-disclosure--compact cb-core-ls-advanced">
 				<summary class="cb-core-disclosure__summary">
-					<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+					<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output ?>
+					<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?>
+					<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<span class="cb-core-disclosure__title"><?php esc_html_e( 'Advanced', 'core-blueprint' ); ?></span>
 				</summary>
 				<div class="cb-core-disclosure__body">
 
 				<?php
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Field escapes its text fields; RadioGroup owns context-specific escaping for the complete raw control slot.
 				echo \CoreBlueprint\Core\UI\Field::render( [
 					'variant'   => 'separated',
 					'label'     => __( 'Block response', 'core-blueprint' ),
@@ -239,7 +258,8 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 							],
 						],
 					] ),
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 				</div>
 			</details>
@@ -256,7 +276,9 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 					<?php esc_html_e( 'Test custom URL', 'core-blueprint' ); ?>
 				</button>
 
-				<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-ls-save-status' => '' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+				<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output ?>
+				<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-ls-save-status' => '' ] ] ); ?>
+				<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
 
 		</form>
@@ -266,7 +288,9 @@ $ls_response_code = (int) ( $config['block_response_code'] ?? 404 );
 
 	<details class="cb-core-disclosure cb-core-disclosure--compact cb-core-disclosure--subtle cb-core-ls-notes">
 		<summary class="cb-core-disclosure__summary">
-			<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+			<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output ?>
+			<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?>
+			<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			<span class="cb-core-disclosure__title"><?php esc_html_e( 'What Login Shield does not do', 'core-blueprint' ); ?></span>
 		</summary>
 		<div class="cb-core-disclosure__body">

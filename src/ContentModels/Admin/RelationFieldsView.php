@@ -26,6 +26,7 @@ trait RelationFieldsView {
 		<div class="<?php echo esc_attr( $classes ); ?>" data-cb-cm-relation-settings <?php echo $is_relation ? '' : 'hidden'; ?>>
 			<div class="cb-content-models-relation-card">
 				<strong><?php esc_html_e( 'Cardinality', 'core-blueprint' ); ?></strong>
+				<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output. ?>
 				<?php echo ChoiceGroup::render( [
 					'type'       => ChoiceGroup::TYPE_RADIO,
 					'compact'    => $quick,
@@ -34,39 +35,46 @@ trait RelationFieldsView {
 						[ 'name' => 'relation_multiple', 'value' => '0', 'label' => __( 'Single selection', 'core-blueprint' ), 'checked' => empty( $field['relation_multiple'] ) ],
 						[ 'name' => 'relation_multiple', 'value' => '1', 'label' => __( 'Multiple selection', 'core-blueprint' ), 'checked' => ! empty( $field['relation_multiple'] ) ],
 					],
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output. ?>
+				] ); ?>
+				<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
 
 			<div class="cb-content-models-relation-card" data-cb-cm-relation-target="post_relation" <?php echo 'post_relation' === $type ? '' : 'hidden'; ?>>
 				<strong><?php esc_html_e( 'Allowed post types', 'core-blueprint' ); ?></strong>
+				<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output. ?>
 				<?php echo ChoiceGroup::render( [
 					'compact'    => $quick,
 					'scrollable' => true,
 					'aria_label' => __( 'Allowed post types', 'core-blueprint' ),
 					'options'    => $this->relation_post_type_choices( (array) ( $field['relation_post_types'] ?? [] ) ),
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output. ?>
+				] ); ?>
+				<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<p class="description"><?php esc_html_e( 'Search results are restricted to these WordPress post types. Values are stored as post IDs.', 'core-blueprint' ); ?></p>
 			</div>
 
 			<div class="cb-content-models-relation-card" data-cb-cm-relation-target="user_relation" <?php echo 'user_relation' === $type ? '' : 'hidden'; ?>>
 				<strong><?php esc_html_e( 'Allowed user roles', 'core-blueprint' ); ?></strong>
+				<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output. ?>
 				<?php echo ChoiceGroup::render( [
 					'compact'    => $quick,
 					'scrollable' => true,
 					'aria_label' => __( 'Allowed user roles', 'core-blueprint' ),
 					'options'    => $this->relation_role_choices( (array) ( $field['relation_roles'] ?? [] ) ),
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output. ?>
+				] ); ?>
+				<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<p class="description"><?php esc_html_e( 'Leave all roles unchecked to allow any WordPress user. Values are stored as user IDs.', 'core-blueprint' ); ?></p>
 			</div>
 
 			<div class="cb-content-models-relation-card" data-cb-cm-relation-target="term_relation" <?php echo 'term_relation' === $type ? '' : 'hidden'; ?>>
 				<strong><?php esc_html_e( 'Allowed taxonomies', 'core-blueprint' ); ?></strong>
+				<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output. ?>
 				<?php echo ChoiceGroup::render( [
 					'compact'    => $quick,
 					'scrollable' => true,
 					'aria_label' => __( 'Allowed taxonomies', 'core-blueprint' ),
 					'options'    => $this->relation_taxonomy_choices( (array) ( $field['relation_taxonomies'] ?? [] ) ),
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output. ?>
+				] ); ?>
+				<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<p class="description"><?php esc_html_e( 'Search results are restricted to these taxonomies. Values are stored as term IDs.', 'core-blueprint' ); ?></p>
 			</div>
 		</div>

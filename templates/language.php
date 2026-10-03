@@ -52,7 +52,9 @@ $can_manage_site = current_user_can( 'manage_options' );
 			</div>
 		<?php endif; ?>
 
-		<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'block' => true, 'class' => 'cb-core-lang-status' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+		<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output ?>
+		<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'block' => true, 'class' => 'cb-core-lang-status' ] ); ?>
+		<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	</div>
 
 	<!-- ─── Locale ─── -->
@@ -82,6 +84,7 @@ $can_manage_site = current_user_can( 'manage_options' );
 					<?php endforeach; ?>
 			</select>
 		<?php
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output
 		echo \CoreBlueprint\Core\UI\Field::render( [
 			'label'     => __( 'Language', 'core-blueprint' ),
 			'label_for' => 'cb-core-locale-select',
@@ -92,7 +95,8 @@ $can_manage_site = current_user_can( 'manage_options' );
 				\CoreBlueprint\Core\Locale::label( $current ),
 				\CoreBlueprint\Core\Locale::label( $site_default )
 			),
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 
 		<div class="cb-core-pref-reset cb-core-preferences-reset">
@@ -146,6 +150,7 @@ $can_manage_site = current_user_can( 'manage_options' );
 				$selected_site = ( ! $opt['user_only'] && $key === $desc_site );
 			?>
 				<?php
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo \CoreBlueprint\Core\UI\RadioCard::render( [
 					'variant'       => 'checkable',
 					'name'          => 'cb-core-desc-mode',
@@ -159,7 +164,8 @@ $can_manage_site = current_user_can( 'manage_options' );
 						'data-mode'      => $key,
 						'data-user-only' => $opt['user_only'] ? '1' : '0',
 					],
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			<?php endforeach; ?>
 		</div>

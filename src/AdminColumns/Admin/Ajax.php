@@ -61,7 +61,9 @@ final class Ajax {
 	private static function assert_sources_allowed( string $screen_id, array $incoming ): void {
 		$post_type = SupportedScreen::post_type_from_screen_id( $screen_id );
 		if ( null === $post_type ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Unsupported Admin Columns screen.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$current = PolicyRepository::screen( $screen_id ) ?? [ 'taxonomies' => [], 'meta' => [] ];
 
@@ -71,7 +73,9 @@ final class Ajax {
 		);
 		foreach ( $incoming['taxonomies'] as $taxonomy ) {
 			if ( ! isset( $allowed_taxonomies[ $taxonomy ] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The selected taxonomy column is not available for this post type.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 
@@ -81,7 +85,9 @@ final class Ajax {
 		);
 		foreach ( $incoming['meta'] as $meta_key ) {
 			if ( ! isset( $allowed_meta[ $meta_key ] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The selected meta column is not a registered scalar field for this post type.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 	}

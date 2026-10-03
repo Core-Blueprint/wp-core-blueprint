@@ -230,7 +230,9 @@ final class Policy {
 
 	private static function object( mixed $value, string $name ): array {
 		if ( ! is_array( $value ) || array_is_list( $value ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( sprintf( 'Admin Navigation %s must be an object.', $name ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $value;
 	}
@@ -241,7 +243,9 @@ final class Policy {
 		sort( $actual, SORT_STRING );
 		sort( $expected, SORT_STRING );
 		if ( $actual !== $expected ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( sprintf( 'Admin Navigation %s has an invalid schema.', $name ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 

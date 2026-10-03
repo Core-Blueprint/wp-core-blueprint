@@ -10,7 +10,9 @@ final class CanonicalJson {
 		$normalized = self::sort_recursive( $value );
 		$json = wp_json_encode( $normalized, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | $flags );
 		if ( ! is_string( $json ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Blueprint could not encode the profile document.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $json;
 	}

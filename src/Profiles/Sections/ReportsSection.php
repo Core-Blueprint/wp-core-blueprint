@@ -83,7 +83,9 @@ final class ReportsSection extends ExactSection {
 		$reports['branding']['accent_color'] = $incoming['branding']['accent_color'];
 		$reports['composer']['maintenance'] = $incoming['composer']['maintenance'];
 		if ( ! Settings::set_key( 'reports', $reports, $actor ) && $this->export() !== $incoming ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Could not apply the Reports profile policy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 

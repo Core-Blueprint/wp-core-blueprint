@@ -41,7 +41,9 @@ final class PermissionsSection extends ExactSection {
 		SchemaGuard::exact_keys( $incoming, [ 'hide_from_admins', 'privileged_access_mode', 'admin_capabilities', 'email_alerts' ], 'Permissions' );
 		$mode = SchemaGuard::string( $incoming['privileged_access_mode'] ?? null, 'Privileged Access Protection mode' );
 		if ( ! PrivilegedAccessPolicy::is_valid_mode( $mode ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The profile contains an invalid Privileged Access Protection mode.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$admin_caps = SchemaGuard::object( $incoming['admin_capabilities'] ?? null, 'Permissions administrator capabilities' );
 		SchemaGuard::exact_keys( $admin_caps, [ 'reports_generate_maintenance', 'integrity_run' ], 'Permissions administrator capabilities' );
@@ -88,7 +90,9 @@ final class PermissionsSection extends ExactSection {
 			|| $verified['privileged_access_mode'] !== $incoming['privileged_access_mode']
 			|| $verified['email_alerts'] !== $incoming['email_alerts']
 		) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Could not apply the Permissions profile policy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$reports = is_array( Settings::get()['reports'] ?? null ) ? Settings::get()['reports'] : [];
@@ -96,14 +100,18 @@ final class PermissionsSection extends ExactSection {
 		$reports['admin_can_generate']['maintenance'] = $incoming['admin_capabilities']['reports_generate_maintenance'];
 		Settings::set_key( 'reports', $reports, $actor );
 		if ( $this->export()['admin_capabilities']['reports_generate_maintenance'] !== $incoming['admin_capabilities']['reports_generate_maintenance'] ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Could not apply the Permissions profile policy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$integrity = is_array( Settings::get()['integrity'] ?? null ) ? Settings::get()['integrity'] : [];
 		$integrity['admin_can_run'] = $incoming['admin_capabilities']['integrity_run'];
 		Settings::set_key( 'integrity', $integrity, $actor );
 		if ( $this->export()['admin_capabilities']['integrity_run'] !== $incoming['admin_capabilities']['integrity_run'] ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Could not apply the Permissions profile policy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 }

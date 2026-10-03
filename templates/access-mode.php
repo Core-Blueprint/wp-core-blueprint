@@ -91,7 +91,8 @@ $mode_options = [
 				<div class="cb-core-field cb-core-stack">
 					<label class="cb-core-field__label" for="cb-core-coming-soon-page"><?php esc_html_e( 'Coming Soon page', 'core-blueprint' ); ?></label>
 					<?php
-					echo \CoreBlueprint\Core\UI\ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output.
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+					echo \CoreBlueprint\Core\UI\ObjectPicker::render( [
 						'name'          => 'coming_soon_page_id',
 						'id'            => 'cb-core-coming-soon-page',
 						'action'        => 'cb_core_access_mode_search_pages',
@@ -100,6 +101,7 @@ $mode_options = [
 						'placeholder'   => __( 'Search published pages…', 'core-blueprint' ),
 						'empty_message' => __( 'No published pages found.', 'core-blueprint' ),
 					] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 					<p class="description"><?php esc_html_e( 'This page remains available with HTTP 200. Other anonymous front-end URLs redirect here with HTTP 302.', 'core-blueprint' ); ?></p>
 				</div>
@@ -107,7 +109,8 @@ $mode_options = [
 				<div class="cb-core-field cb-core-stack">
 					<span class="cb-core-field__label"><?php esc_html_e( 'Search visibility', 'core-blueprint' ); ?></span>
 					<?php
-					echo \CoreBlueprint\Core\UI\ChoiceGroup::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output.
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+					echo \CoreBlueprint\Core\UI\ChoiceGroup::render( [
 						'type'       => \CoreBlueprint\Core\UI\ChoiceGroup::TYPE_RADIO,
 						'aria_label' => __( 'Coming Soon search visibility', 'core-blueprint' ),
 						'options'    => [
@@ -125,6 +128,7 @@ $mode_options = [
 							],
 						],
 					] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 					<p class="description"><?php esc_html_e( 'When hidden from search, Core Blueprint sends X-Robots-Tag: noindex, follow on the landing page. It does not block crawlers in robots.txt.', 'core-blueprint' ); ?></p>
 				</div>
@@ -137,7 +141,8 @@ $mode_options = [
 				<div class="cb-core-field cb-core-stack">
 					<label class="cb-core-field__label" for="cb-core-maintenance-page"><?php esc_html_e( 'Maintenance page', 'core-blueprint' ); ?></label>
 					<?php
-					echo \CoreBlueprint\Core\UI\ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output.
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+					echo \CoreBlueprint\Core\UI\ObjectPicker::render( [
 						'name'          => 'maintenance_page_id',
 						'id'            => 'cb-core-maintenance-page',
 						'action'        => 'cb_core_access_mode_search_pages',
@@ -146,6 +151,7 @@ $mode_options = [
 						'placeholder'   => __( 'Search published pages…', 'core-blueprint' ),
 						'empty_message' => __( 'No published pages found.', 'core-blueprint' ),
 					] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 					<p class="description"><?php esc_html_e( 'The selected page is rendered through WordPress at every public URL while the original URL returns HTTP 503 Service Unavailable.', 'core-blueprint' ); ?></p>
 				</div>
@@ -170,7 +176,8 @@ $mode_options = [
 
 		<div class="cb-core-access-notice" data-cb-core-access-notice="<?php echo esc_attr( \CoreBlueprint\Core\Security\AccessMode::MODE_ADMIN_ONLY ); ?>"<?php echo \CoreBlueprint\Core\Security\AccessMode::MODE_ADMIN_ONLY === $current ? '' : ' hidden'; ?>>
 			<?php
-			echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+			echo \CoreBlueprint\Core\UI\Notice::render( [
 				'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 				'title'   => __( 'Before enabling Admin-Only Mode:', 'core-blueprint' ),
 				'items'   => [
@@ -179,12 +186,14 @@ $mode_options = [
 					__( 'Search engines receive 403 on public URLs and may remove those URLs from their index.', 'core-blueprint' ),
 				],
 			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		</div>
 
 		<div class="cb-core-access-notice" data-cb-core-access-notice="<?php echo esc_attr( \CoreBlueprint\Core\Security\AccessMode::MODE_MAINTENANCE ); ?>"<?php echo \CoreBlueprint\Core\Security\AccessMode::MODE_MAINTENANCE === $current ? '' : ' hidden'; ?>>
 			<?php
-			echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+			echo \CoreBlueprint\Core\UI\Notice::render( [
 				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'title'   => __( 'Maintenance keeps temporary downtime machine-readable.', 'core-blueprint' ),
 				'items'   => [
@@ -193,6 +202,7 @@ $mode_options = [
 					__( 'WordPress admin, login, REST, AJAX, cron, WP-CLI and registered machine/webhook bypasses remain reachable.', 'core-blueprint' ),
 				],
 			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		</div>
 

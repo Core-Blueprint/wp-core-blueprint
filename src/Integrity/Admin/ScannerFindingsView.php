@@ -178,7 +178,7 @@ trait ScannerFindingsView {
 					<p class="cb-core-integrity-muted"><?php echo esc_html( $baseline_only ? __( 'Review every local-baseline candidate before trusting its current file state. Approval changes what future scans consider expected.', 'core-blueprint' ) : __( 'Review anomalies, narrow the investigation, and isolate actionable uploads without losing context.', 'core-blueprint' ) ); ?></p>
 				</div>
 				<div class="cb-core-integrity-findings-head-actions">
-					<?php echo StateBadge::render( $findings_count_label, [ 'variant' => $total > 0 ? StateBadge::WARNING : StateBadge::SUCCESS ] ); ?>
+					<?php echo StateBadge::render( $findings_count_label, [ 'variant' => $total > 0 ? StateBadge::WARNING : StateBadge::SUCCESS ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 					<?php if ( $baseline_only && $baseline_candidates > 0 ) : ?>
 						<span class="cb-core-integrity-review-progress"><?php echo esc_html( $review_progress_label ); ?></span>
 					<?php endif; ?>
@@ -217,7 +217,7 @@ trait ScannerFindingsView {
 
 		<details class="cb-core-integrity-verified-panel cb-core-disclosure cb-core-disclosure--section">
 			<summary class="cb-core-disclosure__summary" aria-controls="cb-core-integrity-passed">
-				<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?>
+				<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 				<h2 class="cb-core-disclosure__title"><?php echo esc_html__( 'Verified / Passed Checks', 'core-blueprint' ); ?></h2>
 				<span class="cb-core-disclosure__meta cb-core-integrity-group-count" aria-label="<?php echo esc_attr( $passed_count_label ); ?>"><?php echo esc_html( (string) $passed_count ); ?></span>
 			</summary>

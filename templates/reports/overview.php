@@ -135,7 +135,9 @@ defined( 'ABSPATH' ) || exit;
 						<td><?php echo esc_html( $user_label ); ?></td>
 						<td>
 							<?php
-							echo \CoreBlueprint\Core\UI\Status::render( $status_variant, $status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Status::render() returns escape-clean HTML.
+							// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+							echo \CoreBlueprint\Core\UI\Status::render( $status_variant, $status );
+							// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 							?>
 						</td>
 						<td>

@@ -194,6 +194,7 @@ final class AdminIntegration {
 				<h2 class="cb-core-section-title"><?php esc_html_e( 'Archive policy', 'core-blueprint' ); ?></h2>
 				<?php
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice escapes supplied content.
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo Notice::render( [
 					'variant' => Notice::INFO,
 					'title'   => __( 'Safe temporary archives', 'core-blueprint' ),
@@ -202,6 +203,7 @@ final class AdminIntegration {
 						__( 'Directory packages keep their existing root folder. Single-file plugins are wrapped in a matching root folder inside the archive so the ZIP remains installable.', 'core-blueprint' ),
 					],
 				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			</section>
 		</div>
@@ -211,7 +213,9 @@ final class AdminIntegration {
 	/** @return array{0:string,1:string} */
 	private static function build_plugin_archive( ArchiveService $service, string $plugin_file ): array {
 		if ( ! self::plugin_exists( $plugin_file ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The requested plugin is not installed.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$dirname = dirname( $plugin_file );
@@ -230,7 +234,9 @@ final class AdminIntegration {
 	private static function build_theme_archive( ArchiveService $service, string $stylesheet ): array {
 		$themes = wp_get_themes( [ 'allowed' => true ] );
 		if ( ! isset( $themes[ $stylesheet ] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The requested theme is not installed or is not available to this site.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$root   = get_theme_root( $stylesheet );

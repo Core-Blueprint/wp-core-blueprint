@@ -48,7 +48,9 @@ final class MutationLock {
 			}
 		}
 
+		// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 		throw new RuntimeException( __( 'Another quarantine action is already running for this item. Try again after it finishes.', 'core-blueprint' ) );
+		// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 	}
 
 	public static function release( string $id, string $token ): void {
@@ -62,7 +64,9 @@ final class MutationLock {
 
 	private static function validate_id( string $id ): string {
 		if ( 1 !== preg_match( '/^q_[a-f0-9]{16}$/', $id ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Invalid quarantine item identifier.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $id;
 	}

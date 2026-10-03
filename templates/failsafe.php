@@ -31,7 +31,8 @@ $admin_email = get_option( 'admin_email', '' );
 		if ( $layers['option'] )    { $parts[] = __( 'Layer 2 (emergency option)', 'core-blueprint' ); }
 		if ( $layers['transient'] ) { $parts[] = __( 'Layer 3 (60-minute window)', 'core-blueprint' ); }
 
-		echo \CoreBlueprint\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+		echo \CoreBlueprint\Core\UI\Notice::render(
 			[
 				'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 				'title'   => __( 'Emergency bypass is currently active.', 'core-blueprint' ),
@@ -39,6 +40,7 @@ $admin_email = get_option( 'admin_email', '' );
 				'items'   => $parts,
 			]
 		);
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 	<?php endif; ?>
 
@@ -72,10 +74,12 @@ $admin_email = get_option( 'admin_email', '' );
 					</td>
 					<td>
 						<?php
-						echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+						echo \CoreBlueprint\Core\UI\StateBadge::render(
 							$layers['constant'] ? __( 'ACTIVE', 'core-blueprint' ) : __( 'Inactive', 'core-blueprint' ),
 							[ 'variant' => $layers['constant'] ? \CoreBlueprint\Core\UI\StateBadge::WARNING : \CoreBlueprint\Core\UI\StateBadge::NEUTRAL ]
 						);
+						// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 						?>
 					</td>
 				</tr>
@@ -90,10 +94,12 @@ $admin_email = get_option( 'admin_email', '' );
 					</td>
 					<td>
 						<?php
-						echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+						echo \CoreBlueprint\Core\UI\StateBadge::render(
 							$layers['option'] ? __( 'ACTIVE', 'core-blueprint' ) : __( 'Inactive', 'core-blueprint' ),
 							[ 'variant' => $layers['option'] ? \CoreBlueprint\Core\UI\StateBadge::WARNING : \CoreBlueprint\Core\UI\StateBadge::NEUTRAL ]
 						);
+						// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 						?>
 					</td>
 				</tr>
@@ -117,7 +123,9 @@ $admin_email = get_option( 'admin_email', '' );
 							$layer3_label   = __( 'No token', 'core-blueprint' );
 							$layer3_variant = \CoreBlueprint\Core\UI\StateBadge::DANGER;
 						}
-						echo \CoreBlueprint\Core\UI\StateBadge::render( $layer3_label, [ 'variant' => $layer3_variant ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+						echo \CoreBlueprint\Core\UI\StateBadge::render( $layer3_label, [ 'variant' => $layer3_variant ] );
+						// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 						?>
 					</td>
 				</tr>
@@ -130,7 +138,9 @@ $admin_email = get_option( 'admin_email', '' );
 						</span>
 					</td>
 					<td>
-						<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Available', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::INFO ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML. ?>
+						<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- StateBadge::render() returns escape-clean HTML. ?>
+						<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Available', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::INFO ] ); ?>
+						<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					</td>
 				</tr>
 			</tbody>
@@ -157,10 +167,12 @@ $admin_email = get_option( 'admin_email', '' );
 						<td><strong><?php echo esc_html( $check ); ?></strong></td>
 						<td>
 							<?php
-							echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+							// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+							echo \CoreBlueprint\Core\UI\StateBadge::render(
 								$result['ok'] ? __( 'PASS', 'core-blueprint' ) : __( 'FAIL', 'core-blueprint' ),
 								[ 'variant' => $result['ok'] ? \CoreBlueprint\Core\UI\StateBadge::SUCCESS : \CoreBlueprint\Core\UI\StateBadge::ERROR ]
 							);
+							// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 							?>
 						</td>
 						<td><?php echo esc_html( $result['message'] ); ?></td>
@@ -177,7 +189,9 @@ $admin_email = get_option( 'admin_email', '' );
 
 		<?php if ( $has_token ) : ?>
 			<div class="cb-core-failsafe-setting-state">
-				<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Armed', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::SUCCESS ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML. ?>
+				<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- StateBadge::render() returns escape-clean HTML. ?>
+				<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Armed', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::SUCCESS ] ); ?>
+				<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<p class="description">
 					<?php esc_html_e( 'A bypass token is currently armed. The plaintext URL is never stored - only a hash. If you have lost your copy, rotate the token to generate a new one.', 'core-blueprint' ); ?>
 				</p>
@@ -190,13 +204,15 @@ $admin_email = get_option( 'admin_email', '' );
 			</div>
 		<?php else : ?>
 			<?php
-			echo \CoreBlueprint\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+			echo \CoreBlueprint\Core\UI\Notice::render(
 				[
 					'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 					'title'   => __( 'No bypass token is currently armed.', 'core-blueprint' ),
 					'message' => __( 'Generate one now and store it in your password manager. Without a token, Layer 3 of the failsafe cannot protect you.', 'core-blueprint' ),
 				]
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 			<div class="cb-core-failsafe-action-stack">
 				<button type="button" class="button cb-core-button cb-core-button--primary cb-core-rotate-token">
@@ -213,13 +229,15 @@ $admin_email = get_option( 'admin_email', '' );
 
 		<?php if ( $layers['option'] ) : ?>
 			<?php
-			echo \CoreBlueprint\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+			echo \CoreBlueprint\Core\UI\Notice::render(
 				[
 					'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 					'title'   => __( 'Emergency bypass is active.', 'core-blueprint' ),
 					'message' => __( 'The emergency bypass (Layer 2) is currently active. Restrictive features are disabled.', 'core-blueprint' ),
 				]
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 			<div class="cb-core-failsafe-action-stack">
 				<button type="button" class="button cb-core-button cb-core-button--primary cb-core-panic-deactivate">
@@ -241,13 +259,15 @@ $admin_email = get_option( 'admin_email', '' );
 		<?php if ( $layers['transient'] ) : ?>
 			<div class="cb-core-failsafe-window-control">
 				<?php
-				echo \CoreBlueprint\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+				echo \CoreBlueprint\Core\UI\Notice::render(
 					[
 						'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 						'title'   => __( 'A 60-minute bypass window (Layer 3) is currently open.', 'core-blueprint' ),
 						'message' => __( 'Close it immediately to resume enforcement before the window expires naturally.', 'core-blueprint' ),
 					]
 				);
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 				<button type="button" class="button cb-core-button cb-core-button--remediation cb-core-close-window">
 					<?php esc_html_e( 'Close bypass window now', 'core-blueprint' ); ?>

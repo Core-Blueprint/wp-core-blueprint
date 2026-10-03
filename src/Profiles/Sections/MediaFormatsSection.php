@@ -26,7 +26,9 @@ final class MediaFormatsSection extends ExactSection {
 		SchemaGuard::exact_keys( $incoming, $allowed, 'Media Formats' );
 		$output = SchemaGuard::string( $incoming['output_format'] ?? null, 'Media Formats output format' );
 		if ( ! in_array( $output, [ 'original', 'webp', 'avif' ], true ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The profile contains an invalid generated image format.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return [
 			'svg_uploads'   => SchemaGuard::bool( $incoming['svg_uploads'] ?? null, 'Media Formats SVG uploads' ),
@@ -43,7 +45,9 @@ final class MediaFormatsSection extends ExactSection {
 		if ( ! Settings::save( $incoming, $actor ) ) {
 			$current = $this->export();
 			if ( $current !== $incoming ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( __( 'Could not apply the Media Formats profile settings.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 	}

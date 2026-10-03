@@ -16,18 +16,24 @@ final class Serializer {
 		} catch ( \JsonException $exception ) {
 			$diagnostics = new Diagnostics();
 			$diagnostics->error( 'json.invalid', 'Design JSON could not be decoded.', 'design' );
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ValidationException( $diagnostics );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( ! is_array( $payload ) || array_is_list( $payload ) ) {
 			$diagnostics = new Diagnostics();
 			$diagnostics->error( 'schema.invalid_envelope', 'Design JSON must decode to an object.', 'design' );
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ValidationException( $diagnostics );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$diagnostics = $this->validator->validate( $payload, $allow_experimental );
 		if ( $diagnostics->has_errors() ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ValidationException( $diagnostics );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		return new DesignProject(
@@ -42,7 +48,9 @@ final class Serializer {
 		$allow_experimental = 0 === $project->schema_version();
 		$diagnostics = $this->validator->validate( $payload, $allow_experimental );
 		if ( $diagnostics->has_errors() ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ValidationException( $diagnostics );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$payload['root'] = $this->normalize_node_for_json( $payload['root'] );

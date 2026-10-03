@@ -113,21 +113,21 @@ trait ScannerGroupedFindingsView {
 					?>
 					<details class="cb-core-integrity-component-result cb-core-integrity-component-result-<?php echo esc_attr( $severity ); ?> cb-core-interactive-surface cb-core-interactive-row cb-core-interactive-row--<?php echo esc_attr( $severity ); ?>">
 						<summary class="cb-core-interactive-row__summary">
-							<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-interactive-row__icon' ] ); ?>
+							<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-interactive-row__icon' ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 							<span class="cb-core-integrity-component-title"><?php echo esc_html( $slug ); ?></span>
-							<?php echo StateBadge::render( str_replace( '_', ' ', $status ), [ 'variant' => self::state_badge_variant( $status ) ] ); ?>
+							<?php echo StateBadge::render( str_replace( '_', ' ', $status ), [ 'variant' => self::state_badge_variant( $status ) ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 							<span class="cb-core-integrity-muted"><?php echo esc_html( $count_label ); ?></span>
 							<?php if ( is_array( $directory_recommendation ) ) : ?>
-								<button type="button" class="button cb-core-button cb-core-button--remediation cb-core-integrity-summary-action cb-core-integrity-quarantine-primary" data-cb-integrity-action="quarantine-finding" data-cb-integrity-finding-id="<?php echo esc_attr( (string) ( $directory_recommendation['id'] ?? '' ) ); ?>" data-cb-integrity-scope="directory"><?php echo Icon::render( 'quarantine', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Quarantine folder', 'core-blueprint' ); ?></span></button>
+								<button type="button" class="button cb-core-button cb-core-button--remediation cb-core-integrity-summary-action cb-core-integrity-quarantine-primary" data-cb-integrity-action="quarantine-finding" data-cb-integrity-finding-id="<?php echo esc_attr( (string) ( $directory_recommendation['id'] ?? '' ) ); ?>" data-cb-integrity-scope="directory"><?php echo Icon::render( 'quarantine', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Quarantine folder', 'core-blueprint' ); ?></span></button> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 							<?php endif; ?>
 							<?php if ( self::can_manage_policy() && $can_approve && '' !== $type && '' !== $base_slug && '' !== $candidate_id ) : ?>
 								<?php if ( $candidate_reviewed ) : ?>
-									<?php echo StateBadge::render( __( 'Reviewed', 'core-blueprint' ), [ 'variant' => StateBadge::SUCCESS, 'class' => 'cb-core-integrity-reviewed-pill' ] ); ?>
+									<?php echo StateBadge::render( __( 'Reviewed', 'core-blueprint' ), [ 'variant' => StateBadge::SUCCESS, 'class' => 'cb-core-integrity-reviewed-pill' ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 									<button type="button" class="button cb-core-button cb-core-button--primary cb-core-button--compact cb-core-integrity-summary-action" data-cb-integrity-action="approve-component-baseline" data-cb-integrity-type="<?php echo esc_attr( $type ); ?>" data-cb-integrity-slug="<?php echo esc_attr( $base_slug ); ?>" data-cb-integrity-baseline-exists="<?php echo $baseline_exists ? '1' : '0'; ?>">
 										<?php echo esc_html( $baseline_label ); ?>
 									</button>
 								<?php else : ?>
-									<button type="button" class="button cb-core-button cb-core-button--secondary cb-core-button--compact cb-core-integrity-summary-action cb-core-integrity-review-action" data-cb-integrity-action="open-baseline-review"><?php echo Icon::render( 'review', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Review', 'core-blueprint' ); ?></span></button>
+									<button type="button" class="button cb-core-button cb-core-button--secondary cb-core-button--compact cb-core-integrity-summary-action cb-core-integrity-review-action" data-cb-integrity-action="open-baseline-review"><?php echo Icon::render( 'review', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Review', 'core-blueprint' ); ?></span></button> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 								<?php endif; ?>
 							<?php endif; ?>
 							<?php if ( self::can_manage_policy() && 'missing' === $status && $baseline_exists && '' !== $type && '' !== $base_slug ) : ?>
@@ -220,15 +220,15 @@ trait ScannerGroupedFindingsView {
 										</div>
 									<?php elseif ( ! $passed && self::can_manage_policy() && QuarantineService::can_quarantine_finding( $finding ) ) : ?>
 										<div class="cb-core-integrity-remediation-actions">
-											<button type="button" class="button cb-core-button cb-core-button--remediation cb-core-button--compact cb-core-integrity-quarantine-file" data-cb-integrity-action="quarantine-finding" data-cb-integrity-finding-id="<?php echo esc_attr( $finding_id ); ?>" data-cb-integrity-scope="file"><?php echo Icon::render( 'quarantine', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Quarantine file', 'core-blueprint' ); ?></span></button>
+											<button type="button" class="button cb-core-button cb-core-button--remediation cb-core-button--compact cb-core-integrity-quarantine-file" data-cb-integrity-action="quarantine-finding" data-cb-integrity-finding-id="<?php echo esc_attr( $finding_id ); ?>" data-cb-integrity-scope="file"><?php echo Icon::render( 'quarantine', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Quarantine file', 'core-blueprint' ); ?></span></button> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 											<?php if ( null === $directory_recommendation && QuarantineService::directory_action_available( $finding ) ) : ?>
-												<button type="button" class="button cb-core-button cb-core-button--remediation cb-core-integrity-quarantine-primary" data-cb-integrity-action="quarantine-finding" data-cb-integrity-finding-id="<?php echo esc_attr( $finding_id ); ?>" data-cb-integrity-scope="directory"><?php echo Icon::render( 'quarantine', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Quarantine folder', 'core-blueprint' ); ?></span></button>
+												<button type="button" class="button cb-core-button cb-core-button--remediation cb-core-integrity-quarantine-primary" data-cb-integrity-action="quarantine-finding" data-cb-integrity-finding-id="<?php echo esc_attr( $finding_id ); ?>" data-cb-integrity-scope="directory"><?php echo Icon::render( 'quarantine', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-button__icon' ] ); ?><span class="cb-core-button__label"><?php echo esc_html__( 'Quarantine folder', 'core-blueprint' ); ?></span></button> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 											<?php endif; ?>
 										</div>
 									<?php endif; ?>
 									<details class="cb-core-disclosure cb-core-disclosure--compact cb-core-integrity-finding-technical">
 										<summary class="cb-core-disclosure__summary">
-											<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?>
+											<?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 											<span class="cb-core-disclosure__title"><?php echo esc_html__( 'Technical details', 'core-blueprint' ); ?></span>
 										</summary>
 										<div class="cb-core-disclosure__body">

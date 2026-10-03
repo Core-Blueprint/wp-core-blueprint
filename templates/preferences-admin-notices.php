@@ -72,10 +72,12 @@ $kind_labels = [
 
 	<?php if ( '' !== $notice_message ) : ?>
 		<?php
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => $notice_variant,
 			'message' => $notice_message,
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 	<?php endif; ?>
 
@@ -99,10 +101,12 @@ $kind_labels = [
 	</div>
 
 	<?php
+	// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 	echo \CoreBlueprint\Core\UI\Notice::render( [
 		'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 		'message' => __( 'Core Blueprint operators and delegated Admin Notices managers always see governed notices. Protected and unattributable sources always remain visible.', 'core-blueprint' ),
-	] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
+	] );
+	// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	?>
 
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-cb-admin-notices-form>
@@ -117,6 +121,7 @@ $kind_labels = [
 
 		<?php if ( [] === $sources ) : ?>
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Card renderer escapes structured content.
 			echo \CoreBlueprint\Core\UI\Card::render( [
 				'title' => __( 'Notice sources', 'core-blueprint' ),
 				'body'  => '',
@@ -124,7 +129,8 @@ $kind_labels = [
 					'title'       => __( 'No notice sources observed yet', 'core-blueprint' ),
 					'description' => __( 'Open normal WordPress admin screens and return here. Core Blueprint records only source metadata from supported notice hooks, never the notice message or action data.', 'core-blueprint' ),
 				],
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Card renderer escapes structured content.
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		<?php else : ?>
 			<section class="cb-core-preferences-section" aria-labelledby="cb-admin-notices-sources-title">
@@ -188,17 +194,21 @@ $kind_labels = [
 
 							<?php if ( $protected ) : ?>
 								<?php
+								// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 								echo \CoreBlueprint\Core\UI\Notice::render( [
 									'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 									'message' => __( 'This source is protected and always remains visible to everyone.', 'core-blueprint' ),
-								] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+								] );
+								// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 								?>
 							<?php elseif ( ! $manageable ) : ?>
 								<?php
+								// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 								echo \CoreBlueprint\Core\UI\Notice::render( [
 									'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 									'message' => __( 'This source could not be attributed to a stable WordPress, plugin or theme identity, so Core Blueprint will not suppress it.', 'core-blueprint' ),
-								] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+								] );
+								// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 								?>
 							<?php else : ?>
 								<fieldset class="cb-core-field" data-cb-admin-notices-visibility-group>
@@ -223,13 +233,17 @@ $kind_labels = [
 									<div class="cb-core-field" role="group" aria-labelledby="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-roles-label">
 										<span class="cb-core-field__label" id="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-roles-label"><?php esc_html_e( 'Roles', 'core-blueprint' ); ?></span>
 										<div data-cb-admin-notices-roles-picker>
-											<?php echo $render_audience_picker( $rule, 'roles', 'cb-admin-notices-' . (string) $index . '-roles' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+											<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+											<?php echo $render_audience_picker( $rule, 'roles', 'cb-admin-notices-' . (string) $index . '-roles' ); ?>
+											<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 										</div>
 									</div>
 									<div class="cb-core-field" role="group" aria-labelledby="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-capabilities-label">
 										<span class="cb-core-field__label" id="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-capabilities-label"><?php esc_html_e( 'Capabilities', 'core-blueprint' ); ?></span>
 										<div data-cb-admin-notices-capabilities-picker>
-											<?php echo $render_audience_picker( $rule, 'capabilities', 'cb-admin-notices-' . (string) $index . '-capabilities' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+											<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+											<?php echo $render_audience_picker( $rule, 'capabilities', 'cb-admin-notices-' . (string) $index . '-capabilities' ); ?>
+											<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 										</div>
 									</div>
 									<p class="description"><?php esc_html_e( 'Selected audience uses OR matching: a matching role or capability is enough. Operators remain visible regardless of this selection.', 'core-blueprint' ); ?></p>

@@ -391,7 +391,8 @@ final class MetaBoxes {
 			'term_relation' => __( 'Search terms…', 'core-blueprint' ),
 			default         => __( 'Search posts…', 'core-blueprint' ),
 		};
-		echo ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+		echo ObjectPicker::render( [
 			'id'          => $id,
 			'name'        => $input_name,
 			'multiple'    => ! empty( $field['relation_multiple'] ),
@@ -401,6 +402,7 @@ final class MetaBoxes {
 			'selected'    => FieldTypes::relation_selected_items( $field, $stored ),
 			'placeholder' => $placeholder,
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 

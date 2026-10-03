@@ -42,10 +42,12 @@ if ( isset( $states[ $routing_state ] ) ) {
 
 	<?php if ( is_array( $notice ) ) : ?>
 		<?php
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => (string) $notice[0],
 			'message' => (string) $notice[1],
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 	<?php endif; ?>
 
@@ -54,10 +56,12 @@ if ( isset( $states[ $routing_state ] ) ) {
 		<div class="cb-core-stack">
 			<div>
 				<?php
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo \CoreBlueprint\Core\UI\Status::render(
 					$routing_enabled ? 'active' : 'idle',
 					$routing_enabled ? __( 'Enabled', 'core-blueprint' ) : __( 'WordPress default', 'core-blueprint' )
-				); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
+				);
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			</div>
 			<p class="description">
@@ -69,12 +73,14 @@ if ( isset( $states[ $routing_state ] ) ) {
 			$routing_blockers = is_array( $routing_preflight['blockers'] ?? null )
 				? $routing_preflight['blockers']
 				: [];
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 			echo \CoreBlueprint\Core\UI\Notice::render( [
 				'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 				'title'   => __( 'Blocking route collisions found', 'core-blueprint' ),
 				'message' => __( 'Clean Archive URLs are temporarily suspended because route collisions were detected. WordPress default category routing remains active until the collisions are resolved.', 'core-blueprint' ),
 				'items'   => $routing_blockers,
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 			<?php endif; ?>
 
@@ -108,19 +114,23 @@ if ( isset( $states[ $routing_state ] ) ) {
 				$blockers = is_array( $routing_preflight['blockers'] ?? null ) ? $routing_preflight['blockers'] : [];
 				$warnings = is_array( $routing_preflight['warnings'] ?? null ) ? $routing_preflight['warnings'] : [];
 				$ready    = ! empty( $routing_preflight['ready'] );
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo \CoreBlueprint\Core\UI\Notice::render( [
 					'variant' => $ready ? \CoreBlueprint\Core\UI\Notice::SUCCESS : \CoreBlueprint\Core\UI\Notice::ERROR,
 					'title'   => $ready ? __( 'No known blocking collisions found', 'core-blueprint' ) : __( 'Blocking route collisions found', 'core-blueprint' ),
 					'items'   => $blockers,
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
+				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 				<?php if ( [] !== $warnings ) : ?>
 					<?php
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 					echo \CoreBlueprint\Core\UI\Notice::render( [
 						'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 						'title'   => __( 'Review before enabling', 'core-blueprint' ),
 						'items'   => $warnings,
-					] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
+					] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 				<?php endif; ?>
 
@@ -148,10 +158,12 @@ if ( isset( $states[ $routing_state ] ) ) {
 			<h2 id="cb-core-routing-disable-title"><?php esc_html_e( 'Disable policy', 'core-blueprint' ); ?></h2>
 			<div class="cb-core-stack">
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 			echo \CoreBlueprint\Core\UI\Notice::render( [
 				'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 				'message' => __( 'Disabling this policy changes canonical category URLs back to the WordPress category base and default pagination format.', 'core-blueprint' ),
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- component owns escaping.
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="<?php echo esc_attr( \CoreBlueprint\Core\Routing\Admin::DISABLE_ACTION ); ?>" />

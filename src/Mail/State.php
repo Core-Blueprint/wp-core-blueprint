@@ -44,7 +44,9 @@ final class State implements ModuleStateInterface {
 
 		if ( self::is_enabled() !== $enabled ) {
 			Settings::save( $previous );
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Mail state could not be persisted consistently.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( class_exists( AuditLog::class ) ) {

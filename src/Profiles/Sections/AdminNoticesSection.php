@@ -41,7 +41,9 @@ final class AdminNoticesSection extends ExactSection {
 		], $actor );
 
 		if ( ! $ok || ! $this->verify( $incoming ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Could not apply the Admin Notices profile policy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 }

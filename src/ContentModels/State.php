@@ -33,7 +33,9 @@ final class State implements ModuleStateInterface {
 		update_option( self::OPTION, $enabled ? '1' : '0', false );
 		Rewrite::mark_dirty();
 		if ( self::is_enabled() !== $enabled ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The Content Models module state could not be saved.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( class_exists( AuditLog::class ) ) {

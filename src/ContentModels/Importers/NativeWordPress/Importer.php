@@ -19,14 +19,18 @@ final class Importer {
 	public static function create_plan( array $input ): array {
 		$preview = PlanStore::discovery();
 		if ( ! is_array( $preview ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The WordPress discovery preview expired. Discover the runtime schema again.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$fresh = Discovery::snapshot();
 		$preview_by_token = self::by_token( $preview );
 		$fresh_by_token   = self::by_token( $fresh );
 		$selected = array_values( array_unique( array_filter( array_map( [ __CLASS__, 'clean_token' ], (array) ( $input['selected'] ?? [] ) ) ) ) );
 		if ( [] === $selected ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Select at least one native WordPress definition to include in the import plan.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$labels = is_array( $input['meta_label'] ?? null ) ? $input['meta_label'] : [];
@@ -49,12 +53,16 @@ final class Importer {
 			$before = $preview_by_token[ $token ] ?? null;
 			$current = $fresh_by_token[ $token ] ?? null;
 			if ( ! is_array( $before ) || ! is_array( $current ) || ! isset( $before['fingerprint'], $current['fingerprint'] ) || ! hash_equals( (string) $before['fingerprint'], (string) $current['fingerprint'] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The WordPress runtime schema changed after discovery. Discover it again before creating an import plan.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$kind = (string) ( $current['kind'] ?? '' );
 			if ( in_array( $kind, [ 'post_type', 'taxonomy' ], true ) ) {
 				if ( Discovery::READY !== (string) ( $current['status'] ?? '' ) || ! is_array( $current['definition'] ?? null ) ) {
+					// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 					throw new \InvalidArgumentException( __( 'Only definitions marked Ready can be added to the import plan.', 'core-blueprint' ) );
+					// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				}
 				$key = (string) ( $current['key'] ?? '' );
 				if ( 'post_type' === $kind ) {
@@ -68,23 +76,31 @@ final class Importer {
 				continue;
 			}
 			if ( 'meta' !== $kind || Discovery::MAPPING_REQUIRED !== (string) ( $current['status'] ?? '' ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The selected metadata entry is not eligible for explicit mapping.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 
 			$label = sanitize_text_field( (string) ( $labels[ $token ] ?? '' ) );
 			$field_type = sanitize_key( (string) ( $field_types[ $token ] ?? '' ) );
 			$allowed = is_array( $current['allowed_field_types'] ?? null ) ? $current['allowed_field_types'] : [];
 			if ( '' === $label || ! in_array( $field_type, $allowed, true ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Every selected metadata key requires an explicit label and compatible Content Models field type.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$context_token = (string) ( $current['context_token'] ?? '' );
 			$group_title = sanitize_text_field( (string) ( $group_titles[ $context_token ] ?? '' ) );
 			if ( '' === $group_title ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Every selected metadata context requires an explicit Field Group title.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$compatibility = ValueCompatibility::inspect( $current, $field_type );
 			if ( empty( $compatibility['compatible'] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( (string) ( $compatibility['reason'] ?? __( 'Existing metadata values are not compatible with the selected field mapping.', 'core-blueprint' ) ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 
 			$context_id = (string) ( $current['context_id'] ?? '' );
@@ -97,7 +113,9 @@ final class Importer {
 					'fields'   => [],
 				];
 			} elseif ( $group_title !== (string) $meta_groups[ $context_id ]['title'] ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Use one Field Group title for all selected metadata in the same WordPress context.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$field_id = 'field_wp_' . substr( hash( 'sha256', $plan_id . '|' . (string) $current['id'] ), 0, 18 );
 			$field = Repository::normalize_field( [
@@ -172,50 +190,68 @@ final class Importer {
 	public static function apply_plan(): array {
 		$plan = PlanStore::plan();
 		if ( ! is_array( $plan ) || ! is_array( $plan['document'] ?? null ) || ! is_array( $plan['targets'] ?? null ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The WordPress import plan is missing, expired or failed its integrity check. Create a new plan.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( ! PlanStore::repository_unchanged( $plan ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Content Models changed after this plan was created. Discover and review the WordPress runtime schema again.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		foreach ( $plan['targets'] as $target ) {
 			if ( ! is_array( $target ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The import plan contains an invalid target.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$kind = (string) ( $target['kind'] ?? '' );
 			$key = (string) ( $target['key'] ?? '' );
 			if ( 'post_type' === $kind ) {
 				if ( post_type_exists( $key ) || null !== Repository::post_type( $key ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 					/* translators: %s: post type key. */
 			throw new \InvalidArgumentException( sprintf( __( 'Post type “%s” is still registered or now conflicts with Content Models. Disable its original registrar and create a fresh plan.', 'core-blueprint' ), $key ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				}
 				continue;
 			}
 			if ( 'taxonomy' === $kind ) {
 				if ( taxonomy_exists( $key ) || null !== Repository::taxonomy( $key ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 					/* translators: %s: taxonomy key. */
 			throw new \InvalidArgumentException( sprintf( __( 'Taxonomy “%s” is still registered or now conflicts with Content Models. Disable its original registrar and create a fresh plan.', 'core-blueprint' ), $key ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				}
 				continue;
 			}
 			if ( 'meta' !== $kind ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The import plan contains an unsupported target kind.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$object_type = (string) ( $target['object_type'] ?? '' );
 			$subtype = (string) ( $target['object_subtype'] ?? '' );
 			if ( registered_meta_key_exists( $object_type, $key, $subtype ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				/* translators: %s: registered metadata key. */
 			throw new \InvalidArgumentException( sprintf( __( 'Registered metadata key “%s” is still owned by the original runtime registrar. Disable that registration before applying the plan.', 'core-blueprint' ), $key ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$compatibility = ValueCompatibility::inspect( $target, (string) ( $target['field_type'] ?? '' ) );
 			if ( empty( $compatibility['compatible'] ) || (int) ( $target['value_count'] ?? -1 ) !== (int) $compatibility['count'] || ! hash_equals( (string) ( $target['value_digest'] ?? '' ), (string) $compatibility['digest'] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Existing metadata values changed or no longer match the reviewed field mapping. Create a fresh import plan.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 
 		foreach ( (array) ( $plan['document']['field_groups'] ?? [] ) as $group_id => $group ) {
 			if ( null !== Repository::field_group( (string) $group_id ) || ! is_array( $group ) || ! empty( Repository::field_group_conflicts( $group ) ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'A target Field Group or field name now conflicts with Content Models. Create a fresh import plan.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 
@@ -264,8 +300,10 @@ final class Importer {
 			if ( null !== Repository::post_type( $subtype ) || isset( $selected_post_types[ $subtype ] ) ) {
 				return;
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			/* translators: %s: required post type key. */
 			throw new \InvalidArgumentException( sprintf( __( 'Post type “%s” is a required context but is not WordPress-built-in, Content Models-managed or selected for adoption.', 'core-blueprint' ), $subtype ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( 'term' === $object_type ) {
 			$object = get_taxonomy( $subtype );
@@ -275,8 +313,10 @@ final class Importer {
 			if ( null !== Repository::taxonomy( $subtype ) || isset( $selected_taxonomies[ $subtype ] ) ) {
 				return;
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			/* translators: %s: required taxonomy key. */
 			throw new \InvalidArgumentException( sprintf( __( 'Taxonomy “%s” is a required context but is not WordPress-built-in, Content Models-managed or selected for adoption.', 'core-blueprint' ), $subtype ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 }

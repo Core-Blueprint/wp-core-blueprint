@@ -49,6 +49,7 @@ final class Page {
 			<?php if ( ! $is_enabled ) : ?>
 				<?php
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() returns escape-clean HTML.
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo Notice::render( [
 					'variant' => Notice::INFO,
 					'title'   => __( 'Core Scanner is disabled.', 'core-blueprint' ),
@@ -56,6 +57,7 @@ final class Page {
 						? __( 'Scheduled scans will not run; manual scan is unavailable. Existing scan history, findings, quarantine records, and approved baselines remain available.', 'core-blueprint' )
 						: __( 'Scheduled and manual scans are unavailable while the scanner is disabled. Existing evidence remains available for review; a CB Operator can re-enable the scanner.', 'core-blueprint' ),
 				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			<?php endif; ?>
 

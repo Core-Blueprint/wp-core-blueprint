@@ -63,7 +63,8 @@ final class Settings extends PageBase {
 
 			<?php if ( [] === $providers ) : ?>
 				<?php
-				echo Card::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Card::render() escapes structured empty-state content.
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Card receives no raw HTML slot here and escapes the complete structured empty-state payload.
+				echo Card::render( [
 					'title' => __( 'Extension settings', 'core-blueprint' ),
 					'body'  => '',
 					'empty' => [
@@ -71,6 +72,7 @@ final class Settings extends PageBase {
 						'description' => __( 'Installed extensions will appear here after they adopt the Core Blueprint Settings Hub contract.', 'core-blueprint' ),
 					],
 				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			<?php else : ?>
 				<?php $this->render_provider_section(
@@ -179,10 +181,12 @@ final class Settings extends PageBase {
 			<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ); ?>">← <?php esc_html_e( 'All extensions', 'core-blueprint' ); ?></a></p>
 			<h1 class="cb-core-title"><?php echo esc_html( (string) $provider['label'] ); ?></h1>
 			<p class="cb-core-intro"><?php echo esc_html( (string) $provider['description'] ); ?></p>
-			<?php echo Card::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- identity_html is escaped above.
+			<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- identity_html is composed locally from esc_html/esc_url output before entering Card's raw body slot. ?>
+			<?php echo Card::render( [
 				'title' => __( 'Extension information', 'core-blueprint' ),
 				'body'  => $identity_html,
 			] ); ?>
+			<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			<div class="cb-core-settings-provider">
 				<?php call_user_func( $provider['renderer'] ); ?>
 			</div>

@@ -13,7 +13,9 @@ final class Diff {
 		$changes = [];
 		self::walk( $before, $after, '', $changes );
 		if ( count( $changes ) > self::MAX_CHANGES ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The profile contains too many individual changes to review safely in one apply.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $changes;
 	}

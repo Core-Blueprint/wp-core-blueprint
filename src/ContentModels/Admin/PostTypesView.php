@@ -126,6 +126,7 @@ trait PostTypesView {
 				<tr><th scope="row"><label for="cb-cm-post-type-icon"><?php esc_html_e( 'Menu icon', 'core-blueprint' ); ?></label></th><td><?php $this->render_icon_picker( 'cb-cm-post-type-icon', 'icon', (string) $model['icon'], __( 'Choose a Dashicon or Core Blueprint Lucide icon for this post type’s admin menu item.', 'core-blueprint' ) ); ?></td></tr>
 				<tr><th scope="row"><?php esc_html_e( 'Behaviour', 'core-blueprint' ); ?></th><td>
 					<?php
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 					echo ChoiceGroup::render( [
 						'aria_label' => __( 'Post type behaviour', 'core-blueprint' ),
 						'options' => [
@@ -134,7 +135,8 @@ trait PostTypesView {
 							[ 'name' => 'has_archive', 'label' => __( 'Enable archive page', 'core-blueprint' ), 'checked' => ! empty( $model['has_archive'] ) ],
 							[ 'name' => 'hierarchical', 'label' => __( 'Hierarchical (page-like parent/child structure)', 'core-blueprint' ), 'checked' => ! empty( $model['hierarchical'] ) ],
 						],
-					] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output.
+					] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 				</td></tr>
 				<tr><th scope="row"><?php esc_html_e( 'Editor features', 'core-blueprint' ); ?></th><td>
@@ -159,10 +161,12 @@ trait PostTypesView {
 							'checked' => in_array( $support, (array) $model['supports'], true ),
 						];
 					}
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 					echo ChoiceGroup::render( [
 						'aria_label' => __( 'Editor features', 'core-blueprint' ),
 						'options' => $support_options,
-					] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes its own output.
+					] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 				</td></tr>
 				</tbody>

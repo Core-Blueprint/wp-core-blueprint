@@ -564,10 +564,12 @@ final class Preferences extends PageBase {
 			</p>
 			<?php if ( $notice ) : ?>
 				<?php
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo \CoreBlueprint\Core\UI\Notice::render( [
 					'variant' => 'error' === $notice['type'] ? \CoreBlueprint\Core\UI\Notice::ERROR : \CoreBlueprint\Core\UI\Notice::SUCCESS,
 					'message' => $notice['message'],
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
+				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			<?php endif; ?>
 			<?php \CoreBlueprint\Core\Notes\Admin\PreferencesPage::render_body(); ?>

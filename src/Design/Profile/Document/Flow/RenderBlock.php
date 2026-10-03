@@ -259,7 +259,9 @@ final readonly class RenderBlock {
 
 	private static function assert_text_size( string $text, string $message ): void {
 		if ( strlen( $text ) > self::MAX_TEXT_BYTES ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( $message );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 }

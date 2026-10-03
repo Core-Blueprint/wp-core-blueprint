@@ -160,7 +160,9 @@ final class Renderer {
                                     'Open'      => StateBadge::INFO,
                                     default     => StateBadge::NEUTRAL,
                                 };
-                                echo StateBadge::render( (string) $note->status, [ 'variant' => $status_variant ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                                // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+                                echo StateBadge::render( (string) $note->status, [ 'variant' => $status_variant ] );
+                                // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                                 ?>
                                 <span class="cb-core-badge cb-core-badge-neutral"><?php echo esc_html( $note->type ); ?></span>
                             </span>
@@ -302,7 +304,7 @@ final class Renderer {
             </div>
             <details class="cb-core-disclosure cb-core-disclosure--compact cb-notes-details" data-cb-notes-details>
                 <summary class="cb-core-disclosure__summary">
-                    <?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?>
+                    <?php echo Icon::render( 'expand', [ 'size' => Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
                     <span class="cb-core-disclosure__title"><?php esc_html_e( 'Details', 'core-blueprint' ); ?></span>
                 </summary>
                 <div class="cb-core-disclosure__body cb-notes-details__grid">

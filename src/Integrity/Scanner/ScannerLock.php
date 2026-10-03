@@ -49,7 +49,9 @@ final class ScannerLock {
 			if ( add_option( self::OPTION, $data, '', false ) ) {
 				return $token;
 			}
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new ScanLockedException( self::current() );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$existing  = maybe_unserialize( $existing_raw );
@@ -61,7 +63,9 @@ final class ScannerLock {
 			return $token;
 		}
 
+		// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 		throw new ScanLockedException( self::current() );
+		// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 	}
 
 	/** Refresh a persisted job lock without changing its owner token. */

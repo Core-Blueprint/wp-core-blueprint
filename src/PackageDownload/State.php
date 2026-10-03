@@ -31,7 +31,9 @@ final class State implements ModuleStateInterface {
 
 		update_option( self::OPTION, $enabled ? '1' : '0', false );
 		if ( self::is_enabled() !== $enabled ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Package Downloads state could not be persisted.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( class_exists( AuditLog::class ) ) {

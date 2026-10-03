@@ -18,7 +18,9 @@ final class AIGovernanceSection extends ExactSection {
 	public function normalize( array $incoming ): array {
 		SchemaGuard::exact_keys( $incoming, [ 'retention_days' ], 'AI Governance' );
 		if ( ! array_key_exists( 'retention_days', $incoming ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The profile contains an incomplete AI Governance policy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$days = SchemaGuard::int( $incoming['retention_days'], 'AI Governance retention days' );
 		if ( $days < 0 || $days > Settings::MAX_RETENTION_DAYS ) {
@@ -31,7 +33,9 @@ final class AIGovernanceSection extends ExactSection {
 		$incoming = $this->normalize( $incoming );
 		$ok = Settings::update_retention_days( $incoming['retention_days'] );
 		if ( ! $ok && Settings::retention_days() !== $incoming['retention_days'] ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Could not apply the AI Governance retention policy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 }

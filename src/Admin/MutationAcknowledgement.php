@@ -51,7 +51,9 @@ final class MutationAcknowledgement {
 
 	public static function require_confirmed( mixed $value, string $message ): void {
 		if ( ! self::confirmed( $value ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( $message );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 }

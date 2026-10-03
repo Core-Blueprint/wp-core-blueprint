@@ -63,10 +63,12 @@ $render_audience_picker = static function ( ?array $rule, string $kind, string $
 
 	<?php if ( '' !== $notice_message ) : ?>
 		<?php
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => $notice_variant,
 			'message' => $notice_message,
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 	<?php endif; ?>
 
@@ -149,13 +151,17 @@ $render_audience_picker = static function ( ?array $rule, string $kind, string $
 									<div class="cb-core-field" role="group" aria-labelledby="cb-admin-navigation-menu-<?php echo esc_attr( (string) $menu_index ); ?>-hide-roles-label">
 										<span class="cb-core-field__label" id="cb-admin-navigation-menu-<?php echo esc_attr( (string) $menu_index ); ?>-hide-roles-label"><?php esc_html_e( 'Roles', 'core-blueprint' ); ?></span>
 										<div data-cb-admin-navigation-hide-roles-picker>
-											<?php echo $render_audience_picker( $hidden, 'roles', 'cb-admin-navigation-menu-' . (string) $menu_index . '-hide-roles' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+											<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+											<?php echo $render_audience_picker( $hidden, 'roles', 'cb-admin-navigation-menu-' . (string) $menu_index . '-hide-roles' ); ?>
+											<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 										</div>
 									</div>
 									<div class="cb-core-field" role="group" aria-labelledby="cb-admin-navigation-menu-<?php echo esc_attr( (string) $menu_index ); ?>-hide-capabilities-label">
 										<span class="cb-core-field__label" id="cb-admin-navigation-menu-<?php echo esc_attr( (string) $menu_index ); ?>-hide-capabilities-label"><?php esc_html_e( 'Capabilities', 'core-blueprint' ); ?></span>
 										<div data-cb-admin-navigation-hide-capabilities-picker>
-											<?php echo $render_audience_picker( $hidden, 'capabilities', 'cb-admin-navigation-menu-' . (string) $menu_index . '-hide-capabilities' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+											<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+											<?php echo $render_audience_picker( $hidden, 'capabilities', 'cb-admin-navigation-menu-' . (string) $menu_index . '-hide-capabilities' ); ?>
+											<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 										</div>
 									</div>
 								</div>
@@ -211,13 +217,17 @@ $render_audience_picker = static function ( ?array $rule, string $kind, string $
 							<div class="cb-core-field" role="group" aria-labelledby="cb-admin-navigation-toolbar-<?php echo esc_attr( (string) $toolbar_index ); ?>-hide-roles-label">
 								<span class="cb-core-field__label" id="cb-admin-navigation-toolbar-<?php echo esc_attr( (string) $toolbar_index ); ?>-hide-roles-label"><?php esc_html_e( 'Roles', 'core-blueprint' ); ?></span>
 								<div data-cb-admin-navigation-hide-roles-picker>
-									<?php echo $render_audience_picker( $hidden, 'roles', 'cb-admin-navigation-toolbar-' . (string) $toolbar_index . '-hide-roles' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+									<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+									<?php echo $render_audience_picker( $hidden, 'roles', 'cb-admin-navigation-toolbar-' . (string) $toolbar_index . '-hide-roles' ); ?>
+									<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 								</div>
 							</div>
 							<div class="cb-core-field" role="group" aria-labelledby="cb-admin-navigation-toolbar-<?php echo esc_attr( (string) $toolbar_index ); ?>-hide-capabilities-label">
 								<span class="cb-core-field__label" id="cb-admin-navigation-toolbar-<?php echo esc_attr( (string) $toolbar_index ); ?>-hide-capabilities-label"><?php esc_html_e( 'Capabilities', 'core-blueprint' ); ?></span>
 								<div data-cb-admin-navigation-hide-capabilities-picker>
-									<?php echo $render_audience_picker( $hidden, 'capabilities', 'cb-admin-navigation-toolbar-' . (string) $toolbar_index . '-hide-capabilities' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+									<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+									<?php echo $render_audience_picker( $hidden, 'capabilities', 'cb-admin-navigation-toolbar-' . (string) $toolbar_index . '-hide-capabilities' ); ?>
+									<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 								</div>
 							</div>
 						</div>
@@ -232,13 +242,17 @@ $render_audience_picker = static function ( ?array $rule, string $kind, string $
 							<div class="cb-core-field" role="group" aria-labelledby="cb-admin-navigation-toolbar-<?php echo esc_attr( (string) $toolbar_index ); ?>-rename-roles-label">
 								<span class="cb-core-field__label" id="cb-admin-navigation-toolbar-<?php echo esc_attr( (string) $toolbar_index ); ?>-rename-roles-label"><?php esc_html_e( 'Roles', 'core-blueprint' ); ?></span>
 								<div data-cb-admin-navigation-rename-roles-picker>
-									<?php echo $render_audience_picker( $renamed, 'roles', 'cb-admin-navigation-toolbar-' . (string) $toolbar_index . '-rename-roles' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+									<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+									<?php echo $render_audience_picker( $renamed, 'roles', 'cb-admin-navigation-toolbar-' . (string) $toolbar_index . '-rename-roles' ); ?>
+									<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 								</div>
 							</div>
 							<div class="cb-core-field" role="group" aria-labelledby="cb-admin-navigation-toolbar-<?php echo esc_attr( (string) $toolbar_index ); ?>-rename-capabilities-label">
 								<span class="cb-core-field__label" id="cb-admin-navigation-toolbar-<?php echo esc_attr( (string) $toolbar_index ); ?>-rename-capabilities-label"><?php esc_html_e( 'Capabilities', 'core-blueprint' ); ?></span>
 								<div data-cb-admin-navigation-rename-capabilities-picker>
-									<?php echo $render_audience_picker( $renamed, 'capabilities', 'cb-admin-navigation-toolbar-' . (string) $toolbar_index . '-rename-capabilities' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+									<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output. ?>
+									<?php echo $render_audience_picker( $renamed, 'capabilities', 'cb-admin-navigation-toolbar-' . (string) $toolbar_index . '-rename-capabilities' ); ?>
+									<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 								</div>
 							</div>
 						</div>

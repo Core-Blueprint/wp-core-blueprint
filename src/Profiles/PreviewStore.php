@@ -11,7 +11,9 @@ final class PreviewStore {
 
 	public static function put( int $user_id, array $document, array $preview ): string {
 		if ( $user_id <= 0 ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'A signed-in operator is required.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$token = bin2hex( random_bytes( 16 ) );
 		$key = self::key( $user_id, $token );
@@ -21,7 +23,9 @@ final class PreviewStore {
 			'created_at'  => time(),
 		];
 		if ( ! set_transient( $key, $payload, self::TTL ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Core Blueprint could not store the profile preview.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $token;
 	}

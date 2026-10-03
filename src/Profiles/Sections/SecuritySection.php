@@ -62,12 +62,16 @@ final class SecuritySection extends ExactSection {
 		$slug_raw = SchemaGuard::string( $raw_login['slug'] ?? null, 'Login Shield slug' );
 		$slug = LoginShield::sanitize_slug( $slug_raw );
 		if ( $slug !== $slug_raw ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The profile contains invalid Login Shield settings.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$mode = SchemaGuard::string( $raw_login['mode'] ?? null, 'Login Shield mode' );
 		$code = SchemaGuard::int( $raw_login['block_response_code'] ?? null, 'Login Shield response code' );
 		if ( ! in_array( $mode, LoginShield::MODES, true ) || ! in_array( $code, LoginShield::RESPONSE_CODES, true ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The profile contains invalid Login Shield settings.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$raw_modules = SchemaGuard::object( $incoming['core_modules'] ?? null, 'Core Shield modules' );
@@ -77,7 +81,9 @@ final class SecuritySection extends ExactSection {
 		foreach ( $raw_modules as $slug_id => $raw ) {
 			$slug_id = sanitize_key( (string) $slug_id );
 			if ( ! in_array( $slug_id, self::CORE_MODULES, true ) || null === ModuleRegistry::get( $slug_id ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The profile contains an unsupported Core Shield module.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$raw = SchemaGuard::object( $raw, 'Core Shield module' );
 			SchemaGuard::exact_keys( $raw, [ 'enabled', 'features' ], 'Core Shield module' );
@@ -93,7 +99,9 @@ final class SecuritySection extends ExactSection {
 			foreach ( $raw_features as $feature_id => $enabled ) {
 				$feature_id = sanitize_key( (string) $feature_id );
 				if ( ! isset( $known_features[ $feature_id ] ) ) {
+					// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 					throw new \InvalidArgumentException( __( 'The profile contains an unsupported Core Shield feature.', 'core-blueprint' ) );
+					// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				}
 				$features[ $feature_id ] = SchemaGuard::bool( $enabled, 'Core Shield feature state' );
 			}
@@ -138,7 +146,9 @@ final class SecuritySection extends ExactSection {
 
 		$actor = wp_get_current_user();
 		if ( ! ( $actor instanceof \WP_User ) || $actor->ID <= 0 ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Two-factor policy changes require a trusted CB Operator.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		PolicyMutation::assert_can_set_mode( $incoming_mode, $actor );
@@ -170,14 +180,18 @@ final class SecuritySection extends ExactSection {
 			if ( ! Settings::set_module_enabled( $slug, (bool) $config['enabled'], $actor ) ) {
 				$stored = Settings::get()['modules'][ $slug ]['enabled'] ?? null;
 				if ( (bool) $stored !== (bool) $config['enabled'] ) {
+					// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 					throw new \RuntimeException( __( 'Could not apply a Core Shield module state.', 'core-blueprint' ) );
+					// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				}
 			}
 			foreach ( $config['features'] as $feature => $enabled ) {
 				if ( ! Settings::set_feature_enabled( $slug, $feature, (bool) $enabled, $actor ) ) {
 					$stored = Settings::get()['modules'][ $slug ]['features'][ $feature ] ?? null;
 					if ( (bool) $stored !== (bool) $enabled ) {
+						// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 						throw new \RuntimeException( __( 'Could not apply a Core Shield feature state.', 'core-blueprint' ) );
+						// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 					}
 				}
 			}
@@ -186,7 +200,9 @@ final class SecuritySection extends ExactSection {
 		if ( Policy::mode() !== (string) $incoming['two_factor']['mode'] ) {
 			$wp_actor = wp_get_current_user();
 			if ( ! ( $wp_actor instanceof \WP_User ) || $wp_actor->ID <= 0 ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( __( 'Two-factor policy changes require a trusted CB Operator.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			PolicyMutation::set_mode( (string) $incoming['two_factor']['mode'], $wp_actor, 'profile' );
 		}
@@ -195,7 +211,9 @@ final class SecuritySection extends ExactSection {
 	public function restore( array $snapshot, array $incoming, string $actor ): void {
 		$current = $this->snapshot();
 		if ( ! StateGuard::is_between( $current, $snapshot, $incoming ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Configuration changed during Profile rollback and was not overwritten.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$snapshot = $this->normalize( $snapshot );
@@ -206,7 +224,9 @@ final class SecuritySection extends ExactSection {
 		if ( $current_mode !== $snapshot_mode ) {
 			$wp_actor = wp_get_current_user();
 			if ( ! ( $wp_actor instanceof \WP_User ) || $wp_actor->ID <= 0 ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( __( 'Two-factor policy changes require a trusted CB Operator.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			PolicyMutation::restore_mode(
 				$snapshot_mode,

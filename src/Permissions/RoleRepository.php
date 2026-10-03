@@ -56,20 +56,28 @@ final class RoleRepository {
 		$name = trim( wp_strip_all_tags( $name ) );
 		$slug = sanitize_key( $slug );
 		if ( '' === $name || '' === $slug ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Role name and slug are required.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( strlen( $slug ) > 64 ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Role slug must be 64 characters or fewer.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( null !== get_role( $slug ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'A role with this slug already exists.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$caps = [];
 		if ( '' !== $source_role ) {
 			$source = get_role( sanitize_key( $source_role ) );
 			if ( ! $source ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The source role no longer exists.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			foreach ( (array) $source->capabilities as $cap => $granted ) {
 				if ( $granted ) {
@@ -81,7 +89,9 @@ final class RoleRepository {
 
 		$result = add_role( $slug, $name, $caps );
 		if ( null === $result ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'WordPress could not create the role.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		AuditLog::log( 'permissions.role_created', 'notice', [
@@ -100,7 +110,9 @@ final class RoleRepository {
 	public static function duplicate( string $source_slug, string $name, string $slug ): string {
 		$source_slug = sanitize_key( $source_slug );
 		if ( null === get_role( $source_slug ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The role to duplicate no longer exists.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return self::create( $name, $slug, $source_slug );
 	}
@@ -117,15 +129,21 @@ final class RoleRepository {
 		RolePolicy::assert_can_edit_role( $slug );
 
 		if ( ! $state['can_rename_label'] ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'The display name of this system role is protected.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( '' === $name ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Role name cannot be empty.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$wp_roles = wp_roles();
 		if ( ! isset( $wp_roles->roles[ $slug ] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Role not found.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$old_name = (string) ( $wp_roles->roles[ $slug ]['name'] ?? $slug );
@@ -133,7 +151,9 @@ final class RoleRepository {
 		$wp_roles->role_names[ $slug ]    = $name;
 
 		if ( false === update_option( $wp_roles->role_key, $wp_roles->roles ) && $old_name !== $name ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'WordPress could not update the role name.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		AuditLog::log( 'permissions.role_updated', 'notice', [
@@ -155,7 +175,9 @@ final class RoleRepository {
 
 		$role = get_role( $slug );
 		if ( ! $role ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Role not found.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$desired = [];
@@ -210,7 +232,9 @@ final class RoleRepository {
 	public static function delete( string $slug ): void {
 		$slug = sanitize_key( $slug );
 		if ( null === get_role( $slug ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Role not found.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		RolePolicy::assert_can_delete_role( $slug );
 

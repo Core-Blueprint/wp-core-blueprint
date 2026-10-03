@@ -12,7 +12,9 @@ final class Engine {
 		$selected = [];
 		foreach ( $selected_ids as $raw_id ) {
 			if ( ! is_string( $raw_id ) || $raw_id !== sanitize_key( $raw_id ) || 1 !== preg_match( '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $raw_id ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The profile export contains an unknown section.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( ! in_array( $raw_id, $selected, true ) ) {
 				$selected[] = $raw_id;
@@ -22,7 +24,9 @@ final class Engine {
 		$sections = [];
 		foreach ( $selected as $id ) {
 			if ( ! isset( $registry[ $id ] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The profile export contains an unknown section.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$section = $registry[ $id ];
 			$sections[ $id ] = [
@@ -47,11 +51,13 @@ final class Engine {
 			$changes = $section->preview( $current[ $id ], $incoming );
 			$total_changes += count( $changes );
 			if ( $total_changes > Document::MAX_CHANGES ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( sprintf(
 					/* translators: %d: maximum number of changes that can be reviewed */
 					__( 'This profile produces more than %d configuration changes and cannot be reviewed safely in one operation.', 'core-blueprint' ),
 					Document::MAX_CHANGES
 				) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$sections[ $id ] = [
 				'label'       => $section->label(),
@@ -78,7 +84,9 @@ final class Engine {
 		$preview = self::preview( $document );
 		$document = $preview['document'];
 		if ( '' === $expected_fingerprint || ! hash_equals( $preview['fingerprint'], $expected_fingerprint ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Configuration changed since this preview was created. Review the profile again before applying it.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$lock = ApplyLock::acquire( $actor );
@@ -141,7 +149,9 @@ final class Engine {
 				'error'             => substr( sanitize_text_field( $error->getMessage() ), 0, 500 ),
 			] );
 			if ( ! empty( $rollback_failures ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \RuntimeException( __( 'The profile could not be applied and one or more sections could not be restored automatically. Review the Audit Log before making further configuration changes.', 'core-blueprint' ), 0, $error );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			throw $error;
 		} finally {
@@ -162,27 +172,37 @@ final class Engine {
 		// contract as uploaded JSON documents.
 		$document = Document::decode( CanonicalJson::encode( $document ) );
 		if ( Document::FORMAT !== (string) ( $document['format'] ?? '' ) || Document::FORMAT_VERSION !== (int) ( $document['format_version'] ?? 0 ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'This is not a supported Core Blueprint Profile.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$registry = SectionRegistry::all();
 		$sections = is_array( $document['sections'] ?? null ) ? $document['sections'] : [];
 		if ( [] === $sections ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The profile contains no sections.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		foreach ( $sections as $id => &$payload ) {
 			if ( ! isset( $registry[ $id ] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				/* translators: %s: profile section ID. */
 				throw new \InvalidArgumentException( sprintf( __( 'Profile section %s is not available on this site.', 'core-blueprint' ), (string) $id ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$section = $registry[ $id ];
 			$source_schema_version = (int) ( $payload['schema_version'] ?? 0 );
 			if ( ! $section->supports_schema_version( $source_schema_version ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				/* translators: %s: profile section ID. */
 				throw new \InvalidArgumentException( sprintf( __( 'Profile section %s uses an unsupported schema version.', 'core-blueprint' ), (string) $id ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$data = $payload['data'] ?? null;
 			if ( ! is_array( $data ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The profile contains an invalid section payload.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$payload['data'] = $section->migrate( $data, $source_schema_version );
 			$payload['schema_version'] = $section->schema_version();

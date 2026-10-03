@@ -29,7 +29,9 @@ final class DesignerState {
 		Settings::save( $current );
 
 		if ( self::is_enabled() !== $enabled ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Mail Designer state could not be persisted.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( class_exists( AuditLog::class ) ) {

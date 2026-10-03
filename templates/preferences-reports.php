@@ -47,21 +47,25 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 
 		<?php if ( ! $is_enabled ) : ?>
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 			echo \CoreBlueprint\Core\UI\Notice::render( [
 				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'title'   => __( 'Reports is disabled.', 'core-blueprint' ),
 				'message' => __( 'Branding below stays editable. Enable Reports from the Dashboard when you want to generate reports again.', 'core-blueprint' ),
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		<?php endif; ?>
 
 		<?php if ( ! $can_manage_branding ) : ?>
 			<?php
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 			echo \CoreBlueprint\Core\UI\Notice::render( [
 				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'title'   => __( 'Reports', 'core-blueprint' ),
 				'message' => __( 'Sorry, you are not allowed to access this page.', 'core-blueprint' ),
-			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
+			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		<?php else : ?>
 			<section class="card">

@@ -33,17 +33,23 @@ final class MaintenanceTemplate {
 	 */
 	public static function from_json( string $json ): array {
 		if ( '' === trim( $json ) || strlen( $json ) > self::MAX_JSON_BYTES ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Invalid data.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		try {
 			$decoded = json_decode( $json, true, 32, JSON_THROW_ON_ERROR );
 		} catch ( \JsonException $error ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Invalid data.', 'core-blueprint' ), 0, $error );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( ! is_array( $decoded ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Invalid data.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		return self::normalize( $decoded );

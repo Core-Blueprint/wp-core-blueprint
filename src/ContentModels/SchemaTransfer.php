@@ -33,10 +33,14 @@ final class SchemaTransfer {
 	public static function decode( string $json ): array {
 		$data = json_decode( $json, true );
 		if ( ! is_array( $data ) || 'core-blueprint-content-models' !== (string) ( $data['format'] ?? '' ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'This is not a valid Core Blueprint Content Models JSON document.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( 1 !== (int) ( $data['format_version'] ?? 0 ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'This Content Models JSON format version is not supported.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return self::normalize_document( $data );
 	}
@@ -75,10 +79,14 @@ final class SchemaTransfer {
 	public static function import( array $document, bool $overwrite ): array {
 		$analysis = self::analyze( $document );
 		if ( ! empty( $analysis['locked'] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The import contains definitions owned and locked by another plugin.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( ! $overwrite && ! empty( $analysis['conflicts'] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'The import contains existing definitions. Enable overwrite for matching user-managed definitions or resolve the conflicts first.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return Repository::merge_imported_schema( $document, $overwrite );
 	}
