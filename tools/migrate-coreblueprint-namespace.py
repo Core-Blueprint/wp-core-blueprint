@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-time pre-v1 namespace migration for Core Blueprint Base.
+r"""One-time pre-v1 namespace migration for Core Blueprint Base.
 
 Migrates the first-party Base namespace root:
     CB\Core -> CoreBlueprint\Core
@@ -32,6 +32,12 @@ EXCLUDED_DIRS = {
     "licenses",
 }
 
+EXCLUDED_FILES = {
+    # Historical milestone record: preserve namespace references exactly as they
+    # appeared at the time instead of rewriting history during the pre-v1 cutover.
+    Path("CHANGELOG-HISTORY.md"),
+}
+
 TEXT_SUFFIXES = {
     ".php",
     ".js",
@@ -50,8 +56,8 @@ TEXT_SUFFIXES = {
 
 # Escaped representation first, then normal PHP namespace representation.
 REPLACEMENTS = (
-    ("CB\\\\Core", "CoreBlueprint\\\\Core"),
-    ("CB\\Core", "CoreBlueprint\\Core"),
+    (r"CB\\Core", r"CoreBlueprint\\Core"),
+    (r"CB\Core", r"CoreBlueprint\Core"),
 )
 
 
@@ -63,6 +69,9 @@ def candidate_files() -> list[Path]:
 
         relative = path.relative_to(ROOT)
         if any(part in EXCLUDED_DIRS for part in relative.parts):
+            continue
+
+        if relative in EXCLUDED_FILES:
             continue
 
         if path.suffix.lower() not in TEXT_SUFFIXES:
