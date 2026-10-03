@@ -9,8 +9,11 @@ final class CB_Base_Snippets_Extraction_Contract_Test extends WP_UnitTestCase {
 		self::assertFileDoesNotExist( CB_CORE_DIR . 'assets/js/features/snippets.js' );
 
 		$core = (string) file_get_contents( CB_CORE_DIR . 'src/Core.php' );
+		$dashboard = (string) file_get_contents( CB_CORE_DIR . 'src/Admin/Pages/Dashboard.php' );
 		self::assertStringNotContainsString( 'Core\\Snippets\\Bootstrap', $core );
 		self::assertStringNotContainsString( 'managed PHP/CSS/JavaScript/HTML snippets', $core );
+		self::assertStringNotContainsString( 'CoreBlueprint\\Core\\Snippets', $dashboard );
+		self::assertStringNotContainsString( 'cb_manage_snippets', $dashboard );
 	}
 
 	public function test_base_registries_release_snippets_to_the_extension_boundary(): void {
@@ -26,6 +29,13 @@ final class CB_Base_Snippets_Extraction_Contract_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( "'core-blueprint-snippets'", $pages );
 		self::assertStringNotContainsString( "'core-blueprint-snippets'", $assets );
 		self::assertStringNotContainsString( 'SnippetsCheck', $setup );
+
+		$checks = \CoreBlueprint\Core\Setup\Registry::all();
+		$sections = \CoreBlueprint\Core\Setup\Registry::sections();
+		self::assertCount( 29, $checks );
+		self::assertArrayHasKey( 'cms-tools', $sections );
+		self::assertCount( 9, $sections['cms-tools'] );
+		self::assertArrayNotHasKey( 'snippets', $checks );
 	}
 
 	public function test_base_retains_only_cross_extension_governance_compatibility(): void {
