@@ -150,9 +150,9 @@ final class Request {
 	 * optional numeric inputs without extra isset() dance.
 	 */
 	public static function int( string $field, int $default = 0 ): int {
-		if ( ! isset( $_POST[ $field ] ) ) {
+		if ( ! isset( $_POST[ $field ] ) || ! is_scalar( $_POST[ $field ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce ownership belongs to the public handler.
 			return $default;
 		}
-		return (int) wp_unslash( $_POST[ $field ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		return (int) sanitize_text_field( wp_unslash( (string) $_POST[ $field ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce ownership belongs to the public handler.
 	}
 }
