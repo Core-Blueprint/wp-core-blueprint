@@ -18,6 +18,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from pathlib import Path
 
@@ -86,7 +87,10 @@ def normalize_reason(raw: str) -> str:
     return reason
 
 
-def inspect_file(text: str) -> list[tuple[int, int, str]]:
+def inspect_file(
+    text: str,
+    reported_lines: set[int],
+) -> list[tuple[int, int, str]]:
     lines = text.splitlines()
     found: list[tuple[int, int, str]] = []
 
@@ -99,14 +103,22 @@ def inspect_file(text: str) -> list[tuple[int, int, str]]:
         start = statement_start(lines, end)
         if start is None or already_scoped(lines, start, end):
             continue
+
+        # Plugin Check line numbers are 1-based and refer to the exact source
+        # used for this scan. Only normalize an existing documented boundary
+        # when at least one current OutputNotEscaped error falls inside the
+        # statement that owns that trailing ignore.
+        if not any(start + 1 <= line_no <= end + 1 for line_no in reported_lines):
+            continue
+
         found.append((start, end, normalize_reason(match.group("reason"))))
 
     return found
 
 
-def transform(text: str) -> tuple[str, int]:
+def transform(text: str, reported_lines: set[int]) -> tuple[str, int]:
     lines = text.splitlines()
-    boundaries = inspect_file(text)
+    boundaries = inspect_file(text, reported_lines)
     if not boundaries:
         return text, 0
 
@@ -148,14 +160,40 @@ def transform(text: str) -> tuple[str, int]:
     return updated, len(boundaries)
 
 
-def inspect() -> list[tuple[Path, int]]:
+def load_scan(path: Path) -> dict[str, set[int]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    results = payload.get("results", {})
+    if not isinstance(results, dict):
+        raise ValueError("Plugin Check export does not contain a results object.")
+
+    reported: dict[str, set[int]] = {}
+    for file_name, messages in results.items():
+        if not isinstance(file_name, str) or not isinstance(messages, list):
+            continue
+        for message in messages:
+            if not isinstance(message, dict):
+                continue
+            if (
+                message.get("type") == "ERROR"
+                and message.get("code") == SNIFF
+                and isinstance(message.get("line"), int)
+            ):
+                reported.setdefault(file_name, set()).add(int(message["line"]))
+    return reported
+
+
+def inspect(reported: dict[str, set[int]]) -> list[tuple[Path, int]]:
     affected: list[tuple[Path, int]] = []
     for path in candidate_files():
+        rel = path.relative_to(ROOT).as_posix()
+        reported_lines = reported.get(rel)
+        if not reported_lines:
+            continue
         try:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        count = len(inspect_file(text))
+        count = len(inspect_file(text, reported_lines))
         if count:
             affected.append((path, count))
     return affected
@@ -163,11 +201,21 @@ def inspect() -> list[tuple[Path, int]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--scan-json",
+        required=True,
+        help="Plugin Check JSON export from the exact source tree being audited.",
+    )
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
 
-    affected = inspect()
+    scan_path = Path(args.scan_json).expanduser().resolve()
+    if not scan_path.is_file():
+        parser.error(f"scan JSON not found: {scan_path}")
+
+    reported = load_scan(scan_path)
+    affected = inspect(reported)
 
     if args.check:
         if affected:
@@ -191,7 +239,8 @@ def main() -> int:
     total = 0
     for path, _count in affected:
         text = path.read_text(encoding="utf-8")
-        updated, count = transform(text)
+        rel = path.relative_to(ROOT).as_posix()
+        updated, count = transform(text, reported.get(rel, set()))
         if not count:
             continue
         path.write_text(updated, encoding="utf-8")
@@ -201,7 +250,7 @@ def main() -> int:
     print(f"APPLIED FILES: {changed_files}")
     print(f"APPLIED BOUNDARIES: {total}")
 
-    remaining = inspect()
+    remaining = inspect(reported)
     if remaining:
         print("FAIL: documented OutputNotEscaped boundaries remain trailing-only after apply.")
         return 1
