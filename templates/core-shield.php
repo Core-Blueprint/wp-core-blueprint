@@ -87,14 +87,18 @@ defined( 'ABSPATH' ) || exit;
 								? $_sh_pick( [ 'plain' => __( 'Minimal (staging)', 'core-blueprint' ), 'technical' => __( 'Development preset', 'core-blueprint' ) ] )
 								: $_sh_pick( [ 'plain' => __( 'Balanced', 'core-blueprint' ), 'technical' => __( 'Production preset', 'core-blueprint' ) ] ) );
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Status::render() returns escape-clean HTML.
+						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 						echo \CoreBlueprint\Core\UI\Status::render( 'active', $_profile_label );
+						// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					} else {
 						$_status_label = $_sh_pick( [
 							'plain'     => __( 'Shield is off. All features are disabled.', 'core-blueprint' ),
 							'technical' => __( 'Shield is off. All features disabled regardless of individual state.', 'core-blueprint' ),
 						] );
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Status::render() returns escape-clean HTML.
+						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 						echo \CoreBlueprint\Core\UI\Status::render( 'warning', $_status_label );
+						// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					}
 					?>
 				</div>
@@ -133,6 +137,7 @@ defined( 'ABSPATH' ) || exit;
 			);
 		}
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'title'   => sprintf(
@@ -142,11 +147,14 @@ defined( 'ABSPATH' ) || exit;
 			),
 			'message' => __( 'Core Blueprint security will delegate overlapping features to avoid double-enforcement.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 
 		<details class="cb-core-disclosure cb-core-disclosure--compact cb-core-disclosure--subtle cb-core-detector-details">
 			<summary class="cb-core-disclosure__summary">
-				<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+				<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output ?>
+				<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?>
+				<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<span class="cb-core-disclosure__title"><?php esc_html_e( 'View delegated features', 'core-blueprint' ); ?></span>
 			</summary>
 			<div class="cb-core-disclosure__body">
@@ -182,6 +190,7 @@ defined( 'ABSPATH' ) || exit;
 		<?php if ( ! $can_manage_privileged ) : ?>
 			<?php
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 			echo \CoreBlueprint\Core\UI\Notice::render( [
 				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'message' => sprintf(
@@ -190,11 +199,13 @@ defined( 'ABSPATH' ) || exit;
 					$_privileged_mode_label
 				),
 			] );
+			// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		<?php else : ?>
 			<div class="cb-core-radio-grid cb-core-radio-grid--columns-2 cb-core-privileged-access__modes" role="radiogroup" aria-label="<?php esc_attr_e( 'Privileged access protection mode', 'core-blueprint' ); ?>">
 				<?php
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - RadioCard::render() escapes its own output.
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo \CoreBlueprint\Core\UI\RadioCard::render( [
 					'name'       => 'cb-core-privileged-access-mode',
 					'value'      => \CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy::MODE_ENFORCE,
@@ -203,8 +214,10 @@ defined( 'ABSPATH' ) || exit;
 					'checked'    => $_privileged_mode_enforce,
 					'input_data' => [ 'data-cb-core-privileged-mode' => '' ],
 				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - RadioCard::render() escapes its own output.
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo \CoreBlueprint\Core\UI\RadioCard::render( [
 					'name'       => 'cb-core-privileged-access-mode',
 					'value'      => \CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy::MODE_MONITOR,
@@ -213,6 +226,7 @@ defined( 'ABSPATH' ) || exit;
 					'checked'    => ! $_privileged_mode_enforce,
 					'input_data' => [ 'data-cb-core-privileged-mode' => '' ],
 				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			</div>
 			<p class="description">
@@ -222,11 +236,13 @@ defined( 'ABSPATH' ) || exit;
 			<?php if ( ! $_privileged_mode_enforce ) : ?>
 				<?php
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo \CoreBlueprint\Core\UI\Notice::render( [
 					'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 					'title'   => __( 'Monitor only provides visibility, not automatic restriction', 'core-blueprint' ),
 					'message' => __( 'Unapproved administrator-level accounts can continue using their existing WordPress permissions until you review them. Core Blueprint trust-authority controls stay protected. Use Enforce approval when you also want administrator-level WordPress access restricted automatically.', 'core-blueprint' ),
 				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			<?php endif; ?>
 
@@ -236,7 +252,9 @@ defined( 'ABSPATH' ) || exit;
 				<div class="cb-core-privileged-access__clear" aria-live="polite">
 					<?php
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 					echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'All clear', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::SUCCESS ] );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 					?>
 					<span class="cb-core-muted">
 						<?php
@@ -253,7 +271,9 @@ defined( 'ABSPATH' ) || exit;
 			<?php else : ?>
 				<details class="cb-core-disclosure cb-core-disclosure--section cb-core-disclosure--subtle cb-core-privileged-review">
 					<summary class="cb-core-disclosure__summary">
-						<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+						<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output ?>
+						<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); ?>
+						<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 						<span class="cb-core-disclosure__title">
 							<?php
 							echo esc_html(
@@ -269,17 +289,21 @@ defined( 'ABSPATH' ) || exit;
 							<?php
 							$_review_badge = $_privileged_mode_enforce ? __( 'Restricted until approved', 'core-blueprint' ) : __( 'Access not restricted', 'core-blueprint' );
 							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+							// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 							echo \CoreBlueprint\Core\UI\StateBadge::render( $_review_badge, [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::WARNING ] );
+							// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 							?>
 						</span>
 					</summary>
 					<div class="cb-core-disclosure__body">
 						<?php
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 						echo \CoreBlueprint\Core\UI\Notice::render( [
 							'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 							'message' => __( 'Privileged Access Protection is independent of the Core Shield master switch. Turning Shield off does not stop privileged-account detection, fingerprinting, review or the selected approval policy.', 'core-blueprint' ),
 						] );
+						// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 						?>
 
 						<div class="cb-core-privileged-access__summary" aria-live="polite">
@@ -441,7 +465,7 @@ defined( 'ABSPATH' ) || exit;
 		<?php if ( empty( $modules ) ) : ?>
 			<div class="cb-core-empty">
 				<strong><?php esc_html_e( 'No feature modules registered yet.', 'core-blueprint' ); ?></strong>
-				<?php esc_html_e( 'Feature modules are loaded via the cb_core_modules filter. The built-in modules ship with Core Blueprint itself; additional modules can be provided by other Core Blueprint plugins.', 'core-blueprint' ); ?>
+				<?php esc_html_e( 'Feature modules are loaded via the core_blueprint_modules filter. The built-in modules ship with Core Blueprint itself; additional modules can be provided by other Core Blueprint plugins.', 'core-blueprint' ); ?>
 			</div>
 		<?php else : ?>
 			<?php foreach ( $modules as $module ) :
@@ -500,16 +524,21 @@ defined( 'ABSPATH' ) || exit;
 							<span class="screen-reader-text"><?php esc_html_e( 'Enabled', 'core-blueprint' ); ?></span>
 						</label>
 						<button type="button" class="cb-core-module-collapse" aria-expanded="false" aria-label="<?php esc_attr_e( 'Toggle module details', 'core-blueprint' ); ?>">
-							<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Icon::render() returns escape-clean SVG. ?>
+							<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Icon::render() owns context-specific escaping for its complete SVG payload. ?>
 							<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'class' => 'cb-core-chevron', 'size' => 'compact' ] ); ?>
+							<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 						</button>
 					</div>
 
 					<div class="cb-core-module-body">
 						<div class="cb-core-module-body-inner">
 						<div class="cb-core-module-details">
-							<?php echo \CoreBlueprint\Core\UI::render_description_text( $module_desc, $active_variant, 'cb-core-module-description' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-							<?php echo \CoreBlueprint\Core\UI::render_badges( $module_badges ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+							<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe. ?>
+							<?php echo \CoreBlueprint\Core\UI::render_description_text( $module_desc, $active_variant, 'cb-core-module-description' ); ?>
+							<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+							<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe. ?>
+							<?php echo \CoreBlueprint\Core\UI::render_badges( $module_badges ); ?>
+							<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 						</div>
 
 					<?php if ( ! empty( $features ) ) : ?>
@@ -566,7 +595,9 @@ defined( 'ABSPATH' ) || exit;
 												<?php endif; ?>
 											</div>
 
-											<?php echo \CoreBlueprint\Core\UI::render_description_text( $feature_desc, $active_variant, 'cb-core-feature-summary' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+											<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe. ?>
+											<?php echo \CoreBlueprint\Core\UI::render_description_text( $feature_desc, $active_variant, 'cb-core-feature-summary' ); ?>
+											<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 										</div>
 
 										<label class="cb-core-rack-toggle">
@@ -592,20 +623,26 @@ defined( 'ABSPATH' ) || exit;
 											aria-controls="<?php echo esc_attr( $feature_detail_id ); ?>"
 											aria-label="<?php echo esc_attr( $feature_details_label ); ?>"
 										>
-											<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Icon::render() returns escape-clean SVG. ?>
+											<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Icon::render() owns context-specific escaping for its complete SVG payload. ?>
 											<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'class' => 'cb-core-feature-chevron', 'size' => 'compact' ] ); ?>
+											<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 										</button>
 									</div>
 
 									<div class="cb-core-feature-body" id="<?php echo esc_attr( $feature_detail_id ); ?>" hidden>
-										<?php echo \CoreBlueprint\Core\UI::render_description_text( $feature_desc, $active_variant, 'cb-core-feature-description' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+										<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe. ?>
+										<?php echo \CoreBlueprint\Core\UI::render_description_text( $feature_desc, $active_variant, 'cb-core-feature-description' ); ?>
+										<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
-										<?php echo \CoreBlueprint\Core\UI::render_badges( $feature_badges ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+										<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- UI::render_badges() escapes URLs, attributes, and visible labels for every supported badge type. ?>
+										<?php echo \CoreBlueprint\Core\UI::render_badges( $feature_badges ); ?>
+										<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
 										<?php if ( $delegated_label ) : ?>
 											<div class="cb-core-feature-delegated">
-												<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML. ?>
+												<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- StateBadge::render() owns context-specific escaping for its complete structured payload. ?>
 												<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Delegated', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::INFO ] ); ?>
+												<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 												<span>
 													<?php
 													printf(

@@ -189,10 +189,12 @@ final class AdminIntegration {
 
 			<?php
 			if ( $notice ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo Notice::render( [
 					'variant' => $notice['type'],
 					'message' => $notice['message'],
 				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 			?>
 
@@ -203,7 +205,7 @@ final class AdminIntegration {
 						<?php if ( wp_attachment_is_image( $attachment_id ) ) : ?>
 							<div class="cb-media-replace-preview"><?php echo wp_get_attachment_image( $attachment_id, 'medium', false, [ 'alt' => '' ] ); ?></div>
 						<?php else : ?>
-							<div class="cb-media-replace-file-icon" aria-hidden="true"><?php echo Icon::render( 'file', [ 'class' => 'cb-media-replace-file-glyph' ] ); ?></div>
+							<div class="cb-media-replace-file-icon" aria-hidden="true"><?php echo Icon::render( 'file', [ 'class' => 'cb-media-replace-file-glyph' ] ); ?></div> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 						<?php endif; ?>
 						<table class="cb-core-kv cb-media-replace-facts">
 							<tbody>
@@ -238,6 +240,7 @@ final class AdminIntegration {
 						<p class="description"><?php esc_html_e( 'The replacement must currently use the same file type as the original. WordPress thumbnails and attachment metadata are regenerated automatically.', 'core-blueprint' ); ?></p>
 
 						<?php
+						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 						echo Notice::render( [
 							'variant' => Notice::INFO,
 							'title'   => __( 'Preserved', 'core-blueprint' ),
@@ -247,6 +250,7 @@ final class AdminIntegration {
 								__( 'Current public URL', 'core-blueprint' ),
 							],
 						] );
+						// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 						MutationAcknowledgement::render(
 							self::ACKNOWLEDGEMENT_FIELD,
 							'cb-media-replace-acknowledgement',
@@ -350,7 +354,7 @@ final class AdminIntegration {
 		] );
 
 		try {
-			do_action( 'cb_core_media_replaced', $attachment_id, $result );
+			do_action( 'core_blueprint_media_replaced', $attachment_id, $result );
 		} catch ( \Throwable $e ) {
 			AuditLog::log( 'media.post_replace_hook_failed', 'warning', [
 				'attachment_id' => $attachment_id,
@@ -460,11 +464,13 @@ final class AdminIntegration {
 
 				<?php
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice escapes supplied content.
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
 				echo Notice::render( [
 					'variant' => Notice::INFO,
 					'message' => __( 'A future replacement method can use a new filename and update references; the transaction layer is already designed for that extension, but it is not enabled yet.', 'core-blueprint' ),
 					'class'   => 'cb-media-replace-module-note',
 				] );
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 
 				<div class="cb-media-replace-overview-actions">

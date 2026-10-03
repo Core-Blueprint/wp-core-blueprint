@@ -29,10 +29,10 @@ final class Api {
 			return;
 		}
 		self::$booted = true;
-		add_filter( 'cb_core_content_models_post_types', [ __CLASS__, 'merge_post_types' ] );
-		add_filter( 'cb_core_content_models_taxonomies', [ __CLASS__, 'merge_taxonomies' ] );
-		add_filter( 'cb_core_content_models_option_pages', [ __CLASS__, 'merge_option_pages' ] );
-		add_filter( 'cb_core_content_models_field_groups', [ __CLASS__, 'merge_field_groups' ] );
+		add_filter( 'core_blueprint_content_models_post_types', [ __CLASS__, 'merge_post_types' ] );
+		add_filter( 'core_blueprint_content_models_taxonomies', [ __CLASS__, 'merge_taxonomies' ] );
+		add_filter( 'core_blueprint_content_models_option_pages', [ __CLASS__, 'merge_option_pages' ] );
+		add_filter( 'core_blueprint_content_models_field_groups', [ __CLASS__, 'merge_field_groups' ] );
 	}
 
 	/** @return array<string,mixed> */
@@ -148,7 +148,9 @@ final class Api {
 	private static function managed( array $definition, string $owner ): array {
 		$owner = sanitize_key( $owner );
 		if ( '' === $owner ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Plugin-managed Content Models require a non-empty owner identifier.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$definition['_managed'] = true;
 		$definition['_locked'] = true;

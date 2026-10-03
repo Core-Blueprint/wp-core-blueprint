@@ -47,7 +47,7 @@ final class Repository {
 
 	/** @return array<string,array<string,mixed>> */
 	public static function post_types(): array {
-		$models = apply_filters( 'cb_core_content_models_post_types', self::all()['post_types'] );
+		$models = apply_filters( 'core_blueprint_content_models_post_types', self::all()['post_types'] );
 		$models = is_array( $models ) ? $models : [];
 		ksort( $models, SORT_NATURAL | SORT_FLAG_CASE );
 		return $models;
@@ -55,7 +55,7 @@ final class Repository {
 
 	/** @return array<string,array<string,mixed>> */
 	public static function taxonomies(): array {
-		$models = apply_filters( 'cb_core_content_models_taxonomies', self::all()['taxonomies'] );
+		$models = apply_filters( 'core_blueprint_content_models_taxonomies', self::all()['taxonomies'] );
 		$models = is_array( $models ) ? $models : [];
 		ksort( $models, SORT_NATURAL | SORT_FLAG_CASE );
 		return $models;
@@ -63,7 +63,7 @@ final class Repository {
 
 	/** @return array<string,array<string,mixed>> */
 	public static function option_pages(): array {
-		$pages = apply_filters( 'cb_core_content_models_option_pages', self::all()['option_pages'] );
+		$pages = apply_filters( 'core_blueprint_content_models_option_pages', self::all()['option_pages'] );
 		$pages = is_array( $pages ) ? $pages : [];
 		uasort( $pages, static fn( array $a, array $b ): int => strnatcasecmp( (string) ( $a['title'] ?? '' ), (string) ( $b['title'] ?? '' ) ) );
 		return $pages;
@@ -71,7 +71,7 @@ final class Repository {
 
 	/** @return array<string,array<string,mixed>> */
 	public static function field_groups(): array {
-		$groups = apply_filters( 'cb_core_content_models_field_groups', self::all()['field_groups'] );
+		$groups = apply_filters( 'core_blueprint_content_models_field_groups', self::all()['field_groups'] );
 		$groups = is_array( $groups ) ? $groups : [];
 		uasort( $groups, static fn( array $a, array $b ): int => strnatcasecmp( (string) ( $a['title'] ?? '' ), (string) ( $b['title'] ?? '' ) ) );
 		return $groups;
@@ -107,13 +107,17 @@ final class Repository {
 	public static function normalize_post_type( array $input ): array {
 		$key = sanitize_key( (string) ( $input['key'] ?? '' ) );
 		if ( '' === $key || strlen( $key ) > 20 ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Post type keys must be 1–20 lowercase characters, numbers, dashes or underscores.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$singular = sanitize_text_field( (string) ( $input['singular_label'] ?? '' ) );
 		$plural   = sanitize_text_field( (string) ( $input['plural_label'] ?? '' ) );
 		if ( '' === $singular || '' === $plural ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Singular and plural labels are required.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$supports = array_values( array_intersect(
@@ -147,13 +151,17 @@ final class Repository {
 	public static function normalize_taxonomy( array $input ): array {
 		$key = sanitize_key( (string) ( $input['key'] ?? '' ) );
 		if ( '' === $key || strlen( $key ) > 32 ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Taxonomy keys must be 1–32 lowercase characters, numbers, dashes or underscores.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$singular = sanitize_text_field( (string) ( $input['singular_label'] ?? '' ) );
 		$plural   = sanitize_text_field( (string) ( $input['plural_label'] ?? '' ) );
 		if ( '' === $singular || '' === $plural ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Singular and plural labels are required.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$objects = array_values( array_unique( array_filter( array_map(
@@ -161,7 +169,9 @@ final class Repository {
 			is_array( $input['object_types'] ?? null ) ? $input['object_types'] : []
 		) ) ) );
 		if ( empty( $objects ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Select at least one post type for this taxonomy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$rewrite = sanitize_title( (string) ( $input['rewrite_slug'] ?? '' ) );
@@ -187,13 +197,17 @@ final class Repository {
 	public static function normalize_option_page( array $input ): array {
 		$slug = sanitize_key( (string) ( $input['slug'] ?? '' ) );
 		if ( '' === $slug || strlen( $slug ) > 80 ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Option Page slugs must be 1–80 lowercase characters, numbers, dashes or underscores.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$title = sanitize_text_field( (string) ( $input['title'] ?? '' ) );
 		$menu_label = sanitize_text_field( (string) ( $input['menu_label'] ?? '' ) );
 		if ( '' === $title ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'An Option Page title is required.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( '' === $menu_label ) {
 			$menu_label = $title;
@@ -206,7 +220,9 @@ final class Repository {
 
 		$parent_slug = sanitize_text_field( (string) ( $input['parent_slug'] ?? '' ) );
 		if ( str_contains( $parent_slug, '://' ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Parent page must be a WordPress admin menu slug, not a URL.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$icon = Icon::normalize_menu_icon( (string) ( $input['icon'] ?? 'dashicons-admin-generic' ), 'dashicons-admin-generic' );
@@ -237,7 +253,9 @@ final class Repository {
 
 		$title = sanitize_text_field( (string) ( $input['title'] ?? '' ) );
 		if ( '' === $title ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'A field group title is required.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$post_types = array_values( array_unique( array_filter( array_map(
@@ -258,7 +276,9 @@ final class Repository {
 			is_array( $input['user_roles'] ?? null ) ? $input['user_roles'] : []
 		) ) ) );
 		if ( empty( $post_types ) && empty( $option_pages ) && empty( $term_taxonomies ) && ! $user_enabled ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Select at least one Post Type, Option Page, taxonomy term context or user-profile context for this field group.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$context = sanitize_key( (string) ( $input['context'] ?? 'normal' ) );
@@ -295,29 +315,39 @@ final class Repository {
 
 		$label = sanitize_text_field( (string) ( $input['label'] ?? '' ) );
 		if ( '' === $label ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'A field label is required.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$name = is_array( $existing )
 			? sanitize_key( (string) ( $existing['name'] ?? '' ) )
 			: sanitize_key( (string) ( $input['name'] ?? '' ) );
 		if ( '' === $name || strlen( $name ) > 191 ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Field names must be valid WordPress meta keys and may not exceed 191 characters.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( str_starts_with( $name, '_' ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Core Blueprint field names may not start with an underscore because that marks protected WordPress metadata.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$type = sanitize_key( (string) ( $input['type'] ?? 'text' ) );
 		if ( ! FieldTypes::exists( $type ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Select a supported field type.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$choices = [];
 		if ( in_array( $type, [ 'select', 'radio', 'checkbox' ], true ) ) {
 			$choices = FieldTypes::parse_choices( (string) ( $input['choices_text'] ?? '' ) );
 			if ( empty( $choices ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Choice fields require at least one value.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 
@@ -330,15 +360,21 @@ final class Repository {
 		if ( FieldTypes::is_structured_type( $type ) ) {
 			$sub_fields = self::normalize_sub_fields( is_array( $input['sub_fields'] ?? null ) ? $input['sub_fields'] : [], $existing_sub_fields );
 			if ( empty( $sub_fields ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Group and Repeater fields require at least one subfield.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 		}
 		$conditional_logic = self::normalize_conditional_logic( is_array( $input['conditional_logic'] ?? null ) ? $input['conditional_logic'] : [] );
 		if ( 'post_relation' === $type && empty( $relation_post_types ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Post / Object Relation fields require at least one allowed post type.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		if ( 'term_relation' === $type && empty( $relation_taxonomies ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Taxonomy / Term Relation fields require at least one allowed taxonomy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$default = $input['default_value'] ?? '';
@@ -356,7 +392,9 @@ final class Repository {
 		$repeater_min = max( 0, min( 100, (int) ( $input['repeater_min'] ?? 0 ) ) );
 		$repeater_max = max( 0, min( 500, (int) ( $input['repeater_max'] ?? 0 ) ) );
 		if ( $repeater_max > 0 && $repeater_max < $repeater_min ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Repeater maximum rows must be greater than or equal to minimum rows.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$field = [
@@ -415,19 +453,27 @@ final class Repository {
 			$name = null !== $before ? sanitize_key( (string) ( $before['name'] ?? '' ) ) : sanitize_key( (string) ( $row['name'] ?? '' ) );
 			$type = sanitize_key( (string) ( $row['type'] ?? 'text' ) );
 			if ( '' === $label || '' === $name ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Every structured subfield requires a label and field name.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( str_starts_with( $name, '_' ) || strlen( $name ) > 191 || isset( $names[ $name ] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Structured subfield names must be unique valid WordPress keys and may not start with an underscore.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( ! FieldTypes::exists( $type ) || FieldTypes::is_structured_type( $type ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'Structured subfields must use a supported non-structured field type.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$names[ $name ] = true;
 			$choices = in_array( $type, [ 'select', 'radio', 'checkbox' ], true ) ? FieldTypes::parse_choices( (string) ( $row['choices_text'] ?? '' ) ) : [];
 			if ( in_array( $type, [ 'select', 'radio', 'checkbox' ], true ) && empty( $choices ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				/* translators: %s: subfield label. */
 			throw new \InvalidArgumentException( sprintf( __( 'Subfield %s requires at least one choice.', 'core-blueprint' ), $label ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$relation_multiple = ! empty( $row['relation_multiple'] );
 			$relation_post_types = array_values( array_unique( array_filter( array_map(
@@ -443,12 +489,16 @@ final class Repository {
 				(array) ( $row['relation_taxonomies'] ?? [] )
 			) ) ) );
 			if ( 'post_relation' === $type && empty( $relation_post_types ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				/* translators: %s: subfield label. */
 			throw new \InvalidArgumentException( sprintf( __( 'Subfield %s requires at least one allowed post type.', 'core-blueprint' ), $label ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			if ( 'term_relation' === $type && empty( $relation_taxonomies ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				/* translators: %s: subfield label. */
 			throw new \InvalidArgumentException( sprintf( __( 'Subfield %s requires at least one allowed taxonomy.', 'core-blueprint' ), $label ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 			$sub = [
 				'id'                    => $id,
@@ -621,13 +671,17 @@ final class Repository {
 	public static function save_field( string $group_id, array $input, ?string $existing_field_id = null ): array {
 		$group = self::field_group( $group_id );
 		if ( null === $group ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Field group not found.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		self::assert_definition_unlocked( $group );
 		$existing = null !== $existing_field_id ? self::field( $group_id, $existing_field_id ) : null;
 		$field = self::normalize_field( $input, $existing );
 		if ( self::field_name_conflicts( $group_id, $field, $existing_field_id ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'That field name is already used by another field group on an overlapping location.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$data = self::all();
@@ -712,7 +766,9 @@ final class Repository {
 		self::assert_definition_unlocked( self::field_group( $group_id ) );
 		$data = self::all();
 		if ( ! isset( $data['field_groups'][ $group_id ] ) || ! is_array( $data['field_groups'][ $group_id ] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'Field group not found.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		$fields = is_array( $data['field_groups'][ $group_id ]['fields'] ?? null ) ? $data['field_groups'][ $group_id ]['fields'] : [];
 		if ( [] === $fields ) {
@@ -846,7 +902,9 @@ final class Repository {
 
 		foreach ( $maps as $section => $getter ) {
 			if ( ! isset( $snapshot[ $section ], $target[ $section ] ) || ! is_array( $snapshot[ $section ] ) || ! is_array( $target[ $section ] ) ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 				throw new \InvalidArgumentException( __( 'The Content Models rollback snapshot is invalid.', 'core-blueprint' ) );
+				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			}
 
 			foreach ( $target[ $section ] as $key => $target_definition ) {
@@ -856,7 +914,9 @@ final class Repository {
 				$snapshot_definition = $snapshot_has ? $snapshot[ $section ][ $key ] : null;
 
 				if ( $current_definition !== $target_definition && ( ! $snapshot_has || $current_definition !== $snapshot_definition ) ) {
+					// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 					throw new \RuntimeException( __( 'A Content Models definition changed during Profile rollback and was not overwritten.', 'core-blueprint' ) );
+					// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				}
 
 				self::assert_definition_unlocked( self::{$getter}( $key ) );
@@ -880,10 +940,14 @@ final class Repository {
 				$key = (string) $key;
 				if ( array_key_exists( $key, $snapshot[ $section ] ) ) {
 					if ( ! array_key_exists( $key, $restored[ $section ] ) || $restored[ $section ][ $key ] !== $snapshot[ $section ][ $key ] ) {
+						// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 						throw new \RuntimeException( __( 'The Content Models rollback snapshot could not be restored.', 'core-blueprint' ) );
+						// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 					}
 				} elseif ( array_key_exists( $key, $restored[ $section ] ) ) {
+					// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 					throw new \RuntimeException( __( 'The Content Models rollback snapshot could not be restored.', 'core-blueprint' ) );
+					// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				}
 			}
 		}
@@ -892,7 +956,9 @@ final class Repository {
 
 	private static function assert_definition_unlocked( ?array $definition ): void {
 		if ( is_array( $definition ) && ! empty( $definition['_locked'] ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException( __( 'This Content Model is managed by another plugin and is locked against admin mutations.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 

@@ -45,7 +45,7 @@ final class ProfileController {
 		}
 		self::$booted = true;
 
-		add_action( 'cb_core_register_user_profile_sections', [ self::class, 'register_profile_section' ] );
+		add_action( 'core_blueprint_register_user_profile_sections', [ self::class, 'register_profile_section' ] );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_profile_assets' ] );
 		add_action( 'admin_post_' . self::START_ACTION, [ self::class, 'start' ] );
 		add_action( 'admin_post_' . self::CONFIRM_ACTION, [ self::class, 'confirm' ] );
@@ -301,11 +301,13 @@ final class ProfileController {
 
 	private static function render_profile_password_field( string $form_id, string $input_id ): void {
 		$control = '<input type="password" id="' . esc_attr( $input_id ) . '" class="regular-text" name="cb_two_factor_password" form="' . esc_attr( $form_id ) . '" autocomplete="current-password" required>';
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Field escapes labels; control is assembled from escaped static values.
 		echo Field::render( [
 			'label'     => __( 'Current password', 'core-blueprint' ),
 			'label_for' => $input_id,
 			'control'   => $control,
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field escapes labels; control is assembled from escaped static values.
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	private static function render_profile_code_field( string $form_id, string $input_id, string $label, bool $numeric ): void {
@@ -313,11 +315,13 @@ final class ProfileController {
 		$control .= $numeric ? ' inputmode="numeric"' : ' autocapitalize="characters" spellcheck="false"';
 		$control .= ' required>';
 
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Field escapes labels; control is assembled from escaped static values.
 		echo Field::render( [
 			'label'     => $label,
 			'label_for' => $input_id,
 			'control'   => $control,
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field escapes labels; control is assembled from escaped static values.
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	private static function render_profile_submit_button( string $form_id, string $label, string $variant ): void {
@@ -366,11 +370,13 @@ final class ProfileController {
 		echo '<div class="cb-core-secure-action__step-content">';
 		echo '<h2 class="cb-core-secure-action__step-title">' . esc_html__( 'Enter the six-digit verification code', 'core-blueprint' ) . '</h2>';
 		echo '<p class="cb-core-secure-action__step-copy">' . esc_html__( 'Enter the current code shown for this account in your authenticator app.', 'core-blueprint' ) . '</p>';
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Field owns label escaping; control is static markup.
 		echo Field::render( [
 			'label'     => __( 'Verification code', 'core-blueprint' ),
 			'label_for' => 'cb-core-two-factor-setup-code',
 			'control'   => '<input type="text" id="cb-core-two-factor-setup-code" class="regular-text" name="cb_two_factor_code" autocomplete="one-time-code" inputmode="numeric" required>',
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field owns label escaping; control is static markup.
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '</div></section>';
 
 		echo '<section class="cb-core-secure-action__step">';
@@ -378,11 +384,13 @@ final class ProfileController {
 		echo '<div class="cb-core-secure-action__step-content">';
 		echo '<h2 class="cb-core-secure-action__step-title">' . esc_html__( 'Confirm with your current WordPress password', 'core-blueprint' ) . '</h2>';
 		echo '<p class="cb-core-secure-action__step-copy">' . esc_html__( 'Enter your current password to confirm this security change.', 'core-blueprint' ) . '</p>';
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Field owns label escaping; control is static markup.
 		echo Field::render( [
 			'label'     => __( 'Current password', 'core-blueprint' ),
 			'label_for' => 'cb-core-two-factor-setup-password',
 			'control'   => '<input type="password" id="cb-core-two-factor-setup-password" class="regular-text" name="cb_two_factor_password" autocomplete="current-password" required>',
-		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Field owns label escaping; control is static markup.
+		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '<div class="cb-core-form-actions">';
 		echo '<button type="submit" class="button button-primary cb-core-button cb-core-button--primary">' . esc_html__( 'Enable two-factor authentication', 'core-blueprint' ) . '</button>';
 		echo self::cancel_button_html( self::FORM_CANCEL, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes every attribute and label.
@@ -407,11 +415,13 @@ final class ProfileController {
 	private static function render_recovery_codes( array $codes ): never {
 		ob_start();
 		echo '<p class="cb-core-secure-action__intro">' . esc_html__( 'Two-factor authentication is now enabled for this account.', 'core-blueprint' ) . '</p>';
-		echo Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice owns escaping.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+		echo Notice::render( [
 			'variant' => Notice::WARNING,
 			'title'   => __( 'Save your recovery codes now', 'core-blueprint' ),
 			'message' => __( 'Use a recovery code if you lose access to your authenticator app. Each code can be used once, and these codes will not be shown again.', 'core-blueprint' ),
 		] );
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 
 		echo '<ul class="cb-core-secure-action__recovery-list" aria-label="' . esc_attr__( 'Recovery codes', 'core-blueprint' ) . '">';
 		foreach ( $codes as $code ) {

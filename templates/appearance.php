@@ -56,7 +56,9 @@ $auto_option = [
 			</div>
 		<?php endif; ?>
 
-		<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'block' => true, 'class' => 'cb-core-appearance-status' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+		<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output ?>
+		<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'block' => true, 'class' => 'cb-core-appearance-status' ] ); ?>
+		<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	</div>
 
 	<div class="cb-core-theme-grid" data-user-pref="<?php echo esc_attr( $user_pref ); ?>" data-site-default="<?php echo esc_attr( $site_default ); ?>">
@@ -96,7 +98,9 @@ $auto_option = [
 				aria-pressed="<?php echo $selected_user ? 'true' : 'false'; ?>">
 				<?php if ( $has_partner_svg ) : ?>
 					<span class="cb-core-theme-preview cb-core-theme-preview-partner">
+						<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitize_preview_svg() applies wp_kses() with Core Blueprint's bounded SVG allowlist immediately before output. ?>
 						<?php echo \CoreBlueprint\Core\Themes::sanitize_preview_svg( (string) $theme['preview_svg'] ); ?>
+						<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					</span>
 				<?php else : ?>
 					<span class="cb-core-theme-preview <?php echo esc_attr( $preview_class ); ?>" data-theme-preview="<?php echo esc_attr( $slug ); ?>">
@@ -138,7 +142,7 @@ $auto_option = [
 			<li><?php esc_html_e( 'Fallback: Core Blueprint - Dark.', 'core-blueprint' ); ?></li>
 		</ol>
 		<p class="description">
-			<?php esc_html_e( 'Partner themes register via the filter cb_admin_themes.', 'core-blueprint' ); ?>
+			<?php esc_html_e( 'Partner themes register via the filter core_blueprint_admin_themes.', 'core-blueprint' ); ?>
 		</p>
 	</section>
 

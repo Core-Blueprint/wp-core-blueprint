@@ -14,7 +14,7 @@
 defined( 'ABSPATH' ) || exit;
 
 function core_blueprint_about_page(): void {
-	$cap = (string) apply_filters( 'cb_core_menu_capability', 'manage_options' );
+	$cap = (string) apply_filters( 'core_blueprint_menu_capability', 'manage_options' );
 	if ( ! current_user_can( $cap ) ) {
 		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'core-blueprint' ) );
 	}
@@ -100,10 +100,12 @@ function core_blueprint_about_page(): void {
 									<td><code><?php echo esc_html( $plugin['version'] ); ?></code></td>
 									<td>
 										<?php
-										echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+										// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Core Blueprint UI renderer owns context-specific escaping for its complete public payload.
+										echo \CoreBlueprint\Core\UI\StateBadge::render(
 											$is_active ? __( 'Active', 'core-blueprint' ) : __( 'Inactive', 'core-blueprint' ),
 											[ 'variant' => $is_active ? \CoreBlueprint\Core\UI\StateBadge::SUCCESS : \CoreBlueprint\Core\UI\StateBadge::NEUTRAL ]
 										);
+										// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 										?>
 									</td>
 									<td><?php echo esc_html( $plugin['description'] ); ?></td>

@@ -68,7 +68,7 @@ final class Generator {
 			 * @param array     $args  Original generate() arguments.
 			 * @param Throwable $error Failure that aborted generation.
 			 */
-			do_action( 'cb_maintenance_report_failed', $args, $e );
+			do_action( 'core_blueprint_maintenance_report_failed', $args, $e );
 
 			throw $e;
 		}
@@ -84,7 +84,7 @@ final class Generator {
 		 * @param int   $report_id Row ID in cb_maintenance_reports.
 		 * @param array $args      Original generate() arguments.
 		 */
-		do_action( 'cb_maintenance_report_generated', $report_id, $args );
+		do_action( 'core_blueprint_maintenance_report_generated', $report_id, $args );
 
 		return [
 			'report_id'    => $report_id,
@@ -124,15 +124,19 @@ final class Generator {
 			|| $start_day->format( 'Y-m-d' ) !== $start
 			|| $end_day->format( 'Y-m-d' ) !== $end
 		) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException(
 				sprintf( 'Invalid period: %s -> %s', $start, $end )
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( $start_day > $end_day ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \InvalidArgumentException(
 				sprintf( 'period_start must be <= period_end (got %s -> %s).', $start, $end )
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$start_boundary = $start_day->setTime( 0, 0, 0 );

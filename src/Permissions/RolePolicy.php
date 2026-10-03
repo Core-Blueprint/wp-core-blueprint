@@ -73,7 +73,7 @@ final class RolePolicy {
 		 * @param string[] $external_reasons Additional reasons the role may not be deleted.
 		 * @param string   $slug             Role slug being evaluated.
 		 */
-		$external_reasons = apply_filters( 'cb_core_role_delete_reasons', [], $slug );
+		$external_reasons = apply_filters( 'core_blueprint_role_delete_reasons', [], $slug );
 		if ( is_array( $external_reasons ) ) {
 			foreach ( $external_reasons as $reason ) {
 				if ( ! is_scalar( $reason ) ) {
@@ -126,11 +126,15 @@ final class RolePolicy {
 	 */
 	public static function assert_can_edit_role( string $slug ): void {
 		if ( ! self::can_manage_roles() ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'You do not have permission to manage user roles.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( 'administrator' === $slug && ! current_user_can( 'manage_options' ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Only an administrator may modify the Administrator role.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -143,6 +147,7 @@ final class RolePolicy {
 		self::assert_can_edit_role( $slug );
 
 		if ( ! $granting && in_array( $cap, self::required_capabilities( $slug ), true ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException(
 				sprintf(
 					/* translators: %s: capability name */
@@ -150,9 +155,11 @@ final class RolePolicy {
 					$cap
 				)
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( ! current_user_can( $cap ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException(
 				sprintf(
 					/* translators: %s: capability name */
@@ -160,6 +167,7 @@ final class RolePolicy {
 					$cap
 				)
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -192,7 +200,9 @@ final class RolePolicy {
 			}
 		}
 
+		// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 		throw new \RuntimeException( __( 'This change would remove your last capability to manage user roles.', 'core-blueprint' ) );
+		// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 	}
 
 	/**
@@ -202,6 +212,7 @@ final class RolePolicy {
 		self::assert_can_edit_role( $slug );
 		$state = self::role_state( $slug );
 		if ( ! $state['can_delete'] ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException(
 				sprintf(
 					/* translators: %s: comma-separated safety reasons */
@@ -209,6 +220,7 @@ final class RolePolicy {
 					implode( ', ', $state['delete_reasons'] )
 				)
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 }
