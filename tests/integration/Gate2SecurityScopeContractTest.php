@@ -7,8 +7,6 @@ final class CB_Base_Gate2_Security_Scope_Contract_Test extends WP_UnitTestCase {
 			CB_CORE_DIR . 'src/Ajax/Handlers/Failsafe.php',
 			CB_CORE_DIR . 'src/Admin/Pages/Safeguards.php',
 			CB_CORE_DIR . 'templates/failsafe.php',
-			CB_CORE_DIR . 'src/Snippets/Admin/Actions.php',
-			CB_CORE_DIR . 'src/Snippets/Admin/Page.php',
 		];
 
 		foreach ( $files as $file ) {
