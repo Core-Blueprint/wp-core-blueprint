@@ -70,6 +70,8 @@ final class CB_Base_Extension_Lifecycle_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "'data-cb-core-extension-action' => \$extension_id", $dashboard );
 		self::assertStringContainsString( "__( 'Deactivate' )", $dashboard );
 		self::assertStringContainsString( "__( 'Activate' )", $dashboard );
+		self::assertStringContainsString( "__( 'Active' )", $dashboard );
+		self::assertStringContainsString( "__( 'Inactive' )", $dashboard );
 	}
 
 	private function create_fixture(): void {
