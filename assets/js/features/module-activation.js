@@ -13,7 +13,6 @@ import { apiPost, qs, qsa } from '../core/dom.js';
 const dataEl = document.getElementById( 'wp-script-module-data-@cb-core/module-activation' );
 const data   = dataEl ? JSON.parse( dataEl.textContent ) : {};
 const nonce  = data.nonce || '';
-const modules = Array.isArray( data.modules ) ? new Set( data.modules ) : new Set();
 const extensions = Array.isArray( data.extensions ) ? new Set( data.extensions ) : new Set();
 const i18n   = data.i18n || {};
 
@@ -34,7 +33,7 @@ const setBusy = ( button, busy ) => {
 	}
 };
 
-if ( nonce && ( modules.size || extensions.size ) ) {
+if ( nonce ) {
 	document.addEventListener( 'click', async ( event ) => {
 		const extensionAction = event.target.closest( '[data-cb-core-extension-action]' );
 		if ( extensionAction ) {
@@ -67,7 +66,6 @@ if ( nonce && ( modules.size || extensions.size ) ) {
 		const menuAction = event.target.closest( '[data-cb-core-module-action]' );
 		if ( menuAction ) {
 			const module = menuAction.dataset.cbCoreModuleAction || '';
-			if ( ! modules.has( module ) ) return;
 
 			event.preventDefault();
 			event.stopPropagation();
@@ -98,7 +96,6 @@ if ( nonce && ( modules.size || extensions.size ) ) {
 		const root = trigger.closest( '[data-cb-core-master-switch]' );
 		if ( ! root ) return;
 		const module = root.dataset.cbCoreMasterSwitch || '';
-		if ( ! modules.has( module ) ) return;
 
 		event.preventDefault();
 		const toggle = qs( '[data-cb-core-master-switch-toggle]', root );
