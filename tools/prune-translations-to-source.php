@@ -176,6 +176,8 @@ foreach ( $iterator as $file ) {
 	$messages_removed += count( $before ) - count( $after );
 }
 
+file_put_contents( $root . '/tools/canonical-i18n-count.txt', (string) count( $source ) . "\n" );
+
 printf(
 	"PASS: pruned Base translation layers to %d canonical source keys; %d files changed; %d stale message entries removed.\n",
 	count( $source ),
