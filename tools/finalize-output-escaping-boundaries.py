@@ -188,47 +188,106 @@ def patch_settings(text: str) -> str:
 
 
 def patch_core_shield(text: str) -> str:
-    old_module_icon = """							<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Icon::render() returns escape-clean SVG. ?>
-							<?php echo \\CoreBlueprint\\Core\\UI\\Icon::render( 'expand', [ 'class' => 'cb-core-chevron', 'size' => 'compact' ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
-"""
-    new_module_icon = """							<?php """ + DISABLE + """Icon::render() owns context-specific escaping for its complete SVG payload. ?>
-							<?php echo \\CoreBlueprint\\Core\\UI\\Icon::render( 'expand', [ 'class' => 'cb-core-chevron', 'size' => 'compact' ] ); ?>
-							<?php """ + ENABLE + """ ?>
-"""
-    text = replace_once(text, old_module_icon, new_module_icon, "Core Shield module icon boundary")
+    lines = text.splitlines()
 
-    old_feature_icon = """										<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Icon::render() returns escape-clean SVG. ?>
-										<?php echo \\CoreBlueprint\\Core\\UI\\Icon::render( 'expand', [ 'class' => 'cb-core-feature-chevron', 'size' => 'compact' ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
-"""
-    new_feature_icon = """										<?php """ + DISABLE + """Icon::render() owns context-specific escaping for its complete SVG payload. ?>
-										<?php echo \\CoreBlueprint\\Core\\UI\\Icon::render( 'expand', [ 'class' => 'cb-core-feature-chevron', 'size' => 'compact' ] ); ?>
-										<?php """ + ENABLE + """ ?>
-"""
-    text = replace_once(text, old_feature_icon, new_feature_icon, "Core Shield feature icon boundary")
+    def unique_index(needle: str, label: str) -> int:
+        matches = [i for i, line in enumerate(lines) if needle in line]
+        if 1 != len(matches):
+            raise RuntimeError(
+                f"{label}: expected one matching source line, found {len(matches)}."
+            )
+        return matches[0]
 
-    old_badge_state = """									<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- existing callsite documents this output boundary as safe. ?>
-									<?php // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- StateBadge::render() returns escape-clean HTML. ?>
-									<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-									<?php echo \\CoreBlueprint\\Core\\UI::render_badges( $feature_badges ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+    def canonicalize_icon(needle: str, label: str) -> None:
+        index = unique_index(needle, label)
+        line = lines[index]
+        indent = re.match(r"^\\s*", line).group(0)
+        echo_only = line.split("?>", 1)[0].rstrip() + " ?>"
 
-									<?php if ( $delegated_label ) : ?>
-										<div class="cb-core-feature-delegated">
-											<?php ?>
-								<?php // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-											<?php echo \\CoreBlueprint\\Core\\UI\\StateBadge::render( __( 'Delegated', 'core-blueprint' ), [ 'variant' => \\CoreBlueprint\\Core\\UI\\StateBadge::INFO ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
-"""
-    new_badge_state = """									<?php """ + DISABLE + """UI::render_badges() escapes URLs, attributes, and visible labels for every supported badge type. ?>
-									<?php echo \\CoreBlueprint\\Core\\UI::render_badges( $feature_badges ); ?>
-									<?php """ + ENABLE + """ ?>
+        # E1B2a may have left both a preceding legacy ignore and an inline
+        # same-line ignore. Remove only those tool-owned PHPCS lines.
+        start = index
+        if index > 0 and "phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped" in lines[index - 1]:
+            start = index - 1
 
-									<?php if ( $delegated_label ) : ?>
-										<div class="cb-core-feature-delegated">
-											<?php """ + DISABLE + """StateBadge::render() owns context-specific escaping for its complete structured payload. ?>
-											<?php echo \\CoreBlueprint\\Core\\UI\\StateBadge::render( __( 'Delegated', 'core-blueprint' ), [ 'variant' => \\CoreBlueprint\\Core\\UI\\StateBadge::INFO ] ); ?>
-											<?php """ + ENABLE + """ ?>
-"""
-    return replace_once(text, old_badge_state, new_badge_state, "Core Shield badge/state boundary repair")
+        lines[start:index + 1] = [
+            indent + "<?php " + DISABLE
+            + "Icon::render() owns context-specific escaping for its complete SVG payload. ?>",
+            indent + echo_only.lstrip(),
+            indent + "<?php " + ENABLE + " ?>",
+        ]
 
+    canonicalize_icon(
+        "UI\\Icon::render( 'expand', [ 'class' => 'cb-core-chevron'",
+        "Core Shield module icon boundary",
+    )
+    canonicalize_icon(
+        "UI\\Icon::render( 'expand', [ 'class' => 'cb-core-feature-chevron'",
+        "Core Shield feature icon boundary",
+    )
+
+    # Re-resolve indexes after the icon rewrites changed physical line numbers.
+    badge_index = unique_index(
+        "UI::render_badges( $feature_badges )",
+        "Core Shield feature badges boundary",
+    )
+    state_index = unique_index(
+        "UI\\StateBadge::render( __( 'Delegated'",
+        "Core Shield delegated StateBadge boundary",
+    )
+
+    if state_index <= badge_index:
+        raise RuntimeError("Core Shield badge/state boundary order is unexpected.")
+
+    # The earlier mechanical passes left a recognizable PHPCS-only tangle
+    # around these two calls. Assert that every extra PHP-only line in the
+    # replacement window is one of our PHPCS markers or an empty PHP tag.
+    start = badge_index
+    while start > 0 and (
+        "phpcs:" in lines[start - 1]
+        or lines[start - 1].strip() in {"<?php ?>", "<?php", "?>"}
+    ):
+        start -= 1
+
+    end = state_index
+    if "phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped" not in lines[state_index]:
+        raise RuntimeError("Core Shield StateBadge line is not the audited pre-patch form.")
+
+    between = lines[start:state_index]
+    if_line = next(
+        (line for line in between if "if ( $delegated_label )" in line),
+        None,
+    )
+    div_line = next(
+        (line for line in between if 'class="cb-core-feature-delegated"' in line),
+        None,
+    )
+    if if_line is None or div_line is None:
+        raise RuntimeError("Core Shield delegated wrapper was not found in the audited window.")
+
+    badge_indent = re.match(r"^\\s*", lines[badge_index]).group(0)
+    state_indent = re.match(r"^\\s*", lines[state_index]).group(0)
+    badge_echo = lines[badge_index].split("// phpcs:ignore", 1)[0].rstrip()
+    state_echo = lines[state_index].split("?>", 1)[0].rstrip() + " ?>"
+
+    lines[start:end + 1] = [
+        badge_indent + "<?php " + DISABLE
+        + "UI::render_badges() escapes URLs, attributes, and visible labels for every supported badge type. ?>",
+        badge_indent + badge_echo.lstrip(),
+        badge_indent + "<?php " + ENABLE + " ?>",
+        "",
+        if_line,
+        div_line,
+        state_indent + "<?php " + DISABLE
+        + "StateBadge::render() owns context-specific escaping for its complete structured payload. ?>",
+        state_indent + state_echo.lstrip(),
+        state_indent + "<?php " + ENABLE + " ?>",
+    ]
+
+    updated = "\\n".join(lines)
+    if text.endswith("\\n"):
+        updated += "\\n"
+    return updated
 
 def patch_appearance(text: str) -> str:
     old = """						<?php echo \\CoreBlueprint\\Core\\Themes::sanitize_preview_svg( (string) $theme['preview_svg'] ); ?>
