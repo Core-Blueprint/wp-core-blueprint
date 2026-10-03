@@ -25,7 +25,6 @@ use CoreBlueprint\Core\Permissions\UserRolesState;
 use CoreBlueprint\Core\Reports\State as ReportsState;
 use CoreBlueprint\Core\Security\CoreShieldState;
 use CoreBlueprint\Core\Security\LoginShieldState;
-use CoreBlueprint\Core\Snippets\State as SnippetsState;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -77,10 +76,6 @@ final class ActivationRegistry {
 			'user-roles' => [
 				'state'      => UserRolesState::class,
 				'capability' => 'cb_manage_roles',
-			],
-			'snippets' => [
-				'state'      => SnippetsState::class,
-				'capability' => 'cb_manage_snippets',
 			],
 		];
 	}

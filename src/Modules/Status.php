@@ -17,7 +17,6 @@ use CoreBlueprint\Core\Log\Status as LogStatus;
 use CoreBlueprint\Core\Notes\Status as NotesStatus;
 use CoreBlueprint\Core\Reports\Status as ReportsStatus;
 use CoreBlueprint\Core\Safeguards\Contributors as SafeguardContributors;
-use CoreBlueprint\Core\Snippets\Status as SnippetsStatus;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -70,11 +69,6 @@ final class Status {
 				'provider' => [ ReportsStatus::class, 'contribute' ],
 				'label'    => 'Reports',
 				'url'      => admin_url( 'admin.php?page=core-blueprint-reports' ),
-			],
-			'snippets' => [
-				'provider' => [ SnippetsStatus::class, 'contribute' ],
-				'label'    => 'Snippets',
-				'url'      => admin_url( 'admin.php?page=core-blueprint-snippets' ),
 			],
 		];
 	}
@@ -216,7 +210,6 @@ final class Status {
 			case 'logs':         return __( 'Logs', 'core-blueprint' );
 			case 'notes':        return __( 'Notes', 'core-blueprint' );
 			case 'reports':      return __( 'Reports', 'core-blueprint' );
-			case 'snippets':     return __( 'Snippets', 'core-blueprint' );
 			default:             return '' !== $fallback ? $fallback : $id;
 		}
 	}

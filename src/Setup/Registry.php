@@ -38,7 +38,6 @@ use CoreBlueprint\Core\Setup\Checks\OperationalToolsCheck;
 use CoreBlueprint\Core\Setup\Checks\PrivacyIpHandlingCheck;
 use CoreBlueprint\Core\Setup\Checks\PrivilegedAccessProtectionCheck;
 use CoreBlueprint\Core\Setup\Checks\PrivilegedAccessReviewCheck;
-use CoreBlueprint\Core\Setup\Checks\SnippetsCheck;
 use CoreBlueprint\Core\Setup\Checks\TwoFactorReadinessCheck;
 
 defined( 'ABSPATH' ) || exit;
@@ -75,7 +74,6 @@ final class Registry {
 			new AuditVerbosityCheck(),
 
 			new ContentModelsCheck(),
-			new SnippetsCheck(),
 			new ModuleActivationDecisionCheck(
 				'user-roles',
 				'User Roles',

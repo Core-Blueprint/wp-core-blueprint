@@ -193,11 +193,6 @@ final class Core {
 		// preserves definitions and WordPress content for later recovery.
 		\CoreBlueprint\Core\ContentModels\Bootstrap::boot();
 
-		// Snippets subsystem - managed PHP/CSS/JavaScript/HTML snippets.
-		// Boot synchronously so enabled PHP snippets can intentionally target
-		// plugins_loaded; Runtime itself remains gated by State + SafeMode.
-		\CoreBlueprint\Core\Snippets\Bootstrap::boot();
-
 		// Core Scanner subsystem - file integrity verification (WP core
 		// checksums, supported plugin/theme checksums, uploads executable
 		// scan). Tab-rendered inside Safeguards; no separate top-level

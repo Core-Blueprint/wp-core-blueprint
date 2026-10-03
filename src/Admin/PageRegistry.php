@@ -44,7 +44,6 @@ final class PageRegistry {
 		'core-blueprint-safeguards',
 		'core-blueprint-settings',
 		'core-blueprint-setup',
-		'core-blueprint-snippets',
 		'core-blueprint-user-roles',
 	];
 
