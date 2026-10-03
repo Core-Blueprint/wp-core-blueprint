@@ -31,7 +31,6 @@ final class ScreenAssetRegistry {
 		'core-blueprint-console',
 		'core-blueprint-media-formats',
 		'core-blueprint-content-models',
-		'core-blueprint-snippets',
 	];
 
 	/** Whether the normalized context belongs to a registered Core Admin screen. */
@@ -209,9 +208,6 @@ final class ScreenAssetRegistry {
 
 			case 'core-blueprint-content-models':
 				return self::content_models_requirements( $tab, $view );
-
-			case 'core-blueprint-snippets':
-				return self::snippets_requirements( $tab, $view );
 		}
 
 		return [];
@@ -350,19 +346,4 @@ final class ScreenAssetRegistry {
 		return $items;
 	}
 
-	/** @return string[] */
-	private static function snippets_requirements( string $tab, string $view ): array {
-		$items = [ 'page.snippets', 'page.security', 'component.nav-tabs' ];
-		if ( 'import-export' === $tab ) {
-			$items[] = 'provider.snippets-import-export';
-			return $items;
-		}
-		if ( 'snippets' !== $tab ) {
-			return $items;
-		}
-
-		$items[] = 'foundation.modal';
-		$items[] = 'edit' === $view ? 'provider.snippets-editor' : 'provider.snippets-list';
-		return $items;
-	}
 }

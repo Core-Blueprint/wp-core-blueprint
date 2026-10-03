@@ -147,7 +147,7 @@ final class AdminAssetCatalog {
 			'preferences-notifications', 'preferences-permissions', 'preferences-cli', 'console', 'mail',
 			'safeguards-modules', 'safeguards-failsafe', 'safeguards-login-shield', 'safeguards-site-mode',
 			'safeguards-core-shield', 'safeguards-core-scanner', 'notes', 'user-roles', 'media-replace',
-			'media-formats', 'content-models', 'snippets',
+			'media-formats', 'content-models',
 		] as $page ) {
 			$assets[] = 'page.' . $page;
 		}
@@ -229,15 +229,6 @@ final class AdminAssetCatalog {
 				'type'     => 'provider',
 				'provider' => static function (): void {
 					wp_enqueue_media();
-				},
-			];
-		}
-		if ( in_array( $asset_id, [ 'provider.snippets-list', 'provider.snippets-editor', 'provider.snippets-import-export' ], true ) ) {
-			$editor = 'provider.snippets-editor' === $asset_id;
-			return [
-				'type'     => 'provider',
-				'provider' => static function ( ScreenContext $context ) use ( $editor ): void {
-					\CoreBlueprint\Core\Snippets\Admin\Assets::enqueue( $context->hook(), $editor );
 				},
 			];
 		}
@@ -364,7 +355,7 @@ final class AdminAssetCatalog {
 				'preferences-notifications', 'preferences-permissions', 'preferences-cli', 'console', 'mail',
 				'safeguards-modules', 'safeguards-failsafe', 'safeguards-login-shield', 'safeguards-site-mode',
 				'safeguards-core-shield', 'safeguards-core-scanner', 'notes', 'user-roles', 'media-replace',
-				'media-formats', 'content-models', 'snippets',
+				'media-formats', 'content-models',
 			];
 			if ( in_array( $name, $allowed, true ) ) {
 				return [

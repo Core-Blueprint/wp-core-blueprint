@@ -172,6 +172,21 @@ final class EventRegistry {
 			'audit.pruned' => __( 'Audit log pruned', 'core-blueprint' ),
 			'audit.prune.failed' => __( 'Audit log prune failed', 'core-blueprint' ),
 			'module.boot.failed' => __( 'Module boot failed', 'core-blueprint' ),
+			// Historical Base-owned Snippets event identities remain registered so
+			// audit rows written before the standalone extension extraction retain
+			// their human-readable labels.
+			'snippets.subsystem.enabled' => __( 'Snippets: subsystem enabled', 'core-blueprint' ),
+			'snippets.subsystem.disabled' => __( 'Snippets: subsystem disabled', 'core-blueprint' ),
+			'snippet.created' => __( 'Snippets: snippet created', 'core-blueprint' ),
+			'snippet.updated' => __( 'Snippets: snippet updated', 'core-blueprint' ),
+			'snippet.enabled' => __( 'Snippets: snippet enabled', 'core-blueprint' ),
+			'snippet.disabled' => __( 'Snippets: snippet disabled', 'core-blueprint' ),
+			'snippet.duplicated' => __( 'Snippets: snippet duplicated', 'core-blueprint' ),
+			'snippet.deleted' => __( 'Snippets: snippet deleted', 'core-blueprint' ),
+			'snippet.auto.disabled' => __( 'Snippets: snippet auto-disabled after runtime error', 'core-blueprint' ),
+			'snippets.exported' => __( 'Snippets: snippets exported', 'core-blueprint' ),
+			'snippets.imported' => __( 'Snippets: snippets imported', 'core-blueprint' ),
+			'snippets.restore.acknowledged' => __( 'Snippets: restore backup and recovery responsibility acknowledged', 'core-blueprint' ),
 			'security.password.reconfirm.failed' => __( 'Password re-confirm failed', 'core-blueprint' ),
 			'ui.site.mode.changed' => __( 'Description mode (site default) changed', 'core-blueprint' ),
 		] );
