@@ -10,9 +10,10 @@ OutputNotEscaped ignores into narrowly-scoped phpcs:disable/phpcs:enable pairs
 around the exact echo statement that already carries the documented rationale.
 
 Usage:
-  python3 tools/harden-documented-output-boundaries.py
-  python3 tools/harden-documented-output-boundaries.py --apply
-  python3 tools/harden-documented-output-boundaries.py --check
+  python3 tools/harden-documented-output-boundaries.py --scan-json <export.json>
+  python3 tools/harden-documented-output-boundaries.py --scan-json <export.json> --apply
+  python3 tools/harden-documented-output-boundaries.py --scan-json <export.json> --check
+  python3 tools/harden-documented-output-boundaries.py --repair-applied
 """
 
 from __future__ import annotations
@@ -37,8 +38,8 @@ EXCLUDED_DIRS = {
 }
 
 START_RE = re.compile(r"^\s*(?:<\?php\s+)?echo\b")
-IGNORE_RE = re.compile(
-    rf"\s*//\s*phpcs:ignore\s+{re.escape(SNIFF)}(?P<reason>.*?)(?=\s*\?>\s*$|\s*$)"
+IGNORE_MARKER_RE = re.compile(
+    rf"//\s*phpcs:ignore\s+{re.escape(SNIFF)}"
 )
 
 
@@ -87,6 +88,31 @@ def normalize_reason(raw: str) -> str:
     return reason
 
 
+def split_ignore_line(line: str) -> tuple[str, str] | None:
+    """Remove only the PHPCS ignore comment and preserve PHP/HTML suffixes.
+
+    A template line can legitimately end in sequences such as `?>>` where
+    `?>` closes PHP and the final `>` closes the surrounding HTML tag.
+    Treat everything from the first PHP close token after the ignore marker as
+    runtime syntax, never as part of the PHPCS comment.
+    """
+    match = IGNORE_MARKER_RE.search(line)
+    if not match:
+        return None
+
+    tail = line[match.end():]
+    suffix_offset = tail.find("?>")
+    if suffix_offset >= 0:
+        reason_raw = tail[:suffix_offset]
+        suffix = tail[suffix_offset:]
+    else:
+        reason_raw = tail
+        suffix = ""
+
+    cleaned = line[:match.start()].rstrip() + suffix
+    return cleaned, normalize_reason(reason_raw)
+
+
 def inspect_file(
     text: str,
     reported_lines: set[int],
@@ -97,9 +123,10 @@ def inspect_file(
     for end, line in enumerate(lines):
         if IGNORE_TOKEN not in line:
             continue
-        match = IGNORE_RE.search(line)
-        if not match:
+        parsed = split_ignore_line(line)
+        if parsed is None:
             continue
+        _cleaned, reason = parsed
         start = statement_start(lines, end)
         if start is None or already_scoped(lines, start, end):
             continue
@@ -111,7 +138,7 @@ def inspect_file(
         if not any(start + 1 <= line_no <= end + 1 for line_no in reported_lines):
             continue
 
-        found.append((start, end, normalize_reason(match.group("reason"))))
+        found.append((start, end, reason))
 
     return found
 
@@ -125,8 +152,12 @@ def transform(text: str, reported_lines: set[int]) -> tuple[str, int]:
     for start, end, reason in reversed(boundaries):
         indent = re.match(r"^\s*", lines[start]).group(0)
 
-        # Remove only the existing trailing ignore; keep any closing PHP tag.
-        lines[end] = IGNORE_RE.sub("", lines[end]).rstrip()
+        # Remove only the existing trailing ignore. PHP close tokens and any
+        # following HTML syntax are preserved verbatim by split_ignore_line().
+        parsed = split_ignore_line(lines[end])
+        if parsed is None:
+            continue
+        lines[end], _existing_reason = parsed
 
         if "<?php" in lines[start]:
             disable_line = (
@@ -158,6 +189,113 @@ def transform(text: str, reported_lines: set[int]) -> tuple[str, int]:
     if text.endswith("\n"):
         updated += "\n"
     return updated, len(boundaries)
+
+
+
+def repair_applied_boundaries() -> tuple[int, int]:
+    """Repair suffixes swallowed by the pre-fix migrator.
+
+    The older implementation could consume a PHP close token plus following
+    HTML syntax (for example `?>>`) into the generated disable-comment reason.
+    That suffix is still recoverable from the marker, so restore it in place
+    without touching unrelated working-tree changes.
+    """
+    changed_files = 0
+    repaired = 0
+
+    disable_token = f"phpcs:disable {SNIFF}"
+    enable_token = f"phpcs:enable {SNIFF}"
+
+    for path in candidate_files():
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+
+        lines = text.splitlines()
+        file_repairs = 0
+        index = 0
+
+        while index < len(lines):
+            line = lines[index]
+            if disable_token not in line or "--" not in line:
+                index += 1
+                continue
+
+            php_wrapped = line.lstrip().startswith("<?php")
+            payload = line.split("--", 1)[1].strip()
+            if php_wrapped and payload.endswith("?>"):
+                payload = payload[:-2].rstrip()
+
+            suffix_at = payload.find("?>")
+            if suffix_at < 0:
+                index += 1
+                continue
+
+            reason = payload[:suffix_at].strip()
+            suffix = payload[suffix_at:]
+            if not reason:
+                reason = "existing callsite documents this output boundary as safe."
+
+            enable_index = None
+            for probe in range(index + 1, min(len(lines), index + 160)):
+                if enable_token in lines[probe]:
+                    enable_index = probe
+                    break
+            if enable_index is None or enable_index <= index + 1:
+                raise RuntimeError(
+                    f"Could not locate generated enable boundary after "
+                    f"{path.relative_to(ROOT)}:{index + 1}"
+                )
+
+            statement_end = enable_index - 1
+            if "?>" in lines[statement_end]:
+                raise RuntimeError(
+                    f"Refusing ambiguous repair at "
+                    f"{path.relative_to(ROOT)}:{statement_end + 1}"
+                )
+
+            lines[statement_end] = lines[statement_end].rstrip() + suffix
+
+            indent = re.match(r"^\s*", line).group(0)
+            if php_wrapped:
+                lines[index] = (
+                    indent
+                    + "<?php // phpcs:disable "
+                    + SNIFF
+                    + " -- "
+                    + reason
+                    + " ?>"
+                )
+            else:
+                lines[index] = (
+                    indent
+                    + "// phpcs:disable "
+                    + SNIFF
+                    + " -- "
+                    + reason
+                )
+
+            enable_indent = re.match(r"^\s*", lines[enable_index]).group(0)
+            lines[enable_index] = (
+                enable_indent
+                + "<?php // phpcs:enable "
+                + SNIFF
+                + " ?>"
+            )
+
+            repaired += 1
+            file_repairs += 1
+            index = enable_index + 1
+
+        if file_repairs:
+            updated = "\n".join(lines)
+            if text.endswith("\n"):
+                updated += "\n"
+            path.write_text(updated, encoding="utf-8")
+            changed_files += 1
+
+    return changed_files, repaired
 
 
 def load_scan(path: Path) -> dict[str, set[int]]:
@@ -203,12 +341,21 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--scan-json",
-        required=True,
         help="Plugin Check JSON export from the exact source tree being audited.",
     )
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--repair-applied", action="store_true")
     args = parser.parse_args()
+
+    if args.repair_applied:
+        changed_files, repaired = repair_applied_boundaries()
+        print(f"REPAIRED FILES: {changed_files}")
+        print(f"REPAIRED BOUNDARIES: {repaired}")
+        return 0
+
+    if not args.scan_json:
+        parser.error("--scan-json is required unless --repair-applied is used")
 
     scan_path = Path(args.scan_json).expanduser().resolve()
     if not scan_path.is_file():
