@@ -317,6 +317,8 @@ def patch_core_shield(text: str) -> str:
     badge_indent = re.match(r"^\s*", lines[badge_index]).group(0)
     state_indent = re.match(r"^\s*", lines[state_index]).group(0)
     badge_echo = lines[badge_index].split("// phpcs:ignore", 1)[0].rstrip()
+    if badge_echo.lstrip().startswith("<?php") and "?>" not in badge_echo:
+        badge_echo += " ?>"
     state_echo = lines[state_index].split("?>", 1)[0].rstrip() + " ?>"
 
     lines[start:state_index + 1] = [
@@ -455,11 +457,75 @@ def prepare() -> dict[str, str]:
     return updated
 
 
+def repair_applied_core_shield() -> tuple[int, int]:
+    """Repair the one malformed E1B2b template boundary from the first apply.
+
+    The original finalizer removed an inline PHPCS comment from the
+    render_badges() template line but accidentally removed the trailing PHP
+    close tag with it. Repair only that exact already-applied shape.
+    """
+    path = ROOT / "templates/core-shield.php"
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+
+    matches = [
+        i
+        for i, line in enumerate(lines)
+        if "UI::render_badges( $feature_badges )" in line
+    ]
+    if 1 != len(matches):
+        raise RuntimeError(
+            "Core Shield repair expected exactly one feature badges renderer, "
+            f"found {len(matches)}."
+        )
+
+    index = matches[0]
+    line = lines[index]
+    if "phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped" in line:
+        raise RuntimeError(
+            "Core Shield repair refused: source is not the already-applied "
+            "E1B2b shape."
+        )
+
+    if "?>" in line:
+        print("REPAIRED FILES: 0")
+        print("REPAIRED BOUNDARIES: 0")
+        print("PASS: Core Shield feature badges boundary already has a PHP close tag.")
+        return (0, 0)
+
+    if "<?php echo " not in line or not line.rstrip().endswith(");"):
+        raise RuntimeError(
+            "Core Shield repair refused: feature badges line does not match "
+            "the known malformed E1B2b output."
+        )
+
+    lines[index] = line.rstrip() + " ?>"
+    updated = "\n".join(lines)
+    if text.endswith("\n"):
+        updated += "\n"
+    path.write_text(updated, encoding="utf-8")
+
+    print("REPAIRED FILES: 1")
+    print("REPAIRED BOUNDARIES: 1")
+    print("PASS: restored the missing PHP close tag on the Core Shield badges boundary.")
+    return (1, 1)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scan-json", required=True)
+    parser.add_argument("--scan-json")
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--repair-applied", action="store_true")
     args = parser.parse_args()
+
+    if args.repair_applied:
+        if args.apply:
+            parser.error("--repair-applied cannot be combined with --apply")
+        repair_applied_core_shield()
+        return 0
+
+    if not args.scan_json:
+        parser.error("--scan-json is required unless --repair-applied is used")
 
     scan_path = Path(args.scan_json).expanduser().resolve()
     if not scan_path.is_file():
