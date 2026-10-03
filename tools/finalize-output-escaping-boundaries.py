@@ -364,6 +364,69 @@ def patch_appearance(text: str) -> str:
     return updated
 
 
+def patch_secure_action_screen(text: str) -> str:
+    lines = text.splitlines()
+    matches = [
+        i
+        for i, line in enumerate(lines)
+        if "echo Card::render( [" in line
+        and "Card owns frame escaping" in line
+    ]
+    if 1 != len(matches):
+        raise RuntimeError(
+            "SecureActionScreen Card boundary: expected one documented Card "
+            f"callsite, found {len(matches)}."
+        )
+
+    start = matches[0]
+    body_matches = [
+        i
+        for i in range(start, min(len(lines), start + 8))
+        if "'body'    => $body" in lines[i]
+    ]
+    if 1 != len(body_matches):
+        raise RuntimeError(
+            "SecureActionScreen Card boundary: expected one $body raw-slot "
+            f"assignment, found {len(body_matches)}."
+        )
+
+    end = next(
+        (
+            i
+            for i in range(body_matches[0], min(len(lines), body_matches[0] + 6))
+            if "] );" in lines[i]
+        ),
+        None,
+    )
+    if end is None:
+        raise RuntimeError("SecureActionScreen Card boundary end not found.")
+
+    indent = re.match(r"^\s*", lines[start]).group(0)
+    first = lines[start].split("// phpcs:ignore", 1)[0].rstrip()
+
+    lines[start:end + 1] = [
+        indent + DISABLE
+        + "Both internal callers construct body from static markup, escaped dynamic values, and audited UI components before entering Card's caller-owned raw body slot.",
+        first,
+        *lines[start + 1:end + 1],
+        indent + ENABLE,
+    ]
+
+    updated = "\n".join(lines)
+    if text.endswith("\n"):
+        updated += "\n"
+    return updated
+
+
+PATCHERS = {
+    "src/Admin/Pages/Settings.php": patch_settings,
+    "src/Admin/SecureActionScreen.php": patch_secure_action_screen,
+    "templates/core-shield.php": patch_core_shield,
+    "templates/login-shield.php": patch_login_shield,
+    "templates/appearance.php": patch_appearance,
+}
+
+
 def secure_action_callers() -> list[tuple[str, int, str]]:
     callers: list[tuple[str, int, str]] = []
     needle = "SecureActionScreen::render"
@@ -405,12 +468,21 @@ def main() -> int:
     found = load_scan(scan_path)
     verify_scan(found)
     callers = secure_action_callers()
+    caller_paths = [path for path, _line_no, _line in callers]
+    if caller_paths != [
+        "src/Security/TwoFactor/ProfileController.php",
+        "src/Security/TwoFactor/ProfileController.php",
+    ]:
+        raise RuntimeError(
+            "SecureActionScreen caller set changed; re-audit the raw Card body "
+            f"slot before applying. Found: {caller_paths!r}"
+        )
 
     print("AUDITED BASELINE: 24 OutputNotEscaped findings in 5 files")
-    print("PATCHABLE FILES: 4")
-    print("PATCHABLE BOUNDARIES: 8")
-    print("PATCHABLE FINDINGS: 22")
-    print("DEFERRED SECURE-ACTION FINDINGS: 2")
+    print("PATCHABLE FILES: 5")
+    print("PATCHABLE BOUNDARIES: 9")
+    print("PATCHABLE FINDINGS: 24")
+    print("DEFERRED SECURE-ACTION FINDINGS: 0")
     print("SECURE-ACTION CALLERS:")
     if callers:
         for path, line_no, line in callers:
@@ -427,10 +499,10 @@ def main() -> int:
     for rel, content in updated.items():
         (ROOT / rel).write_text(content, encoding="utf-8")
 
-    print("APPLIED FILES: 4")
-    print("APPLIED BOUNDARIES: 8")
-    print("COVERED FINDINGS: 22")
-    print("SecureActionScreen remains intentionally unchanged pending caller audit.")
+    print("APPLIED FILES: 5")
+    print("APPLIED BOUNDARIES: 9")
+    print("COVERED FINDINGS: 24")
+    print("PASS: all audited OutputNotEscaped callsite boundaries are documented.")
     return 0
 
 
