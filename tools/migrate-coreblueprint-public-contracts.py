@@ -172,6 +172,20 @@ DYNAMIC_HOOK_PREFIXES = {
     "cb_core_reports_render_tab_",
 }
 
+# The log-export AJAX action values are an internal request protocol, not the
+# dynamic public extension hook cb_core_export_{format}. Keep those stable while
+# migrating the extension hook itself.
+PRESERVED_EXPORT_AJAX_FILES = {
+    Path("assets/js/features/log-exports.js"),
+    Path("templates/partials/log-events-page.php"),
+}
+
+PRESERVED_EXPORT_AJAX_RENAMES = {
+    "core_blueprint_export_audit": "cb_core_export_audit",
+    "core_blueprint_export_system_log": "cb_core_export_system_log",
+    "core_blueprint_export_maintenance_report": "cb_core_export_maintenance_report",
+}
+
 TOKEN_CHARS = r"A-Za-z0-9_"
 
 
@@ -206,11 +220,13 @@ def replace_dynamic_prefix(text: str, old: str, new: str) -> tuple[str, int]:
     return pattern.subn(new, text)
 
 
-def transform(text: str) -> tuple[str, dict[str, int]]:
+def transform(text: str, relative: Path) -> tuple[str, dict[str, int]]:
     updated = text
     counts: dict[str, int] = {}
 
     for old, new in HOOK_RENAMES.items():
+        if old == "cb_core_export_" and relative in PRESERVED_EXPORT_AJAX_FILES:
+            continue
         if old in DYNAMIC_HOOK_PREFIXES:
             updated, count = replace_dynamic_prefix(updated, old, new)
         else:
@@ -222,6 +238,12 @@ def transform(text: str) -> tuple[str, dict[str, int]]:
         updated, count = replace_exact_token(updated, old, new)
         if count:
             counts[old] = counts.get(old, 0) + count
+
+    if relative in PRESERVED_EXPORT_AJAX_FILES:
+        for migrated, preserved in PRESERVED_EXPORT_AJAX_RENAMES.items():
+            updated, count = replace_exact_token(updated, migrated, preserved)
+            if count:
+                counts[migrated] = counts.get(migrated, 0) + count
 
     return updated, counts
 
@@ -236,7 +258,7 @@ def inspect() -> tuple[list[tuple[Path, dict[str, int]]], int]:
         except UnicodeDecodeError:
             continue
 
-        _updated, counts = transform(text)
+        _updated, counts = transform(text, path.relative_to(ROOT))
         if counts:
             affected.append((path, counts))
             total += sum(counts.values())
@@ -250,7 +272,7 @@ def apply() -> tuple[int, int]:
 
     for path, _counts in affected:
         text = path.read_text(encoding="utf-8")
-        updated, counts = transform(text)
+        updated, counts = transform(text, path.relative_to(ROOT))
         count = sum(counts.values())
         if not count:
             continue
