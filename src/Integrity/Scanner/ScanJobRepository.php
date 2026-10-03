@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Scanner;
+namespace CoreBlueprint\Core\Integrity\Scanner;
 
-use CB\Core\Integrity\Storage\ChunkedOptionStore;
-use CB\Core\Integrity\Storage\StorageSchema;
+use CoreBlueprint\Core\Integrity\Storage\ChunkedOptionStore;
+use CoreBlueprint\Core\Integrity\Storage\StorageSchema;
 
 use function is_array;
 

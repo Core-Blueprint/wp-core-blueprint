@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\Notes\Settings;
+namespace CoreBlueprint\Core\Notes\Settings;
 
-use CB\Core\Notes\Repository;
+use CoreBlueprint\Core\Notes\Repository;
 
 defined( 'ABSPATH' ) || exit;
 

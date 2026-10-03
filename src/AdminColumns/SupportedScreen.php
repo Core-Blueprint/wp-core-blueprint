@@ -6,7 +6,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\AdminColumns;
+namespace CoreBlueprint\Core\AdminColumns;
 
 defined( 'ABSPATH' ) || exit;
 

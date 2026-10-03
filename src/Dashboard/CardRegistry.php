@@ -15,7 +15,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Dashboard;
+namespace CoreBlueprint\Core\Dashboard;
 
 defined( 'ABSPATH' ) || exit;
 

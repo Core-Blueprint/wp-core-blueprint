@@ -18,9 +18,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD\Brand;
+namespace CoreBlueprint\Core\HUD\Brand;
 
-use CB\Core\Themes;
+use CoreBlueprint\Core\Themes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -85,7 +85,7 @@ abstract class AbstractBrand implements BrandInterface {
 	 * consistent across brands.
 	 */
 	public function render_trigger(): string {
-		$logo  = \CB\Core\HUD\HUD::sanitize_logo_svg( $this->logo_svg() );
+		$logo  = \CoreBlueprint\Core\HUD\HUD::sanitize_logo_svg( $this->logo_svg() );
 		$label = esc_html( $this->label() );
 
 		return sprintf(

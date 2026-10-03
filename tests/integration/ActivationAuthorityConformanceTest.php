@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Ajax\Handlers\Modules as ModuleActions;
-use CB\Core\Ajax\Handlers\Reports as ReportsActions;
-use CB\Core\Integrity\Rest\ScanController;
-use CB\Core\Integrity\State as IntegrityState;
-use CB\Core\Log\AuditLog;
-use CB\Core\Modules\ActivationRegistry;
-use CB\Core\Notes\Rest\NotesController;
-use CB\Core\Notes\State as NotesState;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\Roles;
-use CB\Core\Reports\State as ReportsState;
+use CoreBlueprint\Core\Ajax\Handlers\Modules as ModuleActions;
+use CoreBlueprint\Core\Ajax\Handlers\Reports as ReportsActions;
+use CoreBlueprint\Core\Integrity\Rest\ScanController;
+use CoreBlueprint\Core\Integrity\State as IntegrityState;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Modules\ActivationRegistry;
+use CoreBlueprint\Core\Notes\Rest\NotesController;
+use CoreBlueprint\Core\Notes\State as NotesState;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Reports\State as ReportsState;
 
 final class CB_C3_Test_Termination extends RuntimeException {}
 

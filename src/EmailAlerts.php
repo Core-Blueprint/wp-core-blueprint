@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core;
+namespace CoreBlueprint\Core;
 
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -352,7 +352,7 @@ final class EmailAlerts {
 			$insert_id
 		) . "\n";
 
-		$audit_url = admin_url( 'admin.php?page=' . \CB\Core\Admin\Admin::LOGS_SLUG . '&tab=audit' );
+		$audit_url = admin_url( 'admin.php?page=' . \CoreBlueprint\Core\Admin\Admin::LOGS_SLUG . '&tab=audit' );
 		$body     .= __( 'View audit log:', 'core-blueprint' ) . ' ' . $audit_url . "\n\n";
 		$body     .= __( 'This alert was throttled to at most one notification per event type per 15 minutes. Additional events of the same type within that window were not emailed - check the audit log for the complete record.', 'core-blueprint' ) . "\n\n";
 		$body     .= '- Core Blueprint';

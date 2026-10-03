@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Storage;
+namespace CoreBlueprint\Core\Integrity\Storage;
 
 use function array_fill_keys;
 use function array_intersect_key;

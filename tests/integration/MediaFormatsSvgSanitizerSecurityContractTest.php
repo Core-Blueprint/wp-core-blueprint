@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\MediaFormats\Environment;
-use CB\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
+use CoreBlueprint\Core\MediaFormats\Environment;
+use CoreBlueprint\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
 
 final class CB_Base_Media_Formats_Svg_Sanitizer_Security_Contract_Test extends WP_UnitTestCase {
 

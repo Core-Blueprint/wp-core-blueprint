@@ -11,10 +11,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
-use CB\Core\Design\Editor\Assets as DesignEditorAssets;
-use CB\Core\UI\Assets as UiAssets;
+use CoreBlueprint\Core\Design\Editor\Assets as DesignEditorAssets;
+use CoreBlueprint\Core\UI\Assets as UiAssets;
 
 defined( 'ABSPATH' ) || exit;
 

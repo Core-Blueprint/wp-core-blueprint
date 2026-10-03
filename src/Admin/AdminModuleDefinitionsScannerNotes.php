@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /** Private BASE-10E.2 module definitions: ScannerNotes. */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -121,8 +121,8 @@ final class AdminModuleDefinitionsScannerNotes {
 					'data' => [
 						'restRoot' => esc_url_raw( rest_url( 'core-blueprint/v1/notes/' ) ),
 						'nonce'    => wp_create_nonce( 'wp_rest' ),
-						'settings' => class_exists( '\\CB\\Core\\Notes\\Settings\\SettingsRepository' )
-							? \CB\Core\Notes\Settings\SettingsRepository::all()
+						'settings' => class_exists( '\\CoreBlueprint\\Core\\Notes\\Settings\\SettingsRepository' )
+							? \CoreBlueprint\Core\Notes\Settings\SettingsRepository::all()
 							: [],
 						'i18n'     => [
 							/* translators: %d: number of selected notes; substituted by the Notes interface. */
@@ -212,10 +212,10 @@ final class AdminModuleDefinitionsScannerNotes {
 
 	/** Read-only scanner state provider used only by the Scanner module. */
 	private static function core_scanner_active_job_data(): ?array {
-		if ( ! class_exists( \CB\Core\Integrity\Scanner\ScanJobStatus::class ) ) {
+		if ( ! class_exists( \CoreBlueprint\Core\Integrity\Scanner\ScanJobStatus::class ) ) {
 			return null;
 		}
-		$job = \CB\Core\Integrity\Scanner\ScanJobStatus::active_job();
+		$job = \CoreBlueprint\Core\Integrity\Scanner\ScanJobStatus::active_job();
 		if ( ! is_array( $job ) ) {
 			return null;
 		}

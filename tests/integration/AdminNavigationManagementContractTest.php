@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminNavigation\Admin as AdminNavigationAdmin;
-use CB\Core\AdminNavigation\Discovery;
-use CB\Core\AdminNavigation\Policy;
+use CoreBlueprint\Core\AdminNavigation\Admin as AdminNavigationAdmin;
+use CoreBlueprint\Core\AdminNavigation\Discovery;
+use CoreBlueprint\Core\AdminNavigation\Policy;
 
 if ( ! class_exists( 'WP_Admin_Bar' ) ) {
 	require_once ABSPATH . WPINC . '/class-wp-admin-bar.php';
@@ -185,7 +185,7 @@ final class CB_Base_Admin_Navigation_Management_Contract_Test extends WP_UnitTes
 		self::assertStringContainsString( 'data-cb-admin-navigation-rename-audience', $template );
 		self::assertStringContainsString( 'data-cb-admin-navigation-hide-roles-picker', $template );
 		self::assertStringContainsString( 'data-cb-admin-navigation-hide-capabilities-picker', $template );
-		self::assertStringContainsString( '\\CB\\Core\\UI\\ObjectPicker::render', $template );
+		self::assertStringContainsString( '\\CoreBlueprint\\Core\\UI\\ObjectPicker::render', $template );
 		self::assertStringContainsString( 'cb-core-admin-navigation-toolbar-item', $template );
 		self::assertStringContainsString( 'cb-core-disclosure--compact', $template );
 		self::assertStringNotContainsString( 'class="cb-core-panel"', $template );

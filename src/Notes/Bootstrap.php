@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Bootstrap - wires the Notes subsystem into Core Blueprint.
  *
- * Called from {@see \CB\Core\Core::init()} alongside Reports,
+ * Called from {@see \CoreBlueprint\Core\Core::init()} alongside Reports,
  * Permissions, and Integrity bootstraps. Registers:
  *
  *   - REST routes (list + action endpoints under core-blueprint/v1/notes/*)
@@ -12,25 +12,25 @@ declare(strict_types=1);
  *   - Audit-log event metadata via the canonical Governance EventRegistry
  *
  * Asset enqueue (script module + stylesheet) is registered in the central
- * {@see \CB\Core\Admin\Admin::enqueue_assets()} alongside every other CB
+ * {@see \CoreBlueprint\Core\Admin\Admin::enqueue_assets()} alongside every other CB
  * Base module - keeps a single enqueue surface, single place to read
  * which modules ship.
  *
  * The Notes UI itself renders as a top-level page under Core Blueprint;
- * see {@see \CB\Core\Notes\Admin\Page}. Notes preferences are surfaced as
+ * see {@see \CoreBlueprint\Core\Notes\Admin\Page}. Notes preferences are surfaced as
  * a tab inside the central Preferences page via
- * {@see \CB\Core\Notes\Admin\PreferencesPage::render_body()}.
+ * {@see \CoreBlueprint\Core\Notes\Admin\PreferencesPage::render_body()}.
  *
  * @package Core_Blueprint
  * @since   1.0.0
  */
 
-namespace CB\Core\Notes;
+namespace CoreBlueprint\Core\Notes;
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\Notes\Admin\Page;
-use CB\Core\Notes\DB\Install;
-use CB\Core\Notes\Rest\NotesController;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Notes\Admin\Page;
+use CoreBlueprint\Core\Notes\DB\Install;
+use CoreBlueprint\Core\Notes\Rest\NotesController;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -38,7 +38,7 @@ final class Bootstrap {
 
 	/**
 	 * Register all Notes hooks. Called once from
-	 * {@see \CB\Core\Core::init()} during plugin load.
+	 * {@see \CoreBlueprint\Core\Core::init()} during plugin load.
 	 */
 	public static function boot(): void {
 		// Register Notes before the central DB migration sweep at priority 5.
@@ -136,7 +136,7 @@ final class Bootstrap {
 
 	/** Register translation-bearing metadata filters after the textdomain is loaded. */
 	public static function register_i18n_filters(): void {
-		\CB\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
+		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
 	}
 
 	/**

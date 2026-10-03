@@ -313,19 +313,19 @@ function cb_f1_render_admin_scenario(string $scenario, string $page): void {
         do_action('load-' . $hook);
         do_action('admin_enqueue_scripts', $hook);
         ob_start();
-        \CB\Core\Admin\Admin::render_parent_landing();
+        \CoreBlueprint\Core\Admin\Admin::render_parent_landing();
         ob_end_clean();
         return;
     }
 
-    $hook = \CB\Core\Admin\PageRegistry::hook_suffix($page);
+    $hook = \CoreBlueprint\Core\Admin\PageRegistry::hook_suffix($page);
     cb_f1_expect('' !== $hook, "Core Admin page '{$page}' did not register a hook suffix.");
     set_current_screen($hook);
     do_action('load-' . $hook);
     do_action('admin_enqueue_scripts', $hook);
 
-    $registered_page = \CB\Core\Admin\PageRegistry::get($page);
-    cb_f1_expect($registered_page instanceof \CB\Core\Admin\Page, "Core Admin page '{$page}' is not registered.");
+    $registered_page = \CoreBlueprint\Core\Admin\PageRegistry::get($page);
+    cb_f1_expect($registered_page instanceof \CoreBlueprint\Core\Admin\Page, "Core Admin page '{$page}' is not registered.");
     ob_start();
     $registered_page->render();
     ob_end_clean();
@@ -485,17 +485,17 @@ try {
         wp_set_current_user((int) $admin->ID);
 
         cb_f1_expect(
-            class_exists( '\\CB\\Core\\Reports\\State' ),
+            class_exists( '\\CoreBlueprint\\Core\\Reports\\State' ),
             'Reports state authority is unavailable in performance setup.'
         );
         cb_f1_expect(
-            false === \CB\Core\Reports\State::is_enabled(),
+            false === \CoreBlueprint\Core\Reports\State::is_enabled(),
             'Reports must remain disabled before the explicit performance opt-in stage.'
         );
 
-        \CB\Core\Reports\State::set_enabled(true, 'performance-harness');
+        \CoreBlueprint\Core\Reports\State::set_enabled(true, 'performance-harness');
         cb_f1_expect(
-            true === \CB\Core\Reports\State::is_enabled(),
+            true === \CoreBlueprint\Core\Reports\State::is_enabled(),
             'Reports did not become enabled during the explicit performance opt-in stage.'
         );
 
@@ -508,7 +508,7 @@ try {
         cb_f1_expect($admin instanceof WP_User, 'Performance administrator is missing before module disablement.');
         wp_set_current_user((int) $admin->ID);
 
-        $definitions = \CB\Core\Modules\ActivationRegistry::definitions();
+        $definitions = \CoreBlueprint\Core\Modules\ActivationRegistry::definitions();
         cb_f1_expect([] !== $definitions, 'Canonical module activation registry is empty.');
 
         $disabled = [];

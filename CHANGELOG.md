@@ -6,7 +6,7 @@
 
 ### Secret Protection Foundation v1
 
-- Publish `CB\Core\Security\SecretProtection` as a public Core API `1.2` service for authenticated protection of extension-owned credentials at rest.
+- Publish `CoreBlueprint\Core\Security\SecretProtection` as a public Core API `1.2` service for authenticated protection of extension-owned credentials at rest.
 - Bind every protected payload to an exact consumer purpose and subject so ciphertext cannot be reused under another declared connection context.
 - Keep credential records, authorization, lifecycle and retention extension-owned; Base stores no credentials and provides no plaintext fallback.
 - Fail closed for malformed, unsupported, oversized or unauthenticated payloads and document WordPress salt rotation as an explicit reconnect boundary.

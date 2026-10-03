@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Security\TwoFactor;
+namespace CoreBlueprint\Core\Security\TwoFactor;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Security\Failsafe;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Security\Failsafe;
 
 defined( 'ABSPATH' ) || exit;
 

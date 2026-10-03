@@ -7,9 +7,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail;
+namespace CoreBlueprint\Core\Mail;
 
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 

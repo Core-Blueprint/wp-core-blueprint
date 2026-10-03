@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Reports;
+namespace CoreBlueprint\Core\Reports;
 
-use CB\Core\Design\Profile\Document\Flow\Presentation;
-use CB\Core\Design\Profile\Document\Flow\RenderBlock;
-use CB\Core\Reports\Composer\BlockCatalog;
-use CB\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\Presentation;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
+use CoreBlueprint\Core\Reports\Composer\BlockCatalog;
+use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
 
 defined( 'ABSPATH' ) || exit;
 

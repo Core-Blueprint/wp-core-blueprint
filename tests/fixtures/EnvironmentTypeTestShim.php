@@ -11,7 +11,7 @@ declare(strict_types=1);
  * Environment Governance test explicitly sets an allowed override.
  */
 
-namespace CB\Core\Environment;
+namespace CoreBlueprint\Core\Environment;
 
 final class EnvironmentTypeTestShim {
 	private static ?string $override = null;

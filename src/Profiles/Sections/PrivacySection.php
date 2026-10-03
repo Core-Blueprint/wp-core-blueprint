@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles\Sections;
+namespace CoreBlueprint\Core\Profiles\Sections;
 
-use CB\Core\Governance\RetentionPolicy;
-use CB\Core\Log\Verbosity;
-use CB\Core\Privacy\Anonymizer;
-use CB\Core\Profiles\ExactSection;
-use CB\Core\Profiles\SchemaGuard;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Log\Verbosity;
+use CoreBlueprint\Core\Privacy\Anonymizer;
+use CoreBlueprint\Core\Profiles\ExactSection;
+use CoreBlueprint\Core\Profiles\SchemaGuard;
 
 defined( 'ABSPATH' ) || exit;
 

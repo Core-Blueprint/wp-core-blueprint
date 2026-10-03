@@ -31,11 +31,11 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD\Rest;
+namespace CoreBlueprint\Core\HUD\Rest;
 
-use CB\Core\HUD\Access;
-use CB\Core\HUD\Brand\BrandRegistry;
-use CB\Core\HUD\Storage;
+use CoreBlueprint\Core\HUD\Access;
+use CoreBlueprint\Core\HUD\Brand\BrandRegistry;
+use CoreBlueprint\Core\HUD\Storage;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -201,7 +201,7 @@ final class HUDController {
 
 		// Validate against the Themes registry. Allows 'auto' plus any
 		// registered theme slug - same contract as Themes::is_valid().
-		if ( ! \CB\Core\Themes::is_valid( $theme ) ) {
+		if ( ! \CoreBlueprint\Core\Themes::is_valid( $theme ) ) {
 			return new \WP_Error(
 				'cb_core_hud_unknown_theme',
 				__( 'Unknown theme slug.', 'core-blueprint' ),
@@ -209,7 +209,7 @@ final class HUDController {
 			);
 		}
 
-		if ( ! \CB\Core\Themes::set_user( $user_id, $theme ) ) {
+		if ( ! \CoreBlueprint\Core\Themes::set_user( $user_id, $theme ) ) {
 			return new \WP_Error(
 				'cb_core_hud_save_failed',
 				__( 'Could not save theme selection.', 'core-blueprint' ),

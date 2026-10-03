@@ -3,7 +3,7 @@
 /**
  * Template: Core Blueprint Dashboard (landing).
  *
- * Variables provided by \CB\Core\Admin\Pages\Dashboard::render():
+ * Variables provided by \CoreBlueprint\Core\Admin\Pages\Dashboard::render():
  *   $get_started_card    array|null - first-install Core Setup entry until review begins
  *   $safeguards          array - canonical Base safeguard status entries (ordered)
  *   $extensions          array - sibling CB plugins detected, enriched with status menus
@@ -23,7 +23,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-use CB\Core\Modules\Status;
+use CoreBlueprint\Core\Modules\Status;
 ?>
 <div class="wrap cb-core-wrap cb-core-dashboard">
 

@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Fixed\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Fixed\PdfRenderer;
-use CB\Core\Design\Profile\Document\Fixed\RenderFragment;
-use CB\Core\Design\Profile\Document\Fixed\TextStyle;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\PdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\RenderFragment;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\TextStyle;
 
 final class CB_Design_Foundation_B4_Fixed_Text_Transform_Test extends WP_UnitTestCase {
 

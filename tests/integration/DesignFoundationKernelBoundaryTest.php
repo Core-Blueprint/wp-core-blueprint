@@ -11,7 +11,7 @@ final class CB_Design_Foundation_Kernel_Boundary_Test extends WP_UnitTestCase {
 		$forbidden = [
 			'Dompdf',
 			'PdfApi',
-			'CB\\Core\\PDF',
+			'CoreBlueprint\\Core\\PDF',
 			'Profile\\Document',
 			'pagination',
 			'paper_size',

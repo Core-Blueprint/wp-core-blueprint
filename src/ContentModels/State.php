@@ -9,11 +9,11 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels;
+namespace CoreBlueprint\Core\ContentModels;
 
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\AuditLog;
 
-use CB\Core\Modules\ModuleStateInterface;
+use CoreBlueprint\Core\Modules\ModuleStateInterface;
 
 defined( 'ABSPATH' ) || exit;
 

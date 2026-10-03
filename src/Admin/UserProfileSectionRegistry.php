@@ -11,9 +11,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
-use CB\Core\UI\FormComposition;
+use CoreBlueprint\Core\UI\FormComposition;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;

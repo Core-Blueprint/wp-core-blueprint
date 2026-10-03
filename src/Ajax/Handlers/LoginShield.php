@@ -26,11 +26,11 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Ajax\Handlers;
+namespace CoreBlueprint\Core\Ajax\Handlers;
 
-use CB\Core\Ajax\Guards;
-use CB\Core\Ajax\Request;
-use CB\Core\Security\LoginShield as LoginShieldCore;
+use CoreBlueprint\Core\Ajax\Guards;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\Security\LoginShield as LoginShieldCore;
 
 defined( 'ABSPATH' ) || exit;
 

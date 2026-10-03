@@ -12,9 +12,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\AdminNotices;
+namespace CoreBlueprint\Core\AdminNotices;
 
-use CB\Core\Permissions\Roles;
+use CoreBlueprint\Core\Permissions\Roles;
 
 defined( 'ABSPATH' ) || exit;
 

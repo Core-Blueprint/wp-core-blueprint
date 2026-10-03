@@ -7,10 +7,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail\Admin;
+namespace CoreBlueprint\Core\Mail\Admin;
 
-use CB\Core\Mail\DeliveryState;
-use CB\Core\Mail\DesignerState;
+use CoreBlueprint\Core\Mail\DeliveryState;
+use CoreBlueprint\Core\Mail\DesignerState;
 
 defined( 'ABSPATH' ) || exit;
 

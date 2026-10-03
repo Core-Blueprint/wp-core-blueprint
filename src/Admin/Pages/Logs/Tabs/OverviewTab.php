@@ -4,7 +4,7 @@ declare(strict_types=1);
  * OverviewTab - built-in Overview tab for the Logs page.
  *
  * First tab on the Logs page; wayfinding + status snapshot for the full
- * logging stack. Renders via the shared {@see \CB\Core\Admin\Overview}
+ * logging stack. Renders via the shared {@see \CoreBlueprint\Core\Admin\Overview}
  * helper so the visual grammar stays consistent with Safeguards and
  * Preferences Overview tabs.
  *
@@ -18,16 +18,16 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin\Pages\Logs\Tabs;
+namespace CoreBlueprint\Core\Admin\Pages\Logs\Tabs;
 
-use CB\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\Overview;
-use CB\Core\Admin\Pages\Logs\TabRegistry;
-use CB\Core\Admin\TabNav;
-use CB\Core\Log\AuditLog;
-use CB\Core\Log\Retention;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Overview;
+use CoreBlueprint\Core\Admin\Pages\Logs\TabRegistry;
+use CoreBlueprint\Core\Admin\TabNav;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\Retention;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -107,12 +107,12 @@ final class OverviewTab {
 					'primary' => false,
 				],
 				[
-					'url'     => admin_url( 'admin.php?page=' . \CB\Core\Admin\Pages\Preferences::SLUG . '&tab=privacy' ),
+					'url'     => admin_url( 'admin.php?page=' . \CoreBlueprint\Core\Admin\Pages\Preferences::SLUG . '&tab=privacy' ),
 					'label'   => __( 'Edit retention rules', 'core-blueprint' ),
 					'primary' => false,
 				],
 				[
-					'url'     => admin_url( 'admin.php?page=' . \CB\Core\Admin\Pages\Preferences::SLUG . '&tab=notifications' ),
+					'url'     => admin_url( 'admin.php?page=' . \CoreBlueprint\Core\Admin\Pages\Preferences::SLUG . '&tab=notifications' ),
 					'label'   => __( 'Email notifications', 'core-blueprint' ),
 					'primary' => false,
 				],

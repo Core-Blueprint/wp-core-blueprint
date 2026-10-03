@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminNavigation\Admin as AdminNavigationAdmin;
-use CB\Core\AdminNavigation\Bootstrap as AdminNavigationBootstrap;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\AdminNavigation\Admin as AdminNavigationAdmin;
+use CoreBlueprint\Core\AdminNavigation\Bootstrap as AdminNavigationBootstrap;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 
 /**
  * Canonical WordPress AJAX coverage for Admin Navigation audience pickers.

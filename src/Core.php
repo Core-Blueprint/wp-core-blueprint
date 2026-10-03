@@ -15,24 +15,24 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core;
+namespace CoreBlueprint\Core;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\PageRegistry;
-use CB\Core\Ajax\Router;
-use CB\Core\Ajax\SecurityRouter;
-use CB\Core\Log\AuditLog;
-use CB\Core\Log\Retention;
-use CB\Core\Log\SystemLog;
-use CB\Core\Environment\Governance as EnvironmentGovernance;
-use CB\Core\Migration\Recovery as MigrationRecovery;
-use CB\Core\Security\AccessMode;
-use CB\Core\Security\Failsafe;
-use CB\Core\Security\LoginShield;
-use CB\Core\Security\ModuleRegistry;
-use CB\Core\Security\Modules\Fingerprint;
-use CB\Core\Security\Modules\Headers;
-use CB\Core\Integrity\Scheduler\Cron as IntegrityCron;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Ajax\Router;
+use CoreBlueprint\Core\Ajax\SecurityRouter;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\Retention;
+use CoreBlueprint\Core\Log\SystemLog;
+use CoreBlueprint\Core\Environment\Governance as EnvironmentGovernance;
+use CoreBlueprint\Core\Migration\Recovery as MigrationRecovery;
+use CoreBlueprint\Core\Security\AccessMode;
+use CoreBlueprint\Core\Security\Failsafe;
+use CoreBlueprint\Core\Security\LoginShield;
+use CoreBlueprint\Core\Security\ModuleRegistry;
+use CoreBlueprint\Core\Security\Modules\Fingerprint;
+use CoreBlueprint\Core\Security\Modules\Headers;
+use CoreBlueprint\Core\Integrity\Scheduler\Cron as IntegrityCron;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -72,7 +72,7 @@ final class Core {
 		// Privileged two-factor authentication registers its login boundaries
 		// after Migration Recovery so the destination recovery flow can establish
 		// its request-scoped Failsafe authority before 2FA makes a decision.
-		\CB\Core\Security\TwoFactor\Bootstrap::boot();
+		\CoreBlueprint\Core\Security\TwoFactor\Bootstrap::boot();
 
 		// Request-hot option policy, then DB/settings migrations.
 		add_action( 'plugins_loaded', [ OptionPolicy::class, 'maybe_sync' ], 3 );
@@ -117,23 +117,23 @@ final class Core {
 		// and their visual shell. admin-ajax.php and admin-post.php are request
 		// endpoints, not screens, and must not boot browser presentation.
 		if ( RequestContext::is_admin_screen() ) {
-			\CB\Core\Admin\UserProfileSectionRegistry::init();
+			\CoreBlueprint\Core\Admin\UserProfileSectionRegistry::init();
 			PageRegistry::init();
 			Admin::init();
-			\CB\Core\AdminColumns\Bootstrap::boot();
+			\CoreBlueprint\Core\AdminColumns\Bootstrap::boot();
 			Extensions::init();
 		}
 
 		// Native WordPress Admin Navigation presentation governance. Sidebar
 		// runtime is site wp-admin only; Toolbar rules may also apply on frontend.
-		\CB\Core\AdminNavigation\Bootstrap::boot();
+		\CoreBlueprint\Core\AdminNavigation\Bootstrap::boot();
 
 		// AJAX routers exist only for actual admin-ajax.php requests. Their
 		// handlers are still registered before WordPress dispatches the action.
 		if ( RequestContext::is_ajax() ) {
 			Router::init();
 			SecurityRouter::init();
-			\CB\Core\AdminColumns\Bootstrap::boot();
+			\CoreBlueprint\Core\AdminColumns\Bootstrap::boot();
 		}
 
 		// Theme-attribute pre-paint injection belongs to normal admin HTML only.
@@ -146,80 +146,80 @@ final class Core {
 		// with the central DB registry on plugins_loaded priority 4 so the
 		// migration sweep at priority 5 picks it up alongside every other
 		// CB-owned table. Admin-page wiring lands in subsequent milestones.
-		\CB\Core\Reports\Bootstrap::boot();
+		\CoreBlueprint\Core\Reports\Bootstrap::boot();
 
 		// Permissions subsystem - registers the user_has_cap filter (admin-
 		// toggle for cb_manage_reports) and the OperatorGuard role-change
 		// listeners that auto-disable hide_from_admins when the operator
 		// count drops to zero.
-		\CB\Core\Permissions\Bootstrap::boot();
+		\CoreBlueprint\Core\Permissions\Bootstrap::boot();
 
 		// URL Governance owns the opt-in clean category routing contract. It
 		// remains disabled by default and registers only explicit category paths.
 		// Runtime drift fails open to native WordPress routing.
-		\CB\Core\Routing\Bootstrap::boot();
+		\CoreBlueprint\Core\Routing\Bootstrap::boot();
 
 		// Admin Notices Governance - audience-scoped presentation policy for
 		// WordPress admin-notice producers. Runtime is fail-open, never parses
 		// arbitrary notice HTML, and never suppresses notices from CB Operators.
-		\CB\Core\AdminNotices\Bootstrap::boot();
+		\CoreBlueprint\Core\AdminNotices\Bootstrap::boot();
 
 		// Media Replace subsystem - native attachment replacement with a
 		// transactional rollback path. v1 preserves attachment ID, filename
 		// and URL; the filename strategy boundary is ready for a later
 		// rename + reference-update mode.
-		\CB\Core\MediaReplace\Bootstrap::boot();
+		\CoreBlueprint\Core\MediaReplace\Bootstrap::boot();
 
 		// Media Formats subsystem - optional modern image upload policy,
 		// SVG sanitization, capability-aware MIME support and WordPress-native
 		// generated image format mapping. Disabled means WordPress remains
 		// completely untouched by this subsystem.
-		\CB\Core\MediaFormats\Bootstrap::boot();
+		\CoreBlueprint\Core\MediaFormats\Bootstrap::boot();
 
 		// Package Downloads subsystem - export installed plugins and themes as
 		// installable ZIP archives from their native WordPress admin screens.
 		// Archives are built in temporary storage; package source directories
 		// are never mutated as part of the download flow.
-		\CB\Core\PackageDownload\Bootstrap::boot();
+		\CoreBlueprint\Core\PackageDownload\Bootstrap::boot();
 
 		// Mail subsystem - privacy-first outbound delivery with a dedicated
 		// delivery log. The admin/configuration layer is always available;
 		// Runtime itself registers transport hooks only when explicitly enabled
 		// and no known SMTP/mail plugin conflict is active.
-		\CB\Core\Mail\Bootstrap::boot();
+		\CoreBlueprint\Core\Mail\Bootstrap::boot();
 
 		// Content Models subsystem - governed custom post types and taxonomies.
 		// The subsystem remains fully deactivatable: disabling registration
 		// preserves definitions and WordPress content for later recovery.
-		\CB\Core\ContentModels\Bootstrap::boot();
+		\CoreBlueprint\Core\ContentModels\Bootstrap::boot();
 
 		// Snippets subsystem - managed PHP/CSS/JavaScript/HTML snippets.
 		// Boot synchronously so enabled PHP snippets can intentionally target
 		// plugins_loaded; Runtime itself remains gated by State + SafeMode.
-		\CB\Core\Snippets\Bootstrap::boot();
+		\CoreBlueprint\Core\Snippets\Bootstrap::boot();
 
 		// Core Scanner subsystem - file integrity verification (WP core
 		// checksums, supported plugin/theme checksums, uploads executable
 		// scan). Tab-rendered inside Safeguards; no separate top-level
 		// page. Cron handler stays dormant unless schedule != 'disabled'.
-		\CB\Core\Integrity\Bootstrap::boot();
+		\CoreBlueprint\Core\Integrity\Bootstrap::boot();
 
 
 		// Notes subsystem - site-specific notes for maintenance, security
 		// context, and operational handover. Top-level page (position 22,
 		// between Logs and Reports), settings as a Preferences tab.
-		\CB\Core\Notes\Bootstrap::boot();
+		\CoreBlueprint\Core\Notes\Bootstrap::boot();
 
 		// Profiles subsystem - portable, versioned Base configuration with a
 		// mandatory preview/diff and transactional apply/rollback boundary.
 		// Profiles deliberately exclude secrets, identities and runtime evidence.
-		\CB\Core\Profiles\Bootstrap::boot();
+		\CoreBlueprint\Core\Profiles\Bootstrap::boot();
 
 		// Core Setup subsystem - persistent read-only review/control plane.
 		// Canonical subsystem settings remain owned by their modules; Setup stores
 		// only lifecycle, review intent and bounded section annotations.
-		\CB\Core\Setup\Bootstrap::boot();
-		\CB\Core\Setup\Onboarding::boot();
+		\CoreBlueprint\Core\Setup\Bootstrap::boot();
+		\CoreBlueprint\Core\Setup\Onboarding::boot();
 
 
 		// HUD subsystem - the floating "front door" launcher. Renders on
@@ -227,7 +227,7 @@ final class Core {
 		// cb_core_hud_enabled filter + Preferences › Floating Menu toggle as
 		// a kill-switch. Brand abstraction (BrandRegistry, BrandInterface)
 		// provides the supported white-label extension boundary.
-		\CB\Core\HUD\Bootstrap::boot();
+		\CoreBlueprint\Core\HUD\Bootstrap::boot();
 
 		// Per-subsystem HUD-item registration. Each Bootstrap below only
 		// hooks the cb_hud_register_items action - no other side effects.
@@ -235,22 +235,22 @@ final class Core {
 		// switch) live inside the per-subsystem callback. Boot order is
 		// alphabetical and inconsequential - items sort by their `order`
 		// key inside HUD\Registry.
-		\CB\Core\Log\Bootstrap::boot();
-		\CB\Core\Safeguards\Bootstrap::boot();
-		\CB\Core\Preferences\Bootstrap::boot();
+		\CoreBlueprint\Core\Log\Bootstrap::boot();
+		\CoreBlueprint\Core\Safeguards\Bootstrap::boot();
+		\CoreBlueprint\Core\Preferences\Bootstrap::boot();
 
 		// CLI subsystem - registers the HUD documentation item linking
 		// to Preferences › CLI. Actual `wp cb …` command registration
 		// happens in core-blueprint.php on plugin load (must run before
 		// WP-CLI's command-resolution pass) - this boot() call only
 		// wires the in-admin/frontend HUD entry.
-		\CB\Core\CLI\Bootstrap::boot();
+		\CoreBlueprint\Core\CLI\Bootstrap::boot();
 
 		// Console subsystem - operator-only browser surface for governed
 		// CB CLI commands. Read-only, state-changing and destructive
 		// commands share the same capability boundary; destructive actions
 		// additionally require explicit consequence confirmation.
-		\CB\Core\Console\Bootstrap::boot();
+		\CoreBlueprint\Core\Console\Bootstrap::boot();
 
 		// Signal that Core Blueprint is fully booted. Extension plugins may hook here.
 		add_action( 'plugins_loaded', static function () {
@@ -348,19 +348,19 @@ final class Core {
 
 		// Core Setup origin is authoritative only at the activation boundary.
 		// A later lazy bootstrap never upgrades an established site to first-install.
-		\CB\Core\Setup\Lifecycle::initialize_activation( $is_first_activation );
+		\CoreBlueprint\Core\Setup\Lifecycle::initialize_activation( $is_first_activation );
 
 		OptionPolicy::sync_active();
 
 		// Deactivation removes URL Governance rewrite rules while preserving
 		// policy, so activation schedules safe reconciliation when enabled.
-		\CB\Core\Routing\Runtime::reconcile_activation();
+		\CoreBlueprint\Core\Routing\Runtime::reconcile_activation();
 
 		Retention::schedule();
 
 		// Privileged Access Guard unattended reconciliation. The guard also
 		// self-heals this schedule on normal plugin load after ZIP updates.
-		\CB\Core\Permissions\PrivilegedAccessGuard::ensure_schedule();
+		\CoreBlueprint\Core\Permissions\PrivilegedAccessGuard::ensure_schedule();
 
 		// Core Scanner cron - sync the optional scheduled scan based on
 		// the current `cb_core_settings['integrity'].schedule` value. If
@@ -372,7 +372,7 @@ final class Core {
 		// protected role is reconciled. Public v1 starts at trust schema 1; there
 		// are no historical public migration steps.
 		if ( ! $is_first_activation ) {
-			\CB\Core\Permissions\TrustSchemaMigrator::maybe_migrate();
+			\CoreBlueprint\Core\Permissions\TrustSchemaMigrator::maybe_migrate();
 		}
 
 		// Role Policy is initialized only on a genuine first installation. A
@@ -380,16 +380,16 @@ final class Core {
 		// authority to repair roles during activation or normal runtime. Future
 		// known schema upgrades are handled by RolePolicySchema's explicit migrator.
 		if ( $is_first_activation ) {
-			\CB\Core\Permissions\RolePolicySchema::initialize_first_install();
+			\CoreBlueprint\Core\Permissions\RolePolicySchema::initialize_first_install();
 		} else {
-			\CB\Core\Permissions\RolePolicySchema::maybe_migrate();
+			\CoreBlueprint\Core\Permissions\RolePolicySchema::maybe_migrate();
 		}
 
 		$current_user = wp_get_current_user();
 		if ( $is_first_activation && $current_user instanceof \WP_User && $current_user->ID ) {
-			if ( ! in_array( \CB\Core\Permissions\Roles::OPERATOR_ROLE, (array) $current_user->roles, true ) ) {
-				\CB\Core\Permissions\PrivilegedAccessGuard::trusted_mutation( static function () use ( $current_user ): void {
-					$current_user->add_role( \CB\Core\Permissions\Roles::OPERATOR_ROLE );
+			if ( ! in_array( \CoreBlueprint\Core\Permissions\Roles::OPERATOR_ROLE, (array) $current_user->roles, true ) ) {
+				\CoreBlueprint\Core\Permissions\PrivilegedAccessGuard::trusted_mutation( static function () use ( $current_user ): void {
+					$current_user->add_role( \CoreBlueprint\Core\Permissions\Roles::OPERATOR_ROLE );
 				} );
 				AuditLog::log( 'permissions.first_operator_assigned', 'notice', [
 					'user_id'    => $current_user->ID,
@@ -399,19 +399,19 @@ final class Core {
 
 			// Bind the first-install trust root to its exact current privilege
 			// fingerprint. Subsequent activations never write approvals here.
-			if ( \CB\Core\Permissions\PrivilegedAccessPolicy::is_privileged( $current_user ) ) {
-				\CB\Core\Permissions\PrivilegedAccessRegistry::approve( $current_user, (int) $current_user->ID, 'first_activation' );
+			if ( \CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy::is_privileged( $current_user ) ) {
+				\CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::approve( $current_user, (int) $current_user->ID, 'first_activation' );
 			}
 
-			\CB\Core\Permissions\PrivilegedAccessGuard::complete_first_activation();
+			\CoreBlueprint\Core\Permissions\PrivilegedAccessGuard::complete_first_activation();
 		}
 
 		// A genuine first install is born on the current public trust schema.
 		if ( $is_first_activation ) {
-			\CB\Core\Permissions\TrustSchemaMigrator::mark_current();
+			\CoreBlueprint\Core\Permissions\TrustSchemaMigrator::mark_current();
 		}
 
-		\CB\Core\Setup\Onboarding::queue_first_activation_redirect( $is_first_activation, $network_wide );
+		\CoreBlueprint\Core\Setup\Onboarding::queue_first_activation_redirect( $is_first_activation, $network_wide );
 
 		AuditLog::log( 'plugin.activated', 'notice', [
 			'version' => CB_CORE_VERSION,
@@ -425,7 +425,7 @@ final class Core {
 
 		// Remove URL Governance rewrites before Base stops participating in
 		// WordPress routing. The policy remains stored for reactivation.
-		\CB\Core\Routing\Runtime::cleanup_deactivation();
+		\CoreBlueprint\Core\Routing\Runtime::cleanup_deactivation();
 
 		// Clear bypass transient window. Persistent emergency-bypass option is
 		// intentionally left alone - deactivation must never silently re-enable
@@ -435,13 +435,13 @@ final class Core {
 		Retention::unschedule();
 
 		// Clear Privileged Access Guard cron so deactivation leaves no orphan.
-		\CB\Core\Permissions\PrivilegedAccessGuard::clear_schedule();
+		\CoreBlueprint\Core\Permissions\PrivilegedAccessGuard::clear_schedule();
 
 		// Cancel an in-flight resumable Scanner job before clearing its cron.
 		// This releases the cross-entrypoint lock and removes chunked job state,
 		// so reactivation cannot inherit a stale running scan.
-		\CB\Core\Integrity\Scanner\ScanJobRunner::cancel_active();
-		\CB\Core\Integrity\Scanner\ScanSliceLock::clear();
+		\CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner::cancel_active();
+		\CoreBlueprint\Core\Integrity\Scanner\ScanSliceLock::clear();
 
 		// Clear Core Scanner cron - unconditional, deactivation should
 		// never leave orphaned scheduled hooks behind.
@@ -449,7 +449,7 @@ final class Core {
 
 		// A request cannot legitimately keep owning a Profile apply lease once
 		// Base is deactivated. Preview transients may simply expire naturally.
-		\CB\Core\Profiles\ApplyLock::clear();
+		\CoreBlueprint\Core\Profiles\ApplyLock::clear();
 
 		// Base is no longer executing on normal requests; keep its small runtime
 		// state out of WordPress alloptions until reactivation.

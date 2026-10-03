@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Security\SecretProtection;
+use CoreBlueprint\Core\Security\SecretProtection;
 
 final class CB_Base_Secret_Protection_Foundation_Contract_Test extends WP_UnitTestCase {
 

@@ -19,12 +19,12 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Permissions;
+namespace CoreBlueprint\Core\Permissions;
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\Permissions\Admin\RolesPage;
-use CB\Core\Permissions\Admin\UserRolesFields;
-use CB\Core\Permissions\Rest\RolesController;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Permissions\Admin\RolesPage;
+use CoreBlueprint\Core\Permissions\Admin\UserRolesFields;
+use CoreBlueprint\Core\Permissions\Rest\RolesController;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -75,7 +75,7 @@ final class Bootstrap {
 
 	/** Register translation-bearing metadata filters after the textdomain is loaded. */
 	public static function register_i18n_filters(): void {
-		\CB\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
+		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
 	}
 
 	/**

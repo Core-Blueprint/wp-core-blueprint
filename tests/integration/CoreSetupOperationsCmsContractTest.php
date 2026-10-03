@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminColumns\PolicyRepository as AdminColumnsPolicy;
-use CB\Core\AdminNavigation\Policy as AdminNavigationPolicy;
-use CB\Core\Mail\Settings as MailSettings;
-use CB\Core\Notes\State as NotesState;
-use CB\Core\Reports\State as ReportsState;
-use CB\Core\Settings;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Evidence;
-use CB\Core\Setup\Registry;
-use CB\Core\Setup\ReviewRepository;
-use CB\Core\Setup\StatusResolver;
+use CoreBlueprint\Core\AdminColumns\PolicyRepository as AdminColumnsPolicy;
+use CoreBlueprint\Core\AdminNavigation\Policy as AdminNavigationPolicy;
+use CoreBlueprint\Core\Mail\Settings as MailSettings;
+use CoreBlueprint\Core\Notes\State as NotesState;
+use CoreBlueprint\Core\Reports\State as ReportsState;
+use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Evidence;
+use CoreBlueprint\Core\Setup\Registry;
+use CoreBlueprint\Core\Setup\ReviewRepository;
+use CoreBlueprint\Core\Setup\StatusResolver;
 
 final class CB_Base_Core_Setup_Operations_Cms_Contract_Test extends WP_UnitTestCase {
 

@@ -1,6 +1,6 @@
 # Choice Group Foundation
 
-`CB\Core\UI\ChoiceGroup` is the shared Base primitive for grouped native checkbox or radio options.
+`CoreBlueprint\Core\UI\ChoiceGroup` is the shared Base primitive for grouped native checkbox or radio options.
 
 The Foundation owns only:
 
@@ -14,7 +14,7 @@ Consumers own field names, values, persistence, validation and business meaning.
 ## Rendering
 
 ```php
-use CB\Core\UI\ChoiceGroup;
+use CoreBlueprint\Core\UI\ChoiceGroup;
 
 echo ChoiceGroup::render( [
     'aria_label' => __( 'Behaviour', 'core-blueprint' ),
@@ -50,7 +50,7 @@ Core Blueprint admin pages receive the Core presentation automatically through B
 Standalone extension screens can opt in explicitly:
 
 ```php
-CB\Core\UI\Assets::enqueue_choice_group();
+CoreBlueprint\Core\UI\Assets::enqueue_choice_group();
 ```
 
 Auto mode selects `core` below the Core Blueprint parent menu and `wp-native` elsewhere. Consumers may force either documented presentation constant when required.

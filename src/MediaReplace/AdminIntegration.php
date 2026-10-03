@@ -7,15 +7,15 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\MediaReplace;
+namespace CoreBlueprint\Core\MediaReplace;
 
-use CB\Core\Admin\MutationAcknowledgement;
-use CB\Core\Log\AuditLog;
-use CB\Core\MediaReplace\Admin\Page as MediaReplacePage;
-use CB\Core\MediaReplace\Strategy\PreserveFilenameStrategy;
-use CB\Core\UI\Icon;
-use CB\Core\UI\Notice;
-use CB\Core\UI\Status;
+use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\MediaReplace\Admin\Page as MediaReplacePage;
+use CoreBlueprint\Core\MediaReplace\Strategy\PreserveFilenameStrategy;
+use CoreBlueprint\Core\UI\Icon;
+use CoreBlueprint\Core\UI\Notice;
+use CoreBlueprint\Core\UI\Status;
 
 defined( 'ABSPATH' ) || exit;
 

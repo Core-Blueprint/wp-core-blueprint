@@ -4,7 +4,7 @@ declare(strict_types=1);
  * CLI Registry
  *
  * Filter-driven registration helper for `wp cb` subcommands. Lives parallel
- * to {@see \CB\Core\HUD\Registry} but for the command line: built-in CB Base
+ * to {@see \CoreBlueprint\Core\HUD\Registry} but for the command line: built-in CB Base
  * commands register here on bootstrap, and sibling plugins (Hub, Invoice,
  * etc.) hook the `cb_core_cli_register_commands` filter to add their own.
  *
@@ -22,7 +22,7 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI;
+namespace CoreBlueprint\Core\CLI;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -35,7 +35,7 @@ final class Registry {
 	 *
 	 *   [
 	 *       'name'        => 'scan',
-	 *       'class'       => 'CB\\Core\\CLI\\Commands\\Scan',
+	 *       'class'       => 'CoreBlueprint\\Core\\CLI\\Commands\\Scan',
 	 *       'description' => 'Run and inspect file integrity scans.',
 	 *   ]
 	 *

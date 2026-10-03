@@ -2,9 +2,9 @@
 declare(strict_types=1);
 /** Private BASE-10E.2 module definitions: Security. */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
-use CB\Core\UI;
+use CoreBlueprint\Core\UI;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -44,7 +44,7 @@ final class AdminModuleDefinitionsSecurity {
 					'deps' => [ '@cb-core/dom', '@cb-core/modal', '@cb-core/toast', '@cb-core/busy', '@cb-core/icon' ],
 					'data' => [
 						'nonce'          => $admin_nonce,
-						'privilegedMode' => \CB\Core\Permissions\PrivilegedAccessPolicy::enforcement_mode(),
+						'privilegedMode' => \CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy::enforcement_mode(),
 						'i18n'           => [
 							'networkError'                => $save_status['networkError'],
 							'shieldApplyDefaultsTitle'    => __( 'Apply recommended defaults?', 'core-blueprint' ),
@@ -75,7 +75,7 @@ final class AdminModuleDefinitionsSecurity {
 					'deps' => [ '@cb-core/dom', '@cb-core/modal', '@cb-core/toast' ],
 					'data' => [
 						'nonce'       => $admin_nonce,
-						'currentMode' => \CB\Core\Security\TwoFactor\Policy::mode(),
+						'currentMode' => \CoreBlueprint\Core\Security\TwoFactor\Policy::mode(),
 						'i18n'        => [
 							'networkError'       => $save_status['networkError'],
 							'passwordPlaceholder'=> __( 'WordPress password', 'core-blueprint' ),

@@ -21,7 +21,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD;
+namespace CoreBlueprint\Core\HUD;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -235,12 +235,12 @@ final class Registry {
 		}
 
 		$module = trim( (string) $item['module'] );
-		if ( '' !== $module && ! \CB\Core\Modules\ActivationRegistry::is_enabled( $module ) ) {
+		if ( '' !== $module && ! \CoreBlueprint\Core\Modules\ActivationRegistry::is_enabled( $module ) ) {
 			return false;
 		}
 
 		$status = trim( (string) $item['status'] );
-		if ( '' !== $status && ! \CB\Core\Modules\ActivationRegistry::is_valid_id( $status ) ) {
+		if ( '' !== $status && ! \CoreBlueprint\Core\Modules\ActivationRegistry::is_valid_id( $status ) ) {
 			self::diagnostic( __METHOD__, sprintf( 'HUD item "%s" declares an invalid status ID.', $id ) );
 			return false;
 		}

@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Environment\EnvironmentTypeTestShim;
-use CB\Core\Environment\Governance;
-use CB\Core\Mail\Settings as MailSettings;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Settings;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Evidence;
-use CB\Core\Setup\Registry;
-use CB\Core\Setup\ReviewRepository;
-use CB\Core\Setup\StatusResolver;
+use CoreBlueprint\Core\Environment\EnvironmentTypeTestShim;
+use CoreBlueprint\Core\Environment\Governance;
+use CoreBlueprint\Core\Mail\Settings as MailSettings;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Evidence;
+use CoreBlueprint\Core\Setup\Registry;
+use CoreBlueprint\Core\Setup\ReviewRepository;
+use CoreBlueprint\Core\Setup\StatusResolver;
 
 final class CB_Base_Core_Setup_Foundation_Contract_Test extends WP_UnitTestCase {
 

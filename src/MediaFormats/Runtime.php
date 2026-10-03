@@ -6,11 +6,11 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\MediaFormats;
+namespace CoreBlueprint\Core\MediaFormats;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\MediaFormats\Svg\Metadata as SvgMetadata;
-use CB\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\MediaFormats\Svg\Metadata as SvgMetadata;
+use CoreBlueprint\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
 
 defined( 'ABSPATH' ) || exit;
 

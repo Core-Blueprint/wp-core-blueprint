@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Modules\ActivationRegistry;
-use CB\Core\Modules\ModuleStateInterface;
+use CoreBlueprint\Core\Modules\ActivationRegistry;
+use CoreBlueprint\Core\Modules\ModuleStateInterface;
 
 final class CB_Base_Module_Registry_Smoke_Test extends WP_UnitTestCase {
 

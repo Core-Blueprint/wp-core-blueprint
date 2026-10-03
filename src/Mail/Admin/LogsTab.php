@@ -7,14 +7,14 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail\Admin;
+namespace CoreBlueprint\Core\Mail\Admin;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\Pages\Logs\TabRegistry;
-use CB\Core\Admin\TabNav;
-use CB\Core\Log\TimeFilter;
-use CB\Core\Mail\Log\Repository;
-use CB\Core\Mail\Settings;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Pages\Logs\TabRegistry;
+use CoreBlueprint\Core\Admin\TabNav;
+use CoreBlueprint\Core\Log\TimeFilter;
+use CoreBlueprint\Core\Mail\Log\Repository;
+use CoreBlueprint\Core\Mail\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -5,7 +5,7 @@
  *
  * Renders an activity chart, the shared Toolbar with a Plain/Technical
  * toggle, and a native WordPress log table. Used by the Audit and System
- * tabs in the Logs page; any future tab that queries {@see \CB\Core\Log\AuditLog}
+ * tabs in the Logs page; any future tab that queries {@see \CoreBlueprint\Core\Log\AuditLog}
  * with the same filter shape can reuse this partial.
  *
  * Layout: title → description → chart → filter toolbar → table. The toolbar
@@ -44,7 +44,7 @@ $current_period   = $current_period ?? 'all';
 //   - per-row rendering (Event column + Context column)
 // current_mode() is guaranteed to return 'plain' or 'technical'
 // (sync resolves to site-default at the UI layer).
-$cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'technical';
+$cb_mode = class_exists( '\CoreBlueprint\Core\UI' ) ? \CoreBlueprint\Core\UI::current_mode() : 'technical';
 ?>
 <div class="wrap cb-core-wrap cb-core-logs-page" data-cb-mode="<?php echo esc_attr( $cb_mode ); ?>">
 
@@ -57,19 +57,19 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 	// so this partial stays backwards-compatible with any future callers
 	// that haven't been updated yet.
 	$log_type_for_desc = isset( $log_type ) ? (string) $log_type : '';
-	$log_description   = '' !== $log_type_for_desc && class_exists( \CB\Core\Log\Language::class )
-		? \CB\Core\Log\Language::describe_log( $log_type_for_desc, $cb_mode )
+	$log_description   = '' !== $log_type_for_desc && class_exists( \CoreBlueprint\Core\Log\Language::class )
+		? \CoreBlueprint\Core\Log\Language::describe_log( $log_type_for_desc, $cb_mode )
 		: '';
 
 	// Meta strip: retention, access, export formats. Keeps AVG-relevant
 	// facts visible at a glance alongside the total count so non-technical
 	// readers (Peter's gemeente/zorg contacts) see the transparency story
 	// without digging into Preferences.
-	$log_retention_categories = class_exists( \CB\Core\Governance\RetentionPolicy::class )
-		? count( \CB\Core\Governance\RetentionPolicy::CATEGORIES )
+	$log_retention_categories = class_exists( \CoreBlueprint\Core\Governance\RetentionPolicy::class )
+		? count( \CoreBlueprint\Core\Governance\RetentionPolicy::CATEGORIES )
 		: 0;
-	$log_export_formats = class_exists( \CB\Core\Log\LogExporter::class )
-		? array_values( \CB\Core\Log\LogExporter::formats() )
+	$log_export_formats = class_exists( \CoreBlueprint\Core\Log\LogExporter::class )
+		? array_values( \CoreBlueprint\Core\Log\LogExporter::formats() )
 		: [ __( 'CSV', 'core-blueprint' ) ];
 	?>
 
@@ -111,8 +111,8 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 	<section class="cb-core-section cb-core-log-chart">
 		<?php
 		$chart_rows = $chart_daily ?? ( $sys_chart_daily ?? [] );
-		if ( ! empty( $chart_rows ) && class_exists( '\CB\Core\Log\Chart' ) ) {
-			echo \CB\Core\Log\Chart::render_activity( $chart_rows, __( 'Activity', 'core-blueprint' ) ); // phpcs:ignore WordPress.Security.EscapeOutput
+		if ( ! empty( $chart_rows ) && class_exists( '\CoreBlueprint\Core\Log\Chart' ) ) {
+			echo \CoreBlueprint\Core\Log\Chart::render_activity( $chart_rows, __( 'Activity', 'core-blueprint' ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 		}
 		?>
 	</section>
@@ -121,7 +121,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 
 	<section class="cb-core-section cb-core-log-filters-wrap">
 		<form method="get" class="cb-core-toolbar">
-			<input type="hidden" name="page" value="<?php echo esc_attr( \CB\Core\Admin\Admin::LOGS_SLUG ); ?>" />
+			<input type="hidden" name="page" value="<?php echo esc_attr( \CoreBlueprint\Core\Admin\Admin::LOGS_SLUG ); ?>" />
 			<input type="hidden" name="tab"  value="<?php echo esc_attr( $tab_slug ); ?>" />
 
 			<div class="cb-core-toolbar__field">
@@ -131,7 +131,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 				// the HUD header. Click handling is in core/mode-switcher.js;
 				// features/logs-toggle.js listens for the broadcast event
 				// and reloads (Logs renders different columns per-mode).
-				\CB\Core\UI::render_mode_switcher();
+				\CoreBlueprint\Core\UI::render_mode_switcher();
 				?>
 			</div>
 
@@ -154,17 +154,17 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 			<label class="cb-core-toolbar__field">
 				<span class="cb-core-toolbar__label"><?php esc_html_e( 'Period', 'core-blueprint' ); ?></span>
 				<select name="period">
-					<?php foreach ( \CB\Core\Log\TimeFilter::PRESETS as $slug => $_label ) : ?>
+					<?php foreach ( \CoreBlueprint\Core\Log\TimeFilter::PRESETS as $slug => $_label ) : ?>
 						<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $current_period, $slug ); ?>>
-							<?php echo esc_html( \CB\Core\Log\TimeFilter::label( $slug ) ); ?>
+							<?php echo esc_html( \CoreBlueprint\Core\Log\TimeFilter::label( $slug ) ); ?>
 						</option>
 					<?php endforeach; ?>
 				</select>
 			</label>
 
 			<?php
-			$export_formats = class_exists( \CB\Core\Log\LogExporter::class )
-				? \CB\Core\Log\LogExporter::formats()
+			$export_formats = class_exists( \CoreBlueprint\Core\Log\LogExporter::class )
+				? \CoreBlueprint\Core\Log\LogExporter::formats()
 				: [ 'csv' => __( 'CSV', 'core-blueprint' ) ];
 			?>
 			<div class="cb-core-toolbar__actions">
@@ -174,7 +174,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 						<?php esc_html_e( 'Apply filters', 'core-blueprint' ); ?>
 					</button>
 					<?php if ( $current_event || $current_severity || ( $current_period && 'all' !== $current_period ) ) : ?>
-						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . \CB\Core\Admin\Admin::LOGS_SLUG . '&tab=' . $tab_slug ) ); ?>" class="button">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . \CoreBlueprint\Core\Admin\Admin::LOGS_SLUG . '&tab=' . $tab_slug ) ); ?>" class="button">
 							<?php esc_html_e( 'Clear', 'core-blueprint' ); ?>
 						</a>
 					<?php endif; ?>
@@ -278,10 +278,10 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 								</td>
 								<td>
 									<?php if ( 'plain' === $cb_mode ) : ?>
-										<span class="cb-core-event-plain"><?php echo esc_html( \CB\Core\Log\Language::describe_event( $row->event_type, $context, 'plain' ) ); ?></span>
+										<span class="cb-core-event-plain"><?php echo esc_html( \CoreBlueprint\Core\Log\Language::describe_event( $row->event_type, $context, 'plain' ) ); ?></span>
 									<?php else : ?>
 										<span class="cb-core-event-type"><?php echo esc_html( $row->event_type ); ?></span><br />
-										<span class="cb-core-muted"><?php echo esc_html( \CB\Core\Log\AuditLog::event_label( $row->event_type, 'technical' ) ); ?></span>
+										<span class="cb-core-muted"><?php echo esc_html( \CoreBlueprint\Core\Log\AuditLog::event_label( $row->event_type, 'technical' ) ); ?></span>
 									<?php endif; ?>
 								</td>
 								<td>
@@ -313,7 +313,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 			<!-- ─── Pagination ───────────────────────────────────────── -->
 
 			<?php if ( $total_pages > 1 ) :
-				$base_url = admin_url( 'admin.php?page=' . \CB\Core\Admin\Admin::LOGS_SLUG . '&tab=' . $tab_slug );
+				$base_url = admin_url( 'admin.php?page=' . \CoreBlueprint\Core\Admin\Admin::LOGS_SLUG . '&tab=' . $tab_slug );
 				$qs       = [];
 				if ( $current_event )    { $qs['event']    = $current_event; }
 				if ( $current_severity ) { $qs['severity'] = $current_severity; }

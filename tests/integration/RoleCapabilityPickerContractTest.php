@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminNavigation\Admin as AdminNavigationAdmin;
-use CB\Core\AdminNotices\Admin as AdminNoticesAdmin;
-use CB\Core\UI\RoleCapabilityPicker;
+use CoreBlueprint\Core\AdminNavigation\Admin as AdminNavigationAdmin;
+use CoreBlueprint\Core\AdminNotices\Admin as AdminNoticesAdmin;
+use CoreBlueprint\Core\UI\RoleCapabilityPicker;
 
 final class CB_Base_Role_Capability_Picker_Contract_Test extends WP_UnitTestCase {
 

@@ -107,7 +107,7 @@ assert_packaged_svg_sanitizer() {
   local result
 
   result="$(wp_cli "$site_dir" eval '
-$version = \CB\Core\MediaFormats\Svg\Sanitizer::VERSION;
+$version = \CoreBlueprint\Core\MediaFormats\Svg\Sanitizer::VERSION;
 $dtd = wp_tempnam("cb-svg-package-dtd.svg");
 $css = wp_tempnam("cb-svg-package-css.svg");
 $loop = wp_tempnam("cb-svg-package-loop.svg");
@@ -118,16 +118,16 @@ if (!is_string($dtd) || !is_string($css) || !is_string($loop)) {
 
 try {
     file_put_contents($dtd, "<?xml version=\"1.0\"?><!DOCTYPE svg [<!ENTITY Tab \"#\">]><svg xmlns=\"http://www.w3.org/2000/svg\"><a href=\"&Tab;javascript:alert(1)\"><text>x</text></a></svg>");
-    $dtd_result = \CB\Core\MediaFormats\Svg\Sanitizer::sanitize_file($dtd);
+    $dtd_result = \CoreBlueprint\Core\MediaFormats\Svg\Sanitizer::sanitize_file($dtd);
     $dtd_ok = is_wp_error($dtd_result) && $dtd_result->get_error_code() === "cb_media_formats_svg_invalid";
 
     file_put_contents($css, "<svg xmlns=\"http://www.w3.org/2000/svg\"><style>@import url(https://example.invalid/a.css);rect{fill:url(//example.invalid/fill.svg#x)}</style><rect width=\"10\" height=\"10\" style=\"stroke:url(https://example.invalid/stroke.svg#x)\"/></svg>");
-    $css_result = \CB\Core\MediaFormats\Svg\Sanitizer::sanitize_file($css);
+    $css_result = \CoreBlueprint\Core\MediaFormats\Svg\Sanitizer::sanitize_file($css);
     $css_clean = file_get_contents($css);
     $css_ok = $css_result === true && is_string($css_clean) && strpos($css_clean, "example.invalid") === false;
 
     file_put_contents($loop, "<svg xmlns=\"http://www.w3.org/2000/svg\"><g id=\"ping\"><use HrEf=\"#pong\"/></g><g id=\"pong\"><use HREF=\"#ping\"/></g></svg>");
-    $loop_result = \CB\Core\MediaFormats\Svg\Sanitizer::sanitize_file($loop);
+    $loop_result = \CoreBlueprint\Core\MediaFormats\Svg\Sanitizer::sanitize_file($loop);
     $loop_clean = file_get_contents($loop);
     $loop_ok = $loop_result === true && is_string($loop_clean) && preg_match("/<use\\b/i", $loop_clean) === 0;
 
@@ -169,12 +169,12 @@ wp_cli "$UPDATE_SITE" plugin install "$PREVIOUS_ZIP" --activate
 assert_active_version "$UPDATE_SITE" "$PREVIOUS_VERSION"
 assert_clean_debug_log "$UPDATE_SITE"
 
-REPORT_SENTINEL_ID="$(wp_cli "$UPDATE_SITE" eval 'echo (int) CB\Core\Reports\Storage::save([
+REPORT_SENTINEL_ID="$(wp_cli "$UPDATE_SITE" eval 'echo (int) CoreBlueprint\Core\Reports\Storage::save([
     "period_start" => "2026-09-01",
     "period_end" => "2026-09-30",
     "generated_by" => 0,
     "report_data" => [
-        "snapshot_version" => CB\Core\Reports\MaintenanceAggregator::SNAPSHOT_VERSION,
+        "snapshot_version" => CoreBlueprint\Core\Reports\MaintenanceAggregator::SNAPSHOT_VERSION,
         "sentinel" => "release-update-preserve-me",
     ],
     "status" => "generated",
@@ -187,7 +187,7 @@ fi
 wp_cli "$UPDATE_SITE" plugin install "$CANDIDATE_ZIP" --force
 assert_active_version "$UPDATE_SITE" "$CANDIDATE_VERSION"
 
-report_preserved="$(wp_cli "$UPDATE_SITE" eval "echo is_array(CB\Core\Reports\Storage::find($REPORT_SENTINEL_ID)) && (CB\Core\Reports\Storage::find($REPORT_SENTINEL_ID)['report_data']['sentinel'] ?? '') === 'release-update-preserve-me' ? 'yes' : 'no';")"
+report_preserved="$(wp_cli "$UPDATE_SITE" eval "echo is_array(CoreBlueprint\Core\Reports\Storage::find($REPORT_SENTINEL_ID)) && (CoreBlueprint\Core\Reports\Storage::find($REPORT_SENTINEL_ID)['report_data']['sentinel'] ?? '') === 'release-update-preserve-me' ? 'yes' : 'no';")"
 if [[ "$report_preserved" != "yes" ]]; then
   echo "[H] Existing Maintenance Report was not preserved across release update." >&2
   exit 1

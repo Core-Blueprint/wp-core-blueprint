@@ -11,14 +11,14 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Permissions;
+namespace CoreBlueprint\Core\CLI\Commands\Permissions;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\RolePolicySchema;
-use CB\Core\Permissions\Roles;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\RolePolicySchema;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

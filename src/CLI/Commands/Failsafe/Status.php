@@ -10,21 +10,21 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Failsafe;
+namespace CoreBlueprint\Core\CLI\Commands\Failsafe;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Detector;
-use CB\Core\Security\ModuleRegistry;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Detector;
+use CoreBlueprint\Core\Security\ModuleRegistry;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 
 final class Status implements CommandInterface {
 
 	public function execute( array $args ): Result {
-		$bypassed = \CB\Core\Security\Failsafe::is_bypassed();
-		$layers   = \CB\Core\Security\Failsafe::active_layers();
+		$bypassed = \CoreBlueprint\Core\Security\Failsafe::is_bypassed();
+		$layers   = \CoreBlueprint\Core\Security\Failsafe::active_layers();
 
 		$lines   = [];
 		$lines[] = '';

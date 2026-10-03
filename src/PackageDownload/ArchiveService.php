@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\PackageDownload;
+namespace CoreBlueprint\Core\PackageDownload;
 
 defined( 'ABSPATH' ) || exit;
 

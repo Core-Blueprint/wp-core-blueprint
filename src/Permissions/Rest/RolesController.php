@@ -7,10 +7,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Permissions\Rest;
+namespace CoreBlueprint\Core\Permissions\Rest;
 
-use CB\Core\Permissions\RolePolicy;
-use CB\Core\Permissions\RoleRepository;
+use CoreBlueprint\Core\Permissions\RolePolicy;
+use CoreBlueprint\Core\Permissions\RoleRepository;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -33,7 +33,7 @@ final class RolesController {
 	}
 
 	public static function can_manage(): bool {
-		return \CB\Core\Permissions\UserRolesState::is_enabled() && RolePolicy::can_manage_roles();
+		return \CoreBlueprint\Core\Permissions\UserRolesState::is_enabled() && RolePolicy::can_manage_roles();
 	}
 
 	public static function list( WP_REST_Request $request ): WP_REST_Response {

@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\HUD\Brand;
+namespace CoreBlueprint\Core\HUD\Brand;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,8 +13,8 @@ defined( 'ABSPATH' ) || exit;
  * descriptions shown in the brand picker.
  *
  * The built-in CoreBlueprint brand lives under
- * {@see \CB\Core\HUD\Brand} and are registered automatically by
- * {@see \CB\Core\HUD\Bootstrap::register_brands()}. White-label and
+ * {@see \CoreBlueprint\Core\HUD\Brand} and are registered automatically by
+ * {@see \CoreBlueprint\Core\HUD\Bootstrap::register_brands()}. White-label and
  * sibling plugins implement this interface and register their brand on
  * the `cb_core_register_brands` action - see Bootstrap docblock for the
  * canonical usage example.
@@ -138,7 +138,7 @@ interface BrandInterface {
 	 * Output is rendered server-side and inserted with no further
 	 * escaping - implementations are responsible for their own escaping
 	 * via esc_html() / esc_attr() / wp_kses() as appropriate. SVG
-	 * markup MUST be sanitised through {@see \CB\Core\HUD\HUD::sanitize_logo_svg()}
+	 * markup MUST be sanitised through {@see \CoreBlueprint\Core\HUD\HUD::sanitize_logo_svg()}
 	 * or an equivalent allowlist, never echoed raw.
 	 *
 	 * Default implementation in {@see AbstractBrand} renders a

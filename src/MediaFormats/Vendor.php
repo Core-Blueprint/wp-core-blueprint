@@ -6,7 +6,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\MediaFormats;
+namespace CoreBlueprint\Core\MediaFormats;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,7 +19,7 @@ final class Vendor {
 		}
 		self::$registered = true;
 
-		$prefix = 'CB\\Core\\MediaFormats\\Vendor\\SvgSanitize\\';
+		$prefix = 'CoreBlueprint\\Core\\MediaFormats\\Vendor\\SvgSanitize\\';
 		$base   = __DIR__ . '/lib/svg-sanitizer/src/';
 
 		spl_autoload_register( static function ( string $class ) use ( $prefix, $base ): void {

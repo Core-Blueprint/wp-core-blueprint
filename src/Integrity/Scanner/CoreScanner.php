@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Scanner;
+namespace CoreBlueprint\Core\Integrity\Scanner;
 
-use CB\Core\Integrity\Support\BatchedChecksumVerifier;
-use CB\Core\Integrity\Support\BatchedFilesystemWalker;
-use CB\Core\Integrity\Support\FilesystemWalker;
-use CB\Core\Integrity\Support\Finding;
-use CB\Core\Integrity\Support\FileHashProbe;
-use CB\Core\Integrity\Support\PathGuard;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Integrity\Support\BatchedChecksumVerifier;
+use CoreBlueprint\Core\Integrity\Support\BatchedFilesystemWalker;
+use CoreBlueprint\Core\Integrity\Support\FilesystemWalker;
+use CoreBlueprint\Core\Integrity\Support\Finding;
+use CoreBlueprint\Core\Integrity\Support\FileHashProbe;
+use CoreBlueprint\Core\Integrity\Support\PathGuard;
+use CoreBlueprint\Core\Settings;
 
 use function current_time;
 use function do_action;

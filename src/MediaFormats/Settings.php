@@ -6,9 +6,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\MediaFormats;
+namespace CoreBlueprint\Core\MediaFormats;
 
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\CLI\Commands\Operator\Add as OperatorAdd;
-use CB\Core\CLI\Commands\Operator\Recover as OperatorRecover;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\RolePolicySchema;
-use CB\Core\Permissions\Roles;
-use CB\Core\Permissions\UserRoleAssignments;
+use CoreBlueprint\Core\CLI\Commands\Operator\Add as OperatorAdd;
+use CoreBlueprint\Core\CLI\Commands\Operator\Recover as OperatorRecover;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\RolePolicySchema;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Permissions\UserRoleAssignments;
 
 final class CB_Base_Privileged_Access_Recovery_CLI_Contract_Test extends WP_UnitTestCase {
 

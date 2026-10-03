@@ -7,11 +7,11 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\PackageDownload;
+namespace CoreBlueprint\Core\PackageDownload;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\UI\Icon;
-use CB\Core\UI\Notice;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\UI\Icon;
+use CoreBlueprint\Core\UI\Notice;
 
 defined( 'ABSPATH' ) || exit;
 

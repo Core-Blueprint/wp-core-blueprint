@@ -6,13 +6,13 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since   1.0.0
  */
-namespace CB\Core\AIGovernance;
+namespace CoreBlueprint\Core\AIGovernance;
 
-use CB\Core\Admin\Pages\Logs\TabRegistry;
-use CB\Core\Admin\Pages\Logs\Tabs\AIActivityTab;
-use CB\Core\AIGovernance\Admin\Actions;
-use CB\Core\Governance\EventRegistry;
-use CB\Core\RequestContext;
+use CoreBlueprint\Core\Admin\Pages\Logs\TabRegistry;
+use CoreBlueprint\Core\Admin\Pages\Logs\Tabs\AIActivityTab;
+use CoreBlueprint\Core\AIGovernance\Admin\Actions;
+use CoreBlueprint\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\RequestContext;
 
 defined( 'ABSPATH' ) || exit;
 

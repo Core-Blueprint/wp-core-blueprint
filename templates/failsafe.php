@@ -3,9 +3,9 @@
 /**
  * Core Blueprint - Failsafe management page
  *
- * Available variables (set by \CB\Core\Admin\Admin::render_failsafe):
- *   $self_test - \CB\Core\Security\Failsafe::self_test() result
- *   $layers    - \CB\Core\Security\Failsafe::active_layers() result
+ * Available variables (set by \CoreBlueprint\Core\Admin\Admin::render_failsafe):
+ *   $self_test - \CoreBlueprint\Core\Security\Failsafe::self_test() result
+ *   $layers    - \CoreBlueprint\Core\Security\Failsafe::active_layers() result
  *   $bypassed  - bool, is any failsafe layer active
  *
  * @package Core_Blueprint
@@ -31,9 +31,9 @@ $admin_email = get_option( 'admin_email', '' );
 		if ( $layers['option'] )    { $parts[] = __( 'Layer 2 (emergency option)', 'core-blueprint' ); }
 		if ( $layers['transient'] ) { $parts[] = __( 'Layer 3 (60-minute window)', 'core-blueprint' ); }
 
-		echo \CB\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+		echo \CoreBlueprint\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
 			[
-				'variant' => \CB\Core\UI\Notice::WARNING,
+				'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 				'title'   => __( 'Emergency bypass is currently active.', 'core-blueprint' ),
 				'message' => __( 'Restrictive Core Blueprint features are currently bypassed through one or more recovery layers.', 'core-blueprint' ),
 				'items'   => $parts,
@@ -72,9 +72,9 @@ $admin_email = get_option( 'admin_email', '' );
 					</td>
 					<td>
 						<?php
-						echo \CB\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+						echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
 							$layers['constant'] ? __( 'ACTIVE', 'core-blueprint' ) : __( 'Inactive', 'core-blueprint' ),
-							[ 'variant' => $layers['constant'] ? \CB\Core\UI\StateBadge::WARNING : \CB\Core\UI\StateBadge::NEUTRAL ]
+							[ 'variant' => $layers['constant'] ? \CoreBlueprint\Core\UI\StateBadge::WARNING : \CoreBlueprint\Core\UI\StateBadge::NEUTRAL ]
 						);
 						?>
 					</td>
@@ -90,9 +90,9 @@ $admin_email = get_option( 'admin_email', '' );
 					</td>
 					<td>
 						<?php
-						echo \CB\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+						echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
 							$layers['option'] ? __( 'ACTIVE', 'core-blueprint' ) : __( 'Inactive', 'core-blueprint' ),
-							[ 'variant' => $layers['option'] ? \CB\Core\UI\StateBadge::WARNING : \CB\Core\UI\StateBadge::NEUTRAL ]
+							[ 'variant' => $layers['option'] ? \CoreBlueprint\Core\UI\StateBadge::WARNING : \CoreBlueprint\Core\UI\StateBadge::NEUTRAL ]
 						);
 						?>
 					</td>
@@ -109,15 +109,15 @@ $admin_email = get_option( 'admin_email', '' );
 						<?php
 						if ( $layers['transient'] ) {
 							$layer3_label   = __( 'WINDOW OPEN', 'core-blueprint' );
-							$layer3_variant = \CB\Core\UI\StateBadge::WARNING;
+							$layer3_variant = \CoreBlueprint\Core\UI\StateBadge::WARNING;
 						} elseif ( $has_token ) {
 							$layer3_label   = __( 'Armed', 'core-blueprint' );
-							$layer3_variant = \CB\Core\UI\StateBadge::SUCCESS;
+							$layer3_variant = \CoreBlueprint\Core\UI\StateBadge::SUCCESS;
 						} else {
 							$layer3_label   = __( 'No token', 'core-blueprint' );
-							$layer3_variant = \CB\Core\UI\StateBadge::DANGER;
+							$layer3_variant = \CoreBlueprint\Core\UI\StateBadge::DANGER;
 						}
-						echo \CB\Core\UI\StateBadge::render( $layer3_label, [ 'variant' => $layer3_variant ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+						echo \CoreBlueprint\Core\UI\StateBadge::render( $layer3_label, [ 'variant' => $layer3_variant ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
 						?>
 					</td>
 				</tr>
@@ -130,7 +130,7 @@ $admin_email = get_option( 'admin_email', '' );
 						</span>
 					</td>
 					<td>
-						<?php echo \CB\Core\UI\StateBadge::render( __( 'Available', 'core-blueprint' ), [ 'variant' => \CB\Core\UI\StateBadge::INFO ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML. ?>
+						<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Available', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::INFO ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML. ?>
 					</td>
 				</tr>
 			</tbody>
@@ -157,9 +157,9 @@ $admin_email = get_option( 'admin_email', '' );
 						<td><strong><?php echo esc_html( $check ); ?></strong></td>
 						<td>
 							<?php
-							echo \CB\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
+							echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
 								$result['ok'] ? __( 'PASS', 'core-blueprint' ) : __( 'FAIL', 'core-blueprint' ),
-								[ 'variant' => $result['ok'] ? \CB\Core\UI\StateBadge::SUCCESS : \CB\Core\UI\StateBadge::ERROR ]
+								[ 'variant' => $result['ok'] ? \CoreBlueprint\Core\UI\StateBadge::SUCCESS : \CoreBlueprint\Core\UI\StateBadge::ERROR ]
 							);
 							?>
 						</td>
@@ -177,7 +177,7 @@ $admin_email = get_option( 'admin_email', '' );
 
 		<?php if ( $has_token ) : ?>
 			<div class="cb-core-failsafe-setting-state">
-				<?php echo \CB\Core\UI\StateBadge::render( __( 'Armed', 'core-blueprint' ), [ 'variant' => \CB\Core\UI\StateBadge::SUCCESS ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML. ?>
+				<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Armed', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::SUCCESS ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML. ?>
 				<p class="description">
 					<?php esc_html_e( 'A bypass token is currently armed. The plaintext URL is never stored - only a hash. If you have lost your copy, rotate the token to generate a new one.', 'core-blueprint' ); ?>
 				</p>
@@ -190,9 +190,9 @@ $admin_email = get_option( 'admin_email', '' );
 			</div>
 		<?php else : ?>
 			<?php
-			echo \CB\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+			echo \CoreBlueprint\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
 				[
-					'variant' => \CB\Core\UI\Notice::WARNING,
+					'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 					'title'   => __( 'No bypass token is currently armed.', 'core-blueprint' ),
 					'message' => __( 'Generate one now and store it in your password manager. Without a token, Layer 3 of the failsafe cannot protect you.', 'core-blueprint' ),
 				]
@@ -213,9 +213,9 @@ $admin_email = get_option( 'admin_email', '' );
 
 		<?php if ( $layers['option'] ) : ?>
 			<?php
-			echo \CB\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+			echo \CoreBlueprint\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
 				[
-					'variant' => \CB\Core\UI\Notice::WARNING,
+					'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 					'title'   => __( 'Emergency bypass is active.', 'core-blueprint' ),
 					'message' => __( 'The emergency bypass (Layer 2) is currently active. Restrictive features are disabled.', 'core-blueprint' ),
 				]
@@ -241,9 +241,9 @@ $admin_email = get_option( 'admin_email', '' );
 		<?php if ( $layers['transient'] ) : ?>
 			<div class="cb-core-failsafe-window-control">
 				<?php
-				echo \CB\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
+				echo \CoreBlueprint\Core\UI\Notice::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
 					[
-						'variant' => \CB\Core\UI\Notice::WARNING,
+						'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 						'title'   => __( 'A 60-minute bypass window (Layer 3) is currently open.', 'core-blueprint' ),
 						'message' => __( 'Close it immediately to resume enforcement before the window expires naturally.', 'core-blueprint' ),
 					]

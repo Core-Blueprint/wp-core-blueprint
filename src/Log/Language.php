@@ -30,8 +30,8 @@ declare(strict_types=1);
  *
  * Consumer pattern:
  *
- *     use CB\Core\Log\Language;
- *     use CB\Core\UI;
+ *     use CoreBlueprint\Core\Log\Language;
+ *     use CoreBlueprint\Core\UI;
  *
  *     $mode = UI::current_mode(); // 'plain' | 'technical' | 'sync'
  *     $line = Language::describe_event( $row->event_type, $row->context_decoded, $mode );
@@ -44,7 +44,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Log;
+namespace CoreBlueprint\Core\Log;
 
 defined( 'ABSPATH' ) || exit;
 

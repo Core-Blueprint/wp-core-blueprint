@@ -11,8 +11,8 @@ wp_cli_eval_args(){ local php_code="$1"; shift; printf '<?php\n%s\n' "$php_code"
 fail(){ echo "[B2] FAIL: $*" >&2; exit 1; }
 contains(){ grep -Fq "$2" <<<"$1" || { printf '%s\n' "$1" >&2; fail "$3 (missing: $2)"; }; }
 eq(){ [[ "$1" == "$2" ]] || fail "$3 (expected '$2', got '$1')"; }
-audit_count(){ wp_cli_eval_args '$q=\CB\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);echo (int)$q["total"];' "$1"; }
-audit_context(){ wp_cli_eval_args '$q=\CB\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);$r=$q["rows"][0]??null;echo $r?wp_json_encode($r->context_decoded??[]):"";' "$1"; }
+audit_count(){ wp_cli_eval_args '$q=\CoreBlueprint\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);echo (int)$q["total"];' "$1"; }
+audit_context(){ wp_cli_eval_args '$q=\CoreBlueprint\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);$r=$q["rows"][0]??null;echo $r?wp_json_encode($r->context_decoded??[]):"";' "$1"; }
 auth(){ wp_cli_eval_args '$u=get_userdata((int)$args[0]);$e=time()+3600;$t=WP_Session_Tokens::get_instance($u->ID)->create($e);$c=wp_generate_auth_cookie($u->ID,$e,"logged_in",$t);$_COOKIE[LOGGED_IN_COOKIE]=$c;wp_set_current_user($u->ID);echo LOGGED_IN_COOKIE,"\n",$c,"\n",wp_create_nonce("wp_rest"),"\n";' "$1"; }
 
 pid=""
@@ -160,24 +160,24 @@ contains "$(audit_context console_executed)" '"via":"console"' 'Browser Console 
 echo "[B2] Browser Console provenance isolation PASS"
 
 # Keep async jobs persisted long enough to inspect their canonical actor field.
-wp_cli eval '\CB\Core\Integrity\State::set_enabled(true,"c2b2-conformance");' >/dev/null
+wp_cli eval '\CoreBlueprint\Core\Integrity\State::set_enabled(true,"c2b2-conformance");' >/dev/null
 wp_cli config set DISABLE_WP_CRON true --raw >/dev/null
 
 spoof_run="$(wp_cli cb scan run --user="$spoof_id")"
 contains "$spoof_run" 'operator: server CLI' 'Terminal Scanner did not identify the trusted server CLI context'
-cli_actor="$(wp_cli eval '$j=\CB\Core\Integrity\Scanner\ScanJobRepository::get();echo is_array($j)?(int)($j["started_by_user_id"]??-1):-1;')"
+cli_actor="$(wp_cli eval '$j=\CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository::get();echo is_array($j)?(int)($j["started_by_user_id"]??-1):-1;')"
 eq "$cli_actor" 0 'Terminal Scanner persisted caller-selected WordPress user attribution'
-eq "$(wp_cli eval '$j=\CB\Core\Integrity\Scanner\ScanJobRepository::get();echo is_array($j)?(string)($j["source"]??""):"";')" manual 'Terminal Scanner source contract drifted'
-wp_cli eval '\CB\Core\Integrity\Scanner\ScanJobRunner::cancel_active();' >/dev/null
-eq "$(wp_cli eval 'echo null===\CB\Core\Integrity\Scanner\ScanJobRepository::get()?"empty":"present";')" empty 'Terminal Scanner fixture cleanup failed'
+eq "$(wp_cli eval '$j=\CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository::get();echo is_array($j)?(string)($j["source"]??""):"";')" manual 'Terminal Scanner source contract drifted'
+wp_cli eval '\CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner::cancel_active();' >/dev/null
+eq "$(wp_cli eval 'echo null===\CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository::get()?"empty":"present";')" empty 'Terminal Scanner fixture cleanup failed'
 
 browser_request -sS -o /tmp/cb-b2-console-scan.json -w '%{http_code}' -X POST -H "Cookie: $browser_cookie" -H "X-WP-Nonce: $browser_rest" -H 'Content-Type: application/json' --data "{\"id\":\"cb-scan-run\",\"args\":{\"user\":\"$target_id\"}}" "$site/?rest_route=/core-blueprint/v1/console/run"
 code="$B2_HTTP_CODE"
 eq "$code" 200 'Browser Console Scanner failed'
 contains "$(cat /tmp/cb-b2-console-scan.json)" '"status":"success"' 'Browser Console Scanner did not schedule successfully'
-browser_actor="$(wp_cli eval '$j=\CB\Core\Integrity\Scanner\ScanJobRepository::get();echo is_array($j)?(int)($j["started_by_user_id"]??-1):-1;')"
+browser_actor="$(wp_cli eval '$j=\CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository::get();echo is_array($j)?(int)($j["started_by_user_id"]??-1):-1;')"
 eq "$browser_actor" "$target_id" 'Browser Console Scanner lost its authenticated WordPress operator attribution'
-wp_cli eval '\CB\Core\Integrity\Scanner\ScanJobRunner::cancel_active();' >/dev/null
+wp_cli eval '\CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner::cancel_active();' >/dev/null
 wp_cli config delete DISABLE_WP_CRON >/dev/null
 
 echo "[B2] Scanner CLI/browser attribution isolation PASS"

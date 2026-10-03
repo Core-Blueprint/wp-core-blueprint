@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles\Sections;
+namespace CoreBlueprint\Core\Profiles\Sections;
 
-use CB\Core\Profiles\CanonicalJson;
-use CB\Core\Profiles\ExactSection;
-use CB\Core\Profiles\SchemaGuard;
-use CB\Core\Reports\Composer\MaintenanceTemplate;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Profiles\CanonicalJson;
+use CoreBlueprint\Core\Profiles\ExactSection;
+use CoreBlueprint\Core\Profiles\SchemaGuard;
+use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

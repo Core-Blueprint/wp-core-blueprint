@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Console Registry - flat command index for the Console runner.
  *
- * Where {@see \CB\Core\CLI\Registry::commands()} groups commands by
+ * Where {@see \CoreBlueprint\Core\CLI\Registry::commands()} groups commands by
  * top-level namespace ("scan", "beacon", "logs"…) for WP-CLI to walk
  * with its own subcommand-resolution, the Console needs a flat list of
  * runnable atomic commands keyed by their full name ("scan latest",
@@ -30,9 +30,9 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\Console;
+namespace CoreBlueprint\Core\Console;
 
-use CB\Core\CLI\Commands as CLICommands;
+use CoreBlueprint\Core\CLI\Commands as CLICommands;
 
 defined( 'ABSPATH' ) || exit;
 

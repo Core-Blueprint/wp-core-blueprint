@@ -6,7 +6,7 @@ Introduced in Core API `1.2`.
 
 ## Purpose
 
-`CB\Core\Security\SecretProtection` is the Base-owned authenticated protection boundary for extension-owned credentials and other small secrets that must be stored at rest.
+`CoreBlueprint\Core\Security\SecretProtection` is the Base-owned authenticated protection boundary for extension-owned credentials and other small secrets that must be stored at rest.
 
 Base owns cryptographic protection only. The consuming extension remains responsible for authorization, credential semantics, persistence, retention, disconnect/reconnect behavior and any external-provider lifecycle.
 
@@ -15,7 +15,7 @@ This Foundation is deliberately **not** a credential database or central secrets
 ## Public API
 
 ```php
-use CB\Core\Security\SecretProtection;
+use CoreBlueprint\Core\Security\SecretProtection;
 
 $protected = SecretProtection::seal(
     $app_password,

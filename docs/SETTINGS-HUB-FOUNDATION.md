@@ -11,7 +11,7 @@ This is a configuration surface only. Operational work remains in each extension
 Extensions register settings providers during `cb_core_register_settings` through:
 
 ```php
-use CB\Core\Admin\SettingsRegistry;
+use CoreBlueprint\Core\Admin\SettingsRegistry;
 
 add_action( 'cb_core_register_settings', static function (): void {
     SettingsRegistry::register(
@@ -33,7 +33,7 @@ add_action( 'cb_core_register_settings', static function (): void {
 } );
 ```
 
-The first argument is the extension's existing `ExtensionRegistry` ID. A settings provider is accepted only when that extension identity is already valid and resolvable through `CB\Core\ExtensionRegistry`.
+The first argument is the extension's existing `ExtensionRegistry` ID. A settings provider is accepted only when that extension identity is already valid and resolvable through `CoreBlueprint\Core\ExtensionRegistry`.
 
 Registration outside `cb_core_register_settings` is rejected. Duplicate providers are rejected rather than overwritten.
 

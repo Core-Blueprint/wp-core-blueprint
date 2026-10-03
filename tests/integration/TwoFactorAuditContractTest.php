@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Governance\EventRegistry;
-use CB\Core\Security\TwoFactor\Audit;
-use CB\Core\Security\TwoFactor\Bootstrap;
+use CoreBlueprint\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\Security\TwoFactor\Audit;
+use CoreBlueprint\Core\Security\TwoFactor\Bootstrap;
 
 final class CB_Base_Two_Factor_Audit_Contract_Test extends WP_UnitTestCase {
 

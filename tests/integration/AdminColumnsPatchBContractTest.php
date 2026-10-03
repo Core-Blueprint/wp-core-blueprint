@@ -1,20 +1,20 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminColumns\Admin\Ajax as AdminColumnsAjax;
-use CB\Core\AdminColumns\Admin\ScreenSettings;
-use CB\Core\AdminColumns\PolicyRepository;
-use CB\Core\AdminColumns\RegisteredMetaColumns;
-use CB\Core\AdminColumns\Runtime;
-use CB\Core\AdminColumns\TaxonomyColumns;
-use CB\Core\ContentModels\FieldTypes;
-use CB\Core\ContentModels\Repository as ContentModelsRepository;
-use CB\Core\Log\AuditLog;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Profiles\Diff;
-use CB\Core\Profiles\Engine;
-use CB\Core\Profiles\SectionInterface;
-use CB\Core\Profiles\SectionRegistry;
+use CoreBlueprint\Core\AdminColumns\Admin\Ajax as AdminColumnsAjax;
+use CoreBlueprint\Core\AdminColumns\Admin\ScreenSettings;
+use CoreBlueprint\Core\AdminColumns\PolicyRepository;
+use CoreBlueprint\Core\AdminColumns\RegisteredMetaColumns;
+use CoreBlueprint\Core\AdminColumns\Runtime;
+use CoreBlueprint\Core\AdminColumns\TaxonomyColumns;
+use CoreBlueprint\Core\ContentModels\FieldTypes;
+use CoreBlueprint\Core\ContentModels\Repository as ContentModelsRepository;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Profiles\Diff;
+use CoreBlueprint\Core\Profiles\Engine;
+use CoreBlueprint\Core\Profiles\SectionInterface;
+use CoreBlueprint\Core\Profiles\SectionRegistry;
 
 final class CB_Admin_Columns_Failing_Profile_Section implements SectionInterface {
 	public function id(): string { return 'zz-admin-columns-failing'; }
@@ -163,7 +163,7 @@ final class CB_Base_Admin_Columns_Patch_B_Contract_Test extends WP_UnitTestCase 
 	}
 
 	public function test_b3_ajax_contract_is_private_capability_and_nonce_gated(): void {
-		\CB\Core\AdminColumns\Admin\Ajax::boot();
+		\CoreBlueprint\Core\AdminColumns\Admin\Ajax::boot();
 		self::assertNotFalse( has_action( 'wp_ajax_' . AdminColumnsAjax::ACTION, [ AdminColumnsAjax::class, 'handle' ] ) );
 		$root = dirname( __DIR__, 2 );
 		$source = file_get_contents( $root . '/src/AdminColumns/Admin/Ajax.php' );

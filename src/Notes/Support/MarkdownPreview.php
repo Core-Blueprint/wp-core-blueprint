@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\Notes\Support;
+namespace CoreBlueprint\Core\Notes\Support;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,7 +1,7 @@
 /**
  * Core Blueprint UI Foundation - shared icon registry client.
  *
- * Registry data is provided by CB\Core\UI\Icon so PHP and JavaScript share
+ * Registry data is provided by CoreBlueprint\Core\UI\Icon so PHP and JavaScript share
  * one canonical icon set. The browser renderer builds SVG nodes directly;
  * no innerHTML or remote assets are involved.
  *

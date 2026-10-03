@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\DataExchange\Mapper;
+namespace CoreBlueprint\Core\DataExchange\Mapper;
 
-use CB\Core\DataExchange\Foundation;
-use CB\Core\DataExchange\Mapper;
+use CoreBlueprint\Core\DataExchange\Foundation;
+use CoreBlueprint\Core\DataExchange\Mapper;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;

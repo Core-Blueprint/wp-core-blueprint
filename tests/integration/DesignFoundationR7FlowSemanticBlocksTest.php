@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Flow\PdfRenderer;
-use CB\Core\Design\Profile\Document\Flow\Presentation;
-use CB\Core\Design\Profile\Document\Flow\RenderBlock;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\PdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\Presentation;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
 
 final class CB_Design_Foundation_R7_Flow_Semantic_Blocks_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */

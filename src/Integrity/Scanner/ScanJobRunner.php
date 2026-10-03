@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Scanner;
+namespace CoreBlueprint\Core\Integrity\Scanner;
 
-use CB\Core\Integrity\Bootstrap;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Integrity\Storage\StorageSchema;
-use CB\Core\Integrity\Support\Audit;
-use CB\Core\Integrity\Support\Finding;
+use CoreBlueprint\Core\Integrity\Bootstrap;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Storage\StorageSchema;
+use CoreBlueprint\Core\Integrity\Support\Audit;
+use CoreBlueprint\Core\Integrity\Support\Finding;
 use Throwable;
 
 use function array_merge;
@@ -198,7 +198,7 @@ final class ScanJobRunner {
 
 					if ( 'finalize' === $phase ) {
 						self::assert_job_current( $job );
-						if ( class_exists( \CB\Core\Integrity\State::class ) && ! \CB\Core\Integrity\State::is_enabled() ) {
+						if ( class_exists( \CoreBlueprint\Core\Integrity\State::class ) && ! \CoreBlueprint\Core\Integrity\State::is_enabled() ) {
 							throw new \RuntimeException( __( 'Core Scanner was disabled before finalization. No completed result was published.', 'core-blueprint' ) );
 						}
 						$result = ( new ScannerEngine() )->finalize_job_result( $job, $reporter );

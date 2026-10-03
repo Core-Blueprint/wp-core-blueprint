@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Design\Editor;
+namespace CoreBlueprint\Core\Design\Editor;
 
-use CB\Core\Brand\CoreBlueprintLockup;
-use CB\Core\Brand\CoreBlueprintMark;
+use CoreBlueprint\Core\Brand\CoreBlueprintLockup;
+use CoreBlueprint\Core\Brand\CoreBlueprintMark;
 
 defined( 'ABSPATH' ) || exit;
 

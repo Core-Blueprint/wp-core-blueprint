@@ -28,22 +28,22 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Admin\Pages;
+namespace CoreBlueprint\Core\Admin\Pages;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\Overview;
-use CB\Core\Admin\PageBase;
-use CB\Core\Admin\Tabbed;
-use CB\Core\Detector;
-use CB\Core\Environment\Governance as EnvironmentGovernance;
-use CB\Core\Security\AccessMode as SecurityAccessMode;
-use CB\Core\Security\Failsafe;
-use CB\Core\Security\LoginShield;
-use CB\Core\Security\ModuleRegistry;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\Policy as TwoFactorPolicy;
-use CB\Core\Security\TwoFactor\ProviderDetector;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Overview;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\Tabbed;
+use CoreBlueprint\Core\Detector;
+use CoreBlueprint\Core\Environment\Governance as EnvironmentGovernance;
+use CoreBlueprint\Core\Security\AccessMode as SecurityAccessMode;
+use CoreBlueprint\Core\Security\Failsafe;
+use CoreBlueprint\Core\Security\LoginShield;
+use CoreBlueprint\Core\Security\ModuleRegistry;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\Policy as TwoFactorPolicy;
+use CoreBlueprint\Core\Security\TwoFactor\ProviderDetector;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -143,7 +143,7 @@ final class Safeguards extends PageBase {
 
 		$shield_on    = Settings::shield_enabled();
 		$module_count = count( $modules );
-		$audit_total  = (int) \CB\Core\Log\AuditLog::query( [ 'per_page' => 1 ] )['total'];
+		$audit_total  = (int) \CoreBlueprint\Core\Log\AuditLog::query( [ 'per_page' => 1 ] )['total'];
 
 		// Optional bypass banner - supplied as raw HTML to the Overview
 		// helper because it contains dynamic composed layer lists that
@@ -311,13 +311,13 @@ final class Safeguards extends PageBase {
 		$current_user             = wp_get_current_user();
 		$can_manage_privileged    = current_user_can( 'cb_manage_permissions' )
 			&& $current_user instanceof \WP_User
-			&& \CB\Core\Permissions\PrivilegedAccessGuard::is_trusted_operator( $current_user );
-		$privileged_access_mode  = \CB\Core\Permissions\PrivilegedAccessPolicy::enforcement_mode();
+			&& \CoreBlueprint\Core\Permissions\PrivilegedAccessGuard::is_trusted_operator( $current_user );
+		$privileged_access_mode  = \CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy::enforcement_mode();
 		$privileged_review_users = [];
 		$approved_privileged_count = 0;
-		if ( $can_manage_privileged && class_exists( '\CB\Core\Permissions\PrivilegedAccessRegistry' ) ) {
-			$privileged_review_users     = \CB\Core\Permissions\PrivilegedAccessRegistry::review_snapshot();
-			$approved_privileged_count = \CB\Core\Permissions\PrivilegedAccessRegistry::approved_count();
+		if ( $can_manage_privileged && class_exists( '\CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry' ) ) {
+			$privileged_review_users     = \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::review_snapshot();
+			$approved_privileged_count = \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::approved_count();
 		}
 
 		ob_start();
@@ -399,7 +399,7 @@ final class Safeguards extends PageBase {
 		$current_user = wp_get_current_user();
 		$can_manage = current_user_can( 'cb_manage_permissions' )
 			&& $current_user instanceof \WP_User
-			&& \CB\Core\Permissions\PrivilegedAccessGuard::is_trusted_operator( $current_user );
+			&& \CoreBlueprint\Core\Permissions\PrivilegedAccessGuard::is_trusted_operator( $current_user );
 		$base_enrolled = $current_user instanceof \WP_User
 			&& $current_user->ID > 0
 			&& CredentialStore::is_enrolled( (int) $current_user->ID );
@@ -417,7 +417,7 @@ final class Safeguards extends PageBase {
 	}
 
 	private function render_core_scanner_tab( string $tab, array $tab_labels ): void {
-		if ( ! class_exists( '\\CB\\Core\\Integrity\\Admin\\Page' ) ) {
+		if ( ! class_exists( '\\CoreBlueprint\\Core\\Integrity\\Admin\\Page' ) ) {
 			$this->render_subsystem_missing( __( 'Core Scanner subsystem not loaded.', 'core-blueprint' ) );
 			return;
 		}
@@ -429,7 +429,7 @@ final class Safeguards extends PageBase {
 			<p class="cb-core-intro">
 				<?php esc_html_e( 'File integrity verification for WordPress core, supported plugins and themes, and the uploads directory. Detects unexpected changes; never modifies files. Run on demand or schedule daily/weekly.', 'core-blueprint' ); ?>
 			</p>
-			<?php \CB\Core\Integrity\Admin\Page::render_panel(); ?>
+			<?php \CoreBlueprint\Core\Integrity\Admin\Page::render_panel(); ?>
 		</div>
 		<?php
 		$html = ob_get_clean();

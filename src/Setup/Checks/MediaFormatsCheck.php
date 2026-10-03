@@ -7,14 +7,14 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup\Checks;
+namespace CoreBlueprint\Core\Setup\Checks;
 
-use CB\Core\MediaFormats\Admin\Page;
-use CB\Core\MediaFormats\FormatRegistry;
-use CB\Core\MediaFormats\Settings;
-use CB\Core\Modules\ActivationRegistry;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Evidence;
+use CoreBlueprint\Core\MediaFormats\Admin\Page;
+use CoreBlueprint\Core\MediaFormats\FormatRegistry;
+use CoreBlueprint\Core\MediaFormats\Settings;
+use CoreBlueprint\Core\Modules\ActivationRegistry;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Evidence;
 
 defined( 'ABSPATH' ) || exit;
 

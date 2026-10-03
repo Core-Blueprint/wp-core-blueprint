@@ -1,20 +1,20 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Ajax\Handlers\Permissions as PermissionsActions;
-use CB\Core\Ajax\Request;
-use CB\Core\ContentModels\Admin\MetaBoxes as ContentModelMetaBoxes;
-use CB\Core\ContentModels\Repository as ContentModelRepository;
-use CB\Core\ContentModels\State as ContentModelsState;
-use CB\Core\Integrity\State as IntegrityState;
-use CB\Core\Log\AuditLog;
-use CB\Core\MediaFormats\Admin\Actions as MediaFormatsActions;
-use CB\Core\MediaFormats\Settings as MediaFormatsSettings;
-use CB\Core\MediaFormats\State as MediaFormatsState;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\Roles;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Ajax\Handlers\Permissions as PermissionsActions;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\ContentModels\Admin\MetaBoxes as ContentModelMetaBoxes;
+use CoreBlueprint\Core\ContentModels\Repository as ContentModelRepository;
+use CoreBlueprint\Core\ContentModels\State as ContentModelsState;
+use CoreBlueprint\Core\Integrity\State as IntegrityState;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\MediaFormats\Admin\Actions as MediaFormatsActions;
+use CoreBlueprint\Core\MediaFormats\Settings as MediaFormatsSettings;
+use CoreBlueprint\Core\MediaFormats\State as MediaFormatsState;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Settings;
 
 final class CB_C1_Test_Termination extends RuntimeException {
     /** @var mixed */

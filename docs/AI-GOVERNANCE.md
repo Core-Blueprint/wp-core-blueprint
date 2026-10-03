@@ -214,7 +214,7 @@ That supports source attribution to the **WordPress MCP Adapter** for Ability ex
 
 The public v1 reporting boundary is:
 
-`CB\Core\AIGovernance\Activity::record( array $activity ): string|false`
+`CoreBlueprint\Core\AIGovernance\Activity::record( array $activity ): string|false`
 
 Use this only when a Core Blueprint extension or integration has governance evidence that is not already captured adequately by the WordPress Abilities observer.
 
@@ -243,7 +243,7 @@ Optional keys:
 Example:
 
 ```php
-use CB\Core\AIGovernance\Activity;
+use CoreBlueprint\Core\AIGovernance\Activity;
 
 $activity_id = Activity::record( [
     'operation'    => 'my-plugin/content-operation',

@@ -13,21 +13,21 @@ declare(strict_types=1);
  * notes. The audit log records who did what for accountability.
  *
  * Asset enqueue (script module + stylesheet) lives in the central
- * {@see \CB\Core\Admin\Admin::enqueue_assets()} alongside every other
+ * {@see \CoreBlueprint\Core\Admin\Admin::enqueue_assets()} alongside every other
  * CB Base module - single enqueue surface, single registration point.
  *
  * @package Core_Blueprint
  * @since   1.0.0
  */
 
-namespace CB\Core\Notes\Admin;
+namespace CoreBlueprint\Core\Notes\Admin;
 
-use CB\Core\Admin\MutationAcknowledgement;
-use CB\Core\Admin\PageBase;
-use CB\Core\UI\Icon;
-use CB\Core\UI\Notice;
-use CB\Core\Notes\Repository;
-use CB\Core\Notes\Support\Audit;
+use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\UI\Icon;
+use CoreBlueprint\Core\UI\Notice;
+use CoreBlueprint\Core\Notes\Repository;
+use CoreBlueprint\Core\Notes\Support\Audit;
 
 defined( 'ABSPATH' ) || exit;
 

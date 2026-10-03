@@ -127,32 +127,32 @@ try {
         cb_b3_expect(is_plugin_active($plugin_basename), 'B3 Base activation did not persist.');
         $admin = get_user_by('login', 'cbadmin');
         cb_b3_expect($admin instanceof WP_User, 'B3 administrator disappeared during activation.');
-        cb_b3_expect([] !== \CB\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($admin), 'B3 first operator is not approved.');
+        cb_b3_expect([] !== \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($admin), 'B3 first operator is not approved.');
         fwrite(STDOUT, "[B3] activate PASS\n");
         exit(0);
     }
 
     cb_b3_expect(is_plugin_active($plugin_basename), 'Base must be active after B3 activation.');
     wp_set_current_user((int) $admin->ID);
-    cb_b3_expect([] !== \CB\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($admin), 'B3 operator approval is no longer valid.');
+    cb_b3_expect([] !== \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($admin), 'B3 operator approval is no longer valid.');
     cb_b3_expect(12 === count(cb_b3_modules()), 'B3 canonical module registry count mismatch.');
 
     if ('seed-enable' === $stage) {
-        $login = \CB\Core\Security\LoginShield::save([
+        $login = \CoreBlueprint\Core\Security\LoginShield::save([
             'enabled' => false,
             'slug' => 'cb-b3-login',
-            'mode' => \CB\Core\Security\LoginShield::MODE_STANDARD,
-            'redirect_after_login' => \CB\Core\Security\LoginShield::REDIRECT_HOMEPAGE,
+            'mode' => \CoreBlueprint\Core\Security\LoginShield::MODE_STANDARD,
+            'redirect_after_login' => \CoreBlueprint\Core\Security\LoginShield::REDIRECT_HOMEPAGE,
             'redirect_custom_url' => '',
-            'block_response_code' => \CB\Core\Security\LoginShield::RESPONSE_CODE_404,
+            'block_response_code' => \CoreBlueprint\Core\Security\LoginShield::RESPONSE_CODE_404,
         ], 'b3-seed');
         cb_b3_expect('cb-b3-login' === $login['slug'], 'Could not seed Login Shield slug.');
 
-        \CB\Core\Settings::set_feature_enabled('fingerprint', 'remove_asset_version_query', false, 'b3-seed');
-        \CB\Core\Settings::set_feature_enabled('fingerprint', 'remove_wp_version_meta', true, 'b3-seed');
+        \CoreBlueprint\Core\Settings::set_feature_enabled('fingerprint', 'remove_asset_version_query', false, 'b3-seed');
+        \CoreBlueprint\Core\Settings::set_feature_enabled('fingerprint', 'remove_wp_version_meta', true, 'b3-seed');
 
-        \CB\Core\Integrity\State::set_enabled(false, 'b3-seed');
-        \CB\Core\Integrity\Storage\ResultRepository::saveSettings([
+        \CoreBlueprint\Core\Integrity\State::set_enabled(false, 'b3-seed');
+        \CoreBlueprint\Core\Integrity\Storage\ResultRepository::saveSettings([
             'schedule' => 'daily',
             'plugin_checksums' => false,
             'theme_checksums' => true,
@@ -160,7 +160,7 @@ try {
             'max_visible_findings' => 73,
         ]);
 
-        $definition = \CB\Core\ContentModels\Repository::normalize_post_type([
+        $definition = \CoreBlueprint\Core\ContentModels\Repository::normalize_post_type([
             'key' => 'cb_b3_item',
             'singular_label' => 'B3 Item',
             'plural_label' => 'B3 Items',
@@ -173,9 +173,9 @@ try {
             'icon' => 'dashicons-admin-post',
             'supports' => ['title','editor'],
         ]);
-        \CB\Core\ContentModels\Repository::save_post_type($definition);
+        \CoreBlueprint\Core\ContentModels\Repository::save_post_type($definition);
 
-        cb_b3_expect(\CB\Core\Notes\Repository::create([
+        cb_b3_expect(\CoreBlueprint\Core\Notes\Repository::create([
             'title' => 'B3 preserved note',
             'content' => 'Preserve this note while Notes is disabled.',
             'content_format' => 'plain',
@@ -188,25 +188,25 @@ try {
         $note_id = (int) $wpdb->insert_id;
         cb_b3_expect($note_id > 0, 'B3 note ID missing.');
 
-        $reports = (array) (\CB\Core\Settings::get()['reports'] ?? []);
+        $reports = (array) (\CoreBlueprint\Core\Settings::get()['reports'] ?? []);
         $reports['retention_days'] = 61;
         $reports['branding']['provider_name'] = 'B3 Provider';
         $reports['branding']['provider_contact'] = 'b3@example.test';
-        \CB\Core\Settings::set_key('reports', $reports, 'b3-seed');
-        $report_id = \CB\Core\Reports\Storage::save([
+        \CoreBlueprint\Core\Settings::set_key('reports', $reports, 'b3-seed');
+        $report_id = \CoreBlueprint\Core\Reports\Storage::save([
             'period_start' => '2026-01-01',
             'period_end' => '2026-01-31',
             'generated_by' => (int) $admin->ID,
             'report_data' => [
-                'snapshot_version' => \CB\Core\Reports\MaintenanceAggregator::SNAPSHOT_VERSION,
+                'snapshot_version' => \CoreBlueprint\Core\Reports\MaintenanceAggregator::SNAPSHOT_VERSION,
                 'site' => ['title' => 'B3'],
             ],
             'status' => 'generated',
         ]);
         cb_b3_expect($report_id > 0, 'Could not seed B3 report archive row.');
-        $wpdb->update(\CB\Core\Reports\Storage::table_name(), ['generated_at' => '2025-01-01 00:00:00'], ['id' => $report_id], ['%s'], ['%d']);
+        $wpdb->update(\CoreBlueprint\Core\Reports\Storage::table_name(), ['generated_at' => '2025-01-01 00:00:00'], ['id' => $report_id], ['%s'], ['%d']);
 
-        $mail = \CB\Core\Mail\Settings::all();
+        $mail = \CoreBlueprint\Core\Mail\Settings::all();
         $mail['enabled'] = false;
         $mail['provider'] = 'smtp';
         $mail['from_email'] = 'b3@example.test';
@@ -216,10 +216,10 @@ try {
         $mail['smtp_encryption'] = 'none';
         $mail['smtp_auth'] = false;
         $mail['retention_days'] = 60;
-        \CB\Core\Mail\Settings::save($mail);
-        cb_b3_expect('' === \CB\Core\Mail\Settings::activation_error_code(), 'B3 Mail configuration is not runtime-valid.');
+        \CoreBlueprint\Core\Mail\Settings::save($mail);
+        cb_b3_expect('' === \CoreBlueprint\Core\Mail\Settings::activation_error_code(), 'B3 Mail configuration is not runtime-valid.');
 
-        cb_b3_expect(\CB\Core\MediaFormats\Settings::save([
+        cb_b3_expect(\CoreBlueprint\Core\MediaFormats\Settings::save([
             'svg_uploads' => false,
             'webp_uploads' => true,
             'avif_uploads' => false,
@@ -233,7 +233,7 @@ try {
         cb_b3_expect($role instanceof WP_Role, 'Could not seed B3 WordPress role.');
 
         cb_b3_set_module('snippets', false);
-        $snippet = \CB\Core\Snippets\Repository::save([
+        $snippet = \CoreBlueprint\Core\Snippets\Repository::save([
             'title' => 'B3 preserved CSS',
             'description' => 'B3 conformance sentinel',
             'type' => 'css',
@@ -248,22 +248,22 @@ try {
         cb_b3_expect('' !== $snippet_id, 'B3 Snippets sentinel ID missing.');
 
         cb_b3_set_all_modules(true);
-        \CB\Core\Integrity\Scheduler\Cron::sync_schedule();
+        \CoreBlueprint\Core\Integrity\Scheduler\Cron::sync_schedule();
         cb_b3_assert_all_states(true);
 
-        $settings = \CB\Core\Settings::get();
+        $settings = \CoreBlueprint\Core\Settings::get();
         $expected = [
             'module_count' => 12,
-            'login_config' => cb_b3_without_enabled(\CB\Core\Security\LoginShield::config()),
+            'login_config' => cb_b3_without_enabled(\CoreBlueprint\Core\Security\LoginShield::config()),
             'fingerprint_features' => (array) ($settings['modules']['fingerprint']['features'] ?? []),
-            'scanner_settings' => cb_b3_without_enabled(\CB\Core\Integrity\Storage\ResultRepository::settings()),
-            'content_model' => \CB\Core\ContentModels\Repository::post_type('cb_b3_item'),
+            'scanner_settings' => cb_b3_without_enabled(\CoreBlueprint\Core\Integrity\Storage\ResultRepository::settings()),
+            'content_model' => \CoreBlueprint\Core\ContentModels\Repository::post_type('cb_b3_item'),
             'content_post_id' => 0,
             'note_id' => $note_id,
             'report_id' => $report_id,
             'reports_settings' => cb_b3_without_enabled((array) ($settings['reports'] ?? [])),
-            'mail_settings' => cb_b3_without_enabled(\CB\Core\Mail\Settings::all()),
-            'media_formats_settings' => cb_b3_without_enabled(\CB\Core\MediaFormats\Settings::all()),
+            'mail_settings' => cb_b3_without_enabled(\CoreBlueprint\Core\Mail\Settings::all()),
+            'media_formats_settings' => cb_b3_without_enabled(\CoreBlueprint\Core\MediaFormats\Settings::all()),
             'snippet_id' => $snippet_id,
             'snippet_code_hash' => (string) ($snippet['code_hash'] ?? ''),
         ];
@@ -309,7 +309,7 @@ try {
         cb_b3_set_all_modules(false);
         cb_b3_assert_all_states(false);
         cb_b3_assert_preserved_data();
-        cb_b3_expect(false === wp_next_scheduled(\CB\Core\Integrity\Scheduler\Cron::HOOK), 'Scanner cron survived the OFF transition.');
+        cb_b3_expect(false === wp_next_scheduled(\CoreBlueprint\Core\Integrity\Scheduler\Cron::HOOK), 'Scanner cron survived the OFF transition.');
         fwrite(STDOUT, "[B3] disable PASS\n");
         exit(0);
     }
@@ -337,7 +337,7 @@ try {
         cb_b3_set_all_modules(true);
         cb_b3_assert_all_states(true);
         cb_b3_assert_preserved_data();
-        cb_b3_expect(false !== wp_next_scheduled(\CB\Core\Integrity\Scheduler\Cron::HOOK), 'Scanner cron was not restored from preserved daily schedule.');
+        cb_b3_expect(false !== wp_next_scheduled(\CoreBlueprint\Core\Integrity\Scheduler\Cron::HOOK), 'Scanner cron was not restored from preserved daily schedule.');
         fwrite(STDOUT, "[B3] reenable PASS\n");
         exit(0);
     }
@@ -361,7 +361,7 @@ try {
     if ('cleanup' === $stage) {
         $expected = get_option('cb_b3_expected', []);
         if (is_array($expected) && '' !== (string) ($expected['snippet_id'] ?? '')) {
-            \CB\Core\Snippets\Repository::delete((string) $expected['snippet_id']);
+            \CoreBlueprint\Core\Snippets\Repository::delete((string) $expected['snippet_id']);
         }
         remove_role('cb_b3_role');
         cb_b3_drop_isolated_tables();

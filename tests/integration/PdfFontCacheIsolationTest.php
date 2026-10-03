@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\PDF\Renderer;
+use CoreBlueprint\Core\PDF\Renderer;
 
 final class CB_Pdf_Font_Cache_Isolation_Test extends WP_UnitTestCase {
 

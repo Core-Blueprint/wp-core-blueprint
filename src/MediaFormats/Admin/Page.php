@@ -6,16 +6,16 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\MediaFormats\Admin;
+namespace CoreBlueprint\Core\MediaFormats\Admin;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\MediaFormats\Capabilities;
-use CB\Core\MediaFormats\Environment;
-use CB\Core\MediaFormats\FormatRegistry;
-use CB\Core\MediaFormats\Settings;
-use CB\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
-use CB\Core\UI\StateBadge;
-use CB\Core\UI\Status;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\MediaFormats\Capabilities;
+use CoreBlueprint\Core\MediaFormats\Environment;
+use CoreBlueprint\Core\MediaFormats\FormatRegistry;
+use CoreBlueprint\Core\MediaFormats\Settings;
+use CoreBlueprint\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
+use CoreBlueprint\Core\UI\StateBadge;
+use CoreBlueprint\Core\UI\Status;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -135,7 +135,7 @@ defined( 'ABSPATH' ) || exit;
 						<td><?php echo esc_html( $user_label ); ?></td>
 						<td>
 							<?php
-							echo \CB\Core\UI\Status::render( $status_variant, $status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Status::render() returns escape-clean HTML.
+							echo \CoreBlueprint\Core\UI\Status::render( $status_variant, $status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Status::render() returns escape-clean HTML.
 							?>
 						</td>
 						<td>

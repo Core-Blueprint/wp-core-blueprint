@@ -11,11 +11,11 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Logs;
+namespace CoreBlueprint\Core\CLI\Commands\Logs;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 

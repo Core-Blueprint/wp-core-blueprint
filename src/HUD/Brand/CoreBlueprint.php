@@ -20,9 +20,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD\Brand;
+namespace CoreBlueprint\Core\HUD\Brand;
 
-use CB\Core\Brand\CoreBlueprintMark;
+use CoreBlueprint\Core\Brand\CoreBlueprintMark;
 
 defined( 'ABSPATH' ) || exit;
 

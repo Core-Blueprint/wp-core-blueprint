@@ -7,9 +7,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Compliance\Admin;
+namespace CoreBlueprint\Core\Compliance\Admin;
 
-use CB\Core\Compliance\Resolver;
+use CoreBlueprint\Core\Compliance\Resolver;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -13,7 +13,7 @@ The Foundation does not define Forms, builders, storage, mail, payments, AI or a
 The public v1 surface is:
 
 ```php
-CB\Core\Interoperability\Registry
+CoreBlueprint\Core\Interoperability\Registry
 ```
 
 Registration occurs through two controlled lifecycles:
@@ -32,7 +32,7 @@ Interoperability does not create a second provider identity system.
 An implementation provider must always be a valid registered extension in:
 
 ```php
-CB\Core\ExtensionRegistry
+CoreBlueprint\Core\ExtensionRegistry
 ```
 
 A contract registered through the public `Registry::register_contract()` path must likewise use a valid registered extension as its owner. The extension ID used in Interoperability is the same canonical platform identity used elsewhere in Base.
@@ -46,7 +46,7 @@ An unknown public owner or implementation provider is rejected.
 A domain extension defines a versioned contract during `cb_core_register_interoperability_contracts`.
 
 ```php
-use CB\Core\Interoperability\Registry;
+use CoreBlueprint\Core\Interoperability\Registry;
 
 add_action( 'cb_core_register_interoperability_contracts', static function (): void {
     Registry::register_contract( [
@@ -94,7 +94,7 @@ Specialized Base-owned contracts are documented by their own Foundation document
 An extension implements a previously collected contract during `cb_core_register_interoperability_implementations`.
 
 ```php
-use CB\Core\Interoperability\Registry;
+use CoreBlueprint\Core\Interoperability\Registry;
 
 add_action( 'cb_core_register_interoperability_implementations', static function (): void {
     Registry::register_implementation( [
@@ -318,9 +318,9 @@ Automation Foundation remains a specialized Base interoperability surface for pr
 Generic Interoperability does not replace:
 
 ```php
-CB\Core\Automation\TriggerRegistry
-CB\Core\Automation\StateRegistry
-CB\Core\Automation\ActionRegistry
+CoreBlueprint\Core\Automation\TriggerRegistry
+CoreBlueprint\Core\Automation\StateRegistry
+CoreBlueprint\Core\Automation\ActionRegistry
 ```
 
 Do not duplicate Automation trigger/state/action semantics inside a generic interoperability contract merely to avoid using Automation Foundation.

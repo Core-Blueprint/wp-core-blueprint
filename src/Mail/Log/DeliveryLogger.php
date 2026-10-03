@@ -7,12 +7,12 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail\Log;
+namespace CoreBlueprint\Core\Mail\Log;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Mail\Message;
-use CB\Core\Mail\Settings;
-use CB\Core\Mail\TestContext;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Mail\Message;
+use CoreBlueprint\Core\Mail\Settings;
+use CoreBlueprint\Core\Mail\TestContext;
 
 use WP_Error;
 

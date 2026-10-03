@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminNavigation\Policy;
-use CB\Core\AdminNavigation\ToolbarRuntime;
-use CB\Core\Profiles\Engine;
-use CB\Core\Profiles\SectionRegistry;
-use CB\Core\Profiles\Sections\AdminNavigationSection;
+use CoreBlueprint\Core\AdminNavigation\Policy;
+use CoreBlueprint\Core\AdminNavigation\ToolbarRuntime;
+use CoreBlueprint\Core\Profiles\Engine;
+use CoreBlueprint\Core\Profiles\SectionRegistry;
+use CoreBlueprint\Core\Profiles\Sections\AdminNavigationSection;
 
 if ( ! class_exists( 'WP_Admin_Bar' ) ) {
 	require_once ABSPATH . WPINC . '/class-wp-admin-bar.php';

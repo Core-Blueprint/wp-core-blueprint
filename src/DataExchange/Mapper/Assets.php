@@ -7,9 +7,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\DataExchange\Mapper;
+namespace CoreBlueprint\Core\DataExchange\Mapper;
 
-use CB\Core\Design\Editor\Assets as DesignerAssets;
+use CoreBlueprint\Core\Design\Editor\Assets as DesignerAssets;
 
 defined( 'ABSPATH' ) || exit;
 

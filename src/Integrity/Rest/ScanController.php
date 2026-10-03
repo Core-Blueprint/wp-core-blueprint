@@ -1,22 +1,22 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Rest;
+namespace CoreBlueprint\Core\Integrity\Rest;
 
-use CB\Core\Admin\MutationAcknowledgement;
-use CB\Core\Integrity\Api\IntegrityApi;
-use CB\Core\Integrity\Quarantine\Repository as QuarantineRepository;
-use CB\Core\Integrity\Quarantine\Service as QuarantineService;
-use CB\Core\Integrity\Scanner\LocaleDetector;
-use CB\Core\Integrity\Scanner\ScanJobStatus;
-use CB\Core\Integrity\Scheduler\Cron;
-use CB\Core\Integrity\State;
-use CB\Core\Integrity\Storage\BaselineReviewRepository;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Integrity\Support\Audit;
-use CB\Core\Integrity\Support\ResultFormatter;
-use CB\Core\Integrity\Support\Summary;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\Integrity\Api\IntegrityApi;
+use CoreBlueprint\Core\Integrity\Quarantine\Repository as QuarantineRepository;
+use CoreBlueprint\Core\Integrity\Quarantine\Service as QuarantineService;
+use CoreBlueprint\Core\Integrity\Scanner\LocaleDetector;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobStatus;
+use CoreBlueprint\Core\Integrity\Scheduler\Cron;
+use CoreBlueprint\Core\Integrity\State;
+use CoreBlueprint\Core\Integrity\Storage\BaselineReviewRepository;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Support\Audit;
+use CoreBlueprint\Core\Integrity\Support\ResultFormatter;
+use CoreBlueprint\Core\Integrity\Support\Summary;
+use CoreBlueprint\Core\Settings;
 use Throwable;
 use WP_Error;
 use WP_REST_Request;

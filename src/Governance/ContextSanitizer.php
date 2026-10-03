@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /** @package Core_Blueprint @since 1.0.0 */
-namespace CB\Core\Governance;
+namespace CoreBlueprint\Core\Governance;
 
 defined( 'ABSPATH' ) || exit;
 

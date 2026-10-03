@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
-use CB\Core\UI\Assets as UiAssets;
+use CoreBlueprint\Core\UI\Assets as UiAssets;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -237,7 +237,7 @@ final class AdminAssetCatalog {
 			return [
 				'type'     => 'provider',
 				'provider' => static function ( ScreenContext $context ) use ( $editor ): void {
-					\CB\Core\Snippets\Admin\Assets::enqueue( $context->hook(), $editor );
+					\CoreBlueprint\Core\Snippets\Admin\Assets::enqueue( $context->hook(), $editor );
 				},
 			];
 		}

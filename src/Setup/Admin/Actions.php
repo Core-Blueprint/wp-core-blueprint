@@ -10,11 +10,11 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup\Admin;
+namespace CoreBlueprint\Core\Setup\Admin;
 
-use CB\Core\Setup\Registry;
-use CB\Core\Setup\ReviewManager;
-use CB\Core\Setup\SectionRegistry;
+use CoreBlueprint\Core\Setup\Registry;
+use CoreBlueprint\Core\Setup\ReviewManager;
+use CoreBlueprint\Core\Setup\SectionRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

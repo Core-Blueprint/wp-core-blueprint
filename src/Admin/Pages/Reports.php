@@ -19,12 +19,12 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin\Pages;
+namespace CoreBlueprint\Core\Admin\Pages;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\Admin\Tabbed;
-use CB\Core\PDF\Renderer;
-use CB\Core\Reports\Storage;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\Tabbed;
+use CoreBlueprint\Core\PDF\Renderer;
+use CoreBlueprint\Core\Reports\Storage;
 
 defined( 'ABSPATH' ) || exit;
 

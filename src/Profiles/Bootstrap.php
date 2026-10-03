@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles;
+namespace CoreBlueprint\Core\Profiles;
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\Admin\Pages\Profiles as ProfilesPage;
-use CB\Core\Governance\EventRegistry;
-use CB\Core\Profiles\Admin\Actions;
-use CB\Core\RequestContext;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Admin\Pages\Profiles as ProfilesPage;
+use CoreBlueprint\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\Profiles\Admin\Actions;
+use CoreBlueprint\Core\RequestContext;
 
 defined( 'ABSPATH' ) || exit;
 

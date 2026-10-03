@@ -19,11 +19,11 @@
  *   4. Security modules list (Fingerprint, Headers - with feature-toggles)
  *   5. Security header test (diagnostic - verify Headers module is landing)
  *
- * Available variables (set by \CB\Core\Admin\Pages\Safeguards::render_core_shield_tab):
+ * Available variables (set by \CoreBlueprint\Core\Admin\Pages\Safeguards::render_core_shield_tab):
  *   $settings   - full settings array
  *   $site_mode  - current site mode ('hub' | 'production' | 'development')
- *   $detector   - output of \CB\Core\Detector::summary()
- *   $modules    - all registered \CB\Core\Security\Module instances
+ *   $detector   - output of \CoreBlueprint\Core\Detector::summary()
+ *   $modules    - all registered \CoreBlueprint\Core\Security\Module instances
  *
  * @package Core_Blueprint
  * @since   1.0.0
@@ -38,7 +38,7 @@ defined( 'ABSPATH' ) || exit;
 	// so the intro itself can use mode-aware variants - keeps the suite's
 	// plain↔technical philosophy visible at the very first paragraph
 	// non-technical readers see.
-	$_shield_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'plain';
+	$_shield_mode = class_exists( '\CoreBlueprint\Core\UI' ) ? \CoreBlueprint\Core\UI::current_mode() : 'plain';
 	if ( 'sync' === $_shield_mode ) {
 		$_shield_mode = ( 'development' === $site_mode ) ? 'technical' : 'plain';
 	}
@@ -61,8 +61,8 @@ defined( 'ABSPATH' ) || exit;
 	<?php
 	// Dashboard owns the master activation; this page reads the canonical
 	// state only to present the effective security level and configuration.
-	$_shield_on      = \CB\Core\Settings::shield_enabled();
-	$_effective_mode = \CB\Core\Settings::effective_hardening_mode();
+	$_shield_on      = \CoreBlueprint\Core\Settings::shield_enabled();
+	$_effective_mode = \CoreBlueprint\Core\Settings::effective_hardening_mode();
 	?>
 
 	<section class="cb-core-shield-panel">
@@ -87,14 +87,14 @@ defined( 'ABSPATH' ) || exit;
 								? $_sh_pick( [ 'plain' => __( 'Minimal (staging)', 'core-blueprint' ), 'technical' => __( 'Development preset', 'core-blueprint' ) ] )
 								: $_sh_pick( [ 'plain' => __( 'Balanced', 'core-blueprint' ), 'technical' => __( 'Production preset', 'core-blueprint' ) ] ) );
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Status::render() returns escape-clean HTML.
-						echo \CB\Core\UI\Status::render( 'active', $_profile_label );
+						echo \CoreBlueprint\Core\UI\Status::render( 'active', $_profile_label );
 					} else {
 						$_status_label = $_sh_pick( [
 							'plain'     => __( 'Shield is off. All features are disabled.', 'core-blueprint' ),
 							'technical' => __( 'Shield is off. All features disabled regardless of individual state.', 'core-blueprint' ),
 						] );
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Status::render() returns escape-clean HTML.
-						echo \CB\Core\UI\Status::render( 'warning', $_status_label );
+						echo \CoreBlueprint\Core\UI\Status::render( 'warning', $_status_label );
 					}
 					?>
 				</div>
@@ -133,8 +133,8 @@ defined( 'ABSPATH' ) || exit;
 			);
 		}
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
-		echo \CB\Core\UI\Notice::render( [
-			'variant' => \CB\Core\UI\Notice::INFO,
+		echo \CoreBlueprint\Core\UI\Notice::render( [
+			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'title'   => sprintf(
 				/* translators: %d: number of detected security plugins */
 				_n( 'Detected %d complementary security plugin', 'Detected %d complementary security plugins', $plugin_count, 'core-blueprint' ),
@@ -146,7 +146,7 @@ defined( 'ABSPATH' ) || exit;
 
 		<details class="cb-core-disclosure cb-core-disclosure--compact cb-core-disclosure--subtle cb-core-detector-details">
 			<summary class="cb-core-disclosure__summary">
-				<?php echo \CB\Core\UI\Icon::render( 'expand', [ 'size' => \CB\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+				<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 				<span class="cb-core-disclosure__title"><?php esc_html_e( 'View delegated features', 'core-blueprint' ); ?></span>
 			</summary>
 			<div class="cb-core-disclosure__body">
@@ -164,7 +164,7 @@ defined( 'ABSPATH' ) || exit;
 
 	<section class="cb-core-privileged-access" id="cb-core-privileged-access">
 		<?php
-		$_privileged_mode_enforce = \CB\Core\Permissions\PrivilegedAccessPolicy::MODE_ENFORCE === $privileged_access_mode;
+		$_privileged_mode_enforce = \CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy::MODE_ENFORCE === $privileged_access_mode;
 		$_privileged_mode_label   = $_privileged_mode_enforce
 			? __( 'Enforce approval', 'core-blueprint' )
 			: __( 'Monitor only', 'core-blueprint' );
@@ -182,8 +182,8 @@ defined( 'ABSPATH' ) || exit;
 		<?php if ( ! $can_manage_privileged ) : ?>
 			<?php
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
-			echo \CB\Core\UI\Notice::render( [
-				'variant' => \CB\Core\UI\Notice::INFO,
+			echo \CoreBlueprint\Core\UI\Notice::render( [
+				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'message' => sprintf(
 					/* translators: %s: active privileged access protection mode */
 					__( 'Current mode: %s. Only approved CB Operators can change this protection policy, inspect identities that require review, or approve privileged access.', 'core-blueprint' ),
@@ -195,9 +195,9 @@ defined( 'ABSPATH' ) || exit;
 			<div class="cb-core-radio-grid cb-core-radio-grid--columns-2 cb-core-privileged-access__modes" role="radiogroup" aria-label="<?php esc_attr_e( 'Privileged access protection mode', 'core-blueprint' ); ?>">
 				<?php
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - RadioCard::render() escapes its own output.
-				echo \CB\Core\UI\RadioCard::render( [
+				echo \CoreBlueprint\Core\UI\RadioCard::render( [
 					'name'       => 'cb-core-privileged-access-mode',
-					'value'      => \CB\Core\Permissions\PrivilegedAccessPolicy::MODE_ENFORCE,
+					'value'      => \CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy::MODE_ENFORCE,
 					'label'      => __( 'Enforce approval — Recommended', 'core-blueprint' ),
 					'desc'       => __( 'New or changed privileged accounts still require CB Operator review. Until approved, administrator-level capabilities are temporarily restricted.', 'core-blueprint' ),
 					'checked'    => $_privileged_mode_enforce,
@@ -205,9 +205,9 @@ defined( 'ABSPATH' ) || exit;
 				] );
 
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - RadioCard::render() escapes its own output.
-				echo \CB\Core\UI\RadioCard::render( [
+				echo \CoreBlueprint\Core\UI\RadioCard::render( [
 					'name'       => 'cb-core-privileged-access-mode',
-					'value'      => \CB\Core\Permissions\PrivilegedAccessPolicy::MODE_MONITOR,
+					'value'      => \CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy::MODE_MONITOR,
 					'label'      => __( 'Monitor only', 'core-blueprint' ),
 					'desc'       => __( 'Detection, fingerprinting, audit logging and review remain active. Existing WordPress permissions keep working while review is pending; Core Blueprint trust-authority controls still require approval.', 'core-blueprint' ),
 					'checked'    => ! $_privileged_mode_enforce,
@@ -222,8 +222,8 @@ defined( 'ABSPATH' ) || exit;
 			<?php if ( ! $_privileged_mode_enforce ) : ?>
 				<?php
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
-				echo \CB\Core\UI\Notice::render( [
-					'variant' => \CB\Core\UI\Notice::WARNING,
+				echo \CoreBlueprint\Core\UI\Notice::render( [
+					'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 					'title'   => __( 'Monitor only provides visibility, not automatic restriction', 'core-blueprint' ),
 					'message' => __( 'Unapproved administrator-level accounts can continue using their existing WordPress permissions until you review them. Core Blueprint trust-authority controls stay protected. Use Enforce approval when you also want administrator-level WordPress access restricted automatically.', 'core-blueprint' ),
 				] );
@@ -236,7 +236,7 @@ defined( 'ABSPATH' ) || exit;
 				<div class="cb-core-privileged-access__clear" aria-live="polite">
 					<?php
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
-					echo \CB\Core\UI\StateBadge::render( __( 'All clear', 'core-blueprint' ), [ 'variant' => \CB\Core\UI\StateBadge::SUCCESS ] );
+					echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'All clear', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::SUCCESS ] );
 					?>
 					<span class="cb-core-muted">
 						<?php
@@ -253,7 +253,7 @@ defined( 'ABSPATH' ) || exit;
 			<?php else : ?>
 				<details class="cb-core-disclosure cb-core-disclosure--section cb-core-disclosure--subtle cb-core-privileged-review">
 					<summary class="cb-core-disclosure__summary">
-						<?php echo \CB\Core\UI\Icon::render( 'expand', [ 'size' => \CB\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+						<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT, 'class' => 'cb-core-disclosure__icon' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 						<span class="cb-core-disclosure__title">
 							<?php
 							echo esc_html(
@@ -269,15 +269,15 @@ defined( 'ABSPATH' ) || exit;
 							<?php
 							$_review_badge = $_privileged_mode_enforce ? __( 'Restricted until approved', 'core-blueprint' ) : __( 'Access not restricted', 'core-blueprint' );
 							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML.
-							echo \CB\Core\UI\StateBadge::render( $_review_badge, [ 'variant' => \CB\Core\UI\StateBadge::WARNING ] );
+							echo \CoreBlueprint\Core\UI\StateBadge::render( $_review_badge, [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::WARNING ] );
 							?>
 						</span>
 					</summary>
 					<div class="cb-core-disclosure__body">
 						<?php
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Notice::render() returns escape-clean HTML.
-						echo \CB\Core\UI\Notice::render( [
-							'variant' => \CB\Core\UI\Notice::INFO,
+						echo \CoreBlueprint\Core\UI\Notice::render( [
+							'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 							'message' => __( 'Privileged Access Protection is independent of the Core Shield master switch. Turning Shield off does not stop privileged-account detection, fingerprinting, review or the selected approval policy.', 'core-blueprint' ),
 						] );
 						?>
@@ -392,8 +392,8 @@ defined( 'ABSPATH' ) || exit;
 	<?php
 	// Description variant (plain or technical) used by module/feature blocks
 	// further down to render the appropriate description text.
-	$desc_mode_effective = \CB\Core\UI::current_mode();
-	$desc_mode_site      = \CB\Core\UI::site_default_mode();
+	$desc_mode_effective = \CoreBlueprint\Core\UI::current_mode();
+	$desc_mode_site      = \CoreBlueprint\Core\UI::site_default_mode();
 	$active_variant      = 'sync' === $desc_mode_effective
 		? ( 'technical' === $desc_mode_site ? 'technical' : 'plain' )
 		: $desc_mode_effective;
@@ -479,8 +479,8 @@ defined( 'ABSPATH' ) || exit;
 					: $module_desc_technical;
 
 				$module_badges            = method_exists( $module, 'badges' ) ? (array) $module->badges() : [];
-				$module_summary_plain      = wp_trim_words( wp_strip_all_tags( \CB\Core\UI::pick_description( $module_desc, 'plain' ) ), 18, '…' );
-				$module_summary_technical  = wp_trim_words( wp_strip_all_tags( \CB\Core\UI::pick_description( $module_desc, 'technical' ) ), 18, '…' );
+				$module_summary_plain      = wp_trim_words( wp_strip_all_tags( \CoreBlueprint\Core\UI::pick_description( $module_desc, 'plain' ) ), 18, '…' );
+				$module_summary_technical  = wp_trim_words( wp_strip_all_tags( \CoreBlueprint\Core\UI::pick_description( $module_desc, 'technical' ) ), 18, '…' );
 			?>
 				<div class="cb-core-module <?php echo $enabled ? 'is-enabled' : ''; ?>" data-module="<?php echo esc_attr( $slug ); ?>">
 					<div class="cb-core-module-header">
@@ -501,15 +501,15 @@ defined( 'ABSPATH' ) || exit;
 						</label>
 						<button type="button" class="cb-core-module-collapse" aria-expanded="false" aria-label="<?php esc_attr_e( 'Toggle module details', 'core-blueprint' ); ?>">
 							<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Icon::render() returns escape-clean SVG. ?>
-							<?php echo \CB\Core\UI\Icon::render( 'expand', [ 'class' => 'cb-core-chevron', 'size' => 'compact' ] ); ?>
+							<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'class' => 'cb-core-chevron', 'size' => 'compact' ] ); ?>
 						</button>
 					</div>
 
 					<div class="cb-core-module-body">
 						<div class="cb-core-module-body-inner">
 						<div class="cb-core-module-details">
-							<?php echo \CB\Core\UI::render_description_text( $module_desc, $active_variant, 'cb-core-module-description' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-							<?php echo \CB\Core\UI::render_badges( $module_badges ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+							<?php echo \CoreBlueprint\Core\UI::render_description_text( $module_desc, $active_variant, 'cb-core-module-description' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+							<?php echo \CoreBlueprint\Core\UI::render_badges( $module_badges ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 						</div>
 
 					<?php if ( ! empty( $features ) ) : ?>
@@ -524,8 +524,8 @@ defined( 'ABSPATH' ) || exit;
 								$risk            = $feature['risk'] ?? 'none';
 								$is_restrictive  = ! empty( $feature['restrictive'] );
 								$conflict_id     = $feature['conflict'] ?? null;
-								$delegated_to    = $conflict_id ? \CB\Core\Detector::delegated_to( $conflict_id ) : null;
-								$delegated_label = $delegated_to ? \CB\Core\Detector::plugin_label( $delegated_to ) : null;
+								$delegated_to    = $conflict_id ? \CoreBlueprint\Core\Detector::delegated_to( $conflict_id ) : null;
+								$delegated_label = $delegated_to ? \CoreBlueprint\Core\Detector::plugin_label( $delegated_to ) : null;
 								$feature_desc      = $feature['description'] ?? '';
 								$feature_badges    = (array) ( $feature['badges'] ?? [] );
 								$feature_label     = (string) ( $feature['label'] ?? $feature_id );
@@ -566,7 +566,7 @@ defined( 'ABSPATH' ) || exit;
 												<?php endif; ?>
 											</div>
 
-											<?php echo \CB\Core\UI::render_description_text( $feature_desc, $active_variant, 'cb-core-feature-summary' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+											<?php echo \CoreBlueprint\Core\UI::render_description_text( $feature_desc, $active_variant, 'cb-core-feature-summary' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 										</div>
 
 										<label class="cb-core-rack-toggle">
@@ -593,19 +593,19 @@ defined( 'ABSPATH' ) || exit;
 											aria-label="<?php echo esc_attr( $feature_details_label ); ?>"
 										>
 											<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - Icon::render() returns escape-clean SVG. ?>
-											<?php echo \CB\Core\UI\Icon::render( 'expand', [ 'class' => 'cb-core-feature-chevron', 'size' => 'compact' ] ); ?>
+											<?php echo \CoreBlueprint\Core\UI\Icon::render( 'expand', [ 'class' => 'cb-core-feature-chevron', 'size' => 'compact' ] ); ?>
 										</button>
 									</div>
 
 									<div class="cb-core-feature-body" id="<?php echo esc_attr( $feature_detail_id ); ?>" hidden>
-										<?php echo \CB\Core\UI::render_description_text( $feature_desc, $active_variant, 'cb-core-feature-description' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+										<?php echo \CoreBlueprint\Core\UI::render_description_text( $feature_desc, $active_variant, 'cb-core-feature-description' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
-										<?php echo \CB\Core\UI::render_badges( $feature_badges ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+										<?php echo \CoreBlueprint\Core\UI::render_badges( $feature_badges ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
 										<?php if ( $delegated_label ) : ?>
 											<div class="cb-core-feature-delegated">
 												<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - StateBadge::render() returns escape-clean HTML. ?>
-												<?php echo \CB\Core\UI\StateBadge::render( __( 'Delegated', 'core-blueprint' ), [ 'variant' => \CB\Core\UI\StateBadge::INFO ] ); ?>
+												<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Delegated', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::INFO ] ); ?>
 												<span>
 													<?php
 													printf(

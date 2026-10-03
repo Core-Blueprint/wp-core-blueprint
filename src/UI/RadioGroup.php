@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\UI;
+namespace CoreBlueprint\Core\UI;
 
 defined( 'ABSPATH' ) || exit;
 

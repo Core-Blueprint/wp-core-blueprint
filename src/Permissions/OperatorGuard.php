@@ -17,7 +17,7 @@ declare(strict_types=1);
  * plugins routinely write directly to user_meta and never fire the standard
  * role-change actions. The admin_init pass catches them anyway.
  *
- * Naming note: this is NOT the same thing as CB\Core\Security\Failsafe. That
+ * Naming note: this is NOT the same thing as CoreBlueprint\Core\Security\Failsafe. That
  * class handles lockout-prevention via bypass tokens and is mission-critical
  * to plugin operation. OperatorGuard is a much lighter mechanism scoped to a
  * single feature (the Permissions page hide-toggle).
@@ -26,10 +26,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Permissions;
+namespace CoreBlueprint\Core\Permissions;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

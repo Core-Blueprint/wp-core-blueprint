@@ -1,20 +1,20 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Ajax\Handlers\Reports as ReportsActions;
-use CB\Core\Integrity\Scheduler\Cron as IntegrityCron;
-use CB\Core\Integrity\State as IntegrityState;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Mail\Admin\Actions as MailActions;
-use CB\Core\Mail\Settings as MailSettings;
-use CB\Core\Mail\State as MailState;
-use CB\Core\MediaFormats\Admin\Actions as MediaFormatsActions;
-use CB\Core\MediaFormats\Settings as MediaFormatsSettings;
-use CB\Core\MediaFormats\State as MediaFormatsState;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Reports\State as ReportsState;
-use CB\Core\Snippets\Admin\Actions as SnippetsActions;
-use CB\Core\Snippets\State as SnippetsState;
+use CoreBlueprint\Core\Ajax\Handlers\Reports as ReportsActions;
+use CoreBlueprint\Core\Integrity\Scheduler\Cron as IntegrityCron;
+use CoreBlueprint\Core\Integrity\State as IntegrityState;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Mail\Admin\Actions as MailActions;
+use CoreBlueprint\Core\Mail\Settings as MailSettings;
+use CoreBlueprint\Core\Mail\State as MailState;
+use CoreBlueprint\Core\MediaFormats\Admin\Actions as MediaFormatsActions;
+use CoreBlueprint\Core\MediaFormats\Settings as MediaFormatsSettings;
+use CoreBlueprint\Core\MediaFormats\State as MediaFormatsState;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Reports\State as ReportsState;
+use CoreBlueprint\Core\Snippets\Admin\Actions as SnippetsActions;
+use CoreBlueprint\Core\Snippets\State as SnippetsState;
 
 final class CB_B2_Test_Termination extends RuntimeException {
     /** @var mixed */

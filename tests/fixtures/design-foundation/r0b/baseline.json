@@ -45,8 +45,8 @@
     }
   },
   "renderer": {
-    "public_extension_boundary": "CB\\Core\\PDF\\Api\\PdfApi",
-    "base_internal_renderer": "CB\\Core\\PDF\\Renderer",
+    "public_extension_boundary": "CoreBlueprint\\Core\\PDF\\Api\\PdfApi",
+    "base_internal_renderer": "CoreBlueprint\\Core\\PDF\\Renderer",
     "backend": {
       "name": "dompdf/dompdf",
       "version": "3.1.6",
@@ -81,9 +81,9 @@
       "layout_character": "paginated-flow-like-html",
       "render_path": [
         "immutable maintenance snapshot",
-        "CB\\Core\\Reports\\MaintenancePdf",
+        "CoreBlueprint\\Core\\Reports\\MaintenancePdf",
         "templates/pdf/maintenance-report.php",
-        "CB\\Core\\PDF\\Renderer",
+        "CoreBlueprint\\Core\\PDF\\Renderer",
         "in-memory PDF"
       ],
       "paper": {
@@ -145,7 +145,7 @@
         "CB\\Certificates\\Rendering\\CertificateHtml",
         "artwork placeholder hydration",
         "CB\\Certificates\\Rendering\\PdfGateway",
-        "CB\\Core\\PDF\\Api\\PdfApi"
+        "CoreBlueprint\\Core\\PDF\\Api\\PdfApi"
       ],
       "paper": {
         "size": "A4",
@@ -210,7 +210,7 @@
         "immutable financial document snapshot",
         "CB\\CommerceEssentials\\Documents\\DocumentHtml",
         "CB\\CommerceEssentials\\Documents\\PdfRenderer",
-        "CB\\Core\\PDF\\Api\\PdfApi"
+        "CoreBlueprint\\Core\\PDF\\Api\\PdfApi"
       ],
       "paper": {
         "size": "A4",

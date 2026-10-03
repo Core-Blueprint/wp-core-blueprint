@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\DataExchange\CsvEntityInterface;
-use CB\Core\DataExchange\Engine;
-use CB\Core\DataExchange\EntityInterface;
-use CB\Core\DataExchange\Foundation;
-use CB\Core\ExtensionRegistry;
-use CB\Core\Interoperability\Registry;
+use CoreBlueprint\Core\DataExchange\CsvEntityInterface;
+use CoreBlueprint\Core\DataExchange\Engine;
+use CoreBlueprint\Core\DataExchange\EntityInterface;
+use CoreBlueprint\Core\DataExchange\Foundation;
+use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Interoperability\Registry;
 
 final class CB_Data_Exchange_Fixture_Entity implements CsvEntityInterface {
 	/** @var list<array<string,mixed>> */

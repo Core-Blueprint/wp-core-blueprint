@@ -20,11 +20,11 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\Console;
+namespace CoreBlueprint\Core\Console;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\PageRegistry;
-use CB\Core\Console\Rest\RunController;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Console\Rest\RunController;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -80,7 +80,7 @@ final class Bootstrap {
 
 	/** Register translation-bearing log labels after the textdomain is loaded. */
 	public static function register_i18n_filters(): void {
-		\CB\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
+		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
 	}
 
 	/**

@@ -7,10 +7,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\AdminNotices;
+namespace CoreBlueprint\Core\AdminNotices;
 
-use CB\Core\Governance\EventRegistry;
-use CB\Core\RequestContext;
+use CoreBlueprint\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\RequestContext;
 
 defined( 'ABSPATH' ) || exit;
 

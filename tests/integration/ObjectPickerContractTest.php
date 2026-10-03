@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\UI\ObjectPicker;
+use CoreBlueprint\Core\UI\ObjectPicker;
 
 final class CB_Base_Object_Picker_Contract_Test extends WP_UnitTestCase {
 

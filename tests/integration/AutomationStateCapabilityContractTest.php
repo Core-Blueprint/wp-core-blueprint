@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Automation\StateRegistry;
-use CB\Core\Automation\TriggerRegistry;
-use CB\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Automation\StateRegistry;
+use CoreBlueprint\Core\Automation\TriggerRegistry;
+use CoreBlueprint\Core\ExtensionRegistry;
 
 final class CB_Base_Automation_State_Capability_Contract_Test extends WP_UnitTestCase {
 

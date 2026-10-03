@@ -10,13 +10,13 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Integrity\Admin;
+namespace CoreBlueprint\Core\Integrity\Admin;
 
-use CB\Core\Integrity\Quarantine\Repository as QuarantineRepository;
-use CB\Core\Integrity\State;
-use CB\Core\Integrity\Support\ResultFormatter;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\UI\Notice;
+use CoreBlueprint\Core\Integrity\Quarantine\Repository as QuarantineRepository;
+use CoreBlueprint\Core\Integrity\State;
+use CoreBlueprint\Core\Integrity\Support\ResultFormatter;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\UI\Notice;
 
 defined( 'ABSPATH' ) || exit;
 

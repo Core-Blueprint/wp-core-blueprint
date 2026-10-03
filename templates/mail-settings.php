@@ -18,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
 	<?php endif; ?>
 
 	<?php if ( '' !== $conflict_notice ) : ?>
-		<?php echo $conflict_notice; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CB\Core\UI\Notice escapes all supplied content. ?>
+		<?php echo $conflict_notice; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CoreBlueprint\Core\UI\Notice escapes all supplied content. ?>
 	<?php endif; ?>
 
 	<section class="cb-core-mail-section cb-core-mail-runtime">

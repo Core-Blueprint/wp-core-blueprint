@@ -11,19 +11,19 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail;
+namespace CoreBlueprint\Core\Mail;
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\RequestContext;
-use CB\Core\Mail\Admin\Actions;
-use CB\Core\Mail\Admin\DesignerAjax;
-use CB\Core\Mail\Admin\DesignerAssets;
-use CB\Core\Mail\Admin\FeatureActions;
-use CB\Core\Mail\Admin\LogsTab;
-use CB\Core\Mail\Admin\Page;
-use CB\Core\Mail\Admin\TemplateActions;
-use CB\Core\Mail\Designer\WordPressIntegration;
-use CB\Core\Mail\Log\Repository;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\RequestContext;
+use CoreBlueprint\Core\Mail\Admin\Actions;
+use CoreBlueprint\Core\Mail\Admin\DesignerAjax;
+use CoreBlueprint\Core\Mail\Admin\DesignerAssets;
+use CoreBlueprint\Core\Mail\Admin\FeatureActions;
+use CoreBlueprint\Core\Mail\Admin\LogsTab;
+use CoreBlueprint\Core\Mail\Admin\Page;
+use CoreBlueprint\Core\Mail\Admin\TemplateActions;
+use CoreBlueprint\Core\Mail\Designer\WordPressIntegration;
+use CoreBlueprint\Core\Mail\Log\Repository;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -73,7 +73,7 @@ final class Bootstrap {
 
 	/** Register translation-bearing metadata after the textdomain is loaded. */
 	public static function register_i18n_filters(): void {
-		\CB\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
+		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
 	}
 
 	/** Public registration lifecycle for extension-owned sender identity slots. */

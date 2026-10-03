@@ -5,8 +5,8 @@
  *
  * Full interactive theme switcher replacing the M1 stub.
  *
- * Variables available (set by \CB\Core\Admin\Admin::render_appearance):
- *   $themes         array  - from \CB\Core\Themes::all()
+ * Variables available (set by \CoreBlueprint\Core\Admin\Admin::render_appearance):
+ *   $themes         array  - from \CoreBlueprint\Core\Themes::all()
  *   $current_theme  string - resolved theme for the current user
  *   $user_pref      string - raw user_meta, '' = inherit, 'auto' = auto
  *   $site_default   string - raw option, 'auto' possible
@@ -56,7 +56,7 @@ $auto_option = [
 			</div>
 		<?php endif; ?>
 
-		<?php echo \CB\Core\UI\FormStatus::render( [ 'block' => true, 'class' => 'cb-core-appearance-status' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+		<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'block' => true, 'class' => 'cb-core-appearance-status' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 	</div>
 
 	<div class="cb-core-theme-grid" data-user-pref="<?php echo esc_attr( $user_pref ); ?>" data-site-default="<?php echo esc_attr( $site_default ); ?>">
@@ -96,7 +96,7 @@ $auto_option = [
 				aria-pressed="<?php echo $selected_user ? 'true' : 'false'; ?>">
 				<?php if ( $has_partner_svg ) : ?>
 					<span class="cb-core-theme-preview cb-core-theme-preview-partner">
-						<?php echo \CB\Core\Themes::sanitize_preview_svg( (string) $theme['preview_svg'] ); ?>
+						<?php echo \CoreBlueprint\Core\Themes::sanitize_preview_svg( (string) $theme['preview_svg'] ); ?>
 					</span>
 				<?php else : ?>
 					<span class="cb-core-theme-preview <?php echo esc_attr( $preview_class ); ?>" data-theme-preview="<?php echo esc_attr( $slug ); ?>">

@@ -12,9 +12,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core;
+namespace CoreBlueprint\Core;
 
-use CB\Core\Modules\Status;
+use CoreBlueprint\Core\Modules\Status;
 
 defined( 'ABSPATH' ) || exit;
 

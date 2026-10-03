@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminNotices\Admin;
-use CB\Core\AdminNotices\Capabilities;
-use CB\Core\AdminNotices\Policy;
-use CB\Core\AdminNotices\SourceLedger;
-use CB\Core\AdminNotices\SourceResolver;
-use CB\Core\AdminNotices\Visibility;
-use CB\Core\Admin\Admin as CoreAdmin;
-use CB\Core\Admin\Pages\Preferences;
-use CB\Core\Admin\ScreenContext;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\Roles;
+use CoreBlueprint\Core\AdminNotices\Admin;
+use CoreBlueprint\Core\AdminNotices\Capabilities;
+use CoreBlueprint\Core\AdminNotices\Policy;
+use CoreBlueprint\Core\AdminNotices\SourceLedger;
+use CoreBlueprint\Core\AdminNotices\SourceResolver;
+use CoreBlueprint\Core\AdminNotices\Visibility;
+use CoreBlueprint\Core\Admin\Admin as CoreAdmin;
+use CoreBlueprint\Core\Admin\Pages\Preferences;
+use CoreBlueprint\Core\Admin\ScreenContext;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\Roles;
 
 final class CB_Base_Admin_Notices_Admin_Contract_Test extends WP_UnitTestCase {
 

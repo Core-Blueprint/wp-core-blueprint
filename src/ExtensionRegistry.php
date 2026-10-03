@@ -11,9 +11,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core;
+namespace CoreBlueprint\Core;
 
-use CB\Core\Modules\ActivationRegistry;
+use CoreBlueprint\Core\Modules\ActivationRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

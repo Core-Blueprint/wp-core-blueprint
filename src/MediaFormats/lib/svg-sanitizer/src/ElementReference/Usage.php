@@ -1,5 +1,5 @@
 <?php
-namespace CB\Core\MediaFormats\Vendor\SvgSanitize\ElementReference;
+namespace CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\ElementReference;
 
 class Usage
 {

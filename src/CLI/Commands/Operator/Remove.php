@@ -18,15 +18,15 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Operator;
+namespace CoreBlueprint\Core\CLI\Commands\Operator;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Log\AuditLog;
-use CB\Core\Permissions\Roles;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\PrivilegedAccessPolicy;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

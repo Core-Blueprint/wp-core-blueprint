@@ -12,7 +12,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core;
+namespace CoreBlueprint\Core;
 
 defined( 'ABSPATH' ) || exit;
 

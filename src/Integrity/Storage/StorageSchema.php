@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Storage;
+namespace CoreBlueprint\Core\Integrity\Storage;
 
-use CB\Core\Integrity\Support\Finding;
+use CoreBlueprint\Core\Integrity\Support\Finding;
 
 use function array_key_exists;
 use function is_array;

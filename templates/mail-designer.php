@@ -65,8 +65,8 @@ foreach ( (array) $templates as $definition ) {
 								<?php foreach ( $definitions as $definition ) : ?>
 									<?php
 									$id = (string) ( $definition['id'] ?? '' );
-									$url = add_query_arg( [ 'page' => \CB\Core\Mail\Admin\Page::SLUG, 'tab' => 'templates', 'template' => $id ], admin_url( 'admin.php' ) );
-									$resolved = \CB\Core\Mail\Designer\TemplateRepository::get( $id );
+									$url = add_query_arg( [ 'page' => \CoreBlueprint\Core\Mail\Admin\Page::SLUG, 'tab' => 'templates', 'template' => $id ], admin_url( 'admin.php' ) );
+									$resolved = \CoreBlueprint\Core\Mail\Designer\TemplateRepository::get( $id );
 									$state_label = ! empty( $resolved['customized'] ) ? __( 'Customized', 'core-blueprint' ) : __( 'Default', 'core-blueprint' );
 									?>
 									<option value="<?php echo esc_url( $url ); ?>" <?php selected( $id, $template_id ); ?>><?php echo esc_html( (string) ( $definition['label'] ?? $id ) . ' — ' . $state_label ); ?></option>

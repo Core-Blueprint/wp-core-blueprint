@@ -36,7 +36,7 @@ Prefer an existing section unless a separate group is genuinely useful.
 
 Custom types use a namespaced lower-case ID such as `vendor/metrics`. They are deliberately restricted to Base-owned presentation primitives. Extensions do not provide arbitrary PHP render callbacks or raw HUD markup.
 
-Hook `cb_hud_register_section_types`. The callback receives the `CB\Core\HUD\SectionTypeRegistry` class name.
+Hook `cb_hud_register_section_types`. The callback receives the `CoreBlueprint\Core\HUD\SectionTypeRegistry` class name.
 
 ```php
 add_action( 'cb_hud_register_section_types', static function ( string $types ): void {
@@ -64,7 +64,7 @@ Malformed, duplicate or Base-reserved type registrations are rejected safely.
 
 ## Register a section
 
-Hook `cb_hud_register_sections`. The callback receives the `CB\Core\HUD\Registry` class name. Section IDs use strict lower-case kebab-case and must be unique.
+Hook `cb_hud_register_sections`. The callback receives the `CoreBlueprint\Core\HUD\Registry` class name. Section IDs use strict lower-case kebab-case and must be unique.
 
 ```php
 add_action( 'cb_hud_register_sections', static function ( string $registry ): void {
@@ -87,7 +87,7 @@ The referenced type must already exist. Unknown types, malformed IDs, duplicate 
 
 ## Register an item
 
-Hook `cb_hud_register_items`. The callback receives the `CB\Core\HUD\Registry` class name.
+Hook `cb_hud_register_items`. The callback receives the `CoreBlueprint\Core\HUD\Registry` class name.
 
 ```php
 add_action( 'cb_hud_register_items', static function ( string $registry ): void {

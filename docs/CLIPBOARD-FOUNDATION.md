@@ -7,7 +7,7 @@ Clipboard is a shared copy-to-clipboard primitive for Base and standalone Core B
 ## Enqueue and runtime contract
 
 ```php
-\CB\Core\UI\Assets::enqueue_clipboard();
+\CoreBlueprint\Core\UI\Assets::enqueue_clipboard();
 ```
 
 Script-module dependency: `@cb-core/clipboard`.

@@ -6,10 +6,10 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Mail;
+namespace CoreBlueprint\Core\Mail;
 
-use CB\Core\Design\Profile\Mail\BindingInterpolator;
-use CB\Core\Design\Profile\Mail\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Mail\BindingInterpolator;
+use CoreBlueprint\Core\Design\Profile\Mail\HtmlRenderer;
 
 defined( 'ABSPATH' ) || exit;
 

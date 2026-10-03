@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Design\Profile\Document\Flow;
+namespace CoreBlueprint\Core\Design\Profile\Document\Flow;
 
 defined( 'ABSPATH' ) || exit;
 

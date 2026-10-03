@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\Governance\EventRegistry;
 
 final class MutationAcknowledgementConditionalConsumersContractTest extends WP_UnitTestCase {
 

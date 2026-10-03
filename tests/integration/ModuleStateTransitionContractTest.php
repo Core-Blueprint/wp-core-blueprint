@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Integrity\Scheduler\Cron as IntegrityCron;
-use CB\Core\Integrity\State as IntegrityState;
-use CB\Core\Log\AuditLog;
-use CB\Core\Mail\Settings as MailSettings;
-use CB\Core\Mail\State as MailState;
-use CB\Core\MediaReplace\State as MediaReplaceState;
-use CB\Core\Notes\State as NotesState;
-use CB\Core\PackageDownload\State as PackageDownloadState;
-use CB\Core\Permissions\UserRolesState;
-use CB\Core\Reports\State as ReportsState;
+use CoreBlueprint\Core\Integrity\Scheduler\Cron as IntegrityCron;
+use CoreBlueprint\Core\Integrity\State as IntegrityState;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Mail\Settings as MailSettings;
+use CoreBlueprint\Core\Mail\State as MailState;
+use CoreBlueprint\Core\MediaReplace\State as MediaReplaceState;
+use CoreBlueprint\Core\Notes\State as NotesState;
+use CoreBlueprint\Core\PackageDownload\State as PackageDownloadState;
+use CoreBlueprint\Core\Permissions\UserRolesState;
+use CoreBlueprint\Core\Reports\State as ReportsState;
 
 final class CB_Base_Module_State_Transition_Contract_Test extends WP_UnitTestCase {
 

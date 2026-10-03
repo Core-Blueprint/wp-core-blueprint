@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\MutationAcknowledgement;
-use CB\Core\Admin\Pages\Dashboard as DashboardPage;
-use CB\Core\Admin\Pages\Profiles as ProfilesPage;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\Roles;
-use CB\Core\Profiles\Document;
-use CB\Core\Profiles\Engine;
-use CB\Core\Profiles\PreviewStore;
-use CB\Core\Profiles\SectionRegistry;
-use CB\Core\Profiles\Sections\ModuleStatesSection;
+use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\Admin\Pages\Dashboard as DashboardPage;
+use CoreBlueprint\Core\Admin\Pages\Profiles as ProfilesPage;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Profiles\Document;
+use CoreBlueprint\Core\Profiles\Engine;
+use CoreBlueprint\Core\Profiles\PreviewStore;
+use CoreBlueprint\Core\Profiles\SectionRegistry;
+use CoreBlueprint\Core\Profiles\Sections\ModuleStatesSection;
 
 final class CB_Base_Profiles_Foundation_Contract_Test extends WP_UnitTestCase {
 

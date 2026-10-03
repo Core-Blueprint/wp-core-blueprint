@@ -1,5 +1,5 @@
 <?php
-namespace CB\Core\MediaFormats\Vendor\SvgSanitize\data;
+namespace CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data;
 
 class XPath extends \DOMXPath
 {

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Design\Kernel;
+namespace CoreBlueprint\Core\Design\Kernel;
 
 defined( 'ABSPATH' ) || exit;
 

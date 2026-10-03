@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\AdminNavigation;
+namespace CoreBlueprint\Core\AdminNavigation;
 
 defined( 'ABSPATH' ) || exit;
 

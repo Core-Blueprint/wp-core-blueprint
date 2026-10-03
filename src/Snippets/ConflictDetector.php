@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Snippets;
+namespace CoreBlueprint\Core\Snippets;
 
 defined( 'ABSPATH' ) || exit;
 

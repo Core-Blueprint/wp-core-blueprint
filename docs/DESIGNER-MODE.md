@@ -15,7 +15,7 @@ The Design Foundation deliberately exposes two different levels of integration.
 ### Editor engine and shell only
 
 ```php
-CB\Core\Design\Editor\Assets::enqueue();
+CoreBlueprint\Core\Design\Editor\Assets::enqueue();
 ```
 
 This loads the public Design Editor module and shared shell/runtime contracts, including `@cb-core/design-editor`. Use it for an embedded or otherwise consumer-composed editor that needs Base session/history/profile/shell APIs but does **not** want the canonical Designer Mode launch/fullscreen experience.
@@ -25,7 +25,7 @@ The semantic `design-editor` Foundation requirement resolves to this engine/shel
 ### Canonical Designer Mode
 
 ```php
-CB\Core\Design\Editor\Assets::enqueue_designer_mode( __( 'Example Designer', 'example' ) );
+CoreBlueprint\Core\Design\Editor\Assets::enqueue_designer_mode( __( 'Example Designer', 'example' ) );
 ```
 
 This includes the editor engine and adds the canonical Designer Mode launch, adaptive toolbar composition, Button presentation required by Base-generated chrome, Form Control presentation inside the Designer, panel rails/collapse behavior, canonical panel/canvas composition primitives, responsive drawers and focus/fullscreen lifecycle.
@@ -45,7 +45,7 @@ Manual mode remains the default. Use it when a normal WordPress admin page shoul
 </div>
 ```
 
-After `CB\Core\Design\Editor\Assets::enqueue_designer_mode()` Base adds the canonical **Design with Core Blueprint** launch control, owns the vertical rhythm around that control, keeps the shell hidden until launch and returns to the normal admin context when fullscreen closes.
+After `CoreBlueprint\Core\Design\Editor\Assets::enqueue_designer_mode()` Base adds the canonical **Design with Core Blueprint** launch control, owns the vertical rhythm around that control, keeps the shell hidden until launch and returns to the normal admin context when fullscreen closes.
 
 The surrounding admin page may remain WordPress-native. Do not add `.cb-core-wrap` merely to make Designer chrome look correct.
 

@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Migration\Recovery;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\RolePolicySchema;
-use CB\Core\Permissions\TrustSchemaMigrator;
-use CB\Core\Security\Failsafe;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\LoginController;
-use CB\Core\Security\TwoFactor\LoginFlow;
-use CB\Core\Security\TwoFactor\Policy;
-use CB\Core\Security\TwoFactor\Totp;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Migration\Recovery;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\RolePolicySchema;
+use CoreBlueprint\Core\Permissions\TrustSchemaMigrator;
+use CoreBlueprint\Core\Security\Failsafe;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\LoginController;
+use CoreBlueprint\Core\Security\TwoFactor\LoginFlow;
+use CoreBlueprint\Core\Security\TwoFactor\Policy;
+use CoreBlueprint\Core\Security\TwoFactor\Totp;
+use CoreBlueprint\Core\Settings;
 
 final class MigrationRecoveryTwoFactorBoundaryContractTest extends WP_UnitTestCase {
 

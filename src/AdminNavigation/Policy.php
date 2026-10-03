@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\AdminNavigation;
+namespace CoreBlueprint\Core\AdminNavigation;
 
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 

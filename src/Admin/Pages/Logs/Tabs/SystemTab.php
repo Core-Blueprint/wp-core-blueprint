@@ -7,14 +7,14 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin\Pages\Logs\Tabs;
+namespace CoreBlueprint\Core\Admin\Pages\Logs\Tabs;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\TabNav;
-use CB\Core\Log\AuditLog;
-use CB\Core\Log\Chart;
-use CB\Core\Log\SystemLog;
-use CB\Core\Log\TimeFilter;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\TabNav;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\Chart;
+use CoreBlueprint\Core\Log\SystemLog;
+use CoreBlueprint\Core\Log\TimeFilter;
 
 defined( 'ABSPATH' ) || exit;
 

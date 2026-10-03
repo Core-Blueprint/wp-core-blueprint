@@ -12,9 +12,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Permissions;
+namespace CoreBlueprint\Core\Permissions;
 
-use CB\Core\Settings;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

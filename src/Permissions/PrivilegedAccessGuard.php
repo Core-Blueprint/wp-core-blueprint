@@ -22,10 +22,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Permissions;
+namespace CoreBlueprint\Core\Permissions;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Security\Failsafe;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Security\Failsafe;
 
 defined( 'ABSPATH' ) || exit;
 

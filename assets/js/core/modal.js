@@ -66,7 +66,7 @@
  *
  * Native DOM API only. No jQuery. No bundler.
  *
- * @package CB\Core
+ * @package CoreBlueprint\Core
  * @since   1.0.0
  */
 

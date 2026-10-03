@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since   1.0.0
  */
-namespace CB\Core\Log;
+namespace CoreBlueprint\Core\Log;
 
-use CB\Core\Governance\RetentionPolicy;
-use CB\Core\Governance\RetentionStoreRegistry;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Governance\RetentionStoreRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -24,7 +24,7 @@
  * updated. So toggling the HUD's S immediately highlights S in the
  * page-level switcher too.
  *
- * @package CB\Core
+ * @package CoreBlueprint\Core
  * @since   1.0.0
  */
 

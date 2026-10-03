@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\Notes\Support;
+namespace CoreBlueprint\Core\Notes\Support;
 
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 

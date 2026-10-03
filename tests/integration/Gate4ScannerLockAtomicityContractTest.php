@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Integrity\Scanner\ScannerLock;
-use CB\Core\Integrity\Scanner\ScanSliceLock;
+use CoreBlueprint\Core\Integrity\Scanner\ScannerLock;
+use CoreBlueprint\Core\Integrity\Scanner\ScanSliceLock;
 
 final class Gate4ScannerLockAtomicityContractTest extends WP_UnitTestCase {
 

@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Brand\CoreBlueprintMark;
-use CB\Core\HUD\Brand\CoreBlueprint;
-use CB\Core\HUD\HUD;
+use CoreBlueprint\Core\Brand\CoreBlueprintMark;
+use CoreBlueprint\Core\HUD\Brand\CoreBlueprint;
+use CoreBlueprint\Core\HUD\HUD;
 
 final class CB_Base_HUD_Svg_Sanitizer_Contract_Test extends WP_UnitTestCase {
 

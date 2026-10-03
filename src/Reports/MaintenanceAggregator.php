@@ -43,9 +43,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Reports;
+namespace CoreBlueprint\Core\Reports;
 
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -818,7 +818,7 @@ final class MaintenanceAggregator {
 		$period   = $context['period'] ?? [];
 		$start_ts = (int) ( $period['start_ts'] ?? 0 );
 		$end_ts   = (int) ( $period['end_ts']   ?? 0 );
-		if ( $start_ts > 0 && $end_ts > 0 && class_exists( '\CB\Core\Log\AuditLog' ) ) {
+		if ( $start_ts > 0 && $end_ts > 0 && class_exists( '\CoreBlueprint\Core\Log\AuditLog' ) ) {
 			$boot_fail_query = AuditLog::query( [
 				'event_type' => AuditLog::normalize_event_type( 'module.boot_failed' ),
 				'since'      => gmdate( 'Y-m-d H:i:s', $start_ts ),

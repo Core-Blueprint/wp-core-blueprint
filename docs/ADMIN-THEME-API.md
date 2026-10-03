@@ -40,7 +40,7 @@ This keeps extensions compatible with Light, Dark, and partner themes registered
 ## PHP API
 
 ```php
-use CB\Core\UI\AdminTheme;
+use CoreBlueprint\Core\UI\AdminTheme;
 
 $theme = AdminTheme::theme();
 $mode  = AdminTheme::mode();
@@ -62,7 +62,7 @@ Registration is **not** required to receive Light/Dark theme state. The theme en
 Native WordPress screens that need Core Blueprint shared UI may declare semantic requirements at the same boundary:
 
 ```php
-use CB\Core\UI\AdminTheme;
+use CoreBlueprint\Core\UI\AdminTheme;
 
 add_action('current_screen', function ($screen): void {
     if (!$screen instanceof WP_Screen || 'my_post_type' !== $screen->post_type) {

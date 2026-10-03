@@ -24,14 +24,14 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Log;
+namespace CoreBlueprint\Core\Log;
 
-use CB\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
 
-use CB\Core\DB;
-use CB\Core\DB\QueryBuilder;
-use CB\Core\Privacy\Anonymizer;
-use CB\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\DB;
+use CoreBlueprint\Core\DB\QueryBuilder;
+use CoreBlueprint\Core\Privacy\Anonymizer;
+use CoreBlueprint\Core\Governance\EventRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

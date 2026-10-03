@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since   1.0.0
  */
-namespace CB\Core\AIGovernance;
+namespace CoreBlueprint\Core\AIGovernance;
 
 defined( 'ABSPATH' ) || exit;
 

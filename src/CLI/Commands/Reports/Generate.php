@@ -15,12 +15,12 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\CLI\Commands\Reports;
+namespace CoreBlueprint\Core\CLI\Commands\Reports;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Reports\Generator;
-use CB\Core\Reports\State;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Reports\Generator;
+use CoreBlueprint\Core\Reports\State;
 
 defined( 'ABSPATH' ) || exit;
 

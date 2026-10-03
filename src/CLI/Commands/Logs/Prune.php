@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 /** Logs\Prune - run canonical AuditLog retention policy immediately. */
-namespace CB\Core\CLI\Commands\Logs;
+namespace CoreBlueprint\Core\CLI\Commands\Logs;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Governance\RetentionPolicy;
-use CB\Core\Log\AuditLog;
-use CB\Core\Log\Retention;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\Retention;
 
 defined( 'ABSPATH' ) || exit;
 

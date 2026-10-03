@@ -6,9 +6,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels\Importers\NativeWordPress;
+namespace CoreBlueprint\Core\ContentModels\Importers\NativeWordPress;
 
-use CB\Core\ContentModels\Repository;
+use CoreBlueprint\Core\ContentModels\Repository;
 
 defined( 'ABSPATH' ) || exit;
 

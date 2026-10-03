@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Security\TwoFactor\Provisioning;
+use CoreBlueprint\Core\Security\TwoFactor\Provisioning;
 
 final class CB_Base_Two_Factor_Provisioning_Contract_Test extends WP_UnitTestCase {
 

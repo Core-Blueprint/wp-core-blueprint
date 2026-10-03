@@ -9,18 +9,18 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
-use CB\Core\Admin\Pages\Dashboard;
-use CB\Core\Admin\Pages\Logs;
-use CB\Core\Admin\Pages\Preferences;
-use CB\Core\Admin\Pages\Safeguards;
-use CB\Core\Admin\Pages\Settings as SettingsPage;
-use CB\Core\AdminNotices\Admin as AdminNoticesAdmin;
-use CB\Core\AdminNotices\Capabilities as AdminNoticesCapabilities;
-use CB\Core\Compliance\Admin\Page as CompliancePage;
-use CB\Core\UI\AdminTheme;
-use CB\Core\UI\AdminThemeAdapters;
+use CoreBlueprint\Core\Admin\Pages\Dashboard;
+use CoreBlueprint\Core\Admin\Pages\Logs;
+use CoreBlueprint\Core\Admin\Pages\Preferences;
+use CoreBlueprint\Core\Admin\Pages\Safeguards;
+use CoreBlueprint\Core\Admin\Pages\Settings as SettingsPage;
+use CoreBlueprint\Core\AdminNotices\Admin as AdminNoticesAdmin;
+use CoreBlueprint\Core\AdminNotices\Capabilities as AdminNoticesCapabilities;
+use CoreBlueprint\Core\Compliance\Admin\Page as CompliancePage;
+use CoreBlueprint\Core\UI\AdminTheme;
+use CoreBlueprint\Core\UI\AdminThemeAdapters;
 
 defined( 'ABSPATH' ) || exit;
 

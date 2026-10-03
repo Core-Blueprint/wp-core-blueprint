@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles\Admin;
+namespace CoreBlueprint\Core\Profiles\Admin;
 
-use CB\Core\Admin\MutationAcknowledgement;
-use CB\Core\Admin\Pages\Profiles as ProfilesPage;
-use CB\Core\Log\AuditLog;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Profiles\CanonicalJson;
-use CB\Core\Profiles\Document;
-use CB\Core\Profiles\Engine;
-use CB\Core\Profiles\PreviewStore;
-use CB\Core\Profiles\SectionRegistry;
+use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\Admin\Pages\Profiles as ProfilesPage;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Profiles\CanonicalJson;
+use CoreBlueprint\Core\Profiles\Document;
+use CoreBlueprint\Core\Profiles\Engine;
+use CoreBlueprint\Core\Profiles\PreviewStore;
+use CoreBlueprint\Core\Profiles\SectionRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

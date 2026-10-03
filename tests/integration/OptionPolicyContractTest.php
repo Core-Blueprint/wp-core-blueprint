@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\OptionPolicy;
+use CoreBlueprint\Core\OptionPolicy;
 
 final class CB_Base_Option_Policy_Contract_Test extends WP_UnitTestCase {
 
@@ -114,7 +114,7 @@ final class CB_Base_Option_Policy_Contract_Test extends WP_UnitTestCase {
 
 		$prime = strpos( $source, 'OptionPolicy::prime_request_cache( RequestContext::is_admin_screen() );' );
 		$migration = strpos( $source, 'MigrationRecovery::boot();' );
-		$permissions = strpos( $source, '\\CB\\Core\\Permissions\\Bootstrap::boot();' );
+		$permissions = strpos( $source, '\\CoreBlueprint\\Core\\Permissions\\Bootstrap::boot();' );
 
 		self::assertIsInt( $prime );
 		self::assertIsInt( $migration );

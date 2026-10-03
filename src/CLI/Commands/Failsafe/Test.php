@@ -16,17 +16,17 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Failsafe;
+namespace CoreBlueprint\Core\CLI\Commands\Failsafe;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
 
 defined( 'ABSPATH' ) || exit;
 
 final class Test implements CommandInterface {
 
 	public function execute( array $args ): Result {
-		$results = \CB\Core\Security\Failsafe::self_test();
+		$results = \CoreBlueprint\Core\Security\Failsafe::self_test();
 		$all_ok  = true;
 
 		$lines   = [];
@@ -82,7 +82,7 @@ final class Test implements CommandInterface {
 		\WP_CLI::line( 'Running failsafe self-test...' );
 		\WP_CLI::line( '' );
 
-		$results = \CB\Core\Security\Failsafe::self_test();
+		$results = \CoreBlueprint\Core\Security\Failsafe::self_test();
 		$all_ok  = true;
 
 		foreach ( $results as $check => $result ) {

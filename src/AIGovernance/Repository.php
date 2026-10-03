@@ -6,12 +6,12 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since   1.0.0
  */
-namespace CB\Core\AIGovernance;
+namespace CoreBlueprint\Core\AIGovernance;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\Pages\Logs\Tabs\AIActivityTab;
-use CB\Core\Database\SchemaRegistry;
-use CB\Core\Governance\RetentionStoreRegistry;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Pages\Logs\Tabs\AIActivityTab;
+use CoreBlueprint\Core\Database\SchemaRegistry;
+use CoreBlueprint\Core\Governance\RetentionStoreRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

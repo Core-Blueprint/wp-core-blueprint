@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$protect_search_indexing = ! empty( $policy[ \CB\Core\Environment\Governance::PROTECT_SEARCH_INDEXING ] );
+$protect_search_indexing = ! empty( $policy[ \CoreBlueprint\Core\Environment\Governance::PROTECT_SEARCH_INDEXING ] );
 $is_non_production       = 'production' !== $environment_type;
 ?>
 <div class="wrap cb-core-wrap cb-core-environment-governance">
@@ -24,13 +24,13 @@ $is_non_production       = 'production' !== $environment_type;
 
 	<?php
 	if ( 'success' === $save_state ) {
-		echo \CB\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			'variant' => \CB\Core\UI\Notice::SUCCESS,
+		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			'variant' => \CoreBlueprint\Core\UI\Notice::SUCCESS,
 			'title'   => __( 'Environment Governance saved.', 'core-blueprint' ),
 		] );
 	} elseif ( 'error' === $save_state ) {
-		echo \CB\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			'variant' => \CB\Core\UI\Notice::ERROR,
+		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			'variant' => \CoreBlueprint\Core\UI\Notice::ERROR,
 			'title'   => __( 'Environment Governance could not be saved.', 'core-blueprint' ),
 		] );
 	}
@@ -40,9 +40,9 @@ $is_non_production       = 'production' !== $environment_type;
 		<h2 id="cb-core-wordpress-environment-title"><?php esc_html_e( 'WordPress Environment', 'core-blueprint' ); ?></h2>
 		<p>
 			<?php
-			echo \CB\Core\UI\Status::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo \CoreBlueprint\Core\UI\Status::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				$is_non_production ? 'ready' : 'active',
-				\CB\Core\Environment\Admin::environment_label( $environment_type )
+				\CoreBlueprint\Core\Environment\Admin::environment_label( $environment_type )
 			);
 			?>
 		</p>
@@ -55,8 +55,8 @@ $is_non_production       = 'production' !== $environment_type;
 		<h2 id="cb-core-environment-governance-title"><?php esc_html_e( 'Environment Governance', 'core-blueprint' ); ?></h2>
 
 		<?php
-		echo \CB\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			'variant' => \CB\Core\UI\Notice::INFO,
+		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'items'   => [
 				__( 'Environment and Access Mode are separate. A staging environment can still use Public Access Mode.', 'core-blueprint' ),
 				__( 'Noindex asks search engines not to index a response. It is not access protection.', 'core-blueprint' ),
@@ -66,15 +66,15 @@ $is_non_production       = 'production' !== $environment_type;
 		?>
 
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<input type="hidden" name="action" value="<?php echo esc_attr( \CB\Core\Environment\Admin::SAVE_ACTION ); ?>" />
-			<?php wp_nonce_field( \CB\Core\Environment\Admin::NONCE_ACTION ); ?>
+			<input type="hidden" name="action" value="<?php echo esc_attr( \CoreBlueprint\Core\Environment\Admin::SAVE_ACTION ); ?>" />
+			<?php wp_nonce_field( \CoreBlueprint\Core\Environment\Admin::NONCE_ACTION ); ?>
 
 			<div class="cb-core-field">
 				<label for="cb-core-protect-search-indexing">
 					<input
 						id="cb-core-protect-search-indexing"
 						type="checkbox"
-						name="<?php echo esc_attr( \CB\Core\Environment\Governance::PROTECT_SEARCH_INDEXING ); ?>"
+						name="<?php echo esc_attr( \CoreBlueprint\Core\Environment\Governance::PROTECT_SEARCH_INDEXING ); ?>"
 						value="1"
 						<?php checked( $protect_search_indexing ); ?>
 					/>

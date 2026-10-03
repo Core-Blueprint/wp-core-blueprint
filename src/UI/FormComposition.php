@@ -13,7 +13,7 @@ declare(strict_types=1);
  * @since   1.0.0-rc3.36
  */
 
-namespace CB\Core\UI;
+namespace CoreBlueprint\Core\UI;
 
 defined( 'ABSPATH' ) || exit;
 

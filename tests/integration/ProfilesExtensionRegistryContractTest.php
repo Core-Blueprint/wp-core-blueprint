@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\ExtensionRegistry;
-use CB\Core\Profiles\Engine;
-use CB\Core\Profiles\ExactSection;
-use CB\Core\Profiles\SchemaGuard;
-use CB\Core\Profiles\SectionRegistry;
+use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Profiles\Engine;
+use CoreBlueprint\Core\Profiles\ExactSection;
+use CoreBlueprint\Core\Profiles\SchemaGuard;
+use CoreBlueprint\Core\Profiles\SectionRegistry;
 
 final class CB_Profiles_Test_Extension_Section extends ExactSection {
 	public function __construct(

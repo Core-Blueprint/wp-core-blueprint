@@ -1,10 +1,10 @@
 <?php
-namespace CB\Core\MediaFormats\Vendor\SvgSanitize\data;
+namespace CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data;
 
 /**
  * Class AllowedTags
  *
- * @package CB\Core\MediaFormats\Vendor\SvgSanitize\data
+ * @package CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data
  */
 class AllowedTags implements TagInterface
 {

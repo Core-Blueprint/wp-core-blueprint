@@ -1,5 +1,5 @@
 <?php
-namespace CB\Core\MediaFormats\Vendor\SvgSanitize\Exceptions;
+namespace CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\Exceptions;
 
 use Exception;
 

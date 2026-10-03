@@ -380,7 +380,7 @@ If required runtime capabilities are missing, Core Blueprint should refuse activ
 
 ### Foundation layer
 
-The `CB\Core\*` foundation layer is always active and contains the baseline infrastructure shared across Core Blueprint.
+The `CoreBlueprint\Core\*` foundation layer is always active and contains the baseline infrastructure shared across Core Blueprint.
 
 Key boundaries include:
 

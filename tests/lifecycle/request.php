@@ -200,14 +200,14 @@ try {
 
     $audit_table_exists = static function (): bool {
         global $wpdb;
-        $table = \CB\Core\DB::audit_log_table();
+        $table = \CoreBlueprint\Core\DB::audit_log_table();
         $found = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($table)));
         return $found === $table;
     };
 
     $audit_count = static function (string $event_type): int {
         global $wpdb;
-        $table = \CB\Core\DB::audit_log_table();
+        $table = \CoreBlueprint\Core\DB::audit_log_table();
         return (int) $wpdb->get_var(
             $wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE event_type = %s", $event_type)
         );
@@ -223,9 +223,9 @@ try {
 
         $first_admin = get_user_by('login', 'cbadmin');
         cb_a2_expect($first_admin instanceof WP_User, 'First administrator disappeared during activation.');
-        cb_a2_expect(in_array(\CB\Core\Permissions\Roles::OPERATOR_ROLE, (array) $first_admin->roles, true), 'First administrator was not assigned the CB Operator role.');
+        cb_a2_expect(in_array(\CoreBlueprint\Core\Permissions\Roles::OPERATOR_ROLE, (array) $first_admin->roles, true), 'First administrator was not assigned the CB Operator role.');
 
-        $approval = \CB\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($first_admin);
+        $approval = \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($first_admin);
         cb_a2_expect([] !== $approval, 'First operator was not approved for its exact privilege fingerprint.');
 
         $first_activated_at = get_option('cb_core_first_activated_at', false);
@@ -233,7 +233,7 @@ try {
         cb_a2_expect(is_string($first_activated_at) && '' !== $first_activated_at, 'First activation marker missing.');
         cb_a2_expect(false !== $guard_marker && 0 < (int) $guard_marker, 'Privileged guard bootstrap marker missing.');
         cb_a2_expect('1.0' === (string) get_option('cb_core_db_version', ''), 'Audit schema marker not current after first activation.');
-        cb_a2_expect(\CB\Core\Permissions\RolePolicySchema::current_schema() === (int) get_option('cb_core_role_policy_schema_version', 0), 'Role Policy schema not initialized on first activation.');
+        cb_a2_expect(\CoreBlueprint\Core\Permissions\RolePolicySchema::current_schema() === (int) get_option('cb_core_role_policy_schema_version', 0), 'Role Policy schema not initialized on first activation.');
         cb_a2_expect(1 === (int) get_option('cb_core_trust_schema_version', 0), 'Trust Schema not initialized on first activation.');
         cb_a2_expect('auto' === (string) get_option('cb_core_theme_default', ''), 'Theme default was not initialized.');
         cb_a2_expect('auto' === (string) get_option('cb_locale_default', ''), 'Locale default was not initialized.');
@@ -241,12 +241,12 @@ try {
         cb_a2_expect('' !== (string) get_option(CB_CORE_BYPASS_TOK, ''), 'Failsafe bypass token missing after first activation.');
         cb_a2_expect(1 === (int) get_option('cb_core_option_policy_version', 0), 'Active option policy marker missing.');
         cb_a2_expect($audit_table_exists(), 'Audit table missing after first activation.');
-        cb_a2_expect(false !== wp_next_scheduled(\CB\Core\Log\Retention::CRON_HOOK), 'Retention cron missing after first activation.');
+        cb_a2_expect(false !== wp_next_scheduled(\CoreBlueprint\Core\Log\Retention::CRON_HOOK), 'Retention cron missing after first activation.');
         cb_a2_expect(false !== wp_next_scheduled('cb_core_privileged_guard_cron_sweep'), 'Privileged Access Guard cron missing after first activation.');
-        cb_a2_expect(false === wp_next_scheduled(\CB\Core\Integrity\Scheduler\Cron::HOOK), 'Scanner cron must remain unscheduled with the default disabled schedule.');
+        cb_a2_expect(false === wp_next_scheduled(\CoreBlueprint\Core\Integrity\Scheduler\Cron::HOOK), 'Scanner cron must remain unscheduled with the default disabled schedule.');
         cb_a2_expect(1 === $audit_count('plugin_activated'), 'First activation must write exactly one plugin_activated event.');
 
-        cb_a2_expect(\CB\Core\Settings::set_key('site_mode', 'development', 'a2_test'), 'Could not persist lifecycle sentinel setting.');
+        cb_a2_expect(\CoreBlueprint\Core\Settings::set_key('site_mode', 'development', 'a2_test'), 'Could not persist lifecycle sentinel setting.');
         update_option('cb_core_theme_default', 'dark', false);
         update_option('cb_a2_expected_first_activation', $first_activated_at, false);
         update_option('cb_a2_expected_guard_marker', $guard_marker, false);
@@ -260,30 +260,30 @@ try {
         cb_a2_expect(is_plugin_active($plugin_basename), 'Base must start active for deactivation stage.');
         wp_set_current_user((int) $first_admin->ID);
 
-        set_transient(\CB\Core\Security\Failsafe::BYPASS_TRANSIENT, 'active', \CB\Core\Security\Failsafe::BYPASS_WINDOW);
+        set_transient(\CoreBlueprint\Core\Security\Failsafe::BYPASS_TRANSIENT, 'active', \CoreBlueprint\Core\Security\Failsafe::BYPASS_WINDOW);
         update_option(CB_CORE_BYPASS_OPT, 'emergency', false);
 
         deactivate_plugins($plugin_basename);
 
         cb_a2_expect(!is_plugin_active($plugin_basename), 'Base remained active after deactivation.');
-        cb_a2_expect(false === get_transient(\CB\Core\Security\Failsafe::BYPASS_TRANSIENT), 'Transient bypass window survived deactivation.');
+        cb_a2_expect(false === get_transient(\CoreBlueprint\Core\Security\Failsafe::BYPASS_TRANSIENT), 'Transient bypass window survived deactivation.');
         cb_a2_expect('emergency' === get_option(CB_CORE_BYPASS_OPT, false), 'Persistent emergency bypass must survive deactivation.');
-        cb_a2_expect(false === wp_next_scheduled(\CB\Core\Log\Retention::CRON_HOOK), 'Retention cron survived deactivation.');
+        cb_a2_expect(false === wp_next_scheduled(\CoreBlueprint\Core\Log\Retention::CRON_HOOK), 'Retention cron survived deactivation.');
         cb_a2_expect(false === wp_next_scheduled('cb_core_privileged_guard_cron_sweep'), 'Privileged Access Guard cron survived deactivation.');
-        cb_a2_expect(false === wp_next_scheduled(\CB\Core\Integrity\Scheduler\Cron::HOOK), 'Scanner cron survived deactivation.');
+        cb_a2_expect(false === wp_next_scheduled(\CoreBlueprint\Core\Integrity\Scheduler\Cron::HOOK), 'Scanner cron survived deactivation.');
         cb_a2_expect(false === get_option('cb_core_option_policy_version', false), 'Inactive option policy marker survived deactivation.');
 
         cb_a2_expect(get_option('cb_a2_expected_first_activation', false) === get_option('cb_core_first_activated_at', false), 'First activation marker changed during deactivation.');
-        cb_a2_expect('development' === (string) (\CB\Core\Settings::get()['site_mode'] ?? ''), 'Base settings were lost during deactivation.');
+        cb_a2_expect('development' === (string) (\CoreBlueprint\Core\Settings::get()['site_mode'] ?? ''), 'Base settings were lost during deactivation.');
         cb_a2_expect('dark' === (string) get_option('cb_core_theme_default', ''), 'User-selected theme default was lost during deactivation.');
         cb_a2_expect($audit_table_exists(), 'Audit table was removed by deactivation.');
-        cb_a2_expect(null !== get_role(\CB\Core\Permissions\Roles::OPERATOR_ROLE), 'CB Operator role was removed by deactivation.');
+        cb_a2_expect(null !== get_role(\CoreBlueprint\Core\Permissions\Roles::OPERATOR_ROLE), 'CB Operator role was removed by deactivation.');
 
         $first_admin = get_user_by('login', 'cbadmin');
         cb_a2_expect($first_admin instanceof WP_User, 'First administrator missing after deactivation.');
-        cb_a2_expect(in_array(\CB\Core\Permissions\Roles::OPERATOR_ROLE, (array) $first_admin->roles, true), 'Operator assignment was removed by deactivation.');
+        cb_a2_expect(in_array(\CoreBlueprint\Core\Permissions\Roles::OPERATOR_ROLE, (array) $first_admin->roles, true), 'Operator assignment was removed by deactivation.');
         cb_a2_expect(
-            get_option('cb_a2_expected_first_approval', []) === \CB\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($first_admin),
+            get_option('cb_a2_expected_first_approval', []) === \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($first_admin),
             'Signed first-operator approval changed during deactivation.'
         );
         cb_a2_expect(1 === $audit_count('plugin_deactivated'), 'Deactivation must write exactly one plugin_deactivated event.');
@@ -328,7 +328,7 @@ try {
         cb_a2_expect(get_option('cb_a2_expected_first_activation', false) === get_option('cb_core_first_activated_at', false), 'Reactivation changed the genuine first-activation marker.');
         cb_a2_expect(get_option('cb_a2_expected_guard_marker', false) === get_option('cb_core_privileged_guard_bootstrapped', false), 'Reactivation rewrote the privileged guard trust-root marker.');
         cb_a2_expect(false === get_option('cb_core_trust_schema_version', false), 'Reactivation silently recreated missing Trust Schema metadata.');
-        cb_a2_expect(null === \CB\Core\Permissions\RolePolicySchema::stored_schema(), 'Reactivation silently recreated missing Role Policy schema metadata.');
+        cb_a2_expect(null === \CoreBlueprint\Core\Permissions\RolePolicySchema::stored_schema(), 'Reactivation silently recreated missing Role Policy schema metadata.');
 
         $admin_role = get_role('administrator');
         cb_a2_expect(null !== $admin_role && !$admin_role->has_cap('cb_manage_media_replace'), 'Reactivation silently repaired established-site role drift.');
@@ -342,25 +342,25 @@ try {
         $second_admin = get_user_by('login', 'cbsecond');
         cb_a2_expect($first_admin instanceof WP_User && $second_admin instanceof WP_User, 'Lifecycle administrators missing after reactivation.');
 
-        cb_a2_expect(in_array(\CB\Core\Permissions\Roles::OPERATOR_ROLE, (array) $first_admin->roles, true), 'Original operator role assignment was lost on reactivation.');
+        cb_a2_expect(in_array(\CoreBlueprint\Core\Permissions\Roles::OPERATOR_ROLE, (array) $first_admin->roles, true), 'Original operator role assignment was lost on reactivation.');
         cb_a2_expect(
-            get_option('cb_a2_expected_first_approval', []) === \CB\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($first_admin),
+            get_option('cb_a2_expected_first_approval', []) === \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($first_admin),
             'Original signed approval changed on reactivation.'
         );
-        cb_a2_expect(!in_array(\CB\Core\Permissions\Roles::OPERATOR_ROLE, (array) $second_admin->roles, true), 'Reactivation minted a new CB Operator from the activating administrator.');
-        cb_a2_expect([] === \CB\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($second_admin), 'Reactivation minted an approval for the activating administrator.');
+        cb_a2_expect(!in_array(\CoreBlueprint\Core\Permissions\Roles::OPERATOR_ROLE, (array) $second_admin->roles, true), 'Reactivation minted a new CB Operator from the activating administrator.');
+        cb_a2_expect([] === \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($second_admin), 'Reactivation minted an approval for the activating administrator.');
 
-        cb_a2_expect('development' === (string) (\CB\Core\Settings::get()['site_mode'] ?? ''), 'Custom settings were overwritten by reactivation.');
+        cb_a2_expect('development' === (string) (\CoreBlueprint\Core\Settings::get()['site_mode'] ?? ''), 'Custom settings were overwritten by reactivation.');
         cb_a2_expect('dark' === (string) get_option('cb_core_theme_default', ''), 'User-selected theme default was overwritten by reactivation.');
         cb_a2_expect(1 === (int) get_option('cb_core_option_policy_version', 0), 'Active option policy marker was not restored on reactivation.');
-        cb_a2_expect(false !== wp_next_scheduled(\CB\Core\Log\Retention::CRON_HOOK), 'Retention cron was not restored on reactivation.');
+        cb_a2_expect(false !== wp_next_scheduled(\CoreBlueprint\Core\Log\Retention::CRON_HOOK), 'Retention cron was not restored on reactivation.');
         cb_a2_expect(false !== wp_next_scheduled('cb_core_privileged_guard_cron_sweep'), 'Privileged Access Guard cron was not restored on reactivation.');
         cb_a2_expect(2 === $audit_count('plugin_activated'), 'Fresh request reactivation must persist a second plugin_activated event.');
 
         // Restore intentionally-created drift through the explicit Role Policy
         // repair boundary. Trust Schema has no public historical migration in v1,
         // so the test restores its known marker directly after proving no auto-heal.
-        $repair = \CB\Core\Permissions\RolePolicySchema::repair();
+        $repair = \CoreBlueprint\Core\Permissions\RolePolicySchema::repair();
         cb_a2_expect(!empty($repair['canonical']), 'Explicit Role Policy repair did not restore canonical state.');
         update_option('cb_core_trust_schema_version', 1, false);
         cb_a2_expect(1 === (int) get_option('cb_core_trust_schema_version', 0), 'Could not restore Trust Schema marker after drift assertion.');
@@ -372,7 +372,7 @@ try {
     if ('damage-schema' === $stage) {
         cb_a2_expect(is_plugin_active($plugin_basename), 'Base must be active before schema damage stage.');
         global $wpdb;
-        $table = \CB\Core\DB::audit_log_table();
+        $table = \CoreBlueprint\Core\DB::audit_log_table();
         $wpdb->query("DROP TABLE IF EXISTS {$table}");
         update_option('cb_core_db_health_checked_at', 0, true);
 
@@ -414,7 +414,7 @@ try {
             $wpdb->query("CREATE TABLE {$table} (id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) {$charset}");
         };
 
-        $registered = \CB\Core\Database\SchemaRegistry::register([
+        $registered = \CoreBlueprint\Core\Database\SchemaRegistry::register([
             'id' => 'a2-schema-ok',
             'version' => '1.0',
             'option_key' => 'cb_a2_schema_ok_version',
@@ -428,7 +428,7 @@ try {
         cb_a2_expect($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($ok_table))) === $ok_table, 'Late registered schema table was not created.');
 
         cb_a2_expect(
-            !\CB\Core\Database\SchemaRegistry::register([
+            !\CoreBlueprint\Core\Database\SchemaRegistry::register([
                 'id' => 'a2-schema-ok',
                 'version' => '1.0',
                 'option_key' => 'cb_a2_schema_duplicate_version',
@@ -438,7 +438,7 @@ try {
             'Duplicate schema id was accepted.'
         );
         cb_a2_expect(
-            !\CB\Core\Database\SchemaRegistry::register([
+            !\CoreBlueprint\Core\Database\SchemaRegistry::register([
                 'id' => 'a2-schema-other',
                 'version' => '1.0',
                 'option_key' => 'cb_a2_schema_ok_version',
@@ -448,7 +448,7 @@ try {
             'Duplicate schema option ownership was accepted.'
         );
         cb_a2_expect(
-            !\CB\Core\Database\SchemaRegistry::register([
+            !\CoreBlueprint\Core\Database\SchemaRegistry::register([
                 'id' => 'audit-log',
                 'version' => '1.0',
                 'option_key' => 'cb_a2_schema_reserved_id',
@@ -458,7 +458,7 @@ try {
             'Extension schema claimed a Base-reserved schema id.'
         );
         cb_a2_expect(
-            !\CB\Core\Database\SchemaRegistry::register([
+            !\CoreBlueprint\Core\Database\SchemaRegistry::register([
                 'id' => 'a2-schema-reserved-option',
                 'version' => '1.0',
                 'option_key' => 'cb_core_db_version',
@@ -474,7 +474,7 @@ try {
         ini_set('log_errors', '1');
         ini_set('error_log', $diagnostic_log);
 
-        $partial_registered = \CB\Core\Database\SchemaRegistry::register([
+        $partial_registered = \CoreBlueprint\Core\Database\SchemaRegistry::register([
             'id' => 'a2-schema-partial',
             'version' => '1.0',
             'option_key' => 'cb_a2_schema_partial_version',

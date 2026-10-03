@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Snippets;
+namespace CoreBlueprint\Core\Snippets;
 
-use CB\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
 
 defined( 'ABSPATH' ) || exit;
 

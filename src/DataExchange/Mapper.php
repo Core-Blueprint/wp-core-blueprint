@@ -11,9 +11,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\DataExchange;
+namespace CoreBlueprint\Core\DataExchange;
 
-use CB\Core\ExtensionRegistry;
+use CoreBlueprint\Core\ExtensionRegistry;
 use JsonException;
 use Throwable;
 use WP_Error;

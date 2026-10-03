@@ -80,25 +80,25 @@ if ( ! function_exists( 'esc_url' ) ) {
 
 require_once $tile_path;
 
-$default_tile = \CB\Core\UI\Tile::render( [
-    'variant' => \CB\Core\UI\Tile::VARIANT_STATUS_NAV,
+$default_tile = \CoreBlueprint\Core\UI\Tile::render( [
+    'variant' => \CoreBlueprint\Core\UI\Tile::VARIANT_STATUS_NAV,
     'title' => 'Default',
     'state' => 'active',
 ] );
-$compact_tile = \CB\Core\UI\Tile::render( [
-    'variant' => \CB\Core\UI\Tile::VARIANT_STATUS_NAV,
-    'density' => \CB\Core\UI\Tile::DENSITY_COMPACT,
+$compact_tile = \CoreBlueprint\Core\UI\Tile::render( [
+    'variant' => \CoreBlueprint\Core\UI\Tile::VARIANT_STATUS_NAV,
+    'density' => \CoreBlueprint\Core\UI\Tile::DENSITY_COMPACT,
     'title' => 'Compact',
     'state' => 'warning',
 ] );
-$unknown_density_tile = \CB\Core\UI\Tile::render( [
-    'variant' => \CB\Core\UI\Tile::VARIANT_STATUS_NAV,
+$unknown_density_tile = \CoreBlueprint\Core\UI\Tile::render( [
+    'variant' => \CoreBlueprint\Core\UI\Tile::VARIANT_STATUS_NAV,
     'density' => 'unknown',
     'title' => 'Fallback',
 ] );
-$compact_metric = \CB\Core\UI\Tile::render( [
-    'variant' => \CB\Core\UI\Tile::VARIANT_METRIC,
-    'density' => \CB\Core\UI\Tile::DENSITY_COMPACT,
+$compact_metric = \CoreBlueprint\Core\UI\Tile::render( [
+    'variant' => \CoreBlueprint\Core\UI\Tile::VARIANT_METRIC,
+    'density' => \CoreBlueprint\Core\UI\Tile::DENSITY_COMPACT,
     'label' => 'Metric',
     'value' => '1',
 ] );

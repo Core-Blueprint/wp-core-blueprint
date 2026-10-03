@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles;
+namespace CoreBlueprint\Core\Profiles;
 
 defined( 'ABSPATH' ) || exit;
 

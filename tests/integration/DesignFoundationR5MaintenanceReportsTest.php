@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Flow\PdfRenderer;
-use CB\Core\Design\Profile\Document\Flow\Presentation;
-use CB\Core\Design\Profile\Document\Flow\RenderBlock;
-use CB\Core\Reports\MaintenanceAggregator;
-use CB\Core\Reports\MaintenanceFlowBranding;
-use CB\Core\Reports\MaintenanceFlowCompiler;
-use CB\Core\Reports\MaintenancePdf;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\PdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\Presentation;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
+use CoreBlueprint\Core\Reports\MaintenanceAggregator;
+use CoreBlueprint\Core\Reports\MaintenanceFlowBranding;
+use CoreBlueprint\Core\Reports\MaintenanceFlowCompiler;
+use CoreBlueprint\Core\Reports\MaintenancePdf;
+use CoreBlueprint\Core\Settings;
 
 final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */
@@ -333,7 +333,7 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 		$compiler = (string) file_get_contents( $root . '/src/Reports/MaintenanceFlowCompiler.php' );
 		$branding = (string) file_get_contents( $root . '/src/Reports/MaintenanceFlowBranding.php' );
 
-		self::assertStringNotContainsString( 'CB\\Core\\PDF\\Renderer;', $maintenance_pdf );
+		self::assertStringNotContainsString( 'CoreBlueprint\\Core\\PDF\\Renderer;', $maintenance_pdf );
 		self::assertStringNotContainsString( 'templates/pdf/maintenance-report.php', $maintenance_pdf );
 		self::assertFileDoesNotExist( $root . '/templates/pdf/maintenance-report.php' );
 		self::assertStringContainsString( 'Document\\Flow\\PdfRenderer', $maintenance_pdf );
@@ -347,7 +347,7 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 		$flow = $root . '/src/Design/Profile/Document/Flow';
 		foreach ( glob( $flow . '/*.php' ) ?: [] as $file ) {
 			$source = (string) file_get_contents( $file );
-			self::assertStringNotContainsString( 'CB\\Core\\Reports', $source, basename( $file ) );
+			self::assertStringNotContainsString( 'CoreBlueprint\\Core\\Reports', $source, basename( $file ) );
 			self::assertStringNotContainsString( 'MaintenanceAggregator', $source, basename( $file ) );
 		}
 	}

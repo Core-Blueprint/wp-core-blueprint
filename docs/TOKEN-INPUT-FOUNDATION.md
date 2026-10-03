@@ -13,7 +13,7 @@ Start from a real native input; that input remains the only submitted/persistent
 ```
 
 ```php
-\CB\Core\UI\Assets::enqueue_token_inputs();
+\CoreBlueprint\Core\UI\Assets::enqueue_token_inputs();
 ```
 
 Script-module dependency: `@cb-core/token-input`.

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\UserProfileSectionRegistry;
+use CoreBlueprint\Core\Admin\UserProfileSectionRegistry;
 
 final class CB_Base_User_Profile_Section_Registry_Contract_Test extends WP_UnitTestCase {
 

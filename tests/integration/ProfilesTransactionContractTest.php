@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AIGovernance\Settings as AISettings;
-use CB\Core\ContentModels\Repository as ContentModelsRepository;
-use CB\Core\Profiles\ApplyLock;
-use CB\Core\Profiles\Diff;
-use CB\Core\Profiles\Engine;
-use CB\Core\Profiles\SectionInterface;
-use CB\Core\Profiles\SectionRegistry;
+use CoreBlueprint\Core\AIGovernance\Settings as AISettings;
+use CoreBlueprint\Core\ContentModels\Repository as ContentModelsRepository;
+use CoreBlueprint\Core\Profiles\ApplyLock;
+use CoreBlueprint\Core\Profiles\Diff;
+use CoreBlueprint\Core\Profiles\Engine;
+use CoreBlueprint\Core\Profiles\SectionInterface;
+use CoreBlueprint\Core\Profiles\SectionRegistry;
 
 final class CB_Profiles_Test_Mutable_Section implements SectionInterface {
 	public function id(): string { return 'zz-test-mutable'; }

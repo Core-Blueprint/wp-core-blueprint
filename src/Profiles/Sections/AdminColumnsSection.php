@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles\Sections;
+namespace CoreBlueprint\Core\Profiles\Sections;
 
-use CB\Core\AdminColumns\PolicyRepository;
-use CB\Core\Profiles\ExactSection;
+use CoreBlueprint\Core\AdminColumns\PolicyRepository;
+use CoreBlueprint\Core\Profiles\ExactSection;
 
 defined( 'ABSPATH' ) || exit;
 

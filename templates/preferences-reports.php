@@ -28,7 +28,7 @@ $surface_style       = (string) ( $branding['surface_style'] ?? $fallback['surfa
 $density             = (string) ( $branding['density'] ?? $fallback['density'] ?? 'comfortable' );
 $corner_style        = (string) ( $branding['corner_style'] ?? $fallback['corner_style'] ?? 'soft' );
 $text_scale          = (string) ( $branding['text_scale'] ?? $fallback['text_scale'] ?? 'standard' );
-$is_enabled          = class_exists( '\\CB\\Core\\Reports\\State' ) ? \CB\Core\Reports\State::is_enabled() : true;
+$is_enabled          = class_exists( '\\CoreBlueprint\\Core\\Reports\\State' ) ? \CoreBlueprint\Core\Reports\State::is_enabled() : true;
 $can_manage_branding = current_user_can( 'cb_manage_branding' );
 ?>
 <div
@@ -47,8 +47,8 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 
 		<?php if ( ! $is_enabled ) : ?>
 			<?php
-			echo \CB\Core\UI\Notice::render( [
-				'variant' => \CB\Core\UI\Notice::INFO,
+			echo \CoreBlueprint\Core\UI\Notice::render( [
+				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'title'   => __( 'Reports is disabled.', 'core-blueprint' ),
 				'message' => __( 'Branding below stays editable. Enable Reports from the Dashboard when you want to generate reports again.', 'core-blueprint' ),
 			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
@@ -57,8 +57,8 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 
 		<?php if ( ! $can_manage_branding ) : ?>
 			<?php
-			echo \CB\Core\UI\Notice::render( [
-				'variant' => \CB\Core\UI\Notice::INFO,
+			echo \CoreBlueprint\Core\UI\Notice::render( [
+				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'title'   => __( 'Reports', 'core-blueprint' ),
 				'message' => __( 'Sorry, you are not allowed to access this page.', 'core-blueprint' ),
 			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.

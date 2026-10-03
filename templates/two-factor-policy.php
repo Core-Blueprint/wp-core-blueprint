@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy::MODE_OPTIONAL );
+$current_mode = (string) ( $policy['mode'] ?? \CoreBlueprint\Core\Security\TwoFactor\Policy::MODE_OPTIONAL );
 ?>
 <div class="wrap cb-core-wrap cb-core-two-factor-policy" data-cb-core-two-factor-policy>
 	<h1 class="cb-core-title"><?php esc_html_e( 'Two-factor authentication', 'core-blueprint' ); ?></h1>
@@ -24,25 +24,25 @@ $current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy
 
 	<?php
 	if ( $bypassed ) {
-		echo \CB\Core\UI\Notice::render( [
-			'variant' => \CB\Core\UI\Notice::WARNING,
+		echo \CoreBlueprint\Core\UI\Notice::render( [
+			'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 			'title'   => __( 'Failsafe bypass is active.', 'core-blueprint' ),
 			'message' => __( 'Two-factor enforcement is temporarily bypassed. A new enforce policy cannot be enabled until Failsafe is closed.', 'core-blueprint' ),
 		] );
 	}
 
 	if ( ! $can_manage ) {
-		echo \CB\Core\UI\Notice::render( [
-			'variant' => \CB\Core\UI\Notice::INFO,
+		echo \CoreBlueprint\Core\UI\Notice::render( [
+			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'title'   => __( 'Policy is read-only for this account.', 'core-blueprint' ),
 			'message' => __( 'Only a signed and approved CB Operator can change the site-wide two-factor policy.', 'core-blueprint' ),
 		] );
-	} elseif ( ! $base_enrolled && \CB\Core\Security\TwoFactor\Policy::MODE_ENFORCE !== $current_mode ) {
+	} elseif ( ! $base_enrolled && \CoreBlueprint\Core\Security\TwoFactor\Policy::MODE_ENFORCE !== $current_mode ) {
 		$message = [] !== $providers
 			? __( 'The acting CB Operator must have Base two-factor authentication enrolled before this site can switch to Enforce. Your account is currently owned by a supported external provider. Use another trusted Base-enrolled Operator, or move your own account to Base two-factor authentication first.', 'core-blueprint' )
 			: __( 'The acting CB Operator must have Base two-factor authentication enrolled before this site can switch to Enforce. Configure Base two-factor authentication on your WordPress profile first.', 'core-blueprint' );
-		echo \CB\Core\UI\Notice::render( [
-			'variant' => \CB\Core\UI\Notice::WARNING,
+		echo \CoreBlueprint\Core\UI\Notice::render( [
+			'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 			'title'   => __( 'Enroll Base two-factor authentication before enforcing.', 'core-blueprint' ),
 			'message' => $message,
 		] );
@@ -58,18 +58,18 @@ $current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy
 		<?php if ( $can_manage ) : ?>
 			<?php
 			$policy_control = '<div data-cb-core-two-factor-policy-control>'
-				. \CB\Core\UI\RadioGroup::render( [
+				. \CoreBlueprint\Core\UI\RadioGroup::render( [
 					'name'    => 'cb_core_two_factor_mode',
 					'value'   => $current_mode,
 					'options' => [
 						[
-							'value'      => \CB\Core\Security\TwoFactor\Policy::MODE_OPTIONAL,
+							'value'      => \CoreBlueprint\Core\Security\TwoFactor\Policy::MODE_OPTIONAL,
 							'label'      => __( 'Optional', 'core-blueprint' ),
 							'desc'       => __( 'Privileged users may enroll in Base two-factor authentication, but unenrolled accounts are not forced into setup. Existing enrollments still require a second factor at login.', 'core-blueprint' ),
 							'input_data' => [ 'data-cb-core-two-factor-mode' => '' ],
 						],
 						[
-							'value'      => \CB\Core\Security\TwoFactor\Policy::MODE_ENFORCE,
+							'value'      => \CoreBlueprint\Core\Security\TwoFactor\Policy::MODE_ENFORCE,
 							'label'      => __( 'Enforce', 'core-blueprint' ),
 							'desc'       => __( 'Privileged accounts must establish a second factor. Users protected by a supported external provider stay with that provider; other privileged users are routed through Base enrollment.', 'core-blueprint' ),
 							'input_data' => [ 'data-cb-core-two-factor-mode' => '' ],
@@ -78,14 +78,14 @@ $current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy
 				] )
 				. '</div>';
 
-			echo \CB\Core\UI\Field::render( [
+			echo \CoreBlueprint\Core\UI\Field::render( [
 				'control' => $policy_control,
 			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		<?php else : ?>
 			<?php
-			echo \CB\Core\UI\Field::render( [
-				'control' => '<strong>' . esc_html( \CB\Core\Security\TwoFactor\Policy::MODE_ENFORCE === $current_mode ? __( 'Enforce', 'core-blueprint' ) : __( 'Optional', 'core-blueprint' ) ) . '</strong>',
+			echo \CoreBlueprint\Core\UI\Field::render( [
+				'control' => '<strong>' . esc_html( \CoreBlueprint\Core\Security\TwoFactor\Policy::MODE_ENFORCE === $current_mode ? __( 'Enforce', 'core-blueprint' ) : __( 'Optional', 'core-blueprint' ) ) . '</strong>',
 			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>
 		<?php endif; ?>
@@ -123,7 +123,7 @@ $current_mode = (string) ( $policy['mode'] ?? \CB\Core\Security\TwoFactor\Policy
 	<?php
 	$authentication_state = (string) ob_get_clean();
 
-	echo \CB\Core\UI\Field::render( [
+	echo \CoreBlueprint\Core\UI\Field::render( [
 		'control' => $authentication_state,
 	] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	?>

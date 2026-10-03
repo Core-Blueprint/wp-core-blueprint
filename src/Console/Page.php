@@ -20,10 +20,10 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\Console;
+namespace CoreBlueprint\Core\Console;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\PageBase;
 
 defined( 'ABSPATH' ) || exit;
 

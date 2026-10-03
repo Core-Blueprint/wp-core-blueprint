@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Snippets;
+namespace CoreBlueprint\Core\Snippets;
 
-use CB\Core\Snippets\Conditions\Engine;
+use CoreBlueprint\Core\Snippets\Conditions\Engine;
 
 defined( 'ABSPATH' ) || exit;
 

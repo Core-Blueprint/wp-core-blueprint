@@ -52,25 +52,25 @@ Supported feature tokens are:
 - `format.json`
 - `format.csv`
 
-Declaring CSV support additionally requires `CB\Core\DataExchange\CsvEntityInterface`. Declaring mapping support additionally requires `CB\Core\DataExchange\MappingEntityInterface`; see `DATA-MAPPER.md`.
+Declaring CSV support additionally requires `CoreBlueprint\Core\DataExchange\CsvEntityInterface`. Declaring mapping support additionally requires `CoreBlueprint\Core\DataExchange\MappingEntityInterface`; see `DATA-MAPPER.md`.
 
 Example registration:
 
 ```php
 add_action( 'cb_core_register_interoperability_implementations', static function (): void {
-    \CB\Core\Interoperability\Registry::register_implementation( [
+    \CoreBlueprint\Core\Interoperability\Registry::register_implementation( [
         'provider'         => 'core-blueprint-example',
         'id'               => 'thing',
         'label'            => __( 'Things', 'core-blueprint-example' ),
         'description'      => __( 'Portable example records.', 'core-blueprint-example' ),
-        'contract_owner'   => \CB\Core\DataExchange\Foundation::CONTRACT_OWNER,
-        'contract'         => \CB\Core\DataExchange\Foundation::CONTRACT_ID,
-        'contract_version' => \CB\Core\DataExchange\Foundation::CONTRACT_VERSION,
+        'contract_owner'   => \CoreBlueprint\Core\DataExchange\Foundation::CONTRACT_OWNER,
+        'contract'         => \CoreBlueprint\Core\DataExchange\Foundation::CONTRACT_ID,
+        'contract_version' => \CoreBlueprint\Core\DataExchange\Foundation::CONTRACT_VERSION,
         'supports'         => [
-            \CB\Core\DataExchange\Foundation::SUPPORT_EXPORT,
-            \CB\Core\DataExchange\Foundation::SUPPORT_IMPORT,
-            \CB\Core\DataExchange\Foundation::SUPPORT_MAPPING,
-            \CB\Core\DataExchange\Foundation::SUPPORT_JSON,
+            \CoreBlueprint\Core\DataExchange\Foundation::SUPPORT_EXPORT,
+            \CoreBlueprint\Core\DataExchange\Foundation::SUPPORT_IMPORT,
+            \CoreBlueprint\Core\DataExchange\Foundation::SUPPORT_MAPPING,
+            \CoreBlueprint\Core\DataExchange\Foundation::SUPPORT_JSON,
         ],
         'factory'          => static fn() => new ExampleDataExchangeEntity(),
     ] );

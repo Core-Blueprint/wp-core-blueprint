@@ -19,15 +19,15 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Scan;
+namespace CoreBlueprint\Core\CLI\Commands\Scan;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Integrity\Scanner\ScanJobDispatcher;
-use CB\Core\Integrity\Scanner\ScanJobRunner;
-use CB\Core\Integrity\Scanner\ScanJobStatus;
-use CB\Core\Integrity\Scanner\ScanLockedException;
-use CB\Core\Integrity\State as IntegrityState;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobDispatcher;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobStatus;
+use CoreBlueprint\Core\Integrity\Scanner\ScanLockedException;
+use CoreBlueprint\Core\Integrity\State as IntegrityState;
 
 defined( 'ABSPATH' ) || exit;
 

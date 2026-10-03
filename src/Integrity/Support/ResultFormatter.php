@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Support;
+namespace CoreBlueprint\Core\Integrity\Support;
 
-use CB\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
 
 use function array_slice;
 use function array_map;

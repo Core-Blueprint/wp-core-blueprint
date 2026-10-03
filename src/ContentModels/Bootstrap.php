@@ -6,19 +6,19 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels;
+namespace CoreBlueprint\Core\ContentModels;
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\ContentModels\Admin\Actions;
-use CB\Core\ContentModels\Admin\MetaBoxes;
-use CB\Core\ContentModels\Admin\OptionPages;
-use CB\Core\ContentModels\Admin\Page;
-use CB\Core\ContentModels\Admin\TermMeta;
-use CB\Core\ContentModels\Admin\Transfer;
-use CB\Core\ContentModels\Admin\UserMeta;
-use CB\Core\ContentModels\Adapters\Bricks\Bootstrap as BricksAdapter;
-use CB\Core\ContentModels\Importers\NativeWordPress\Bootstrap as NativeImporter;
-use CB\Core\RequestContext;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\ContentModels\Admin\Actions;
+use CoreBlueprint\Core\ContentModels\Admin\MetaBoxes;
+use CoreBlueprint\Core\ContentModels\Admin\OptionPages;
+use CoreBlueprint\Core\ContentModels\Admin\Page;
+use CoreBlueprint\Core\ContentModels\Admin\TermMeta;
+use CoreBlueprint\Core\ContentModels\Admin\Transfer;
+use CoreBlueprint\Core\ContentModels\Admin\UserMeta;
+use CoreBlueprint\Core\ContentModels\Adapters\Bricks\Bootstrap as BricksAdapter;
+use CoreBlueprint\Core\ContentModels\Importers\NativeWordPress\Bootstrap as NativeImporter;
+use CoreBlueprint\Core\RequestContext;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -61,7 +61,7 @@ final class Bootstrap {
 	}
 
 	public static function register_i18n_filters(): void {
-		\CB\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
+		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
 		add_filter( 'cb_core_capability_catalog', [ __CLASS__, 'register_capability' ] );
 	}
 

@@ -25,7 +25,7 @@ On a standalone extension-owned wp-admin screen, enqueue the narrow Foundation
 primitive instead of the full Core Admin Theme:
 
 ```php
-\CB\Core\UI\Assets::enqueue_modals();
+\CoreBlueprint\Core\UI\Assets::enqueue_modals();
 ```
 
 The default presentation is `wp-native`. It loads the modal runtime, shared
@@ -165,7 +165,7 @@ Certificates can replace the long inline keyboard-shortcut sentence with a
 normal WordPress button. Its screen enqueue callback calls:
 
 ```php
-\CB\Core\UI\Assets::enqueue_modals();
+\CoreBlueprint\Core\UI\Assets::enqueue_modals();
 ```
 
 Its Designer module declares `@cb-core/modal` as a dependency and then opens:

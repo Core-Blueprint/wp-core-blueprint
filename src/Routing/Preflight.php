@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Routing;
+namespace CoreBlueprint\Core\Routing;
 
-use CB\Core\Setup\Fingerprint;
+use CoreBlueprint\Core\Setup\Fingerprint;
 use WP_Post_Type;
 use WP_Taxonomy;
 

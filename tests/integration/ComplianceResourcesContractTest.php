@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Compliance\Admin\Actions as ComplianceActions;
-use CB\Core\Compliance\Admin\Page as CompliancePage;
-use CB\Core\Compliance\Repository;
-use CB\Core\Compliance\Resolver;
-use CB\Core\Compliance\ResourceRegistry;
-use CB\Core\Compliance\Shortcode;
-use CB\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Compliance\Admin\Actions as ComplianceActions;
+use CoreBlueprint\Core\Compliance\Admin\Page as CompliancePage;
+use CoreBlueprint\Core\Compliance\Repository;
+use CoreBlueprint\Core\Compliance\Resolver;
+use CoreBlueprint\Core\Compliance\ResourceRegistry;
+use CoreBlueprint\Core\Compliance\Shortcode;
+use CoreBlueprint\Core\ExtensionRegistry;
 
 final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 
@@ -349,7 +349,7 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 		$modules  = (string) file_get_contents( $root . '/src/Admin/AdminModuleDefinitionsConsoleAux.php' );
 		$feedback = (string) file_get_contents( $root . '/assets/js/features/compliance-feedback.js' );
 
-		self::assertStringContainsString( 'use CB\\Core\\UI\\ObjectPicker;', $page );
+		self::assertStringContainsString( 'use CoreBlueprint\\Core\\UI\\ObjectPicker;', $page );
 		self::assertStringContainsString( 'ObjectPicker::render(', $page );
 		self::assertStringContainsString( 'cb-core-interactive-row', $page );
 		self::assertStringContainsString( 'cb-core-disclosure--compact', $page );
@@ -393,7 +393,7 @@ final class CB_Base_Compliance_Resources_Contract_Test extends WP_UnitTestCase {
 	public function test_compliance_has_a_dashboard_operations_tile(): void {
 		$dashboard = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Admin/Pages/Dashboard.php' );
 
-		self::assertStringContainsString( 'use CB\\Core\\Compliance\\Admin\\Page as CompliancePage;', $dashboard );
+		self::assertStringContainsString( 'use CoreBlueprint\\Core\\Compliance\\Admin\\Page as CompliancePage;', $dashboard );
 		self::assertStringContainsString( 'CompliancePage::SLUG', $dashboard );
 		self::assertStringContainsString( "'id'    => 'compliance'", $dashboard );
 		self::assertStringContainsString( "'title' => __( 'Compliance', 'core-blueprint' )", $dashboard );

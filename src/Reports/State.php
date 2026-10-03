@@ -9,7 +9,7 @@ declare(strict_types=1);
  * generate-report endpoint, the retention-pruner short-circuit in
  * {@see Storage::cleanup_expired_registered()}, and the master-switch UI
  * from the Dashboard; written through the canonical module activation
- * authority in {@see \CB\Core\Modules\ActivationRegistry}.
+ * authority in {@see \CoreBlueprint\Core\Modules\ActivationRegistry}.
  *
  * The `enabled` flag lives directly under the existing
  * `cb_core_settings['reports']` array (sibling of `branding` and
@@ -35,12 +35,12 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Reports;
+namespace CoreBlueprint\Core\Reports;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Settings;
 
-use CB\Core\Modules\ModuleStateInterface;
+use CoreBlueprint\Core\Modules\ModuleStateInterface;
 defined( 'ABSPATH' ) || exit;
 
 final class State implements ModuleStateInterface {

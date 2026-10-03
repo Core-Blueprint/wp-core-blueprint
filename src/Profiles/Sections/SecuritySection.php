@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles\Sections;
+namespace CoreBlueprint\Core\Profiles\Sections;
 
-use CB\Core\Profiles\ExactSection;
-use CB\Core\Profiles\SchemaGuard;
-use CB\Core\Profiles\StateGuard;
-use CB\Core\Security\LoginShield;
-use CB\Core\Security\ModuleRegistry;
-use CB\Core\Security\TwoFactor\Policy;
-use CB\Core\Security\TwoFactor\PolicyMutation;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Profiles\ExactSection;
+use CoreBlueprint\Core\Profiles\SchemaGuard;
+use CoreBlueprint\Core\Profiles\StateGuard;
+use CoreBlueprint\Core\Security\LoginShield;
+use CoreBlueprint\Core\Security\ModuleRegistry;
+use CoreBlueprint\Core\Security\TwoFactor\Policy;
+use CoreBlueprint\Core\Security\TwoFactor\PolicyMutation;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

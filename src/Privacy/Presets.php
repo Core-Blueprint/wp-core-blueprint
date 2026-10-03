@@ -24,11 +24,11 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Privacy;
+namespace CoreBlueprint\Core\Privacy;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Log\Verbosity;
-use CB\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\Verbosity;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
 
 defined( 'ABSPATH' ) || exit;
 

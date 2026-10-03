@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Editor\Assets as DesignEditorAssets;
+use CoreBlueprint\Core\Design\Editor\Assets as DesignEditorAssets;
 
 final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 

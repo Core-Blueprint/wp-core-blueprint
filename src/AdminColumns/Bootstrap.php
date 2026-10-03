@@ -6,11 +6,11 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\AdminColumns;
+namespace CoreBlueprint\Core\AdminColumns;
 
-use CB\Core\AdminColumns\Admin\Ajax;
-use CB\Core\AdminColumns\Admin\ScreenSettings;
-use CB\Core\RequestContext;
+use CoreBlueprint\Core\AdminColumns\Admin\Ajax;
+use CoreBlueprint\Core\AdminColumns\Admin\ScreenSettings;
+use CoreBlueprint\Core\RequestContext;
 
 defined( 'ABSPATH' ) || exit;
 

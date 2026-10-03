@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Snippets;
+namespace CoreBlueprint\Core\Snippets;
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\RequestContext;
-use CB\Core\Snippets\Admin\Actions;
-use CB\Core\Snippets\Admin\Page;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\RequestContext;
+use CoreBlueprint\Core\Snippets\Admin\Actions;
+use CoreBlueprint\Core\Snippets\Admin\Page;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -91,7 +91,7 @@ final class Bootstrap {
 
 	/** Register translation-bearing metadata filters after the textdomain is loaded. */
 	public static function register_i18n_filters(): void {
-		\CB\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
+		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
 		add_filter( 'cb_core_capability_catalog', [ __CLASS__, 'register_capability' ] );
 	}
 

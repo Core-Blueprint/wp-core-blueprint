@@ -15,7 +15,7 @@ final class CB_Base_Admin_Navigation_Boundary_Contract_Test extends WP_UnitTestC
 		$_GET['page'] = 'core-blueprint-preferences';
 		$_GET['tab']  = 'admin-navigation';
 		try {
-			$context = \CB\Core\Admin\ScreenContext::from_request( 'core-blueprint_page_core-blueprint-preferences' );
+			$context = \CoreBlueprint\Core\Admin\ScreenContext::from_request( 'core-blueprint_page_core-blueprint-preferences' );
 			self::assertSame( 'core-blueprint-preferences', $context->page() );
 			self::assertSame( 'admin-navigation', $context->tab() );
 		} finally {

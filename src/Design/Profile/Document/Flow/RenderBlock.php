@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Design\Profile\Document\Flow;
+namespace CoreBlueprint\Core\Design\Profile\Document\Flow;
 
-use CB\Core\Design\Profile\Document\Render\ImageDataUri;
+use CoreBlueprint\Core\Design\Profile\Document\Render\ImageDataUri;
 
 defined( 'ABSPATH' ) || exit;
 

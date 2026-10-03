@@ -6,13 +6,13 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels\Importers\NativeWordPress;
+namespace CoreBlueprint\Core\ContentModels\Importers\NativeWordPress;
 
-use CB\Core\Admin\MutationAcknowledgement;
-use CB\Core\ContentModels\Admin\Page;
-use CB\Core\ContentModels\FieldTypes;
-use CB\Core\ContentModels\State;
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\ContentModels\Admin\Page;
+use CoreBlueprint\Core\ContentModels\FieldTypes;
+use CoreBlueprint\Core\ContentModels\State;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 

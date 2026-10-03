@@ -25,7 +25,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD;
+namespace CoreBlueprint\Core\HUD;
 
 defined( 'ABSPATH' ) || exit;
 

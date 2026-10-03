@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Snippets\Schema;
+use CoreBlueprint\Core\Snippets\Schema;
 
 final class CB_Base_Snippets_Schema_Contract_Test extends WP_UnitTestCase {
 

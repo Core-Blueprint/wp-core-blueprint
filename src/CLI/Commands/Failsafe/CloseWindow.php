@@ -12,19 +12,19 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Failsafe;
+namespace CoreBlueprint\Core\CLI\Commands\Failsafe;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
 
 defined( 'ABSPATH' ) || exit;
 
 final class CloseWindow implements CommandInterface {
 
 	public function execute( array $args ): Result {
-		$layers_before = \CB\Core\Security\Failsafe::active_layers();
-		\CB\Core\Security\Failsafe::close_bypass_window();
-		$layers_after = \CB\Core\Security\Failsafe::active_layers();
+		$layers_before = \CoreBlueprint\Core\Security\Failsafe::active_layers();
+		\CoreBlueprint\Core\Security\Failsafe::close_bypass_window();
+		$layers_after = \CoreBlueprint\Core\Security\Failsafe::active_layers();
 
 		$lines = [];
 		if ( ! empty( $layers_before['transient'] ) ) {
@@ -57,7 +57,7 @@ final class CloseWindow implements CommandInterface {
 	 * @when after_wp_load
 	 */
 	public function __invoke( array $args, array $assoc_args ): void {
-		\CB\Core\Security\Failsafe::close_bypass_window();
+		\CoreBlueprint\Core\Security\Failsafe::close_bypass_window();
 		\WP_CLI::success( 'Any active bypass window has been closed.' );
 	}
 }

@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core;
+namespace CoreBlueprint\Core;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,11 +21,11 @@ final class SettingsDefaults {
 		return [
 			'site_mode'      => 'production',
 			'shield_enabled' => true,
-			'environment_governance' => \CB\Core\Environment\Governance::default_policy(),
-			'routing'        => \CB\Core\Routing\Policy::defaults(),
+			'environment_governance' => \CoreBlueprint\Core\Environment\Governance::default_policy(),
+			'routing'        => \CoreBlueprint\Core\Routing\Policy::defaults(),
 			'modules'        => [],
-			'login_shield'   => \CB\Core\Security\LoginShield::default_config(),
-			'two_factor'     => \CB\Core\Security\TwoFactor\Policy::default_config(),
+			'login_shield'   => \CoreBlueprint\Core\Security\LoginShield::default_config(),
+			'two_factor'     => \CoreBlueprint\Core\Security\TwoFactor\Policy::default_config(),
 			'audit'          => [
 				'email_recipient' => '',
 				'email_alerts'    => [
@@ -89,7 +89,7 @@ final class SettingsDefaults {
 					'text_scale'         => 'standard',
 				],
 				'composer'           => [
-					'maintenance' => \CB\Core\Reports\Composer\MaintenanceTemplate::defaults(),
+					'maintenance' => \CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate::defaults(),
 				],
 			],
 			'permissions'    => [

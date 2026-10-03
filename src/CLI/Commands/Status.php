@@ -16,15 +16,15 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands;
+namespace CoreBlueprint\Core\CLI\Commands;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Integrity\Storage\ResultRepository as ScanResults;
-use CB\Core\Integrity\State as IntegrityState;
-use CB\Core\Notes\State as NotesState;
-use CB\Core\Reports\State as ReportsState;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository as ScanResults;
+use CoreBlueprint\Core\Integrity\State as IntegrityState;
+use CoreBlueprint\Core\Notes\State as NotesState;
+use CoreBlueprint\Core\Reports\State as ReportsState;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

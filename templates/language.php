@@ -5,8 +5,8 @@
  *
  * Full interactive locale + description-mode switcher replacing the M1 stub.
  *
- * Variables (set by \CB\Core\Admin\Admin::render_language):
- *   $allowed       string[] - from \CB\Core\Locale::allowed()
+ * Variables (set by \CoreBlueprint\Core\Admin\Admin::render_language):
+ *   $allowed       string[] - from \CoreBlueprint\Core\Locale::allowed()
  *   $current       string   - resolved locale for current user
  *   $user_pref     string   - raw user_meta, '' = inherit, 'auto' = auto
  *   $site_default  string   - raw option, 'auto' possible
@@ -52,7 +52,7 @@ $can_manage_site = current_user_can( 'manage_options' );
 			</div>
 		<?php endif; ?>
 
-		<?php echo \CB\Core\UI\FormStatus::render( [ 'block' => true, 'class' => 'cb-core-lang-status' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+		<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'block' => true, 'class' => 'cb-core-lang-status' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 	</div>
 
 	<!-- ─── Locale ─── -->
@@ -69,7 +69,7 @@ $can_manage_site = current_user_can( 'manage_options' );
 		?>
 			<select id="cb-core-locale-select" class="regular-text cb-core-language-select">
 					<?php foreach ( $allowed as $code ) :
-						$label    = \CB\Core\Locale::label( $code );
+						$label    = \CoreBlueprint\Core\Locale::label( $code );
 						$is_site  = ( $code === $site_default );
 						$selected_user = ( $code === $user_pref );
 					?>
@@ -82,15 +82,15 @@ $can_manage_site = current_user_can( 'manage_options' );
 					<?php endforeach; ?>
 			</select>
 		<?php
-		echo \CB\Core\UI\Field::render( [
+		echo \CoreBlueprint\Core\UI\Field::render( [
 			'label'     => __( 'Language', 'core-blueprint' ),
 			'label_for' => 'cb-core-locale-select',
 			'control'   => ob_get_clean(),
 			'hint'      => sprintf(
 				/* translators: 1: resolved locale label, 2: site default label. */
 				__( 'Currently active: %1$s · Site default: %2$s', 'core-blueprint' ),
-				\CB\Core\Locale::label( $current ),
-				\CB\Core\Locale::label( $site_default )
+				\CoreBlueprint\Core\Locale::label( $current ),
+				\CoreBlueprint\Core\Locale::label( $site_default )
 			),
 		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
 		?>
@@ -104,7 +104,7 @@ $can_manage_site = current_user_can( 'manage_options' );
 
 	<!-- ─── Description mode ─── -->
 
-	<?php if ( class_exists( '\CB\Core\UI' ) ) : ?>
+	<?php if ( class_exists( '\CoreBlueprint\Core\UI' ) ) : ?>
 	<section class="cb-core-preferences-section cb-core-pref-descmode cb-core-section--descmode"
 		data-user-pref="<?php echo esc_attr( $desc_user ); ?>"
 		data-site-default="<?php echo esc_attr( $desc_site ); ?>"
@@ -146,7 +146,7 @@ $can_manage_site = current_user_can( 'manage_options' );
 				$selected_site = ( ! $opt['user_only'] && $key === $desc_site );
 			?>
 				<?php
-				echo \CB\Core\UI\RadioCard::render( [
+				echo \CoreBlueprint\Core\UI\RadioCard::render( [
 					'variant'       => 'checkable',
 					'name'          => 'cb-core-desc-mode',
 					'value'         => $key,

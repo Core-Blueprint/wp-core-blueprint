@@ -4,7 +4,7 @@ Status: **public v1 Core Admin Design Foundation contract**.
 
 ## Purpose
 
-`CB\Core\UI\IntegrationGrid` is the shared presentation boundary for integration/readiness cards on registered Core Blueprint admin pages.
+`CoreBlueprint\Core\UI\IntegrationGrid` is the shared presentation boundary for integration/readiness cards on registered Core Blueprint admin pages.
 
 Base owns the generic visual composition. Consumers own all integration meaning and business logic.
 
@@ -20,7 +20,7 @@ Base owns:
 - description presentation;
 - CTA/footer presentation;
 - spacing, borders, hover/focus treatment and dark/light presentation;
-- mapping Integration Grid states onto the existing `CB\Core\UI\Status` primitive.
+- mapping Integration Grid states onto the existing `CoreBlueprint\Core\UI\Status` primitive.
 
 Consumers own:
 
@@ -37,7 +37,7 @@ Base must not infer provider, plugin, builder or product semantics from an Integ
 ## Public renderer
 
 ```php
-use CB\Core\UI\IntegrationGrid;
+use CoreBlueprint\Core\UI\IntegrationGrid;
 
 echo IntegrationGrid::render( [
     [

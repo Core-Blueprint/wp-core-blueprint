@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\ContentModels\Admin\Actions;
-use CB\Core\ContentModels\Admin\MetaBoxes;
-use CB\Core\ContentModels\Admin\OptionPages;
-use CB\Core\ContentModels\Admin\TermMeta;
-use CB\Core\ContentModels\Admin\Transfer;
-use CB\Core\ContentModels\Admin\UserMeta;
-use CB\Core\ContentModels\Bootstrap as ContentModelsBootstrap;
-use CB\Core\ContentModels\Importers\NativeWordPress\Bootstrap as NativeImporter;
-use CB\Core\RequestContext;
+use CoreBlueprint\Core\ContentModels\Admin\Actions;
+use CoreBlueprint\Core\ContentModels\Admin\MetaBoxes;
+use CoreBlueprint\Core\ContentModels\Admin\OptionPages;
+use CoreBlueprint\Core\ContentModels\Admin\TermMeta;
+use CoreBlueprint\Core\ContentModels\Admin\Transfer;
+use CoreBlueprint\Core\ContentModels\Admin\UserMeta;
+use CoreBlueprint\Core\ContentModels\Bootstrap as ContentModelsBootstrap;
+use CoreBlueprint\Core\ContentModels\Importers\NativeWordPress\Bootstrap as NativeImporter;
+use CoreBlueprint\Core\RequestContext;
 
 final class CB_Base_Content_Models_Bootstrap_Boundary_Test extends WP_UnitTestCase {
 

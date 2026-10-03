@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\MutationAcknowledgement;
-use CB\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\Governance\EventRegistry;
 
 final class MutationAcknowledgementDirectConsumersContractTest extends WP_UnitTestCase {
 

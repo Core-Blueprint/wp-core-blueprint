@@ -37,9 +37,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD;
+namespace CoreBlueprint\Core\HUD;
 
-use CB\Core\HUD\Brand\BrandRegistry;
+use CoreBlueprint\Core\HUD\Brand\BrandRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -181,7 +181,7 @@ final class HUD {
 					// (CB-cap-gated). Admins without operator caps don't see
 					// it; their HUD has no Preferences page to link to anyway.
 					if ( current_user_can( 'cb_view_permissions' ) ) :
-						$prefs_url = admin_url( 'admin.php?page=' . \CB\Core\Admin\Admin::PREFERENCES_SLUG );
+						$prefs_url = admin_url( 'admin.php?page=' . \CoreBlueprint\Core\Admin\Admin::PREFERENCES_SLUG );
 						?>
 						<a
 							class="cb-hud__header-action cb-hud__header-action--preferences"
@@ -427,7 +427,7 @@ final class HUD {
 	 * the page-level Logs/Reports switchers use.
 	 */
 	private static function render_mode_switcher(): void {
-		\CB\Core\UI::render_mode_switcher( [
+		\CoreBlueprint\Core\UI::render_mode_switcher( [
 			'compact'    => true,
 			'cycle'      => true,
 			'aria_label' => __( 'Description mode (click to cycle)', 'core-blueprint' ),
@@ -476,7 +476,7 @@ final class HUD {
 		$status_state  = '';
 		$status_detail = '';
 		if ( '' !== $status_id ) {
-			$status_shape = \CB\Core\Modules\Status::get( $status_id );
+			$status_shape = \CoreBlueprint\Core\Modules\Status::get( $status_id );
 			if ( is_array( $status_shape ) ) {
 				$status_state  = (string) $status_shape['state'];
 				$status_detail = (string) $status_shape['detail'];

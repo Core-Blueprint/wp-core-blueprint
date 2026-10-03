@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\UI;
+namespace CoreBlueprint\Core\UI;
 
-use CB\Core\Permissions\CapabilityCatalog;
+use CoreBlueprint\Core\Permissions\CapabilityCatalog;
 
 defined( 'ABSPATH' ) || exit;
 

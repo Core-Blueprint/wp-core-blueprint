@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Snippets;
+namespace CoreBlueprint\Core\Snippets;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Snippets\Validation\PhpValidator;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Snippets\Validation\PhpValidator;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -11,21 +11,21 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Modules;
+namespace CoreBlueprint\Core\Modules;
 
-use CB\Core\ContentModels\State as ContentModelsState;
-use CB\Core\Integrity\State as CoreScannerState;
-use CB\Core\Mail\State as MailState;
-use CB\Core\MediaFormats\State as MediaFormatsState;
-use CB\Core\MediaReplace\Capabilities as MediaReplaceCapabilities;
-use CB\Core\MediaReplace\State as MediaReplaceState;
-use CB\Core\Notes\State as NotesState;
-use CB\Core\PackageDownload\State as PackageDownloadState;
-use CB\Core\Permissions\UserRolesState;
-use CB\Core\Reports\State as ReportsState;
-use CB\Core\Security\CoreShieldState;
-use CB\Core\Security\LoginShieldState;
-use CB\Core\Snippets\State as SnippetsState;
+use CoreBlueprint\Core\ContentModels\State as ContentModelsState;
+use CoreBlueprint\Core\Integrity\State as CoreScannerState;
+use CoreBlueprint\Core\Mail\State as MailState;
+use CoreBlueprint\Core\MediaFormats\State as MediaFormatsState;
+use CoreBlueprint\Core\MediaReplace\Capabilities as MediaReplaceCapabilities;
+use CoreBlueprint\Core\MediaReplace\State as MediaReplaceState;
+use CoreBlueprint\Core\Notes\State as NotesState;
+use CoreBlueprint\Core\PackageDownload\State as PackageDownloadState;
+use CoreBlueprint\Core\Permissions\UserRolesState;
+use CoreBlueprint\Core\Reports\State as ReportsState;
+use CoreBlueprint\Core\Security\CoreShieldState;
+use CoreBlueprint\Core\Security\LoginShieldState;
+use CoreBlueprint\Core\Snippets\State as SnippetsState;
 
 defined( 'ABSPATH' ) || exit;
 

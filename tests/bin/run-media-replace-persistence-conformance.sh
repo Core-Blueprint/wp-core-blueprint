@@ -12,8 +12,8 @@ fail(){ echo "[C2-C] FAIL: $*" >&2; exit 1; }
 eq(){ [[ "$1" == "$2" ]] || fail "$3 (expected '$2', got '$1')"; }
 neq(){ [[ "$1" != "$2" ]] || fail "$3 (both were '$1')"; }
 contains(){ grep -Fq "$2" <<<"$1" || { printf '%s\n' "$1" >&2; fail "$3 (missing: $2)"; }; }
-audit_count(){ wp_cli_eval_args '$q=\CB\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);echo (int)$q["total"];' "$1"; }
-audit_context(){ wp_cli_eval_args '$q=\CB\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);$r=$q["rows"][0]??null;echo $r?wp_json_encode($r->context_decoded??[]):"";' "$1"; }
+audit_count(){ wp_cli_eval_args '$q=\CoreBlueprint\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);echo (int)$q["total"];' "$1"; }
+audit_context(){ wp_cli_eval_args '$q=\CoreBlueprint\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);$r=$q["rows"][0]??null;echo $r?wp_json_encode($r->context_decoded??[]):"";' "$1"; }
 state_hash(){ wp_cli_eval_args '$id=(int)$args[0];$keys=["_cb_media_replaced_at","_cb_media_replaced_by","_cb_media_replace_revision"];$m=[];foreach($keys as $k){$x=metadata_exists("post",$id,$k);$m[$k]=["exists"=>$x,"value"=>$x?get_post_meta($id,$k,true):null];}$x=metadata_exists("post",$id,"_wp_attachment_metadata");$s=["attached"=>wp_normalize_path((string)get_attached_file($id,true)),"metadata_exists"=>$x,"metadata"=>$x?get_post_meta($id,"_wp_attachment_metadata",true):null,"replacement_meta"=>$m];echo hash("sha256",serialize($s));' "$1"; }
 metadata_hash(){ wp_cli_eval_args '$id=(int)$args[0];$x=metadata_exists("post",$id,"_wp_attachment_metadata");echo $x?hash("sha256",serialize(get_post_meta($id,"_wp_attachment_metadata",true))):"none";' "$1"; }
 file_hash(){ wp_cli_eval_args '$f=get_attached_file((int)$args[0],true);echo is_string($f)&&is_file($f)?hash_file("sha256",$f):"missing";' "$1"; }
@@ -75,12 +75,12 @@ PY
 operator_id="$(wp_cli user create cb-c2c-operator cb-c2c-operator@example.test --role=administrator --user_pass=cb-c2c-operator-pass --porcelain)"
 add="$(wp_cli cb operator add "$operator_id")"
 contains "$add" 'promoted to CB Operator' 'Could not create approved Media Replace operator'
-wp_cli eval '\CB\Core\MediaReplace\State::set_enabled(true,"c2c-conformance");' >/dev/null
+wp_cli eval '\CoreBlueprint\Core\MediaReplace\State::set_enabled(true,"c2c-conformance");' >/dev/null
 
 attachment_id="$(wp_cli_eval_args '$src=$args[0];$uid=(int)$args[1];$up=wp_upload_dir();if(!empty($up["error"]))throw new RuntimeException((string)$up["error"]);wp_mkdir_p($up["path"]);$dest=wp_normalize_path(trailingslashit($up["path"])."cb-c2c-media.wav");if(!copy($src,$dest))throw new RuntimeException("copy failed");$ft=wp_check_filetype(wp_basename($dest),null);$id=wp_insert_attachment(["post_mime_type"=>(string)($ft["type"]??"audio/wav"),"post_title"=>"C2-C Media Replace fixture","post_status"=>"inherit","post_author"=>$uid],$dest);if(is_wp_error($id)||!$id)throw new RuntimeException("attachment insert failed");update_attached_file((int)$id,$dest);require_once ABSPATH."wp-admin/includes/image.php";$meta=wp_generate_attachment_metadata((int)$id,$dest);if(!is_array($meta)||[]===$meta)throw new RuntimeException("initial metadata generation failed");wp_update_attachment_metadata((int)$id,$meta);echo (int)$id;' "$fixture_dir/initial.wav" "$operator_id")"
 [[ "$attachment_id" =~ ^[0-9]+$ ]] || fail 'Initial attachment fixture did not return an ID'
 
-eq "$(wp_cli_eval_args 'wp_set_current_user((int)$args[0]);echo current_user_can(\CB\Core\MediaReplace\Capabilities::REPLACE_MEDIA,(int)$args[1])?"yes":"no";' "$operator_id" "$attachment_id")" yes 'Approved operator cannot replace its attachment'
+eq "$(wp_cli_eval_args 'wp_set_current_user((int)$args[0]);echo current_user_can(\CoreBlueprint\Core\MediaReplace\Capabilities::REPLACE_MEDIA,(int)$args[1])?"yes":"no";' "$operator_id" "$attachment_id")" yes 'Approved operator cannot replace its attachment'
 initial_metadata_hash="$(metadata_hash "$attachment_id")"
 [[ "$initial_metadata_hash" != "none" ]] || fail 'Initial attachment has no durable metadata'
 initial_file_hash="$(file_hash "$attachment_id")"

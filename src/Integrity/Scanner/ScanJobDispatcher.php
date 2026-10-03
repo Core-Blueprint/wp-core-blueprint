@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Scanner;
+namespace CoreBlueprint\Core\Integrity\Scanner;
 
-use CB\Core\Integrity\Bootstrap;
+use CoreBlueprint\Core\Integrity\Bootstrap;
 use RuntimeException;
 
 use function bin2hex;

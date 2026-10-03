@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Lightweight subsystem bootstrap for the audit/system-log surface.
  * Currently only registers the HUD item that links to the Logs admin
  * page - the audit-log writer/reader/retention machinery already wires
- * itself in {@see \CB\Core\Core::init_hooks()} alongside DB migrations.
+ * itself in {@see \CoreBlueprint\Core\Core::init_hooks()} alongside DB migrations.
  *
  * Kept as a separate Bootstrap class so that future Logs-side work
  * (per-event filters, exported-log notifications, etc.) has a natural
@@ -17,9 +17,9 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\Log;
+namespace CoreBlueprint\Core\Log;
 
-use CB\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Admin;
 
 defined( 'ABSPATH' ) || exit;
 

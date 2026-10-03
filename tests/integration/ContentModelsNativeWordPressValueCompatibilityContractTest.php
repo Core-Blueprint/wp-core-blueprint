@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\ContentModels\Importers\NativeWordPress\ValueCompatibility;
+use CoreBlueprint\Core\ContentModels\Importers\NativeWordPress\ValueCompatibility;
 
 final class CB_Base_Content_Models_Native_Object_Fixture {
 	public static bool $woke = false;

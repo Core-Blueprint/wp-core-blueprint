@@ -7,10 +7,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Compliance;
+namespace CoreBlueprint\Core\Compliance;
 
-use CB\Core\Compliance\Admin\Actions;
-use CB\Core\Compliance\Admin\ObjectSearch;
+use CoreBlueprint\Core\Compliance\Admin\Actions;
+use CoreBlueprint\Core\Compliance\Admin\ObjectSearch;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -11,12 +11,12 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin\Pages;
+namespace CoreBlueprint\Core\Admin\Pages;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\Admin\SettingsRegistry;
-use CB\Core\UI\Card;
-use CB\Core\UI\Icon;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\SettingsRegistry;
+use CoreBlueprint\Core\UI\Card;
+use CoreBlueprint\Core\UI\Icon;
 
 defined( 'ABSPATH' ) || exit;
 

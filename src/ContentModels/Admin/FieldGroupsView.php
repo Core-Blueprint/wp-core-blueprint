@@ -4,15 +4,15 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since 1.0.0
  */
-namespace CB\Core\ContentModels\Admin;
+namespace CoreBlueprint\Core\ContentModels\Admin;
 
-use CB\Core\ContentModels\FieldTypes;
-use CB\Core\ContentModels\Repository;
-use CB\Core\ContentModels\Runtime;
-use CB\Core\ContentModels\State;
-use CB\Core\UI\ChoiceGroup;
-use CB\Core\UI\Icon;
-use CB\Core\UI\Status as StatusUi;
+use CoreBlueprint\Core\ContentModels\FieldTypes;
+use CoreBlueprint\Core\ContentModels\Repository;
+use CoreBlueprint\Core\ContentModels\Runtime;
+use CoreBlueprint\Core\ContentModels\State;
+use CoreBlueprint\Core\UI\ChoiceGroup;
+use CoreBlueprint\Core\UI\Icon;
+use CoreBlueprint\Core\UI\Status as StatusUi;
 
 defined( 'ABSPATH' ) || exit;
 

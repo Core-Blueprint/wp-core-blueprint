@@ -1,10 +1,10 @@
 <?php
-namespace CB\Core\MediaFormats\Vendor\SvgSanitize\data;
+namespace CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data;
 
 /**
  * Interface TagInterface
  *
- * @package CB\Core\MediaFormats\Vendor\SvgSanitize\tags
+ * @package CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\tags
  */
 interface TagInterface
 {

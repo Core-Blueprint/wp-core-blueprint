@@ -10,7 +10,7 @@ declare(strict_types=1);
  *   3. Approved baseline    - operator-approved hash snapshot, autoload off.
  *
  * Configuration (schedule, scan toggles, max_visible_findings) lives in
- * the central `cb_core_settings['integrity']` subkey via {@see \CB\Core\Settings},
+ * the central `cb_core_settings['integrity']` subkey via {@see \CoreBlueprint\Core\Settings},
  * NOT in a separate option. Read via {@see settings()}, write via
  * {@see saveSettings()} which delegates to Settings::set_key().
  *
@@ -18,12 +18,12 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Integrity\Storage;
+namespace CoreBlueprint\Core\Integrity\Storage;
 
-use CB\Core\Integrity\Support\DirectoryHasher;
-use CB\Core\Integrity\Support\PathGuard;
-use CB\Core\Integrity\Support\ResultFormatter;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Integrity\Support\DirectoryHasher;
+use CoreBlueprint\Core\Integrity\Support\PathGuard;
+use CoreBlueprint\Core\Integrity\Support\ResultFormatter;
+use CoreBlueprint\Core\Settings;
 
 use function array_filter;
 use function array_merge;

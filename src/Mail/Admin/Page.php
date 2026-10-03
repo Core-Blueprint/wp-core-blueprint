@@ -10,25 +10,25 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail\Admin;
+namespace CoreBlueprint\Core\Mail\Admin;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\Admin\TabNav;
-use CB\Core\Design\Editor\Assets as DesignEditorAssets;
-use CB\Core\Mail\ConflictDetector;
-use CB\Core\Mail\DeliveryState;
-use CB\Core\Mail\Designer\BindingRegistry;
-use CB\Core\Mail\Designer\ComponentRegistry;
-use CB\Core\Mail\Designer\Renderer as DesignerRenderer;
-use CB\Core\Mail\Designer\TemplateRepository;
-use CB\Core\Mail\Designer\TemplateRegistry;
-use CB\Core\Mail\DesignerState;
-use CB\Core\Mail\Runtime;
-use CB\Core\Mail\Secrets;
-use CB\Core\Mail\SenderIdentityRegistry;
-use CB\Core\Mail\Settings;
-use CB\Core\UI\Notice;
-use CB\Core\UI\Status;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\TabNav;
+use CoreBlueprint\Core\Design\Editor\Assets as DesignEditorAssets;
+use CoreBlueprint\Core\Mail\ConflictDetector;
+use CoreBlueprint\Core\Mail\DeliveryState;
+use CoreBlueprint\Core\Mail\Designer\BindingRegistry;
+use CoreBlueprint\Core\Mail\Designer\ComponentRegistry;
+use CoreBlueprint\Core\Mail\Designer\Renderer as DesignerRenderer;
+use CoreBlueprint\Core\Mail\Designer\TemplateRepository;
+use CoreBlueprint\Core\Mail\Designer\TemplateRegistry;
+use CoreBlueprint\Core\Mail\DesignerState;
+use CoreBlueprint\Core\Mail\Runtime;
+use CoreBlueprint\Core\Mail\Secrets;
+use CoreBlueprint\Core\Mail\SenderIdentityRegistry;
+use CoreBlueprint\Core\Mail\Settings;
+use CoreBlueprint\Core\UI\Notice;
+use CoreBlueprint\Core\UI\Status;
 
 defined( 'ABSPATH' ) || exit;
 

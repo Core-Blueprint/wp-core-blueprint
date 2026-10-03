@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Security\TwoFactor;
+namespace CoreBlueprint\Core\Security\TwoFactor;
 
 use InvalidArgumentException;
 use RuntimeException;

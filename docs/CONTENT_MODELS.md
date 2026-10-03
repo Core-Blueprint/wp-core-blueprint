@@ -90,7 +90,7 @@ REST exposure is opt-in per field. Registered meta receives a typed schema match
 
 ## Public developer API
 
-Plugins can register runtime-owned Content Models through `CB\Core\ContentModels\Api`. Managed definitions are runtime-only, carry an owner identifier and are locked against normal admin mutation.
+Plugins can register runtime-owned Content Models through `CoreBlueprint\Core\ContentModels\Api`. Managed definitions are runtime-only, carry an owner identifier and are locked against normal admin mutation.
 
 Registration is intended during the public registration hook, before Content Models runtime registration:
 

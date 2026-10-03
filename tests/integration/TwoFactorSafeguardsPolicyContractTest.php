@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\AdminModuleCatalog;
-use CB\Core\Admin\Pages\Safeguards;
-use CB\Core\Admin\ScreenAssetRegistry;
-use CB\Core\Admin\ScreenContext;
-use CB\Core\Ajax\Handlers\TwoFactorPolicy;
-use CB\Core\Ajax\SecurityRouter;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\RolePolicySchema;
-use CB\Core\Permissions\Roles;
-use CB\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Admin\AdminModuleCatalog;
+use CoreBlueprint\Core\Admin\Pages\Safeguards;
+use CoreBlueprint\Core\Admin\ScreenAssetRegistry;
+use CoreBlueprint\Core\Admin\ScreenContext;
+use CoreBlueprint\Core\Ajax\Handlers\TwoFactorPolicy;
+use CoreBlueprint\Core\Ajax\SecurityRouter;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\RolePolicySchema;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
 
 final class CB_Base_Two_Factor_Safeguards_Policy_Contract_Test extends WP_UnitTestCase {
 

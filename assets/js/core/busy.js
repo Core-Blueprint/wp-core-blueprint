@@ -6,7 +6,7 @@
  *   window.cbCore.busy.region(element, isBusy)
  *   window.cbCore.busy.spinner({ decorative })
  *
- * @package CB\Core
+ * @package CoreBlueprint\Core
  * @since   1.0.0
  */
 

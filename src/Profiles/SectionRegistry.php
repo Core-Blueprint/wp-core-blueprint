@@ -1,24 +1,24 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles;
+namespace CoreBlueprint\Core\Profiles;
 
-use CB\Core\ExtensionRegistry;
-use CB\Core\Profiles\Sections\AIGovernanceSection;
-use CB\Core\Profiles\Sections\AdminColumnsSection;
-use CB\Core\Profiles\Sections\AdminNavigationSection;
-use CB\Core\Profiles\Sections\AdminNoticesSection;
-use CB\Core\Profiles\Sections\AuditNotificationsSection;
-use CB\Core\Profiles\Sections\ContentModelsSection;
-use CB\Core\Profiles\Sections\EnvironmentGovernanceSection;
-use CB\Core\Profiles\Sections\IntegritySection;
-use CB\Core\Profiles\Sections\MediaFormatsSection;
-use CB\Core\Profiles\Sections\ModuleStatesSection;
-use CB\Core\Profiles\Sections\NotesSection;
-use CB\Core\Profiles\Sections\PermissionsSection;
-use CB\Core\Profiles\Sections\PrivacySection;
-use CB\Core\Profiles\Sections\ReportsSection;
-use CB\Core\Profiles\Sections\SecuritySection;
+use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Profiles\Sections\AIGovernanceSection;
+use CoreBlueprint\Core\Profiles\Sections\AdminColumnsSection;
+use CoreBlueprint\Core\Profiles\Sections\AdminNavigationSection;
+use CoreBlueprint\Core\Profiles\Sections\AdminNoticesSection;
+use CoreBlueprint\Core\Profiles\Sections\AuditNotificationsSection;
+use CoreBlueprint\Core\Profiles\Sections\ContentModelsSection;
+use CoreBlueprint\Core\Profiles\Sections\EnvironmentGovernanceSection;
+use CoreBlueprint\Core\Profiles\Sections\IntegritySection;
+use CoreBlueprint\Core\Profiles\Sections\MediaFormatsSection;
+use CoreBlueprint\Core\Profiles\Sections\ModuleStatesSection;
+use CoreBlueprint\Core\Profiles\Sections\NotesSection;
+use CoreBlueprint\Core\Profiles\Sections\PermissionsSection;
+use CoreBlueprint\Core\Profiles\Sections\PrivacySection;
+use CoreBlueprint\Core\Profiles\Sections\ReportsSection;
+use CoreBlueprint\Core\Profiles\Sections\SecuritySection;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -10,17 +10,17 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup\Admin;
+namespace CoreBlueprint\Core\Setup\Admin;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\Admin\Tabbed;
-use CB\Core\Setup\Evidence;
-use CB\Core\Setup\Lifecycle;
-use CB\Core\Setup\Presentation;
-use CB\Core\Setup\ReviewRepository;
-use CB\Core\Setup\StatusResolver;
-use CB\Core\Setup\Summary;
-use CB\Core\UI\Icon;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\Tabbed;
+use CoreBlueprint\Core\Setup\Evidence;
+use CoreBlueprint\Core\Setup\Lifecycle;
+use CoreBlueprint\Core\Setup\Presentation;
+use CoreBlueprint\Core\Setup\ReviewRepository;
+use CoreBlueprint\Core\Setup\StatusResolver;
+use CoreBlueprint\Core\Setup\Summary;
+use CoreBlueprint\Core\UI\Icon;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -15,7 +15,7 @@ The v1 candidate becomes frozen only after the Designer Golden Standard field pr
 Public Flow classes live under:
 
 ```php
-CB\Core\Design\Profile\Document\Flow
+CoreBlueprint\Core\Design\Profile\Document\Flow
 ```
 
 The principal server-side types are:

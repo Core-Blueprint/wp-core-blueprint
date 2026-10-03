@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Support;
+namespace CoreBlueprint\Core\Integrity\Support;
 
-use CB\Core\Integrity\Support\ResultFormatter;
-use CB\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Support\ResultFormatter;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -6,10 +6,10 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Mail\Admin;
+namespace CoreBlueprint\Core\Mail\Admin;
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\Design\Editor\Assets as DesignEditorAssets;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Design\Editor\Assets as DesignEditorAssets;
 
 defined( 'ABSPATH' ) || exit;
 

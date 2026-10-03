@@ -15,7 +15,7 @@ Core Blueprint Base owns outbound mail transport, credentials, delivery logging 
 Attach a callback during extension bootstrap. Base fires `cb_core_register_mail_sender_identities` on `init` priority `5`, after the normal translation lifecycle has started.
 
 ```php
-use CB\Core\Mail\SenderIdentityRegistry;
+use CoreBlueprint\Core\Mail\SenderIdentityRegistry;
 
 add_action( 'cb_core_register_mail_sender_identities', static function (): void {
     SenderIdentityRegistry::register( [
@@ -32,10 +32,10 @@ Identity IDs use the same lower-case namespaced kebab-case discipline as Core Bl
 
 ## Sending
 
-Use `CB\Core\Mail\Sender::send()` instead of constructing a separate transport:
+Use `CoreBlueprint\Core\Mail\Sender::send()` instead of constructing a separate transport:
 
 ```php
-use CB\Core\Mail\Sender;
+use CoreBlueprint\Core\Mail\Sender;
 
 $sent = Sender::send(
     'core-blueprint-helpdesk',

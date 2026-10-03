@@ -11,9 +11,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Mail\Designer;
+namespace CoreBlueprint\Core\Mail\Designer;
 
-use CB\Core\Mail\DesignerState;
+use CoreBlueprint\Core\Mail\DesignerState;
 
 defined( 'ABSPATH' ) || exit;
 

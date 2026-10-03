@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\DB\DeleteBuilder;
-use CB\Core\DB\InsertBuilder;
-use CB\Core\DB\QueryBuilder;
-use CB\Core\DB\UpdateBuilder;
+use CoreBlueprint\Core\DB\DeleteBuilder;
+use CoreBlueprint\Core\DB\InsertBuilder;
+use CoreBlueprint\Core\DB\QueryBuilder;
+use CoreBlueprint\Core\DB\UpdateBuilder;
 
 defined( 'ABSPATH' ) || exit;
 

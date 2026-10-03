@@ -9,22 +9,22 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$policy  = is_array( $state['policy'] ?? null ) ? $state['policy'] : \CB\Core\AdminNotices\Policy::defaults();
+$policy  = is_array( $state['policy'] ?? null ) ? $state['policy'] : \CoreBlueprint\Core\AdminNotices\Policy::defaults();
 $sources = is_array( $state['sources'] ?? null ) ? $state['sources'] : [];
 $summary = is_array( $state['summary'] ?? null ) ? $state['summary'] : [];
 
 $notice_message = '';
-$notice_variant = \CB\Core\UI\Notice::SUCCESS;
+$notice_variant = \CoreBlueprint\Core\UI\Notice::SUCCESS;
 if ( 'saved' === $notice ) {
 	$notice_message = __( 'Admin Notices policy saved.', 'core-blueprint' );
 } elseif ( 'reset' === $notice ) {
 	$notice_message = __( 'Admin Notices policy reset to show supported notices to everyone.', 'core-blueprint' );
 } elseif ( 'invalid' === $notice ) {
 	$notice_message = __( 'The Admin Notices policy could not be saved. Review the audience choices and try again.', 'core-blueprint' );
-	$notice_variant = \CB\Core\UI\Notice::ERROR;
+	$notice_variant = \CoreBlueprint\Core\UI\Notice::ERROR;
 }
 
-$picker_nonce = wp_create_nonce( \CB\Core\AdminNotices\Admin::PICKER_NONCE_ACTION );
+$picker_nonce = wp_create_nonce( \CoreBlueprint\Core\AdminNotices\Admin::PICKER_NONCE_ACTION );
 
 $audience_references = static function ( array $rule, string $key ): array {
 	$audience = is_array( $rule['audience'] ?? null ) ? $rule['audience'] : [];
@@ -36,16 +36,16 @@ $render_audience_picker = static function ( array $rule, string $kind, string $i
 	$references = $audience_references( $rule, $kind );
 	$is_roles   = 'roles' === $kind;
 	$selected   = $is_roles
-		? \CB\Core\AdminNotices\Admin::role_picker_items( $references )
-		: \CB\Core\AdminNotices\Admin::capability_picker_items( $references );
+		? \CoreBlueprint\Core\AdminNotices\Admin::role_picker_items( $references )
+		: \CoreBlueprint\Core\AdminNotices\Admin::capability_picker_items( $references );
 
-	return \CB\Core\UI\ObjectPicker::render( [
+	return \CoreBlueprint\Core\UI\ObjectPicker::render( [
 		'name'      => str_replace( '-', '_', $id ),
 		'id'        => $id,
 		'multiple'  => true,
 		'action'    => $is_roles
-			? \CB\Core\AdminNotices\Admin::ROLE_SEARCH_ACTION
-			: \CB\Core\AdminNotices\Admin::CAPABILITY_SEARCH_ACTION,
+			? \CoreBlueprint\Core\AdminNotices\Admin::ROLE_SEARCH_ACTION
+			: \CoreBlueprint\Core\AdminNotices\Admin::CAPABILITY_SEARCH_ACTION,
 		'nonce'     => $picker_nonce,
 		'selected'  => $selected,
 		'show_hint' => false,
@@ -53,17 +53,17 @@ $render_audience_picker = static function ( array $rule, string $kind, string $i
 };
 
 $kind_labels = [
-	\CB\Core\AdminNotices\SourceResolver::KIND_WORDPRESS => __( 'WordPress', 'core-blueprint' ),
-	\CB\Core\AdminNotices\SourceResolver::KIND_PLUGIN    => __( 'Plugin', 'core-blueprint' ),
-	\CB\Core\AdminNotices\SourceResolver::KIND_MU_PLUGIN => __( 'MU plugin', 'core-blueprint' ),
-	\CB\Core\AdminNotices\SourceResolver::KIND_THEME     => __( 'Theme', 'core-blueprint' ),
-	\CB\Core\AdminNotices\SourceResolver::KIND_UNKNOWN   => __( 'Unknown source', 'core-blueprint' ),
+	\CoreBlueprint\Core\AdminNotices\SourceResolver::KIND_WORDPRESS => __( 'WordPress', 'core-blueprint' ),
+	\CoreBlueprint\Core\AdminNotices\SourceResolver::KIND_PLUGIN    => __( 'Plugin', 'core-blueprint' ),
+	\CoreBlueprint\Core\AdminNotices\SourceResolver::KIND_MU_PLUGIN => __( 'MU plugin', 'core-blueprint' ),
+	\CoreBlueprint\Core\AdminNotices\SourceResolver::KIND_THEME     => __( 'Theme', 'core-blueprint' ),
+	\CoreBlueprint\Core\AdminNotices\SourceResolver::KIND_UNKNOWN   => __( 'Unknown source', 'core-blueprint' ),
 ];
 ?>
 <div
 	class="wrap cb-core-wrap"
 	data-cb-admin-notices-editor
-	data-policy-version="<?php echo esc_attr( (string) \CB\Core\AdminNotices\Policy::VERSION ); ?>"
+	data-policy-version="<?php echo esc_attr( (string) \CoreBlueprint\Core\AdminNotices\Policy::VERSION ); ?>"
 >
 	<h1 class="cb-core-title"><?php esc_html_e( 'Admin Notices', 'core-blueprint' ); ?></h1>
 	<p class="cb-core-intro">
@@ -72,7 +72,7 @@ $kind_labels = [
 
 	<?php if ( '' !== $notice_message ) : ?>
 		<?php
-		echo \CB\Core\UI\Notice::render( [
+		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => $notice_variant,
 			'message' => $notice_message,
 		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
@@ -99,15 +99,15 @@ $kind_labels = [
 	</div>
 
 	<?php
-	echo \CB\Core\UI\Notice::render( [
-		'variant' => \CB\Core\UI\Notice::INFO,
+	echo \CoreBlueprint\Core\UI\Notice::render( [
+		'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 		'message' => __( 'Core Blueprint operators and delegated Admin Notices managers always see governed notices. Protected and unattributable sources always remain visible.', 'core-blueprint' ),
 	] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
 	?>
 
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-cb-admin-notices-form>
-		<input type="hidden" name="action" value="<?php echo esc_attr( \CB\Core\AdminNotices\Admin::FORM_ACTION ); ?>" />
-		<?php wp_nonce_field( \CB\Core\AdminNotices\Admin::NONCE_ACTION, \CB\Core\AdminNotices\Admin::NONCE_NAME ); ?>
+		<input type="hidden" name="action" value="<?php echo esc_attr( \CoreBlueprint\Core\AdminNotices\Admin::FORM_ACTION ); ?>" />
+		<?php wp_nonce_field( \CoreBlueprint\Core\AdminNotices\Admin::NONCE_ACTION, \CoreBlueprint\Core\AdminNotices\Admin::NONCE_NAME ); ?>
 		<input
 			type="hidden"
 			name="cb_admin_notices_payload"
@@ -117,7 +117,7 @@ $kind_labels = [
 
 		<?php if ( [] === $sources ) : ?>
 			<?php
-			echo \CB\Core\UI\Card::render( [
+			echo \CoreBlueprint\Core\UI\Card::render( [
 				'title' => __( 'Notice sources', 'core-blueprint' ),
 				'body'  => '',
 				'empty' => [
@@ -137,13 +137,13 @@ $kind_labels = [
 					<?php
 					$source_id  = (string) ( $source['id'] ?? '' );
 					$label      = (string) ( $source['label'] ?? $source_id );
-					$kind       = (string) ( $source['kind'] ?? \CB\Core\AdminNotices\SourceResolver::KIND_UNKNOWN );
+					$kind       = (string) ( $source['kind'] ?? \CoreBlueprint\Core\AdminNotices\SourceResolver::KIND_UNKNOWN );
 					$manageable = ! empty( $source['manageable'] );
 					$protected  = ! empty( $source['protected'] );
-					$rule       = is_array( $source['rule'] ?? null ) ? $source['rule'] : \CB\Core\AdminNotices\Policy::rule_for( $source_id );
-					$visibility = (string) ( $rule['visibility'] ?? \CB\Core\AdminNotices\Policy::EVERYONE );
+					$rule       = is_array( $source['rule'] ?? null ) ? $source['rule'] : \CoreBlueprint\Core\AdminNotices\Policy::rule_for( $source_id );
+					$visibility = (string) ( $rule['visibility'] ?? \CoreBlueprint\Core\AdminNotices\Policy::EVERYONE );
 					$hooks      = array_values( array_filter( array_map( 'strval', (array) ( $source['hooks'] ?? [] ) ) ) );
-					$active     = \CB\Core\AdminNotices\Policy::EVERYONE !== $visibility;
+					$active     = \CoreBlueprint\Core\AdminNotices\Policy::EVERYONE !== $visibility;
 					?>
 					<details
 						class="cb-core-disclosure cb-core-disclosure--compact"
@@ -164,9 +164,9 @@ $kind_labels = [
 								<span class="cb-core-state-badge cb-core-state-badge--compact cb-core-state-badge--warning"><?php esc_html_e( 'Protected', 'core-blueprint' ); ?></span>
 							<?php elseif ( ! $manageable ) : ?>
 								<span class="cb-core-state-badge cb-core-state-badge--compact cb-core-state-badge--neutral"><?php esc_html_e( 'Observed only', 'core-blueprint' ); ?></span>
-							<?php elseif ( \CB\Core\AdminNotices\Policy::OPERATORS_ONLY === $visibility ) : ?>
+							<?php elseif ( \CoreBlueprint\Core\AdminNotices\Policy::OPERATORS_ONLY === $visibility ) : ?>
 								<span class="cb-core-state-badge cb-core-state-badge--compact cb-core-state-badge--info"><?php esc_html_e( 'Operators only', 'core-blueprint' ); ?></span>
-							<?php elseif ( \CB\Core\AdminNotices\Policy::SELECTED === $visibility ) : ?>
+							<?php elseif ( \CoreBlueprint\Core\AdminNotices\Policy::SELECTED === $visibility ) : ?>
 								<span class="cb-core-state-badge cb-core-state-badge--compact cb-core-state-badge--info"><?php esc_html_e( 'Selected audience', 'core-blueprint' ); ?></span>
 							<?php else : ?>
 								<span class="cb-core-state-badge cb-core-state-badge--compact cb-core-state-badge--success"><?php esc_html_e( 'Everyone', 'core-blueprint' ); ?></span>
@@ -188,15 +188,15 @@ $kind_labels = [
 
 							<?php if ( $protected ) : ?>
 								<?php
-								echo \CB\Core\UI\Notice::render( [
-									'variant' => \CB\Core\UI\Notice::INFO,
+								echo \CoreBlueprint\Core\UI\Notice::render( [
+									'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 									'message' => __( 'This source is protected and always remains visible to everyone.', 'core-blueprint' ),
 								] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 								?>
 							<?php elseif ( ! $manageable ) : ?>
 								<?php
-								echo \CB\Core\UI\Notice::render( [
-									'variant' => \CB\Core\UI\Notice::INFO,
+								echo \CoreBlueprint\Core\UI\Notice::render( [
+									'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 									'message' => __( 'This source could not be attributed to a stable WordPress, plugin or theme identity, so Core Blueprint will not suppress it.', 'core-blueprint' ),
 								] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 								?>
@@ -205,21 +205,21 @@ $kind_labels = [
 									<legend class="cb-core-field__label"><?php esc_html_e( 'Who should see this notice source?', 'core-blueprint' ); ?></legend>
 									<div class="cb-core-field__choices cb-core-admin-notices-visibility-choices">
 										<label>
-											<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="everyone" data-cb-admin-notices-visibility <?php checked( \CB\Core\AdminNotices\Policy::EVERYONE, $visibility ); ?> />
+											<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="everyone" data-cb-admin-notices-visibility <?php checked( \CoreBlueprint\Core\AdminNotices\Policy::EVERYONE, $visibility ); ?> />
 											<?php esc_html_e( 'Everyone', 'core-blueprint' ); ?>
 										</label>
 										<label>
-											<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="operators_only" data-cb-admin-notices-visibility <?php checked( \CB\Core\AdminNotices\Policy::OPERATORS_ONLY, $visibility ); ?> />
+											<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="operators_only" data-cb-admin-notices-visibility <?php checked( \CoreBlueprint\Core\AdminNotices\Policy::OPERATORS_ONLY, $visibility ); ?> />
 											<?php esc_html_e( 'Operators only', 'core-blueprint' ); ?>
 										</label>
 										<label>
-											<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="selected" data-cb-admin-notices-visibility <?php checked( \CB\Core\AdminNotices\Policy::SELECTED, $visibility ); ?> />
+											<input type="radio" name="cb_admin_notices_visibility_<?php echo esc_attr( (string) $index ); ?>" value="selected" data-cb-admin-notices-visibility <?php checked( \CoreBlueprint\Core\AdminNotices\Policy::SELECTED, $visibility ); ?> />
 											<?php esc_html_e( 'Selected roles or capabilities', 'core-blueprint' ); ?>
 										</label>
 									</div>
 								</fieldset>
 
-								<div data-cb-admin-notices-selected-audience <?php if ( \CB\Core\AdminNotices\Policy::SELECTED !== $visibility ) : ?>hidden<?php endif; ?>>
+								<div data-cb-admin-notices-selected-audience <?php if ( \CoreBlueprint\Core\AdminNotices\Policy::SELECTED !== $visibility ) : ?>hidden<?php endif; ?>>
 									<div class="cb-core-field" role="group" aria-labelledby="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-roles-label">
 										<span class="cb-core-field__label" id="cb-admin-notices-<?php echo esc_attr( (string) $index ); ?>-roles-label"><?php esc_html_e( 'Roles', 'core-blueprint' ); ?></span>
 										<div data-cb-admin-notices-roles-picker>

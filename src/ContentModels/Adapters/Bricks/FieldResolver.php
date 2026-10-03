@@ -6,11 +6,11 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels\Adapters\Bricks;
+namespace CoreBlueprint\Core\ContentModels\Adapters\Bricks;
 
-use CB\Core\ContentModels\Api;
-use CB\Core\ContentModels\FieldTypes;
-use CB\Core\ContentModels\LocationMatcher;
+use CoreBlueprint\Core\ContentModels\Api;
+use CoreBlueprint\Core\ContentModels\FieldTypes;
+use CoreBlueprint\Core\ContentModels\LocationMatcher;
 use WP_Post;
 
 defined( 'ABSPATH' ) || exit;

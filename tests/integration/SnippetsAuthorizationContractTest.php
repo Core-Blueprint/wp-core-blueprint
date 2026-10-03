@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\Roles;
-use CB\Core\Snippets\Authorization;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Snippets\Authorization;
 
 final class CB_Base_Snippets_Authorization_Contract_Test extends WP_UnitTestCase {
 

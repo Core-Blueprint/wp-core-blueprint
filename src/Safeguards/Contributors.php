@@ -16,14 +16,14 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Safeguards;
+namespace CoreBlueprint\Core\Safeguards;
 
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Security\AccessMode;
-use CB\Core\Security\Failsafe;
-use CB\Core\Security\LoginShield;
-use CB\Core\Security\ModuleRegistry;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Security\AccessMode;
+use CoreBlueprint\Core\Security\Failsafe;
+use CoreBlueprint\Core\Security\LoginShield;
+use CoreBlueprint\Core\Security\ModuleRegistry;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -102,10 +102,10 @@ final class Contributors {
 		// Privileged Access Guard is independent of the Shield master switch.
 		// Surface pending privileged reviews before module state so the
 		// dashboard never presents a green Shield tile during an access incident.
-		if ( class_exists( '\CB\Core\Permissions\PrivilegedAccessRegistry' ) ) {
-			$review_required = count( \CB\Core\Permissions\PrivilegedAccessRegistry::review_snapshot() );
+		if ( class_exists( '\CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry' ) ) {
+			$review_required = count( \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::review_snapshot() );
 			if ( $review_required > 0 ) {
-				$enforcing = \CB\Core\Permissions\PrivilegedAccessPolicy::enforces_approval();
+				$enforcing = \CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy::enforces_approval();
 				$detail = sprintf(
 					/* translators: 1: number of privileged identities requiring review, 2: current protection state */
 					_n( '%1$d privileged user requires review · %2$s', '%1$d privileged users require review · %2$s', $review_required, 'core-blueprint' ),
@@ -187,7 +187,7 @@ final class Contributors {
 	public static function core_scanner(): array {
 		$url = admin_url( 'admin.php?page=core-blueprint-safeguards&tab=core-scanner' );
 
-		if ( class_exists( '\CB\Core\Integrity\State' ) && ! \CB\Core\Integrity\State::is_enabled() ) {
+		if ( class_exists( '\CoreBlueprint\Core\Integrity\State' ) && ! \CoreBlueprint\Core\Integrity\State::is_enabled() ) {
 			return [ 'state' => 'off', 'detail' => __( 'Disabled', 'core-blueprint' ), 'url' => $url ];
 		}
 

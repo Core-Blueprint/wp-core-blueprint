@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\ExtensionRegistry;
-use CB\Core\Interoperability\Registry;
+use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Interoperability\Registry;
 
 interface CB_Interop_Fixture_Contract {
 	public function name(): string;

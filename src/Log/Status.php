@@ -7,7 +7,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Log;
+namespace CoreBlueprint\Core\Log;
 
 defined( 'ABSPATH' ) || exit;
 

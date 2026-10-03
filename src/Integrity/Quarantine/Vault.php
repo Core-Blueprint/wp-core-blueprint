@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Quarantine;
+namespace CoreBlueprint\Core\Integrity\Quarantine;
 
-use CB\Core\Integrity\Support\PathGuard;
+use CoreBlueprint\Core\Integrity\Support\PathGuard;
 use RuntimeException;
 
 use function chmod;

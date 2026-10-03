@@ -11,11 +11,11 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail;
+namespace CoreBlueprint\Core\Mail;
 
-use CB\Core\Mail\Log\DeliveryLogger;
-use CB\Core\Mail\Transport\BrevoTransport;
-use CB\Core\Mail\Transport\SmtpTransport;
+use CoreBlueprint\Core\Mail\Log\DeliveryLogger;
+use CoreBlueprint\Core\Mail\Transport\BrevoTransport;
+use CoreBlueprint\Core\Mail\Transport\SmtpTransport;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -35,7 +35,7 @@ final class Runtime {
 		$transports = is_array( $transports ) ? $transports : [];
 		$transport  = $transports[ Settings::provider() ] ?? null;
 
-		if ( ! is_string( $transport ) || ! is_subclass_of( $transport, \CB\Core\Mail\Transport\TransportInterface::class ) ) {
+		if ( ! is_string( $transport ) || ! is_subclass_of( $transport, \CoreBlueprint\Core\Mail\Transport\TransportInterface::class ) ) {
 			return;
 		}
 

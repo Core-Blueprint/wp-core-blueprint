@@ -2,10 +2,10 @@
 declare(strict_types=1);
 /** Bootstrap for native WordPress Admin Navigation presentation governance. */
 
-namespace CB\Core\AdminNavigation;
+namespace CoreBlueprint\Core\AdminNavigation;
 
-use CB\Core\Governance\EventRegistry;
-use CB\Core\RequestContext;
+use CoreBlueprint\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\RequestContext;
 
 defined( 'ABSPATH' ) || exit;
 

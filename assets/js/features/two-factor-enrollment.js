@@ -6,7 +6,7 @@
  * persists, transmits or logs either value.
  *
  * @internal
- * @package CB\Core
+ * @package CoreBlueprint\Core
  */
 
 import qrcode from '../vendor/qrcode-generator-2.0.4.js';

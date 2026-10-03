@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Security\TwoFactor\ChallengeStore;
-use CB\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\ChallengeStore;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
 
 final class CB_Base_Two_Factor_Challenge_Store_Contract_Test extends WP_UnitTestCase {
 

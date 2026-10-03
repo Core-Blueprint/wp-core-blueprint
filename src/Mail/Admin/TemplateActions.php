@@ -6,12 +6,12 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Mail\Admin;
+namespace CoreBlueprint\Core\Mail\Admin;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Mail\Designer\TemplateRepository;
-use CB\Core\Mail\Designer\TemplateRegistry;
-use CB\Core\Mail\DesignerState;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Mail\Designer\TemplateRepository;
+use CoreBlueprint\Core\Mail\Designer\TemplateRegistry;
+use CoreBlueprint\Core\Mail\DesignerState;
 
 defined( 'ABSPATH' ) || exit;
 

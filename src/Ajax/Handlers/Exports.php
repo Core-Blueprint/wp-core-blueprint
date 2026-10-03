@@ -15,14 +15,14 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Ajax\Handlers;
+namespace CoreBlueprint\Core\Ajax\Handlers;
 
-use CB\Core\Ajax\Guards;
-use CB\Core\Ajax\Request;
-use CB\Core\Log\AuditLog;
-use CB\Core\Log\LogExporter;
-use CB\Core\Log\MaintenanceReport;
-use CB\Core\Log\TimeFilter;
+use CoreBlueprint\Core\Ajax\Guards;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\LogExporter;
+use CoreBlueprint\Core\Log\MaintenanceReport;
+use CoreBlueprint\Core\Log\TimeFilter;
 
 defined( 'ABSPATH' ) || exit;
 

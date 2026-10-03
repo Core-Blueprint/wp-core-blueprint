@@ -11,9 +11,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Reports;
+namespace CoreBlueprint\Core\Reports;
 
-use CB\Core\Settings;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

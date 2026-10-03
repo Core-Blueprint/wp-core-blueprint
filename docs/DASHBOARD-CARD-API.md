@@ -24,7 +24,7 @@ Base module cards use their `ActivationRegistry` slug:
 - `notes`
 - `reports`
 
-Extension cards use the canonical extension `id` registered through `CB\Core\ExtensionRegistry`, for example:
+Extension cards use the canonical extension `id` registered through `CoreBlueprint\Core\ExtensionRegistry`, for example:
 
 - `core-blueprint-lms`
 - `core-blueprint-certificates`
@@ -38,7 +38,7 @@ Register from the public `cb_core_dashboard_register_cards` hook so plugin load
 order does not matter:
 
 ```php
-use CB\Core\Dashboard\CardRegistry;
+use CoreBlueprint\Core\Dashboard\CardRegistry;
 
 add_action( 'cb_core_dashboard_register_cards', static function (): void {
     CardRegistry::register_shortcuts( 'core-blueprint-lms', [
@@ -109,7 +109,7 @@ The API accepts navigation shortcuts only. It deliberately does **not** accept:
 - activation/deactivation callbacks;
 - executable dashboard actions.
 
-Base module activation remains owned by `CB\Core\Modules\ActivationRegistry` and
+Base module activation remains owned by `CoreBlueprint\Core\Modules\ActivationRegistry` and
 the Core Blueprint AJAX security boundary. The Dashboard only renders a Turn
 on/off action when the current user has the capability declared by that registry.
 Sibling WordPress plugins/extensions are never activated or deactivated through

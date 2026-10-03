@@ -7,9 +7,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail\Transport;
+namespace CoreBlueprint\Core\Mail\Transport;
 
-use CB\Core\Mail\Settings;
+use CoreBlueprint\Core\Mail\Settings;
 
 use PHPMailer\PHPMailer\PHPMailer;
 

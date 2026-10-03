@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Security\TwoFactor\Authenticator;
-use CB\Core\Security\TwoFactor\ChallengeStore;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\EnrollmentStore;
-use CB\Core\Security\TwoFactor\LoginController;
-use CB\Core\Security\TwoFactor\LoginFlow;
-use CB\Core\Security\TwoFactor\Policy;
-use CB\Core\Security\TwoFactor\Totp;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Security\TwoFactor\Authenticator;
+use CoreBlueprint\Core\Security\TwoFactor\ChallengeStore;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\EnrollmentStore;
+use CoreBlueprint\Core\Security\TwoFactor\LoginController;
+use CoreBlueprint\Core\Security\TwoFactor\LoginFlow;
+use CoreBlueprint\Core\Security\TwoFactor\Policy;
+use CoreBlueprint\Core\Security\TwoFactor\Totp;
+use CoreBlueprint\Core\Settings;
 
 final class CB_Base_Two_Factor_Login_Flow_Contract_Test extends WP_UnitTestCase {
 

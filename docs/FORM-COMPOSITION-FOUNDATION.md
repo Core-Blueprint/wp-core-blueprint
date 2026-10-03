@@ -12,7 +12,7 @@ Form Composition gives Core Blueprint screens one semantic Field + Stack markup 
 Consumers enqueue the narrow adapter through:
 
 ```php
-use CB\Core\UI\FormComposition;
+use CoreBlueprint\Core\UI\FormComposition;
 
 FormComposition::enqueue();
 ```
@@ -94,7 +94,7 @@ Form Actions wrapper instead.
 
 ## Field contract
 
-Use `CB\Core\UI\Field::render()` when one normal wrapper + label/control/hint shape fits the field. Native semantic containers such as `<fieldset>` may use the same classes directly when their HTML semantics require a `<legend>`.
+Use `CoreBlueprint\Core\UI\Field::render()` when one normal wrapper + label/control/hint shape fits the field. Native semantic containers such as `<fieldset>` may use the same classes directly when their HTML semantics require a `<legend>`.
 
 ```html
 <div class="cb-core-field">

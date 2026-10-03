@@ -17,9 +17,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\UI;
+namespace CoreBlueprint\Core\UI;
 
-use CB\Core\Themes;
+use CoreBlueprint\Core\Themes;
 
 defined( 'ABSPATH' ) || exit;
 

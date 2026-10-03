@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Storage;
+namespace CoreBlueprint\Core\Integrity\Storage;
 
 use RuntimeException;
 

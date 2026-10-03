@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Core;
-use CB\Core\HUD\Settings as HudSettings;
-use CB\Core\Integrity\State as IntegrityState;
-use CB\Core\MediaReplace\State as MediaReplaceState;
-use CB\Core\Notes\State as NotesState;
-use CB\Core\PackageDownload\State as PackageDownloadState;
-use CB\Core\Permissions\UserRolesState;
-use CB\Core\Reports\State as ReportsState;
-use CB\Core\Permissions\Roles;
-use CB\Core\Settings;
-use CB\Core\Setup\Onboarding;
-use CB\Core\Setup\ReviewRepository;
+use CoreBlueprint\Core\Core;
+use CoreBlueprint\Core\HUD\Settings as HudSettings;
+use CoreBlueprint\Core\Integrity\State as IntegrityState;
+use CoreBlueprint\Core\MediaReplace\State as MediaReplaceState;
+use CoreBlueprint\Core\Notes\State as NotesState;
+use CoreBlueprint\Core\PackageDownload\State as PackageDownloadState;
+use CoreBlueprint\Core\Permissions\UserRolesState;
+use CoreBlueprint\Core\Reports\State as ReportsState;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Setup\Onboarding;
+use CoreBlueprint\Core\Setup\ReviewRepository;
 
 final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTestCase {
 

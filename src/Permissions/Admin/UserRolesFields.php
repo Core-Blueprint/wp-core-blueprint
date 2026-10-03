@@ -12,10 +12,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Permissions\Admin;
+namespace CoreBlueprint\Core\Permissions\Admin;
 
-use CB\Core\Permissions\Roles;
-use CB\Core\Permissions\UserRoleAssignments;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Permissions\UserRoleAssignments;
 
 defined( 'ABSPATH' ) || exit;
 

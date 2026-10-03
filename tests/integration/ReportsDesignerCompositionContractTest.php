@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Reports\DesignerPreview;
-use CB\Core\Reports\MaintenanceFlowBranding;
-use CB\Core\Reports\ReportBranding;
-use CB\Core\Reports\ReportBrandingInput;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Reports\DesignerPreview;
+use CoreBlueprint\Core\Reports\MaintenanceFlowBranding;
+use CoreBlueprint\Core\Reports\ReportBranding;
+use CoreBlueprint\Core\Reports\ReportBrandingInput;
+use CoreBlueprint\Core\Settings;
 
 final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 

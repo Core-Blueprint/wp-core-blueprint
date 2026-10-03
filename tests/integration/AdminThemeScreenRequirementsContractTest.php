@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\UI\AdminTheme;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\UI\AdminTheme;
 
 final class CB_Admin_Theme_Screen_Requirements_Contract_Test extends WP_UnitTestCase {
 

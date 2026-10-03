@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
 defined( 'ABSPATH' ) || exit;
 

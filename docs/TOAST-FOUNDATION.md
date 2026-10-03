@@ -52,7 +52,7 @@ Standalone plugins such as Certificates, LMS and Communities must use the **WP N
 Use the opt-in asset helper from the extension's own `admin_enqueue_scripts` callback after confirming that the current screen belongs to the extension:
 
 ```php
-use CB\Core\UI\Assets;
+use CoreBlueprint\Core\UI\Assets;
 
 add_action( 'admin_enqueue_scripts', static function ( string $hook ): void {
     if ( ! my_certificates_screen( $hook ) ) {

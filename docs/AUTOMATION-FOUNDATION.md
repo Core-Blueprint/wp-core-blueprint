@@ -19,12 +19,12 @@ The architectural rule is:
 
 ## Provider identity
 
-Third-party capabilities must belong to a plugin already registered through `CB\Core\ExtensionRegistry`. This prevents anonymous or accidental capability ownership.
+Third-party capabilities must belong to a plugin already registered through `CoreBlueprint\Core\ExtensionRegistry`. This prevents anonymous or accidental capability ownership.
 
 Attach the extension registration callback during normal plugin loading:
 
 ```php
-use CB\Core\ExtensionRegistry;
+use CoreBlueprint\Core\ExtensionRegistry;
 
 add_action( 'cb_core_register_extensions', static function (): void {
     ExtensionRegistry::register( [
@@ -45,10 +45,10 @@ add_action( 'cb_core_register_extensions', static function (): void {
 Attach one callback during plugin loading. Automation Foundation invokes it once, lazily, after WordPress `init` has completed and after Base's canonical ExtensionRegistry collection.
 
 ```php
-use CB\Core\Automation\ActionRegistry;
-use CB\Core\Automation\InvocationContext;
-use CB\Core\Automation\StateRegistry;
-use CB\Core\Automation\TriggerRegistry;
+use CoreBlueprint\Core\Automation\ActionRegistry;
+use CoreBlueprint\Core\Automation\InvocationContext;
+use CoreBlueprint\Core\Automation\StateRegistry;
+use CoreBlueprint\Core\Automation\TriggerRegistry;
 
 add_action( 'cb_core_register_automation_capabilities', static function (): void {
     TriggerRegistry::register( [
@@ -237,7 +237,7 @@ It does not redact, hash or mutate an in-request value. Domain execution/resolut
 Emit only after WordPress `init` has completed:
 
 ```php
-use CB\Core\Automation\Emitter;
+use CoreBlueprint\Core\Automation\Emitter;
 
 $result = Emitter::emit(
     'acme-reservations',
@@ -256,7 +256,7 @@ if ( is_wp_error( $result ) ) {
 
 The optional event ID should be a stable domain-event identifier when one exists. This gives an orchestration runtime a deterministic deduplication key. When omitted, Base generates a UUID for that emission.
 
-A successful emission dispatches one immutable `CB\Core\Automation\TriggerEvent` on:
+A successful emission dispatches one immutable `CoreBlueprint\Core\Automation\TriggerEvent` on:
 
 ```text
 cb_core_automation_trigger_emitted
@@ -310,7 +310,7 @@ The provider owns `invoice.current`. The Automations product owns operators such
 
 ## Governed invocation context
 
-State and action invocation require an explicit immutable `CB\Core\Automation\InvocationContext`. The launch contract carries:
+State and action invocation require an explicit immutable `CoreBlueprint\Core\Automation\InvocationContext`. The launch contract carries:
 
 ```text
 principal_user_id()
@@ -346,11 +346,11 @@ output_schema
 required_capability
 ```
 
-The resolver itself remains private. Official orchestration consumers resolve state only through `CB\Core\Automation\StateInvoker`:
+The resolver itself remains private. Official orchestration consumers resolve state only through `CoreBlueprint\Core\Automation\StateInvoker`:
 
 ```php
-use CB\Core\Automation\InvocationContext;
-use CB\Core\Automation\StateInvoker;
+use CoreBlueprint\Core\Automation\InvocationContext;
+use CoreBlueprint\Core\Automation\StateInvoker;
 
 $context = new InvocationContext(
     $principal_user_id,
@@ -378,10 +378,10 @@ External code must not use reflection or internal Foundation classes to obtain a
 
 ## Action execution boundary
 
-The executor itself remains private. Official orchestration consumers invoke actions only through `CB\Core\Automation\ActionInvoker`:
+The executor itself remains private. Official orchestration consumers invoke actions only through `CoreBlueprint\Core\Automation\ActionInvoker`:
 
 ```php
-use CB\Core\Automation\ActionInvoker;
+use CoreBlueprint\Core\Automation\ActionInvoker;
 
 $result = ActionInvoker::invoke(
     'acme-reservations',
@@ -435,9 +435,9 @@ A domain event that happens before this boundary must not be worked around by fo
 Consumers can inspect registered metadata through:
 
 ```php
-use CB\Core\Automation\ActionRegistry;
-use CB\Core\Automation\StateRegistry;
-use CB\Core\Automation\TriggerRegistry;
+use CoreBlueprint\Core\Automation\ActionRegistry;
+use CoreBlueprint\Core\Automation\StateRegistry;
+use CoreBlueprint\Core\Automation\TriggerRegistry;
 
 $triggers = TriggerRegistry::all();
 $actions  = ActionRegistry::all();

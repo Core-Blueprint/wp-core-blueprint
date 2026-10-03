@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Kernel\DesignProject;
-use CB\Core\Design\Profile\Document\Fixed\Geometry;
-use CB\Core\Design\Profile\Document\Fixed\Validator;
+use CoreBlueprint\Core\Design\Kernel\DesignProject;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\Geometry;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\Validator;
 
 final class CB_Design_Foundation_R3_Fixed_Contract_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */
@@ -94,7 +94,7 @@ final class CB_Design_Foundation_R3_Fixed_Contract_Test extends WP_UnitTestCase 
 		foreach ( glob( $directory . '/*.php' ) ?: [] as $file ) {
 			$source = (string) file_get_contents( $file );
 			self::assertDoesNotMatchRegularExpression( '/\b(?:Dompdf|pagination|Flow)\b/i', $source, basename( $file ) );
-			self::assertStringNotContainsString( 'CB\\Core\\PDF\\Renderer', $source, basename( $file ) );
+			self::assertStringNotContainsString( 'CoreBlueprint\\Core\\PDF\\Renderer', $source, basename( $file ) );
 		}
 	}
 
@@ -103,16 +103,16 @@ final class CB_Design_Foundation_R3_Fixed_Contract_Test extends WP_UnitTestCase 
 		foreach ( [ 'Contract.php', 'Geometry.php', 'Validator.php' ] as $filename ) {
 			$source = (string) file_get_contents( $directory . '/' . $filename );
 			self::assertStringNotContainsString( 'PdfApi', $source, $filename );
-			self::assertStringNotContainsString( 'CB\\Core\\PDF', $source, $filename );
+			self::assertStringNotContainsString( 'CoreBlueprint\\Core\\PDF', $source, $filename );
 		}
 	}
 
 	public function test_fixed_pdf_adapter_uses_only_the_public_base_pdf_boundary(): void {
 		$path = dirname( __DIR__, 2 ) . '/src/Design/Profile/Document/Fixed/PdfRenderer.php';
 		$source = (string) file_get_contents( $path );
-		self::assertStringContainsString( 'use CB\\Core\\PDF\\Api\\PdfApi;', $source );
+		self::assertStringContainsString( 'use CoreBlueprint\\Core\\PDF\\Api\\PdfApi;', $source );
 		self::assertStringContainsString( 'PdfApi::render(', $source );
 		self::assertStringNotContainsString( 'Dompdf', $source );
-		self::assertStringNotContainsString( 'CB\\Core\\PDF\\Renderer', $source );
+		self::assertStringNotContainsString( 'CoreBlueprint\\Core\\PDF\\Renderer', $source );
 	}
 }

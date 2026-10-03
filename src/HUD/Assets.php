@@ -18,9 +18,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD;
+namespace CoreBlueprint\Core\HUD;
 
-use CB\Core\HUD\Brand\BrandRegistry;
+use CoreBlueprint\Core\HUD\Brand\BrandRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

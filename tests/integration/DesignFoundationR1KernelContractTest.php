@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Bootstrap;
-use CB\Core\Design\Kernel\AuthorizationRegistry;
-use CB\Core\Design\Kernel\CapabilityClass;
-use CB\Core\Design\Kernel\CapabilityRegistry;
-use CB\Core\Design\Kernel\DesignTypeRegistry;
-use CB\Core\Design\Kernel\ProviderRegistry;
-use CB\Core\Design\Kernel\SchemaValidator;
-use CB\Core\Design\Kernel\Serializer;
-use CB\Core\Design\Kernel\ValidationException;
+use CoreBlueprint\Core\Design\Bootstrap;
+use CoreBlueprint\Core\Design\Kernel\AuthorizationRegistry;
+use CoreBlueprint\Core\Design\Kernel\CapabilityClass;
+use CoreBlueprint\Core\Design\Kernel\CapabilityRegistry;
+use CoreBlueprint\Core\Design\Kernel\DesignTypeRegistry;
+use CoreBlueprint\Core\Design\Kernel\ProviderRegistry;
+use CoreBlueprint\Core\Design\Kernel\SchemaValidator;
+use CoreBlueprint\Core\Design\Kernel\Serializer;
+use CoreBlueprint\Core\Design\Kernel\ValidationException;
 
 final class CB_Design_Foundation_R1_Kernel_Contract_Test extends WP_UnitTestCase {
 	/** @return array{0:ProviderRegistry,1:DesignTypeRegistry,2:CapabilityRegistry,3:AuthorizationRegistry,4:Serializer} */
@@ -110,8 +110,8 @@ final class CB_Design_Foundation_R1_Kernel_Contract_Test extends WP_UnitTestCase
 
 	public function test_document_bootstrap_is_available_without_registering_speculative_contracts(): void {
 		Bootstrap::boot();
-		self::assertTrue( class_exists( \CB\Core\Design\Profile\Document\Bootstrap::class ) );
-		self::assertFalse( class_exists( \CB\Core\Design\Profile\ProfileRegistry::class ) );
-		self::assertFalse( interface_exists( \CB\Core\Design\Profile\ProfileInterface::class ) );
+		self::assertTrue( class_exists( \CoreBlueprint\Core\Design\Profile\Document\Bootstrap::class ) );
+		self::assertFalse( class_exists( \CoreBlueprint\Core\Design\Profile\ProfileRegistry::class ) );
+		self::assertFalse( interface_exists( \CoreBlueprint\Core\Design\Profile\ProfileInterface::class ) );
 	}
 }

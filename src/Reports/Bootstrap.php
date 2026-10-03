@@ -8,7 +8,7 @@ declare(strict_types=1);
  * on-demand PDF rendering and AJAX handling are delegated to their dedicated
  * classes.
  *
- * Pattern mirrors CB\Core\Beacon\Bootstrap: a single boot() static call
+ * Pattern mirrors CoreBlueprint\Core\Beacon\Bootstrap: a single boot() static call
  * invoked synchronously from Core::init_hooks(), then internal hook
  * registrations for everything that needs to defer.
  *
@@ -16,9 +16,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Reports;
+namespace CoreBlueprint\Core\Reports;
 
-use CB\Core\Design\Editor\Assets as DesignEditorAssets;
+use CoreBlueprint\Core\Design\Editor\Assets as DesignEditorAssets;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -110,13 +110,13 @@ final class Bootstrap {
 		if ( ! State::is_enabled() ) {
 			return;
 		}
-		if ( ! class_exists( '\\CB\\Core\\Admin\\PageRegistry' ) ) {
+		if ( ! class_exists( '\\CoreBlueprint\\Core\\Admin\\PageRegistry' ) ) {
 			return;
 		}
-		if ( ! class_exists( '\\CB\\Core\\Admin\\Pages\\Reports' ) ) {
+		if ( ! class_exists( '\\CoreBlueprint\\Core\\Admin\\Pages\\Reports' ) ) {
 			return;
 		}
-		\CB\Core\Admin\PageRegistry::register_base( new \CB\Core\Admin\Pages\Reports() );
+		\CoreBlueprint\Core\Admin\PageRegistry::register_base( new \CoreBlueprint\Core\Admin\Pages\Reports() );
 	}
 
 	/**
@@ -179,7 +179,7 @@ final class Bootstrap {
 
 	/** Register translation-bearing metadata filters after the textdomain is loaded. */
 	public static function register_i18n_filters(): void {
-		\CB\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
+		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many( self::register_event_labels( [] ) );
 	}
 
 	/**

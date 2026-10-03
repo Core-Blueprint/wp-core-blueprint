@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Ajax\Handlers;
+namespace CoreBlueprint\Core\Ajax\Handlers;
 
-use CB\Core\Ajax\Guards;
-use CB\Core\Ajax\Request;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Security\TwoFactor\Policy;
-use CB\Core\Security\TwoFactor\PolicyMutation;
+use CoreBlueprint\Core\Ajax\Guards;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Security\TwoFactor\Policy;
+use CoreBlueprint\Core\Security\TwoFactor\PolicyMutation;
 use Throwable;
 use WP_User;
 

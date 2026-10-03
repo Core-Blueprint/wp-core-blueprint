@@ -32,9 +32,9 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI;
+namespace CoreBlueprint\Core\CLI;
 
-use CB\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -105,7 +105,7 @@ final class Bootstrap {
 
 	/**
 	 * Register the HUD-item that links to the CLI documentation tab.
-	 * Hooked from {@see \CB\Core\Core::init()} on every request (admin and
+	 * Hooked from {@see \CoreBlueprint\Core\Core::init()} on every request (admin and
 	 * frontend) so the HUD picker shows the entry to operators.
 	 */
 	public static function boot(): void {

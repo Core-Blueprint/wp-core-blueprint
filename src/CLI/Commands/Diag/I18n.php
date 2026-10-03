@@ -10,10 +10,10 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Diag;
+namespace CoreBlueprint\Core\CLI\Commands\Diag;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
 
 defined( 'ABSPATH' ) || exit;
 

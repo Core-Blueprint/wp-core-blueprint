@@ -63,8 +63,8 @@ final class CB_Design_Foundation_R0b_Golden_Fixtures_Contract_Test extends WP_Un
         $baseline = self::baseline();
         $renderer = $baseline['renderer'];
 
-        self::assertSame( 'CB\\Core\\PDF\\Api\\PdfApi', $renderer['public_extension_boundary'] );
-        self::assertSame( 'CB\\Core\\PDF\\Renderer', $renderer['base_internal_renderer'] );
+        self::assertSame( 'CoreBlueprint\\Core\\PDF\\Api\\PdfApi', $renderer['public_extension_boundary'] );
+        self::assertSame( 'CoreBlueprint\\Core\\PDF\\Renderer', $renderer['base_internal_renderer'] );
         self::assertSame( 'dompdf/dompdf', $renderer['backend']['name'] );
         self::assertSame( '3.1.6', $renderer['backend']['version'] );
         self::assertSame(

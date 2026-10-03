@@ -71,10 +71,10 @@ Supported structural elements include `__header`, `__title`, `__icon`, `__body`,
 
 ## `metric-tiles`
 
-Compact KPI/value tile rendered with the current `CB\Core\UI\Tile` metric variant. This semantic exposes only the generic metric contract; navigation variants are not included.
+Compact KPI/value tile rendered with the current `CoreBlueprint\Core\UI\Tile` metric variant. This semantic exposes only the generic metric contract; navigation variants are not included.
 
 ```php
-echo CB\Core\UI\Tile::render( [
+echo CoreBlueprint\Core\UI\Tile::render( [
     'variant'    => 'metric',
     'label'      => 'Protected media',
     'value'      => '42',
@@ -87,11 +87,11 @@ Base owns metric-card surface, label/value hierarchy and semantic state treatmen
 
 ## `notices`
 
-Persistent semantic in-page notice rendered by `CB\Core\UI\Notice`.
+Persistent semantic in-page notice rendered by `CoreBlueprint\Core\UI\Notice`.
 
 ```php
-echo CB\Core\UI\Notice::render( [
-    'variant' => CB\Core\UI\Notice::WARNING,
+echo CoreBlueprint\Core\UI\Notice::render( [
+    'variant' => CoreBlueprint\Core\UI\Notice::WARNING,
     'title'   => 'Attention required',
     'message' => 'Review this setting before continuing.',
 ] );
@@ -101,10 +101,10 @@ Canonical variants are `info`, `success`, `warning` and `error`. Base owns the n
 
 ## `fields`
 
-Structured form-field wrapper rendered by `CB\Core\UI\Field`.
+Structured form-field wrapper rendered by `CoreBlueprint\Core\UI\Field`.
 
 ```php
-echo CB\Core\UI\Field::render( [
+echo CoreBlueprint\Core\UI\Field::render( [
     'label'   => 'Endpoint',
     'control' => '<input type="text" name="endpoint">',
     'hint'    => 'Used for outbound requests.',
@@ -115,10 +115,10 @@ Field owns wrapper, label, hint/meta/error structure and field-level states. The
 
 ## `radio-cards`
 
-Single-select radio options presented as shared clickable cards. Prefer `CB\Core\UI\RadioGroup` / `CB\Core\UI\RadioCard` rather than duplicating markup.
+Single-select radio options presented as shared clickable cards. Prefer `CoreBlueprint\Core\UI\RadioGroup` / `CoreBlueprint\Core\UI\RadioCard` rather than duplicating markup.
 
 ```php
-echo CB\Core\UI\RadioGroup::render( [
+echo CoreBlueprint\Core\UI\RadioGroup::render( [
     'name'    => 'mode',
     'value'   => 'safe',
     'layout'  => 'grid',
@@ -133,10 +133,10 @@ Base owns card surfaces, selected/focus/hover treatment, responsive radio-grid g
 
 ## `master-switch`
 
-Binary consequence-selector rendered by `CB\Core\UI\MasterSwitch`.
+Binary consequence-selector rendered by `CoreBlueprint\Core\UI\MasterSwitch`.
 
 ```php
-echo CB\Core\UI\MasterSwitch::render( [
+echo CoreBlueprint\Core\UI\MasterSwitch::render( [
     'name'       => 'feature',
     'aria_label' => 'Toggle feature',
     'active'     => 'on',
@@ -199,7 +199,7 @@ Informational dot + text status indicator.
 The visible label carries the accessible state meaning; the dot is decorative and should be `aria-hidden`. Canonical dot modifiers include success, warning, danger, info and muted.
 
 Standalone WordPress admin screens load this same semantic markup through
-`CB\Core\UI\Assets::enqueue_status()`; Base selects the WordPress-native
+`CoreBlueprint\Core\UI\Assets::enqueue_status()`; Base selects the WordPress-native
 presentation adapter without importing the Core Admin token/theme boundary.
 
 ## `empty-state`
@@ -240,12 +240,12 @@ Plain/Technical dual-description block with Base-owned toggle behavior.
 Prefer Base's renderer so the accessibility and toggle markup remain canonical:
 
 ```php
-CB\Core\UI::render_description_block(
+CoreBlueprint\Core\UI::render_description_block(
     [
         'plain'     => 'Plain explanation…',
         'technical' => 'Technical explanation…',
     ],
-    CB\Core\UI::current_mode()
+    CoreBlueprint\Core\UI::current_mode()
 );
 ```
 

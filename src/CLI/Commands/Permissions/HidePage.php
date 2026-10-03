@@ -16,13 +16,13 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Permissions;
+namespace CoreBlueprint\Core\CLI\Commands\Permissions;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Log\AuditLog;
-use CB\Core\Permissions\Roles;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

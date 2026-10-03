@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail;
+namespace CoreBlueprint\Core\Mail;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Fixed\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Fixed\ImageStyle;
-use CB\Core\Design\Profile\Document\Fixed\PdfRenderer;
-use CB\Core\Design\Profile\Document\Fixed\RenderFragment;
-use CB\Core\Design\Profile\Document\Render\ImageDataUri;
-use CB\Core\Design\Profile\Document\Render\SvgSanitizer;
-use CB\Core\PDF\Api\PdfApi;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\ImageStyle;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\PdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\RenderFragment;
+use CoreBlueprint\Core\Design\Profile\Document\Render\ImageDataUri;
+use CoreBlueprint\Core\Design\Profile\Document\Render\SvgSanitizer;
+use CoreBlueprint\Core\PDF\Api\PdfApi;
 
 final class CB_Design_Foundation_B3_Fixed_Image_Presentation_Test extends WP_UnitTestCase {
 

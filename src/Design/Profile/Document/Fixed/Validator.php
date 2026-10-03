@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Design\Profile\Document\Fixed;
+namespace CoreBlueprint\Core\Design\Profile\Document\Fixed;
 
-use CB\Core\Design\Kernel\DesignProject;
-use CB\Core\Design\Kernel\Diagnostics;
+use CoreBlueprint\Core\Design\Kernel\DesignProject;
+use CoreBlueprint\Core\Design\Kernel\Diagnostics;
 
 defined( 'ABSPATH' ) || exit;
 

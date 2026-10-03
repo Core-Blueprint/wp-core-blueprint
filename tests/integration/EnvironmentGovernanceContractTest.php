@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Environment\EnvironmentTypeTestShim;
-use CB\Core\Environment\Governance;
-use CB\Core\Settings;
-use CB\Core\SettingsDefaults;
+use CoreBlueprint\Core\Environment\EnvironmentTypeTestShim;
+use CoreBlueprint\Core\Environment\Governance;
+use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\SettingsDefaults;
 
 final class CB_Base_Environment_Governance_Contract_Test extends WP_UnitTestCase {
 

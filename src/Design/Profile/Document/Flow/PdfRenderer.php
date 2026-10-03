@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Design\Profile\Document\Flow;
+namespace CoreBlueprint\Core\Design\Profile\Document\Flow;
 
-use CB\Core\PDF\Api\PdfApi;
+use CoreBlueprint\Core\PDF\Api\PdfApi;
 
 defined( 'ABSPATH' ) || exit;
 

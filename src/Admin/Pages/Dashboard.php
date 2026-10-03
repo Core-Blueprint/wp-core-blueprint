@@ -1,38 +1,38 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\Admin\Pages;
+namespace CoreBlueprint\Core\Admin\Pages;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\PageBase;
-use CB\Core\Compliance\Admin\Page as CompliancePage;
-use CB\Core\ContentModels\Admin\Page as ContentModelsPage;
-use CB\Core\ContentModels\State as ContentModelsState;
-use CB\Core\Dashboard\CardRegistry as DashboardCardRegistry;
-use CB\Core\ExtensionLifecycle;
-use CB\Core\Extensions;
-use CB\Core\ExtensionRegistry;
-use CB\Core\MediaReplace\Admin\Page as MediaReplacePage;
-use CB\Core\MediaReplace\Capabilities as MediaReplaceCapabilities;
-use CB\Core\MediaFormats\Admin\Page as MediaFormatsPage;
-use CB\Core\MediaFormats\State as MediaFormatsState;
-use CB\Core\Mail\Admin\Page as MailPage;
-use CB\Core\Mail\State as MailState;
-use CB\Core\Mail\Runtime as MailRuntime;
-use CB\Core\Mail\Settings as MailSettings;
-use CB\Core\Modules\ActivationRegistry;
-use CB\Core\PackageDownload\Admin\Page as PackageDownloadPage;
-use CB\Core\MediaReplace\State as MediaReplaceState;
-use CB\Core\PackageDownload\State as PackageDownloadState;
-use CB\Core\Permissions\Admin\RolesPage;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\UserRolesState;
-use CB\Core\Modules\Status;
-use CB\Core\Security\AccessMode;
-use CB\Core\Snippets\Admin\Page as SnippetsPage;
-use CB\Core\Snippets\State as SnippetsState;
-use CB\Core\Setup\Admin\Page as SetupPage;
-use CB\Core\Setup\ReviewRepository as SetupReviewRepository;
-use CB\Core\UI\StatusMenu;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Compliance\Admin\Page as CompliancePage;
+use CoreBlueprint\Core\ContentModels\Admin\Page as ContentModelsPage;
+use CoreBlueprint\Core\ContentModels\State as ContentModelsState;
+use CoreBlueprint\Core\Dashboard\CardRegistry as DashboardCardRegistry;
+use CoreBlueprint\Core\ExtensionLifecycle;
+use CoreBlueprint\Core\Extensions;
+use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\MediaReplace\Admin\Page as MediaReplacePage;
+use CoreBlueprint\Core\MediaReplace\Capabilities as MediaReplaceCapabilities;
+use CoreBlueprint\Core\MediaFormats\Admin\Page as MediaFormatsPage;
+use CoreBlueprint\Core\MediaFormats\State as MediaFormatsState;
+use CoreBlueprint\Core\Mail\Admin\Page as MailPage;
+use CoreBlueprint\Core\Mail\State as MailState;
+use CoreBlueprint\Core\Mail\Runtime as MailRuntime;
+use CoreBlueprint\Core\Mail\Settings as MailSettings;
+use CoreBlueprint\Core\Modules\ActivationRegistry;
+use CoreBlueprint\Core\PackageDownload\Admin\Page as PackageDownloadPage;
+use CoreBlueprint\Core\MediaReplace\State as MediaReplaceState;
+use CoreBlueprint\Core\PackageDownload\State as PackageDownloadState;
+use CoreBlueprint\Core\Permissions\Admin\RolesPage;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\UserRolesState;
+use CoreBlueprint\Core\Modules\Status;
+use CoreBlueprint\Core\Security\AccessMode;
+use CoreBlueprint\Core\Snippets\Admin\Page as SnippetsPage;
+use CoreBlueprint\Core\Snippets\State as SnippetsState;
+use CoreBlueprint\Core\Setup\Admin\Page as SetupPage;
+use CoreBlueprint\Core\Setup\ReviewRepository as SetupReviewRepository;
+use CoreBlueprint\Core\UI\StatusMenu;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -61,7 +61,7 @@ defined( 'ABSPATH' ) || exit;
  * than a regular preference.
  *
  * The page itself is a pure consumer. All status data comes from
- * \CB\Core\Modules\Status::many(); per-module logic lives in the
+ * \CoreBlueprint\Core\Modules\Status::many(); per-module logic lives in the
  * canonical status providers owned by their subsystems.
  *
  * @package Core_Blueprint
@@ -121,8 +121,8 @@ final class Dashboard extends PageBase {
 		// visible here for discoverability while their functional pages hide; the
 		// compact status menu is the single activation surface. Logs has no module
 		// activation state and remains a regular navigation card.
-		$notes_enabled            = class_exists( '\CB\Core\Notes\State' ) ? \CB\Core\Notes\State::is_enabled() : true;
-		$reports_enabled          = class_exists( '\CB\Core\Reports\State' ) ? \CB\Core\Reports\State::is_enabled() : true;
+		$notes_enabled            = class_exists( '\CoreBlueprint\Core\Notes\State' ) ? \CoreBlueprint\Core\Notes\State::is_enabled() : true;
+		$reports_enabled          = class_exists( '\CoreBlueprint\Core\Reports\State' ) ? \CoreBlueprint\Core\Reports\State::is_enabled() : true;
 		$user_roles_enabled       = UserRolesState::is_enabled();
 		$media_replace_enabled    = MediaReplaceState::is_enabled();
 		$media_formats_enabled    = MediaFormatsState::is_enabled();

@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
-use CB\Core\Reports\Composer\MaintenanceTemplate;
-use CB\Core\Reports\DesignerPreview;
-use CB\Core\Reports\MaintenanceFlowCompiler;
-use CB\Core\Reports\ReportBranding;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Reports\DesignerPreview;
+use CoreBlueprint\Core\Reports\MaintenanceFlowCompiler;
+use CoreBlueprint\Core\Reports\ReportBranding;
 
 final class CB_Reports_Designer_Preview_Sample_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */

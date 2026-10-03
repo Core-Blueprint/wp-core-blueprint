@@ -7,9 +7,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Permissions\Admin;
+namespace CoreBlueprint\Core\Permissions\Admin;
 
-use CB\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\PageBase;
 
 defined( 'ABSPATH' ) || exit;
 

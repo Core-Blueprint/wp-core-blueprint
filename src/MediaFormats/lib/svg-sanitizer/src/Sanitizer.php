@@ -1,17 +1,17 @@
 <?php
-namespace CB\Core\MediaFormats\Vendor\SvgSanitize;
+namespace CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize;
 
-use CB\Core\MediaFormats\Vendor\SvgSanitize\data\AllowedAttributes;
-use CB\Core\MediaFormats\Vendor\SvgSanitize\data\AllowedTags;
-use CB\Core\MediaFormats\Vendor\SvgSanitize\data\AttributeInterface;
-use CB\Core\MediaFormats\Vendor\SvgSanitize\data\TagInterface;
-use CB\Core\MediaFormats\Vendor\SvgSanitize\data\XPath;
-use CB\Core\MediaFormats\Vendor\SvgSanitize\ElementReference\Resolver;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data\AllowedAttributes;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data\AllowedTags;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data\AttributeInterface;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data\TagInterface;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data\XPath;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\ElementReference\Resolver;
 
 /**
  * Class Sanitizer
  *
- * @package CB\Core\MediaFormats\Vendor\SvgSanitize
+ * @package CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize
  */
 class Sanitizer
 {

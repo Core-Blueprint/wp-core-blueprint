@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Automation\ActionInvoker;
-use CB\Core\Automation\ActionRegistry;
-use CB\Core\Automation\InvocationContext;
-use CB\Core\Automation\StateInvoker;
-use CB\Core\Automation\StateRegistry;
-use CB\Core\Automation\TriggerRegistry;
-use CB\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Automation\ActionInvoker;
+use CoreBlueprint\Core\Automation\ActionRegistry;
+use CoreBlueprint\Core\Automation\InvocationContext;
+use CoreBlueprint\Core\Automation\StateInvoker;
+use CoreBlueprint\Core\Automation\StateRegistry;
+use CoreBlueprint\Core\Automation\TriggerRegistry;
+use CoreBlueprint\Core\ExtensionRegistry;
 
 final class CB_Base_Automation_Invocation_Contract_Test extends WP_UnitTestCase {
 

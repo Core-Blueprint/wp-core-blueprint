@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Ajax\Handlers\ExtensionLifecycle as ExtensionLifecycleActions;
-use CB\Core\ExtensionLifecycle;
-use CB\Core\Extensions;
+use CoreBlueprint\Core\Ajax\Handlers\ExtensionLifecycle as ExtensionLifecycleActions;
+use CoreBlueprint\Core\ExtensionLifecycle;
+use CoreBlueprint\Core\Extensions;
 
 final class CB_Base_Extension_Lifecycle_Contract_Test extends WP_UnitTestCase {
 

@@ -32,8 +32,8 @@ $overview_url = admin_url( 'admin.php?page=' . $page_slug );
 
 	<?php if ( ! $pdf_ready ) : ?>
 		<?php
-		echo \CB\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() escapes its own output.
-			'variant' => \CB\Core\UI\Notice::WARNING,
+		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() escapes its own output.
+			'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 			'title'   => __( 'PDF rendering is not available.', 'core-blueprint' ),
 			'message' => __( 'You can still generate and store report snapshots, but View and Download require Dompdf and its PHP extensions to be available.', 'core-blueprint' ),
 		] );
@@ -42,8 +42,8 @@ $overview_url = admin_url( 'admin.php?page=' . $page_slug );
 
 	<?php if ( ! $can_manage ) : ?>
 		<?php
-		echo \CB\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() escapes its own output.
-			'variant' => \CB\Core\UI\Notice::INFO,
+		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() escapes its own output.
+			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'message' => __( 'Maintenance Reports are managed by your Core Blueprint operator. You can download previously generated reports from the Overview tab.', 'core-blueprint' ),
 		] );
 		?>
@@ -130,7 +130,7 @@ $overview_url = admin_url( 'admin.php?page=' . $page_slug );
 					// clutter on every page load.
 					?>
 
-					<?php echo \CB\Core\UI\FormStatus::render( [ 'id' => 'cb-core-mr-status' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+					<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'id' => 'cb-core-mr-status' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 				</div>
 			</form>
 		</section>

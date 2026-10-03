@@ -22,7 +22,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Log;
+namespace CoreBlueprint\Core\Log;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -603,7 +603,7 @@ class SystemLog {
 	public static function on_login( string $user_login, $user ): void {
 		if (
 			$user instanceof \WP_User
-			&& \CB\Core\Security\TwoFactor\LoginFlow::is_password_stage_pending( (int) $user->ID )
+			&& \CoreBlueprint\Core\Security\TwoFactor\LoginFlow::is_password_stage_pending( (int) $user->ID )
 		) {
 			return;
 		}

@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\MenuGroup;
-use CB\Core\Admin\MenuGroupRegistry;
-use CB\Core\Admin\Page;
+use CoreBlueprint\Core\Admin\MenuGroup;
+use CoreBlueprint\Core\Admin\MenuGroupRegistry;
+use CoreBlueprint\Core\Admin\Page;
 
 final class CB_Base_Menu_Group_Registry_Contract_Test extends WP_UnitTestCase {
 

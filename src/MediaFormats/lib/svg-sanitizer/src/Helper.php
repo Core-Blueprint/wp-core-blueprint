@@ -1,5 +1,5 @@
 <?php
-namespace CB\Core\MediaFormats\Vendor\SvgSanitize;
+namespace CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize;
 
 class Helper
 {

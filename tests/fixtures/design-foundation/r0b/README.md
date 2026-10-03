@@ -1,6 +1,6 @@
 # Design Foundation R0b golden fixtures
 
-R0b freezes the pre-Foundation document-rendering baseline before any `CB\Core\Design\` production code is introduced.
+R0b freezes the pre-Foundation document-rendering baseline before any `CoreBlueprint\Core\Design\` production code is introduced.
 
 ## What is frozen
 

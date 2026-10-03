@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\UI;
+namespace CoreBlueprint\Core\UI;
 
 defined( 'ABSPATH' ) || exit;
 

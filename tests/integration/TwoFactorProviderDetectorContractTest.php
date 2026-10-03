@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Security\TwoFactor\ProviderDetector;
+use CoreBlueprint\Core\Security\TwoFactor\ProviderDetector;
 
 final class CB_Two_Factor_Provider_Test_State {
 	/** @var array<string,array<int,bool>> */

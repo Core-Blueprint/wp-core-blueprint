@@ -36,8 +36,8 @@ defined( 'ABSPATH' ) || exit;
 
 	<?php if ( ! $can_manage ) : ?>
 		<?php
-		echo \CB\Core\UI\Notice::render( [
-			'variant' => \CB\Core\UI\Notice::INFO,
+		echo \CoreBlueprint\Core\UI\Notice::render( [
+			'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 			'message' => __( 'You can view this page but not modify it. Only Core Blueprint operators may change permissions.', 'core-blueprint' ),
 		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
 		?>
@@ -64,7 +64,7 @@ defined( 'ABSPATH' ) || exit;
 			?>
 			<div class="cb-core-permissions-self-state" data-is-operator="<?php echo esc_attr( $self_is_operator ? 'yes' : 'no' ); ?>">
 				<?php
-				echo \CB\Core\UI\Status::render(
+				echo \CoreBlueprint\Core\UI\Status::render(
 					$self_is_operator ? 'active' : 'warning',
 					$self_is_operator ? __( 'CB Operator', 'core-blueprint' ) : __( 'Administrator', 'core-blueprint' )
 				); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
@@ -151,7 +151,7 @@ defined( 'ABSPATH' ) || exit;
 					>
 						<?php esc_html_e( 'Save operators', 'core-blueprint' ); ?>
 					</button>
-					<?php echo \CB\Core\UI\FormStatus::render( [ 'target' => 'operators' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'target' => 'operators' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</div>
 			<?php endif; ?>
 		</section>
@@ -188,7 +188,7 @@ defined( 'ABSPATH' ) || exit;
 				>
 					<?php esc_html_e( 'Save visibility', 'core-blueprint' ); ?>
 				</button>
-				<?php echo \CB\Core\UI\FormStatus::render( [ 'target' => 'hide' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'target' => 'hide' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
 		</section>
 
@@ -232,7 +232,7 @@ defined( 'ABSPATH' ) || exit;
 				>
 					<?php esc_html_e( 'Save admin capabilities', 'core-blueprint' ); ?>
 				</button>
-				<?php echo \CB\Core\UI\FormStatus::render( [ 'target' => 'admin-caps' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'target' => 'admin-caps' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
 		</section>
 

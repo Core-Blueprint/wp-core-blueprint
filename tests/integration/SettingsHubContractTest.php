@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\Pages\Settings as SettingsPage;
-use CB\Core\Admin\SettingsRegistry;
-use CB\Core\ExtensionRegistry;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Admin\Pages\Settings as SettingsPage;
+use CoreBlueprint\Core\Admin\SettingsRegistry;
+use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 
 final class CB_Base_Settings_Hub_Contract_Test extends WP_UnitTestCase {
 

@@ -7,13 +7,13 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup;
+namespace CoreBlueprint\Core\Setup;
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\Governance\EventRegistry;
-use CB\Core\RequestContext;
-use CB\Core\Setup\Admin\Actions;
-use CB\Core\Setup\Admin\Page;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\RequestContext;
+use CoreBlueprint\Core\Setup\Admin\Actions;
+use CoreBlueprint\Core\Setup\Admin\Page;
 
 defined( 'ABSPATH' ) || exit;
 

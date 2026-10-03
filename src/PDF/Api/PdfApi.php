@@ -11,10 +11,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\PDF\Api;
+namespace CoreBlueprint\Core\PDF\Api;
 
-use CB\Core\PDF\Renderer;
-use CB\Core\PDF\RendererException;
+use CoreBlueprint\Core\PDF\Renderer;
+use CoreBlueprint\Core\PDF\RendererException;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -16,10 +16,10 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Failsafe;
+namespace CoreBlueprint\Core\CLI\Commands\Failsafe;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -29,7 +29,7 @@ final class Disable implements CommandInterface {
 		$reason = isset( $args['reason'] ) ? (string) $args['reason'] : '';
 		$reason = '' !== trim( $reason ) ? $reason : null;
 
-		\CB\Core\Security\Failsafe::activate_emergency_bypass( 'console', $reason );
+		\CoreBlueprint\Core\Security\Failsafe::activate_emergency_bypass( 'console', $reason );
 
 		$lines = [
 			'Emergency bypass activated.',
@@ -76,7 +76,7 @@ final class Disable implements CommandInterface {
 	 */
 	public function __invoke( array $args, array $assoc_args ): void {
 		$reason = $assoc_args['reason'] ?? null;
-		\CB\Core\Security\Failsafe::activate_emergency_bypass( 'cli', $reason );
+		\CoreBlueprint\Core\Security\Failsafe::activate_emergency_bypass( 'cli', $reason );
 		\WP_CLI::success( 'Emergency bypass activated. All restrictive Core Blueprint features are now disabled.' );
 		\WP_CLI::line( 'Run `wp cb failsafe enable` to resume enforcement.' );
 	}

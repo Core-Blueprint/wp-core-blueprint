@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\Pages\Safeguards;
-use CB\Core\Admin\ScreenAssetRegistry;
-use CB\Core\Admin\ScreenContext;
-use CB\Core\Environment\Admin as EnvironmentAdmin;
-use CB\Core\Environment\EnvironmentTypeTestShim;
-use CB\Core\Environment\Governance;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Admin\Pages\Safeguards;
+use CoreBlueprint\Core\Admin\ScreenAssetRegistry;
+use CoreBlueprint\Core\Admin\ScreenContext;
+use CoreBlueprint\Core\Environment\Admin as EnvironmentAdmin;
+use CoreBlueprint\Core\Environment\EnvironmentTypeTestShim;
+use CoreBlueprint\Core\Environment\Governance;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Settings;
 
 final class CB_Base_Environment_Governance_Admin_Contract_Test extends WP_UnitTestCase {
 

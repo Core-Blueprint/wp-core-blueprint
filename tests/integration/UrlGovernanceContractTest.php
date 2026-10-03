@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\Pages\Preferences;
-use CB\Core\Routing\CategoryRoutes;
-use CB\Core\Routing\Policy;
-use CB\Core\Routing\Preflight;
-use CB\Core\Routing\Runtime;
-use CB\Core\Settings;
-use CB\Core\Setup\Registry;
+use CoreBlueprint\Core\Admin\Pages\Preferences;
+use CoreBlueprint\Core\Routing\CategoryRoutes;
+use CoreBlueprint\Core\Routing\Policy;
+use CoreBlueprint\Core\Routing\Preflight;
+use CoreBlueprint\Core\Routing\Runtime;
+use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Setup\Registry;
 
 final class CB_Base_URL_Governance_Contract_Test extends WP_UnitTestCase {
 

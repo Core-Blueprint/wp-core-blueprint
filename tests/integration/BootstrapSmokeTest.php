@@ -12,7 +12,7 @@ final class CB_Base_Bootstrap_Smoke_Test extends WP_UnitTestCase {
         self::assertSame( '1.2', CB_CORE_API_VERSION );
         self::assertSame( '8.4', CB_CORE_MIN_PHP );
         self::assertSame( 'core-blueprint/core-blueprint.php', CB_CORE_BASENAME );
-        self::assertTrue( class_exists( \CB\Core\Core::class ) );
+        self::assertTrue( class_exists( \CoreBlueprint\Core\Core::class ) );
     }
 
     public function test_bootstrap_requirements_are_satisfied_in_ci(): void {

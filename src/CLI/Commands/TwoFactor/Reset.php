@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\CLI\Commands\TwoFactor;
+namespace CoreBlueprint\Core\CLI\Commands\TwoFactor;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Security\TwoFactor\ProviderDetector;
-use CB\Core\Security\TwoFactor\RecoveryManager;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Security\TwoFactor\ProviderDetector;
+use CoreBlueprint\Core\Security\TwoFactor\RecoveryManager;
 
 defined( 'ABSPATH' ) || exit;
 

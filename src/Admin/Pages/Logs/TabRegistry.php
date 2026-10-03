@@ -26,7 +26,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin\Pages\Logs;
+namespace CoreBlueprint\Core\Admin\Pages\Logs;
 
 defined( 'ABSPATH' ) || exit;
 

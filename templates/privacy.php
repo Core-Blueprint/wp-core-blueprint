@@ -3,7 +3,7 @@
 /**
  * Template: Privacy & Logging.
  *
- * Rendered by \CB\Core\Admin\Pages\Privacy::render(). Expects the following
+ * Rendered by \CoreBlueprint\Core\Admin\Pages\Privacy::render(). Expects the following
  * variables to be in scope:
  *
  *   $current_ip_mode          string
@@ -11,7 +11,7 @@
  *   $current_retention        array<string,int>
  *   $active_preset            string (slug or 'custom')
  *   $preset_actually_matches  bool
- *   $preset_definitions       array (from \CB\Core\Privacy\Presets::definitions())
+ *   $preset_definitions       array (from \CoreBlueprint\Core\Privacy\Presets::definitions())
  *   $verbosity_categories     array<string,string>  category → label
  *   $retention_categories     array<string,string>  category → label
  *   $retention_options        array<int,string>     days → label
@@ -40,7 +40,7 @@ defined( 'ABSPATH' ) || exit;
 			<div class="cb-core-radio-grid cb-core-radio-grid--columns-4">
 				<?php foreach ( $preset_definitions as $slug => $def ) : ?>
 					<?php
-					echo \CB\Core\UI\RadioCard::render( [
+					echo \CoreBlueprint\Core\UI\RadioCard::render( [
 						'name'    => 'preset',
 						'value'   => $slug,
 						'label'   => $def['label'],
@@ -63,8 +63,8 @@ defined( 'ABSPATH' ) || exit;
 						$ref
 					);
 				}
-				echo \CB\Core\UI\Notice::render( [
-					'variant' => \CB\Core\UI\Notice::INFO,
+				echo \CoreBlueprint\Core\UI\Notice::render( [
+					'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 					'message' => $custom_message,
 					'class'   => 'cb-core-privacy-custom-notice',
 				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
@@ -72,8 +72,8 @@ defined( 'ABSPATH' ) || exit;
 			<?php endif; ?>
 
 			<?php
-			echo \CB\Core\UI\Notice::render( [
-				'variant' => \CB\Core\UI\Notice::INFO,
+			echo \CoreBlueprint\Core\UI\Notice::render( [
+				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'message' => __( 'Presets are starting points. Core Blueprint does not replace a full AVG/GDPR processor agreement. For organizations handling special-category data, consult a data protection officer.', 'core-blueprint' ),
 				'class'   => 'cb-core-privacy-guidance',
 			] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
@@ -94,10 +94,10 @@ defined( 'ABSPATH' ) || exit;
 			</p>
 
 			<?php
-			echo \CB\Core\UI\RadioGroup::render( [
+			echo \CoreBlueprint\Core\UI\RadioGroup::render( [
 				'name'    => 'ip_mode',
 				'value'   => $current_ip_mode,
-				'layout'  => \CB\Core\UI\RadioGroup::LAYOUT_GRID,
+				'layout'  => \CoreBlueprint\Core\UI\RadioGroup::LAYOUT_GRID,
 				'columns' => 3,
 				'options' => [
 					[
@@ -213,7 +213,7 @@ defined( 'ABSPATH' ) || exit;
 			<button type="button" class="button button-primary cb-core-button cb-core-button--primary cb-core-privacy-save">
 				<?php esc_html_e( 'Save changes', 'core-blueprint' ); ?>
 			</button>
-			<?php echo \CB\Core\UI\FormStatus::render(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+			<?php echo \CoreBlueprint\Core\UI\FormStatus::render(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 		</div>
 	</form>
 </div>

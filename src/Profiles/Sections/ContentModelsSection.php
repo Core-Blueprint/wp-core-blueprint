@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles\Sections;
+namespace CoreBlueprint\Core\Profiles\Sections;
 
-use CB\Core\ContentModels\Repository;
-use CB\Core\ContentModels\SchemaTransfer;
-use CB\Core\Profiles\CanonicalJson;
-use CB\Core\Profiles\Diff;
-use CB\Core\Profiles\SectionInterface;
-use CB\Core\Profiles\SchemaGuard;
+use CoreBlueprint\Core\ContentModels\Repository;
+use CoreBlueprint\Core\ContentModels\SchemaTransfer;
+use CoreBlueprint\Core\Profiles\CanonicalJson;
+use CoreBlueprint\Core\Profiles\Diff;
+use CoreBlueprint\Core\Profiles\SectionInterface;
+use CoreBlueprint\Core\Profiles\SchemaGuard;
 
 defined( 'ABSPATH' ) || exit;
 

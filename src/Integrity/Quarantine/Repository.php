@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Quarantine;
+namespace CoreBlueprint\Core\Integrity\Quarantine;
 
-use CB\Core\Integrity\Storage\ChunkedOptionStore;
+use CoreBlueprint\Core\Integrity\Storage\ChunkedOptionStore;
 
 use function array_values;
 use function current_time;

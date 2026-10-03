@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Environment\EnvironmentTypeTestShim;
-use CB\Core\Environment\Governance;
-use CB\Core\Profiles\ApplyLock;
-use CB\Core\Profiles\Diff;
-use CB\Core\Profiles\Engine;
-use CB\Core\Profiles\SectionInterface;
-use CB\Core\Profiles\SectionRegistry;
-use CB\Core\Profiles\Sections\EnvironmentGovernanceSection;
-use CB\Core\Security\AccessMode;
-use CB\Core\Security\AccessModeState;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Environment\EnvironmentTypeTestShim;
+use CoreBlueprint\Core\Environment\Governance;
+use CoreBlueprint\Core\Profiles\ApplyLock;
+use CoreBlueprint\Core\Profiles\Diff;
+use CoreBlueprint\Core\Profiles\Engine;
+use CoreBlueprint\Core\Profiles\SectionInterface;
+use CoreBlueprint\Core\Profiles\SectionRegistry;
+use CoreBlueprint\Core\Profiles\Sections\EnvironmentGovernanceSection;
+use CoreBlueprint\Core\Security\AccessMode;
+use CoreBlueprint\Core\Security\AccessModeState;
+use CoreBlueprint\Core\Settings;
 
 final class CB_Profiles_Environment_Governance_Failing_Section implements SectionInterface {
 	public function id(): string { return 'zz-environment-failing'; }

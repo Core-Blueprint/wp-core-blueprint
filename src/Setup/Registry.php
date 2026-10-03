@@ -10,36 +10,36 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup;
+namespace CoreBlueprint\Core\Setup;
 
-use CB\Core\Setup\Checks\AccessModeCheck;
-use CB\Core\Setup\Checks\AdminColumnsCheck;
-use CB\Core\Setup\Checks\AdminNavigationCheck;
-use CB\Core\Setup\Checks\AdminNoticesCheck;
-use CB\Core\Setup\Checks\RoutingUrlsCheck;
-use CB\Core\Setup\Checks\AuditRetentionCheck;
-use CB\Core\Setup\Checks\AuditVerbosityCheck;
-use CB\Core\Setup\Checks\ContentModelsCheck;
-use CB\Core\Setup\Checks\CoreScannerPolicyCheck;
-use CB\Core\Setup\Checks\CoreScannerReadinessCheck;
-use CB\Core\Setup\Checks\CoreShieldCheck;
-use CB\Core\Setup\Checks\EnvironmentIdentityCheck;
-use CB\Core\Setup\Checks\EnvironmentIndexingProtectionCheck;
-use CB\Core\Setup\Checks\FailsafeReadinessCheck;
-use CB\Core\Setup\Checks\LoginShieldCheck;
-use CB\Core\Setup\Checks\MailDeliveryReadinessCheck;
-use CB\Core\Setup\Checks\MailDeliveryStrategyCheck;
-use CB\Core\Setup\Checks\MailDesignerCheck;
-use CB\Core\Setup\Checks\MediaFormatsCheck;
-use CB\Core\Setup\Checks\ModuleActivationDecisionCheck;
-use CB\Core\Setup\Checks\NotificationsPolicyCheck;
-use CB\Core\Setup\Checks\OperationalLogsCheck;
-use CB\Core\Setup\Checks\OperationalToolsCheck;
-use CB\Core\Setup\Checks\PrivacyIpHandlingCheck;
-use CB\Core\Setup\Checks\PrivilegedAccessProtectionCheck;
-use CB\Core\Setup\Checks\PrivilegedAccessReviewCheck;
-use CB\Core\Setup\Checks\SnippetsCheck;
-use CB\Core\Setup\Checks\TwoFactorReadinessCheck;
+use CoreBlueprint\Core\Setup\Checks\AccessModeCheck;
+use CoreBlueprint\Core\Setup\Checks\AdminColumnsCheck;
+use CoreBlueprint\Core\Setup\Checks\AdminNavigationCheck;
+use CoreBlueprint\Core\Setup\Checks\AdminNoticesCheck;
+use CoreBlueprint\Core\Setup\Checks\RoutingUrlsCheck;
+use CoreBlueprint\Core\Setup\Checks\AuditRetentionCheck;
+use CoreBlueprint\Core\Setup\Checks\AuditVerbosityCheck;
+use CoreBlueprint\Core\Setup\Checks\ContentModelsCheck;
+use CoreBlueprint\Core\Setup\Checks\CoreScannerPolicyCheck;
+use CoreBlueprint\Core\Setup\Checks\CoreScannerReadinessCheck;
+use CoreBlueprint\Core\Setup\Checks\CoreShieldCheck;
+use CoreBlueprint\Core\Setup\Checks\EnvironmentIdentityCheck;
+use CoreBlueprint\Core\Setup\Checks\EnvironmentIndexingProtectionCheck;
+use CoreBlueprint\Core\Setup\Checks\FailsafeReadinessCheck;
+use CoreBlueprint\Core\Setup\Checks\LoginShieldCheck;
+use CoreBlueprint\Core\Setup\Checks\MailDeliveryReadinessCheck;
+use CoreBlueprint\Core\Setup\Checks\MailDeliveryStrategyCheck;
+use CoreBlueprint\Core\Setup\Checks\MailDesignerCheck;
+use CoreBlueprint\Core\Setup\Checks\MediaFormatsCheck;
+use CoreBlueprint\Core\Setup\Checks\ModuleActivationDecisionCheck;
+use CoreBlueprint\Core\Setup\Checks\NotificationsPolicyCheck;
+use CoreBlueprint\Core\Setup\Checks\OperationalLogsCheck;
+use CoreBlueprint\Core\Setup\Checks\OperationalToolsCheck;
+use CoreBlueprint\Core\Setup\Checks\PrivacyIpHandlingCheck;
+use CoreBlueprint\Core\Setup\Checks\PrivilegedAccessProtectionCheck;
+use CoreBlueprint\Core\Setup\Checks\PrivilegedAccessReviewCheck;
+use CoreBlueprint\Core\Setup\Checks\SnippetsCheck;
+use CoreBlueprint\Core\Setup\Checks\TwoFactorReadinessCheck;
 
 defined( 'ABSPATH' ) || exit;
 

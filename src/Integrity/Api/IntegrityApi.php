@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Api;
+namespace CoreBlueprint\Core\Integrity\Api;
 
-use CB\Core\Integrity\Scanner\ScanJobDispatcher;
-use CB\Core\Integrity\Scanner\ScanJobRepository;
-use CB\Core\Integrity\Scanner\ScanJobStatus;
-use CB\Core\Integrity\Scanner\ScanLockedException;
-use CB\Core\Integrity\Scanner\TransientProgressReporter;
-use CB\Core\Integrity\State;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Integrity\Support\Audit as IntegrityAudit;
-use CB\Core\Integrity\Support\Finding;
-use CB\Core\Integrity\Support\ResultFormatter;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobDispatcher;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobStatus;
+use CoreBlueprint\Core\Integrity\Scanner\ScanLockedException;
+use CoreBlueprint\Core\Integrity\Scanner\TransientProgressReporter;
+use CoreBlueprint\Core\Integrity\State;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Support\Audit as IntegrityAudit;
+use CoreBlueprint\Core\Integrity\Support\Finding;
+use CoreBlueprint\Core\Integrity\Support\ResultFormatter;
 use Throwable;
 use WP_Error;
 

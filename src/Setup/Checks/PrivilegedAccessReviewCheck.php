@@ -10,13 +10,13 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup\Checks;
+namespace CoreBlueprint\Core\Setup\Checks;
 
-use CB\Core\Admin\Pages\Safeguards;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Evidence;
-use CB\Core\Setup\Fingerprint;
+use CoreBlueprint\Core\Admin\Pages\Safeguards;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Evidence;
+use CoreBlueprint\Core\Setup\Fingerprint;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;

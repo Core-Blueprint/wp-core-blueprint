@@ -11,14 +11,14 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
 final class AdminExtensionTabAssetProvider {
 
 	public static function enqueue( ScreenContext $context ): void {
-		$hud_enabled = \CB\Core\HUD\Settings::is_enabled();
+		$hud_enabled = \CoreBlueprint\Core\HUD\Settings::is_enabled();
 
 		foreach ( AdminAssetCatalog::extension_tab_full_set() as $asset_id ) {
 			if ( ! $hud_enabled && in_array( $asset_id, [ 'component.hud', 'module.hud' ], true ) ) {

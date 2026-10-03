@@ -10,11 +10,11 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup\Checks;
+namespace CoreBlueprint\Core\Setup\Checks;
 
-use CB\Core\Modules\ActivationRegistry;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Evidence;
+use CoreBlueprint\Core\Modules\ActivationRegistry;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Evidence;
 
 defined( 'ABSPATH' ) || exit;
 

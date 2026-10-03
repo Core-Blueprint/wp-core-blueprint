@@ -24,9 +24,9 @@ final class CB_Base_Core_Api_Documentation_Contract_Test extends WP_UnitTestCase
 		self::assertStringContainsString( 'Reorder Foundation must declare at least `1.1`', $public_api );
 		self::assertStringContainsString( 'Secret Protection Foundation must declare at least `1.2`', $public_api );
 		self::assertStringContainsString( 'native-screen semantic UI requirements must declare at least `1.2`', $public_api );
-		self::assertStringContainsString( 'CB\\\\Core\\\\UI\\\\PrimaryNav::render()', $public_api );
-		self::assertStringContainsString( 'CB\\\\Core\\\\UI\\\\SectionNav::render()', $public_api );
-		self::assertStringContainsString( 'CB\\\\Core\\\\UI\\\\Tile::render()', $public_api );
+		self::assertStringContainsString( 'CoreBlueprint\\\\Core\\\\UI\\\\PrimaryNav::render()', $public_api );
+		self::assertStringContainsString( 'CoreBlueprint\\\\Core\\\\UI\\\\SectionNav::render()', $public_api );
+		self::assertStringContainsString( 'CoreBlueprint\\\\Core\\\\UI\\\\Tile::render()', $public_api );
 		self::assertStringContainsString( 'Introduced in Core API `1.2`.', $secrets );
 		self::assertStringContainsString( 'Introduced in Core API `1.1`.', $reorder );
 		self::assertStringContainsString( 'public Core API `1.1` contract', $changelog );

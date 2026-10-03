@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Design\Profile\Mail;
+namespace CoreBlueprint\Core\Design\Profile\Mail;
 
-use CB\Core\Design\Kernel\Diagnostics;
+use CoreBlueprint\Core\Design\Kernel\Diagnostics;
 
 defined( 'ABSPATH' ) || exit;
 

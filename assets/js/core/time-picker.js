@@ -19,7 +19,7 @@
  *
  * Native DOM only. No jQuery, React, wp.element, or @wordpress/components.
  *
- * @package CB\Core
+ * @package CoreBlueprint\Core
  */
 
 import { create as createIcon } from './icon.js';

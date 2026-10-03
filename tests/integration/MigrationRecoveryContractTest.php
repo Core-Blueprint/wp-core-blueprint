@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Migration\Recovery;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\RolePolicySchema;
-use CB\Core\Permissions\TrustSchemaMigrator;
-use CB\Core\Security\TwoFactor\ChallengeStore;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\EnrollmentStore;
+use CoreBlueprint\Core\Migration\Recovery;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\RolePolicySchema;
+use CoreBlueprint\Core\Permissions\TrustSchemaMigrator;
+use CoreBlueprint\Core\Security\TwoFactor\ChallengeStore;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\EnrollmentStore;
 
 final class MigrationRecoveryContractTest extends WP_UnitTestCase {
 

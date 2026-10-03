@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 defined( 'ABSPATH' ) || exit;
 
 interface Page {

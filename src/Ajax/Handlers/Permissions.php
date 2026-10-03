@@ -28,16 +28,16 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Ajax\Handlers;
+namespace CoreBlueprint\Core\Ajax\Handlers;
 
-use CB\Core\Ajax\Guards;
-use CB\Core\Ajax\Request;
-use CB\Core\Log\AuditLog;
-use CB\Core\Permissions\Roles;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\PrivilegedAccessPolicy;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Ajax\Guards;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

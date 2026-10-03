@@ -16,9 +16,9 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\Safeguards;
+namespace CoreBlueprint\Core\Safeguards;
 
-use CB\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Admin;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -118,19 +118,19 @@ if ( ! empty( $cb_core_errors ) ) {
 
 unset( $cb_core_errors );
 
-// ─── PSR-4 autoloader for CB\Core\ ────────────────────────────────────────────
+// ─── PSR-4 autoloader for CoreBlueprint\Core\ ────────────────────────────────────────────
 // Registered before any Core Blueprint code runs so class references resolve
 // lazily. Core Blueprint extensions register their own autoloaders and consume
 // Base through the public Foundation/services boundary.
 //
-// Namespace prefix 'CB\Core\' maps to src/ directory with one file per class,
+// Namespace prefix 'CoreBlueprint\Core\' maps to src/ directory with one file per class,
 // e.g.:
-//   CB\Core\Core                         -> src/Core.php
-//   CB\Core\Log\AuditLog                 -> src/Log/AuditLog.php
-//   CB\Core\Admin\Pages\Dashboard        -> src/Admin/Pages/Dashboard.php
+//   CoreBlueprint\Core\Core                         -> src/Core.php
+//   CoreBlueprint\Core\Log\AuditLog                 -> src/Log/AuditLog.php
+//   CoreBlueprint\Core\Admin\Pages\Dashboard        -> src/Admin/Pages/Dashboard.php
 
 spl_autoload_register( static function ( string $class ): void {
-	$prefix = 'CB\\Core\\';
+	$prefix = 'CoreBlueprint\\Core\\';
 	$len    = strlen( $prefix );
 
 	if ( strncmp( $class, $prefix, $len ) !== 0 ) {
@@ -155,30 +155,30 @@ require_once CB_CORE_DIR . 'includes/cb-about-page.php';
 // mechanism must still be operational. Touching the class here triggers the
 // autoloader; calling init() hooks the fail-open handlers.
 
-\CB\Core\Security\Failsafe::init();
+\CoreBlueprint\Core\Security\Failsafe::init();
 
 // ─── Core bootstrap (Foundation layer) ───────────────────────────────────────
 
-register_activation_hook(   __FILE__, [ \CB\Core\Core::class, 'activate' ] );
-register_deactivation_hook( __FILE__, [ \CB\Core\Core::class, 'deactivate' ] );
+register_activation_hook(   __FILE__, [ \CoreBlueprint\Core\Core::class, 'activate' ] );
+register_deactivation_hook( __FILE__, [ \CoreBlueprint\Core\Core::class, 'deactivate' ] );
 
 // The resolver is the sole WordPress hook owner for Core Admin screen assets.
 // Screen-specific and open extension-tab requirements resolve through the
 // canonical private asset/module catalogs.
-if ( \CB\Core\RequestContext::is_admin_screen() ) {
-	\CB\Core\Admin\AdminAssetResolver::init();
+if ( \CoreBlueprint\Core\RequestContext::is_admin_screen() ) {
+	\CoreBlueprint\Core\Admin\AdminAssetResolver::init();
 }
 
-\CB\Core\Core::instance();
+\CoreBlueprint\Core\Core::instance();
 
 // Compliance Resources is a Base foundation: software registers stable roles,
 // while each site owns the Page/document assignments and custom entries.
-\CB\Core\Compliance\Bootstrap::boot();
+\CoreBlueprint\Core\Compliance\Bootstrap::boot();
 
 // AI Governance is a Base foundation concern rather than an extension module.
 // Boot after the canonical Core hook owner so it can register its schema before
 // the priority-5 reconciliation sweep and contribute its Base-owned admin page.
-\CB\Core\AIGovernance\Bootstrap::boot();
+\CoreBlueprint\Core\AIGovernance\Bootstrap::boot();
 
 // ─── WP-CLI commands ─────────────────────────────────────────────────────────
 
@@ -186,6 +186,6 @@ if ( \CB\Core\RequestContext::is_admin_screen() ) {
 // Core Blueprint extensions can contribute commands through the public CLI
 // registry filters before WP-CLI resolves the final `cb` command tree. Web
 // requests do not install CLI-only wiring.
-if ( \CB\Core\RequestContext::is_cli() ) {
-	add_action( 'plugins_loaded', [ \CB\Core\CLI\Bootstrap::class, 'register_cli' ], 30 );
+if ( \CoreBlueprint\Core\RequestContext::is_cli() ) {
+	add_action( 'plugins_loaded', [ \CoreBlueprint\Core\CLI\Bootstrap::class, 'register_cli' ], 30 );
 }

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Reports\Composer;
+namespace CoreBlueprint\Core\Reports\Composer;
 
 defined( 'ABSPATH' ) || exit;
 

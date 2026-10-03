@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Flow\Api\FlowRenderApi;
-use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Flow\RenderBlock;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\Api\FlowRenderApi;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
 
 final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */

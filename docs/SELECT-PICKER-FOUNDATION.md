@@ -16,7 +16,7 @@ Foundation owns only presentation and interaction. It must not hardcode product-
 Enqueue the Foundation:
 
 ```php
-CB\Core\UI\Assets::enqueue_select_picker();
+CoreBlueprint\Core\UI\Assets::enqueue_select_picker();
 ```
 
 Opt a native select into enhancement:
@@ -56,7 +56,7 @@ Programmatic changes to the native select remain supported. Consumers that chang
 
 ## Presentation boundary
 
-Auto mode uses the Core presentation below the Core Blueprint parent menu and the WordPress-native adapter on standalone wp-admin screens. Explicit presentation constants remain available through `CB\Core\UI\Assets`.
+Auto mode uses the Core presentation below the Core Blueprint parent menu and the WordPress-native adapter on standalone wp-admin screens. Explicit presentation constants remain available through `CoreBlueprint\Core\UI\Assets`.
 
 ## Scope
 

@@ -23,10 +23,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Security\Modules;
+namespace CoreBlueprint\Core\Security\Modules;
 
-use CB\Core\Settings;
-use CB\Core\Security\AbstractModule;
+use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Security\AbstractModule;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -14,7 +14,7 @@
  *   cb:admin-theme-ready
  *   cb:admin-theme-change
  *
- * @package CB\Core
+ * @package CoreBlueprint\Core
  * @since   1.0.0
  */
 

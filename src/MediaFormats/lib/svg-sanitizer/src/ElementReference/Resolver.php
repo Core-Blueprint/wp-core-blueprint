@@ -1,9 +1,9 @@
 <?php
-namespace CB\Core\MediaFormats\Vendor\SvgSanitize\ElementReference;
+namespace CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\ElementReference;
 
-use CB\Core\MediaFormats\Vendor\SvgSanitize\data\XPath;
-use CB\Core\MediaFormats\Vendor\SvgSanitize\Exceptions\NestingException;
-use CB\Core\MediaFormats\Vendor\SvgSanitize\Helper;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\data\XPath;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\Exceptions\NestingException;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\Helper;
 
 class Resolver
 {

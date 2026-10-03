@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /** Private BASE-10E.2 module definitions: Preferences. */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 defined( 'ABSPATH' ) || exit;
 
 final class AdminModuleDefinitionsPreferences {
@@ -87,7 +87,7 @@ final class AdminModuleDefinitionsPreferences {
 					'src'  => 'features/reports-preferences.js',
 					'deps' => [ '@cb-core/dom', '@cb-core/modal', '@cb-core/design-editor' ],
 					'data' => [
-						'composer' => \CB\Core\Reports\Composer\MaintenanceTemplate::current(),
+						'composer' => \CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate::current(),
 						'blockLabels' => [
 							'header'        => __( 'Header', 'core-blueprint' ),
 							'status'        => __( 'Status', 'core-blueprint' ),

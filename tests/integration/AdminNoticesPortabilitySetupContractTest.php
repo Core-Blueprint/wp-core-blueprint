@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminNotices\Capabilities as AdminNoticeCapabilities;
-use CB\Core\AdminNotices\Policy;
-use CB\Core\AdminNotices\SourceLedger;
-use CB\Core\Profiles\SectionInterface;
-use CB\Core\Profiles\SectionRegistry as ProfileSectionRegistry;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Registry as SetupRegistry;
+use CoreBlueprint\Core\AdminNotices\Capabilities as AdminNoticeCapabilities;
+use CoreBlueprint\Core\AdminNotices\Policy;
+use CoreBlueprint\Core\AdminNotices\SourceLedger;
+use CoreBlueprint\Core\Profiles\SectionInterface;
+use CoreBlueprint\Core\Profiles\SectionRegistry as ProfileSectionRegistry;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Registry as SetupRegistry;
 
 final class CB_Base_Admin_Notices_Portability_Setup_Contract_Test extends WP_UnitTestCase {
 

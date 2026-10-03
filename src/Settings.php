@@ -11,11 +11,11 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core;
+namespace CoreBlueprint\Core;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Security\AccessMode;
-use CB\Core\Security\ModuleRegistry;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Security\AccessMode;
+use CoreBlueprint\Core\Security\ModuleRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

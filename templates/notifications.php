@@ -28,7 +28,7 @@
  * directly, deliberately bypassing this UI so a compromised admin account
  * cannot silently redirect its own lockout-recovery alerts.
  *
- * Available variables (set by \CB\Core\Admin\Pages\Preferences::render_notifications_tab):
+ * Available variables (set by \CoreBlueprint\Core\Admin\Pages\Preferences::render_notifications_tab):
  *   $settings       - full settings array
  *   $email_override - current audit.email_recipient value
  *   $email_alerts   - current audit.email_alerts array (per-severity toggles)
@@ -86,7 +86,7 @@ defined( 'ABSPATH' ) || exit;
 								data-cb-core-alert-recipient-save>
 								<?php esc_html_e( 'Save', 'core-blueprint' ); ?>
 							</button>
-							<?php echo \CB\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-alert-recipient-status' => '' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+							<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-alert-recipient-status' => '' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 						</div>
 						<p class="description">
 							<?php esc_html_e( 'Leave empty to use the site administrator address. Separate multiple addresses with commas - every valid address receives the alert; invalid entries are dropped on save.', 'core-blueprint' ); ?>
@@ -168,7 +168,7 @@ defined( 'ABSPATH' ) || exit;
 								<?php disabled( ! $can_manage_permissions_notifications ); ?>>
 								<?php esc_html_e( 'Save', 'core-blueprint' ); ?>
 							</button>
-							<?php echo \CB\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-alert-recipient-status' => '', 'data-cb-core-alert-group' => 'permissions' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+							<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-alert-recipient-status' => '', 'data-cb-core-alert-group' => 'permissions' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 						</div>
 						<p class="description">
 							<?php esc_html_e( 'Optional override for permissions notifications. Leave empty to use the audit-tab recipient (or the site admin email if that is also empty).', 'core-blueprint' ); ?>
@@ -267,7 +267,7 @@ defined( 'ABSPATH' ) || exit;
 								<?php disabled( ! $can_manage_integrity_policy ); ?>>
 								<?php esc_html_e( 'Save', 'core-blueprint' ); ?>
 							</button>
-							<?php echo \CB\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-alert-recipient-status' => '', 'data-cb-core-alert-group' => 'integrity' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+							<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-alert-recipient-status' => '', 'data-cb-core-alert-group' => 'integrity' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 						</div>
 						<p class="description">
 							<?php esc_html_e( 'Optional override for Core Scanner notifications. Leave empty to use the audit recipient, then the site administrator address.', 'core-blueprint' ); ?>
@@ -353,7 +353,7 @@ defined( 'ABSPATH' ) || exit;
 								data-cb-core-alert-group="reports">
 								<?php esc_html_e( 'Save', 'core-blueprint' ); ?>
 							</button>
-							<?php echo \CB\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-alert-recipient-status' => '', 'data-cb-core-alert-group' => 'reports' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
+							<?php echo \CoreBlueprint\Core\UI\FormStatus::render( [ 'data' => [ 'data-cb-core-alert-recipient-status' => '', 'data-cb-core-alert-group' => 'reports' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output ?>
 						</div>
 						<p class="description">
 							<?php esc_html_e( 'Optional override for report notifications. Leave empty to use the audit-tab recipient.', 'core-blueprint' ); ?>
@@ -383,8 +383,8 @@ defined( 'ABSPATH' ) || exit;
 	<!-- ─── Scope note (page-level, not group-level) ────────────────── -->
 
 	<?php
-	echo \CB\Core\UI\Notice::render( [
-		'variant' => \CB\Core\UI\Notice::INFO,
+	echo \CoreBlueprint\Core\UI\Notice::render( [
+		'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 		'title'   => __( 'Scope note:', 'core-blueprint' ),
 		'message' => __( 'Failsafe emergency-bypass notifications always go to the site administrator address and cannot be redirected here. Keeping that channel out of the admin UI ensures lockout-recovery alerts remain reachable even if an administrator account is compromised.', 'core-blueprint' ),
 		'class'   => 'cb-core-notification-footer',

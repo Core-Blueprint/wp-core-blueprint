@@ -12,10 +12,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\MediaReplace\Admin;
+namespace CoreBlueprint\Core\MediaReplace\Admin;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\MediaReplace\AdminIntegration;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\MediaReplace\AdminIntegration;
 
 defined( 'ABSPATH' ) || exit;
 

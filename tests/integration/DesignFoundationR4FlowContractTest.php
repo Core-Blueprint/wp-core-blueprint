@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Kernel\DesignProject;
-use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Flow\PdfRenderer;
-use CB\Core\Design\Profile\Document\Flow\Presentation;
-use CB\Core\Design\Profile\Document\Flow\RenderBlock;
-use CB\Core\Design\Profile\Document\Flow\Validator;
+use CoreBlueprint\Core\Design\Kernel\DesignProject;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\PdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\Presentation;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\Validator;
 
 final class CB_Design_Foundation_R4_Flow_Contract_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */
@@ -111,12 +111,12 @@ final class CB_Design_Foundation_R4_Flow_Contract_Test extends WP_UnitTestCase {
 		$flow = dirname( __DIR__, 2 ) . '/src/Design/Profile/Document/Flow';
 		foreach ( glob( $flow . '/*.php' ) ?: [] as $file ) {
 			$source = (string) file_get_contents( $file );
-			self::assertDoesNotMatchRegularExpression( '/\\\\Dompdf\\\\|CB\\\\Core\\\\PDF\\\\Renderer\b/', $source, basename( $file ) );
+			self::assertDoesNotMatchRegularExpression( '/\\\\Dompdf\\\\|CoreBlueprint\\\\Core\\\\PDF\\\\Renderer\b/', $source, basename( $file ) );
 		}
 		$shared = dirname( __DIR__, 2 ) . '/src/Design/Profile/Document/Render';
 		foreach ( glob( $shared . '/*.php' ) ?: [] as $file ) {
 			$source = (string) file_get_contents( $file );
-			self::assertDoesNotMatchRegularExpression( '/\\\\Dompdf\\\\|CB\\\\Core\\\\PDF\\\\Renderer\b|PdfApi/', $source, basename( $file ) );
+			self::assertDoesNotMatchRegularExpression( '/\\\\Dompdf\\\\|CoreBlueprint\\\\Core\\\\PDF\\\\Renderer\b|PdfApi/', $source, basename( $file ) );
 		}
 	}
 }

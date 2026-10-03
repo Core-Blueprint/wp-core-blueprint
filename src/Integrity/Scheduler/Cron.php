@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Scheduler;
+namespace CoreBlueprint\Core\Integrity\Scheduler;
 
-use CB\Core\Integrity\Scanner\ScanJobRunner;
-use CB\Core\Integrity\Scanner\ScanLockedException;
-use CB\Core\Integrity\State;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Integrity\Support\Audit;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner;
+use CoreBlueprint\Core\Integrity\Scanner\ScanLockedException;
+use CoreBlueprint\Core\Integrity\State;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Support\Audit;
 
 use function bin2hex;
 use function random_bytes;

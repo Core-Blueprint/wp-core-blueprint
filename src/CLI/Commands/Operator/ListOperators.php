@@ -12,11 +12,11 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Operator;
+namespace CoreBlueprint\Core\CLI\Commands\Operator;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Permissions\Roles;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Permissions\Roles;
 
 defined( 'ABSPATH' ) || exit;
 

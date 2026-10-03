@@ -7,9 +7,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels\Importers\NativeWordPress;
+namespace CoreBlueprint\Core\ContentModels\Importers\NativeWordPress;
 
-use CB\Core\ContentModels\FieldTypes;
+use CoreBlueprint\Core\ContentModels\FieldTypes;
 
 defined( 'ABSPATH' ) || exit;
 

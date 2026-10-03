@@ -10,14 +10,14 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since   1.0.0
  */
-namespace CB\Core\Admin\Pages\Logs\Tabs;
+namespace CoreBlueprint\Core\Admin\Pages\Logs\Tabs;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\Pages\Preferences;
-use CB\Core\Admin\TabNav;
-use CB\Core\Governance\RetentionPolicy;
-use CB\Core\Governance\RetentionStoreRegistry;
-use CB\Core\Log\Retention;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Pages\Preferences;
+use CoreBlueprint\Core\Admin\TabNav;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Governance\RetentionStoreRegistry;
+use CoreBlueprint\Core\Log\Retention;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -55,7 +55,7 @@ final class RetentionTab {
 								<?php /* translators: %d: retention window in days. */ ?>
 								<span class="cb-core-muted" style="margin-left:8px;"><?php echo esc_html( sprintf( _n( '(%d day)', '(%d days)', $days, 'core-blueprint' ), $days ) ); ?></span>
 							<?php else : ?>
-								<?php echo \CB\Core\UI\StateBadge::render( __( 'Keep forever', 'core-blueprint' ), [ 'variant' => \CB\Core\UI\StateBadge::NEUTRAL ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Keep forever', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::NEUTRAL ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 							<?php endif; ?>
 						</td></tr>
 					<?php endforeach; ?>
@@ -85,7 +85,7 @@ final class RetentionTab {
 				<?php if ( $next_prune ) : ?>
 					<?php echo esc_html( wp_date( 'Y-m-d H:i:s T', $next_prune ) ); ?> <span class="cb-core-muted">(<?php echo esc_html( human_time_diff( time(), $next_prune ) ); ?> <?php esc_html_e( 'from now', 'core-blueprint' ); ?>)</span>
 				<?php else : ?>
-					<?php echo \CB\Core\UI\StateBadge::render( __( 'Not scheduled', 'core-blueprint' ), [ 'variant' => \CB\Core\UI\StateBadge::WARNING ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php echo \CoreBlueprint\Core\UI\StateBadge::render( __( 'Not scheduled', 'core-blueprint' ), [ 'variant' => \CoreBlueprint\Core\UI\StateBadge::WARNING ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<?php endif; ?>
 				</td></tr></tbody></table>
 				<p class="cb-core-muted" style="margin-top:10px;"><?php esc_html_e( 'Prune runs once per day. Every AuditLog row is classified by the same canonical event-to-category policy used by the UI and CLI.', 'core-blueprint' ); ?></p>

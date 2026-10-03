@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Scanner;
+namespace CoreBlueprint\Core\Integrity\Scanner;
 
 use function array_unique;
 use function array_values;

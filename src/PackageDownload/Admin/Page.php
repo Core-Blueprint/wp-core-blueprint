@@ -7,10 +7,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\PackageDownload\Admin;
+namespace CoreBlueprint\Core\PackageDownload\Admin;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\PackageDownload\AdminIntegration;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\PackageDownload\AdminIntegration;
 
 defined( 'ABSPATH' ) || exit;
 

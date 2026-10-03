@@ -7,9 +7,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\DataExchange;
+namespace CoreBlueprint\Core\DataExchange;
 
-use CB\Core\Interoperability\Registry;
+use CoreBlueprint\Core\Interoperability\Registry;
 use Throwable;
 use WP_Error;
 

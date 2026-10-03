@@ -33,7 +33,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\DB;
+namespace CoreBlueprint\Core\DB;
 
 defined( 'ABSPATH' ) || exit;
 

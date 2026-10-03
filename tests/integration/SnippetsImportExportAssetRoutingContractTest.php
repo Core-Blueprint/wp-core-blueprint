@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\ScreenAssetRegistry;
+use CoreBlueprint\Core\Admin\ScreenAssetRegistry;
 
 final class SnippetsImportExportAssetRoutingContractTest extends WP_UnitTestCase {
 

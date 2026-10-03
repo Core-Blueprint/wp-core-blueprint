@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Notes - Preferences tab fragment.
  *
  * Renders the Notes settings panel inside the central Preferences page.
- * Called from {@see \CB\Core\Admin\Pages\Preferences::render_notes_tab()}.
+ * Called from {@see \CoreBlueprint\Core\Admin\Pages\Preferences::render_notes_tab()}.
  *
  * No longer a standalone PageBase implementation - there is no separate
  * `cb-notes-preferences` admin page. Two static entry points:
@@ -16,18 +16,18 @@ declare(strict_types=1);
  *     handler to emit the form markup.
  *
  * Settings live in the central CB Base settings array under the `notes`
- * subkey via {@see \CB\Core\Notes\Settings\SettingsRepository}, which
- * delegates writes to {@see \CB\Core\Settings::set_key()}.
+ * subkey via {@see \CoreBlueprint\Core\Notes\Settings\SettingsRepository}, which
+ * delegates writes to {@see \CoreBlueprint\Core\Settings::set_key()}.
  *
  * @package Core_Blueprint
  * @since   1.0.0
  */
 
-namespace CB\Core\Notes\Admin;
+namespace CoreBlueprint\Core\Notes\Admin;
 
-use CB\Core\Notes\Repository;
-use CB\Core\Notes\Settings\SettingsRepository;
-use CB\Core\Notes\State;
+use CoreBlueprint\Core\Notes\Repository;
+use CoreBlueprint\Core\Notes\Settings\SettingsRepository;
+use CoreBlueprint\Core\Notes\State;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -80,8 +80,8 @@ final class PreferencesPage {
 		?>
 		<?php if ( ! $is_enabled ) : ?>
 			<?php
-			echo \CB\Core\UI\Notice::render( [
-				'variant' => \CB\Core\UI\Notice::INFO,
+			echo \CoreBlueprint\Core\UI\Notice::render( [
+				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'title'   => __( 'Notes is disabled.', 'core-blueprint' ),
 				'message' => __( 'Existing notes are preserved and these defaults remain editable. Enable Notes from the Dashboard when you want to use the module again.', 'core-blueprint' ),
 				'class'   => 'cb-notes-disabled-notice',

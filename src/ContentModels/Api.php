@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels;
+namespace CoreBlueprint\Core\ContentModels;
 
 defined( 'ABSPATH' ) || exit;
 

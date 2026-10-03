@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class CB_Base_Integration_Grid_Test_Page implements \CB\Core\Admin\Page {
+final class CB_Base_Integration_Grid_Test_Page implements \CoreBlueprint\Core\Admin\Page {
     public function slug(): string {
         return 'cb-integration-grid-test';
     }
@@ -30,16 +30,16 @@ final class CB_Base_Integration_Grid_Contract_Test extends WP_UnitTestCase {
 
     public function set_up(): void {
         parent::set_up();
-        \CB\Core\Admin\PageRegistry::_reset_for_testing();
+        \CoreBlueprint\Core\Admin\PageRegistry::_reset_for_testing();
     }
 
     public function tear_down(): void {
-        \CB\Core\Admin\PageRegistry::_reset_for_testing();
+        \CoreBlueprint\Core\Admin\PageRegistry::_reset_for_testing();
         parent::tear_down();
     }
 
     public function test_renderer_maps_integration_states_to_existing_status_semantics(): void {
-        $html = \CB\Core\UI\IntegrationGrid::render( [
+        $html = \CoreBlueprint\Core\UI\IntegrationGrid::render( [
             [
                 'name'         => 'Alpha',
                 'description'  => 'Ready integration.',
@@ -76,7 +76,7 @@ final class CB_Base_Integration_Grid_Contract_Test extends WP_UnitTestCase {
     }
 
     public function test_renderer_escapes_content_and_only_emits_complete_cta(): void {
-        $html = \CB\Core\UI\IntegrationGrid::render( [
+        $html = \CoreBlueprint\Core\UI\IntegrationGrid::render( [
             [
                 'name'         => '<Alpha>',
                 'description'  => '<script>alert(1)</script>',
@@ -103,8 +103,8 @@ final class CB_Base_Integration_Grid_Contract_Test extends WP_UnitTestCase {
     }
 
     public function test_invalid_items_fail_closed(): void {
-        self::assertSame( '', \CB\Core\UI\IntegrationGrid::render( [] ) );
-        self::assertSame( '', \CB\Core\UI\IntegrationGrid::render( [
+        self::assertSame( '', \CoreBlueprint\Core\UI\IntegrationGrid::render( [] ) );
+        self::assertSame( '', \CoreBlueprint\Core\UI\IntegrationGrid::render( [
             [ 'name' => '', 'status' => 'ready', 'status_label' => 'Ready' ],
             [ 'name' => 'Missing label', 'status' => 'ready' ],
             [ 'name' => 'Unknown', 'status' => 'mystery', 'status_label' => 'Mystery' ],
@@ -113,16 +113,16 @@ final class CB_Base_Integration_Grid_Contract_Test extends WP_UnitTestCase {
     }
 
     public function test_page_registry_accepts_single_integration_grid_requirement(): void {
-        self::assertTrue( \CB\Core\Admin\PageRegistry::register(
+        self::assertTrue( \CoreBlueprint\Core\Admin\PageRegistry::register(
             new CB_Base_Integration_Grid_Test_Page(),
             [ 'components' => [ 'integration-grid' ] ]
         ) );
     }
 
     public function test_integration_grid_requirement_owns_internal_asset_dependencies(): void {
-        $context = \CB\Core\Admin\ScreenContext::from_request( 'core-blueprint_page_cb-integration-grid-test' );
+        $context = \CoreBlueprint\Core\Admin\ScreenContext::from_request( 'core-blueprint_page_cb-integration-grid-test' );
 
-        \CB\Core\Admin\AdminAssetCatalog::enqueue_component_requirement( 'integration-grid', $context );
+        \CoreBlueprint\Core\Admin\AdminAssetCatalog::enqueue_component_requirement( 'integration-grid', $context );
 
         self::assertTrue( wp_style_is( 'cb-core-css-integration-grid', 'enqueued' ) );
         self::assertTrue( wp_style_is( 'cb-core-css-status-indicators', 'enqueued' ) );

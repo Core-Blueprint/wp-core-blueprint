@@ -44,7 +44,7 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\Console;
+namespace CoreBlueprint\Core\Console;
 
 defined( 'ABSPATH' ) || exit;
 

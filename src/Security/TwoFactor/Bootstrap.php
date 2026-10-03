@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Security\TwoFactor;
+namespace CoreBlueprint\Core\Security\TwoFactor;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,7 +21,7 @@ final class Bootstrap {
 	}
 
 	public static function register_i18n_filters(): void {
-		\CB\Core\Governance\EventRegistry::register_core_many(
+		\CoreBlueprint\Core\Governance\EventRegistry::register_core_many(
 			self::register_event_labels( [] )
 		);
 	}

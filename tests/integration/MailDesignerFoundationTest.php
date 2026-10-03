@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\ScreenContext;
-use CB\Core\Design\Profile\Mail\HtmlRenderer;
-use CB\Core\Design\Profile\Mail\Validator;
-use CB\Core\Mail\Designer\BindingRegistry;
-use CB\Core\Mail\Designer\ComponentRegistry;
-use CB\Core\Mail\Designer\Renderer;
-use CB\Core\Mail\Designer\TemplateRegistry;
-use CB\Core\Mail\Designer\WordPressIntegration;
-use CB\Core\Mail\Settings as MailSettings;
+use CoreBlueprint\Core\Admin\ScreenContext;
+use CoreBlueprint\Core\Design\Profile\Mail\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Mail\Validator;
+use CoreBlueprint\Core\Mail\Designer\BindingRegistry;
+use CoreBlueprint\Core\Mail\Designer\ComponentRegistry;
+use CoreBlueprint\Core\Mail\Designer\Renderer;
+use CoreBlueprint\Core\Mail\Designer\TemplateRegistry;
+use CoreBlueprint\Core\Mail\Designer\WordPressIntegration;
+use CoreBlueprint\Core\Mail\Settings as MailSettings;
 
 final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 	private mixed $original_settings;

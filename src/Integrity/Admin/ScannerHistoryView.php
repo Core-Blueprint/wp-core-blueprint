@@ -4,19 +4,19 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since 1.0.0
  */
-namespace CB\Core\Integrity\Admin;
+namespace CoreBlueprint\Core\Integrity\Admin;
 
-use CB\Core\Integrity\Quarantine\Repository as QuarantineRepository;
-use CB\Core\Integrity\Quarantine\Service as QuarantineService;
-use CB\Core\Integrity\State;
-use CB\Core\Integrity\Support\ResultFormatter;
-use CB\Core\Integrity\Storage\BaselineReviewRepository;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\UI\Icon;
-use CB\Core\UI\FormStatus;
-use CB\Core\UI\Notice;
-use CB\Core\UI\StateBadge;
-use CB\Core\UI\Status;
+use CoreBlueprint\Core\Integrity\Quarantine\Repository as QuarantineRepository;
+use CoreBlueprint\Core\Integrity\Quarantine\Service as QuarantineService;
+use CoreBlueprint\Core\Integrity\State;
+use CoreBlueprint\Core\Integrity\Support\ResultFormatter;
+use CoreBlueprint\Core\Integrity\Storage\BaselineReviewRepository;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\UI\Icon;
+use CoreBlueprint\Core\UI\FormStatus;
+use CoreBlueprint\Core\UI\Notice;
+use CoreBlueprint\Core\UI\StateBadge;
+use CoreBlueprint\Core\UI\Status;
 
 use function checked;
 use function count;

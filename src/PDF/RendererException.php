@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * RendererException
  *
- * Thrown by CB\Core\PDF\Renderer when the underlying engine cannot produce a
+ * Thrown by CoreBlueprint\Core\PDF\Renderer when the underlying engine cannot produce a
  * PDF. Wraps any Throwable raised by Dompdf so callers only have to catch a
  * single exception type from the CB namespace.
  *
@@ -16,7 +16,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\PDF;
+namespace CoreBlueprint\Core\PDF;
 
 defined( 'ABSPATH' ) || exit;
 

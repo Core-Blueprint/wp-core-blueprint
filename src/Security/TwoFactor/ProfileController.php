@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Security\TwoFactor;
+namespace CoreBlueprint\Core\Security\TwoFactor;
 
-use CB\Core\Admin\ProfileActionForms;
-use CB\Core\Admin\SecureActionScreen;
-use CB\Core\Admin\UserProfileSectionRegistry;
-use CB\Core\UI\Assets as UiAssets;
-use CB\Core\UI\Field;
-use CB\Core\UI\Notice;
+use CoreBlueprint\Core\Admin\ProfileActionForms;
+use CoreBlueprint\Core\Admin\SecureActionScreen;
+use CoreBlueprint\Core\Admin\UserProfileSectionRegistry;
+use CoreBlueprint\Core\UI\Assets as UiAssets;
+use CoreBlueprint\Core\UI\Field;
+use CoreBlueprint\Core\UI\Notice;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;

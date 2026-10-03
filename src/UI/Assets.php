@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\UI;
+namespace CoreBlueprint\Core\UI;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -739,7 +739,7 @@ final class Assets {
 	/**
 	 * Enqueue the shared Tile Foundation for an extension-owned admin screen.
 	 *
-	 * Tile markup is provided by CB\Core\UI\Tile. This helper exposes only
+	 * Tile markup is provided by CoreBlueprint\Core\UI\Tile. This helper exposes only
 	 * the canonical token and tile presentation required by that primitive;
 	 * it does not import page layouts, cards, dark-mode state or other Core
 	 * Admin presentation.
@@ -798,7 +798,7 @@ final class Assets {
 	/**
 	 * Enqueue standalone-safe Status presentation.
 	 *
-	 * Status markup continues to come from CB\Core\UI\Status. This helper
+	 * Status markup continues to come from CoreBlueprint\Core\UI\Status. This helper
 	 * exposes the presentation boundary to standalone first-party extensions
 	 * without requiring private Core Admin handles or the full admin theme.
 	 *

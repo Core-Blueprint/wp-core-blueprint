@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /** Native top-level wp-admin menu presentation governance. */
 
-namespace CB\Core\AdminNavigation;
+namespace CoreBlueprint\Core\AdminNavigation;
 
 defined( 'ABSPATH' ) || exit;
 

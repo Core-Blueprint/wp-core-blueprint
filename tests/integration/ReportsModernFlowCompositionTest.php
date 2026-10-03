@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Flow\PdfRenderer;
-use CB\Core\Reports\Composer\MaintenanceTemplate;
-use CB\Core\Reports\MaintenanceAggregator;
-use CB\Core\Reports\MaintenanceFlowCompiler;
-use CB\Core\Reports\ReportBranding;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\PdfRenderer;
+use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Reports\MaintenanceAggregator;
+use CoreBlueprint\Core\Reports\MaintenanceFlowCompiler;
+use CoreBlueprint\Core\Reports\ReportBranding;
 
 final class CB_Reports_Modern_Flow_Composition_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */

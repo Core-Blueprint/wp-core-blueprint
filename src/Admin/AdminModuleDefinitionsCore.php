@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /** Private BASE-10E.2 module definitions: Core. */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -102,11 +102,11 @@ final class AdminModuleDefinitionsCore {
 					'deps' => [ '@cb-core/dom', '@cb-core/toast' ],
 					'data' => [
 						'nonce'      => $admin_nonce,
-						'modules'    => class_exists( '\\CB\\Core\\Modules\\ActivationRegistry' )
-							? \CB\Core\Modules\ActivationRegistry::slugs()
+						'modules'    => class_exists( '\\CoreBlueprint\\Core\\Modules\\ActivationRegistry' )
+							? \CoreBlueprint\Core\Modules\ActivationRegistry::slugs()
 							: [],
-						'extensions' => class_exists( '\\CB\\Core\\ExtensionLifecycle' )
-							? \CB\Core\ExtensionLifecycle::ids()
+						'extensions' => class_exists( '\\CoreBlueprint\\Core\\ExtensionLifecycle' )
+							? \CoreBlueprint\Core\ExtensionLifecycle::ids()
 							: [],
 						'i18n'       => [
 							'updateFailed'          => __( 'Could not update module - try again.', 'core-blueprint' ),

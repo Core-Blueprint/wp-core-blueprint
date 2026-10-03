@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\Notes\Admin;
+namespace CoreBlueprint\Core\Notes\Admin;
 
-use CB\Core\Notes\MarkdownRenderer;
-use CB\Core\Notes\Repository;
-use CB\Core\Notes\Settings\SettingsRepository;
-use CB\Core\Notes\Support\MarkdownPreview;
-use CB\Core\UI\Icon;
-use CB\Core\UI\StateBadge;
+use CoreBlueprint\Core\Notes\MarkdownRenderer;
+use CoreBlueprint\Core\Notes\Repository;
+use CoreBlueprint\Core\Notes\Settings\SettingsRepository;
+use CoreBlueprint\Core\Notes\Support\MarkdownPreview;
+use CoreBlueprint\Core\UI\Icon;
+use CoreBlueprint\Core\UI\StateBadge;
 
 defined( 'ABSPATH' ) || exit;
 

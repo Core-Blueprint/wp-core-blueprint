@@ -2,9 +2,9 @@
 declare(strict_types=1);
 /** Native WordPress Admin Toolbar presentation governance. */
 
-namespace CB\Core\AdminNavigation;
+namespace CoreBlueprint\Core\AdminNavigation;
 
-use CB\Core\RequestContext;
+use CoreBlueprint\Core\RequestContext;
 
 defined( 'ABSPATH' ) || exit;
 

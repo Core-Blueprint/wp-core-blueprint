@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Security\TwoFactor\Authenticator;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\Totp;
+use CoreBlueprint\Core\Security\TwoFactor\Authenticator;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\Totp;
 
 final class CB_Base_Two_Factor_Totp_Contract_Test extends WP_UnitTestCase {
 

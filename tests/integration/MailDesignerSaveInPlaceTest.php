@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Mail\Admin\TemplateActions;
+use CoreBlueprint\Core\Mail\Admin\TemplateActions;
 
 final class CB_Mail_Designer_Save_In_Place_Test extends WP_UnitTestCase {
 

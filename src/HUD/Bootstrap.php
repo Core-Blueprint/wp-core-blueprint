@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\HUD;
+namespace CoreBlueprint\Core\HUD;
 
-use CB\Core\HUD\Brand\BrandRegistry;
-use CB\Core\HUD\Brand\CoreBlueprint;
-use CB\Core\HUD\Rest\HUDController;
+use CoreBlueprint\Core\HUD\Brand\BrandRegistry;
+use CoreBlueprint\Core\HUD\Brand\CoreBlueprint;
+use CoreBlueprint\Core\HUD\Rest\HUDController;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Bootstrap - wires the HUD subsystem into Core Blueprint.
  *
- * Called from {@see \CB\Core\Core::init()} alongside the Reports,
+ * Called from {@see \CoreBlueprint\Core\Core::init()} alongside the Reports,
  * Permissions, Integrity, and Notes bootstraps. Registers:
  *
  *   - Brand registry (built-in CoreBlueprint brand, plus the action hook

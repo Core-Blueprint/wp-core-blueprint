@@ -4,8 +4,8 @@ declare(strict_types=1);
  * Preferences Bootstrap
  *
  * Lightweight subsystem bootstrap for the Preferences admin surface. The
- * Preferences page itself is owned by {@see \CB\Core\Admin\Pages\Preferences}
- * and registered via {@see \CB\Core\Admin\Admin::register_foundation_pages()};
+ * Preferences page itself is owned by {@see \CoreBlueprint\Core\Admin\Pages\Preferences}
+ * and registered via {@see \CoreBlueprint\Core\Admin\Admin::register_foundation_pages()};
  * this Bootstrap registers the HUD-item that links into it.
  *
  * Kept as a separate file so that future Preferences-wide work (a master
@@ -17,9 +17,9 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\Preferences;
+namespace CoreBlueprint\Core\Preferences;
 
-use CB\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Admin;
 
 defined( 'ABSPATH' ) || exit;
 

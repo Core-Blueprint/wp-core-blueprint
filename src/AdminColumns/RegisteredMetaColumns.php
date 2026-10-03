@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\AdminColumns;
+namespace CoreBlueprint\Core\AdminColumns;
 
-use CB\Core\ContentModels\FieldTypes;
-use CB\Core\ContentModels\LocationMatcher;
-use CB\Core\ContentModels\Repository;
+use CoreBlueprint\Core\ContentModels\FieldTypes;
+use CoreBlueprint\Core\ContentModels\LocationMatcher;
+use CoreBlueprint\Core\ContentModels\Repository;
 
 defined( 'ABSPATH' ) || exit;
 

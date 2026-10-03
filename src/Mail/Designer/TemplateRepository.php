@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Mail\Designer;
+namespace CoreBlueprint\Core\Mail\Designer;
 
-use CB\Core\Design\Profile\Mail\Validator;
+use CoreBlueprint\Core\Design\Profile\Mail\Validator;
 
 defined( 'ABSPATH' ) || exit;
 

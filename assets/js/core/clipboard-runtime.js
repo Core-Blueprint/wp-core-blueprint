@@ -9,7 +9,7 @@
  *   await window.cbCore.clipboard.copy( text, options )
  *   const instance = window.cbCore.clipboard.enhance( button, options )
  *
- * @package CB\Core
+ * @package CoreBlueprint\Core
  * @since   1.0.0
  */
 

@@ -12,9 +12,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Forms;
+namespace CoreBlueprint\Core\Forms;
 
-use CB\Core\Interoperability\Registry;
+use CoreBlueprint\Core\Interoperability\Registry;
 use Throwable;
 use WP_Error;
 

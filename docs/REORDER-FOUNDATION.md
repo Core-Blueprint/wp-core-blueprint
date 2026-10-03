@@ -258,7 +258,7 @@ child-root movement.
 Standalone WordPress admin screens may opt in with:
 
 ```php
-\CB\Core\UI\Assets::enqueue_reorder();
+\CoreBlueprint\Core\UI\Assets::enqueue_reorder();
 ```
 
 Auto mode uses the Core presentation below the Core Blueprint parent menu and

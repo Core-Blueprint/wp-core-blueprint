@@ -12,10 +12,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\MediaReplace;
+namespace CoreBlueprint\Core\MediaReplace;
 
-use CB\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
-use CB\Core\MediaReplace\Strategy\ReplaceStrategyInterface;
+use CoreBlueprint\Core\MediaFormats\Svg\Sanitizer as SvgSanitizer;
+use CoreBlueprint\Core\MediaReplace\Strategy\ReplaceStrategyInterface;
 
 defined( 'ABSPATH' ) || exit;
 

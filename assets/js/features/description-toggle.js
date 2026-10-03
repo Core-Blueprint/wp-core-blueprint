@@ -2,7 +2,7 @@
  * Core Blueprint - Per-feature description toggle
  *
  * Wires up the per-feature plain/technical "peek" toggle on `.cb-core-dual`
- * blocks (rendered by `CB\Core\UI` wherever a feature has both a plain and
+ * blocks (rendered by `CoreBlueprint\Core\UI` wherever a feature has both a plain and
  * a technical description). Click the toggle button and the block flips
  * between the two registers.
  *

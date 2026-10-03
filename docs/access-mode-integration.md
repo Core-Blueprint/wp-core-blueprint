@@ -14,7 +14,7 @@ Logged-in users, WordPress admin/login, REST, AJAX, cron, WP-CLI, XML-RPC, Core 
 Extensions that expose a non-REST public callback which must remain reachable during Coming Soon, Maintenance or Admin-Only should register a request predicate during bootstrap:
 
 ```php
-use CB\Core\Security\AccessMode;
+use CoreBlueprint\Core\Security\AccessMode;
 
 AccessMode::register_bypass(
     'my-extension-webhook',

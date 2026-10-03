@@ -16,12 +16,12 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Admin\Pages;
+namespace CoreBlueprint\Core\Admin\Pages;
 
-use CB\Core\Privacy\Anonymizer;
-use CB\Core\Privacy\Presets;
-use CB\Core\Log\Verbosity;
-use CB\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Privacy\Anonymizer;
+use CoreBlueprint\Core\Privacy\Presets;
+use CoreBlueprint\Core\Log\Verbosity;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
 
 defined( 'ABSPATH' ) || exit;
 

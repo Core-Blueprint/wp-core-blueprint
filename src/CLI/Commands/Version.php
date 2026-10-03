@@ -8,10 +8,10 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands;
+namespace CoreBlueprint\Core\CLI\Commands;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
 
 defined( 'ABSPATH' ) || exit;
 

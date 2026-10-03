@@ -12,9 +12,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Automation;
+namespace CoreBlueprint\Core\Automation;
 
-use CB\Core\Automation\Internal\CapabilityRegistry;
+use CoreBlueprint\Core\Automation\Internal\CapabilityRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

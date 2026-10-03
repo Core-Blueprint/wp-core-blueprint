@@ -11,13 +11,13 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Modules;
+namespace CoreBlueprint\Core\Modules;
 
-use CB\Core\Log\Status as LogStatus;
-use CB\Core\Notes\Status as NotesStatus;
-use CB\Core\Reports\Status as ReportsStatus;
-use CB\Core\Safeguards\Contributors as SafeguardContributors;
-use CB\Core\Snippets\Status as SnippetsStatus;
+use CoreBlueprint\Core\Log\Status as LogStatus;
+use CoreBlueprint\Core\Notes\Status as NotesStatus;
+use CoreBlueprint\Core\Reports\Status as ReportsStatus;
+use CoreBlueprint\Core\Safeguards\Contributors as SafeguardContributors;
+use CoreBlueprint\Core\Snippets\Status as SnippetsStatus;
 
 defined( 'ABSPATH' ) || exit;
 

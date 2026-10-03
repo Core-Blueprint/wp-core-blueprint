@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Reports\Composer\BlockCatalog;
-use CB\Core\Reports\Composer\MaintenanceTemplate;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Reports\Composer\BlockCatalog;
+use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Settings;
 
 final class CB_Reports_Composer_Contract_Test extends WP_UnitTestCase {
 

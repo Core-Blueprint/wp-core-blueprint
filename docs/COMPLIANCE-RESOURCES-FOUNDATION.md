@@ -35,7 +35,7 @@ The existing WordPress Privacy Policy setting is respected as a non-destructive 
 Extensions register roles during the controlled collection action:
 
 ```php
-use CB\Core\Compliance\ResourceRegistry;
+use CoreBlueprint\Core\Compliance\ResourceRegistry;
 
 add_action( 'cb_core_register_compliance_resources', static function (): void {
     ResourceRegistry::register(
@@ -79,7 +79,7 @@ Resolution uses WordPress' current `determine_locale()` value. Exact locale vari
 PHP consumers can resolve a resource through:
 
 ```php
-use CB\Core\Compliance\Resolver;
+use CoreBlueprint\Core\Compliance\Resolver;
 
 $url = Resolver::url( 'core-blueprint:privacy-policy' );
 ```

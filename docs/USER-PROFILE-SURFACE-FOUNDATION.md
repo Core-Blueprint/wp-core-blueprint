@@ -24,7 +24,7 @@ cb_core_register_user_profile_sections
 Use the public registry:
 
 ```php
-use CB\Core\Admin\UserProfileSectionRegistry;
+use CoreBlueprint\Core\Admin\UserProfileSectionRegistry;
 
 add_action( 'cb_core_register_user_profile_sections', static function (): void {
     UserProfileSectionRegistry::register(
@@ -129,7 +129,7 @@ Consumers remain responsible for:
 
 Public:
 
-- `CB\Core\Admin\UserProfileSectionRegistry`
+- `CoreBlueprint\Core\Admin\UserProfileSectionRegistry`
 - `cb_core_register_user_profile_sections`
 - `CONTEXT_SELF`
 - `CONTEXT_EDIT`

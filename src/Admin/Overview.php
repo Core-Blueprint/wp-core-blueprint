@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
  * (CB Hub, CB Invoice, CB Access Control, CB Protected Content, future
  * modules) can depend on CB Base and render their own Overview by calling:
  *
- *     use CB\Core\Admin\Overview;
+ *     use CoreBlueprint\Core\Admin\Overview;
  *
  *     Overview::render( [
  *         'intro'         => __( 'Short one-sentence description.', 'my-plugin' ),

@@ -18,14 +18,14 @@ declare(strict_types=1);
 defined( 'ABSPATH' ) || exit;
 
 $notice_message = '';
-$notice_variant = \CB\Core\UI\Notice::SUCCESS;
+$notice_variant = \CoreBlueprint\Core\UI\Notice::SUCCESS;
 if ( 'saved' === $notice ) {
 	$notice_message = __( 'Floating menu saved.', 'core-blueprint' );
 } elseif ( 'reset' === $notice ) {
 	$notice_message = __( 'Floating menu reset to registry defaults.', 'core-blueprint' );
 } elseif ( 'invalid' === $notice ) {
 	$notice_message = __( 'The floating menu configuration could not be saved. Reload the page and try again.', 'core-blueprint' );
-	$notice_variant = \CB\Core\UI\Notice::ERROR;
+	$notice_variant = \CoreBlueprint\Core\UI\Notice::ERROR;
 }
 ?>
 <div class="wrap cb-core-wrap cb-hud-menu-preferences" data-cb-hud-menu-editor>
@@ -36,7 +36,7 @@ if ( 'saved' === $notice ) {
 
 	<?php if ( '' !== $notice_message ) : ?>
 		<?php
-		echo \CB\Core\UI\Notice::render( [
+		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => $notice_variant,
 			'message' => $notice_message,
 		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its own output.
@@ -44,8 +44,8 @@ if ( 'saved' === $notice ) {
 	<?php endif; ?>
 
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-cb-hud-menu-form>
-		<input type="hidden" name="action" value="<?php echo esc_attr( \CB\Core\HUD\MenuPreferences::FORM_ACTION ); ?>" />
-		<?php wp_nonce_field( \CB\Core\HUD\MenuPreferences::NONCE_ACTION, \CB\Core\HUD\MenuPreferences::NONCE_NAME ); ?>
+		<input type="hidden" name="action" value="<?php echo esc_attr( \CoreBlueprint\Core\HUD\MenuPreferences::FORM_ACTION ); ?>" />
+		<?php wp_nonce_field( \CoreBlueprint\Core\HUD\MenuPreferences::NONCE_ACTION, \CoreBlueprint\Core\HUD\MenuPreferences::NONCE_NAME ); ?>
 		<input
 			type="hidden"
 			name="cb_hud_menu_payload"

@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\CLI\Commands\TwoFactor;
+namespace CoreBlueprint\Core\CLI\Commands\TwoFactor;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Permissions\PrivilegedAccessPolicy;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\Policy;
-use CB\Core\Security\TwoFactor\ProviderDetector;
-use CB\Core\Security\TwoFactor\RecoveryCodes;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\Policy;
+use CoreBlueprint\Core\Security\TwoFactor\ProviderDetector;
+use CoreBlueprint\Core\Security\TwoFactor\RecoveryCodes;
 
 defined( 'ABSPATH' ) || exit;
 

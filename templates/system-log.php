@@ -11,8 +11,8 @@
  * Delegates to the shared log-events-page partial; only the parameters
  * unique to this tab are set here.
  *
- * Variables set by caller ({@see \CB\Core\Admin\Pages\Logs\Tabs\SystemTab}):
- *   $sys_result       - \CB\Core\Log\AuditLog::query() output
+ * Variables set by caller ({@see \CoreBlueprint\Core\Admin\Pages\Logs\Tabs\SystemTab}):
+ *   $sys_result       - \CoreBlueprint\Core\Log\AuditLog::query() output
  *   $sys_args         - original filter arguments
  *   $current_period   - resolved time-filter preset
  *   $sys_chart_daily  - daily counts for the activity chart

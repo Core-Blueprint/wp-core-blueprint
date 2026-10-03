@@ -7,13 +7,13 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup\Checks;
+namespace CoreBlueprint\Core\Setup\Checks;
 
-use CB\Core\Admin\Pages\Preferences;
-use CB\Core\Routing\Policy;
-use CB\Core\Routing\Preflight;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Evidence;
+use CoreBlueprint\Core\Admin\Pages\Preferences;
+use CoreBlueprint\Core\Routing\Policy;
+use CoreBlueprint\Core\Routing\Preflight;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Evidence;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -38,7 +38,7 @@ final class RoutingUrlsCheck implements CheckInterface {
 					[
 						'enabled'             => false,
 						'permalink_structure' => (string) get_option( 'permalink_structure', '' ),
-						'category_base'       => \CB\Core\Routing\CategoryRoutes::category_base_path(),
+						'category_base'       => \CoreBlueprint\Core\Routing\CategoryRoutes::category_base_path(),
 					],
 					[
 						'enabled'       => false,

@@ -6,13 +6,13 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since   1.0.0
  */
-namespace CB\Core\AIGovernance\Admin;
+namespace CoreBlueprint\Core\AIGovernance\Admin;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\Pages\Logs\Tabs\AIActivityTab;
-use CB\Core\AIGovernance\Exporter;
-use CB\Core\AIGovernance\Settings;
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Pages\Logs\Tabs\AIActivityTab;
+use CoreBlueprint\Core\AIGovernance\Exporter;
+use CoreBlueprint\Core\AIGovernance\Settings;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 

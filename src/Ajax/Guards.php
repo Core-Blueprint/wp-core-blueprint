@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Guards - shared request-validation helpers.
  *
- * Every CB\Core\Ajax\Handlers\* class uses this trait to pick up the
+ * Every CoreBlueprint\Core\Ajax\Handlers\* class uses this trait to pick up the
  * standard security gates:
  *   - require_admin()              - cap check, fails with 403
  *   - require_password_reconfirm() - re-verify current user's password
@@ -14,9 +14,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Ajax;
+namespace CoreBlueprint\Core\Ajax;
 
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 

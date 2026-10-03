@@ -92,10 +92,10 @@ try {
     // called directly by this harness.
     do_action('admin_menu');
 
-    $page = \CB\Core\Admin\PageRegistry::get('core-blueprint-starter-plugin');
-    cb_a3_admin_expect($page instanceof \CB\Core\Admin\Page, 'Starter page was not registered through cb_core_register_pages.');
+    $page = \CoreBlueprint\Core\Admin\PageRegistry::get('core-blueprint-starter-plugin');
+    cb_a3_admin_expect($page instanceof \CoreBlueprint\Core\Admin\Page, 'Starter page was not registered through cb_core_register_pages.');
 
-    $hook = \CB\Core\Admin\PageRegistry::hook_suffix('core-blueprint-starter-plugin');
+    $hook = \CoreBlueprint\Core\Admin\PageRegistry::hook_suffix('core-blueprint-starter-plugin');
     cb_a3_admin_expect('' !== $hook, 'Starter page did not receive a WordPress hook suffix.');
 
     set_current_screen($hook);

@@ -11,10 +11,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Automation\Internal;
+namespace CoreBlueprint\Core\Automation\Internal;
 
-use CB\Core\Automation\Schema;
-use CB\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Automation\Schema;
+use CoreBlueprint\Core\ExtensionRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

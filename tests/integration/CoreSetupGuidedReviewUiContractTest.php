@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\Pages\Dashboard;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Setup\Admin\Page as SetupPage;
-use CB\Core\Setup\Lifecycle;
-use CB\Core\Setup\Registry;
-use CB\Core\Setup\ReviewRepository;
+use CoreBlueprint\Core\Admin\Pages\Dashboard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Setup\Admin\Page as SetupPage;
+use CoreBlueprint\Core\Setup\Lifecycle;
+use CoreBlueprint\Core\Setup\Registry;
+use CoreBlueprint\Core\Setup\ReviewRepository;
 
 final class CB_Base_Core_Setup_Guided_Review_UI_Contract_Test extends WP_UnitTestCase {
 

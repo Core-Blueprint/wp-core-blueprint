@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Mail\Designer;
+namespace CoreBlueprint\Core\Mail\Designer;
 
 defined( 'ABSPATH' ) || exit;
 

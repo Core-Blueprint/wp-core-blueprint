@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Security\TwoFactor;
+namespace CoreBlueprint\Core\Security\TwoFactor;
 
-use CB\Core\Permissions\PrivilegedAccessPolicy;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy;
+use CoreBlueprint\Core\Settings;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;

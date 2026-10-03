@@ -23,20 +23,20 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Ajax;
+namespace CoreBlueprint\Core\Ajax;
 
-use CB\Core\Ajax\Handlers\Branding;
-use CB\Core\Ajax\Handlers\Exports;
-use CB\Core\Ajax\Handlers\ExtensionLifecycle;
-use CB\Core\Ajax\Handlers\Failsafe;
-use CB\Core\Ajax\Handlers\LoginShield;
-use CB\Core\Ajax\Handlers\Modules;
-use CB\Core\Ajax\Handlers\Permissions;
-use CB\Core\Ajax\Handlers\Preferences;
-use CB\Core\Ajax\Handlers\Privacy;
-use CB\Core\Ajax\Handlers\Reports;
-use CB\Core\Ajax\Handlers\Settings;
-use CB\Core\Ajax\Handlers\TwoFactorPolicy;
+use CoreBlueprint\Core\Ajax\Handlers\Branding;
+use CoreBlueprint\Core\Ajax\Handlers\Exports;
+use CoreBlueprint\Core\Ajax\Handlers\ExtensionLifecycle;
+use CoreBlueprint\Core\Ajax\Handlers\Failsafe;
+use CoreBlueprint\Core\Ajax\Handlers\LoginShield;
+use CoreBlueprint\Core\Ajax\Handlers\Modules;
+use CoreBlueprint\Core\Ajax\Handlers\Permissions;
+use CoreBlueprint\Core\Ajax\Handlers\Preferences;
+use CoreBlueprint\Core\Ajax\Handlers\Privacy;
+use CoreBlueprint\Core\Ajax\Handlers\Reports;
+use CoreBlueprint\Core\Ajax\Handlers\Settings;
+use CoreBlueprint\Core\Ajax\Handlers\TwoFactorPolicy;
 
 defined( 'ABSPATH' ) || exit;
 

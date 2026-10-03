@@ -11,11 +11,11 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Scan;
+namespace CoreBlueprint\Core\CLI\Commands\Scan;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
 
 defined( 'ABSPATH' ) || exit;
 

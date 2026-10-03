@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Scanner;
+namespace CoreBlueprint\Core\Integrity\Scanner;
 
-use CB\Core\Integrity\Support\BatchedFilesystemWalker;
-use CB\Core\Integrity\Support\Finding;
-use CB\Core\Integrity\Support\FileHashProbe;
+use CoreBlueprint\Core\Integrity\Support\BatchedFilesystemWalker;
+use CoreBlueprint\Core\Integrity\Support\Finding;
+use CoreBlueprint\Core\Integrity\Support\FileHashProbe;
 
 use function file_get_contents;
 use function in_array;

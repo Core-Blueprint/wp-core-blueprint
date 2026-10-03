@@ -22,7 +22,7 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI;
+namespace CoreBlueprint\Core\CLI;
 
 defined( 'ABSPATH' ) || exit;
 

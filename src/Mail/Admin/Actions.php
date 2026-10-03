@@ -7,18 +7,18 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail\Admin;
+namespace CoreBlueprint\Core\Mail\Admin;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Mail\ConflictDetector;
-use CB\Core\Mail\DeliveryState;
-use CB\Core\Mail\Log\Repository;
-use CB\Core\Mail\Runtime;
-use CB\Core\Mail\Secrets;
-use CB\Core\Mail\Sender;
-use CB\Core\Mail\SenderIdentityRegistry;
-use CB\Core\Mail\Settings;
-use CB\Core\Mail\TestContext;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Mail\ConflictDetector;
+use CoreBlueprint\Core\Mail\DeliveryState;
+use CoreBlueprint\Core\Mail\Log\Repository;
+use CoreBlueprint\Core\Mail\Runtime;
+use CoreBlueprint\Core\Mail\Secrets;
+use CoreBlueprint\Core\Mail\Sender;
+use CoreBlueprint\Core\Mail\SenderIdentityRegistry;
+use CoreBlueprint\Core\Mail\Settings;
+use CoreBlueprint\Core\Mail\TestContext;
 
 defined( 'ABSPATH' ) || exit;
 

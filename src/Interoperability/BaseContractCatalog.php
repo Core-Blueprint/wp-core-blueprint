@@ -11,10 +11,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Interoperability;
+namespace CoreBlueprint\Core\Interoperability;
 
-use CB\Core\DataExchange\Foundation as DataExchangeFoundation;
-use CB\Core\Forms\Foundation as FormsFoundation;
+use CoreBlueprint\Core\DataExchange\Foundation as DataExchangeFoundation;
+use CoreBlueprint\Core\Forms\Foundation as FormsFoundation;
 
 defined( 'ABSPATH' ) || exit;
 

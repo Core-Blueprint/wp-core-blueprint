@@ -7,8 +7,8 @@
  * differ from the System Log (page title, description copy, tab slug,
  * placeholder, export button class) and lets the partial handle the rest.
  *
- * Variables set by caller ({@see \CB\Core\Admin\Pages\Logs\Tabs\AuditTab}):
- *   $result          - \CB\Core\Log\AuditLog::query() output (rows/total/page/per_page)
+ * Variables set by caller ({@see \CoreBlueprint\Core\Admin\Pages\Logs\Tabs\AuditTab}):
+ *   $result          - \CoreBlueprint\Core\Log\AuditLog::query() output (rows/total/page/per_page)
  *   $args            - original filter arguments
  *   $current_period  - resolved time-filter preset
  *   $chart_daily     - daily counts for the activity chart

@@ -6,7 +6,7 @@
  * Four-state access policy editor. A tile click stages a choice; the effective
  * site policy changes only after the explicit Apply button succeeds.
  *
- * Variables (set by \CB\Core\Admin\Pages\Safeguards):
+ * Variables (set by \CoreBlueprint\Core\Admin\Pages\Safeguards):
  *   $current string
  *   $config  array<string,mixed>
  *
@@ -21,29 +21,29 @@ $coming_soon_indexable   = ! empty( $config['coming_soon_indexable'] );
 $maintenance_page_id     = (int) ( $config['maintenance_page_id'] ?? 0 );
 $maintenance_until_date  = (string) ( $config['maintenance_until_date'] ?? '' );
 $maintenance_until_time  = (string) ( $config['maintenance_until_time'] ?? '' );
-$is_public               = \CB\Core\Security\AccessMode::MODE_PUBLIC === $current;
+$is_public               = \CoreBlueprint\Core\Security\AccessMode::MODE_PUBLIC === $current;
 
 $mode_options = [
 	[
-		'mode'  => \CB\Core\Security\AccessMode::MODE_PUBLIC,
+		'mode'  => \CoreBlueprint\Core\Security\AccessMode::MODE_PUBLIC,
 		'icon'  => 'public-site',
 		'title' => __( 'Public Mode', 'core-blueprint' ),
 		'desc'  => __( 'The normal website is live. Visitors and search engines receive the regular WordPress responses.', 'core-blueprint' ),
 	],
 	[
-		'mode'  => \CB\Core\Security\AccessMode::MODE_COMING_SOON,
+		'mode'  => \CoreBlueprint\Core\Security\AccessMode::MODE_COMING_SOON,
 		'icon'  => 'clock',
 		'title' => __( 'Coming Soon', 'core-blueprint' ),
 		'desc'  => __( 'Use one published page as a pre-launch landing page. Other public URLs redirect to it temporarily.', 'core-blueprint' ),
 	],
 	[
-		'mode'  => \CB\Core\Security\AccessMode::MODE_MAINTENANCE,
+		'mode'  => \CoreBlueprint\Core\Security\AccessMode::MODE_MAINTENANCE,
 		'icon'  => 'settings',
 		'title' => __( 'Maintenance', 'core-blueprint' ),
 		'desc'  => __( 'Temporarily take the site offline with HTTP 503 while rendering a selected maintenance page.', 'core-blueprint' ),
 	],
 	[
-		'mode'  => \CB\Core\Security\AccessMode::MODE_ADMIN_ONLY,
+		'mode'  => \CoreBlueprint\Core\Security\AccessMode::MODE_ADMIN_ONLY,
 		'icon'  => 'locked-site',
 		'title' => __( 'Admin-Only Mode', 'core-blueprint' ),
 		'desc'  => __( 'Lock the public front-end with HTTP 403. Logged-in users and recovery paths remain available.', 'core-blueprint' ),
@@ -74,7 +74,7 @@ $mode_options = [
 						<?php checked( $active ); ?> />
 					<span class="cb-core-access-option__head">
 						<span class="cb-core-access-option__icon" aria-hidden="true">
-							<?php echo \CB\Core\UI\Icon::render( $option['icon'], [ 'size' => \CB\Core\UI\Icon::SIZE_LARGE ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+							<?php echo \CoreBlueprint\Core\UI\Icon::render( $option['icon'], [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_LARGE ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 						</span>
 						<span class="cb-core-access-option__copy">
 							<span class="cb-core-access-option__title"><?php echo esc_html( $option['title'] ); ?></span>
@@ -85,18 +85,18 @@ $mode_options = [
 			<?php endforeach; ?>
 		</div>
 
-		<div class="cb-core-access-config" data-cb-core-access-config="<?php echo esc_attr( \CB\Core\Security\AccessMode::MODE_COMING_SOON ); ?>"<?php echo \CB\Core\Security\AccessMode::MODE_COMING_SOON === $current ? '' : ' hidden'; ?>>
+		<div class="cb-core-access-config" data-cb-core-access-config="<?php echo esc_attr( \CoreBlueprint\Core\Security\AccessMode::MODE_COMING_SOON ); ?>"<?php echo \CoreBlueprint\Core\Security\AccessMode::MODE_COMING_SOON === $current ? '' : ' hidden'; ?>>
 			<h2><?php esc_html_e( 'Coming Soon settings', 'core-blueprint' ); ?></h2>
 			<div class="cb-core-access-config__grid">
 				<div class="cb-core-field cb-core-stack">
 					<label class="cb-core-field__label" for="cb-core-coming-soon-page"><?php esc_html_e( 'Coming Soon page', 'core-blueprint' ); ?></label>
 					<?php
-					echo \CB\Core\UI\ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output.
+					echo \CoreBlueprint\Core\UI\ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output.
 						'name'          => 'coming_soon_page_id',
 						'id'            => 'cb-core-coming-soon-page',
 						'action'        => 'cb_core_access_mode_search_pages',
 						'nonce'         => $admin_nonce,
-						'selected'      => \CB\Core\Security\AccessMode::picker_selected_page( $coming_soon_page_id ),
+						'selected'      => \CoreBlueprint\Core\Security\AccessMode::picker_selected_page( $coming_soon_page_id ),
 						'placeholder'   => __( 'Search published pages…', 'core-blueprint' ),
 						'empty_message' => __( 'No published pages found.', 'core-blueprint' ),
 					] );
@@ -107,8 +107,8 @@ $mode_options = [
 				<div class="cb-core-field cb-core-stack">
 					<span class="cb-core-field__label"><?php esc_html_e( 'Search visibility', 'core-blueprint' ); ?></span>
 					<?php
-					echo \CB\Core\UI\ChoiceGroup::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output.
-						'type'       => \CB\Core\UI\ChoiceGroup::TYPE_RADIO,
+					echo \CoreBlueprint\Core\UI\ChoiceGroup::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output.
+						'type'       => \CoreBlueprint\Core\UI\ChoiceGroup::TYPE_RADIO,
 						'aria_label' => __( 'Coming Soon search visibility', 'core-blueprint' ),
 						'options'    => [
 							[
@@ -131,18 +131,18 @@ $mode_options = [
 			</div>
 		</div>
 
-		<div class="cb-core-access-config" data-cb-core-access-config="<?php echo esc_attr( \CB\Core\Security\AccessMode::MODE_MAINTENANCE ); ?>"<?php echo \CB\Core\Security\AccessMode::MODE_MAINTENANCE === $current ? '' : ' hidden'; ?>>
+		<div class="cb-core-access-config" data-cb-core-access-config="<?php echo esc_attr( \CoreBlueprint\Core\Security\AccessMode::MODE_MAINTENANCE ); ?>"<?php echo \CoreBlueprint\Core\Security\AccessMode::MODE_MAINTENANCE === $current ? '' : ' hidden'; ?>>
 			<h2><?php esc_html_e( 'Maintenance settings', 'core-blueprint' ); ?></h2>
 			<div class="cb-core-access-config__grid">
 				<div class="cb-core-field cb-core-stack">
 					<label class="cb-core-field__label" for="cb-core-maintenance-page"><?php esc_html_e( 'Maintenance page', 'core-blueprint' ); ?></label>
 					<?php
-					echo \CB\Core\UI\ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output.
+					echo \CoreBlueprint\Core\UI\ObjectPicker::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Foundation renderer escapes output.
 						'name'          => 'maintenance_page_id',
 						'id'            => 'cb-core-maintenance-page',
 						'action'        => 'cb_core_access_mode_search_pages',
 						'nonce'         => $admin_nonce,
-						'selected'      => \CB\Core\Security\AccessMode::picker_selected_page( $maintenance_page_id ),
+						'selected'      => \CoreBlueprint\Core\Security\AccessMode::picker_selected_page( $maintenance_page_id ),
 						'placeholder'   => __( 'Search published pages…', 'core-blueprint' ),
 						'empty_message' => __( 'No published pages found.', 'core-blueprint' ),
 					] );
@@ -168,10 +168,10 @@ $mode_options = [
 			</div>
 		</div>
 
-		<div class="cb-core-access-notice" data-cb-core-access-notice="<?php echo esc_attr( \CB\Core\Security\AccessMode::MODE_ADMIN_ONLY ); ?>"<?php echo \CB\Core\Security\AccessMode::MODE_ADMIN_ONLY === $current ? '' : ' hidden'; ?>>
+		<div class="cb-core-access-notice" data-cb-core-access-notice="<?php echo esc_attr( \CoreBlueprint\Core\Security\AccessMode::MODE_ADMIN_ONLY ); ?>"<?php echo \CoreBlueprint\Core\Security\AccessMode::MODE_ADMIN_ONLY === $current ? '' : ' hidden'; ?>>
 			<?php
-			echo \CB\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				'variant' => \CB\Core\UI\Notice::WARNING,
+			echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'variant' => \CoreBlueprint\Core\UI\Notice::WARNING,
 				'title'   => __( 'Before enabling Admin-Only Mode:', 'core-blueprint' ),
 				'items'   => [
 					__( 'Verify you can log in via /wp-login.php.', 'core-blueprint' ),
@@ -182,10 +182,10 @@ $mode_options = [
 			?>
 		</div>
 
-		<div class="cb-core-access-notice" data-cb-core-access-notice="<?php echo esc_attr( \CB\Core\Security\AccessMode::MODE_MAINTENANCE ); ?>"<?php echo \CB\Core\Security\AccessMode::MODE_MAINTENANCE === $current ? '' : ' hidden'; ?>>
+		<div class="cb-core-access-notice" data-cb-core-access-notice="<?php echo esc_attr( \CoreBlueprint\Core\Security\AccessMode::MODE_MAINTENANCE ); ?>"<?php echo \CoreBlueprint\Core\Security\AccessMode::MODE_MAINTENANCE === $current ? '' : ' hidden'; ?>>
 			<?php
-			echo \CB\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				'variant' => \CB\Core\UI\Notice::INFO,
+			echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'variant' => \CoreBlueprint\Core\UI\Notice::INFO,
 				'title'   => __( 'Maintenance keeps temporary downtime machine-readable.', 'core-blueprint' ),
 				'items'   => [
 					__( 'Anonymous public requests return HTTP 503 Service Unavailable.', 'core-blueprint' ),
@@ -208,7 +208,7 @@ $mode_options = [
 		<span class="cb-core-access-status-label"><?php esc_html_e( 'Current status', 'core-blueprint' ); ?></span>
 		<span class="cb-core-status" data-cb-core-access-status data-current-mode="<?php echo esc_attr( $current ); ?>">
 			<span class="cb-core-status__dot <?php echo $is_public ? 'cb-core-status__dot--success' : 'cb-core-status__dot--warning'; ?>" data-cb-core-access-status-dot aria-hidden="true"></span>
-			<span class="cb-core-status__label" data-cb-core-access-status-label><?php echo esc_html( \CB\Core\Security\AccessMode::status_label( $current ) ); ?></span>
+			<span class="cb-core-status__label" data-cb-core-access-status-label><?php echo esc_html( \CoreBlueprint\Core\Security\AccessMode::status_label( $current ) ); ?></span>
 		</span>
 	</div>
 

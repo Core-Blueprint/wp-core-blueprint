@@ -237,13 +237,13 @@ try {
     cb_a3_consumer_expect(is_plugin_active($starter_basename), 'Starter must be active for consumer verification.');
     cb_a3_consumer_expect(function_exists('cb_starter_base_ready') && cb_starter_base_ready(), 'Starter dependency gate is not satisfied on a normal subsequent request.');
 
-    $definition = \CB\Core\ExtensionRegistry::definition('core-blueprint-starter-plugin');
+    $definition = \CoreBlueprint\Core\ExtensionRegistry::definition('core-blueprint-starter-plugin');
     cb_a3_consumer_expect(is_array($definition), 'Starter was not collected through cb_core_register_extensions.');
     cb_a3_consumer_expect('1.0' === ($definition['requires_api'] ?? ''), 'Starter registration does not require Core API 1.0.');
     cb_a3_consumer_expect($starter_basename === ($definition['plugin_file'] ?? ''), 'Starter registration exposes the wrong plugin basename.');
     cb_a3_consumer_expect('core-blueprint-starter-plugin' === ($definition['status_id'] ?? ''), 'Starter registration exposes the wrong status ID.');
 
-    $inventory = \CB\Core\ExtensionRegistry::get('core-blueprint-starter-plugin');
+    $inventory = \CoreBlueprint\Core\ExtensionRegistry::get('core-blueprint-starter-plugin');
     cb_a3_consumer_expect(is_array($inventory), 'Starter is missing from the Base extension inventory.');
     cb_a3_consumer_expect(true === ($inventory['installed'] ?? null), 'Starter inventory does not report installed=true.');
     cb_a3_consumer_expect(true === ($inventory['active'] ?? null), 'Starter inventory does not report active=true.');
@@ -251,16 +251,16 @@ try {
     cb_a3_consumer_expect(true === ($inventory['compatible'] ?? null), 'Starter inventory does not report compatible=true.');
     cb_a3_consumer_expect('ok' === ($inventory['health'] ?? ''), 'Starter health did not resolve through the public status contract.');
 
-    $status = \CB\Core\Modules\Status::get('core-blueprint-starter-plugin');
+    $status = \CoreBlueprint\Core\Modules\Status::get('core-blueprint-starter-plugin');
     cb_a3_consumer_expect(is_array($status) && 'ok' === ($status['state'] ?? ''), 'Starter status provider did not resolve to ok.');
     cb_a3_consumer_expect('Starter Plugin' === ($status['label'] ?? ''), 'Starter status label is not available after init.');
 
-    cb_a3_consumer_expect('Starter example updated' === \CB\Core\Governance\EventRegistry::label('starter.example.updated'), 'Starter Governance event was not registered on init.');
-    cb_a3_consumer_expect('general' === \CB\Core\Governance\EventRegistry::retention_category('starter.example.updated'), 'Starter Governance event has the wrong retention category.');
+    cb_a3_consumer_expect('Starter example updated' === \CoreBlueprint\Core\Governance\EventRegistry::label('starter.example.updated'), 'Starter Governance event was not registered on init.');
+    cb_a3_consumer_expect('general' === \CoreBlueprint\Core\Governance\EventRegistry::retention_category('starter.example.updated'), 'Starter Governance event has the wrong retention category.');
     cb_a3_consumer_expect(\CB\Starter\Governance\Events::record_example(42), 'Starter could not record through the public Governance Audit facade.');
 
     global $wpdb;
-    $audit_table = \CB\Core\DB::audit_log_table();
+    $audit_table = \CoreBlueprint\Core\DB::audit_log_table();
     $audit_count = (int) $wpdb->get_var(
         $wpdb->prepare("SELECT COUNT(*) FROM {$audit_table} WHERE event_type = %s", 'starter_example_updated')
     );

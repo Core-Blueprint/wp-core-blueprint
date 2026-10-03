@@ -9,7 +9,7 @@ This document defines the supported external-consumer boundary for rendering Cor
 External consumers use:
 
 ```php
-CB\Core\Design\Profile\Document\Flow\Api\FlowRenderApi
+CoreBlueprint\Core\Design\Profile\Document\Flow\Api\FlowRenderApi
 ```
 
 Supported v1 methods:
@@ -26,9 +26,9 @@ FlowRenderApi::is_pdf_available()
 
 The public v1 rendering vocabulary is:
 
-- `CB\Core\Design\Profile\Document\Flow\RenderBlock`;
-- `CB\Core\Design\Profile\Document\Flow\TableColumn`;
-- `CB\Core\Design\Profile\Document\Flow\Presentation`;
+- `CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock`;
+- `CoreBlueprint\Core\Design\Profile\Document\Flow\TableColumn`;
+- `CoreBlueprint\Core\Design\Profile\Document\Flow\Presentation`;
 - the exact root-owned Flow layout shape below.
 
 The layout shape is:
@@ -98,9 +98,9 @@ The Dompdf implementation, security options, paper-point conversion and backend 
 The following classes are implementation details and are **not** public consumer APIs even when a method is technically `public`:
 
 ```text
-CB\Core\Design\Profile\Document\Flow\HtmlRenderer
-CB\Core\Design\Profile\Document\Flow\PdfRenderer
-CB\Core\PDF\Renderer
+CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer
+CoreBlueprint\Core\Design\Profile\Document\Flow\PdfRenderer
+CoreBlueprint\Core\PDF\Renderer
 ```
 
 External consumers must use `FlowRenderApi`. Base may refactor the internal renderers while preserving this documented facade and typed-input behavior.

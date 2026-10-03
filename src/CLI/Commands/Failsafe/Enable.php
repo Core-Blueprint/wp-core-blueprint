@@ -16,19 +16,19 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Failsafe;
+namespace CoreBlueprint\Core\CLI\Commands\Failsafe;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
 
 defined( 'ABSPATH' ) || exit;
 
 final class Enable implements CommandInterface {
 
 	public function execute( array $args ): Result {
-		\CB\Core\Security\Failsafe::deactivate_emergency_bypass( 'console' );
+		\CoreBlueprint\Core\Security\Failsafe::deactivate_emergency_bypass( 'console' );
 
-		$layers = \CB\Core\Security\Failsafe::active_layers();
+		$layers = \CoreBlueprint\Core\Security\Failsafe::active_layers();
 		$lines  = [];
 
 		if ( $layers['constant'] ) {
@@ -79,9 +79,9 @@ final class Enable implements CommandInterface {
 	 * @when after_wp_load
 	 */
 	public function __invoke( array $args, array $assoc_args ): void {
-		\CB\Core\Security\Failsafe::deactivate_emergency_bypass( 'cli' );
+		\CoreBlueprint\Core\Security\Failsafe::deactivate_emergency_bypass( 'cli' );
 
-		$layers = \CB\Core\Security\Failsafe::active_layers();
+		$layers = \CoreBlueprint\Core\Security\Failsafe::active_layers();
 		if ( $layers['constant'] ) {
 			\WP_CLI::warning( 'Layer 2 cleared, but the CB_CORE_BYPASS constant is still defined in wp-config.php. Remove it to fully resume enforcement.' );
 			return;

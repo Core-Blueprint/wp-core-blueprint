@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Settings repository for Core Blueprint Notes.
  *
  * Reads from / writes to the central CB Base settings array
- * (`cb_core_settings['notes']` subkey) via {@see \CB\Core\Settings}.
+ * (`cb_core_settings['notes']` subkey) via {@see \CoreBlueprint\Core\Settings}.
  * Notes does NOT own a separate option; configuration is part of the
  * single CB Base settings transaction so site-mode changes and module
  * toggles can stay atomic.
@@ -13,9 +13,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Notes\Settings;
+namespace CoreBlueprint\Core\Notes\Settings;
 
-use CB\Core\Settings;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

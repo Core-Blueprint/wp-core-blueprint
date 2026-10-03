@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Notes\DB\Install;
-use CB\Core\Notes\Repository;
+use CoreBlueprint\Core\Notes\DB\Install;
+use CoreBlueprint\Core\Notes\Repository;
 
 final class CB_Base_Notes_Repository_Content_Contract_Test extends WP_UnitTestCase {
 

@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\RolePolicySchema;
-use CB\Core\Permissions\Roles;
-use CB\Core\Profiles\Sections\SecuritySection;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\Policy;
-use CB\Core\Security\TwoFactor\PolicyMutation;
-use CB\Core\Security\TwoFactor\RecoveryCodes;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\RolePolicySchema;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Profiles\Sections\SecuritySection;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\Policy;
+use CoreBlueprint\Core\Security\TwoFactor\PolicyMutation;
+use CoreBlueprint\Core\Security\TwoFactor\RecoveryCodes;
+use CoreBlueprint\Core\Settings;
 
 final class CB_Base_Two_Factor_Profiles_Contract_Test extends WP_UnitTestCase {
 

@@ -6,14 +6,14 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels\Admin;
+namespace CoreBlueprint\Core\ContentModels\Admin;
 
-use CB\Core\ContentModels\FieldTypes;
-use CB\Core\ContentModels\LocationMatcher;
-use CB\Core\ContentModels\Repository;
-use CB\Core\ContentModels\State;
-use CB\Core\UI\Assets;
-use CB\Core\UI\ObjectPicker;
+use CoreBlueprint\Core\ContentModels\FieldTypes;
+use CoreBlueprint\Core\ContentModels\LocationMatcher;
+use CoreBlueprint\Core\ContentModels\Repository;
+use CoreBlueprint\Core\ContentModels\State;
+use CoreBlueprint\Core\UI\Assets;
+use CoreBlueprint\Core\UI\ObjectPicker;
 
 use WP_Post;
 

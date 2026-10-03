@@ -11,9 +11,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core;
+namespace CoreBlueprint\Core;
 
-use CB\Core\Database\SchemaRegistry;
+use CoreBlueprint\Core\Database\SchemaRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

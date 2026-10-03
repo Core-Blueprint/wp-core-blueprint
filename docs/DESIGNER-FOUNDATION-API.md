@@ -113,7 +113,7 @@ First-party Core Blueprint consumers follow the same rule as third-party consume
 The canonical launch/fullscreen/composition experience is loaded through:
 
 ```php
-CB\Core\Design\Editor\Assets::enqueue_designer_mode( __( 'Example Designer', 'example' ) );
+CoreBlueprint\Core\Design\Editor\Assets::enqueue_designer_mode( __( 'Example Designer', 'example' ) );
 ```
 
 See `DESIGNER-MODE.md` for the launch, responsive shell, toolbar and composition contract.

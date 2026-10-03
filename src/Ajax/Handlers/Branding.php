@@ -12,16 +12,16 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Ajax\Handlers;
+namespace CoreBlueprint\Core\Ajax\Handlers;
 
-use CB\Core\Ajax\Guards;
-use CB\Core\Ajax\Request;
-use CB\Core\Log\AuditLog;
-use CB\Core\Reports\Composer\MaintenanceTemplate;
-use CB\Core\Reports\DesignerPreview;
-use CB\Core\Reports\ReportBranding;
-use CB\Core\Reports\ReportBrandingInput;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Ajax\Guards;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Reports\DesignerPreview;
+use CoreBlueprint\Core\Reports\ReportBranding;
+use CoreBlueprint\Core\Reports\ReportBrandingInput;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

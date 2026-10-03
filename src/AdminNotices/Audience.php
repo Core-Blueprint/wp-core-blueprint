@@ -12,9 +12,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\AdminNotices;
+namespace CoreBlueprint\Core\AdminNotices;
 
-use CB\Core\AdminNavigation\Audience as NavigationAudience;
+use CoreBlueprint\Core\AdminNavigation\Audience as NavigationAudience;
 
 defined( 'ABSPATH' ) || exit;
 

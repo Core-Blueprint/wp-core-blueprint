@@ -8,13 +8,13 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Ajax\Handlers;
+namespace CoreBlueprint\Core\Ajax\Handlers;
 
-use CB\Core\Ajax\Guards;
-use CB\Core\Ajax\Request;
-use CB\Core\Log\AuditLog;
-use CB\Core\Security\HeaderTest;
-use CB\Core\UI;
+use CoreBlueprint\Core\Ajax\Guards;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Security\HeaderTest;
+use CoreBlueprint\Core\UI;
 
 defined( 'ABSPATH' ) || exit;
 

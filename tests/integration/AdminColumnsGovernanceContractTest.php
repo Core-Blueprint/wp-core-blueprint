@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminColumns\Bootstrap as AdminColumnsBootstrap;
-use CB\Core\AdminColumns\PolicyRepository;
-use CB\Core\AdminColumns\Runtime;
-use CB\Core\AdminColumns\SupportedScreen;
+use CoreBlueprint\Core\AdminColumns\Bootstrap as AdminColumnsBootstrap;
+use CoreBlueprint\Core\AdminColumns\PolicyRepository;
+use CoreBlueprint\Core\AdminColumns\Runtime;
+use CoreBlueprint\Core\AdminColumns\SupportedScreen;
 
 final class CB_Base_Admin_Columns_Governance_Contract_Test extends WP_UnitTestCase {
 	private mixed $saved_policy = '__cb_admin_columns_missing__';

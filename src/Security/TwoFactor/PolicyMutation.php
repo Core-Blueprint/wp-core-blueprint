@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Security\TwoFactor;
+namespace CoreBlueprint\Core\Security\TwoFactor;
 
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Security\Failsafe;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Security\Failsafe;
+use CoreBlueprint\Core\Settings;
 use InvalidArgumentException;
 use RuntimeException;
 use WP_User;

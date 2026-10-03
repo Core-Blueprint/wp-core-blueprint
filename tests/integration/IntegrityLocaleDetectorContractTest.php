@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Integrity\Scanner\LocaleDetector;
+use CoreBlueprint\Core\Integrity\Scanner\LocaleDetector;
 
 final class CB_Base_Integrity_Locale_Detector_Contract_Test extends WP_UnitTestCase {
 

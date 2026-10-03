@@ -32,14 +32,14 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Integrity;
+namespace CoreBlueprint\Core\Integrity;
 
-use CB\Core\Integrity\Scheduler\Cron;
-use CB\Core\Integrity\Scanner\ScanJobRunner;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Integrity\Support\Audit;
+use CoreBlueprint\Core\Integrity\Scheduler\Cron;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Support\Audit;
 
-use CB\Core\Modules\ModuleStateInterface;
+use CoreBlueprint\Core\Modules\ModuleStateInterface;
 defined( 'ABSPATH' ) || exit;
 
 final class State implements ModuleStateInterface {

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class CB_Base_Detail_Rows_Test_Page implements \CB\Core\Admin\Page {
+final class CB_Base_Detail_Rows_Test_Page implements \CoreBlueprint\Core\Admin\Page {
     public function slug(): string {
         return 'cb-detail-rows-test';
     }
@@ -30,16 +30,16 @@ final class CB_Base_Detail_Rows_Contract_Test extends WP_UnitTestCase {
 
     public function set_up(): void {
         parent::set_up();
-        \CB\Core\Admin\PageRegistry::_reset_for_testing();
+        \CoreBlueprint\Core\Admin\PageRegistry::_reset_for_testing();
     }
 
     public function tear_down(): void {
-        \CB\Core\Admin\PageRegistry::_reset_for_testing();
+        \CoreBlueprint\Core\Admin\PageRegistry::_reset_for_testing();
         parent::tear_down();
     }
 
     public function test_renderer_supports_all_existing_status_semantics_and_multiple_rows(): void {
-        $html = \CB\Core\UI\DetailRows::render( [
+        $html = \CoreBlueprint\Core\UI\DetailRows::render( [
             [ 'name' => 'Alpha', 'status' => 'active', 'status_label' => 'Active' ],
             [ 'name' => 'Beta', 'status' => 'ready', 'status_label' => 'Ready' ],
             [ 'name' => 'Gamma', 'status' => 'warning', 'status_label' => 'Warning' ],
@@ -56,7 +56,7 @@ final class CB_Base_Detail_Rows_Contract_Test extends WP_UnitTestCase {
     }
 
     public function test_status_is_optional_and_invalid_status_metadata_is_not_coerced(): void {
-        $html = \CB\Core\UI\DetailRows::render( [
+        $html = \CoreBlueprint\Core\UI\DetailRows::render( [
             [ 'name' => 'No status', 'description' => 'Still a valid row.' ],
             [ 'name' => 'Unknown status', 'status' => 'mystery', 'status_label' => 'Mystery' ],
             [ 'name' => 'Missing label', 'status' => 'active' ],
@@ -69,7 +69,7 @@ final class CB_Base_Detail_Rows_Contract_Test extends WP_UnitTestCase {
     }
 
     public function test_renderer_escapes_content_and_only_emits_complete_cta(): void {
-        $html = \CB\Core\UI\DetailRows::render( [
+        $html = \CoreBlueprint\Core\UI\DetailRows::render( [
             [
                 'name'         => '<Template>',
                 'description'  => '<script>alert(1)</script>',
@@ -93,8 +93,8 @@ final class CB_Base_Detail_Rows_Contract_Test extends WP_UnitTestCase {
     }
 
     public function test_invalid_rows_fail_closed_and_empty_input_returns_empty_string(): void {
-        self::assertSame( '', \CB\Core\UI\DetailRows::render( [] ) );
-        self::assertSame( '', \CB\Core\UI\DetailRows::render( [
+        self::assertSame( '', \CoreBlueprint\Core\UI\DetailRows::render( [] ) );
+        self::assertSame( '', \CoreBlueprint\Core\UI\DetailRows::render( [
             [ 'name' => '' ],
             [ 'description' => 'Missing name' ],
             'not-an-item',
@@ -102,7 +102,7 @@ final class CB_Base_Detail_Rows_Contract_Test extends WP_UnitTestCase {
     }
 
     public function test_detail_rows_compose_inside_existing_card_without_owning_card_context(): void {
-        $rows = \CB\Core\UI\DetailRows::render( [
+        $rows = \CoreBlueprint\Core\UI\DetailRows::render( [
             [
                 'name'         => 'Course template',
                 'description'  => 'Assigned template',
@@ -112,7 +112,7 @@ final class CB_Base_Detail_Rows_Contract_Test extends WP_UnitTestCase {
                 'action_label' => 'Edit',
             ],
         ] );
-        $html = \CB\Core\UI\Card::render( [
+        $html = \CoreBlueprint\Core\UI\Card::render( [
             'title' => 'Template setup',
             'body'  => $rows . '<p class="consumer-guidance">Consumer-owned guidance</p>',
         ] );
@@ -124,16 +124,16 @@ final class CB_Base_Detail_Rows_Contract_Test extends WP_UnitTestCase {
     }
 
     public function test_page_registry_accepts_single_detail_rows_requirement(): void {
-        self::assertTrue( \CB\Core\Admin\PageRegistry::register(
+        self::assertTrue( \CoreBlueprint\Core\Admin\PageRegistry::register(
             new CB_Base_Detail_Rows_Test_Page(),
             [ 'components' => [ 'detail-rows' ] ]
         ) );
     }
 
     public function test_detail_rows_requirement_owns_internal_asset_dependencies(): void {
-        $context = \CB\Core\Admin\ScreenContext::from_request( 'core-blueprint_page_cb-detail-rows-test' );
+        $context = \CoreBlueprint\Core\Admin\ScreenContext::from_request( 'core-blueprint_page_cb-detail-rows-test' );
 
-        \CB\Core\Admin\AdminAssetCatalog::enqueue_component_requirement( 'detail-rows', $context );
+        \CoreBlueprint\Core\Admin\AdminAssetCatalog::enqueue_component_requirement( 'detail-rows', $context );
 
         self::assertTrue( wp_style_is( 'cb-core-css-detail-rows', 'enqueued' ) );
         self::assertTrue( wp_style_is( 'cb-core-css-status-indicators', 'enqueued' ) );

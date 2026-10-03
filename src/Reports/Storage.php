@@ -11,15 +11,15 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Reports;
+namespace CoreBlueprint\Core\Reports;
 
-use CB\Core\Governance\RetentionStoreRegistry;
+use CoreBlueprint\Core\Governance\RetentionStoreRegistry;
 
-use CB\Core\Database\SchemaRegistry;
+use CoreBlueprint\Core\Database\SchemaRegistry;
 
-use CB\Core\DB\DeleteBuilder;
-use CB\Core\DB\InsertBuilder;
-use CB\Core\DB\QueryBuilder;
+use CoreBlueprint\Core\DB\DeleteBuilder;
+use CoreBlueprint\Core\DB\InsertBuilder;
+use CoreBlueprint\Core\DB\QueryBuilder;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -89,7 +89,7 @@ final class Storage {
 	}
 
 	public static function register_retention_store(): void {
-		$days = (int) ( \CB\Core\Settings::get()['reports']['retention_days'] ?? 365 );
+		$days = (int) ( \CoreBlueprint\Core\Settings::get()['reports']['retention_days'] ?? 365 );
 		$days = max( self::RETENTION_MIN_DAYS, min( self::RETENTION_MAX_DAYS, $days ) );
 		RetentionStoreRegistry::register( [
 			'id'           => 'core-maintenance-reports',

@@ -131,7 +131,7 @@ tests_add_filter(
         add_action(
             'plugins_loaded',
             static function (): void {
-                \CB\Core\Core::activate();
+                \CoreBlueprint\Core\Core::activate();
             },
             2
         );

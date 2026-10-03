@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Fixed\BoxStyle;
-use CB\Core\Design\Profile\Document\Fixed\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Fixed\PdfRenderer;
-use CB\Core\Design\Profile\Document\Fixed\RenderFragment;
-use CB\Core\Design\Profile\Document\Fixed\TextStyle;
-use CB\Core\PDF\Api\PdfApi;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\BoxStyle;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\PdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\RenderFragment;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\TextStyle;
+use CoreBlueprint\Core\PDF\Api\PdfApi;
 
 final class CB_Design_Foundation_B2_Fixed_Presentation_Test extends WP_UnitTestCase {
 

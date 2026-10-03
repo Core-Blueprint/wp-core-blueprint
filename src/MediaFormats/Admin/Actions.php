@@ -6,11 +6,11 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\MediaFormats\Admin;
+namespace CoreBlueprint\Core\MediaFormats\Admin;
 
-use CB\Core\MediaFormats\Environment;
-use CB\Core\MediaFormats\Settings;
-use CB\Core\MediaFormats\State;
+use CoreBlueprint\Core\MediaFormats\Environment;
+use CoreBlueprint\Core\MediaFormats\Settings;
+use CoreBlueprint\Core\MediaFormats\State;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -35,7 +35,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD;
+namespace CoreBlueprint\Core\HUD;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -193,12 +193,12 @@ final class HeaderActions {
 	 * @return array{dark:string, light:string}|null
 	 */
 	private static function theme_toggle_slug_pair(): ?array {
-		if ( ! class_exists( '\\CB\\Core\\Themes' ) ) {
+		if ( ! class_exists( '\\CoreBlueprint\\Core\\Themes' ) ) {
 			return null;
 		}
 
-		$current_slug = (string) \CB\Core\Themes::current();
-		$all          = \CB\Core\Themes::all();
+		$current_slug = (string) \CoreBlueprint\Core\Themes::current();
+		$all          = \CoreBlueprint\Core\Themes::all();
 		$current_fam  = $all[ $current_slug ]['family'] ?? '';
 
 		$dark  = '';
@@ -343,8 +343,8 @@ final class HeaderActions {
 	 */
 	private static function theme_toggle_icon(): string {
 		$mode = 'dark';
-		if ( class_exists( '\\CB\\Core\\Themes' ) ) {
-			$mode = (string) \CB\Core\Themes::current_mode();
+		if ( class_exists( '\\CoreBlueprint\\Core\\Themes' ) ) {
+			$mode = (string) \CoreBlueprint\Core\Themes::current_mode();
 		}
 
 		// When dark is active, show sun (clicking goes back to light).

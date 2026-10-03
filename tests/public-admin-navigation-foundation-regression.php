@@ -66,7 +66,7 @@ $asset_catalog = cb_core_admin_navigation_read( $asset_catalog_path );
 $contract = cb_core_admin_navigation_read( $contract_path );
 $tabbed = cb_core_admin_navigation_read( $tabbed_path );
 
-$primary_html = \CB\Core\UI\PrimaryNav::render( [
+$primary_html = \CoreBlueprint\Core\UI\PrimaryNav::render( [
 	'items' => [
 		'overview' => [ 'label' => 'Overview', 'href' => '/overview' ],
 		'software' => [ 'label' => 'Software', 'href' => '/software' ],
@@ -83,11 +83,11 @@ cb_core_admin_navigation_assert(
 	'PrimaryNav must render canonical Level 1 markup and active accessibility state.'
 );
 cb_core_admin_navigation_assert(
-	'' === \CB\Core\UI\PrimaryNav::render( [ 'items' => [] ] ),
+	'' === \CoreBlueprint\Core\UI\PrimaryNav::render( [ 'items' => [] ] ),
 	'PrimaryNav must render nothing when no valid navigation items exist.'
 );
 
-$tab_html = \CB\Core\Admin\TabNav::build( 'sample-page', 'general', [
+$tab_html = \CoreBlueprint\Core\Admin\TabNav::build( 'sample-page', 'general', [
 	'overview' => 'Overview',
 	'general' => 'General',
 ] );
@@ -103,7 +103,7 @@ cb_core_admin_navigation_assert(
 	'Tabbed must delegate tab markup to TabNav instead of maintaining a second renderer.'
 );
 
-$html = \CB\Core\UI\SectionNav::render( [
+$html = \CoreBlueprint\Core\UI\SectionNav::render( [
 	'items' => [
 		'overview' => [ 'label' => 'Overview', 'href' => '/overview' ],
 		'setup' => [ 'label' => 'Setup & Trust', 'href' => '/setup' ],
@@ -127,7 +127,7 @@ cb_core_admin_navigation_assert(
 	'SectionNav must skip invalid items and keep separators out of consumer markup.'
 );
 cb_core_admin_navigation_assert(
-	'' === \CB\Core\UI\SectionNav::render( [ 'items' => [] ] ),
+	'' === \CoreBlueprint\Core\UI\SectionNav::render( [ 'items' => [] ] ),
 	'SectionNav must render nothing when no valid navigation items exist.'
 );
 
@@ -164,7 +164,7 @@ cb_core_admin_navigation_assert(
 	'PageRegistry and AdminAssetCatalog must expose one complete semantic admin-navigation registration.'
 );
 cb_core_admin_navigation_assert(
-	str_contains( $contract, 'CB\\Core\\UI\\PrimaryNav' )
+	str_contains( $contract, 'CoreBlueprint\\Core\\UI\\PrimaryNav' )
 		&& str_contains( $contract, 'Level 1 - Workspace navigation' )
 		&& str_contains( $contract, 'Level 2 - Section navigation' )
 		&& str_contains( $contract, 'Level 3 - View or mode selector' )

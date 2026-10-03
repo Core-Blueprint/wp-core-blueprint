@@ -21,6 +21,6 @@ final class Gate3SettingsOwnershipContractTest extends WP_UnitTestCase {
 	}
 
 	public function test_settings_defaults_public_facade_matches_internal_schema(): void {
-		$this->assertSame( \CB\Core\SettingsDefaults::all(), \CB\Core\Settings::defaults() );
+		$this->assertSame( \CoreBlueprint\Core\SettingsDefaults::all(), \CoreBlueprint\Core\Settings::defaults() );
 	}
 }

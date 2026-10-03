@@ -19,18 +19,18 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\CLI\Commands\Failsafe;
+namespace CoreBlueprint\Core\CLI\Commands\Failsafe;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
 
 defined( 'ABSPATH' ) || exit;
 
 final class RotateToken implements CommandInterface {
 
 	public function execute( array $args ): Result {
-		$token = \CB\Core\Security\Failsafe::rotate_token();
-		$url   = \CB\Core\Security\Failsafe::build_bypass_url( $token );
+		$token = \CoreBlueprint\Core\Security\Failsafe::rotate_token();
+		$url   = \CoreBlueprint\Core\Security\Failsafe::build_bypass_url( $token );
 
 		// Lines do NOT contain the URL - the Console reads the URL from
 		// data.bypass_url and renders it through a copy-to-clipboard modal
@@ -77,8 +77,8 @@ final class RotateToken implements CommandInterface {
 	 * @when after_wp_load
 	 */
 	public function __invoke( array $args, array $assoc_args ): void {
-		$token = \CB\Core\Security\Failsafe::rotate_token();
-		$url   = \CB\Core\Security\Failsafe::build_bypass_url( $token );
+		$token = \CoreBlueprint\Core\Security\Failsafe::rotate_token();
+		$url   = \CoreBlueprint\Core\Security\Failsafe::build_bypass_url( $token );
 
 		\WP_CLI::success( 'New bypass token generated.' );
 		\WP_CLI::line( '' );

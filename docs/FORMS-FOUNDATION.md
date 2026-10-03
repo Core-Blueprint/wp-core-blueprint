@@ -23,10 +23,10 @@ version:  1
 The canonical constants are:
 
 ```php
-CB\Core\Forms\Foundation::CONTRACT_OWNER
-CB\Core\Forms\Foundation::CONTRACT_ID
-CB\Core\Forms\Foundation::CONTRACT_VERSION
-CB\Core\Forms\Foundation::SUPPORT_SUBMISSION_EMIT
+CoreBlueprint\Core\Forms\Foundation::CONTRACT_OWNER
+CoreBlueprint\Core\Forms\Foundation::CONTRACT_ID
+CoreBlueprint\Core\Forms\Foundation::CONTRACT_VERSION
+CoreBlueprint\Core\Forms\Foundation::SUPPORT_SUBMISSION_EMIT
 ```
 
 `Foundation::contract_definition()` is an internal read-only definition consumed by Base's private interoperability contract catalog. There is no public Base-owned contract registration API.
@@ -38,9 +38,9 @@ Base loads this specialized contract from its internal catalog before dispatchin
 The Forms Foundation public v1 surface is:
 
 ```php
-CB\Core\Forms\ProviderInterface
-CB\Core\Forms\SubmissionEmitter
-CB\Core\Forms\SubmissionEvent
+CoreBlueprint\Core\Forms\ProviderInterface
+CoreBlueprint\Core\Forms\SubmissionEmitter
+CoreBlueprint\Core\Forms\SubmissionEvent
 ```
 
 and the in-request event hook:
@@ -59,13 +59,13 @@ Providers must not rely on undocumented support-token meanings. New optional For
 
 ## Provider admission and implementation registration
 
-A forms adapter is an ordinary Core Blueprint extension. It first registers its canonical platform identity through `CB\Core\ExtensionRegistry`, then registers an implementation during the standard Interoperability implementation lifecycle.
+A forms adapter is an ordinary Core Blueprint extension. It first registers its canonical platform identity through `CoreBlueprint\Core\ExtensionRegistry`, then registers an implementation during the standard Interoperability implementation lifecycle.
 
 ```php
-use CB\Core\ExtensionRegistry;
-use CB\Core\Forms\Foundation;
-use CB\Core\Forms\ProviderInterface;
-use CB\Core\Interoperability\Registry;
+use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Forms\Foundation;
+use CoreBlueprint\Core\Forms\ProviderInterface;
+use CoreBlueprint\Core\Interoperability\Registry;
 
 add_action( 'cb_core_register_extensions', static function (): void {
     ExtensionRegistry::register( [
@@ -116,7 +116,7 @@ Availability is not authorization and does not replace the upstream form system'
 A provider emits through:
 
 ```php
-$result = CB\Core\Forms\SubmissionEmitter::emit(
+$result = CoreBlueprint\Core\Forms\SubmissionEmitter::emit(
     'acme-forms',
     'default',
     'contact-main',
@@ -205,7 +205,7 @@ Forms v1 defines no attachment semantics, field-schema discovery, form catalog/d
 
 ## Submission event
 
-A successful emission creates one immutable `CB\Core\Forms\SubmissionEvent` and dispatches it on:
+A successful emission creates one immutable `CoreBlueprint\Core\Forms\SubmissionEvent` and dispatches it on:
 
 ```text
 cb_core_forms_submission_emitted

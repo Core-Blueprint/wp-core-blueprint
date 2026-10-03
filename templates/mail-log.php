@@ -20,8 +20,8 @@ $mail_log_retention_label = sprintf( _n( 'Retention: %d day', 'Retention: %d day
 
 	<?php if ( is_array( $result_notice ) && ! empty( $result_notice['message'] ) ) : ?>
 		<?php
-		echo \CB\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() returns escape-clean HTML.
-			'variant' => 'error' === ( $result_notice['type'] ?? '' ) ? \CB\Core\UI\Notice::ERROR : \CB\Core\UI\Notice::SUCCESS,
+		echo \CoreBlueprint\Core\UI\Notice::render( [ // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Notice::render() returns escape-clean HTML.
+			'variant' => 'error' === ( $result_notice['type'] ?? '' ) ? \CoreBlueprint\Core\UI\Notice::ERROR : \CoreBlueprint\Core\UI\Notice::SUCCESS,
 			'message' => (string) $result_notice['message'],
 		] );
 		?>
@@ -40,7 +40,7 @@ $mail_log_retention_label = sprintf( _n( 'Retention: %d day', 'Retention: %d day
 			<label><span><?php esc_html_e( 'Search', 'core-blueprint' ); ?></span><input type="search" name="search" value="<?php echo esc_attr( $current_search ); ?>" placeholder="<?php esc_attr_e( 'Recipient, subject, error…', 'core-blueprint' ); ?>" /></label>
 			<label><span><?php esc_html_e( 'Status', 'core-blueprint' ); ?></span><select name="status"><option value=""><?php esc_html_e( 'Any', 'core-blueprint' ); ?></option><option value="sent" <?php selected( $current_status, 'sent' ); ?>><?php esc_html_e( 'Sent', 'core-blueprint' ); ?></option><option value="failed" <?php selected( $current_status, 'failed' ); ?>><?php esc_html_e( 'Failed', 'core-blueprint' ); ?></option></select></label>
 			<label><span><?php esc_html_e( 'Provider', 'core-blueprint' ); ?></span><select name="provider"><option value=""><?php esc_html_e( 'Any', 'core-blueprint' ); ?></option><?php foreach ( $providers as $slug => $label ) : ?><option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $current_provider, $slug ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
-			<label><span><?php esc_html_e( 'Period', 'core-blueprint' ); ?></span><select name="period"><?php foreach ( \CB\Core\Log\TimeFilter::PRESETS as $slug => $_label ) : ?><option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $current_period, $slug ); ?>><?php echo esc_html( \CB\Core\Log\TimeFilter::label( $slug ) ); ?></option><?php endforeach; ?></select></label>
+			<label><span><?php esc_html_e( 'Period', 'core-blueprint' ); ?></span><select name="period"><?php foreach ( \CoreBlueprint\Core\Log\TimeFilter::PRESETS as $slug => $_label ) : ?><option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $current_period, $slug ); ?>><?php echo esc_html( \CoreBlueprint\Core\Log\TimeFilter::label( $slug ) ); ?></option><?php endforeach; ?></select></label>
 			<div class="cb-core-mail-filter-actions">
 				<button class="button cb-core-button cb-core-button--secondary cb-core-button--compact" type="submit"><?php esc_html_e( 'Apply filters', 'core-blueprint' ); ?></button>
 				<a class="button cb-core-button cb-core-button--secondary cb-core-button--compact" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $page_slug . '&tab=' . $tab_slug ) ); ?>"><?php esc_html_e( 'Clear', 'core-blueprint' ); ?></a>
@@ -66,7 +66,7 @@ $mail_log_retention_label = sprintf( _n( 'Retention: %d day', 'Retention: %d day
 					</thead>
 					<tbody>
 					<?php foreach ( $rows as $row ) :
-						$recipient = \CB\Core\Mail\Admin\LogsTab::format_addresses( $row->recipients_decoded ?? [] );
+						$recipient = \CoreBlueprint\Core\Mail\Admin\LogsTab::format_addresses( $row->recipients_decoded ?? [] );
 						/* translators: %d: mail delivery duration in milliseconds. */
 						$duration_label = sprintf( __( '%d ms', 'core-blueprint' ), (int) $row->duration_ms );
 						$details = 'failed' === $row->status
@@ -88,9 +88,9 @@ $mail_log_retention_label = sprintf( _n( 'Retention: %d day', 'Retention: %d day
 							</td>
 							<td class="cb-core-mail-log-col-status">
 								<?php
-								echo \CB\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- StateBadge::render() returns escape-clean HTML.
+								echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- StateBadge::render() returns escape-clean HTML.
 									'failed' === $row->status ? __( 'Failed', 'core-blueprint' ) : __( 'Sent', 'core-blueprint' ),
-									[ 'variant' => 'failed' === $row->status ? \CB\Core\UI\StateBadge::ERROR : \CB\Core\UI\StateBadge::SUCCESS ]
+									[ 'variant' => 'failed' === $row->status ? \CoreBlueprint\Core\UI\StateBadge::ERROR : \CoreBlueprint\Core\UI\StateBadge::SUCCESS ]
 								);
 								?>
 							</td>

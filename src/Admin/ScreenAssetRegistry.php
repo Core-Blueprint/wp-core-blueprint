@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -98,14 +98,14 @@ final class ScreenAssetRegistry {
 		// enqueue HUD CSS/module data while the site-wide HUD preference is off.
 		// The Floating Menu Preferences editor owns its own lazy catalog bootstrap
 		// and therefore remains fully manageable while HUD presentation is disabled.
-		if ( \CB\Core\HUD\Settings::is_enabled() ) {
+		if ( \CoreBlueprint\Core\HUD\Settings::is_enabled() ) {
 			$requirements[] = 'component.hud';
 		}
 
 		$requirements[] = 'component.mode-switcher';
 		$requirements[] = 'module.mode-switcher';
 
-		if ( \CB\Core\HUD\Settings::is_enabled() ) {
+		if ( \CoreBlueprint\Core\HUD\Settings::is_enabled() ) {
 			$requirements[] = 'module.hud';
 		}
 

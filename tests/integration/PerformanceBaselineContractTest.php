@@ -48,15 +48,15 @@ final class CB_Base_Performance_Baseline_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( "'enable_reports'", $request );
 		self::assertStringContainsString(
-			"false === \\CB\\Core\\Reports\\State::is_enabled()",
+			"false === \\CoreBlueprint\\Core\\Reports\\State::is_enabled()",
 			$request
 		);
 		self::assertStringContainsString(
-			"\\CB\\Core\\Reports\\State::set_enabled(true, 'performance-harness')",
+			"\\CoreBlueprint\\Core\\Reports\\State::set_enabled(true, 'performance-harness')",
 			$request
 		);
 		self::assertStringContainsString(
-			"true === \\CB\\Core\\Reports\\State::is_enabled()",
+			"true === \\CoreBlueprint\\Core\\Reports\\State::is_enabled()",
 			$request
 		);
 	}

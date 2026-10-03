@@ -1,20 +1,20 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Kernel\AuthorizationRegistry;
-use CB\Core\Design\Kernel\CapabilityClass;
-use CB\Core\Design\Kernel\CapabilityRegistry;
-use CB\Core\Design\Kernel\DesignProject;
-use CB\Core\Design\Kernel\DesignTypeRegistry;
-use CB\Core\Design\Kernel\ProviderRegistry;
-use CB\Core\Design\Kernel\SchemaValidator;
-use CB\Core\Design\Kernel\Serializer;
-use CB\Core\Design\Profile\Document\Fixed\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Fixed\PdfRenderer as FixedPdfRenderer;
-use CB\Core\Design\Profile\Document\Fixed\RenderFragment;
-use CB\Core\Design\Profile\Document\Fixed\Validator as FixedValidator;
-use CB\Core\PDF\Api\PdfApi;
-use CB\Core\PDF\RendererException;
+use CoreBlueprint\Core\Design\Kernel\AuthorizationRegistry;
+use CoreBlueprint\Core\Design\Kernel\CapabilityClass;
+use CoreBlueprint\Core\Design\Kernel\CapabilityRegistry;
+use CoreBlueprint\Core\Design\Kernel\DesignProject;
+use CoreBlueprint\Core\Design\Kernel\DesignTypeRegistry;
+use CoreBlueprint\Core\Design\Kernel\ProviderRegistry;
+use CoreBlueprint\Core\Design\Kernel\SchemaValidator;
+use CoreBlueprint\Core\Design\Kernel\Serializer;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\PdfRenderer as FixedPdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\RenderFragment;
+use CoreBlueprint\Core\Design\Profile\Document\Fixed\Validator as FixedValidator;
+use CoreBlueprint\Core\PDF\Api\PdfApi;
+use CoreBlueprint\Core\PDF\RendererException;
 
 final class CB_Design_Foundation_R3b_Shipping_Proof_Test extends WP_UnitTestCase {
 	private const PROVIDER = 'fixture.shipping';

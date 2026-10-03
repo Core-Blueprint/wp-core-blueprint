@@ -10,11 +10,11 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Security;
+namespace CoreBlueprint\Core\Security;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Ajax\Request;
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\Log\AuditLog;
 use WP_Admin_Bar;
 use WP_Query;
 use WP_Post;

@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Security\Failsafe;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Security\Failsafe;
 
 final class CB_Base_Failsafe_Hardening_Contract_Test extends WP_UnitTestCase {
 

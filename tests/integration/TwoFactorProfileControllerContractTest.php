@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\ProfileActionForms;
-use CB\Core\Admin\UserProfileSectionRegistry;
-use CB\Core\Security\TwoFactor\AccountManager;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\EnrollmentStore;
-use CB\Core\Security\TwoFactor\Policy;
-use CB\Core\Security\TwoFactor\ProfileController;
-use CB\Core\Security\TwoFactor\RecoveryCodes;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Admin\ProfileActionForms;
+use CoreBlueprint\Core\Admin\UserProfileSectionRegistry;
+use CoreBlueprint\Core\Security\TwoFactor\AccountManager;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\EnrollmentStore;
+use CoreBlueprint\Core\Security\TwoFactor\Policy;
+use CoreBlueprint\Core\Security\TwoFactor\ProfileController;
+use CoreBlueprint\Core\Security\TwoFactor\RecoveryCodes;
+use CoreBlueprint\Core\Settings;
 
 final class CB_Base_Two_Factor_Profile_Controller_Contract_Test extends WP_UnitTestCase {
 

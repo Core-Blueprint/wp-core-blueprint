@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\DB;
-use CB\Core\Database\SchemaRegistry;
-use CB\Core\Reports\MaintenanceAggregator;
-use CB\Core\Reports\Storage;
+use CoreBlueprint\Core\DB;
+use CoreBlueprint\Core\Database\SchemaRegistry;
+use CoreBlueprint\Core\Reports\MaintenanceAggregator;
+use CoreBlueprint\Core\Reports\Storage;
 
 final class CB_Base_Reports_Storage_Lifecycle_Contract_Test extends WP_UnitTestCase {
 

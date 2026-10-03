@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * TabNav - static rendering helpers for tab navigation on admin pages.
  *
- * The {@see \CB\Core\Admin\Tabbed} trait provides instance methods for
+ * The {@see \CoreBlueprint\Core\Admin\Tabbed} trait provides instance methods for
  * pages that are built as class-instance renderers (Logs, Safeguards).
  * Tab renderers in the Logs registry are static callables though, so
  * they need the same helpers in a form they can actually call. This
@@ -14,9 +14,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
-use CB\Core\UI\PrimaryNav;
+use CoreBlueprint\Core\UI\PrimaryNav;
 
 defined( 'ABSPATH' ) || exit;
 

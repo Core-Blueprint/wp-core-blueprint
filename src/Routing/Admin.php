@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Routing;
+namespace CoreBlueprint\Core\Routing;
 
-use CB\Core\Admin\MutationAcknowledgement;
-use CB\Core\Admin\Pages\Preferences;
+use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\Admin\Pages\Preferences;
 
 defined( 'ABSPATH' ) || exit;
 

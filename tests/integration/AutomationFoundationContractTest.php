@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Automation\ActionRegistry;
-use CB\Core\Automation\Emitter;
-use CB\Core\Automation\Schema;
-use CB\Core\Automation\TriggerEvent;
-use CB\Core\Automation\TriggerRegistry;
-use CB\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Automation\ActionRegistry;
+use CoreBlueprint\Core\Automation\Emitter;
+use CoreBlueprint\Core\Automation\Schema;
+use CoreBlueprint\Core\Automation\TriggerEvent;
+use CoreBlueprint\Core\Automation\TriggerRegistry;
+use CoreBlueprint\Core\ExtensionRegistry;
 
 final class CB_Base_Automation_Foundation_Contract_Test extends WP_UnitTestCase {
 

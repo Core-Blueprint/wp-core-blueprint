@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\HUD\Bootstrap;
+use CoreBlueprint\Core\HUD\Bootstrap;
 
 final class CB_Base_HUD_Update_Boundary_Test extends WP_UnitTestCase {
 
@@ -24,21 +24,21 @@ final class CB_Base_HUD_Update_Boundary_Test extends WP_UnitTestCase {
 	}
 
 	public function test_cross_page_hud_assets_follow_site_runtime_state(): void {
-		$method = new ReflectionMethod( \CB\Core\Admin\ScreenAssetRegistry::class, 'cross_page_requirements' );
+		$method = new ReflectionMethod( \CoreBlueprint\Core\Admin\ScreenAssetRegistry::class, 'cross_page_requirements' );
 
-		delete_option( \CB\Core\HUD\Settings::OPTION_DISABLED );
+		delete_option( \CoreBlueprint\Core\HUD\Settings::OPTION_DISABLED );
 		$disabled = $method->invoke( null );
 		self::assertNotContains( 'component.hud', $disabled );
 		self::assertNotContains( 'module.hud', $disabled );
 		self::assertContains( 'component.mode-switcher', $disabled );
 		self::assertContains( 'module.mode-switcher', $disabled );
 
-		\CB\Core\HUD\Settings::set_site_enabled( true, 'test' );
+		\CoreBlueprint\Core\HUD\Settings::set_site_enabled( true, 'test' );
 		$enabled = $method->invoke( null );
 		self::assertContains( 'component.hud', $enabled );
 		self::assertContains( 'module.hud', $enabled );
 
-		\CB\Core\HUD\Settings::set_site_enabled( false, 'test' );
+		\CoreBlueprint\Core\HUD\Settings::set_site_enabled( false, 'test' );
 	}
 
 	public function test_extension_full_set_skips_hud_assets_when_runtime_is_disabled(): void {
@@ -46,7 +46,7 @@ final class CB_Base_HUD_Update_Boundary_Test extends WP_UnitTestCase {
 		self::assertIsString( $source );
 
 		self::assertStringContainsString(
-			'$hud_enabled = \\CB\\Core\\HUD\\Settings::is_enabled();',
+			'$hud_enabled = \\CoreBlueprint\\Core\\HUD\\Settings::is_enabled();',
 			$source
 		);
 		self::assertStringContainsString(

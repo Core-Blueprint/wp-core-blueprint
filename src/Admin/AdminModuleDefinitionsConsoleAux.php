@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /** Private BASE-10E.2 module definitions: ConsoleAux. */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -104,8 +104,8 @@ final class AdminModuleDefinitionsConsoleAux {
 					'id'   => '@cb-core/hud',
 					'src'  => 'features/hud.js',
 					'deps' => [],
-					'data' => class_exists( \CB\Core\HUD\Assets::class )
-						? ( \CB\Core\HUD\Assets::script_module_data( [] ) )
+					'data' => class_exists( \CoreBlueprint\Core\HUD\Assets::class )
+						? ( \CoreBlueprint\Core\HUD\Assets::script_module_data( [] ) )
 						: [],
 				];
 			},

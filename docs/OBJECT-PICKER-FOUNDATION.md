@@ -1,6 +1,6 @@
 # Object Picker Foundation
 
-`CB\Core\UI\ObjectPicker` is the shared Base primitive for asynchronously searching and selecting WordPress-backed or extension-backed objects without loading a complete object catalog into a `<select>`.
+`CoreBlueprint\Core\UI\ObjectPicker` is the shared Base primitive for asynchronously searching and selecting WordPress-backed or extension-backed objects without loading a complete object catalog into a `<select>`.
 
 Foundation owns:
 
@@ -51,7 +51,7 @@ Selection, initial state, deduplication and removal all compare the complete nor
 ## Rendering
 
 ```php
-use CB\Core\UI\ObjectPicker;
+use CoreBlueprint\Core\UI\ObjectPicker;
 
 echo ObjectPicker::render( [
     'id'       => 'related-object',
@@ -92,7 +92,7 @@ Never treat the browser-provided search context or identifier contents as author
 ## Assets
 
 ```php
-CB\Core\UI\Assets::enqueue_object_picker();
+CoreBlueprint\Core\UI\Assets::enqueue_object_picker();
 ```
 
 Auto mode selects Core presentation below the Core Blueprint parent menu and the WordPress-native adapter elsewhere. Consumers may explicitly use the documented presentation constants where screen ownership is already known.

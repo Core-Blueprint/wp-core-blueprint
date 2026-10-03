@@ -22,10 +22,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Ajax;
+namespace CoreBlueprint\Core\Ajax;
 
-use CB\Core\Locale;
-use CB\Core\Themes;
+use CoreBlueprint\Core\Locale;
+use CoreBlueprint\Core\Themes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -53,7 +53,7 @@ final class Router {
 
 	/**
 	 * Handle a scoped-preference AJAX request against a class that uses the
-	 * {@see \CB\Core\Preferences\ScopedPreference} trait.
+	 * {@see \CoreBlueprint\Core\Preferences\ScopedPreference} trait.
 	 *
 	 * Request shape (POST):
 	 *   - nonce : string - must verify against $nonce_action

@@ -79,7 +79,7 @@ The Mapper never writes extension data itself.
 An entity that exposes mapping metadata implements:
 
 ```php
-CB\Core\DataExchange\MappingEntityInterface
+CoreBlueprint\Core\DataExchange\MappingEntityInterface
 ```
 
 in addition to the normal Data Exchange entity contract and declares the `mapping` support token through Generic Interoperability.
@@ -227,13 +227,13 @@ The resulting JSON is a normal `core-blueprint-data-exchange` envelope and there
 The shared PHP renderer is:
 
 ```php
-CB\Core\DataExchange\Mapper\Renderer::render()
+CoreBlueprint\Core\DataExchange\Mapper\Renderer::render()
 ```
 
 It consumes the public Designer Shell through:
 
 ```php
-CB\Core\DataExchange\Mapper\Assets::enqueue()
+CoreBlueprint\Core\DataExchange\Mapper\Assets::enqueue()
 ```
 
 The Mapper does **not** introduce a new document editor profile. It uses the generic Designer Shell directly because a mapping workspace is not a document/canvas domain.

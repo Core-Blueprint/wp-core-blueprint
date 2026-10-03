@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /** Runtime hot/cold option policy for Core Blueprint Base. */
 
-namespace CB\Core;
+namespace CoreBlueprint\Core;
 
 defined( 'ABSPATH' ) || exit;
 

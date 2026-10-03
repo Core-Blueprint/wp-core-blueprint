@@ -7,8 +7,8 @@
  * with Connection Log (remote actions via Beacon) into one transparent
  * report of all maintenance activity.
  *
- * Available variables (set by \CB\Core\Admin\Admin::render_maintenance_report):
- *   $mr_result  - output of \CB\Core\Log\MaintenanceReport::query()
+ * Available variables (set by \CoreBlueprint\Core\Admin\Admin::render_maintenance_report):
+ *   $mr_result  - output of \CoreBlueprint\Core\Log\MaintenanceReport::query()
  *   $mr_args    - original filter arguments
  *   $mr_summary - 30-day category counts
  *   $mr_actors  - array of distinct user_login strings
@@ -35,7 +35,7 @@ $summary_remote = (int) ( $mr_summary['_remote'] ?? 0 );
 
 // Pick 4 most-active categories for the summary tiles.
 $category_counts = [];
-foreach ( \CB\Core\Log\MaintenanceReport::CATEGORIES as $slug => $label ) {
+foreach ( \CoreBlueprint\Core\Log\MaintenanceReport::CATEGORIES as $slug => $label ) {
 	$category_counts[ $slug ] = (int) ( $mr_summary[ $slug ] ?? 0 );
 }
 arsort( $category_counts );
@@ -43,18 +43,18 @@ $top_categories = array_slice( $category_counts, 0, 4, true );
 
 // Resolve description mode once - controls per-row rendering.
 // current_mode() is guaranteed to return 'plain' or 'technical'.
-$cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'technical';
+$cb_mode = class_exists( '\CoreBlueprint\Core\UI' ) ? \CoreBlueprint\Core\UI::current_mode() : 'technical';
 ?>
 <div class="wrap cb-core-wrap cb-core-maintenance-report cb-core-logs-page" data-cb-mode="<?php echo esc_attr( $cb_mode ); ?>">
 
 	<h1 class="cb-core-title"><?php esc_html_e( 'Maintenance Log', 'core-blueprint' ); ?></h1>
 
 	<?php
-	$mr_description = class_exists( \CB\Core\Log\Language::class )
-		? \CB\Core\Log\Language::describe_log( 'maintenance', $cb_mode )
+	$mr_description = class_exists( \CoreBlueprint\Core\Log\Language::class )
+		? \CoreBlueprint\Core\Log\Language::describe_log( 'maintenance', $cb_mode )
 		: '';
-	$mr_export_formats = class_exists( \CB\Core\Log\LogExporter::class )
-		? array_values( \CB\Core\Log\LogExporter::formats() )
+	$mr_export_formats = class_exists( \CoreBlueprint\Core\Log\LogExporter::class )
+		? array_values( \CoreBlueprint\Core\Log\LogExporter::formats() )
 		: [ __( 'CSV', 'core-blueprint' ) ];
 	?>
 
@@ -94,14 +94,14 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 			$lu = $mr_snapshot['last_update'] ?? [];
 			?>
 
-			<div class="cb-core-tile cb-core-tile--metric <?php echo esc_attr( \CB\Core\UI\Tile::state_class( $lb['state'] ?? 'unknown' ) ); ?>">
+			<div class="cb-core-tile cb-core-tile--metric <?php echo esc_attr( \CoreBlueprint\Core\UI\Tile::state_class( $lb['state'] ?? 'unknown' ) ); ?>">
 				<span class="cb-core-tile__label"><?php esc_html_e( 'Last backup', 'core-blueprint' ); ?></span>
 				<span class="cb-core-tile__value">
 					<?php
 					if ( 'unknown' === ( $lb['state'] ?? 'unknown' ) ) {
 						esc_html_e( 'No data yet', 'core-blueprint' );
 					} else {
-						echo esc_html( \CB\Core\Log\MaintenanceReport::format_age( $lb['age_seconds'] ?? null ) );
+						echo esc_html( \CoreBlueprint\Core\Log\MaintenanceReport::format_age( $lb['age_seconds'] ?? null ) );
 					}
 					?>
 				</span>
@@ -117,14 +117,14 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 				</span>
 			</div>
 
-			<div class="cb-core-tile cb-core-tile--metric <?php echo esc_attr( \CB\Core\UI\Tile::state_class( $lu['state'] ?? 'unknown' ) ); ?>">
+			<div class="cb-core-tile cb-core-tile--metric <?php echo esc_attr( \CoreBlueprint\Core\UI\Tile::state_class( $lu['state'] ?? 'unknown' ) ); ?>">
 				<span class="cb-core-tile__label"><?php esc_html_e( 'Last update', 'core-blueprint' ); ?></span>
 				<span class="cb-core-tile__value">
 					<?php
 					if ( 'unknown' === ( $lu['state'] ?? 'unknown' ) ) {
 						esc_html_e( 'No data yet', 'core-blueprint' );
 					} else {
-						echo esc_html( \CB\Core\Log\MaintenanceReport::format_age( $lu['age_seconds'] ?? null ) );
+						echo esc_html( \CoreBlueprint\Core\Log\MaintenanceReport::format_age( $lu['age_seconds'] ?? null ) );
 					}
 					?>
 				</span>
@@ -196,7 +196,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 				</span>
 			</div>
 
-			<div class="cb-core-tile cb-core-tile--metric <?php echo esc_attr( \CB\Core\UI\Tile::state_class( $mr_snapshot['sla_status'] ) ); ?>">
+			<div class="cb-core-tile cb-core-tile--metric <?php echo esc_attr( \CoreBlueprint\Core\UI\Tile::state_class( $mr_snapshot['sla_status'] ) ); ?>">
 				<span class="cb-core-tile__label"><?php esc_html_e( 'Maintenance status', 'core-blueprint' ); ?></span>
 				<span class="cb-core-tile__value">
 					<?php
@@ -223,8 +223,8 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 
 		<?php
 		$daily = $mr_snapshot['daily_counts'] ?? [];
-		if ( ! empty( $daily ) && class_exists( '\CB\Core\Log\Chart' ) ) {
-			echo \CB\Core\Log\Chart::render_activity( $daily, __( 'Activity', 'core-blueprint' ) ); // phpcs:ignore WordPress.Security.EscapeOutput
+		if ( ! empty( $daily ) && class_exists( '\CoreBlueprint\Core\Log\Chart' ) ) {
+			echo \CoreBlueprint\Core\Log\Chart::render_activity( $daily, __( 'Activity', 'core-blueprint' ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 		}
 		?>
 	</section>
@@ -233,12 +233,12 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 
 	<section class="cb-core-section cb-core-log-filters-wrap">
 		<form method="get" class="cb-core-toolbar">
-			<input type="hidden" name="page" value="<?php echo esc_attr( \CB\Core\Admin\Admin::LOGS_SLUG ); ?>" />
+			<input type="hidden" name="page" value="<?php echo esc_attr( \CoreBlueprint\Core\Admin\Admin::LOGS_SLUG ); ?>" />
 			<input type="hidden" name="tab"  value="maintenance" />
 
 			<div class="cb-core-toolbar__field">
 				<span class="cb-core-toolbar__label"><?php esc_html_e( 'Mode', 'core-blueprint' ); ?></span>
-				<?php \CB\Core\UI::render_mode_switcher(); ?>
+				<?php \CoreBlueprint\Core\UI::render_mode_switcher(); ?>
 			</div>
 
 			<label class="cb-core-toolbar__field">
@@ -257,9 +257,9 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 				<span class="cb-core-toolbar__label"><?php esc_html_e( 'Category', 'core-blueprint' ); ?></span>
 				<select name="category">
 					<option value="" <?php selected( $current_category, '' ); ?>><?php esc_html_e( 'All categories', 'core-blueprint' ); ?></option>
-					<?php foreach ( \CB\Core\Log\MaintenanceReport::CATEGORIES as $slug => $_ ) : ?>
+					<?php foreach ( \CoreBlueprint\Core\Log\MaintenanceReport::CATEGORIES as $slug => $_ ) : ?>
 						<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $current_category, $slug ); ?>>
-							<?php echo esc_html( \CB\Core\Log\MaintenanceReport::category_label( $slug ) ); ?>
+							<?php echo esc_html( \CoreBlueprint\Core\Log\MaintenanceReport::category_label( $slug ) ); ?>
 						</option>
 					<?php endforeach; ?>
 				</select>
@@ -269,25 +269,25 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 				<span class="cb-core-toolbar__label"><?php esc_html_e( 'Source', 'core-blueprint' ); ?></span>
 				<select name="source">
 					<option value=""       <?php selected( $current_source, '' );       ?>><?php esc_html_e( 'All sources', 'core-blueprint' ); ?></option>
-					<option value="local"  <?php selected( $current_source, 'local' );  ?>><?php echo esc_html( \CB\Core\Log\MaintenanceReport::source_label( 'local' ) ); ?></option>
-					<option value="remote" <?php selected( $current_source, 'remote' ); ?>><?php echo esc_html( \CB\Core\Log\MaintenanceReport::source_label( 'remote' ) ); ?></option>
+					<option value="local"  <?php selected( $current_source, 'local' );  ?>><?php echo esc_html( \CoreBlueprint\Core\Log\MaintenanceReport::source_label( 'local' ) ); ?></option>
+					<option value="remote" <?php selected( $current_source, 'remote' ); ?>><?php echo esc_html( \CoreBlueprint\Core\Log\MaintenanceReport::source_label( 'remote' ) ); ?></option>
 				</select>
 			</label>
 
 			<label class="cb-core-toolbar__field">
 				<span class="cb-core-toolbar__label"><?php esc_html_e( 'Period', 'core-blueprint' ); ?></span>
 				<select name="period">
-					<?php foreach ( \CB\Core\Log\TimeFilter::PRESETS as $slug => $_label ) : ?>
+					<?php foreach ( \CoreBlueprint\Core\Log\TimeFilter::PRESETS as $slug => $_label ) : ?>
 						<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $current_period, $slug ); ?>>
-							<?php echo esc_html( \CB\Core\Log\TimeFilter::label( $slug ) ); ?>
+							<?php echo esc_html( \CoreBlueprint\Core\Log\TimeFilter::label( $slug ) ); ?>
 						</option>
 					<?php endforeach; ?>
 				</select>
 			</label>
 
 			<?php
-			$export_formats_mr = class_exists( \CB\Core\Log\LogExporter::class )
-				? \CB\Core\Log\LogExporter::formats()
+			$export_formats_mr = class_exists( \CoreBlueprint\Core\Log\LogExporter::class )
+				? \CoreBlueprint\Core\Log\LogExporter::formats()
 				: [ 'csv' => __( 'CSV', 'core-blueprint' ) ];
 			?>
 			<div class="cb-core-toolbar__actions">
@@ -295,7 +295,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 				<div class="cb-core-toolbar__actions-row">
 					<button type="submit" class="button"><?php esc_html_e( 'Apply filters', 'core-blueprint' ); ?></button>
 					<?php if ( $current_actor || $current_category || $current_source || ( $current_period && 'all' !== $current_period ) ) : ?>
-						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . \CB\Core\Admin\Admin::LOGS_SLUG . '&tab=maintenance' ) ); ?>" class="button">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . \CoreBlueprint\Core\Admin\Admin::LOGS_SLUG . '&tab=maintenance' ) ); ?>" class="button">
 							<?php esc_html_e( 'Clear', 'core-blueprint' ); ?>
 						</a>
 					<?php endif; ?>
@@ -325,7 +325,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 	// filter args.
 	$unfiltered_total = $total;
 	if ( $filters_active ) {
-		$unfiltered_result = \CB\Core\Log\MaintenanceReport::query( [ 'per_page' => 1 ] );
+		$unfiltered_result = \CoreBlueprint\Core\Log\MaintenanceReport::query( [ 'per_page' => 1 ] );
 		$unfiltered_total  = (int) ( $unfiltered_result['total'] ?? $total );
 	}
 	?>
@@ -397,12 +397,12 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 							</td>
 							<td>
 								<span class="cb-core-badge cb-core-mr-category cb-core-mr-category--<?php echo esc_attr( $category ); ?>">
-									<?php echo esc_html( \CB\Core\Log\MaintenanceReport::category_label( $category ) ); ?>
+									<?php echo esc_html( \CoreBlueprint\Core\Log\MaintenanceReport::category_label( $category ) ); ?>
 								</span>
 							</td>
 							<td>
 								<span class="cb-core-badge cb-core-mr-source cb-core-mr-source--<?php echo esc_attr( $source ); ?>">
-									<?php echo esc_html( \CB\Core\Log\MaintenanceReport::source_label( $source ) ); ?>
+									<?php echo esc_html( \CoreBlueprint\Core\Log\MaintenanceReport::source_label( $source ) ); ?>
 								</span>
 							</td>
 						</tr>
@@ -414,7 +414,7 @@ $cb_mode = class_exists( '\CB\Core\UI' ) ? \CB\Core\UI::current_mode() : 'techni
 		<!-- Pagination -->
 
 		<?php if ( $total_pages > 1 ) :
-			$base_url = admin_url( 'admin.php?page=' . \CB\Core\Admin\Admin::LOGS_SLUG . '&tab=maintenance' );
+			$base_url = admin_url( 'admin.php?page=' . \CoreBlueprint\Core\Admin\Admin::LOGS_SLUG . '&tab=maintenance' );
 			if ( $current_actor )    { $base_url = add_query_arg( 'actor', $current_actor, $base_url ); }
 			if ( $current_category ) { $base_url = add_query_arg( 'category', $current_category, $base_url ); }
 			if ( $current_source )   { $base_url = add_query_arg( 'source', $current_source, $base_url ); }

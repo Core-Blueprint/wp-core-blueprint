@@ -1,22 +1,22 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Environment\EnvironmentTypeTestShim;
-use CB\Core\Governance\RetentionPolicy;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Log\Verbosity;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Privacy\Anonymizer;
-use CB\Core\Security\AccessMode;
-use CB\Core\Security\AccessModeState;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\Policy as TwoFactorPolicy;
-use CB\Core\Settings;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Evidence;
-use CB\Core\Setup\Registry;
-use CB\Core\Setup\ReviewRepository;
-use CB\Core\Setup\StatusResolver;
+use CoreBlueprint\Core\Environment\EnvironmentTypeTestShim;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Log\Verbosity;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Privacy\Anonymizer;
+use CoreBlueprint\Core\Security\AccessMode;
+use CoreBlueprint\Core\Security\AccessModeState;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\Policy as TwoFactorPolicy;
+use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Evidence;
+use CoreBlueprint\Core\Setup\Registry;
+use CoreBlueprint\Core\Setup\ReviewRepository;
+use CoreBlueprint\Core\Setup\StatusResolver;
 
 final class CB_Base_Core_Setup_Security_Governance_Contract_Test extends WP_UnitTestCase {
 
@@ -212,12 +212,12 @@ final class CB_Base_Core_Setup_Security_Governance_Contract_Test extends WP_Unit
 		$check = Registry::get( 'environment-identity' );
 		self::assertInstanceOf( CheckInterface::class, $check );
 
-		\CB\Core\Environment\EnvironmentTypeTestShim::set( 'production' );
+		\CoreBlueprint\Core\Environment\EnvironmentTypeTestShim::set( 'production' );
 		$production = $check->evidence();
 		self::assertTrue( ReviewRepository::mark_reviewed( $check->id(), $production, 16 ) );
 		self::assertSame( StatusResolver::CONFIGURED, StatusResolver::resolve( $check, $production ) );
 
-		\CB\Core\Environment\EnvironmentTypeTestShim::set( 'staging' );
+		\CoreBlueprint\Core\Environment\EnvironmentTypeTestShim::set( 'staging' );
 		self::assertSame( StatusResolver::NEEDS_REVIEW, StatusResolver::resolve( $check ) );
 	}
 

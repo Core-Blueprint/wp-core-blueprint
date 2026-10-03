@@ -11,9 +11,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup;
+namespace CoreBlueprint\Core\Setup;
 
-use CB\Core\Setup\Admin\Page as SetupPage;
+use CoreBlueprint\Core\Setup\Admin\Page as SetupPage;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
-namespace CB\Core\Notes\Rest;
+namespace CoreBlueprint\Core\Notes\Rest;
 
-use CB\Core\Admin\MutationAcknowledgement;
-use CB\Core\Notes\Admin\Renderer;
-use CB\Core\Notes\Repository;
-use CB\Core\Notes\State;
-use CB\Core\Notes\Support\Audit;
+use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\Notes\Admin\Renderer;
+use CoreBlueprint\Core\Notes\Repository;
+use CoreBlueprint\Core\Notes\State;
+use CoreBlueprint\Core\Notes\Support\Audit;
 use WP_REST_Request;
 use WP_REST_Response;
 

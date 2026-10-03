@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Scanner;
+namespace CoreBlueprint\Core\Integrity\Scanner;
 
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Integrity\Support\BatchedChecksumVerifier;
-use CB\Core\Integrity\Support\DirectoryHasher;
-use CB\Core\Integrity\Support\FilesystemWalker;
-use CB\Core\Integrity\Support\Finding;
-use CB\Core\Integrity\Support\PathGuard;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Support\BatchedChecksumVerifier;
+use CoreBlueprint\Core\Integrity\Support\DirectoryHasher;
+use CoreBlueprint\Core\Integrity\Support\FilesystemWalker;
+use CoreBlueprint\Core\Integrity\Support\Finding;
+use CoreBlueprint\Core\Integrity\Support\PathGuard;
 
 use function array_intersect_key;
 use function array_flip;

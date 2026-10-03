@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Security\TwoFactor\AccountManager;
-use CB\Core\Security\TwoFactor\ChallengeStore;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\EnrollmentStore;
-use CB\Core\Security\TwoFactor\Policy;
-use CB\Core\Security\TwoFactor\RecoveryCodes;
-use CB\Core\Security\TwoFactor\Totp;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Security\TwoFactor\AccountManager;
+use CoreBlueprint\Core\Security\TwoFactor\ChallengeStore;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\EnrollmentStore;
+use CoreBlueprint\Core\Security\TwoFactor\Policy;
+use CoreBlueprint\Core\Security\TwoFactor\RecoveryCodes;
+use CoreBlueprint\Core\Security\TwoFactor\Totp;
+use CoreBlueprint\Core\Settings;
 
 final class CB_Base_Two_Factor_Self_Service_Contract_Test extends WP_UnitTestCase {
 

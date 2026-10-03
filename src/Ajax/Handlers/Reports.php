@@ -24,17 +24,17 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Ajax\Handlers;
+namespace CoreBlueprint\Core\Ajax\Handlers;
 
-use CB\Core\Ajax\Guards;
-use CB\Core\Ajax\Request;
-use CB\Core\Log\AuditLog;
-use CB\Core\PDF\Api\PdfApi;
-use CB\Core\PDF\RendererException;
-use CB\Core\Reports\Generator;
-use CB\Core\Reports\MaintenancePdf;
-use CB\Core\Reports\State;
-use CB\Core\Reports\Storage;
+use CoreBlueprint\Core\Ajax\Guards;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\PDF\Api\PdfApi;
+use CoreBlueprint\Core\PDF\RendererException;
+use CoreBlueprint\Core\Reports\Generator;
+use CoreBlueprint\Core\Reports\MaintenancePdf;
+use CoreBlueprint\Core\Reports\State;
+use CoreBlueprint\Core\Reports\Storage;
 
 defined( 'ABSPATH' ) || exit;
 

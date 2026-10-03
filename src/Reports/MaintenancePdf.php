@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Reports;
+namespace CoreBlueprint\Core\Reports;
 
-use CB\Core\Design\Profile\Document\Flow\PdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\PdfRenderer;
 
 defined( 'ABSPATH' ) || exit;
 

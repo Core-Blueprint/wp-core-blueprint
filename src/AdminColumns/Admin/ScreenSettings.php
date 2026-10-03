@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\AdminColumns\Admin;
+namespace CoreBlueprint\Core\AdminColumns\Admin;
 
-use CB\Core\AdminColumns\PolicyRepository;
-use CB\Core\AdminColumns\RegisteredMetaColumns;
-use CB\Core\AdminColumns\Runtime;
-use CB\Core\AdminColumns\SupportedScreen;
-use CB\Core\AdminColumns\TaxonomyColumns;
-use CB\Core\UI\Assets;
-use CB\Core\UI\FormComposition;
+use CoreBlueprint\Core\AdminColumns\PolicyRepository;
+use CoreBlueprint\Core\AdminColumns\RegisteredMetaColumns;
+use CoreBlueprint\Core\AdminColumns\Runtime;
+use CoreBlueprint\Core\AdminColumns\SupportedScreen;
+use CoreBlueprint\Core\AdminColumns\TaxonomyColumns;
+use CoreBlueprint\Core\UI\Assets;
+use CoreBlueprint\Core\UI\FormComposition;
 
 defined( 'ABSPATH' ) || exit;
 

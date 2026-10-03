@@ -11,10 +11,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Snippets;
+namespace CoreBlueprint\Core\Snippets;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Modules\ModuleStateInterface;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Modules\ModuleStateInterface;
 
 \defined( 'ABSPATH' ) || exit;
 

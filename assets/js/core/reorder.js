@@ -7,7 +7,7 @@
  * Public module: @cb-core/reorder
  * Public runtime: window.cbCore.reorder
  *
- * @package CB\Core
+ * @package CoreBlueprint\Core
  */
 
 const hasDocument = typeof document !== 'undefined';

@@ -3,7 +3,7 @@
 /**
  * Partial: Overview-tab body.
  *
- * Rendered via {@see \CB\Core\Admin\Overview::render()}. Not intended to
+ * Rendered via {@see \CoreBlueprint\Core\Admin\Overview::render()}. Not intended to
  * be included directly - always go through the Overview class so the
  * $config array is defaulted correctly.
  *
@@ -78,14 +78,14 @@ defined( 'ABSPATH' ) || exit;
 				$icon = ! empty( $card['icon'] ) ? sanitize_key( (string) $card['icon'] ) : 'admin-generic';
 			?>
 				<a class="cb-core-tab-card" href="<?php echo esc_url( $card['url'] ); ?>">
-					<span class="cb-core-tab-card__icon" aria-hidden="true"><?php echo \CB\Core\UI\Icon::render( $icon ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Icon::render() is escape-clean. ?></span>
+					<span class="cb-core-tab-card__icon" aria-hidden="true"><?php echo \CoreBlueprint\Core\UI\Icon::render( $icon ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Icon::render() is escape-clean. ?></span>
 					<span class="cb-core-tab-card__body">
 						<span class="cb-core-tab-card__label"><?php echo esc_html( $card['label'] ); ?></span>
 						<?php if ( ! empty( $card['desc'] ) ) : ?>
 							<span class="cb-core-tab-card__desc"><?php echo esc_html( $card['desc'] ); ?></span>
 						<?php endif; ?>
 					</span>
-					<span class="cb-core-tab-card__arrow" aria-hidden="true"><?php echo \CB\Core\UI\Icon::render( 'chevron-right', [ 'size' => \CB\Core\UI\Icon::SIZE_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Icon::render() is escape-clean. ?></span>
+					<span class="cb-core-tab-card__arrow" aria-hidden="true"><?php echo \CoreBlueprint\Core\UI\Icon::render( 'chevron-right', [ 'size' => \CoreBlueprint\Core\UI\Icon::SIZE_COMPACT ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Icon::render() is escape-clean. ?></span>
 				</a>
 			<?php endforeach; ?>
 		</div>

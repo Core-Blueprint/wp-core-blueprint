@@ -10,14 +10,14 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\CLI\Commands\Operator;
+namespace CoreBlueprint\Core\CLI\Commands\Operator;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Result;
-use CB\Core\Permissions\PrivilegedAccessPolicy;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\Roles;
-use CB\Core\Permissions\UserRoleAssignments;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Permissions\UserRoleAssignments;
 
 defined( 'ABSPATH' ) || exit;
 

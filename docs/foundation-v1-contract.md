@@ -12,23 +12,23 @@ Status: **public v1 freeze candidate**.
 
 | Primitive | PHP enqueue | Script-module/runtime |
 | --- | --- | --- |
-| Icons | `CB\Core\UI\Assets::enqueue_icons()` | `@cb-core/icon`, `window.cbCore.icon` |
-| Toast | `CB\Core\UI\Assets::enqueue_toasts()` | `@cb-core/toast`, `window.cbCore.toast` |
-| Modal | `CB\Core\UI\Assets::enqueue_modals()` | `@cb-core/modal`, `window.cbCore.modal` |
-| Clipboard | `CB\Core\UI\Assets::enqueue_clipboard()` | `@cb-core/clipboard`, `window.cbCore.clipboard` |
-| Token Input | `CB\Core\UI\Assets::enqueue_token_inputs()` | `@cb-core/token-input`, `window.cbCore.tokenInput` |
-| Time Picker | `CB\Core\UI\Assets::enqueue_time_picker()` | `@cb-core/time-picker`, `window.cbCore.timePicker` |
-| Icon Picker | `CB\Core\UI\Assets::enqueue_icon_picker()` | `@cb-core/icon-picker`, `window.cbCore.iconPicker` |
-| Capability Picker | `CB\Core\UI\Assets::enqueue_capability_picker()` | `@cb-core/capability-picker`, `window.cbCore.capabilityPicker` |
-| Choice Group | `CB\Core\UI\Assets::enqueue_choice_group()` | PHP/CSS primitive; no JavaScript runtime required |
-| Icon Control | `CB\Core\UI\Assets::enqueue_icon_controls()` | PHP/CSS primitive; no JavaScript runtime required |
-| Object Picker | `CB\Core\UI\Assets::enqueue_object_picker()` | `@cb-core/object-picker`, `window.cbCore.objectPicker` |
-| Select Picker | `CB\Core\UI\Assets::enqueue_select_picker()` | `@cb-core/select-picker`, `window.cbCore.selectPicker` |
-| Interactive Grid | `CB\Core\UI\Assets::enqueue_interactive_grid()` | PHP/CSS primitive; no JavaScript runtime required |
-| Reorder | `CB\Core\UI\Assets::enqueue_reorder()` | `@cb-core/reorder`, `window.cbCore.reorder` (Core API `1.1+`) |
-| Segmented Control | `CB\Core\UI\Assets::enqueue_segmented_control()` | PHP/CSS primitive; no JavaScript runtime required |
-| Status presentation | `CB\Core\UI\Assets::enqueue_status()` | PHP/CSS presentation for `CB\Core\UI\Status` |
-| Form Composition | `CB\Core\UI\FormComposition::enqueue()` | PHP/CSS primitive; no JavaScript runtime required |
+| Icons | `CoreBlueprint\Core\UI\Assets::enqueue_icons()` | `@cb-core/icon`, `window.cbCore.icon` |
+| Toast | `CoreBlueprint\Core\UI\Assets::enqueue_toasts()` | `@cb-core/toast`, `window.cbCore.toast` |
+| Modal | `CoreBlueprint\Core\UI\Assets::enqueue_modals()` | `@cb-core/modal`, `window.cbCore.modal` |
+| Clipboard | `CoreBlueprint\Core\UI\Assets::enqueue_clipboard()` | `@cb-core/clipboard`, `window.cbCore.clipboard` |
+| Token Input | `CoreBlueprint\Core\UI\Assets::enqueue_token_inputs()` | `@cb-core/token-input`, `window.cbCore.tokenInput` |
+| Time Picker | `CoreBlueprint\Core\UI\Assets::enqueue_time_picker()` | `@cb-core/time-picker`, `window.cbCore.timePicker` |
+| Icon Picker | `CoreBlueprint\Core\UI\Assets::enqueue_icon_picker()` | `@cb-core/icon-picker`, `window.cbCore.iconPicker` |
+| Capability Picker | `CoreBlueprint\Core\UI\Assets::enqueue_capability_picker()` | `@cb-core/capability-picker`, `window.cbCore.capabilityPicker` |
+| Choice Group | `CoreBlueprint\Core\UI\Assets::enqueue_choice_group()` | PHP/CSS primitive; no JavaScript runtime required |
+| Icon Control | `CoreBlueprint\Core\UI\Assets::enqueue_icon_controls()` | PHP/CSS primitive; no JavaScript runtime required |
+| Object Picker | `CoreBlueprint\Core\UI\Assets::enqueue_object_picker()` | `@cb-core/object-picker`, `window.cbCore.objectPicker` |
+| Select Picker | `CoreBlueprint\Core\UI\Assets::enqueue_select_picker()` | `@cb-core/select-picker`, `window.cbCore.selectPicker` |
+| Interactive Grid | `CoreBlueprint\Core\UI\Assets::enqueue_interactive_grid()` | PHP/CSS primitive; no JavaScript runtime required |
+| Reorder | `CoreBlueprint\Core\UI\Assets::enqueue_reorder()` | `@cb-core/reorder`, `window.cbCore.reorder` (Core API `1.1+`) |
+| Segmented Control | `CoreBlueprint\Core\UI\Assets::enqueue_segmented_control()` | PHP/CSS primitive; no JavaScript runtime required |
+| Status presentation | `CoreBlueprint\Core\UI\Assets::enqueue_status()` | PHP/CSS presentation for `CoreBlueprint\Core\UI\Status` |
+| Form Composition | `CoreBlueprint\Core\UI\FormComposition::enqueue()` | PHP/CSS primitive; no JavaScript runtime required |
 
 Consumers provide business meaning and exact values. Foundation owns generic behavior, accessibility and presentation adapters.
 
@@ -46,8 +46,8 @@ The Modal Foundation includes the additive public `confirmCheck: { label }` opti
 
 The shared Design Foundation has two public consumption levels:
 
-- `CB\Core\Design\Editor\Assets::enqueue()` loads the Design Editor engine/shell contracts and `@cb-core/design-editor` for embedded or consumer-composed editor experiences.
-- `CB\Core\Design\Editor\Assets::enqueue_designer_mode()` adds the canonical Base-owned Designer Mode launch, header/chrome composition, responsive shell geometry and focus/fullscreen lifecycle.
+- `CoreBlueprint\Core\Design\Editor\Assets::enqueue()` loads the Design Editor engine/shell contracts and `@cb-core/design-editor` for embedded or consumer-composed editor experiences.
+- `CoreBlueprint\Core\Design\Editor\Assets::enqueue_designer_mode()` adds the canonical Base-owned Designer Mode launch, header/chrome composition, responsive shell geometry and focus/fullscreen lifecycle.
 
 The semantic `design-editor` requirement maps to the engine/shell level. Consumers that want the canonical fullscreen Designer experience call `enqueue_designer_mode()` rather than rebuilding that chrome themselves.
 
@@ -59,7 +59,7 @@ The normative public contract is `DESIGNER-MODE.md`.
 
 ## Document Flow rendering
 
-`CB\Core\Design\Profile\Document\Flow\Api\FlowRenderApi` is the public v1 facade for external consumers that render typed Flow documents.
+`CoreBlueprint\Core\Design\Profile\Document\Flow\Api\FlowRenderApi` is the public v1 facade for external consumers that render typed Flow documents.
 
 `FlowRenderApi::preview_html()` returns a safe continuous screen target for isolated Designer/document-canvas previews. `FlowRenderApi::pdf()` returns the authoritative paged PDF output for the same typed layout, `RenderBlock` list, locale and optional `Presentation`. `FlowRenderApi::is_pdf_available()` reports PDF-backend availability; screen preview rendering does not depend on that backend.
 
@@ -89,7 +89,7 @@ Design ownership does not imply universal loading. The minimal Core Admin shell 
 
 ## Settings Hub Foundation
 
-`CB\Core\Admin\SettingsRegistry` is the public v1 boundary for extension configuration contributed to **Core Blueprint → Extensions**. The Settings Hub keeps extension configuration centralized without adding one flat Core Blueprint submenu item per extension. **Extensions** is the final Base-owned submenu item and remains distinct from Base's separate **Preferences** surface. Operational extension administration remains in the extension's own appropriate workspace.
+`CoreBlueprint\Core\Admin\SettingsRegistry` is the public v1 boundary for extension configuration contributed to **Core Blueprint → Extensions**. The Settings Hub keeps extension configuration centralized without adding one flat Core Blueprint submenu item per extension. **Extensions** is the final Base-owned submenu item and remains distinct from Base's separate **Preferences** surface. Operational extension administration remains in the extension's own appropriate workspace.
 
 A provider registers during `cb_core_register_settings` and refers to an existing `ExtensionRegistry` ID. Base owns routing, capability filtering, developer/provenance attribution, grouping, shell presentation and semantic shared-UI requirements. The extension owns its settings fields, save/validation logic, domain semantics and inner renderer.
 

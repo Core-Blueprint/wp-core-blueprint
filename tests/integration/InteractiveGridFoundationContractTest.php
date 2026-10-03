@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\UI\Assets;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\UI\Assets;
 
 final class CB_Base_Interactive_Grid_Foundation_Contract_Test extends WP_UnitTestCase {
 

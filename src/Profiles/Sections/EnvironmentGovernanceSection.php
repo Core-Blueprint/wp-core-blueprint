@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles\Sections;
+namespace CoreBlueprint\Core\Profiles\Sections;
 
-use CB\Core\Environment\Governance;
-use CB\Core\Profiles\ExactSection;
-use CB\Core\Profiles\SchemaGuard;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Environment\Governance;
+use CoreBlueprint\Core\Profiles\ExactSection;
+use CoreBlueprint\Core\Profiles\SchemaGuard;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

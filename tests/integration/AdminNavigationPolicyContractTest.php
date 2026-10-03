@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminNavigation\Audience;
-use CB\Core\AdminNavigation\Discovery;
-use CB\Core\AdminNavigation\Policy;
+use CoreBlueprint\Core\AdminNavigation\Audience;
+use CoreBlueprint\Core\AdminNavigation\Discovery;
+use CoreBlueprint\Core\AdminNavigation\Policy;
 
 final class CB_Base_Admin_Navigation_Policy_Contract_Test extends WP_UnitTestCase {
 

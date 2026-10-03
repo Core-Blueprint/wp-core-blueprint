@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Database\SchemaRegistry;
-use CB\Core\ExtensionRegistry;
-use CB\Core\Governance\EventRegistry;
-use CB\Core\Modules\ActivationRegistry;
+use CoreBlueprint\Core\Database\SchemaRegistry;
+use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\Modules\ActivationRegistry;
 
 final class CB_Base_Fail_Closed_Contract_Test extends WP_UnitTestCase {
 

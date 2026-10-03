@@ -66,7 +66,7 @@ validation boundaries.
 Standalone WordPress admin screens opt in with:
 
 ```php
-\CB\Core\UI\Assets::enqueue_interactive_grid();
+\CoreBlueprint\Core\UI\Assets::enqueue_interactive_grid();
 ```
 
 Auto mode uses the Core presentation below the Core Blueprint parent menu and

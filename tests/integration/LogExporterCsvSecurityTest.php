@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Log\LogExporter;
+use CoreBlueprint\Core\Log\LogExporter;
 
 final class CB_Base_Log_Exporter_Csv_Security_Test extends WP_UnitTestCase {
 

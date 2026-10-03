@@ -7,16 +7,16 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Compliance\Admin;
+namespace CoreBlueprint\Core\Compliance\Admin;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\Compliance\Repository;
-use CB\Core\Compliance\Resolver;
-use CB\Core\Compliance\ResourceRegistry;
-use CB\Core\UI\Icon;
-use CB\Core\UI\Notice;
-use CB\Core\UI\ObjectPicker;
-use CB\Core\UI\StateBadge;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Compliance\Repository;
+use CoreBlueprint\Core\Compliance\Resolver;
+use CoreBlueprint\Core\Compliance\ResourceRegistry;
+use CoreBlueprint\Core\UI\Icon;
+use CoreBlueprint\Core\UI\Notice;
+use CoreBlueprint\Core\UI\ObjectPicker;
+use CoreBlueprint\Core\UI\StateBadge;
 
 defined( 'ABSPATH' ) || exit;
 

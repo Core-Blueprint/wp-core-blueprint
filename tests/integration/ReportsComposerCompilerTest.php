@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Flow\RenderBlock;
-use CB\Core\Reports\Composer\BlockCatalog;
-use CB\Core\Reports\Composer\MaintenanceTemplate;
-use CB\Core\Reports\MaintenanceAggregator;
-use CB\Core\Reports\MaintenanceFlowCompiler;
-use CB\Core\Reports\ReportBranding;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
+use CoreBlueprint\Core\Reports\Composer\BlockCatalog;
+use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Reports\MaintenanceAggregator;
+use CoreBlueprint\Core\Reports\MaintenanceFlowCompiler;
+use CoreBlueprint\Core\Reports\ReportBranding;
 
 final class CB_Reports_Composer_Compiler_Test extends WP_UnitTestCase {
 

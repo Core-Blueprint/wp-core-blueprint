@@ -7,12 +7,12 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Compliance\Admin;
+namespace CoreBlueprint\Core\Compliance\Admin;
 
-use CB\Core\Compliance\Repository;
-use CB\Core\Compliance\Resolver;
-use CB\Core\Compliance\ResourceRegistry;
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Compliance\Repository;
+use CoreBlueprint\Core\Compliance\Resolver;
+use CoreBlueprint\Core\Compliance\ResourceRegistry;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 

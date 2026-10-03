@@ -1,20 +1,20 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Integrity\Quarantine\Repository as QuarantineRepository;
-use CB\Core\Integrity\Quarantine\Service as QuarantineService;
-use CB\Core\Integrity\Quarantine\Vault;
-use CB\Core\Integrity\Storage\ChunkedOptionStore;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Integrity\Storage\StorageSchema;
-use CB\Core\Integrity\Support\DirectoryHasher;
-use CB\Core\Integrity\Support\Finding;
-use CB\Core\Log\AuditLog;
-use CB\Core\PackageDownload\AdminIntegration as PackageDownloads;
-use CB\Core\PackageDownload\ArchiveService;
-use CB\Core\PackageDownload\State as PackageDownloadState;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\Roles;
+use CoreBlueprint\Core\Integrity\Quarantine\Repository as QuarantineRepository;
+use CoreBlueprint\Core\Integrity\Quarantine\Service as QuarantineService;
+use CoreBlueprint\Core\Integrity\Quarantine\Vault;
+use CoreBlueprint\Core\Integrity\Storage\ChunkedOptionStore;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Storage\StorageSchema;
+use CoreBlueprint\Core\Integrity\Support\DirectoryHasher;
+use CoreBlueprint\Core\Integrity\Support\Finding;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\PackageDownload\AdminIntegration as PackageDownloads;
+use CoreBlueprint\Core\PackageDownload\ArchiveService;
+use CoreBlueprint\Core\PackageDownload\State as PackageDownloadState;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\Roles;
 
 final class CB_C2A_Test_Termination extends RuntimeException {
     /** @var mixed */

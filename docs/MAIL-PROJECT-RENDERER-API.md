@@ -6,7 +6,7 @@ Use this contract when an extension owns the project JSON and subject, but wants
 
 ## Public contract
 
-`CB\Core\Mail\ProjectRenderer` accepts:
+`CoreBlueprint\Core\Mail\ProjectRenderer` accepts:
 
 - a Design Foundation `mail-template` project;
 - a subject string;
@@ -25,7 +25,7 @@ It returns:
 Example:
 
 ```php
-use CB\Core\Mail\ProjectRenderer;
+use CoreBlueprint\Core\Mail\ProjectRenderer;
 
 $rendered = ( new ProjectRenderer() )->render(
     $project,
@@ -53,7 +53,7 @@ Subject and HTML use the same canonical `{{ binding.key }}` interpolation contra
 
 The caller owns those workflow concerns. Base only validates and renders the supplied project and subject.
 
-For registered Base Mail Designer templates, `CB\Core\Mail\Designer\Renderer` remains the convenience layer. It resolves the registered template and Base binding providers, then delegates the actual project rendering to `ProjectRenderer`.
+For registered Base Mail Designer templates, `CoreBlueprint\Core\Mail\Designer\Renderer` remains the convenience layer. It resolves the registered template and Base binding providers, then delegates the actual project rendering to `ProjectRenderer`.
 
 ## Failure semantics
 
@@ -63,4 +63,4 @@ The Base Mail Designer convenience layer keeps its existing behavior of catching
 
 ## Delivery
 
-Rendering is separate from sending. Extensions that send the rendered output must use `CB\Core\Mail\Sender::send()` with a registered sender identity rather than constructing their own SMTP or provider transport.
+Rendering is separate from sending. Extensions that send the rendered output must use `CoreBlueprint\Core\Mail\Sender::send()` with a registered sender identity rather than constructing their own SMTP or provider transport.

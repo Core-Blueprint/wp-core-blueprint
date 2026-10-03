@@ -1,22 +1,22 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\Admin\Pages\Dashboard;
-use CB\Core\Environment\EnvironmentTypeTestShim;
-use CB\Core\Governance\EventRegistry;
-use CB\Core\Log\AuditLog;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Setup\Admin\Actions as SetupActions;
-use CB\Core\Setup\Admin\Page as SetupPage;
-use CB\Core\Setup\Bootstrap as SetupBootstrap;
-use CB\Core\Setup\Lifecycle;
-use CB\Core\Setup\Registry;
-use CB\Core\Setup\ReviewManager;
-use CB\Core\Setup\ReviewRepository;
-use CB\Core\Setup\SectionRegistry;
-use CB\Core\Setup\StatusResolver;
-use CB\Core\Setup\Summary;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Admin\Pages\Dashboard;
+use CoreBlueprint\Core\Environment\EnvironmentTypeTestShim;
+use CoreBlueprint\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Setup\Admin\Actions as SetupActions;
+use CoreBlueprint\Core\Setup\Admin\Page as SetupPage;
+use CoreBlueprint\Core\Setup\Bootstrap as SetupBootstrap;
+use CoreBlueprint\Core\Setup\Lifecycle;
+use CoreBlueprint\Core\Setup\Registry;
+use CoreBlueprint\Core\Setup\ReviewManager;
+use CoreBlueprint\Core\Setup\ReviewRepository;
+use CoreBlueprint\Core\Setup\SectionRegistry;
+use CoreBlueprint\Core\Setup\StatusResolver;
+use CoreBlueprint\Core\Setup\Summary;
 
 final class CB_Base_Core_Setup_Control_Plane_Contract_Test extends WP_UnitTestCase {
 

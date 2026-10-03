@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Reports\Composer;
+namespace CoreBlueprint\Core\Reports\Composer;
 
-use CB\Core\Settings;
+use CoreBlueprint\Core\Settings;
 defined( 'ABSPATH' ) || exit;
 
 final class MaintenanceTemplate {

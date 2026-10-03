@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Flow\PdfRenderer;
-use CB\Core\Design\Profile\Document\Flow\Presentation;
-use CB\Core\Design\Profile\Document\Flow\RenderBlock;
-use CB\Core\Design\Profile\Document\Flow\TableColumn;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\PdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\Presentation;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\TableColumn;
 
 final class CB_Design_Foundation_R6_Flow_Composition_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */
@@ -161,7 +161,7 @@ final class CB_Design_Foundation_R6_Flow_Composition_Test extends WP_UnitTestCas
 			$source = (string) file_get_contents( $file );
 			self::assertStringNotContainsString( 'CommerceEssentials', $source, basename( $file ) );
 			self::assertStringNotContainsString( 'Certificates', $source, basename( $file ) );
-			self::assertStringNotContainsString( 'CB\\Core\\PDF\\Renderer', $source, basename( $file ) );
+			self::assertStringNotContainsString( 'CoreBlueprint\\Core\\PDF\\Renderer', $source, basename( $file ) );
 		}
 
 		$render_block = (string) file_get_contents( $flow . '/RenderBlock.php' );

@@ -11,9 +11,9 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Notes\Api;
+namespace CoreBlueprint\Core\Notes\Api;
 
-use CB\Core\Notes\Repository;
+use CoreBlueprint\Core\Notes\Repository;
 
 defined( 'ABSPATH' ) || exit;
 

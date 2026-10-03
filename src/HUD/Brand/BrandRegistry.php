@@ -4,10 +4,10 @@ declare(strict_types=1);
  * BrandRegistry - central registry for HUD brand implementations.
  *
  * Storage layer is in-memory only - brands register themselves on every
- * request via {@see \CB\Core\HUD\Bootstrap::register_brands()} (built-ins)
+ * request via {@see \CoreBlueprint\Core\HUD\Bootstrap::register_brands()} (built-ins)
  * and the `cb_core_register_brands` action (siblings + white-label). The
  * registry is rebuilt each load; no persistence beyond the active brand
- * id (which lives in {@see \CB\Core\HUD\Storage} as user_meta).
+ * id (which lives in {@see \CoreBlueprint\Core\HUD\Storage} as user_meta).
  *
  * Resolution flow for the active brand:
  *
@@ -27,10 +27,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\HUD\Brand;
+namespace CoreBlueprint\Core\HUD\Brand;
 
-use CB\Core\HUD\Settings;
-use CB\Core\HUD\Storage;
+use CoreBlueprint\Core\HUD\Settings;
+use CoreBlueprint\Core\HUD\Storage;
 
 defined( 'ABSPATH' ) || exit;
 

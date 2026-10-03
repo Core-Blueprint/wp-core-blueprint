@@ -13,7 +13,7 @@ contains(){ grep -Fq "$2" <<<"$1" || { printf '%s\n' "$1" >&2; fail "$3 (missing
 eq(){ [[ "$1" == "$2" ]] || fail "$3 (expected '$2', got '$1')"; }
 role_hash(){ wp_cli_eval_args '$r=get_role($args[0]);$c=$r?$r->capabilities:[];ksort($c);echo hash("sha256",wp_json_encode($c));' "$1"; }
 user_hash(){ wp_cli_eval_args '$u=get_userdata((int)$args[0]);$m=get_user_meta($u->ID);ksort($m);foreach($m as &$v){sort($v,SORT_STRING);}unset($v);$r=$u->roles;sort($r,SORT_STRING);echo hash("sha256",wp_json_encode([$r,$m]));' "$1"; }
-audit_count(){ wp_cli_eval_args '$q=\CB\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);echo (int)$q["total"];' "$1"; }
+audit_count(){ wp_cli_eval_args '$q=\CoreBlueprint\Core\Log\AuditLog::query(["event_type"=>$args[0],"per_page"=>1]);echo (int)$q["total"];' "$1"; }
 auth(){ wp_cli_eval_args '$u=get_userdata((int)$args[0]);$e=time()+3600;$t=WP_Session_Tokens::get_instance($u->ID)->create($e);$c=wp_generate_auth_cookie($u->ID,$e,"logged_in",$t);$_COOKIE[LOGGED_IN_COOKIE]=$c;wp_set_current_user($u->ID);echo LOGGED_IN_COOKIE,"\n",$c,"\n",wp_create_nonce("wp_rest"),"\n",wp_create_nonce("cb_core_admin"),"\n";' "$1"; }
 
 pid=""
@@ -213,13 +213,13 @@ echo "[B1] Browser nonce/manage_options/password/no-success-audit matrix PASS"
 invalid="$(printf '0%.0s' {1..64})"; [[ "$invalid" != "$token" ]] || invalid="$(printf '1%.0s' {1..64})"
 reject0="$(audit_count failsafe_bypass_url_rejected)"; used0="$(audit_count failsafe_bypass_url_used)"
 browser_request -sS -o /tmp/b1-invalid.html "$site/?cb_core_bypass=$invalid"
-eq "$(wp_cli eval 'echo get_transient(\CB\Core\Security\Failsafe::BYPASS_TRANSIENT)?:"";')" '' 'Invalid token opened window'; eq "$(wp_cli eval 'echo get_option(CB_CORE_BYPASS_TOK,"");')" "$hash0" 'Invalid token mutated hash'; eq "$(audit_count failsafe_bypass_url_rejected)" "$((reject0+1))" 'Invalid token rejection audit mismatch'; eq "$(audit_count failsafe_bypass_url_used)" "$used0" 'Invalid token emitted success audit'
+eq "$(wp_cli eval 'echo get_transient(\CoreBlueprint\Core\Security\Failsafe::BYPASS_TRANSIENT)?:"";')" '' 'Invalid token opened window'; eq "$(wp_cli eval 'echo get_option(CB_CORE_BYPASS_TOK,"");')" "$hash0" 'Invalid token mutated hash'; eq "$(audit_count failsafe_bypass_url_rejected)" "$((reject0+1))" 'Invalid token rejection audit mismatch'; eq "$(audit_count failsafe_bypass_url_used)" "$used0" 'Invalid token emitted success audit'
 browser_request -sS -o /tmp/b1-valid.html "$site/?cb_core_bypass=$token"
-contains "$(cat /tmp/b1-valid.html)" 'Emergency Bypass Active' 'Valid token missed confirmation surface'; eq "$(wp_cli eval 'echo get_transient(\CB\Core\Security\Failsafe::BYPASS_TRANSIENT)?:"";')" active 'Valid token did not open window'; eq "$(audit_count failsafe_bypass_url_used)" "$((used0+1))" 'Valid token success audit mismatch'
+contains "$(cat /tmp/b1-valid.html)" 'Emergency Bypass Active' 'Valid token missed confirmation surface'; eq "$(wp_cli eval 'echo get_transient(\CoreBlueprint\Core\Security\Failsafe::BYPASS_TRANSIENT)?:"";')" active 'Valid token did not open window'; eq "$(audit_count failsafe_bypass_url_used)" "$((used0+1))" 'Valid token success audit mismatch'
 hash1="$(wp_cli eval 'echo get_option(CB_CORE_BYPASS_TOK,"");')"; [[ "$hash1" != "$hash0" ]] || fail 'Valid token did not rotate hash'; eq "$(wp_cli_eval_args '$t=$args[0];echo wp_check_password($t,get_option(CB_CORE_BYPASS_TOK,""))?"yes":"no";' "$token")" no 'Used token still validates'
 wp_cli cb failsafe close-window >/dev/null; hash2="$(wp_cli eval 'echo get_option(CB_CORE_BYPASS_TOK,"");')"
 browser_request -sS -o /tmp/b1-reuse.html "$site/?cb_core_bypass=$token"
-eq "$(wp_cli eval 'echo get_transient(\CB\Core\Security\Failsafe::BYPASS_TRANSIENT)?:"";')" '' 'Reused token reopened window'; eq "$(wp_cli eval 'echo get_option(CB_CORE_BYPASS_TOK,"");')" "$hash2" 'Reused token mutated hash'; eq "$(audit_count failsafe_bypass_url_rejected)" "$((reject0+2))" 'Reused token rejection audit mismatch'
+eq "$(wp_cli eval 'echo get_transient(\CoreBlueprint\Core\Security\Failsafe::BYPASS_TRANSIENT)?:"";')" '' 'Reused token reopened window'; eq "$(wp_cli eval 'echo get_option(CB_CORE_BYPASS_TOK,"");')" "$hash2" 'Reused token mutated hash'; eq "$(audit_count failsafe_bypass_url_rejected)" "$((reject0+2))" 'Reused token rejection audit mismatch'
 echo "[B1] Secret token invalid/valid/rotate/reuse/audit lifecycle PASS"
 
 before="$(wp_cli eval 'echo get_option(CB_CORE_BYPASS_TOK,"");')"

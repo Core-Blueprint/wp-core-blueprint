@@ -10,19 +10,19 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Admin\Pages;
+namespace CoreBlueprint\Core\Admin\Pages;
 
-use CB\Core\Locale;
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\Overview;
-use CB\Core\Admin\PageBase;
-use CB\Core\Admin\Tabbed;
-use CB\Core\AdminNavigation\Admin as AdminNavigationAdmin;
-use CB\Core\AdminNotices\Admin as AdminNoticesAdmin;
-use CB\Core\Themes;
-use CB\Core\UI;
-use CB\Core\HUD\MenuPreferences;
-use CB\Core\HUD\Registry as HudRegistry;
+use CoreBlueprint\Core\Locale;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Overview;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\Tabbed;
+use CoreBlueprint\Core\AdminNavigation\Admin as AdminNavigationAdmin;
+use CoreBlueprint\Core\AdminNotices\Admin as AdminNoticesAdmin;
+use CoreBlueprint\Core\Themes;
+use CoreBlueprint\Core\UI;
+use CoreBlueprint\Core\HUD\MenuPreferences;
+use CoreBlueprint\Core\HUD\Registry as HudRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -57,7 +57,7 @@ final class Preferences extends PageBase {
 		}
 
 		return AdminNoticesAdmin::can_manage()
-			? \CB\Core\AdminNotices\Capabilities::MANAGE
+			? \CoreBlueprint\Core\AdminNotices\Capabilities::MANAGE
 			: 'manage_options';
 	}
 
@@ -110,7 +110,7 @@ final class Preferences extends PageBase {
 		// to zero, so case (b) can never produce a hard lockout.
 		$can_view_permissions   = current_user_can( 'cb_view_permissions' );
 		$can_manage_permissions = current_user_can( 'cb_manage_permissions' );
-		$hide_active            = ! empty( \CB\Core\Settings::get()['permissions']['hide_from_admins'] );
+		$hide_active            = ! empty( \CoreBlueprint\Core\Settings::get()['permissions']['hide_from_admins'] );
 
 		if ( ! $can_view_permissions || ( $hide_active && ! $can_manage_permissions ) ) {
 			unset( $tab_labels['permissions'] );
@@ -305,7 +305,7 @@ final class Preferences extends PageBase {
 		// Same visibility rule as the tab itself in render().
 		$can_view_permissions   = current_user_can( 'cb_view_permissions' );
 		$can_manage_permissions = current_user_can( 'cb_manage_permissions' );
-		$hide_active            = ! empty( \CB\Core\Settings::get()['permissions']['hide_from_admins'] );
+		$hide_active            = ! empty( \CoreBlueprint\Core\Settings::get()['permissions']['hide_from_admins'] );
 
 		if ( $can_view_permissions && ( ! $hide_active || $can_manage_permissions ) ) {
 			$tab_cards[] = [
@@ -375,7 +375,7 @@ final class Preferences extends PageBase {
 	}
 
 	private function render_notifications_tab( string $tab, array $tab_labels ): void {
-		$settings       = \CB\Core\Settings::get();
+		$settings       = \CoreBlueprint\Core\Settings::get();
 		$email_override = (string) ( $settings['audit']['email_recipient'] ?? '' );
 		$email_alerts   = $settings['audit']['email_alerts'] ?? [];
 		$admin_email    = (string) get_option( 'admin_email', '' );
@@ -437,7 +437,7 @@ final class Preferences extends PageBase {
 		}
 
 		MenuPreferences::ensure_registry();
-		$hud_enabled     = \CB\Core\HUD\Settings::site_enabled();
+		$hud_enabled     = \CoreBlueprint\Core\HUD\Settings::site_enabled();
 		$config          = MenuPreferences::get();
 		$hidden_sections = array_fill_keys( (array) $config['hidden_sections'], true );
 		$hidden_items    = array_fill_keys( (array) $config['hidden_items'], true );
@@ -512,21 +512,21 @@ final class Preferences extends PageBase {
 			return;
 		}
 
-		$routing_enabled        = \CB\Core\Routing\Policy::enabled();
-		$routing_runtime_active = \CB\Core\Routing\Runtime::is_active();
+		$routing_enabled        = \CoreBlueprint\Core\Routing\Policy::enabled();
+		$routing_runtime_active = \CoreBlueprint\Core\Routing\Runtime::is_active();
 		$routing_preflight     = $routing_enabled
-			? \CB\Core\Routing\Preflight::run()
-			: \CB\Core\Routing\Admin::stored_preflight();
+			? \CoreBlueprint\Core\Routing\Preflight::run()
+			: \CoreBlueprint\Core\Routing\Admin::stored_preflight();
 		$routing_state         = isset( $_GET['routing_state'] )
 			? sanitize_key( wp_unslash( (string) $_GET['routing_state'] ) )
 			: ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- redirect status only.
 
-		$routes          = \CB\Core\Routing\CategoryRoutes::all();
+		$routes          = \CoreBlueprint\Core\Routing\CategoryRoutes::all();
 		$example_term    = [] !== $routes ? reset( $routes ) : null;
 		$routing_example = $example_term instanceof \WP_Term
-			? trim( \CB\Core\Routing\CategoryRoutes::path( $example_term ), '/' )
+			? trim( \CoreBlueprint\Core\Routing\CategoryRoutes::path( $example_term ), '/' )
 			: 'blog';
-		$category_base   = \CB\Core\Routing\CategoryRoutes::category_base_path();
+		$category_base   = \CoreBlueprint\Core\Routing\CategoryRoutes::category_base_path();
 
 		ob_start();
 		include CB_CORE_DIR . 'templates/preferences-routing.php';
@@ -538,7 +538,7 @@ final class Preferences extends PageBase {
 	/**
 	 * Render the Notes tab - Notes preferences (modal defaults: type,
 	 * status, assignment, layout, details-panel state). The actual
-	 * markup is rendered by {@see \CB\Core\Notes\Admin\PreferencesPage::render_body()}
+	 * markup is rendered by {@see \CoreBlueprint\Core\Notes\Admin\PreferencesPage::render_body()}
 	 * - that class also owns the form's POST handling, exposed here
 	 * via maybe_handle_post() so any save notice is rendered above the
 	 * form before it draws.
@@ -548,12 +548,12 @@ final class Preferences extends PageBase {
 	 * second check.
 	 */
 	private function render_notes_tab( string $tab, array $tab_labels ): void {
-		if ( ! class_exists( '\CB\Core\\Notes\\Admin\\PreferencesPage' ) ) {
+		if ( ! class_exists( '\CoreBlueprint\Core\\Notes\\Admin\\PreferencesPage' ) ) {
 			$this->render_subsystem_missing( __( 'Notes subsystem not loaded.', 'core-blueprint' ) );
 			return;
 		}
 
-		$notice = \CB\Core\Notes\Admin\PreferencesPage::maybe_handle_post();
+		$notice = \CoreBlueprint\Core\Notes\Admin\PreferencesPage::maybe_handle_post();
 
 		ob_start();
 		?>
@@ -564,13 +564,13 @@ final class Preferences extends PageBase {
 			</p>
 			<?php if ( $notice ) : ?>
 				<?php
-				echo \CB\Core\UI\Notice::render( [
-					'variant' => 'error' === $notice['type'] ? \CB\Core\UI\Notice::ERROR : \CB\Core\UI\Notice::SUCCESS,
+				echo \CoreBlueprint\Core\UI\Notice::render( [
+					'variant' => 'error' === $notice['type'] ? \CoreBlueprint\Core\UI\Notice::ERROR : \CoreBlueprint\Core\UI\Notice::SUCCESS,
 					'message' => $notice['message'],
 				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - helper escapes own output
 				?>
 			<?php endif; ?>
-			<?php \CB\Core\Notes\Admin\PreferencesPage::render_body(); ?>
+			<?php \CoreBlueprint\Core\Notes\Admin\PreferencesPage::render_body(); ?>
 		</div>
 		<?php
 		$html = ob_get_clean();
@@ -614,7 +614,7 @@ final class Preferences extends PageBase {
 	 * and remains separate from immutable report-content snapshots.
 	 */
 	private function render_reports_tab( string $tab, array $tab_labels ): void {
-		if ( ! class_exists( '\CB\Core\\Reports\\ReportBranding' ) ) {
+		if ( ! class_exists( '\CoreBlueprint\Core\\Reports\\ReportBranding' ) ) {
 			$this->render_subsystem_missing( __( 'Reports subsystem not loaded.', 'core-blueprint' ) );
 			return;
 		}
@@ -625,14 +625,14 @@ final class Preferences extends PageBase {
 		// strips logo_attachment_id - the form needs the raw stored ID to
 		// populate the hidden input correctly. Use the raw stored shape
 		// here, fall back to the raw Reports branding defaults for missing keys.
-		$settings    = \CB\Core\Settings::get();
+		$settings    = \CoreBlueprint\Core\Settings::get();
 		$branding    = is_array( $settings['reports']['branding'] ?? null )
 			? $settings['reports']['branding']
 			: [];
-		$fallback    = \CB\Core\Reports\ReportBranding::settings_defaults();
+		$fallback    = \CoreBlueprint\Core\Reports\ReportBranding::settings_defaults();
 		$nonce       = wp_create_nonce( 'cb_core_admin' );
-		$is_enabled  = class_exists( '\CB\Core\\Reports\\State' )
-			? \CB\Core\Reports\State::is_enabled()
+		$is_enabled  = class_exists( '\CoreBlueprint\Core\\Reports\\State' )
+			? \CoreBlueprint\Core\Reports\State::is_enabled()
 			: true;
 
 		// Resolve the logo attachment for the upload widget. Holds an
@@ -643,7 +643,7 @@ final class Preferences extends PageBase {
 		$logo_url           = '';
 		$logo_alt           = '';
 		if ( $logo_attachment_id > 0 ) {
-			$logo_url = \CB\Core\Reports\ReportBranding::attachment_url( $logo_attachment_id, 'medium' );
+			$logo_url = \CoreBlueprint\Core\Reports\ReportBranding::attachment_url( $logo_attachment_id, 'medium' );
 			$logo_alt = (string) get_post_meta( $logo_attachment_id, '_wp_attachment_image_alt', true );
 		}
 
@@ -665,14 +665,14 @@ final class Preferences extends PageBase {
 	 * hardening layer in the threat model.
 	 */
 	private function render_permissions_tab( string $tab, array $tab_labels ): void {
-		if ( ! class_exists( '\CB\Core\\Permissions\\Roles' ) ) {
+		if ( ! class_exists( '\CoreBlueprint\Core\\Permissions\\Roles' ) ) {
 			$this->render_subsystem_missing( __( 'Permissions subsystem not loaded.', 'core-blueprint' ) );
 			return;
 		}
 
 		// Resolve everything the template needs so the template stays
 		// presentation-only.
-		$settings    = \CB\Core\Settings::get();
+		$settings    = \CoreBlueprint\Core\Settings::get();
 		$hide_active = ! empty( $settings['permissions']['hide_from_admins'] );
 		$admin_can_generate_maintenance = ! empty(
 			$settings['reports']['admin_can_generate']['maintenance'] ?? false
@@ -691,7 +691,7 @@ final class Preferences extends PageBase {
 			'fields'  => [ 'ID', 'user_login', 'user_email', 'display_name' ],
 		] );
 
-		$current_operator_ids = \CB\Core\Permissions\Roles::operator_ids();
+		$current_operator_ids = \CoreBlueprint\Core\Permissions\Roles::operator_ids();
 		$current_user_id      = get_current_user_id();
 		$can_manage           = current_user_can( 'cb_manage_permissions' );
 		$nonce                = wp_create_nonce( 'cb_core_admin' );

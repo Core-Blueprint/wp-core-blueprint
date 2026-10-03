@@ -9,19 +9,19 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$policy  = is_array( $state['policy'] ?? null ) ? $state['policy'] : \CB\Core\AdminNavigation\Policy::defaults();
+$policy  = is_array( $state['policy'] ?? null ) ? $state['policy'] : \CoreBlueprint\Core\AdminNavigation\Policy::defaults();
 $menu    = is_array( $state['menu'] ?? null ) ? $state['menu'] : [];
 $toolbar = is_array( $state['toolbar'] ?? null ) ? $state['toolbar'] : [];
 
 $notice_message = '';
-$notice_variant = \CB\Core\UI\Notice::SUCCESS;
+$notice_variant = \CoreBlueprint\Core\UI\Notice::SUCCESS;
 if ( 'saved' === $notice ) {
 	$notice_message = __( 'Admin Navigation policy saved.', 'core-blueprint' );
 } elseif ( 'reset' === $notice ) {
 	$notice_message = __( 'Admin Navigation policy reset to WordPress defaults.', 'core-blueprint' );
 } elseif ( 'invalid' === $notice ) {
 	$notice_message = __( 'The Admin Navigation policy could not be saved. Review the values and try again.', 'core-blueprint' );
-	$notice_variant = \CB\Core\UI\Notice::ERROR;
+	$notice_variant = \CoreBlueprint\Core\UI\Notice::ERROR;
 }
 
 $audience_references = static function ( ?array $rule, string $key ): array {
@@ -30,21 +30,21 @@ $audience_references = static function ( ?array $rule, string $key ): array {
 	return array_values( array_filter( array_map( 'strval', $values ), static fn( string $value ): bool => '' !== $value ) );
 };
 
-$picker_nonce = wp_create_nonce( \CB\Core\AdminNavigation\Admin::PICKER_NONCE_ACTION );
+$picker_nonce = wp_create_nonce( \CoreBlueprint\Core\AdminNavigation\Admin::PICKER_NONCE_ACTION );
 $render_audience_picker = static function ( ?array $rule, string $kind, string $id ) use ( $audience_references, $picker_nonce ): string {
 	$references = $audience_references( $rule, $kind );
 	$is_roles   = 'roles' === $kind;
 	$selected   = $is_roles
-		? \CB\Core\AdminNavigation\Admin::role_picker_items( $references )
-		: \CB\Core\AdminNavigation\Admin::capability_picker_items( $references );
+		? \CoreBlueprint\Core\AdminNavigation\Admin::role_picker_items( $references )
+		: \CoreBlueprint\Core\AdminNavigation\Admin::capability_picker_items( $references );
 
-	return \CB\Core\UI\ObjectPicker::render( [
+	return \CoreBlueprint\Core\UI\ObjectPicker::render( [
 		'name'      => str_replace( '-', '_', $id ),
 		'id'        => $id,
 		'multiple'  => true,
 		'action'    => $is_roles
-			? \CB\Core\AdminNavigation\Admin::ROLE_SEARCH_ACTION
-			: \CB\Core\AdminNavigation\Admin::CAPABILITY_SEARCH_ACTION,
+			? \CoreBlueprint\Core\AdminNavigation\Admin::ROLE_SEARCH_ACTION
+			: \CoreBlueprint\Core\AdminNavigation\Admin::CAPABILITY_SEARCH_ACTION,
 		'nonce'     => $picker_nonce,
 		'selected'  => $selected,
 		'show_hint' => false,
@@ -54,7 +54,7 @@ $render_audience_picker = static function ( ?array $rule, string $kind, string $
 <div
 	class="wrap cb-core-wrap"
 	data-cb-admin-navigation-editor
-	data-policy-version="<?php echo esc_attr( (string) \CB\Core\AdminNavigation\Policy::VERSION ); ?>"
+	data-policy-version="<?php echo esc_attr( (string) \CoreBlueprint\Core\AdminNavigation\Policy::VERSION ); ?>"
 >
 	<h1 class="cb-core-title"><?php esc_html_e( 'Admin Navigation', 'core-blueprint' ); ?></h1>
 	<p class="cb-core-intro">
@@ -63,7 +63,7 @@ $render_audience_picker = static function ( ?array $rule, string $kind, string $
 
 	<?php if ( '' !== $notice_message ) : ?>
 		<?php
-		echo \CB\Core\UI\Notice::render( [
+		echo \CoreBlueprint\Core\UI\Notice::render( [
 			'variant' => $notice_variant,
 			'message' => $notice_message,
 		] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes own output.
@@ -71,8 +71,8 @@ $render_audience_picker = static function ( ?array $rule, string $kind, string $
 	<?php endif; ?>
 
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-cb-admin-navigation-form>
-		<input type="hidden" name="action" value="<?php echo esc_attr( \CB\Core\AdminNavigation\Admin::FORM_ACTION ); ?>" />
-		<?php wp_nonce_field( \CB\Core\AdminNavigation\Admin::NONCE_ACTION, \CB\Core\AdminNavigation\Admin::NONCE_NAME ); ?>
+		<input type="hidden" name="action" value="<?php echo esc_attr( \CoreBlueprint\Core\AdminNavigation\Admin::FORM_ACTION ); ?>" />
+		<?php wp_nonce_field( \CoreBlueprint\Core\AdminNavigation\Admin::NONCE_ACTION, \CoreBlueprint\Core\AdminNavigation\Admin::NONCE_NAME ); ?>
 		<input
 			type="hidden"
 			name="cb_admin_navigation_payload"

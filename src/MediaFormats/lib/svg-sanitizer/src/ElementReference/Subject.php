@@ -1,5 +1,5 @@
 <?php
-namespace CB\Core\MediaFormats\Vendor\SvgSanitize\ElementReference;
+namespace CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\ElementReference;
 
 class Subject
 {
@@ -55,12 +55,12 @@ class Subject
      * @param array $subjects   Previously processed subjects
      * @param int   $level      The current level of nesting.
      * @return bool
-     * @throws \CB\Core\MediaFormats\Vendor\SvgSanitize\Exceptions\NestingException
+     * @throws \CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\Exceptions\NestingException
      */
     public function hasInfiniteLoop(array $subjects = [], $level = 1)
     {
         if ($level > $this->useNestingLimit) {
-            throw new \CB\Core\MediaFormats\Vendor\SvgSanitize\Exceptions\NestingException('Nesting level too high, aborting', 1570713498, null, $this->getElement());
+            throw new \CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\Exceptions\NestingException('Nesting level too high, aborting', 1570713498, null, $this->getElement());
         }
 
         if (in_array($this, $subjects, true)) {

@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Automation;
+namespace CoreBlueprint\Core\Automation;
 defined( 'ABSPATH' ) || exit;
 
 final class InvocationContext {

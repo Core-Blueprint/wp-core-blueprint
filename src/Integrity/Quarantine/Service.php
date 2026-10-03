@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Quarantine;
+namespace CoreBlueprint\Core\Integrity\Quarantine;
 
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Integrity\Support\Audit;
-use CB\Core\Integrity\Support\FileHashProbe;
-use CB\Core\Integrity\Support\PathGuard;
-use CB\Core\Integrity\Support\ResultFormatter;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Support\Audit;
+use CoreBlueprint\Core\Integrity\Support\FileHashProbe;
+use CoreBlueprint\Core\Integrity\Support\PathGuard;
+use CoreBlueprint\Core\Integrity\Support\ResultFormatter;
 use RuntimeException;
 
 use function basename;

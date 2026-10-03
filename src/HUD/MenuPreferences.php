@@ -11,10 +11,10 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\HUD;
+namespace CoreBlueprint\Core\HUD;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\RequestContext;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\RequestContext;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -14,8 +14,8 @@ Use primary tabs for the main destinations of an admin workspace.
 
 Canonical primitives:
 
-- `CB\Core\UI\PrimaryNav` for arbitrary workspace destinations;
-- `CB\Core\Admin\TabNav` as the same-page `?tab=` convenience wrapper;
+- `CoreBlueprint\Core\UI\PrimaryNav` for arbitrary workspace destinations;
+- `CoreBlueprint\Core\Admin\TabNav` as the same-page `?tab=` convenience wrapper;
 - `.cb-core-tab-wrapper`.
 
 Do not render a second full tab row underneath Level 1.
@@ -26,7 +26,7 @@ Use quiet inline links when one Level 1 destination has internal sections.
 
 Canonical primitive:
 
-- `CB\Core\UI\SectionNav`
+- `CoreBlueprint\Core\UI\SectionNav`
 - `.cb-core-section-nav`
 
 Examples:
@@ -43,7 +43,7 @@ Use Segmented Control for mutually exclusive presentation modes or local view ch
 Canonical primitive:
 
 - `.cb-core-segmented-control`
-- `CB\Core\UI\Assets::enqueue_segmented_control()`
+- `CoreBlueprint\Core\UI\Assets::enqueue_segmented_control()`
 
 Examples:
 

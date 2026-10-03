@@ -4,7 +4,7 @@ Status: **public v1 Foundation contract**.
 
 ## Purpose
 
-`CB\Core\UI\DetailRows` is the Base-owned Core Admin presentation primitive for compact object, target or resource rows that belong inside a consumer-owned section or card.
+`CoreBlueprint\Core\UI\DetailRows` is the Base-owned Core Admin presentation primitive for compact object, target or resource rows that belong inside a consumer-owned section or card.
 
 It standardizes the repeated presentation pattern:
 
@@ -12,12 +12,12 @@ It standardizes the repeated presentation pattern:
 
 Typical consumers include template mappings, backup destinations, license assignments, service endpoints, storage providers, scheduled jobs and connected resources.
 
-`DetailRows` is deliberately not integration-specific. Integration/provider-level readiness remains owned by `CB\Core\UI\IntegrationGrid`.
+`DetailRows` is deliberately not integration-specific. Integration/provider-level readiness remains owned by `CoreBlueprint\Core\UI\IntegrationGrid`.
 
 ## Public renderer
 
 ```php
-CB\Core\UI\DetailRows::render( array $items ): string
+CoreBlueprint\Core\UI\DetailRows::render( array $items ): string
 ```
 
 Each item accepts:
@@ -76,7 +76,7 @@ Base must not learn concrete Communities, LMS, Bricks, backup, licensing, storag
 Example:
 
 ```php
-$rows = \CB\Core\UI\DetailRows::render( [
+$rows = \CoreBlueprint\Core\UI\DetailRows::render( [
     [
         'name'         => __( 'Course Single template', 'consumer-text-domain' ),
         'description'  => __( 'Assigned template', 'consumer-text-domain' ),
@@ -87,7 +87,7 @@ $rows = \CB\Core\UI\DetailRows::render( [
     ],
 ] );
 
-$card = \CB\Core\UI\Card::render( [
+$card = \CoreBlueprint\Core\UI\Card::render( [
     'title' => __( 'Template setup', 'consumer-text-domain' ),
     'body'  => $rows . $consumer_owned_guidance,
 ] );

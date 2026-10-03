@@ -12,13 +12,13 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Ajax\Handlers;
+namespace CoreBlueprint\Core\Ajax\Handlers;
 
-use CB\Core\Ajax\Guards;
-use CB\Core\Ajax\Request;
-use CB\Core\EmailAlerts;
-use CB\Core\Log\AuditLog;
-use CB\Core\Settings as CoreSettings;
+use CoreBlueprint\Core\Ajax\Guards;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\EmailAlerts;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Settings as CoreSettings;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Security\TwoFactor;
+namespace CoreBlueprint\Core\Security\TwoFactor;
 
-use CB\Core\Security\Failsafe;
+use CoreBlueprint\Core\Security\Failsafe;
 use WP_Error;
 use WP_Session_Tokens;
 use WP_User;

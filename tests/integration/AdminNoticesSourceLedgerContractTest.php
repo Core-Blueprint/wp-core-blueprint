@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminNotices\Discovery;
-use CB\Core\AdminNotices\SourceLedger;
-use CB\Core\AdminNotices\SourceResolver;
+use CoreBlueprint\Core\AdminNotices\Discovery;
+use CoreBlueprint\Core\AdminNotices\SourceLedger;
+use CoreBlueprint\Core\AdminNotices\SourceResolver;
 
 final class CB_Base_Admin_Notices_Source_Ledger_Contract_Test extends WP_UnitTestCase {
 

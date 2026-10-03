@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\CLI\Commands\TwoFactor\Reset as TwoFactorReset;
-use CB\Core\CLI\Commands\TwoFactor\Status as TwoFactorStatus;
-use CB\Core\CLI\Registry as CLIRegistry;
-use CB\Core\Console\Registry as ConsoleRegistry;
-use CB\Core\Security\TwoFactor\ChallengeStore;
-use CB\Core\Security\TwoFactor\CredentialStore;
-use CB\Core\Security\TwoFactor\EnrollmentStore;
-use CB\Core\Security\TwoFactor\RecoveryCodes;
-use CB\Core\Security\TwoFactor\RecoveryManager;
+use CoreBlueprint\Core\CLI\Commands\TwoFactor\Reset as TwoFactorReset;
+use CoreBlueprint\Core\CLI\Commands\TwoFactor\Status as TwoFactorStatus;
+use CoreBlueprint\Core\CLI\Registry as CLIRegistry;
+use CoreBlueprint\Core\Console\Registry as ConsoleRegistry;
+use CoreBlueprint\Core\Security\TwoFactor\ChallengeStore;
+use CoreBlueprint\Core\Security\TwoFactor\CredentialStore;
+use CoreBlueprint\Core\Security\TwoFactor\EnrollmentStore;
+use CoreBlueprint\Core\Security\TwoFactor\RecoveryCodes;
+use CoreBlueprint\Core\Security\TwoFactor\RecoveryManager;
 
 final class CB_Base_Two_Factor_Recovery_Contract_Test extends WP_UnitTestCase {
 

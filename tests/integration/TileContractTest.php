@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\UI\Tile;
+use CoreBlueprint\Core\UI\Tile;
 
 final class CB_Base_Tile_Contract_Test extends WP_UnitTestCase {
 

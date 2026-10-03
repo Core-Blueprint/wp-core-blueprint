@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Mail\Message;
-use CB\Core\Mail\Sender;
-use CB\Core\Mail\SenderContext;
-use CB\Core\Mail\SenderIdentityRegistry;
+use CoreBlueprint\Core\Mail\Message;
+use CoreBlueprint\Core\Mail\Sender;
+use CoreBlueprint\Core\Mail\SenderContext;
+use CoreBlueprint\Core\Mail\SenderIdentityRegistry;
 
 final class CB_Mail_Sender_Snapshot_Contract_Test extends WP_UnitTestCase {
 

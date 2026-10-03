@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Automation\Schema;
-use CB\Core\Automation\TriggerRegistry;
+use CoreBlueprint\Core\Automation\Schema;
+use CoreBlueprint\Core\Automation\TriggerRegistry;
 
 final class CB_Base_Automation_Semantic_Type_Contract_Test extends WP_UnitTestCase {
 

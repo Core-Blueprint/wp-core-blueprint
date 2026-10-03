@@ -11,20 +11,20 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Migration;
+namespace CoreBlueprint\Core\Migration;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Settings;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\PrivilegedAccessPolicy;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\RolePolicySchema;
-use CB\Core\Permissions\Roles;
-use CB\Core\Permissions\TrustSchemaMigrator;
-use CB\Core\Security\Failsafe;
-use CB\Core\Security\LoginShield;
-use CB\Core\Security\TwoFactor\LoginFlow;
-use CB\Core\Security\TwoFactor\MigrationBoundary;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\RolePolicySchema;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Permissions\TrustSchemaMigrator;
+use CoreBlueprint\Core\Security\Failsafe;
+use CoreBlueprint\Core\Security\LoginShield;
+use CoreBlueprint\Core\Security\TwoFactor\LoginFlow;
+use CoreBlueprint\Core\Security\TwoFactor\MigrationBoundary;
 use RuntimeException;
 use WP_Error;
 use WP_User;

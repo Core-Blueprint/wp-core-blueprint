@@ -100,9 +100,9 @@ function core_blueprint_about_page(): void {
 									<td><code><?php echo esc_html( $plugin['version'] ); ?></code></td>
 									<td>
 										<?php
-										echo \CB\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+										echo \CoreBlueprint\Core\UI\StateBadge::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 											$is_active ? __( 'Active', 'core-blueprint' ) : __( 'Inactive', 'core-blueprint' ),
-											[ 'variant' => $is_active ? \CB\Core\UI\StateBadge::SUCCESS : \CB\Core\UI\StateBadge::NEUTRAL ]
+											[ 'variant' => $is_active ? \CoreBlueprint\Core\UI\StateBadge::SUCCESS : \CoreBlueprint\Core\UI\StateBadge::NEUTRAL ]
 										);
 										?>
 									</td>
@@ -153,8 +153,8 @@ function core_blueprint_about_page(): void {
 
 function core_blueprint_detect_plugins(): array {
 	// Prefer the authoritative detector from Core Blueprint when present.
-	if ( class_exists( \CB\Core\Extensions::class ) ) {
-		$extensions = \CB\Core\Extensions::detected();
+	if ( class_exists( \CoreBlueprint\Core\Extensions::class ) ) {
+		$extensions = \CoreBlueprint\Core\Extensions::detected();
 		$out        = [];
 
 		// Include Core Blueprint itself.

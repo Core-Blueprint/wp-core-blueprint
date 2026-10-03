@@ -1,21 +1,21 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\Pages\Logs\TabRegistry;
-use CB\Core\Admin\Pages\Logs\Tabs\AIActivityTab;
-use CB\Core\AIGovernance\AbilityObserver;
-use CB\Core\AIGovernance\AIClientObserver;
-use CB\Core\AIGovernance\Activity;
-use CB\Core\AIGovernance\Bootstrap as AIGovernanceBootstrap;
-use CB\Core\AIGovernance\Exporter;
-use CB\Core\AIGovernance\MCPEventProjector;
-use CB\Core\AIGovernance\MCPIntegration;
-use CB\Core\AIGovernance\Privacy;
-use CB\Core\AIGovernance\Repository;
-use CB\Core\AIGovernance\Settings;
-use CB\Core\AIGovernance\TraceContext;
-use CB\Core\Governance\RetentionStoreRegistry;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\Pages\Logs\TabRegistry;
+use CoreBlueprint\Core\Admin\Pages\Logs\Tabs\AIActivityTab;
+use CoreBlueprint\Core\AIGovernance\AbilityObserver;
+use CoreBlueprint\Core\AIGovernance\AIClientObserver;
+use CoreBlueprint\Core\AIGovernance\Activity;
+use CoreBlueprint\Core\AIGovernance\Bootstrap as AIGovernanceBootstrap;
+use CoreBlueprint\Core\AIGovernance\Exporter;
+use CoreBlueprint\Core\AIGovernance\MCPEventProjector;
+use CoreBlueprint\Core\AIGovernance\MCPIntegration;
+use CoreBlueprint\Core\AIGovernance\Privacy;
+use CoreBlueprint\Core\AIGovernance\Repository;
+use CoreBlueprint\Core\AIGovernance\Settings;
+use CoreBlueprint\Core\AIGovernance\TraceContext;
+use CoreBlueprint\Core\Governance\RetentionStoreRegistry;
 
 final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 
@@ -54,7 +54,7 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertSame( 'AI Activity', $tab['label'] );
 		$this->assertSame( 50, $tab['priority'] );
 		$this->assertSame( [ AIActivityTab::class, 'render' ], $tab['renderer'] );
-		$this->assertFalse( class_exists( '\CB\Core\Admin\Pages\AIGovernance' ) );
+		$this->assertFalse( class_exists( '\CoreBlueprint\Core\Admin\Pages\AIGovernance' ) );
 	}
 
 	public function test_ai_retention_store_points_to_ai_activity_logs_tab(): void {
@@ -357,7 +357,7 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		] );
 
 		$this->assertSame( 'Fixture\\ExistingObservabilityHandler', MCPIntegration::delegate_class() );
-		$this->assertSame( \CB\Core\AIGovernance\MCPObservabilityHandler::class, $config['observability_handler'] );
+		$this->assertSame( \CoreBlueprint\Core\AIGovernance\MCPObservabilityHandler::class, $config['observability_handler'] );
 	}
 
 	public function test_privacy_summary_never_copies_scalar_payload_values(): void {

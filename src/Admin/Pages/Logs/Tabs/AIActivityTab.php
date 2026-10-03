@@ -10,14 +10,14 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since   1.0.0
  */
-namespace CB\Core\Admin\Pages\Logs\Tabs;
+namespace CoreBlueprint\Core\Admin\Pages\Logs\Tabs;
 
-use CB\Core\Admin\Admin;
-use CB\Core\Admin\TabNav;
-use CB\Core\AIGovernance\Activity;
-use CB\Core\AIGovernance\Admin\Actions;
-use CB\Core\AIGovernance\Repository;
-use CB\Core\AIGovernance\Settings;
+use CoreBlueprint\Core\Admin\Admin;
+use CoreBlueprint\Core\Admin\TabNav;
+use CoreBlueprint\Core\AIGovernance\Activity;
+use CoreBlueprint\Core\AIGovernance\Admin\Actions;
+use CoreBlueprint\Core\AIGovernance\Repository;
+use CoreBlueprint\Core\AIGovernance\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

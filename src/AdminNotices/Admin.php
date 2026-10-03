@@ -11,10 +11,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\AdminNotices;
+namespace CoreBlueprint\Core\AdminNotices;
 
-use CB\Core\Ajax\Request;
-use CB\Core\UI\RoleCapabilityPicker;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\UI\RoleCapabilityPicker;
 
 defined( 'ABSPATH' ) || exit;
 

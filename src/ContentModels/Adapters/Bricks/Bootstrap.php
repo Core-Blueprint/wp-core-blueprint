@@ -6,9 +6,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels\Adapters\Bricks;
+namespace CoreBlueprint\Core\ContentModels\Adapters\Bricks;
 
-use CB\Core\ContentModels\State;
+use CoreBlueprint\Core\ContentModels\State;
 
 defined( 'ABSPATH' ) || exit;
 

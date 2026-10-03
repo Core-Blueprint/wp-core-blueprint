@@ -7,10 +7,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Ajax\Handlers;
+namespace CoreBlueprint\Core\Ajax\Handlers;
 
-use CB\Core\Ajax\Request;
-use CB\Core\Modules\ActivationRegistry;
+use CoreBlueprint\Core\Ajax\Request;
+use CoreBlueprint\Core\Modules\ActivationRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

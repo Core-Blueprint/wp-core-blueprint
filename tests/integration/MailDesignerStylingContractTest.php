@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Mail\HtmlRenderer;
-use CB\Core\Mail\Designer\TemplateRegistry;
-use CB\Core\Mail\Designer\TemplateRepository;
+use CoreBlueprint\Core\Design\Profile\Mail\HtmlRenderer;
+use CoreBlueprint\Core\Mail\Designer\TemplateRegistry;
+use CoreBlueprint\Core\Mail\Designer\TemplateRepository;
 
 final class CB_Mail_Designer_Styling_Contract_Test extends WP_UnitTestCase {
 	private mixed $original_overrides;

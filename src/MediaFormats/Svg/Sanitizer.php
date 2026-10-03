@@ -6,11 +6,11 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\MediaFormats\Svg;
+namespace CoreBlueprint\Core\MediaFormats\Svg;
 
-use CB\Core\MediaFormats\Environment;
-use CB\Core\MediaFormats\Vendor;
-use CB\Core\MediaFormats\Vendor\SvgSanitize\Sanitizer as UpstreamSanitizer;
+use CoreBlueprint\Core\MediaFormats\Environment;
+use CoreBlueprint\Core\MediaFormats\Vendor;
+use CoreBlueprint\Core\MediaFormats\Vendor\SvgSanitize\Sanitizer as UpstreamSanitizer;
 
 defined( 'ABSPATH' ) || exit;
 

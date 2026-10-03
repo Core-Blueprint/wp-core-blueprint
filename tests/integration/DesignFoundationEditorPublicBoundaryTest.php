@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Admin\PageRegistry;
-use CB\Core\Design\Editor\Assets as DesignEditorAssets;
+use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Design\Editor\Assets as DesignEditorAssets;
 
 final class CB_Design_Foundation_Editor_Public_Boundary_Test extends WP_UnitTestCase {
 

@@ -4,13 +4,13 @@ declare(strict_types=1);
  * @package Core_Blueprint
  * @since 1.0.0
  */
-namespace CB\Core\Integrity\Admin;
+namespace CoreBlueprint\Core\Integrity\Admin;
 
-use CB\Core\Integrity\Quarantine\Repository as QuarantineRepository;
-use CB\Core\Integrity\Quarantine\Service as QuarantineService;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\UI\Icon;
-use CB\Core\UI\StateBadge;
+use CoreBlueprint\Core\Integrity\Quarantine\Repository as QuarantineRepository;
+use CoreBlueprint\Core\Integrity\Quarantine\Service as QuarantineService;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\UI\Icon;
+use CoreBlueprint\Core\UI\StateBadge;
 
 defined( 'ABSPATH' ) || exit;
 

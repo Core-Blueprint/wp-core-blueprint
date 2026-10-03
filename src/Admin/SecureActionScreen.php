@@ -13,13 +13,13 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Admin;
+namespace CoreBlueprint\Core\Admin;
 
-use CB\Core\Brand\CoreBlueprintLockup;
-use CB\Core\UI\AdminTheme;
-use CB\Core\UI\AdminThemeAdapters;
-use CB\Core\UI\Card;
-use CB\Core\UI\Status;
+use CoreBlueprint\Core\Brand\CoreBlueprintLockup;
+use CoreBlueprint\Core\UI\AdminTheme;
+use CoreBlueprint\Core\UI\AdminThemeAdapters;
+use CoreBlueprint\Core\UI\Card;
+use CoreBlueprint\Core\UI\Status;
 
 defined( 'ABSPATH' ) || exit;
 

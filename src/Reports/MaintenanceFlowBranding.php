@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Reports;
+namespace CoreBlueprint\Core\Reports;
 
-use CB\Core\Design\Profile\Document\Render\ImageDataUri;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Design\Profile\Document\Render\ImageDataUri;
+use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

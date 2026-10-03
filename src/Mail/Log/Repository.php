@@ -10,11 +10,11 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Mail\Log;
+namespace CoreBlueprint\Core\Mail\Log;
 
-use CB\Core\Database\SchemaRegistry;
-use CB\Core\Governance\RetentionStoreRegistry;
-use CB\Core\Mail\Settings;
+use CoreBlueprint\Core\Database\SchemaRegistry;
+use CoreBlueprint\Core\Governance\RetentionStoreRegistry;
+use CoreBlueprint\Core\Mail\Settings;
 
 defined( 'ABSPATH' ) || exit;
 

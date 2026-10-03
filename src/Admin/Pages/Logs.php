@@ -12,17 +12,17 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\Admin\Pages;
+namespace CoreBlueprint\Core\Admin\Pages;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\Admin\Pages\Logs\TabRegistry;
-use CB\Core\Admin\Pages\Logs\Tabs\AuditTab;
-use CB\Core\Admin\Pages\Logs\Tabs\MaintenanceTab;
-use CB\Core\Admin\Pages\Logs\Tabs\OverviewTab;
-use CB\Core\Admin\Pages\Logs\Tabs\RetentionTab;
-use CB\Core\Admin\Pages\Logs\Tabs\SystemTab;
-use CB\Core\Log\AuditLog;
-use CB\Core\Log\MaintenanceReport as LogMaintenanceReport;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\Pages\Logs\TabRegistry;
+use CoreBlueprint\Core\Admin\Pages\Logs\Tabs\AuditTab;
+use CoreBlueprint\Core\Admin\Pages\Logs\Tabs\MaintenanceTab;
+use CoreBlueprint\Core\Admin\Pages\Logs\Tabs\OverviewTab;
+use CoreBlueprint\Core\Admin\Pages\Logs\Tabs\RetentionTab;
+use CoreBlueprint\Core\Admin\Pages\Logs\Tabs\SystemTab;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Log\MaintenanceReport as LogMaintenanceReport;
 
 defined( 'ABSPATH' ) || exit;
 

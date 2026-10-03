@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Profiles\Sections;
+namespace CoreBlueprint\Core\Profiles\Sections;
 
-use CB\Core\Integrity\Scheduler\Cron;
-use CB\Core\Integrity\State;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Profiles\ExactSection;
-use CB\Core\Profiles\SchemaGuard;
+use CoreBlueprint\Core\Integrity\Scheduler\Cron;
+use CoreBlueprint\Core\Integrity\State;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Profiles\ExactSection;
+use CoreBlueprint\Core\Profiles\SchemaGuard;
 
 defined( 'ABSPATH' ) || exit;
 

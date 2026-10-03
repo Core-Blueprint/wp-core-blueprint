@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Scanner;
+namespace CoreBlueprint\Core\Integrity\Scanner;
 
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Integrity\Storage\StorageSchema;
-use CB\Core\Integrity\Support\Audit;
-use CB\Core\Integrity\Support\DiffService;
-use CB\Core\Integrity\Support\Finding;
-use CB\Core\Integrity\Support\FindingLifecycle;
-use CB\Core\Integrity\Support\IncidentLifecycle;
-use CB\Core\Integrity\Support\SeverityMapper;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Integrity\Storage\StorageSchema;
+use CoreBlueprint\Core\Integrity\Support\Audit;
+use CoreBlueprint\Core\Integrity\Support\DiffService;
+use CoreBlueprint\Core\Integrity\Support\Finding;
+use CoreBlueprint\Core\Integrity\Support\FindingLifecycle;
+use CoreBlueprint\Core\Integrity\Support\IncidentLifecycle;
+use CoreBlueprint\Core\Integrity\Support\SeverityMapper;
 
 use function array_keys;
 use function array_slice;

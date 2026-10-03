@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\ContentModels\Admin;
+namespace CoreBlueprint\Core\ContentModels\Admin;
 
-use CB\Core\Admin\PageBase;
-use CB\Core\Admin\TabNav;
+use CoreBlueprint\Core\Admin\PageBase;
+use CoreBlueprint\Core\Admin\TabNav;
 
 defined( 'ABSPATH' ) || exit;
 

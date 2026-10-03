@@ -10,14 +10,14 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup\Checks;
+namespace CoreBlueprint\Core\Setup\Checks;
 
-use CB\Core\Admin\Pages\Safeguards;
-use CB\Core\Integrity\State;
-use CB\Core\Integrity\Storage\ResultRepository;
-use CB\Core\Modules\Status as ModuleStatus;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Evidence;
+use CoreBlueprint\Core\Admin\Pages\Safeguards;
+use CoreBlueprint\Core\Integrity\State;
+use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
+use CoreBlueprint\Core\Modules\Status as ModuleStatus;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Evidence;
 
 defined( 'ABSPATH' ) || exit;
 

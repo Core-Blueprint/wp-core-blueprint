@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Reports;
+namespace CoreBlueprint\Core\Reports;
 
-use CB\Core\Design\Profile\Document\Flow\Api\FlowRenderApi;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\Api\FlowRenderApi;
 defined( 'ABSPATH' ) || exit;
 
 /**

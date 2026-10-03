@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Integrity\Support;
+namespace CoreBlueprint\Core\Integrity\Support;
 
 use function array_keys;
 use function count;

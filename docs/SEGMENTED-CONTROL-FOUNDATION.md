@@ -12,7 +12,7 @@ The active segment is deliberately less prominent than a primary CTA.
 ## Public enqueue
 
 ```php
-\CB\Core\UI\Assets::enqueue_segmented_control();
+\CoreBlueprint\Core\UI\Assets::enqueue_segmented_control();
 ```
 
 Auto mode uses Core presentation below the Core Blueprint parent menu and the

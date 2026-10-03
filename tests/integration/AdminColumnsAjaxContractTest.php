@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminColumns\Admin\Ajax as AdminColumnsAjax;
-use CB\Core\AdminColumns\PolicyRepository;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\AdminColumns\Admin\Ajax as AdminColumnsAjax;
+use CoreBlueprint\Core\AdminColumns\PolicyRepository;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 
 /**
  * Canonical WordPress AJAX coverage for Admin Columns Governance.

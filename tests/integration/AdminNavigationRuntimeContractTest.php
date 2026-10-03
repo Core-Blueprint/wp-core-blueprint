@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\AdminNavigation\AdminMenuRuntime;
-use CB\Core\AdminNavigation\Discovery;
-use CB\Core\AdminNavigation\Policy;
-use CB\Core\AdminNavigation\ToolbarRuntime;
+use CoreBlueprint\Core\AdminNavigation\AdminMenuRuntime;
+use CoreBlueprint\Core\AdminNavigation\Discovery;
+use CoreBlueprint\Core\AdminNavigation\Policy;
+use CoreBlueprint\Core\AdminNavigation\ToolbarRuntime;
 
 if ( ! class_exists( 'WP_Admin_Bar' ) ) {
 	require_once ABSPATH . WPINC . '/class-wp-admin-bar.php';

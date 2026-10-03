@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\CLI\Commands\Operator\Add as OperatorAdd;
-use CB\Core\CLI\Commands\Operator\Recover as OperatorRecover;
-use CB\Core\CLI\Commands\Operator\Status as OperatorStatus;
-use CB\Core\CLI\Commands\Permissions\RepairRolePolicy;
-use CB\Core\CLI\Registry as CLIRegistry;
-use CB\Core\Console\Registry as ConsoleRegistry;
-use CB\Core\Permissions\Admin\UserRolesFields;
-use CB\Core\Permissions\PrivilegedAccessGuard;
-use CB\Core\Permissions\PrivilegedAccessRegistry;
-use CB\Core\Permissions\RolePolicySchema;
-use CB\Core\Permissions\Roles;
-use CB\Core\Permissions\UserRoleAssignments;
+use CoreBlueprint\Core\CLI\Commands\Operator\Add as OperatorAdd;
+use CoreBlueprint\Core\CLI\Commands\Operator\Recover as OperatorRecover;
+use CoreBlueprint\Core\CLI\Commands\Operator\Status as OperatorStatus;
+use CoreBlueprint\Core\CLI\Commands\Permissions\RepairRolePolicy;
+use CoreBlueprint\Core\CLI\Registry as CLIRegistry;
+use CoreBlueprint\Core\Console\Registry as ConsoleRegistry;
+use CoreBlueprint\Core\Permissions\Admin\UserRolesFields;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\Permissions\RolePolicySchema;
+use CoreBlueprint\Core\Permissions\Roles;
+use CoreBlueprint\Core\Permissions\UserRoleAssignments;
 
 final class CB_Base_Privileged_Access_Recovery_Contract_Test extends WP_UnitTestCase {
 

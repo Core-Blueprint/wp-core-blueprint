@@ -8,9 +8,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\MediaFormats;
+namespace CoreBlueprint\Core\MediaFormats;
 
-use CB\Core\Modules\ModuleStateInterface;
+use CoreBlueprint\Core\Modules\ModuleStateInterface;
 
 defined( 'ABSPATH' ) || exit;
 

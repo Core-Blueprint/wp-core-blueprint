@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\ExtensionRegistry;
-use CB\Core\Forms\Foundation;
-use CB\Core\Forms\ProviderInterface;
-use CB\Core\Forms\SubmissionEmitter;
-use CB\Core\Forms\SubmissionEvent;
-use CB\Core\Interoperability\Registry;
+use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Forms\Foundation;
+use CoreBlueprint\Core\Forms\ProviderInterface;
+use CoreBlueprint\Core\Forms\SubmissionEmitter;
+use CoreBlueprint\Core\Forms\SubmissionEvent;
+use CoreBlueprint\Core\Interoperability\Registry;
 
 final class CB_Forms_Fixture_Provider implements ProviderInterface {
 	public function __construct( private readonly bool $available = true ) {}

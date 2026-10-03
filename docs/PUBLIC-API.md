@@ -11,22 +11,22 @@
 
 - Dashboard Card API — `cb_core_dashboard_register_cards`, `cb_core_dashboard_card_shortcuts`; see `DASHBOARD-CARD-API.md`.
 - HUD Menu API — `cb_hud_register_section_types`, `cb_hud_register_sections`, `cb_hud_register_items`; see `HUD-MENU-API.md`.
-- Content Models — `CB\Core\ContentModels\Api` and `cb_core_content_models_register`; see `CONTENT_MODELS.md`.
+- Content Models — `CoreBlueprint\Core\ContentModels\Api` and `cb_core_content_models_register`; see `CONTENT_MODELS.md`.
 - Content Models JSON Schema v1 — `format: core-blueprint-content-models` + `format_version: 1` is the stable schema portability document described in `CONTENT_MODELS.md`; Native WordPress discovery/import classes are internal Base tooling.
-- Module activation — `cb_core_module_activation_definitions`; state classes must implement `CB\Core\Modules\ModuleStateInterface`.
+- Module activation — `cb_core_module_activation_definitions`; state classes must implement `CoreBlueprint\Core\Modules\ModuleStateInterface`.
 - Module health/status — `cb_core_module_status_definitions`; providers return the canonical `ok|warn|err|off` status shape.
-- Extension registry — `CB\Core\ExtensionRegistry` via `cb_core_register_extensions`; canonical identity/inventory/compatibility boundary.
-- Interoperability Foundation — `CB\Core\Interoperability\Registry` via `cb_core_register_interoperability_contracts` and `cb_core_register_interoperability_implementations`; canonical versioned cross-extension contract registration, discovery and runtime resolution boundary; see `INTEROPERABILITY-FOUNDATION.md`.
-- Forms Foundation — `CB\Core\Forms\ProviderInterface`, `CB\Core\Forms\SubmissionEmitter`, `CB\Core\Forms\SubmissionEvent` and the public contract constants on `CB\Core\Forms\Foundation`; Base-owned normalized form-submission interoperability boundary using Generic Interoperability provider admission; see `FORMS-FOUNDATION.md`.
-- Data Exchange Foundation — `CB\Core\DataExchange\EntityInterface`, optional `CsvEntityInterface`, `CB\Core\DataExchange\Engine` and the public contract/transport constants on `CB\Core\DataExchange\Foundation`; Base-owned bounded import/export infrastructure using Generic Interoperability while extension providers retain authorization, identity resolution, validation and canonical mutations; see `DATA-EXCHANGE-FOUNDATION.md`.
-- Data Mapper Foundation — `CB\Core\DataExchange\MappingEntityInterface`, `CB\Core\DataExchange\Mapper`, `CB\Core\DataExchange\Mapper\Renderer` and the documented `window.cbCore.dataMapper` browser/controller boundary; provider-neutral schema mapping and shared Designer Shell workspace with server-side provider validation remaining authoritative; see `DATA-MAPPER.md`. Asset handles, filenames and internal Designer composition details are not public API.
+- Extension registry — `CoreBlueprint\Core\ExtensionRegistry` via `cb_core_register_extensions`; canonical identity/inventory/compatibility boundary.
+- Interoperability Foundation — `CoreBlueprint\Core\Interoperability\Registry` via `cb_core_register_interoperability_contracts` and `cb_core_register_interoperability_implementations`; canonical versioned cross-extension contract registration, discovery and runtime resolution boundary; see `INTEROPERABILITY-FOUNDATION.md`.
+- Forms Foundation — `CoreBlueprint\Core\Forms\ProviderInterface`, `CoreBlueprint\Core\Forms\SubmissionEmitter`, `CoreBlueprint\Core\Forms\SubmissionEvent` and the public contract constants on `CoreBlueprint\Core\Forms\Foundation`; Base-owned normalized form-submission interoperability boundary using Generic Interoperability provider admission; see `FORMS-FOUNDATION.md`.
+- Data Exchange Foundation — `CoreBlueprint\Core\DataExchange\EntityInterface`, optional `CsvEntityInterface`, `CoreBlueprint\Core\DataExchange\Engine` and the public contract/transport constants on `CoreBlueprint\Core\DataExchange\Foundation`; Base-owned bounded import/export infrastructure using Generic Interoperability while extension providers retain authorization, identity resolution, validation and canonical mutations; see `DATA-EXCHANGE-FOUNDATION.md`.
+- Data Mapper Foundation — `CoreBlueprint\Core\DataExchange\MappingEntityInterface`, `CoreBlueprint\Core\DataExchange\Mapper`, `CoreBlueprint\Core\DataExchange\Mapper\Renderer` and the documented `window.cbCore.dataMapper` browser/controller boundary; provider-neutral schema mapping and shared Designer Shell workspace with server-side provider validation remaining authoritative; see `DATA-MAPPER.md`. Asset handles, filenames and internal Designer composition details are not public API.
 - Designer Foundation: semantic Foundation requirement `design-editor`, script-module identifier `@cb-core/design-editor` and the frozen browser facade documented in `DESIGNER-FOUNDATION-API.md`; Base owns session/history/shell mechanics while consumers retain domain semantics, validation and persistence. Private files below `assets/js/design/` are not public API.
-- Settings Hub — `CB\Core\Admin\SettingsRegistry` via `cb_core_register_settings`; canonical extension-configuration directory and routing boundary; see `SETTINGS-HUB-FOUNDATION.md`.
-- User Profile Surface — `CB\Core\Admin\UserProfileSectionRegistry` via `cb_core_register_user_profile_sections`; ordered, WordPress-native contribution boundary for Profile/Edit User sections; see `USER-PROFILE-SURFACE-FOUNDATION.md`.
+- Settings Hub — `CoreBlueprint\Core\Admin\SettingsRegistry` via `cb_core_register_settings`; canonical extension-configuration directory and routing boundary; see `SETTINGS-HUB-FOUNDATION.md`.
+- User Profile Surface — `CoreBlueprint\Core\Admin\UserProfileSectionRegistry` via `cb_core_register_user_profile_sections`; ordered, WordPress-native contribution boundary for Profile/Edit User sections; see `USER-PROFILE-SURFACE-FOUNDATION.md`.
 - Capability catalog — `cb_core_capability_catalog`.
-- Access Mode request bypass — prefer `CB\Core\Security\AccessMode::register_bypass()`; advanced policy may use `cb_core_access_mode_bypass_request`.
-- AI Governance activity reporting — `CB\Core\AIGovernance\Activity::record()`; see `AI-GOVERNANCE.md` for the stable v1 evidence, privacy and attribution contract.
-- Secret Protection Foundation — `CB\Core\Security\SecretProtection`; authenticated, purpose/subject-bound protection for extension-owned credentials without Base-owned credential persistence; introduced in Core API `1.2`; see `SECRET-PROTECTION-FOUNDATION.md`.
+- Access Mode request bypass — prefer `CoreBlueprint\Core\Security\AccessMode::register_bypass()`; advanced policy may use `cb_core_access_mode_bypass_request`.
+- AI Governance activity reporting — `CoreBlueprint\Core\AIGovernance\Activity::record()`; see `AI-GOVERNANCE.md` for the stable v1 evidence, privacy and attribution contract.
+- Secret Protection Foundation — `CoreBlueprint\Core\Security\SecretProtection`; authenticated, purpose/subject-bound protection for extension-owned credentials without Base-owned credential persistence; introduced in Core API `1.2`; see `SECRET-PROTECTION-FOUNDATION.md`.
 
 ## Canonical module identity and activation
 
@@ -44,7 +44,7 @@ add_filter( 'cb_core_module_activation_definitions', static function ( array $de
 } );
 ```
 
-The state class must implement `CB\Core\Modules\ModuleStateInterface`. Base-owned IDs are reserved. Malformed definitions are ignored. Unknown, malformed or failing module state is treated as **disabled** by the canonical activation authority.
+The state class must implement `CoreBlueprint\Core\Modules\ModuleStateInterface`. Base-owned IDs are reserved. Malformed definitions are ignored. Unknown, malformed or failing module state is treated as **disabled** by the canonical activation authority.
 
 Activation answers only whether a module is enabled. Health/status is a separate contract.
 
@@ -79,12 +79,12 @@ Status registration is presentation metadata. Register translated labels at `ini
 
 ## Canonical extension registry
 
-`CB\Core\ExtensionRegistry` is the public v1 boundary for Core Blueprint extension registration and discovery. Registration is controlled by the registry; mutating an arbitrary discovery array is not a supported v1 extension mechanism.
+`CoreBlueprint\Core\ExtensionRegistry` is the public v1 boundary for Core Blueprint extension registration and discovery. Registration is controlled by the registry; mutating an arbitrary discovery array is not a supported v1 extension mechanism.
 
 Attach the registration callback during plugin bootstrap. Base fires the explicit `cb_core_register_extensions` lifecycle on `init` priority `5`:
 
 ```php
-use CB\Core\ExtensionRegistry;
+use CoreBlueprint\Core\ExtensionRegistry;
 
 add_action( 'cb_core_register_extensions', static function (): void {
     ExtensionRegistry::register( [
@@ -135,12 +135,12 @@ The `core-blueprint-*` ID namespace is reserved for first-party plugins. A regis
 
 ## Canonical Settings Hub registry
 
-`CB\Core\Admin\SettingsRegistry` is the public v1 boundary for extension configuration contributed to **Core Blueprint → Settings**. Configuration-only extension pages should use this registry instead of registering one flat extension submenu item below Core Blueprint.
+`CoreBlueprint\Core\Admin\SettingsRegistry` is the public v1 boundary for extension configuration contributed to **Core Blueprint → Settings**. Configuration-only extension pages should use this registry instead of registering one flat extension submenu item below Core Blueprint.
 
 A provider must reference an extension that is already valid through `ExtensionRegistry`. Register during the explicit `cb_core_register_settings` lifecycle:
 
 ```php
-use CB\Core\Admin\SettingsRegistry;
+use CoreBlueprint\Core\Admin\SettingsRegistry;
 
 add_action( 'cb_core_register_settings', static function (): void {
     SettingsRegistry::register(
@@ -191,12 +191,12 @@ HUD section and item IDs use strict lower-case kebab-case and duplicates are rej
 
 ## Core Admin page registration
 
-`CB\Core\Admin\Page` plus `CB\Core\Admin\PageRegistry` is the public v1 boundary for genuine pages contributed beneath the Core Blueprint admin menu. Configuration-only extension surfaces should use `SettingsRegistry` so adding extensions does not expand the WordPress submenu indefinitely. `PageBase` is an internal convenience implementation for Base-owned pages and is not a supported inheritance contract.
+`CoreBlueprint\Core\Admin\Page` plus `CoreBlueprint\Core\Admin\PageRegistry` is the public v1 boundary for genuine pages contributed beneath the Core Blueprint admin menu. Configuration-only extension surfaces should use `SettingsRegistry` so adding extensions does not expand the WordPress submenu indefinitely. `PageBase` is an internal convenience implementation for Base-owned pages and is not a supported inheritance contract.
 
 Extensions register genuine Core Admin pages during `cb_core_register_pages`:
 
 ```php
-use CB\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Admin\PageRegistry;
 
 PageRegistry::register(
     new Vendor\Admin\OperationsPage(),
@@ -215,10 +215,10 @@ Additional shared UI is declared through semantic requirement identifiers. `foun
 
 ### Native WordPress admin screen UI requirements
 
-Core API `1.2` extends the public Admin Theme compatibility declaration for WordPress-owned screens such as post/CPT editors. A compatible native screen may request shared Base UI through `CB\Core\UI\AdminTheme::register_screen()`:
+Core API `1.2` extends the public Admin Theme compatibility declaration for WordPress-owned screens such as post/CPT editors. A compatible native screen may request shared Base UI through `CoreBlueprint\Core\UI\AdminTheme::register_screen()`:
 
 ```php
-use CB\Core\UI\AdminTheme;
+use CoreBlueprint\Core\UI\AdminTheme;
 
 AdminTheme::register_screen(
     $hook_suffix,
@@ -242,20 +242,20 @@ Base owns the canonical appearance of every declared Design Foundation primitive
 
 Public enqueue/runtime primitives are frozen in `foundation-v1-contract.md` and the individual Foundation documents. Extensions should enqueue the narrow primitive they need rather than importing Core Admin presentation wholesale.
 
-Interactive Grid Foundation is the domain-neutral tabular interactive-cell presentation boundary for tables where one cell owns a stretched primary action while independent nested controls remain usable. Registered Core Admin consumers declare `interactive-grid` as a Foundation requirement; standalone wp-admin consumers use `CB\\Core\\UI\\Assets::enqueue_interactive_grid()`. Base owns cell dividers, full-cell hover/focus geometry and neutral current/disabled presentation. Consumers own table/domain meaning, URLs, labels, authorization and persistence. See `INTERACTIVE-GRID-FOUNDATION.md`.
+Interactive Grid Foundation is the domain-neutral tabular interactive-cell presentation boundary for tables where one cell owns a stretched primary action while independent nested controls remain usable. Registered Core Admin consumers declare `interactive-grid` as a Foundation requirement; standalone wp-admin consumers use `CoreBlueprint\\Core\\UI\\Assets::enqueue_interactive_grid()`. Base owns cell dividers, full-cell hover/focus geometry and neutral current/disabled presentation. Consumers own table/domain meaning, URLs, labels, authorization and persistence. See `INTERACTIVE-GRID-FOUNDATION.md`.
 
-Reorder Foundation was added in Core API `1.1` and is the domain-neutral ordered-list movement boundary. Registered Core Admin consumers declare `reorder` as a Foundation requirement; standalone wp-admin consumers use `CB\\Core\\UI\\Assets::enqueue_reorder()`. The public browser API is `window.cbCore.reorder` through script module `@cb-core/reorder`. Base owns pointer/keyboard movement, focus, announcements, pending state and rollback presentation. Consumers retain structure meaning, authorization and persistence. See `REORDER-FOUNDATION.md`.
+Reorder Foundation was added in Core API `1.1` and is the domain-neutral ordered-list movement boundary. Registered Core Admin consumers declare `reorder` as a Foundation requirement; standalone wp-admin consumers use `CoreBlueprint\\Core\\UI\\Assets::enqueue_reorder()`. The public browser API is `window.cbCore.reorder` through script module `@cb-core/reorder`. Base owns pointer/keyboard movement, focus, announcements, pending state and rollback presentation. Consumers retain structure meaning, authorization and persistence. See `REORDER-FOUNDATION.md`.
 
-Admin Navigation Foundation is part of Core API `1.2`. Core Blueprint-owned admin workspaces use `CB\\Core\\UI\\PrimaryNav::render()` for Level 1 workspace destinations and `CB\\Core\\UI\\SectionNav::render()` for Level 2 section navigation. Registered Core Admin consumers request the `admin-navigation` component; standalone Core Blueprint admin consumers use `CB\\Core\\UI\\Assets::enqueue_admin_navigation()`. Base owns canonical tab/link markup, active-state accessibility and navigation rhythm. Consumers retain routes, capabilities, labels and business behavior. View or mode choices remain Segmented Control concerns, filters remain filter/toolbar concerns, and workflow operations remain buttons. See `ADMIN-NAVIGATION-FOUNDATION.md`.
+Admin Navigation Foundation is part of Core API `1.2`. Core Blueprint-owned admin workspaces use `CoreBlueprint\\Core\\UI\\PrimaryNav::render()` for Level 1 workspace destinations and `CoreBlueprint\\Core\\UI\\SectionNav::render()` for Level 2 section navigation. Registered Core Admin consumers request the `admin-navigation` component; standalone Core Blueprint admin consumers use `CoreBlueprint\\Core\\UI\\Assets::enqueue_admin_navigation()`. Base owns canonical tab/link markup, active-state accessibility and navigation rhythm. Consumers retain routes, capabilities, labels and business behavior. View or mode choices remain Segmented Control concerns, filters remain filter/toolbar concerns, and workflow operations remain buttons. See `ADMIN-NAVIGATION-FOUNDATION.md`.
 
-Shared Tile presentation is also a Core API `1.2` cross-plugin UI boundary through `CB\\Core\\UI\\Tile::render()` and `CB\\Core\\UI\\Assets::enqueue_tiles()`. The public Tile contract includes the current navigation, status-navigation and metric variants plus the presentation-only compact density modifier. Consumers own the tile's domain meaning, destination, status and data. The existing semantic `metric-tiles` requirement remains limited to generic KPI/value-card presentation and does not implicitly enable navigation or status-navigation tile semantics.
+Shared Tile presentation is also a Core API `1.2` cross-plugin UI boundary through `CoreBlueprint\\Core\\UI\\Tile::render()` and `CoreBlueprint\\Core\\UI\\Assets::enqueue_tiles()`. The public Tile contract includes the current navigation, status-navigation and metric variants plus the presentation-only compact density modifier. Consumers own the tile's domain meaning, destination, status and data. The existing semantic `metric-tiles` requirement remains limited to generic KPI/value-card presentation and does not implicitly enable navigation or status-navigation tile semantics.
 
 ## Governance / Audit
 
 Extensions record governance-relevant events through the single public write facade:
 
 ```php
-use CB\Core\Governance\Audit;
+use CoreBlueprint\Core\Governance\Audit;
 
 Audit::record(
     'vendor.item.updated',
@@ -264,7 +264,7 @@ Audit::record(
 );
 ```
 
-`Audit::record()` is best-effort and non-fatal. It returns `true` when Base accepts the event (including an in-request deduplicated event) and `false` when the public contract rejects the input or storage fails. Queueing, storage, actor/IP resolution, retention, querying and export are Base implementation details; `CB\Core\Log\AuditLog` is not public API.
+`Audit::record()` is best-effort and non-fatal. It returns `true` when Base accepts the event (including an in-request deduplicated event) and `false` when the public contract rejects the input or storage fails. Queueing, storage, actor/IP resolution, retention, querying and export are Base implementation details; `CoreBlueprint\Core\Log\AuditLog` is not public API.
 
 Public event IDs use collision-safe dotted identifiers. The first segment is the namespace/owner, the last segment is the action, and zero or more subject segments may appear between them. Every segment must match `[a-z][a-z0-9]*`; `.` is the only separator. IDs containing `_` or `-`, one-segment IDs, uppercase IDs, Base-reserved namespaces, or IDs whose exact storage identity exceeds 50 characters are rejected at the public write boundary. Base never truncates a public event ID. Examples: `vendor.updated`, `vendor.item.updated`, `vendor.sync.job.completed`.
 
@@ -273,7 +273,7 @@ Supported severities are `info`, `notice`, `warning` and `critical`. Invalid sev
 Human-readable event metadata is registered through the controlled registry on `init` or later:
 
 ```php
-use CB\Core\Governance\EventRegistry;
+use CoreBlueprint\Core\Governance\EventRegistry;
 
 EventRegistry::register( [
     'id'                 => 'vendor.item.updated',
@@ -291,7 +291,7 @@ The historical `cb_core_event_labels` filter is not a v1 public contract. Event 
 AuditLog retention has exactly five canonical categories: `security`, `maintenance`, `logins`, `settings` and `general`. `general` is the catch-all, so every AuditLog event resolves to exactly one category. Extensions may assign a registered event to one of these categories through `EventRegistry::register()`; custom categories are rejected.
 
 ```php
-use CB\Core\Governance\RetentionPolicy;
+use CoreBlueprint\Core\Governance\RetentionPolicy;
 
 $days = RetentionPolicy::days( 'security' );
 $all  = RetentionPolicy::all();
@@ -303,7 +303,7 @@ The persisted option layout, destructive query implementation and cron runner ar
 Dedicated datastores are separate from AuditLog categories. A plugin that owns an operational log table may contribute it through the narrow `RetentionStoreRegistry` boundary:
 
 ```php
-use CB\Core\Governance\RetentionStoreRegistry;
+use CoreBlueprint\Core\Governance\RetentionStoreRegistry;
 
 RetentionStoreRegistry::register( [
     'id'           => 'vendor-request-log',
@@ -318,10 +318,10 @@ Store IDs are unique lower-case kebab-case identifiers. Duplicate/malformed regi
 
 ## Database schema registration
 
-Extensions that own database tables register their schema declaratively through `CB\Core\Database\SchemaRegistry`. Base owns **when** reconciliation happens; the extension installer owns only **how** the declared schema is created or upgraded.
+Extensions that own database tables register their schema declaratively through `CoreBlueprint\Core\Database\SchemaRegistry`. Base owns **when** reconciliation happens; the extension installer owns only **how** the declared schema is created or upgraded.
 
 ```php
-use CB\Core\Database\SchemaRegistry;
+use CoreBlueprint\Core\Database\SchemaRegistry;
 
 SchemaRegistry::register( [
     'id'         => 'vendor-jobs',
@@ -342,14 +342,14 @@ Base serializes reconciliation per schema with an internal owner-token lock. Loc
 
 Table health verification is controlled/throttled. A current marker does **not** cause every registered table to be probed on every normal request. Version mismatches reconcile immediately; periodic health verification detects externally removed tables; registration that occurs after the normal sweep (for example during plugin activation) is reconciled immediately for that newly registered schema.
 
-The following are implementation details and are **not** public API: `CB\Core\DB`, `DB::maybe_upgrade()`, Base query builders, repositories/storage classes, lock options, health-throttle state, and the SQL used to verify tables. Extensions register schemas only through `SchemaRegistry::register()`.
+The following are implementation details and are **not** public API: `CoreBlueprint\Core\DB`, `DB::maybe_upgrade()`, Base query builders, repositories/storage classes, lock options, health-throttle state, and the SQL used to verify tables. Extensions register schemas only through `SchemaRegistry::register()`.
 
 ## Integrity / Core Scanner service
 
-`CB\Core\Integrity\Api\IntegrityApi` is the public v1 PHP boundary for integrations that need to start a Core Scanner run or read its canonical result projection. REST controllers, scanner repositories, resumable-job persistence and storage classes remain internal.
+`CoreBlueprint\Core\Integrity\Api\IntegrityApi` is the public v1 PHP boundary for integrations that need to start a Core Scanner run or read its canonical result projection. REST controllers, scanner repositories, resumable-job persistence and storage classes remain internal.
 
 ```php
-use CB\Core\Integrity\Api\IntegrityApi;
+use CoreBlueprint\Core\Integrity\Api\IntegrityApi;
 
 $scan = IntegrityApi::request_scan( 'vendor-feature' );
 if ( ! is_wp_error( $scan ) ) {
@@ -384,7 +384,7 @@ The following are **not** public v1 API: `Integrity\Rest\ScanController`, `Resul
 - Existing public v1 hooks keep their argument meaning and ordering throughout 1.x.
 - Replacements are introduced before an existing public contract is deprecated.
 - Removal of a public v1 contract is reserved for a future major version, except for an urgent security issue where compatibility would itself be unsafe.
-- Internal `CB\Core\...` implementation details may change between 1.x releases.
+- Internal `CoreBlueprint\Core\...` implementation details may change between 1.x releases.
 
 ## Explicitly not public
 

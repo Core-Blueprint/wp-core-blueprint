@@ -25,12 +25,12 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Notes;
+namespace CoreBlueprint\Core\Notes;
 
-use CB\Core\Log\AuditLog;
-use CB\Core\Notes\Settings\SettingsRepository;
+use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Notes\Settings\SettingsRepository;
 
-use CB\Core\Modules\ModuleStateInterface;
+use CoreBlueprint\Core\Modules\ModuleStateInterface;
 defined( 'ABSPATH' ) || exit;
 
 final class State implements ModuleStateInterface {

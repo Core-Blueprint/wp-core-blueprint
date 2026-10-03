@@ -32,12 +32,12 @@ declare(strict_types=1);
  */
 
 
-namespace CB\Core\Console\Rest;
+namespace CoreBlueprint\Core\Console\Rest;
 
-use CB\Core\Console\CommandInterface;
-use CB\Core\Console\Registry;
-use CB\Core\Console\Result;
-use CB\Core\Log\AuditLog;
+use CoreBlueprint\Core\Console\CommandInterface;
+use CoreBlueprint\Core\Console\Registry;
+use CoreBlueprint\Core\Console\Result;
+use CoreBlueprint\Core\Log\AuditLog;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -487,22 +487,22 @@ final class RunController {
 			);
 		}
 
-		$state = \CB\Core\Integrity\Scanner\TransientProgressReporter::read( $job_id );
+		$state = \CoreBlueprint\Core\Integrity\Scanner\TransientProgressReporter::read( $job_id );
 		if ( is_array( $state ) && in_array( (string) ( $state['status'] ?? '' ), [ 'pending', 'running' ], true ) ) {
-			$job = \CB\Core\Integrity\Scanner\ScanJobRepository::get_by_id( $job_id );
-			if ( ! is_array( $job ) || ! \CB\Core\Integrity\Scanner\ScanJobStatus::is_active_job( $job ) ) {
+			$job = \CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository::get_by_id( $job_id );
+			if ( ! is_array( $job ) || ! \CoreBlueprint\Core\Integrity\Scanner\ScanJobStatus::is_active_job( $job ) ) {
 				$state = null;
-				\CB\Core\Integrity\Scanner\TransientProgressReporter::clear( $job_id );
+				\CoreBlueprint\Core\Integrity\Scanner\TransientProgressReporter::clear( $job_id );
 			}
 		}
 
 		if ( null === $state ) {
-			$job = \CB\Core\Integrity\Scanner\ScanJobRepository::get_by_id( $job_id );
-			if ( is_array( $job ) && \CB\Core\Integrity\Scanner\ScanJobStatus::is_active_job( $job ) ) {
-				$state = \CB\Core\Integrity\Scanner\ScanJobStatus::progress_from_job( $job );
+			$job = \CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository::get_by_id( $job_id );
+			if ( is_array( $job ) && \CoreBlueprint\Core\Integrity\Scanner\ScanJobStatus::is_active_job( $job ) ) {
+				$state = \CoreBlueprint\Core\Integrity\Scanner\ScanJobStatus::progress_from_job( $job );
 			} else {
-				$latest = class_exists( \CB\Core\Integrity\Storage\ResultRepository::class )
-					? ( \CB\Core\Integrity\Storage\ResultRepository::getLatest() ?? [] )
+				$latest = class_exists( \CoreBlueprint\Core\Integrity\Storage\ResultRepository::class )
+					? ( \CoreBlueprint\Core\Integrity\Storage\ResultRepository::getLatest() ?? [] )
 					: [];
 				if ( is_array( $latest ) && $job_id === (string) ( $latest['job_id'] ?? '' ) ) {
 					$state = [
@@ -538,9 +538,9 @@ final class RunController {
 			'final_result' => null,
 		];
 
-		if ( 'done' === $status && class_exists( \CB\Core\Integrity\Storage\ResultRepository::class ) ) {
-			$latest  = \CB\Core\Integrity\Storage\ResultRepository::getLatest() ?? [];
-			$summary = \CB\Core\Integrity\Storage\ResultRepository::getSummary();
+		if ( 'done' === $status && class_exists( \CoreBlueprint\Core\Integrity\Storage\ResultRepository::class ) ) {
+			$latest  = \CoreBlueprint\Core\Integrity\Storage\ResultRepository::getLatest() ?? [];
+			$summary = \CoreBlueprint\Core\Integrity\Storage\ResultRepository::getSummary();
 			$issues  = (int) ( $summary['totals']['issues'] ?? $summary['issues'] ?? 0 );
 
 			$lines   = [];

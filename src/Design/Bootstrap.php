@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace CB\Core\Design;
+namespace CoreBlueprint\Core\Design;
 
-use CB\Core\Design\Profile\Document\Bootstrap as DocumentBootstrap;
+use CoreBlueprint\Core\Design\Profile\Document\Bootstrap as DocumentBootstrap;
 
 defined( 'ABSPATH' ) || exit;
 

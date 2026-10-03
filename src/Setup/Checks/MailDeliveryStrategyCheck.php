@@ -11,13 +11,13 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Setup\Checks;
+namespace CoreBlueprint\Core\Setup\Checks;
 
-use CB\Core\Mail\Admin\Page;
-use CB\Core\Mail\ConflictDetector;
-use CB\Core\Mail\Settings;
-use CB\Core\Setup\CheckInterface;
-use CB\Core\Setup\Evidence;
+use CoreBlueprint\Core\Mail\Admin\Page;
+use CoreBlueprint\Core\Mail\ConflictDetector;
+use CoreBlueprint\Core\Mail\Settings;
+use CoreBlueprint\Core\Setup\CheckInterface;
+use CoreBlueprint\Core\Setup\Evidence;
 
 defined( 'ABSPATH' ) || exit;
 

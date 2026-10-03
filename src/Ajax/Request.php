@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Request - typed input + nonce + capability helpers for AJAX handlers.
  *
- * Every handler in CB\Core\Ajax opens with the same four moves: verify
+ * Every handler in CoreBlueprint\Core\Ajax opens with the same four moves: verify
  * the nonce, check the capability, read + sanitize a $_POST field, and
  * reject the request with a 400 if the input is missing or invalid. Four
  * moves × 24 handlers × ~5 lines each = a lot of repeated boilerplate.
@@ -32,7 +32,7 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Ajax;
+namespace CoreBlueprint\Core\Ajax;
 
 defined( 'ABSPATH' ) || exit;
 

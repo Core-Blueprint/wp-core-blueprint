@@ -10,7 +10,7 @@ accessible labels, domain meaning and behavior.
 ## Public enqueue
 
 ```php
-\CB\Core\UI\Assets::enqueue_icon_controls();
+\CoreBlueprint\Core\UI\Assets::enqueue_icon_controls();
 ```
 
 Auto mode uses Core presentation below the Core Blueprint parent menu and the
@@ -28,7 +28,7 @@ WordPress-native adapter on standalone admin screens.
 </button>
 ```
 
-Lucide output from `CB\Core\UI\Icon::render()` is also supported.
+Lucide output from `CoreBlueprint\Core\UI\Icon::render()` is also supported.
 
 ## Reorder handle
 

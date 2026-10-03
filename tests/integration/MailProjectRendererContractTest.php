@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\Design\Profile\Mail\BindingInterpolator;
-use CB\Core\Mail\ProjectRenderer;
+use CoreBlueprint\Core\Design\Profile\Mail\BindingInterpolator;
+use CoreBlueprint\Core\Mail\ProjectRenderer;
 
 final class CB_Mail_Project_Renderer_Contract_Test extends WP_UnitTestCase {
 

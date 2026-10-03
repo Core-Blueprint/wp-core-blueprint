@@ -6,9 +6,9 @@ declare(strict_types=1);
  * @package Core_Blueprint
  */
 
-namespace CB\Core\ContentModels\Adapters\Bricks;
+namespace CoreBlueprint\Core\ContentModels\Adapters\Bricks;
 
-use CB\Core\ContentModels\FieldTypes;
+use CoreBlueprint\Core\ContentModels\FieldTypes;
 use WP_Post;
 
 defined( 'ABSPATH' ) || exit;

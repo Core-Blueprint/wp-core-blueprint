@@ -11,10 +11,10 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Environment;
+namespace CoreBlueprint\Core\Environment;
 
-use CB\Core\Admin\Admin as CoreAdmin;
-use CB\Core\Settings;
+use CoreBlueprint\Core\Admin\Admin as CoreAdmin;
+use CoreBlueprint\Core\Settings;
 use WP_Admin_Bar;
 
 defined( 'ABSPATH' ) || exit;

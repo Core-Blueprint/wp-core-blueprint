@@ -12,13 +12,13 @@ declare(strict_types=1);
  * @since   1.0.0
  */
 
-namespace CB\Core\Design\Profile\Document\Flow\Api;
+namespace CoreBlueprint\Core\Design\Profile\Document\Flow\Api;
 
-use CB\Core\Design\Profile\Document\Flow\HtmlRenderer;
-use CB\Core\Design\Profile\Document\Flow\PdfRenderer;
-use CB\Core\Design\Profile\Document\Flow\Presentation;
-use CB\Core\Design\Profile\Document\Flow\RenderBlock;
-use CB\Core\PDF\Api\PdfApi;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\PdfRenderer;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\Presentation;
+use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
+use CoreBlueprint\Core\PDF\Api\PdfApi;
 
 defined( 'ABSPATH' ) || exit;
 

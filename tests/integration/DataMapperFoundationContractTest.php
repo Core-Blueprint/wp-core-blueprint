@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use CB\Core\DataExchange\Foundation;
-use CB\Core\DataExchange\Mapper;
-use CB\Core\DataExchange\Mapper\Renderer;
+use CoreBlueprint\Core\DataExchange\Foundation;
+use CoreBlueprint\Core\DataExchange\Mapper;
+use CoreBlueprint\Core\DataExchange\Mapper\Renderer;
 
 final class CB_Base_Data_Mapper_Foundation_Contract_Test extends WP_UnitTestCase {
 
