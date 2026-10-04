@@ -67,10 +67,10 @@ final class CB_Base_Extension_Lifecycle_Contract_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( "'data-cb-core-module-action'  => \$status_id", $dashboard );
 		self::assertStringNotContainsString( 'ActivationRegistry::definition( $status_id )', $dashboard );
 		self::assertStringContainsString( "'data-cb-core-extension-action' => \$extension_id", $dashboard );
-		self::assertStringContainsString( "__( 'Deactivate' )", $dashboard );
-		self::assertStringContainsString( "__( 'Activate' )", $dashboard );
-		self::assertStringContainsString( "__( 'Active' )", $dashboard );
-		self::assertStringContainsString( "__( 'Inactive' )", $dashboard );
+		self::assertStringContainsString( "__( 'Deactivate', 'default' )", $dashboard );
+		self::assertStringContainsString( "__( 'Activate', 'default' )", $dashboard );
+		self::assertStringContainsString( "__( 'Active', 'default' )", $dashboard );
+		self::assertStringContainsString( "__( 'Inactive', 'default' )", $dashboard );
 		self::assertStringContainsString( "'state'   => \$active ? 'active' : 'inactive'", $dashboard );
 		$activation_js = (string) file_get_contents( CB_CORE_DIR . 'assets/js/features/module-activation.js' );
 		self::assertStringContainsString( "if ( nonce ) {", $activation_js );
