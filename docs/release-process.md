@@ -1,8 +1,8 @@
 # Core Blueprint Base release process
 
 Base retains the canonical `core-blueprint/` directory and
-`core-blueprint/core-blueprint.php` basename. The launch version remains
-`1.0.0-rc1` in both the plugin header and `CB_CORE_VERSION`.
+`core-blueprint/core-blueprint.php` basename. The stable launch version is
+`1.0.0` in both the plugin header and `CB_CORE_VERSION`.
 
 ## Canonical build
 
@@ -20,7 +20,7 @@ archive integrity and package verification. It refuses to publish a new release
 ZIP or checksum when any required gate fails. See `tools/README.md` for the exact
 requirements and gate order. No alternate builder or skip-gates path exists.
 
-Output is `dist/core-blueprint-1.0.0-rc1.zip` and its `.sha256` sidecar. A GitHub
+Output is `dist/core-blueprint-1.0.0.zip` and its `.sha256` sidecar. A GitHub
 source ZIP is not an installable customer release archive. The source/runtime
 inputs are read-only during packaging.
 

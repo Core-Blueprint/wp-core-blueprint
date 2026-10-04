@@ -1,8 +1,8 @@
 # Core Blueprint changelog
 
-> This changelog tracks the public `1.0.0-rc1` launch line. Internal pre-v1 development history is retained in `CHANGELOG-HISTORY.md` in the source repository and is not included in production packages.
+> This changelog tracks the public `1.0.0` launch line. Internal pre-v1 development history is retained in `CHANGELOG-HISTORY.md` in the source repository and is not included in production packages.
 
-## 1.0.0-rc1 — 2026-09-09
+## 1.0.0 — 2026-10-04
 
 ### Secret Protection Foundation v1
 

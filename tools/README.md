@@ -2,7 +2,7 @@
 
 `tools/build-release` is the canonical fail-closed Base customer-release entrypoint.
 It packages the existing runtime allowlist beneath `core-blueprint/`. The current
-plugin version remains `1.0.0-rc1`.
+plugin version is `1.0.0`.
 
 ## Required environment
 
@@ -54,8 +54,8 @@ customer-build fallback mode. A missing required tool is a failure.
 
 ## Outputs and failure behavior
 
-- `dist/core-blueprint-1.0.0-rc1.zip`
-- `dist/core-blueprint-1.0.0-rc1.zip.sha256`
+- `dist/core-blueprint-1.0.0.zip`
+- `dist/core-blueprint-1.0.0.zip.sha256`
 
 Paths, timestamps, permissions and compression settings retain the previous
 builder's deterministic format. Only a successfully checked temporary archive is

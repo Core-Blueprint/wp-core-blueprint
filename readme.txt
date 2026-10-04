@@ -4,7 +4,7 @@ Tags: security, audit-log, permissions, user-roles, admin-tools
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.4
-Stable tag: 1.0.0-rc1
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -159,7 +159,7 @@ The public source repository is https://github.com/Core-Blueprint/wp-core-bluepr
 
 == Changelog ==
 
-= 1.0.0-rc1 =
+= 1.0.0 =
 
-* Release-candidate line for the Core Blueprint Base v1 quality and compatibility baseline.
-* WordPress.org submission metadata and automated readiness contracts are maintained before the stable v1 release.
+* Initial stable Core Blueprint Base v1 release.
+* WordPress.org submission metadata and automated readiness contracts are validated for the stable v1 release.
