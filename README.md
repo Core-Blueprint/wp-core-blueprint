@@ -332,7 +332,7 @@ The long-term direction is to make it easier for developers and contributors to:
 - report bugs and security concerns responsibly;
 - contribute improvements without introducing unnecessary lock-in.
 
-The project is still evolving toward its first public release, so APIs and architecture should only be presented as stable once they have passed the relevant release gates.
+The project continues to evolve after its initial stable release, so APIs and architecture should only be presented as stable once they have passed the relevant release gates.
 
 ---
 
@@ -442,7 +442,7 @@ See `CHANGELOG.md` for version history.
 
 ## Project status
 
-Core Blueprint is currently in **pre-v1 development and launch-quality review**.
+Core Blueprint is currently in **stable v1 release and ongoing release-quality review**.
 
 The project is actively being hardened around:
 
@@ -456,7 +456,7 @@ The project is actively being hardened around:
 - runtime validation;
 - extension interoperability.
 
-Until the first stable public release, documentation should distinguish between implemented behavior, release candidates, and future direction.
+Documentation should distinguish between implemented behavior, stable public contracts, release candidates, and future direction.
 
 ---
 
@@ -496,7 +496,7 @@ In particular, contributions should aim to preserve:
 
 Builder integrations are welcome when they are implemented as optional adapters rather than dependencies.
 
-More detailed contribution and development guidelines will be published as the project approaches its first public release.
+More detailed contribution and development guidelines will continue to evolve alongside the project.
 
 ---
 
