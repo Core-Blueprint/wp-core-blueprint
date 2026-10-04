@@ -51,4 +51,4 @@ run_stage reenable
 run_stage verify-restored-screen
 run_stage verify-restored-admin-post
 
-echo "[B3] full 12-module request-boundary conformance matrix PASS"
+echo "[B3] full 11-module request-boundary conformance matrix PASS"
