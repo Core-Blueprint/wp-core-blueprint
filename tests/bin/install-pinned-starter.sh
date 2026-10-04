@@ -3,7 +3,7 @@ set -euo pipefail
 
 : "${WP_CORE_DIR:?WP_CORE_DIR is required}"
 
-STARTER_SHA="7f23ad4a90b54d92e828ae53620b604ca33420c2"
+STARTER_SHA="14fc248b4a5cfd0a94851162335db004b9feac6b"
 STARTER_DIR="$WP_CORE_DIR/wp-content/plugins/core-blueprint-starter-plugin"
 STARTER_FILE="$STARTER_DIR/core-blueprint-starter.php"
 
