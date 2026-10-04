@@ -169,12 +169,15 @@ wp_cli "$UPDATE_SITE" plugin install "$PREVIOUS_ZIP" --activate
 assert_active_version "$UPDATE_SITE" "$PREVIOUS_VERSION"
 assert_clean_debug_log "$UPDATE_SITE"
 
-REPORT_SENTINEL_ID="$(wp_cli "$UPDATE_SITE" eval 'echo (int) CoreBlueprint\Core\Reports\Storage::save([
+# Seed the preservation sentinel through the API exposed by the pinned historical
+# RC package. The candidate intentionally has no backwards-compatibility alias for
+# the pre-v1 CB\\Core namespace; after update we verify through the stable v1 API.
+REPORT_SENTINEL_ID="$(wp_cli "$UPDATE_SITE" eval 'echo (int) CB\Core\Reports\Storage::save([
     "period_start" => "2026-09-01",
     "period_end" => "2026-09-30",
     "generated_by" => 0,
     "report_data" => [
-        "snapshot_version" => CoreBlueprint\Core\Reports\MaintenanceAggregator::SNAPSHOT_VERSION,
+        "snapshot_version" => CB\Core\Reports\MaintenanceAggregator::SNAPSHOT_VERSION,
         "sentinel" => "release-update-preserve-me",
     ],
     "status" => "generated",
