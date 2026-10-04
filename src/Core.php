@@ -308,6 +308,17 @@ final class Core {
 	// ─── Activation / Deactivation ────────────────────────────────────────────
 
 	public static function activate( bool $network_wide = false ): void {
+		// Base v1 has no defined Multisite trust, user-meta, lifecycle or uninstall
+		// model. Fail closed before any site state is read or written so neither
+		// per-site nor network activation can create a partially governed install.
+		if ( is_multisite() ) {
+			wp_die(
+				esc_html__( 'Core Blueprint 1.0 does not support WordPress Multisite. Use Core Blueprint only on a standard single-site WordPress installation.', 'core-blueprint' ),
+				esc_html__( 'Core Blueprint activation blocked', 'core-blueprint' ),
+				[ 'back_link' => true ]
+			);
+		}
+
 		// Capture first-install state before writing the marker. Only a genuine
 		// first activation may bootstrap the activating user as trust root; a
 		// later deactivate/reactivate cycle must never mint a new CB Operator.
