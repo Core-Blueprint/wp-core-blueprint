@@ -66,6 +66,25 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 		);
 	}
 
+
+	public function test_dashboard_extension_status_actions_use_plugin_text_domain(): void {
+		$dashboard = file_get_contents( CB_CORE_DIR . 'src/Admin/Pages/Dashboard.php' );
+		self::assertIsString( $dashboard );
+
+		foreach ( [ 'Activate', 'Deactivate', 'Active', 'Inactive' ] as $label ) {
+			self::assertStringContainsString(
+				"__( '" . $label . "', 'core-blueprint' )",
+				$dashboard,
+				'Dashboard extension status/action labels must use the plugin text domain.'
+			);
+			self::assertStringNotContainsString(
+				"__( '" . $label . "', 'default' )",
+				$dashboard,
+				'Dashboard extension status/action labels must not use the WordPress default text domain.'
+			);
+		}
+	}
+
 	public function test_plugin_directory_description_stays_concise(): void {
 		$plugin = file_get_contents( CB_CORE_FILE );
 		self::assertIsString( $plugin );

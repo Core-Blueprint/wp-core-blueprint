@@ -575,7 +575,7 @@ final class Dashboard extends PageBase {
 		if ( null !== $capability && current_user_can( $capability ) ) {
 			$actions[] = [
 				'type'    => 'button',
-				'label'   => $active ? __( 'Deactivate', 'default' ) : __( 'Activate', 'default' ),
+				'label'   => $active ? __( 'Deactivate', 'core-blueprint' ) : __( 'Activate', 'core-blueprint' ),
 				'variant' => $active ? 'danger' : 'default',
 				'attrs'   => [
 					'data-cb-core-extension-action' => $extension_id,
@@ -605,7 +605,7 @@ final class Dashboard extends PageBase {
 		return StatusMenu::render( [
 			'id'      => 'cb-dashboard-status-' . sanitize_html_class( (string) ( $extension['id'] ?? 'extension' ) ),
 			'state'   => $active ? 'active' : 'inactive',
-			'label'   => $active ? __( 'Active', 'default' ) : __( 'Inactive', 'default' ),
+			'label'   => $active ? __( 'Active', 'core-blueprint' ) : __( 'Inactive', 'core-blueprint' ),
 			'detail'  => self::extension_status_line( $extension ),
 			'actions' => $actions,
 		] );
