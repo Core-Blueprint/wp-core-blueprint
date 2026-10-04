@@ -1,5 +1,6 @@
 === Core Blueprint ===
 Contributors: coreblueprint
+Donate link: https://coreblueprint.io/support-open-source
 Tags: security, audit-log, permissions, user-roles, admin-tools
 Requires at least: 7.0
 Tested up to: 7.1
