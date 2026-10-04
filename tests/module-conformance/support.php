@@ -56,8 +56,8 @@ function cb_b3_drop_isolated_tables(): void {
 /** @return array<string,array{state:class-string<\CoreBlueprint\Core\Modules\ModuleStateInterface>,capability:string}> */
 function cb_b3_modules(): array {
     $modules = \CoreBlueprint\Core\Modules\ActivationRegistry::definitions();
-    $expected = ['login-shield','core-shield','core-scanner','content-models','notes','reports','mail','media-replace','media-formats','package-downloads','user-roles','snippets'];
-    cb_b3_expect($expected === array_keys($modules), 'ActivationRegistry no longer exposes the exact canonical 12-module order.');
+    $expected = ['login-shield','core-shield','core-scanner','content-models','notes','reports','mail','media-replace','media-formats','package-downloads','user-roles'];
+    cb_b3_expect($expected === array_keys($modules), 'ActivationRegistry no longer exposes the exact canonical 11-module order.');
     return $modules;
 }
 
@@ -72,8 +72,8 @@ function cb_b3_set_module(string $id, bool $enabled): void {
 
 function cb_b3_set_all_modules(bool $enabled): void {
     $order = $enabled
-        ? ['core-shield','login-shield','core-scanner','content-models','notes','reports','mail','media-replace','media-formats','package-downloads','user-roles','snippets']
-        : ['login-shield','core-shield','core-scanner','content-models','notes','reports','mail','media-replace','media-formats','package-downloads','user-roles','snippets'];
+        ? ['core-shield','login-shield','core-scanner','content-models','notes','reports','mail','media-replace','media-formats','package-downloads','user-roles']
+        : ['login-shield','core-shield','core-scanner','content-models','notes','reports','mail','media-replace','media-formats','package-downloads','user-roles'];
     foreach ($order as $id) {
         cb_b3_set_module($id, $enabled);
     }
@@ -104,7 +104,6 @@ function cb_b3_assert_screen_contract(bool $enabled): void {
         'media-formats' => \CoreBlueprint\Core\MediaFormats\Admin\Page::SLUG,
         'package-downloads' => \CoreBlueprint\Core\PackageDownload\Admin\Page::SLUG,
         'user-roles' => \CoreBlueprint\Core\Permissions\Admin\RolesPage::SLUG,
-        'snippets' => \CoreBlueprint\Core\Snippets\Admin\Page::SLUG,
     ];
     foreach ($module_pages as $id => $slug) {
         $present = in_array($slug, $pages, true);
@@ -132,11 +131,6 @@ function cb_b3_assert_screen_contract(bool $enabled): void {
     cb_b3_expect($package_hook === $enabled, 'Package Downloads admin-screen hook mismatch.');
     $roles_hook = false !== has_action('rest_api_init', [\CoreBlueprint\Core\Permissions\Rest\RolesController::class, 'register']);
     cb_b3_expect($roles_hook === $enabled, 'User Roles REST registration mismatch.');
-    $expected = get_option('cb_b3_expected', []);
-    $snippet_id = is_array($expected) ? (string) ($expected['snippet_id'] ?? '') : '';
-    cb_b3_expect('' !== $snippet_id, 'B3 Snippets sentinel is missing.');
-    $manifest = \CoreBlueprint\Core\Snippets\IndexBuilder::load_runtime_manifest();
-    cb_b3_expect(isset($manifest[$snippet_id]) === $enabled, 'Snippets runtime manifest mismatch.');
 }
 
 function cb_b3_assert_admin_post_contract(bool $enabled): void {
@@ -152,8 +146,6 @@ function cb_b3_assert_admin_post_contract(bool $enabled): void {
         'Mail save' => ['admin_post_cb_core_mail_save', [\CoreBlueprint\Core\Mail\Admin\Actions::class, 'save']],
         'Mail clear log' => ['admin_post_cb_core_mail_clear_log', [\CoreBlueprint\Core\Mail\Admin\Actions::class, 'clear_log']],
         'Media Formats save' => ['admin_post_cb_core_media_formats_save', [\CoreBlueprint\Core\MediaFormats\Admin\Actions::class, 'save']],
-        'Snippets save' => ['admin_post_cb_core_snippets_save', [\CoreBlueprint\Core\Snippets\Admin\Actions::class, 'save']],
-        'Snippets export' => ['admin_post_cb_core_snippets_export', [\CoreBlueprint\Core\Snippets\Admin\Actions::class, 'export']],
         'Content Models save' => ['admin_post_cb_core_content_models_save_post_type', [\CoreBlueprint\Core\ContentModels\Admin\Actions::class, 'save_post_type']],
     ];
     foreach ($always_registered as $label => [$hook, $callback]) {
@@ -169,7 +161,7 @@ function cb_b3_without_enabled(array $value): array {
 
 function cb_b3_assert_preserved_data(): void {
     $expected = get_option('cb_b3_expected', []);
-    cb_b3_expect(is_array($expected) && 12 === (int) ($expected['module_count'] ?? 0), 'B3 expected-state document is missing or invalid.');
+    cb_b3_expect(is_array($expected) && 11 === (int) ($expected['module_count'] ?? 0), 'B3 expected-state document is missing or invalid.');
     cb_b3_expect(cb_b3_without_enabled(\CoreBlueprint\Core\Security\LoginShield::config()) === (array) ($expected['login_config'] ?? []), 'Login Shield configuration changed across state transitions.');
     $settings = \CoreBlueprint\Core\Settings::get();
     $fingerprint_features = (array) ($settings['modules']['fingerprint']['features'] ?? []);
@@ -193,11 +185,6 @@ function cb_b3_assert_preserved_data(): void {
     $role = get_role('cb_b3_role');
     cb_b3_expect($role instanceof WP_Role, 'User Roles sentinel role disappeared.');
     cb_b3_expect(!empty($role->capabilities['read']) && !empty($role->capabilities['edit_posts']), 'User Roles sentinel capabilities changed.');
-    $snippet_id = (string) ($expected['snippet_id'] ?? '');
-    $snippet = \CoreBlueprint\Core\Snippets\Repository::get($snippet_id);
-    cb_b3_expect(is_array($snippet), 'Snippets metadata disappeared.');
-    cb_b3_expect((string) ($snippet['code_hash'] ?? '') === (string) ($expected['snippet_code_hash'] ?? ''), 'Snippets code hash changed across state transitions.');
-    cb_b3_expect(\CoreBlueprint\Core\Snippets\Repository::code($snippet_id) === 'body { --cb-b3-preserved: 1; }', 'Snippets code file changed across state transitions.');
 }
 
 function cb_b3_assert_disabled_mutation_contracts(): void {
