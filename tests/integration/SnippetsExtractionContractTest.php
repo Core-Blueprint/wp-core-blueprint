@@ -38,6 +38,19 @@ final class CB_Base_Snippets_Extraction_Contract_Test extends WP_UnitTestCase {
 		self::assertArrayNotHasKey( 'snippets', $checks );
 	}
 
+
+	public function test_public_documentation_does_not_claim_snippets_as_base_runtime(): void {
+		$readme    = (string) file_get_contents( CB_CORE_DIR . 'readme.txt' );
+		$readme_md = (string) file_get_contents( CB_CORE_DIR . 'README.md' );
+		$dashboard = (string) file_get_contents( CB_CORE_DIR . 'docs/DASHBOARD-CARD-API.md' );
+
+		self::assertStringNotContainsString( '= Managed Snippets =', $readme );
+		self::assertStringNotContainsString( 'managed snippets', strtolower( $readme ) );
+		self::assertStringNotContainsString( 'Managed Snippets source files', $readme );
+		self::assertStringNotContainsString( 'Managed Snippets source files', $readme_md );
+		self::assertStringNotContainsString( "- `snippets`", $dashboard );
+	}
+
 	public function test_base_retains_only_cross_extension_governance_compatibility(): void {
 		$events        = (string) file_get_contents( CB_CORE_DIR . 'src/Governance/EventRegistry.php' );
 		$roles         = (string) file_get_contents( CB_CORE_DIR . 'src/Permissions/Roles.php' );
