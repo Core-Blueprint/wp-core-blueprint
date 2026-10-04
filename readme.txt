@@ -111,7 +111,13 @@ These requests occur as part of an administrator-initiated or configured Core Sc
 
 Core Blueprint requires WordPress 7.0 or later and PHP 8.4 or later.
 
+WordPress Multisite is not supported in Core Blueprint 1.0. Activation is blocked on Multisite installations, including both per-site and network activation. Use Core Blueprint on a standard single-site WordPress installation.
+
 == Frequently Asked Questions ==
+
+= Does Core Blueprint support WordPress Multisite? =
+
+No. Core Blueprint 1.0 does not define a Multisite trust, lifecycle, user-metadata, or uninstall model. Activation is therefore blocked on Multisite installations rather than creating partially governed state.
 
 = Does Core Blueprint require other Core Blueprint plugins? =
 
