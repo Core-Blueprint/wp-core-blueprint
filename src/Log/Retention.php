@@ -13,6 +13,7 @@ namespace CoreBlueprint\Core\Log;
 
 use CoreBlueprint\Core\Governance\RetentionPolicy;
 use CoreBlueprint\Core\Governance\RetentionStoreRegistry;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -80,7 +81,7 @@ final class Retention {
 				AuditLog::log( 'audit.prune_failed', 'warning', [
 					'category' => $category,
 					'days'     => $days,
-					'message'  => $e->getMessage(),
+					...ThrowableBoundary::context( $e, 'audit_prune_failed' ),
 				] );
 				continue;
 			}
@@ -106,7 +107,7 @@ final class Retention {
 				AuditLog::log( 'audit.prune_failed', 'warning', [
 					'store'   => $id,
 					'days'    => $days,
-					'message' => $e->getMessage(),
+					...ThrowableBoundary::context( $e, 'retention_store_prune_failed' ),
 				] );
 				continue;
 			}

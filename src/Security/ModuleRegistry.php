@@ -24,6 +24,7 @@ namespace CoreBlueprint\Core\Security;
 use CoreBlueprint\Core\Log\AuditLog;
 use CoreBlueprint\Core\Detector;
 use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -83,7 +84,7 @@ final class ModuleRegistry {
 				if ( class_exists( AuditLog::class ) ) {
 					AuditLog::log( 'module.boot_failed', 'critical', [
 						'module'  => $module->slug(),
-						'message' => $e->getMessage(),
+						...ThrowableBoundary::context( $e, 'module_boot_failed' ),
 					] );
 				}
 			}

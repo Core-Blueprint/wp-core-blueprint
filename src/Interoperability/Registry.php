@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Interoperability;
 
 use CoreBlueprint\Core\ExtensionRegistry;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use Throwable;
 use WP_Error;
 
@@ -243,7 +244,7 @@ final class Registry {
 		try {
 			$instance = ( self::$factories[ $key ] )();
 		} catch ( Throwable $throwable ) {
-			self::diagnostic( sprintf( 'Interoperability factory failed for %s: %s', $key, $throwable->getMessage() ) );
+			self::diagnostic( sprintf( 'Interoperability factory failed for %s (%s).', $key, ThrowableBoundary::diagnostic( $throwable ) ) );
 			return new WP_Error( 'cb_core_interop_resolution_failed', 'Interoperability implementation could not be resolved.' );
 		}
 

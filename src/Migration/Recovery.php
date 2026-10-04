@@ -15,6 +15,7 @@ namespace CoreBlueprint\Core\Migration;
 
 use CoreBlueprint\Core\Log\AuditLog;
 use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
 use CoreBlueprint\Core\Permissions\PrivilegedAccessPolicy;
 use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
@@ -332,11 +333,11 @@ final class Recovery {
 			}
 		} catch ( \Throwable $e ) {
 			$state['status'] = 'failed';
-			$state['error'] = sanitize_text_field( $e->getMessage() );
+			$state['error']  = 'reconcile_failed';
 			update_option( self::OPTION, $state, false );
 			AuditLog::log( 'migration.recovery.reconcile_failed', 'critical', [
 				'recovery_id' => (string) ( $state['recovery_id'] ?? '' ),
-				'error'       => $e->getMessage(),
+				...ThrowableBoundary::context( $e, 'migration_recovery_reconcile_failed' ),
 			] );
 		}
 	}

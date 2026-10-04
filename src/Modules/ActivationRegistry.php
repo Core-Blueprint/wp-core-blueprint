@@ -25,6 +25,7 @@ use CoreBlueprint\Core\Permissions\UserRolesState;
 use CoreBlueprint\Core\Reports\State as ReportsState;
 use CoreBlueprint\Core\Security\CoreShieldState;
 use CoreBlueprint\Core\Security\LoginShieldState;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -148,7 +149,7 @@ final class ActivationRegistry {
 		try {
 			return (bool) $state::is_enabled();
 		} catch ( \Throwable $e ) {
-			error_log( sprintf( 'CB Modules\\ActivationRegistry [%s]: %s', $id, $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- last-resort state-provider diagnostic; activation fail-closed path must stay independent of AuditLog.
+			error_log( sprintf( 'CB Modules\\ActivationRegistry [%s]: provider failed (%s)', $id, ThrowableBoundary::diagnostic( $e ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- last-resort state-provider diagnostic; activation fail-closed path must stay independent of AuditLog.
 			return false;
 		}
 	}

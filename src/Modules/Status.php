@@ -17,6 +17,7 @@ use CoreBlueprint\Core\Log\Status as LogStatus;
 use CoreBlueprint\Core\Notes\Status as NotesStatus;
 use CoreBlueprint\Core\Reports\Status as ReportsStatus;
 use CoreBlueprint\Core\Safeguards\Contributors as SafeguardContributors;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -142,7 +143,7 @@ final class Status {
 		try {
 			$raw = call_user_func( $definition['provider'] );
 		} catch ( \Throwable $e ) {
-			error_log( sprintf( 'CB Modules\\Status [%s]: %s', $id, $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- last-resort provider failure diagnostic; status fallback must not depend on AuditLog.
+			error_log( sprintf( 'CB Modules\\Status [%s]: provider failed (%s)', $id, ThrowableBoundary::diagnostic( $e ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- last-resort provider failure diagnostic; status fallback must not depend on AuditLog.
 			return self::fallback( 'warn', self::unavailable_label(), $id, $definition );
 		}
 

@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core;
 
 use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -99,7 +100,7 @@ final class SettingsMigrator {
 				if ( class_exists( AuditLog::class ) ) {
 					AuditLog::log( 'settings.migration_failed', 'critical', [
 						'target'  => $version,
-						'message' => $e->getMessage(),
+						...ThrowableBoundary::context( $e, 'settings_migration_failed' ),
 					] );
 				}
 				return;
