@@ -39,10 +39,11 @@ final class CB_Base_Snippets_Extraction_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_base_retains_only_cross_extension_governance_compatibility(): void {
-		$events     = (string) file_get_contents( CB_CORE_DIR . 'src/Governance/EventRegistry.php' );
-		$roles      = (string) file_get_contents( CB_CORE_DIR . 'src/Permissions/Roles.php' );
-		$privileged = (string) file_get_contents( CB_CORE_DIR . 'src/Permissions/PrivilegedAccessPolicy.php' );
-		$uninstall  = (string) file_get_contents( CB_CORE_DIR . 'uninstall.php' );
+		$events        = (string) file_get_contents( CB_CORE_DIR . 'src/Governance/EventRegistry.php' );
+		$roles         = (string) file_get_contents( CB_CORE_DIR . 'src/Permissions/Roles.php' );
+		$privileged    = (string) file_get_contents( CB_CORE_DIR . 'src/Permissions/PrivilegedAccessPolicy.php' );
+		$option_policy = (string) file_get_contents( CB_CORE_DIR . 'src/OptionPolicy.php' );
+		$uninstall     = (string) file_get_contents( CB_CORE_DIR . 'uninstall.php' );
 
 		// Historical event identities stay readable in Base audit history.
 		self::assertStringContainsString( "'snippet.created'", $events );
@@ -51,6 +52,10 @@ final class CB_Base_Snippets_Extraction_Contract_Test extends WP_UnitTestCase {
 		// The executable-code capability stays inside Base's signed trust model.
 		self::assertStringContainsString( "'cb_manage_snippets'", $roles );
 		self::assertStringContainsString( "'cb_manage_snippets'", $privileged );
+
+		// Snippets owns its own settings option after extraction. Base must not
+		// prime, mutate or otherwise retain runtime ownership of that option.
+		self::assertStringNotContainsString( "'cb_core_snippets_settings'", $option_policy );
 
 		// Base may remove its own role capability on uninstall, but no longer owns
 		// Snippets settings, transient UI state or generated runtime files.

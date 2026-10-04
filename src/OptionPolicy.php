@@ -32,7 +32,6 @@ final class OptionPolicy {
 		'cb_core_media_formats',
 		'cb_core_package_download_enabled',
 		'cb_core_content_models_enabled',
-		'cb_core_snippets_settings',
 		'cb_core_hud_disabled',
 		'cb_core_trust_schema_version',
 		'cb_core_role_policy_schema_version',
