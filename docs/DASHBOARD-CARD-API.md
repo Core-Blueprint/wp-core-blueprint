@@ -16,7 +16,6 @@ Dashboard markup or popover implementation.
 Base module cards use their `ActivationRegistry` slug:
 
 - `content-models`
-- `snippets`
 - `user-roles`
 - `media-replace`
 - `mail`
