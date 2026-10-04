@@ -69,7 +69,6 @@ final class PageRegistry {
 
 	/** Public semantic Core Admin component requirements. */
 	private const COMPONENT_REQUIREMENTS = [
-		'actions',
 		'badges',
 		'buttons',
 		'cards',
@@ -86,12 +85,22 @@ final class PageRegistry {
 		'nav-tabs',
 		'admin-navigation',
 		'notices',
-		'overview',
 		'panels',
-		'policy-table',
 		'radio-cards',
 		'state-badges',
 		'status',
+	];
+
+	/**
+	 * Base-only composition requirements.
+	 *
+	 * These IDs support Base-owned page composition but are not public
+	 * extension semantics and must never be accepted by SettingsRegistry or
+	 * native-screen declarations.
+	 */
+	private const BASE_COMPONENT_REQUIREMENTS = [
+		'actions',
+		'overview',
 	];
 
 	/** @var array<string, Page> slug -> page instance */
@@ -211,7 +220,7 @@ final class PageRegistry {
 	 * @return array{foundations:string[],components:string[]}|null
 	 */
 	public static function normalize_semantic_requirements( array $requirements, string $consumer ): ?array {
-		return self::normalize_requirements( $requirements, $consumer );
+		return self::normalize_requirements( $requirements, $consumer, false );
 	}
 
 	/**
@@ -293,7 +302,7 @@ final class PageRegistry {
 			return false;
 		}
 
-		$normalized = self::normalize_requirements( $requirements, $slug );
+		$normalized = self::normalize_requirements( $requirements, $slug, $base_owned );
 		if ( null === $normalized ) {
 			return false;
 		}
@@ -304,7 +313,7 @@ final class PageRegistry {
 	}
 
 	/** @return array{foundations:string[],components:string[]}|null */
-	private static function normalize_requirements( array $requirements, string $consumer ): ?array {
+	private static function normalize_requirements( array $requirements, string $consumer, bool $allow_base_internal ): ?array {
 		$unknown_keys = array_diff( array_keys( $requirements ), [ 'foundations', 'components' ] );
 		if ( [] !== $unknown_keys ) {
 			self::diagnostic( "Core Admin consumer '{$consumer}' contains unknown requirement groups." );
@@ -318,7 +327,12 @@ final class PageRegistry {
 				self::diagnostic( "Core Admin consumer '{$consumer}' requirement group '{$group}' must be an array." );
 				return null;
 			}
-			$allowed = 'foundations' === $group ? self::FOUNDATION_REQUIREMENTS : self::COMPONENT_REQUIREMENTS;
+			$allowed = 'foundations' === $group
+				? self::FOUNDATION_REQUIREMENTS
+				: ( $allow_base_internal
+					? array_merge( self::COMPONENT_REQUIREMENTS, self::BASE_COMPONENT_REQUIREMENTS )
+					: self::COMPONENT_REQUIREMENTS
+				);
 			foreach ( $items as $item ) {
 				if ( ! is_string( $item ) || ! in_array( $item, $allowed, true ) ) {
 					self::diagnostic( "Core Admin consumer '{$consumer}' requested an unknown {$group} identifier." );
