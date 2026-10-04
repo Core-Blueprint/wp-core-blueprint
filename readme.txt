@@ -26,7 +26,7 @@ Audit logging, operational logs, reports, integrity checks, and review state hel
 
 = Administration =
 
-Optional CMS and administration tools cover areas such as content models, media handling, mail, managed snippets, admin navigation, columns, notices, and package downloads.
+Optional CMS and administration tools cover areas such as content models, media handling, mail, admin navigation, columns, notices, and package downloads.
 
 Core Blueprint is designed around WordPress-native concepts and APIs. WordPress remains the canonical data and authorization layer. Builder integrations are optional, and Base can be used without a specific page builder.
 
@@ -37,12 +37,6 @@ Core functionality does not require a Core Blueprint account or an external Core
 Base includes optional modules that can be enabled or disabled independently. This allows site owners to avoid overlapping responsibility when another plugin already manages the same area.
 
 Examples include Media Formats, Content Models, Mail Delivery, and related administration tooling.
-
-= Managed Snippets =
-
-Managed Snippets is an optional module and is disabled by default. It allows authorized Core Blueprint operators to manage PHP, JavaScript, CSS, and HTML snippets when that workflow is appropriate for the site.
-
-Executable-code changes require explicit privileged authority and remain subject to WordPress file-modification policy. Imported snippets are disabled by default, PHP is validated before storage, managed code is integrity-checked before runtime, and runtime failures can automatically disable the affected snippet. Core Blueprint also provides a server-side emergency stop for the Snippets runtime.
 
 = Mail Delivery =
 
@@ -149,7 +143,7 @@ No. Base is builder-agnostic. Builder-specific integrations are optional adapter
 
 = What happens when Core Blueprint is deleted? =
 
-Base removes the configuration, scheduled events, roles and capabilities, user metadata, and database tables that it owns. User-authored site content written through Content Models is preserved. Managed Snippets source files are also preserved while generated Snippets runtime state is neutralized. Quarantine evidence is retained for recovery and investigation rather than silently destroyed.
+Base removes the configuration, scheduled events, roles and capabilities, user metadata, and database tables that it owns. User-authored site content written through Content Models is preserved. Quarantine evidence is retained for recovery and investigation rather than silently destroyed.
 
 = Where is the source code? =
 
