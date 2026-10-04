@@ -136,12 +136,6 @@ final class Core {
 			\CoreBlueprint\Core\AdminColumns\Bootstrap::boot();
 		}
 
-		// Theme-attribute pre-paint injection belongs to normal admin HTML only.
-		if ( RequestContext::is_admin_screen() ) {
-			add_action( 'admin_head',       [ Themes::class, 'emit_prepaint_hooks' ], 1 );
-			add_filter( 'admin_body_class', [ Themes::class, 'filter_admin_body_class' ] );
-		}
-
 		// Reports subsystem - registers the cb_maintenance_reports schema
 		// with the central DB registry on plugins_loaded priority 4 so the
 		// migration sweep at priority 5 picks it up alongside every other

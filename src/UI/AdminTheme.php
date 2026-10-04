@@ -42,11 +42,6 @@ final class AdminTheme {
 
 		self::$initialized = true;
 
-		// Core historically attached CB-screen-only DOM hooks directly from
-		// Core::init_hooks(). Take ownership after plugin bootstrap so one global
-		// presentation path remains authoritative without changing request boot.
-		add_action( 'admin_init', [ self::class, 'take_theme_hook_ownership' ], 0 );
-
 		add_action( 'admin_head', [ self::class, 'emit_prepaint_hooks' ], 0 );
 		add_filter( 'admin_body_class', [ self::class, 'filter_admin_body_class' ], 5 );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_assets' ], 0 );
@@ -137,15 +132,6 @@ final class AdminTheme {
 	/** Server-resolved active mode: dark, light, or custom. */
 	public static function mode(): string {
 		return Themes::current_mode();
-	}
-
-	/**
-	 * Remove the previous Core-admin-only DOM hooks. AdminTheme owns the same
-	 * concerns globally now; keeping both paths would duplicate pre-paint output.
-	 */
-	public static function take_theme_hook_ownership(): void {
-		remove_action( 'admin_head', [ Themes::class, 'emit_prepaint_hooks' ], 1 );
-		remove_filter( 'admin_body_class', [ Themes::class, 'filter_admin_body_class' ], 10 );
 	}
 
 	/** Enqueue semantic tokens, WordPress adapter CSS and the browser API. */
