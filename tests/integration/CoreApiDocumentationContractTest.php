@@ -39,4 +39,47 @@ final class CB_Base_Core_Api_Documentation_Contract_Test extends WP_UnitTestCase
 		self::assertStringContainsString( 'are not the current Base contract', $history );
 		self::assertStringContainsString( "defined( 'CB_CORE_API_VERSION' )", $extensions );
 	}
+
+	public function test_public_admin_ui_requirement_vocabulary_matches_documented_boundary(): void {
+		$public_api = (string) file_get_contents( CB_CORE_DIR . 'docs/PUBLIC-API.md' );
+		$registry   = new ReflectionClass( \CoreBlueprint\Core\Admin\PageRegistry::class );
+
+		$foundations = $registry->getConstant( 'FOUNDATION_REQUIREMENTS' );
+		$components  = $registry->getConstant( 'COMPONENT_REQUIREMENTS' );
+		$base_only   = $registry->getConstant( 'BASE_COMPONENT_REQUIREMENTS' );
+
+		self::assertIsArray( $foundations );
+		self::assertIsArray( $components );
+		self::assertIsArray( $base_only );
+
+		foreach ( [ 'icon-control', 'reorder', 'segmented-control' ] as $foundation ) {
+			self::assertContains( $foundation, $foundations );
+			self::assertStringContainsString( "`{$foundation}`", $public_api );
+		}
+
+		foreach ( [ 'actions', 'overview', 'policy-table' ] as $private_component ) {
+			self::assertNotContains( $private_component, $components );
+		}
+
+		self::assertSame( [ 'actions', 'overview' ], $base_only );
+		self::assertStringContainsString(
+			'Base-only composition identifiers such as `actions` and `overview`',
+			$public_api
+		);
+		self::assertStringContainsString(
+			'private page-specific styles such as `policy-table`',
+			$public_api
+		);
+
+		$source = (string) file_get_contents( CB_CORE_DIR . 'src/Admin/PageRegistry.php' );
+		self::assertStringContainsString(
+			'return self::normalize_requirements( $requirements, $consumer, false );',
+			$source
+		);
+		self::assertStringContainsString(
+			'self::normalize_requirements( $requirements, $slug, $base_owned );',
+			$source
+		);
+	}
+
 }
