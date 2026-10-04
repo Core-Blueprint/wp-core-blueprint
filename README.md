@@ -411,7 +411,7 @@ Deleting Core Blueprint through WordPress runs the Base uninstall process.
 
 Base removes the configuration, scheduled events, capabilities, roles, user metadata, and database structures that it owns where removal is safe and intended.
 
-User-authored content values written through Content Models are preserved for portability. Managed Snippets source files are also preserved while generated runtime state is neutralized. Quarantine evidence remains available for recovery and investigation instead of being silently destroyed.
+User-authored content values written through Content Models are preserved for portability. Quarantine evidence remains available for recovery and investigation instead of being silently destroyed.
 
 Data owned by separate extensions remains the responsibility of those extensions.
 
