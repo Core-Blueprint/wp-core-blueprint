@@ -135,7 +135,7 @@ try {
     cb_b3_expect(is_plugin_active($plugin_basename), 'Base must be active after B3 activation.');
     wp_set_current_user((int) $admin->ID);
     cb_b3_expect([] !== \CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry::valid_approval_record($admin), 'B3 operator approval is no longer valid.');
-    cb_b3_expect(12 === count(cb_b3_modules()), 'B3 canonical module registry count mismatch.');
+    cb_b3_expect(11 === count(cb_b3_modules()), 'B3 canonical module registry count mismatch.');
 
     if ('seed-enable' === $stage) {
         $login = \CoreBlueprint\Core\Security\LoginShield::save([
@@ -232,28 +232,13 @@ try {
         $role = add_role('cb_b3_role', 'B3 Preserved Role', ['read' => true, 'edit_posts' => true]);
         cb_b3_expect($role instanceof WP_Role, 'Could not seed B3 WordPress role.');
 
-        cb_b3_set_module('snippets', false);
-        $snippet = \CoreBlueprint\Core\Snippets\Repository::save([
-            'title' => 'B3 preserved CSS',
-            'description' => 'B3 conformance sentinel',
-            'type' => 'css',
-            'location' => 'frontend',
-            'priority' => 10,
-            'enabled' => true,
-            'tags' => ['b3'],
-            'conditions' => ['relation' => 'and', 'rules' => []],
-        ], 'body { --cb-b3-preserved: 1; }');
-        cb_b3_expect(is_array($snippet), 'Could not seed B3 Snippets sentinel.');
-        $snippet_id = (string) ($snippet['id'] ?? '');
-        cb_b3_expect('' !== $snippet_id, 'B3 Snippets sentinel ID missing.');
-
         cb_b3_set_all_modules(true);
         \CoreBlueprint\Core\Integrity\Scheduler\Cron::sync_schedule();
         cb_b3_assert_all_states(true);
 
         $settings = \CoreBlueprint\Core\Settings::get();
         $expected = [
-            'module_count' => 12,
+            'module_count' => 11,
             'login_config' => cb_b3_without_enabled(\CoreBlueprint\Core\Security\LoginShield::config()),
             'fingerprint_features' => (array) ($settings['modules']['fingerprint']['features'] ?? []),
             'scanner_settings' => cb_b3_without_enabled(\CoreBlueprint\Core\Integrity\Storage\ResultRepository::settings()),
@@ -264,8 +249,6 @@ try {
             'reports_settings' => cb_b3_without_enabled((array) ($settings['reports'] ?? [])),
             'mail_settings' => cb_b3_without_enabled(\CoreBlueprint\Core\Mail\Settings::all()),
             'media_formats_settings' => cb_b3_without_enabled(\CoreBlueprint\Core\MediaFormats\Settings::all()),
-            'snippet_id' => $snippet_id,
-            'snippet_code_hash' => (string) ($snippet['code_hash'] ?? ''),
         ];
         update_option('cb_b3_expected', $expected, false);
         cb_b3_assert_preserved_data();
@@ -359,10 +342,6 @@ try {
     }
 
     if ('cleanup' === $stage) {
-        $expected = get_option('cb_b3_expected', []);
-        if (is_array($expected) && '' !== (string) ($expected['snippet_id'] ?? '')) {
-            \CoreBlueprint\Core\Snippets\Repository::delete((string) $expected['snippet_id']);
-        }
         remove_role('cb_b3_role');
         cb_b3_drop_isolated_tables();
         @unlink($mail_guard);
