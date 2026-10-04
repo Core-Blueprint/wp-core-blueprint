@@ -114,7 +114,7 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 		self::assertIsString( $readme );
 		self::assertStringContainsString( '= What happens when Core Blueprint is deleted? =', $readme );
 		self::assertStringContainsString( 'User-authored site content written through Content Models is preserved.', $readme );
-		self::assertStringContainsString( 'Managed Snippets source files are also preserved', $readme );
+		self::assertStringNotContainsString( 'Managed Snippets source files are also preserved', $readme );
 		self::assertStringContainsString( 'Quarantine evidence is retained', $readme );
 	}
 
