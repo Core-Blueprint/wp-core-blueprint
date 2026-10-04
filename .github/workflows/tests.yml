@@ -148,7 +148,7 @@ jobs:
       - name: Run pinned Starter consumer scenario
         run: bash tests/bin/run-consumer-scenario.sh
 
-      - name: Run full 12-module request-boundary conformance matrix
+      - name: Run full 11-module request-boundary conformance matrix
         run: bash tests/bin/run-module-conformance-scenario.sh
 
       - name: Install pinned WP-CLI 2.12.0
