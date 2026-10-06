@@ -27,7 +27,7 @@ body.wp-admin dialog.cb-core-modal--wp-native {
 	width: min(90vw, 560px);
 	max-height: min(85vh, 720px);
 	padding: 0;
-	overflow: auto;
+	overflow: hidden;
 	border: 1px solid var(--cb-modal-native-border);
 	border-radius: 4px;
 	background: var(--cb-modal-native-surface);
@@ -44,8 +44,13 @@ body.wp-admin dialog.cb-core-modal--wp-native::backdrop {
 }
 
 body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__form {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	max-height: min(85vh, 720px);
 	margin: 0;
 	padding: 20px;
+	overflow: hidden;
 }
 
 body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__title {
@@ -62,7 +67,11 @@ body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--danger .cb-core-mod
 }
 
 body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__body {
+	flex: 1 1 auto;
+	min-height: 0;
 	margin: 0 0 16px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
 	line-height: 1.5;
 	color: var(--cb-modal-native-text);
 }
@@ -131,10 +140,12 @@ body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__confirm-check-labe
 
 body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__actions {
 	display: flex;
+	flex: 0 0 auto;
 	justify-content: flex-end;
 	gap: 8px;
 	margin: 20px 0 0;
-	padding: 0;
+	padding: 12px 0 0;
+	border-top: 1px solid var(--cb-modal-native-border);
 	list-style: none;
 }
 
