@@ -13,7 +13,7 @@ dialog.cb-core-modal--core {
 	max-width: 520px;
 	max-height: min(85vh, 720px);
 	width: 90%;
-	overflow: auto;
+	overflow: hidden;
 	background: var(--cb-surface-1);
 	color: var(--cb-text);
 	box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
@@ -28,8 +28,13 @@ dialog.cb-core-modal--core::backdrop {
 }
 
 dialog.cb-core-modal--core .cb-core-modal__form {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	max-height: min(85vh, 720px);
 	padding: var(--cb-space-5) var(--cb-space-5) var(--cb-space-4);
 	margin: 0;
+	overflow: hidden;
 }
 
 dialog.cb-core-modal--core .cb-core-modal__title {
@@ -44,7 +49,11 @@ dialog.cb-core-modal--core.cb-core-modal--danger .cb-core-modal__title {
 }
 
 dialog.cb-core-modal--core .cb-core-modal__body {
+	flex: 1 1 auto;
+	min-height: 0;
 	margin: 0 0 var(--cb-space-3);
+	overflow-y: auto;
+	overscroll-behavior: contain;
 	line-height: 1.5;
 	color: var(--cb-text);
 }
@@ -114,10 +123,12 @@ dialog.cb-core-modal--core .cb-core-modal__confirm-check-label {
 
 dialog.cb-core-modal--core .cb-core-modal__actions {
 	display: flex;
+	flex: 0 0 auto;
 	justify-content: flex-end;
 	gap: var(--cb-space-2);
 	margin: var(--cb-space-4) 0 0;
-	padding: 0;
+	padding: var(--cb-space-3) 0 0;
+	border-top: 1px solid var(--cb-surface-3);
 	list-style: none;
 }
 
