@@ -144,6 +144,23 @@ Resolves to the entered string when confirmed and `null` when dismissed.
 `danger` remains destructive intent. It must not be used merely because a modal
 contains an error message.
 
+## Scroll and action visibility
+
+The modal shell owns vertical overflow. Consumers provide content; they must not
+move the action row into their own scroll container.
+
+For both Core Admin and WordPress-native presentations:
+
+- the dialog clips outer overflow;
+- the form is constrained to the modal maximum height;
+- the title, mode controls and action row remain visible;
+- only `.cb-core-modal__body` scrolls when rich content exceeds the available
+  height.
+
+Extensions should not override `.cb-core-modal__body` or
+`.cb-core-modal__actions` geometry. Use the public modal API and keep
+consumer-specific layout inside the supplied `body` element.
+
 ## Presentation boundary
 
 ```text
