@@ -31,10 +31,6 @@ class Sanitizer
      */
     protected $allowedAttrs;
 
-    /**
-     * @var
-     */
-    protected $xmlLoaderValue;
 
     /**
      * @var bool
@@ -236,7 +232,8 @@ class Sanitizer
         $this->resetInternal();
         $this->setUpBefore();
 
-        $loaded = $this->xmlDocument->loadXML($dirty, $this->getAllowHugeFiles() ? LIBXML_PARSEHUGE : 0);
+        $xmlOptions = LIBXML_NONET | ($this->getAllowHugeFiles() ? LIBXML_PARSEHUGE : 0);
+        $loaded = $this->xmlDocument->loadXML($dirty, $xmlOptions);
 
         // If we couldn't parse the XML then we go no further. Reset and return false
         if (!$loaded) {
@@ -344,13 +341,7 @@ class Sanitizer
      */
     protected function setUpBefore()
     {
-        // This function has been deprecated in PHP 8.0 because in libxml 2.9.0, external entity loading is
-        // disabled by default, so this function is no longer needed to protect against XXE attacks.
-        if (\LIBXML_VERSION < 20900 && \function_exists('libxml_disable_entity_loader')) {
-            // Turn off the entity loader
-            $this->xmlLoaderValue = libxml_disable_entity_loader(true);
-        }
-
+        // Keep libxml errors request-local. Network access is disabled per parse via LIBXML_NONET.
         // Suppress the errors because we don't really have to worry about formation before cleansing.
         // See reset in resetAfter().
         $this->xmlErrorHandlerPreviousValue = libxml_use_internal_errors(true);
@@ -364,13 +355,6 @@ class Sanitizer
      */
     protected function resetAfter()
     {
-        // This function has been deprecated in PHP 8.0 because in libxml 2.9.0, external entity loading is
-        // disabled by default, so this function is no longer needed to protect against XXE attacks.
-        if (\LIBXML_VERSION < 20900 && \function_exists('libxml_disable_entity_loader')) {
-            // Reset the entity loader
-            libxml_disable_entity_loader($this->xmlLoaderValue);
-        }
-
         libxml_clear_errors();
         libxml_use_internal_errors($this->xmlErrorHandlerPreviousValue);
     }
