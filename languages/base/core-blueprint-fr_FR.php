@@ -2253,6 +2253,7 @@ Nous avons reçu une demande de réinitialisation du mot de passe de votre compt
     'Resolved anomalies' => 'Résolu anomalies',
     'Resource-embedding isolation' => 'Ressource - embedding isolation',
     'Restore' => 'Va',
+    'Restore size' => 'Restaurer la taille',
     'Restore failed' => 'Va échec',
     'Restore needs attention' => 'Va nécessite attention',
     'Restore quarantined item' => 'Va quarantaine élément',
