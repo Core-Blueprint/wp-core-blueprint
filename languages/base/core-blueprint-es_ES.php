@@ -2253,6 +2253,7 @@ Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Si ha
     'Resolved anomalies' => 'Resuelta anomalies',
     'Resource-embedding isolation' => 'Recurso - embedding isolation',
     'Restore' => 'Recargará',
+    'Restore size' => 'Restaurar tamaño',
     'Restore failed' => 'Recargará fallido',
     'Restore needs attention' => 'Recargará necesita atención',
     'Restore quarantined item' => 'Recargará cuarentena elemento',
