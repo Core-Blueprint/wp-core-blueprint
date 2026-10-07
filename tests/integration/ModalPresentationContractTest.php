@@ -47,4 +47,29 @@ final class CB_Base_Modal_Presentation_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "actions.className = 'cb-core-modal__actions';", $source );
 		self::assertStringContainsString( "body.className = 'cb-core-modal__body cb-scrollbar';", $source );
 	}
+
+	public function test_workspace_modal_is_bounded_expandable_and_opt_in(): void {
+		$source = file_get_contents( CB_CORE_DIR . 'assets/js/core/modal.js' );
+		$assets = file_get_contents( CB_CORE_DIR . 'src/UI/Assets.php' );
+		$core_css = $this->css( 'modals.css' );
+		$native_css = $this->css( 'modals-native.css' );
+
+		self::assertIsString( $source );
+		self::assertIsString( $assets );
+		self::assertStringContainsString( "[ 'wide', 'workspace' ]", $source );
+		self::assertStringContainsString( "opts.expandable === true && size === 'workspace'", $source );
+		self::assertStringContainsString( "expandToggle.setAttribute( 'aria-pressed'", $source );
+		self::assertStringContainsString( "'workspace-expand'", $source );
+		self::assertStringContainsString( "'workspace-restore'", $source );
+		self::assertStringContainsString( "'expand'           => __( 'Expand', 'core-blueprint' )", $assets );
+		self::assertStringContainsString( "'restoreSize'      => __( 'Restore size', 'core-blueprint' )", $assets );
+
+		foreach ( [ $core_css, $native_css ] as $css ) {
+			self::assertStringContainsString( '.cb-core-modal--workspace', $css );
+			self::assertStringContainsString( 'width: min(1360px, calc(100vw - 64px));', $css );
+			self::assertStringContainsString( '.cb-core-modal--workspace.is-expanded', $css );
+			self::assertStringContainsString( 'width: calc(100vw - 32px);', $css );
+			self::assertStringContainsString( '.cb-core-modal__expand-toggle', $css );
+		}
+	}
 }
