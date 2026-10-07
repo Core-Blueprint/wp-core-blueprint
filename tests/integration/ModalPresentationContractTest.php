@@ -66,11 +66,18 @@ final class CB_Base_Modal_Presentation_Contract_Test extends WP_UnitTestCase {
 
 		foreach ( [ $core_css, $native_css ] as $css ) {
 			self::assertStringContainsString( '.cb-core-modal--workspace', $css );
-			self::assertStringContainsString( 'width: min(1480px, calc(100vw - 32px));', $css );
 			self::assertStringContainsString( '.cb-core-modal--workspace.is-expanded', $css );
-			self::assertStringContainsString( 'width: calc(100vw - 16px);', $css );
+			self::assertStringContainsString( 'box-sizing: border-box;', $css );
 			self::assertStringContainsString( '.cb-core-modal__expand-toggle', $css );
 		}
+
+		self::assertStringContainsString( 'width: min(1480px, calc(100vw - var(--cb-space-4) - var(--cb-space-4)));', $core_css );
+		self::assertStringContainsString( 'width: calc(100vw - var(--cb-space-4) - var(--cb-space-4));', $core_css );
+		self::assertStringContainsString( 'height: calc(100vh - var(--cb-space-4) - var(--cb-space-4));', $core_css );
+		self::assertStringContainsString( 'inset-block-start: var(--cb-space-4);', $core_css );
+		self::assertStringContainsString( 'inset-inline-end: var(--cb-space-4);', $core_css );
+
+		self::assertStringContainsString( 'var(--cb-space-4, 16px)', $native_css );
 	}
 	public function test_modal_assets_are_content_versioned_within_a_stable_plugin_release(): void {
 		$assets = file_get_contents( CB_CORE_DIR . 'src/UI/Assets.php' );
