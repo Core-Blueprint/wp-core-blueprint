@@ -41,6 +41,9 @@ final class Assets {
 	/** Prevent duplicate module-data filter registration on unusual requests. */
 	private static bool $module_data_filters_registered = false;
 
+	/** Prevent duplicate dynamic palette CSS on unusual double-enqueue requests. */
+	private static bool $palette_css_added = false;
+
 	/**
 	 * Admin-context enqueue. Runs for every admin screen the current
 	 * user can see HUD on; the rendering gate ({@see Access::can_render})
@@ -120,9 +123,11 @@ final class Assets {
 			CB_CORE_VERSION
 		);
 
-		$palette_css = self::brand_palette_css();
-		if ( '' !== $palette_css ) {
-			wp_add_inline_style( self::STYLE_HANDLE, $palette_css );
+		if ( ! self::$palette_css_added ) {
+			$palette_css = self::brand_palette_css();
+			if ( '' !== $palette_css && wp_add_inline_style( self::STYLE_HANDLE, $palette_css ) ) {
+				self::$palette_css_added = true;
+			}
 		}
 
 		// Shared Foundation behaviour. mode-switcher.js imports dom.js and
