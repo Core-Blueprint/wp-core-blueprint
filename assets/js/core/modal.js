@@ -18,7 +18,8 @@
  *     confirmVariant:'primary',             // primary|secondary|remediation|danger
  *     confirmIcon:  'quarantine',            // optional semantic/canonical icon name
  *     dismissOnly:  false,                  // informational modal: one Close action
- *     size:         'wide',                 // optional presentation: default|wide
+ *     size:         'workspace',            // optional presentation: default|wide|workspace
+ *     expandable:   true,                   // optional workspace expand/restore control
  *     initialFocus: 'input[name=title]',    // optional selector or HTMLElement
  *     onConfirm:    async ({ dialog, form, body, confirmButton, value }) => true,
  *                                              // return false to keep modal open
@@ -104,6 +105,11 @@ function resolveMode( opts ) {
 	return 'confirm';
 }
 
+function resolveSize( opts ) {
+	const requested = String( opts.size || '' );
+	return [ 'wide', 'workspace' ].includes( requested ) ? requested : '';
+}
+
 /**
  * Normalize the optional acknowledgement gate. Presence means required;
  * callers cannot request a pre-checked or optional confirmation checkbox.
@@ -140,11 +146,13 @@ function buildDialog( opts ) {
 	const mode = resolveMode( opts );
 	const confirmVariant = resolveConfirmVariant( opts );
 	const confirmCheck = resolveConfirmCheck( opts );
+	const size = resolveSize( opts );
+	const expandable = opts.expandable === true && size === 'workspace';
 
 	const dialog = document.createElement( 'dialog' );
 	const modalId = ++modalSequence;
-	const sizeClass = opts.size === 'wide' ? ' cb-core-modal--wide' : '';
-	dialog.className = `cb-core-modal cb-core-modal--${ presentation } cb-scrollbar` + ( presentation === 'core' ? ' cb-core-form-scope' : '' ) + ( confirmVariant === 'danger' ? ' cb-core-modal--danger' : '' ) + sizeClass;
+	const sizeClass = size ? ` cb-core-modal--${ size }` : '';
+	dialog.className = `cb-core-modal cb-core-modal--${ presentation } cb-scrollbar` + ( presentation === 'core' ? ' cb-core-form-scope' : '' ) + ( confirmVariant === 'danger' ? ' cb-core-modal--danger' : '' ) + sizeClass + ( expandable ? ' cb-core-modal--expandable' : '' );
 	dialog.dataset.confirmVariant = confirmVariant;
 	dialog.setAttribute( 'aria-modal', 'true' );
 
@@ -160,6 +168,32 @@ function buildDialog( opts ) {
 		title.textContent = opts.title;
 		form.appendChild( title );
 		dialog.setAttribute( 'aria-labelledby', title.id );
+	}
+
+	// ─── Optional workspace expand / restore control ─────────────────────
+	if ( expandable ) {
+		const expandToggle = document.createElement( 'button' );
+		expandToggle.type = 'button';
+		expandToggle.className = 'cb-core-modal__expand-toggle';
+
+		const syncExpandToggle = ( expanded ) => {
+			dialog.classList.toggle( 'is-expanded', expanded );
+			expandToggle.setAttribute( 'aria-pressed', expanded ? 'true' : 'false' );
+			const label = expanded
+				? String( opts.restoreLabel || i18n.restoreSize || 'Restore size' )
+				: String( opts.expandLabel || i18n.expand || 'Expand' );
+			expandToggle.setAttribute( 'aria-label', label );
+			expandToggle.title = label;
+			expandToggle.replaceChildren();
+			const icon = createIcon( expanded ? 'workspace-restore' : 'workspace-expand', { size: 'default' } );
+			if ( icon ) expandToggle.appendChild( icon );
+		};
+
+		expandToggle.addEventListener( 'click', () => {
+			syncExpandToggle( ! dialog.classList.contains( 'is-expanded' ) );
+		} );
+		syncExpandToggle( false );
+		form.appendChild( expandToggle );
 	}
 
 	// ─── Body ───────────────────────────────────────────────────────────
