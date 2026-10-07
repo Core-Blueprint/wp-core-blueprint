@@ -2253,6 +2253,7 @@ We hebben een verzoek ontvangen om het wachtwoord van je account opnieuw in te s
     'Resolved anomalies' => 'Opgeloste afwijkingen',
     'Resource-embedding isolation' => 'Resource-embedding isolatie',
     'Restore' => 'Herstellen',
+    'Restore size' => 'Grootte herstellen',
     'Restore failed' => 'Herstel mislukt',
     'Restore needs attention' => 'Herstel vereist aandacht',
     'Restore quarantined item' => 'Quarantaine-item herstellen',
