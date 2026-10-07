@@ -23,7 +23,7 @@ final class CB_Base_WordPress_Org_Review_Hardening_Test extends WP_UnitTestCase 
 	public function test_reviewed_request_consumers_use_the_central_sanitized_boundary(): void {
 		$request_context = file_get_contents( CB_CORE_DIR . 'src/RequestContext.php' );
 		self::assertIsString( $request_context );
-		self::assertStringContainsString( 'sanitize_url( $uri )', $request_context );
+		self::assertStringContainsString( 'sanitize_url( wp_unslash(', $request_context );
 
 		foreach ( [
 			'src/Routing/Runtime.php',
