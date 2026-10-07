@@ -18,13 +18,10 @@ $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
         'Collapse' => 'Replier',
-
         'Expand' => 'Déplier',
-
         'Exit fullscreen' => 'Quitter le mode plein écran',
         'Fullscreen mode' => 'Mode plein écran',
         'Layers' => 'Calques',
-
         'Tablet' => 'Tablette',
         '%1$d checks · %2$d configured · %3$d need review · %4$d attention · %5$d later · %6$d not applicable' => '%1$d vérifications · %2$d configurées · %3$d à vérifier · %4$d nécessitent une attention · %5$d plus tard · %6$d non applicables',
         '%1$s (%2$d)' => '%1$s (%2$d)',
