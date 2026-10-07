@@ -2253,6 +2253,7 @@ wir haben eine Anfrage zum Zurücksetzen des Passworts für Ihr Konto erhalten. 
     'Resolved anomalies' => 'Aufgelösten anomalies',
     'Resource-embedding isolation' => 'Objekt - embedding isolation',
     'Restore' => 'Den',
+    'Restore size' => 'Größe wiederherstellen',
     'Restore failed' => 'Den fehlgeschlagen',
     'Restore needs attention' => 'Den benötigt aufmerksamkeit',
     'Restore quarantined item' => 'Den quarantäne inhalt',
