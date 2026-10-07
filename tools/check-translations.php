@@ -173,6 +173,20 @@ foreach ( $files as $file ) {
         }
 
         $call_domain = literal_translation_value( $args[ $spec['domain'] ] );
+        $third_party_source = str_contains( $file, '/src/PDF/lib/' )
+            || str_contains( $file, '/src/MediaFormats/lib/svg-sanitizer/' );
+        if ( null !== $call_domain && $domain !== $call_domain && ! $third_party_source ) {
+            $relative_file = ltrim( str_replace( $root, '', $file ), DIRECTORY_SEPARATOR );
+            fail_translation_check(
+                sprintf(
+                    'Unexpected first-party text domain "%s" in %s:%d; expected "%s".',
+                    $call_domain,
+                    $relative_file,
+                    (int) $token[2],
+                    $domain
+                )
+            );
+        }
         if ( $domain !== $call_domain ) {
             continue;
         }
