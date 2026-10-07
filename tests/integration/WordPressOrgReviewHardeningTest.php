@@ -66,7 +66,7 @@ final class CB_Base_WordPress_Org_Review_Hardening_Test extends WP_UnitTestCase 
 			CB_CORE_DIR . 'src',
 			CB_CORE_DIR . 'templates',
 		];
-		$pattern = '/\\b(?:__|_e|_x|_n|_nx|esc_html__|esc_html_e|esc_attr__|esc_attr_e)\\s*\\((?:(?!;).){0,800}?[\'"]default[\'"]/s';
+		$pattern = '/\\b(?:__|_e|_x|_n|_nx|esc_html__|esc_html_e|esc_attr__|esc_attr_e)\\s*\\((?:(?!;).){0,800},\\s*[\'"]default[\'"]\\s*\\)/s';
 
 		foreach ( $roots as $root ) {
 			$files = [];
