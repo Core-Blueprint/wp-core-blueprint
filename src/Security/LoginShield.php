@@ -44,6 +44,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Security;
 
 use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\RequestContext;
 use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
@@ -629,10 +630,10 @@ final class LoginShield {
 	// ─── Request helpers ──────────────────────────────────────────────────
 
 	private static function request_path(): string {
-		if ( empty( $_SERVER['REQUEST_URI'] ) ) {
+		$uri = RequestContext::request_uri();
+		if ( '' === $uri ) {
 			return '';
 		}
-		$uri  = (string) wp_unslash( $_SERVER['REQUEST_URI'] );
 		$path = wp_parse_url( $uri, PHP_URL_PATH );
 		return is_string( $path ) ? $path : '';
 	}
