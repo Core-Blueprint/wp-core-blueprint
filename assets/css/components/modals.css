@@ -24,14 +24,15 @@ dialog.cb-core-modal--core.cb-core-modal--wide {
 }
 
 dialog.cb-core-modal--core.cb-core-modal--workspace {
-	width: min(1480px, calc(100vw - 32px));
+	box-sizing: border-box;
+	width: min(1480px, calc(100vw - var(--cb-space-4) - var(--cb-space-4)));
 	max-width: none;
 	max-height: min(88vh, 900px);
 }
 
 dialog.cb-core-modal--core.cb-core-modal--workspace.is-expanded {
-	width: calc(100vw - 16px);
-	height: calc(100vh - 16px);
+	width: calc(100vw - var(--cb-space-4) - var(--cb-space-4));
+	height: calc(100vh - var(--cb-space-4) - var(--cb-space-4));
 	max-height: none;
 }
 
@@ -65,8 +66,8 @@ dialog.cb-core-modal--core.cb-core-modal--expandable .cb-core-modal__title {
 
 dialog.cb-core-modal--core .cb-core-modal__expand-toggle {
 	position: absolute;
-	inset-block-start: var(--cb-space-5);
-	inset-inline-end: var(--cb-space-5);
+	inset-block-start: var(--cb-space-4);
+	inset-inline-end: var(--cb-space-4);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
