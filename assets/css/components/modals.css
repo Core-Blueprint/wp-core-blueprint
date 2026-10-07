@@ -23,11 +23,24 @@ dialog.cb-core-modal--core.cb-core-modal--wide {
 	max-width: 760px;
 }
 
+dialog.cb-core-modal--core.cb-core-modal--workspace {
+	width: min(1360px, calc(100vw - 64px));
+	max-width: none;
+	max-height: min(88vh, 900px);
+}
+
+dialog.cb-core-modal--core.cb-core-modal--workspace.is-expanded {
+	width: calc(100vw - 32px);
+	height: calc(100vh - 32px);
+	max-height: none;
+}
+
 dialog.cb-core-modal--core::backdrop {
 	background: rgb(0 0 0 / 0.45);
 }
 
 dialog.cb-core-modal--core .cb-core-modal__form {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	box-sizing: border-box;
@@ -35,6 +48,50 @@ dialog.cb-core-modal--core .cb-core-modal__form {
 	padding: var(--cb-space-5) var(--cb-space-5) var(--cb-space-4);
 	margin: 0;
 	overflow: hidden;
+}
+
+dialog.cb-core-modal--core.cb-core-modal--workspace .cb-core-modal__form {
+	max-height: min(88vh, 900px);
+}
+
+dialog.cb-core-modal--core.cb-core-modal--workspace.is-expanded .cb-core-modal__form {
+	height: 100%;
+	max-height: none;
+}
+
+dialog.cb-core-modal--core.cb-core-modal--expandable .cb-core-modal__title {
+	padding-inline-end: 44px;
+}
+
+dialog.cb-core-modal--core .cb-core-modal__expand-toggle {
+	position: absolute;
+	inset-block-start: var(--cb-space-5);
+	inset-inline-end: var(--cb-space-5);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: var(--cb-radius-sm);
+	background: transparent;
+	color: var(--cb-text-muted);
+	cursor: pointer;
+}
+
+dialog.cb-core-modal--core .cb-core-modal__expand-toggle:hover {
+	background: var(--cb-interactive-hover);
+	color: var(--cb-text-strong);
+}
+
+dialog.cb-core-modal--core .cb-core-modal__expand-toggle:focus-visible {
+	outline: 2px solid var(--cb-interactive-focus);
+	outline-offset: 2px;
+}
+
+dialog.cb-core-modal--core .cb-core-modal__expand-toggle .cb-core-icon {
+	pointer-events: none;
 }
 
 dialog.cb-core-modal--core .cb-core-modal__title {
