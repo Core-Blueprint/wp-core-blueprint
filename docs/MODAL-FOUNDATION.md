@@ -136,6 +136,9 @@ Resolves to the entered string when confirmed and `null` when dismissed.
 - `confirmVariant` — `primary`, `secondary`, `remediation`, or `danger`.
 - `confirmIcon` — semantic/canonical shared Lucide icon name.
 - `dismissOnly` — informational/reference modal with one Close action.
+- `size` — `default`, `wide`, or `workspace`. `workspace` is for dense multi-column admin workspaces.
+- `expandable` — when `true` with `size: 'workspace'`, renders an accessible Expand / Restore size control.
+- `expandLabel` / `restoreLabel` — optional consumer copy overrides for the workspace size control.
 - `typedConfirm` — exact phrase gate.
 - `typedConfirmHint` / `typedConfirmMismatch` — optional copy overrides.
 - `input` — `{ type, label, placeholder, maxLength, required }`.
@@ -160,6 +163,27 @@ For both Core Admin and WordPress-native presentations:
 Extensions should not override `.cb-core-modal__body` or
 `.cb-core-modal__actions` geometry. Use the public modal API and keep
 consumer-specific layout inside the supplied `body` element.
+
+### Workspace dialogs
+
+Dense operational views may request the bounded workspace presentation:
+
+```js
+await window.cbCore.modal.show( {
+    title: 'Wednesday, 7 October 2026',
+    body: workspaceElement,
+    dismissOnly: true,
+    confirmLabel: 'Close',
+    size: 'workspace',
+    expandable: true,
+} );
+```
+
+The normal workspace view is intentionally large without becoming full screen.
+The optional size control expands the dialog close to the viewport while
+preserving a visible modal boundary and the Base-owned title, body scroll and
+action row. Consumers should keep horizontal overflow inside their own workspace
+content rather than overriding the modal shell.
 
 ## Presentation boundary
 
