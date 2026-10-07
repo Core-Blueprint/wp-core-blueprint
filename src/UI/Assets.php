@@ -226,6 +226,8 @@ final class Assets {
 							'confirm'          => __( 'Confirm', 'core-blueprint' ),
 							'cancel'           => __( 'Cancel', 'core-blueprint' ),
 							'close'            => __( 'Close', 'core-blueprint' ),
+							'expand'           => __( 'Expand', 'core-blueprint' ),
+							'restoreSize'      => __( 'Restore size', 'core-blueprint' ),
 							'typeToConfirm'    => __( 'Type to confirm:', 'core-blueprint' ),
 							'textDoesNotMatch' => __( 'Text does not match.', 'core-blueprint' ),
 							'input'            => __( 'Input', 'core-blueprint' ),
