@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Security\Modules;
 
+use CoreBlueprint\Core\RequestContext;
 use CoreBlueprint\Core\Settings;
 use CoreBlueprint\Core\Security\AbstractModule;
 
@@ -292,7 +293,7 @@ final class Fingerprint extends AbstractModule {
 			return;
 		}
 
-		$uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+		$uri = RequestContext::request_uri();
 		if ( '' === $uri ) {
 			return;
 		}
