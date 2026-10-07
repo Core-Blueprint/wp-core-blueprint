@@ -41,6 +41,18 @@ final class RequestContext {
 		return defined( 'WP_CLI' ) && WP_CLI;
 	}
 
+	/**
+	 * Return the current request URI after WordPress URL sanitization.
+	 *
+	 * REQUEST_URI is client-controlled input. Keep raw superglobal access at
+	 * this single boundary so consumers never parse or redirect from unsanitized
+	 * request data directly.
+	 */
+	public static function request_uri(): string {
+		$uri = wp_unslash( (string) ( $_SERVER['REQUEST_URI'] ?? '' ) );
+		return '' === $uri ? '' : sanitize_url( $uri );
+	}
+
 	private static function is_script( string $basename ): bool {
 		foreach ( [ 'SCRIPT_NAME', 'PHP_SELF', 'SCRIPT_FILENAME' ] as $key ) {
 			$value = sanitize_text_field( wp_unslash( (string) ( $_SERVER[ $key ] ?? '' ) ) );
