@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Routing;
 
+use CoreBlueprint\Core\RequestContext;
 use WP_Term;
 
 defined( 'ABSPATH' ) || exit;
@@ -536,9 +537,7 @@ final class Runtime {
 	}
 
 	private static function current_request_url(): string {
-		$request_uri = isset( $_SERVER['REQUEST_URI'] )
-			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
-			: '';
+		$request_uri = RequestContext::request_uri();
 		if ( '' === $request_uri ) {
 			return home_url( '/' );
 		}
@@ -557,9 +556,7 @@ final class Runtime {
 	}
 
 	private static function current_request_path(): string {
-		$request_uri = isset( $_SERVER['REQUEST_URI'] )
-			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
-			: '';
+		$request_uri = RequestContext::request_uri();
 
 		return self::relative_path_from_url( $request_uri );
 	}
@@ -581,9 +578,7 @@ final class Runtime {
 	}
 
 	private static function redirect_if_needed( string $target ): void {
-		$request_uri  = isset( $_SERVER['REQUEST_URI'] )
-			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
-			: '';
+		$request_uri  = RequestContext::request_uri();
 		$request_path = rawurldecode( (string) wp_parse_url( $request_uri, PHP_URL_PATH ) );
 		$target_path  = rawurldecode( (string) wp_parse_url( $target, PHP_URL_PATH ) );
 
@@ -593,9 +588,7 @@ final class Runtime {
 	}
 
 	private static function redirect( string $target ): never {
-		$request_uri = isset( $_SERVER['REQUEST_URI'] )
-			? (string) wp_unslash( $_SERVER['REQUEST_URI'] )
-			: '';
+		$request_uri = RequestContext::request_uri();
 		$query = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
 
 		if ( '' !== $query ) {
