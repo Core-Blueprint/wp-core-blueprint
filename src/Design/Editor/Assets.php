@@ -183,11 +183,10 @@ final class Assets {
 				'label'         => __( 'Design with Core Blueprint', 'core-blueprint' ),
 				'ariaLabel'     => __( 'Open Designer Mode', 'core-blueprint' ),
 				'iconUrl'       => CoreBlueprintMark::data_uri(),
-				// WordPress editor vocabulary intentionally uses the default text domain.
-				'closeLabel'    => __( 'Close', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
+				'closeLabel'    => __( 'Close', 'core-blueprint' ),
 				'panelLabels'   => [
-					'collapse' => __( 'Collapse', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
-					'expand'   => __( 'Expand', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
+					'collapse' => __( 'Collapse', 'core-blueprint' ),
+					'expand'   => __( 'Expand', 'core-blueprint' ),
 				],
 				'paletteLabels' => [
 					'elements'     => __( 'Elements', 'core-blueprint' ),
@@ -200,14 +199,13 @@ final class Assets {
 				],
 				'sidebarLabels' => [
 					'inspector' => __( 'Inspector', 'core-blueprint' ),
-					// WordPress editor vocabulary intentionally uses the default text domain.
-					'layers'    => __( 'Layers', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
+					'layers'    => __( 'Layers', 'core-blueprint' ),
 					'settings'  => __( 'Settings', 'core-blueprint' ),
 				],
 				'toolbarLabels' => [
-					'view'    => __( 'View', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
-					'actions' => __( 'Actions', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
-					'action'  => __( 'Action', 'default' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary.
+					'view'    => __( 'View', 'core-blueprint' ),
+					'actions' => __( 'Actions', 'core-blueprint' ),
+					'action'  => __( 'Action', 'core-blueprint' ),
 				],
 				'contextLabels' => [
 					'loading' => __( 'Loading design…', 'core-blueprint' ),
