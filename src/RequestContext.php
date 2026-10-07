@@ -49,8 +49,7 @@ final class RequestContext {
 	 * request data directly.
 	 */
 	public static function request_uri(): string {
-		$uri = wp_unslash( (string) ( $_SERVER['REQUEST_URI'] ?? '' ) );
-		return '' === $uri ? '' : sanitize_url( $uri );
+		return sanitize_url( wp_unslash( (string) ( $_SERVER['REQUEST_URI'] ?? '' ) ) );
 	}
 
 	private static function is_script( string $basename ): bool {
