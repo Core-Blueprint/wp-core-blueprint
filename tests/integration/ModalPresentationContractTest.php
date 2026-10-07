@@ -72,4 +72,15 @@ final class CB_Base_Modal_Presentation_Contract_Test extends WP_UnitTestCase {
 			self::assertStringContainsString( '.cb-core-modal__expand-toggle', $css );
 		}
 	}
+	public function test_modal_assets_are_content_versioned_within_a_stable_plugin_release(): void {
+		$assets = file_get_contents( CB_CORE_DIR . 'src/UI/Assets.php' );
+		self::assertIsString( $assets );
+
+		self::assertStringContainsString( 'private static function asset_revision( string $relative ): string', $assets );
+		self::assertStringContainsString( "hash_file( 'sha256', $path )", $assets );
+		self::assertStringContainsString( "self::asset_revision( 'assets/css/components/modals.css' )", $assets );
+		self::assertStringContainsString( "self::asset_revision( 'assets/css/components/modals-native.css' )", $assets );
+		self::assertStringContainsString( "self::asset_revision( 'assets/js/core/modal.js' )", $assets );
+	}
+
 }
