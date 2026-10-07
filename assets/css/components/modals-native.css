@@ -39,11 +39,24 @@ body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--wide {
 	width: min(92vw, 760px);
 }
 
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace {
+	width: min(1360px, calc(100vw - 64px));
+	max-width: none;
+	max-height: min(88vh, 900px);
+}
+
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace.is-expanded {
+	width: calc(100vw - 32px);
+	height: calc(100vh - 32px);
+	max-height: none;
+}
+
 body.wp-admin dialog.cb-core-modal--wp-native::backdrop {
 	background: rgb(0 0 0 / 0.4);
 }
 
 body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__form {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	box-sizing: border-box;
@@ -51,6 +64,50 @@ body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__form {
 	margin: 0;
 	padding: 20px;
 	overflow: hidden;
+}
+
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace .cb-core-modal__form {
+	max-height: min(88vh, 900px);
+}
+
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace.is-expanded .cb-core-modal__form {
+	height: 100%;
+	max-height: none;
+}
+
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--expandable .cb-core-modal__title {
+	padding-inline-end: 44px;
+}
+
+body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__expand-toggle {
+	position: absolute;
+	inset-block-start: 20px;
+	inset-inline-end: 20px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--cb-modal-native-text-muted);
+	cursor: pointer;
+}
+
+body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__expand-toggle:hover {
+	background: var(--cb-modal-native-code-surface);
+	color: var(--cb-modal-native-text-strong);
+}
+
+body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__expand-toggle:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__expand-toggle .cb-core-icon {
+	pointer-events: none;
 }
 
 body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__title {
