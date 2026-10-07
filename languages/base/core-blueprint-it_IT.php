@@ -2253,6 +2253,7 @@ Abbiamo ricevuto una richiesta di reimpostazione della password per il tuo accou
     'Resolved anomalies' => 'Risolta anomalies',
     'Resource-embedding isolation' => 'Risorsa - embedding isolation',
     'Restore' => 'Ricaricata',
+    'Restore size' => 'Ripristina dimensioni',
     'Restore failed' => 'Ricaricata non',
     'Restore needs attention' => 'Ricaricata richiede attenzione',
     'Restore quarantined item' => 'Ricaricata quarantena elemento',
