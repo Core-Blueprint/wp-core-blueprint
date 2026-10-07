@@ -77,7 +77,7 @@ final class CB_Base_Modal_Presentation_Contract_Test extends WP_UnitTestCase {
 		self::assertIsString( $assets );
 
 		self::assertStringContainsString( 'private static function asset_revision( string $relative ): string', $assets );
-		self::assertStringContainsString( "hash_file( 'sha256', $path )", $assets );
+		self::assertStringContainsString( "hash_file( 'sha256', \$path )", $assets );
 		self::assertStringContainsString( "self::asset_revision( 'assets/css/components/modals.css' )", $assets );
 		self::assertStringContainsString( "self::asset_revision( 'assets/css/components/modals-native.css' )", $assets );
 		self::assertStringContainsString( "self::asset_revision( 'assets/js/core/modal.js' )", $assets );
