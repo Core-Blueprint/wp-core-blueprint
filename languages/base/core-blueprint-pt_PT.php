@@ -2253,6 +2253,7 @@ Recebemos um pedido para repor a palavra-passe da sua conta. Se foi você, utili
     'Resolved anomalies' => 'Resolvida anomalies',
     'Resource-embedding isolation' => 'Recurso - embedding isolation',
     'Restore' => 'Recarregada',
+    'Restore size' => 'Restaurar tamanho',
     'Restore failed' => 'Recarregada falhou',
     'Restore needs attention' => 'Recarregada necessita atenção',
     'Restore quarantined item' => 'Recarregada quarentena item',
