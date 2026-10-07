@@ -66,9 +66,9 @@ final class CB_Base_Modal_Presentation_Contract_Test extends WP_UnitTestCase {
 
 		foreach ( [ $core_css, $native_css ] as $css ) {
 			self::assertStringContainsString( '.cb-core-modal--workspace', $css );
-			self::assertStringContainsString( 'width: min(1360px, calc(100vw - 64px));', $css );
+			self::assertStringContainsString( 'width: min(1480px, calc(100vw - 32px));', $css );
 			self::assertStringContainsString( '.cb-core-modal--workspace.is-expanded', $css );
-			self::assertStringContainsString( 'width: calc(100vw - 32px);', $css );
+			self::assertStringContainsString( 'width: calc(100vw - 16px);', $css );
 			self::assertStringContainsString( '.cb-core-modal__expand-toggle', $css );
 		}
 	}
