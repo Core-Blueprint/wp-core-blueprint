@@ -10,9 +10,8 @@ $project_json = is_array( $current_template )
 $project_json = is_string( $project_json ) ? $project_json : '{}';
 $components_json = wp_json_encode( $components ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 $components_json = is_string( $components_json ) ? $components_json : '{}';
-/* translators: WordPress core owns these generic editor UI labels in the default text domain. */
-$fullscreen_label = __( 'Fullscreen mode', 'default' ); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
-$tablet_label = __( 'Tablet', 'default' ); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional WordPress platform vocabulary.
+$fullscreen_label = __( 'Fullscreen mode', 'core-blueprint' );
+$tablet_label = __( 'Tablet', 'core-blueprint' );
 $template_groups = [];
 foreach ( (array) $templates as $definition ) {
 	if ( ! is_array( $definition ) ) {
@@ -160,7 +159,7 @@ foreach ( (array) $templates as $definition ) {
 							<aside class="cb-core-design-shell__sidebar cb-core-design-shell__sidebar--composed cb-core-mail-designer__sidebar" aria-label="<?php esc_attr_e( 'Designer controls', 'core-blueprint' ); ?>">
 								<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Designer panels', 'core-blueprint' ); ?>">
 									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"><?php esc_html_e( 'Inspector', 'core-blueprint' ); ?></button>
-									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="structure" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Layers', 'default' ); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentional editor vocabulary. ?></button>
+									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="structure" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Layers', 'core-blueprint' ); ?></button>
 									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="email" data-cb-design-shell-sidebar-role="settings"><?php esc_html_e( 'Settings', 'core-blueprint' ); ?></button>
 								</div>
 								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="email" data-cb-design-shell-sidebar-role="settings">
