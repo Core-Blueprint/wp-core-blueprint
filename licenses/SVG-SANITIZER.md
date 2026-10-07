@@ -15,6 +15,12 @@ root-relative hrefs. This applies to both `href` and `xlink:href`; local fragmen
 references and the existing allowed raster data URIs remain supported. The
 upstream version above identifies the vendored baseline, not an unmodified copy.
 
+Local WordPress.org/PHP 8.4 hardening (2026-10-07): the obsolete
+`libxml_disable_entity_loader()` compatibility path was removed from the vendored
+copy and XML parsing now explicitly includes `LIBXML_NONET`. Core Blueprint
+already removes DTD declarations before parsing; this keeps network entity access
+disabled without relying on an API deprecated since PHP 8.0.
+
 The original upstream license is also preserved at:
 
 `src/MediaFormats/lib/svg-sanitizer/LICENSE`
