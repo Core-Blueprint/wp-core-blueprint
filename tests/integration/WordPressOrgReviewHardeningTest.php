@@ -23,7 +23,7 @@ final class CB_Base_WordPress_Org_Review_Hardening_Test extends WP_UnitTestCase 
 	public function test_reviewed_request_consumers_use_the_central_sanitized_boundary(): void {
 		$request_context = file_get_contents( CB_CORE_DIR . 'src/RequestContext.php' );
 		self::assertIsString( $request_context );
-		self::assertStringContainsString( "sanitize_url( $uri )", $request_context );
+		self::assertStringContainsString( 'sanitize_url( $uri )', $request_context );
 
 		foreach ( [
 			'src/Routing/Runtime.php',
@@ -34,7 +34,7 @@ final class CB_Base_WordPress_Org_Review_Hardening_Test extends WP_UnitTestCase 
 			self::assertIsString( $content );
 			self::assertStringContainsString( 'RequestContext::request_uri()', $content );
 			self::assertStringNotContainsString(
-				"wp_unslash( $_SERVER['REQUEST_URI'] )",
+				"wp_unslash( \$_SERVER['REQUEST_URI'] )",
 				$content,
 				'Reviewed request consumers must not read unsanitized REQUEST_URI directly: ' . $relative
 			);
