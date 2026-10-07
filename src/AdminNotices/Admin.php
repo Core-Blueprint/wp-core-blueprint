@@ -140,7 +140,8 @@ final class Admin {
 			: ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- strict JSON policy normalization below.
 
 		try {
-			$decoded = is_string( $raw ) ? json_decode( $raw, true, 64, JSON_THROW_ON_ERROR ) : null;
+			// Decode transport only; Policy::normalize() below validates and sanitizes the bounded policy schema before storage.
+		$decoded = is_string( $raw ) ? json_decode( $raw, true, 64, JSON_THROW_ON_ERROR ) : null;
 			if ( ! is_array( $decoded ) ) {
 				throw new \InvalidArgumentException( 'Invalid Admin Notices payload.' );
 			}

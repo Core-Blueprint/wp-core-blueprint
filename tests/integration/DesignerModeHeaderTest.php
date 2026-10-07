@@ -141,7 +141,7 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( "settings: 'email'", $launch );
 		self::assertStringContainsString( "'sidebarLabels' => [", $assets );
 		self::assertStringContainsString( "'inspector' => __( 'Inspector', 'core-blueprint' )", $assets );
-		self::assertStringContainsString( "'layers'    => __( 'Layers', 'default' )", $assets );
+		self::assertStringContainsString( "'layers'    => __( 'Layers', 'core-blueprint' )", $assets );
 		self::assertStringContainsString( "'settings'  => __( 'Settings', 'core-blueprint' )", $assets );
 	}
 
@@ -151,10 +151,10 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		$viewports = (string) file_get_contents( $root . '/assets/js/design/shell/viewports.js' );
 		$feature = (string) file_get_contents( $root . '/assets/js/features/mail-designer.js' );
 
-		self::assertStringContainsString( "\$tablet_label = __( 'Tablet', 'default' )", $template );
+		self::assertStringContainsString( "\$tablet_label = __( 'Tablet', 'core-blueprint' )", $template );
 		self::assertStringContainsString( 'data-cb-design-shell-viewport="tablet"', $template );
 		self::assertStringContainsString( 'data-cb-mail-viewport="tablet"', $template );
-		self::assertStringNotContainsString( "'Tablet', 'core-blueprint'", $template );
+		self::assertStringNotContainsString( "'Tablet', 'default'", $template );
 		self::assertStringContainsString( "cb:design-shell:viewportchange", $viewports );
 		self::assertStringContainsString( "value === 'tablet'", $feature );
 		self::assertStringContainsString( "classList.toggle('is-tablet'", $feature );

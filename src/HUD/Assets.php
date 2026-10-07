@@ -41,6 +41,9 @@ final class Assets {
 	/** Prevent duplicate module-data filter registration on unusual requests. */
 	private static bool $module_data_filters_registered = false;
 
+	/** Prevent duplicate dynamic palette CSS on unusual double-enqueue requests. */
+	private static bool $palette_css_added = false;
+
 	/**
 	 * Admin-context enqueue. Runs for every admin screen the current
 	 * user can see HUD on; the rendering gate ({@see Access::can_render})
@@ -120,6 +123,13 @@ final class Assets {
 			CB_CORE_VERSION
 		);
 
+		if ( ! self::$palette_css_added ) {
+			$palette_css = self::brand_palette_css();
+			if ( '' !== $palette_css && wp_add_inline_style( self::STYLE_HANDLE, $palette_css ) ) {
+				self::$palette_css_added = true;
+			}
+		}
+
 		// Shared Foundation behaviour. mode-switcher.js imports dom.js and
 		// persists through the existing cb_core_set_description_mode endpoint.
 		// Enqueue both explicitly so the switcher works on frontend and
@@ -144,6 +154,41 @@ final class Assets {
 		);
 
 		self::register_module_data_filters();
+	}
+
+	/**
+	 * Build brand palette overrides for the already-enqueued HUD stylesheet.
+	 *
+	 * All registered palettes are emitted up front so client-side brand
+	 * switching can activate another brand without a page reload. Values remain
+	 * restricted to CSS custom properties and the same bounded character set as
+	 * the former footer renderer.
+	 */
+	private static function brand_palette_css(): string {
+		$css = '';
+
+		foreach ( BrandRegistry::all() as $brand ) {
+			$brand_id = sanitize_key( $brand->id() );
+			if ( '' === $brand_id ) {
+				continue;
+			}
+
+			$rules = '';
+			foreach ( $brand->palette() as $token => $value ) {
+				$token = preg_replace( '/[^a-zA-Z0-9\\-]/', '', (string) $token );
+				$value = preg_replace( '/[^#a-zA-Z0-9\\(\\),\\s%\\.\\-]/', '', (string) $value );
+				if ( '' === $token || '' === $value || ! str_starts_with( $token, '--' ) ) {
+					continue;
+				}
+				$rules .= sprintf( '%s:%s;', $token, $value );
+			}
+
+			if ( '' !== $rules ) {
+				$css .= sprintf( 'html[data-cb-brand="%s"]{%s}', $brand_id, $rules );
+			}
+		}
+
+		return $css;
 	}
 
 	/**

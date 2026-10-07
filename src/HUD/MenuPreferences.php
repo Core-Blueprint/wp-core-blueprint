@@ -217,6 +217,7 @@ final class MenuPreferences {
 		}
 
 		$raw_payload = isset( $_POST['cb_hud_menu_payload'] ) ? wp_unslash( $_POST['cb_hud_menu_payload'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- decoded + field-sanitized below.
+		// Decode transport only; sanitize_configuration() below applies the bounded field schema before persistence.
 		$decoded     = is_string( $raw_payload ) ? json_decode( $raw_payload, true ) : null;
 		if ( ! is_array( $decoded ) ) {
 			wp_safe_redirect( add_query_arg( 'hud_menu_notice', 'invalid', $redirect ) );
