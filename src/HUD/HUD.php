@@ -50,23 +50,6 @@ final class HUD {
 		$position = Storage::get_position();
 		$ghost    = Storage::get_ghost();
 
-		// Emit palette-token overrides for EVERY registered brand. This
-		// is critical for client-side brand-switching: when the JS layer
-		// flips <html data-cb-brand="x"> to <html data-cb-brand="y">, the
-		// css selector html[data-cb-brand="y"] must already match a real
-		// <style> block - otherwise the cascade has nothing to work with
-		// and tokens fall back to defaults until next page load.
-		//
-		// Only the active brand's palette block "wins" via the cascade
-		// at any given moment (because the html[data-cb-brand] selector
-		// only matches one value); the inactive blocks sit dormant and
-		// activate instantly when the user switches brand. CoreBlueprint
-		// (empty palette) emits nothing - its "win" state is the absence
-		// of overrides, which is what tokens.css already provides.
-		foreach ( BrandRegistry::all() as $registered_brand ) {
-			self::emit_brand_palette( $registered_brand->id(), $registered_brand->palette() );
-		}
-
 		?>
 		<div
 			class="cb-hud"
@@ -815,48 +798,4 @@ final class HUD {
 		];
 	}
 
-	/**
-	 * Emit a brand palette as inline <style> rules scoped to
-	 * <html data-cb-brand="..."> so the brand's token overrides cascade
-	 * site-wide. Empty palettes (CoreBlueprint default) emit nothing.
-	 *
-	 * Called once per page load from {@see render()}. The selector
-	 * scope (html data-cb-brand=) ensures palette tokens only apply
-	 * when this brand is active, not when the user is previewing
-	 * another brand in the picker.
-	 *
-	 * @param array<string, string> $palette Token overrides.
-	 */
-	private static function emit_brand_palette( string $brand_id, array $palette ): void {
-		if ( empty( $palette ) ) {
-			return;
-		}
-		$brand_id = sanitize_key( $brand_id );
-		if ( '' === $brand_id ) {
-			return;
-		}
-
-		$rules = '';
-		foreach ( $palette as $token => $value ) {
-			$token = preg_replace( '/[^a-zA-Z0-9\-]/', '', (string) $token );
-			$value = preg_replace( '/[^#a-zA-Z0-9\(\),\s%\.\-]/', '', (string) $value );
-			if ( '' === $token || '' === $value ) {
-				continue;
-			}
-			if ( 0 !== strpos( $token, '--' ) ) {
-				continue; // only CSS custom properties allowed
-			}
-			$rules .= sprintf( '%s:%s;', $token, $value );
-		}
-
-		if ( '' === $rules ) {
-			return;
-		}
-
-		printf(
-			"<style id=\"cb-hud-brand-palette-%1\$s\">html[data-cb-brand=\"%1\$s\"]{%2\$s}</style>\n",
-			esc_attr( $brand_id ),
-			esc_html( $rules )
-		);
-	}
 }
