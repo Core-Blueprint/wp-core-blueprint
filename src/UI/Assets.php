@@ -186,7 +186,7 @@ final class Assets {
 				'cb-core-css-modals',
 				CB_CORE_URL . 'assets/css/components/modals.css',
 				[ 'cb-core-css-tokens' ],
-				CB_CORE_VERSION
+				self::asset_revision( 'assets/css/components/modals.css' )
 			);
 			wp_enqueue_style(
 				'cb-core-css-buttons',
@@ -205,7 +205,7 @@ final class Assets {
 				'cb-core-css-modals-native',
 				CB_CORE_URL . 'assets/css/components/modals-native.css',
 				[ 'cb-core-css-icons' ],
-				CB_CORE_VERSION
+				self::asset_revision( 'assets/css/components/modals-native.css' )
 			);
 		}
 
@@ -213,7 +213,7 @@ final class Assets {
 			'@cb-core/modal',
 			CB_CORE_URL . 'assets/js/core/modal.js',
 			[ '@cb-core/icon' ],
-			CB_CORE_VERSION
+			self::asset_revision( 'assets/js/core/modal.js' )
 		);
 
 		if ( ! self::$modal_data_filter_registered ) {
@@ -1119,6 +1119,23 @@ final class Assets {
 			);
 			self::$select_picker_data_filter_registered = true;
 		}
+	}
+
+	/**
+	 * Content-addressed revision for Foundation assets that may change while the
+	 * plugin release version remains stable during release-candidate validation.
+	 */
+	private static function asset_revision( string $relative ): string {
+		$relative = ltrim( $relative, '/\\' );
+		$path = CB_CORE_DIR . $relative;
+		if ( ! is_file( $path ) ) {
+			return CB_CORE_VERSION;
+		}
+		$hash = hash_file( 'sha256', $path );
+		if ( ! is_string( $hash ) || '' === $hash ) {
+			return CB_CORE_VERSION;
+		}
+		return CB_CORE_VERSION . '-' . substr( $hash, 0, 12 );
 	}
 
 	/** Enqueue only the shared Lucide icon primitive. */
