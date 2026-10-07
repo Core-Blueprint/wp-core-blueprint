@@ -17,9 +17,15 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        'Collapse' => 'Recolher',
+
+        'Expand' => 'Expandir',
+
         'Exit fullscreen' => 'Sair do modo de ecrã inteiro',
         'Fullscreen mode' => 'Modo de ecrã inteiro',
         'Layers' => 'Camadas',
+
+        'Tablet' => 'Tablet',
         '%1$d checks · %2$d configured · %3$d need review · %4$d attention · %5$d later · %6$d not applicable' => '%1$d verificações · %2$d configuradas · %3$d requerem revisão · %4$d requerem atenção · %5$d mais tarde · %6$d não aplicáveis',
         '%1$s (%2$d)' => '%1$s (%2$d)',
         'A reason is required for Not applicable.' => 'É necessário indicar um motivo para Não aplicável.',
