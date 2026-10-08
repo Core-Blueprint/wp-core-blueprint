@@ -19,6 +19,7 @@ namespace CoreBlueprint\Core;
 
 use CoreBlueprint\Core\Admin\Admin;
 use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Admin\MenuGroupRegistry;
 use CoreBlueprint\Core\Ajax\Router;
 use CoreBlueprint\Core\Ajax\SecurityRouter;
 use CoreBlueprint\Core\Log\AuditLog;
@@ -119,6 +120,8 @@ final class Core {
 		if ( RequestContext::is_admin_screen() ) {
 			\CoreBlueprint\Core\Admin\UserProfileSectionRegistry::init();
 			PageRegistry::init();
+			// Product menus finalize after PageRegistry collects extension declarations.
+			MenuGroupRegistry::init();
 			Admin::init();
 			\CoreBlueprint\Core\AdminColumns\Bootstrap::boot();
 			Extensions::init();
