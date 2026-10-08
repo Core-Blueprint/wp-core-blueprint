@@ -4,6 +4,8 @@ declare(strict_types=1);
 use CoreBlueprint\Core\Admin\MenuGroup;
 use CoreBlueprint\Core\Admin\MenuGroupRegistry;
 use CoreBlueprint\Core\Admin\Page;
+use CoreBlueprint\Core\Admin\ScreenContext;
+use CoreBlueprint\Core\Admin\ScreenAssetRegistry;
 
 final class CB_Base_Menu_Group_Registry_Contract_Test extends WP_UnitTestCase {
 
@@ -88,6 +90,39 @@ final class CB_Base_Menu_Group_Registry_Contract_Test extends WP_UnitTestCase {
 		do_action( $root_hook );
 		$output = (string) ob_get_clean();
 		self::assertSame( 'cb-test-render-workflows', $output );
+	}
+
+	public function test_product_screen_context_resolves_landing_and_children_as_core_admin_screens(): void {
+		$overview = $this->page( 'cb-test-hub-overview', 'Overview', 'manage_options', 10 );
+		$operations = $this->page( 'cb-test-hub-operations', 'Operations', 'manage_options', 30 );
+		$group = new MenuGroup(
+			'cb-test-hub-menu',
+			'Test Hub',
+			'Hub',
+			'manage_options',
+			'dashicons-networking',
+			82
+		);
+
+		self::assertTrue( MenuGroupRegistry::register( $group, [ $overview, $operations ] ) );
+		MenuGroupRegistry::finalize();
+
+		$landing_hook = get_plugin_page_hookname( $group->slug(), '' );
+		$overview_hook = MenuGroupRegistry::hook_suffix( $overview->slug() );
+		$operations_hook = MenuGroupRegistry::hook_suffix( $operations->slug() );
+
+		self::assertSame( $overview->slug(), MenuGroupRegistry::registered_page_slug_for_hook( $landing_hook ) );
+		self::assertSame( $overview->slug(), MenuGroupRegistry::registered_page_slug_for_hook( $overview_hook ) );
+		self::assertSame( $operations->slug(), MenuGroupRegistry::registered_page_slug_for_hook( $operations_hook ) );
+		self::assertSame( '', MenuGroupRegistry::registered_page_slug_for_hook( 'unregistered-admin-hook' ) );
+
+		$landing = ScreenContext::from_request( $landing_hook );
+		$child = ScreenContext::from_request( $operations_hook );
+		self::assertSame( $overview->slug(), $landing->registered_slug() );
+		self::assertSame( $operations->slug(), $child->registered_slug() );
+		self::assertTrue( ScreenAssetRegistry::owns( $landing ) );
+		self::assertTrue( ScreenAssetRegistry::owns( $child ) );
+		self::assertFalse( ScreenAssetRegistry::requires_full_set( $child ) );
 	}
 
 	private function page( string $slug, string $menu_title, string $capability, ?int $position ): Page {
