@@ -158,6 +158,33 @@ final class MenuGroupRegistry {
 	}
 
 	/**
+	 * Resolve a product-owned page from its registered WordPress screen hook.
+	 *
+	 * A group's top-level landing hook resolves to the first page the current
+	 * user may access, just like render_landing(). Submenus resolve directly.
+	 * ScreenContext uses this to load the same Base Admin shell and semantic
+	 * assets on top-level product pages as on PageRegistry pages.
+	 */
+	public static function registered_page_slug_for_hook( string $hook ): string {
+		if ( '' === $hook ) {
+			return '';
+		}
+
+		$slug = array_search( $hook, self::$hooks, true );
+		if ( false !== $slug ) {
+			return (string) $slug;
+		}
+
+		$group_slug = self::$landing_hooks[ $hook ] ?? '';
+		if ( '' === $group_slug ) {
+			return '';
+		}
+
+		$page = self::accessible_landing_page( $group_slug );
+		return null !== $page ? $page->slug() : '';
+	}
+
+	/**
 	 * Whether one WordPress screen hook currently represents this product page.
 	 *
 	 * A page matches either its dedicated submenu hook or the top-level product
