@@ -6,6 +6,7 @@ use CoreBlueprint\Core\Admin\MenuGroupRegistry;
 use CoreBlueprint\Core\Admin\Page;
 use CoreBlueprint\Core\Admin\ScreenContext;
 use CoreBlueprint\Core\Admin\ScreenAssetRegistry;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 
 final class CB_Base_Menu_Group_Registry_Contract_Test extends WP_UnitTestCase {
 
@@ -103,6 +104,13 @@ final class CB_Base_Menu_Group_Registry_Contract_Test extends WP_UnitTestCase {
 			'dashicons-networking',
 			82
 		);
+
+		// Product-menu screen resolution needs an approved privileged identity.
+		// Base's Privileged Access Guard intentionally restricts new administrators.
+		$user = wp_get_current_user();
+		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'menu_group_screen_context_fixture' ) );
+		self::assertTrue( current_user_can( 'manage_options' ) );
 
 		self::assertTrue( MenuGroupRegistry::register( $group, [ $overview, $operations ] ) );
 		MenuGroupRegistry::finalize();
