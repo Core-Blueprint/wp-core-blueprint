@@ -147,6 +147,9 @@ final class ScreenContext {
 			}
 		}
 
-		return '';
+		// Extension-owned product menus use a separate WordPress parent but
+		// must still resolve to their canonical page for the shared Core
+		// Admin shell, semantic assets, and normalized route context.
+		return MenuGroupRegistry::registered_page_slug_for_hook( $hook );
 	}
 }
