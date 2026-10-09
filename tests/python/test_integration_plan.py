@@ -150,7 +150,10 @@ class BaseIntegrationPlanTest(unittest.TestCase):
 
     def test_cli_unauthorised_execute_is_blocked_before_any_preflight(self):
         cmd = ["bash", str(plan.SOURCE / "tools/check-integration"), "--execute"]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False,
+            env={**os.environ, "CB_BASE_INTEGRATION_APPROVAL": ""},
+        )
         self.assertEqual(2, result.returncode)
         self.assertIn("BLOCKED", result.stderr)
 
