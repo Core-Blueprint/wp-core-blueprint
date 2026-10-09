@@ -12,17 +12,17 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import fcntl
-import hashlib
 import importlib.machinery
 import importlib.util
 import io
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import stat
 import subprocess
 import tarfile
 import urllib.request
+from urllib.parse import urlparse
 
 from tools.integration import plan, preflight
 
@@ -233,8 +233,11 @@ def download_pinned_archive(url: str) -> bytes:
         raise preflight.PreflightError("Unapproved external fixture URL.")
     try:
         with urllib.request.urlopen(url, timeout=60) as response:
-            if not response.url.startswith("https://"):
-                raise preflight.PreflightError("Pinned archive redirected to an insecure URL.")
+            url_parts = urlparse(response.url)
+            if (url_parts.scheme != "https" or url_parts.hostname not in (
+                "wordpress.org", "downloads.wordpress.org", "codeload.github.com",
+            )):
+                raise preflight.PreflightError("Pinned archive redirected outside approved HTTPS hosts.")
             data = response.read(MAX_DOWNLOAD_BYTES + 1)
     except OSError as error:
         raise preflight.PreflightError("Pinned WordPress fixture download failed.") from error
