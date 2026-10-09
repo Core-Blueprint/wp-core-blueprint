@@ -314,6 +314,20 @@ class ExecutionSafetyTest(unittest.TestCase):
         self.assertIn("BLOCKED", result.stderr)
 
 
+    def test_browser_scenario_outputs_stay_in_owned_runner_workspace(self):
+        scripts = (
+            execution.SOURCE / "tests/bin/run-cli-provenance-conformance.sh",
+            execution.SOURCE / "tests/bin/run-media-replace-persistence-conformance.sh",
+        )
+        for path in scripts:
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("RUNNER_TEMP", source, str(path))
+            self.assertNotIn("/tmp/cb-b2-console-", source, str(path))
+            self.assertNotIn("/tmp/cb-b2-prune-invalid.txt", source, str(path))
+            self.assertNotIn("/tmp/cb-c2c-success.html", source, str(path))
+            self.assertNotIn("/tmp/cb-c2c-metadata-failure.html", source, str(path))
+            self.assertNotIn("/tmp/cb-c2c-revision-failure.html", source, str(path))
+
     def test_explicit_approval_calls_prepared_pipeline_without_test_side_effects(self):
         with mock.patch.dict(os.environ, {
             "CB_BASE_INTEGRATION_APPROVAL": "I_APPROVE_FRESH_BASE_TEST_DATABASE"
