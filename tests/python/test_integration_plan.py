@@ -160,6 +160,13 @@ class BaseIntegrationPlanTest(unittest.TestCase):
         self.assertEqual(2, result.returncode)
         self.assertIn("BLOCKED", result.stderr)
 
+    def test_plan_preserves_extended_base_matrix(self):
+        steps = " ".join(plan.plan_steps("7.0", "f" * 40))
+        self.assertIn("performance baseline", steps)
+        self.assertIn("WP-CLI", steps)
+        self.assertIn("Media Replace", steps)
+        self.assertIn("run-cli-provenance-conformance.sh", plan.REQUIRED)
+
     def test_execution_plan_has_no_destructive_uninstall_gate(self):
         steps = plan.plan_steps("7.0", "f" * 40)
         self.assertGreaterEqual(len(steps), 8)
