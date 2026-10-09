@@ -6,6 +6,7 @@ import {
 	handleEditorShortcut,
 	insertNodeCommand,
 	nodeAt,
+	normalizePath,
 	removeNodeCommand,
 	reorderNodeCommand,
 	setPropertyCommand,
@@ -198,13 +199,14 @@ export const createSession = ({
 		setSelection(paths, { primary = null, source = 'consumer', external = false } = {}) {
 			assertActive();
 			if (!Array.isArray(paths)) throw new TypeError('Design editor selection paths must be an array.');
-			if (external !== true && paths.some((path) => !nodeAt(projectState.current().root, path))) {
+			// SelectionState.set() is a lower-level primitive. Prevalidate the
+			// whole transaction, including primary, before it can mutate state.
+			const normalized = paths.map(normalizePath);
+			const normalizedPrimary = primary === null ? null : normalizePath(primary);
+			if (external !== true && normalized.some((path) => !nodeAt(projectState.current().root, path))) {
 				throw new RangeError('Design editor selection contains a path outside the current project.');
 			}
-			if (primary !== null && !Array.isArray(primary)) {
-				throw new TypeError('Design editor primary selection must be a path or null.');
-			}
-			return editorState.selection.set(paths, primary, { source, action: 'set' });
+			return editorState.selection.set(normalized, normalizedPrimary, { source, action: 'set' });
 		},
 		/**
 		 * Immutable snapshot of the command history state. This API does not
