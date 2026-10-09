@@ -267,6 +267,13 @@ class ExecutionSafetyTest(unittest.TestCase):
                     execution.download_pinned_archive(url)
             network.assert_not_called()
 
+    def test_fixture_redirect_to_unapproved_host_is_refused(self):
+        response = mock.MagicMock()
+        response.__enter__.return_value.url = "https://malicious.example/archive.tar.gz"
+        with mock.patch.object(execution.urllib.request, "urlopen", return_value=response):
+            with self.assertRaisesRegex(preflight.PreflightError, "approved HTTPS hosts"):
+                execution.download_pinned_archive("https://wordpress.org/wordpress-7.0.tar.gz")
+
     def test_full_matrix_keeps_phpunit_and_existing_scenarios(self):
         commands = execution.integration_commands("7.0")
         flat = " ".join(" ".join(item) for item in commands)
