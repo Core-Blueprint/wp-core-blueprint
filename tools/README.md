@@ -68,6 +68,47 @@ They do not access the real Docker daemon or WordPress/database state.
 
 ---
 
+## B2b plan-only dry-run candidate
+
+This review branch adds **no integration executor**. Run:
+
+~~~bash
+./tools/check-integration --preflight
+./tools/check-integration --dry-run
+~~~
+
+`--dry-run` is read-only. It verifies the canonical (empty/absent) isolated
+root, exact clean Base Git HEAD, locked PHPUnit dependencies, PHP 8.4+, the
+existing Docker container and WordPress target 7.0 or 7.1. It also makes one
+fixed SQL **SELECT** against `INFORMATION_SCHEMA.SCHEMATA` through the
+existing helper to check whether the dedicated `core_blueprint_base_test`
+database already exists. No arbitrary SQL/name/host override is accepted and
+nothing is created, reset, downloaded or removed. This new dedicated candidate
+is **intentionally not** the legacy `wordpress_test` database; reconcile
+that operator convention with the Base runbook before enabling execution.
+
+- If `core_blueprint_base_test` exists, the dry-run exits nonzero. A matching
+  name is NOT proof that the database is disposable.
+- Existing filesystem content or symlink components are rejected.
+- Network exposure and persistent container mounts remain warnings visible to
+  the operator, not claims that database ownership has been established. They
+  remain explicit blockers for future execution authorization.
+- The dry-run prints the planned full integration suite and request-boundary
+  scenarios with the exact Base source commit. It does not run them.
+- `./tools/check-integration` and `--execute` both return exit 2 (BLOCKED).
+  Unknown modes return 64. There is **no** environment override that activates
+  WordPress provisioning or database mutations in this branch.
+- The independent uninstall scenario, CI, customer ZIP and field acceptance
+  remain outside B2b. Base's existing Python builder is unchanged.
+
+Review the new tests under `tests/python/test_integration_plan.py` through
+`./tools/check` before approving any future integration-execution patch.
+Real execution will require a separate GO, exclusive ownership and concurrent
+run protection, mutation-time revalidation, database provenance safeguards,
+and network exposure assessment.
+
+---
+
 ## Required environment
 
 - Python 3.10+, PHP 8.4+, Node.js with `node --test`, Bash and unzip;
