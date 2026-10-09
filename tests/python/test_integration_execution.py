@@ -186,6 +186,25 @@ class ExecutionSafetyTest(unittest.TestCase):
             with self.assertRaisesRegex(preflight.PreflightError, "never reused"):
                 execution.verify_execution_scope()
 
+    def test_archive_staging_uses_exact_head_and_never_calls_legacy_installer(self):
+        with mock.patch.object(execution, "assert_owner"), \
+             mock.patch.object(execution, "download_pinned_archive", return_value=b"archive") as download, \
+             mock.patch.object(execution, "safe_extract") as extract, \
+             mock.patch.object(execution.subprocess, "run",
+                               return_value=mock.Mock(returncode=0, stdout=b"git")) as run:
+            execution.stage_pinned_environment("7.0", self.sha)
+        self.assertEqual(2, download.call_count)
+        self.assertEqual(3, extract.call_count)
+        command = run.call_args.args[0]
+        self.assertEqual(["git", "-C", str(execution.SOURCE), "archive",
+                          "--format=tar", self.sha], command)
+        self.assertNotIn("install-wp-tests.sh", " ".join(command))
+
+    def test_group_writable_lock_parent_is_refused(self):
+        self.area.chmod(0o770)
+        with self.assertRaisesRegex(preflight.PreflightError, "not world-writable"):
+            execution.require_owned_parent(self.area / ".base-lock")
+
     def test_successful_scope_inspection_has_no_writes(self):
         with mock.patch.object(execution.preflight, "validate_test_root", return_value="absent"), \
              mock.patch.object(execution.plan, "verify_source"), \
