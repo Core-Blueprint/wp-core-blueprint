@@ -104,7 +104,7 @@ class ExecutionSafetyTest(unittest.TestCase):
         command = run.call_args.args[0]
         self.assertEqual(["docker", "exec", "cb-base-test-db"], command[:3])
         self.assertEqual("-e", command[-2])
-        self.assertTrue(command[-1].startswith("CREATE DATABASE \`core_blueprint_base_test\`"))
+        self.assertTrue(command[-1].startswith("CREATE DATABASE `core_blueprint_base_test`"))
         self.assertNotIn("DROP", command[-1])
         self.assertNotIn("IF NOT EXISTS", command[-1])
 
