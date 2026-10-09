@@ -1,21 +1,33 @@
 #!/usr/bin/env bash
-# B2 Safety Gate only. Integration is intentionally unavailable until separately approved.
+# B2b: planning only; active WordPress integration remains blocked.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+usage() { echo 'Usage: ./tools/check-integration [--preflight|--dry-run|--execute]' >&2; }
+
 case "${1:-}" in
   --preflight)
-    [[ $# -eq 1 ]] || { echo 'Usage: ./tools/check-integration [--preflight]' >&2; exit 64; }
+    [[ $# -eq 1 ]] || { usage; exit 64; }
     PYTHONDONTWRITEBYTECODE=1 python3 -B "$ROOT/tools/integration/preflight.py" --preflight
     ;;
+  --dry-run)
+    [[ $# -eq 1 ]] || { usage; exit 64; }
+    cd "$ROOT"
+    PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.plan --dry-run
+    ;;
+  --execute)
+    [[ $# -eq 1 ]] || { usage; exit 64; }
+    echo 'BLOCKED: Base Level 2 execution requires separate explicit approval.' >&2
+    exit 2
+    ;;
   '')
-    [[ $# -eq 0 ]] || { echo 'Usage: ./tools/check-integration [--preflight]' >&2; exit 64; }
-    echo 'BLOCKED: Base Level 2 WordPress integration is not implemented or authorized by B2 Safety Gate.' >&2
-    echo 'For non-destructive environment inspection use: ./tools/check-integration --preflight' >&2
+    [[ $# -eq 0 ]] || { usage; exit 64; }
+    echo 'BLOCKED: Base Level 2 WordPress integration is not active.' >&2
+    echo 'Use --preflight or --dry-run for read-only inspection.' >&2
     exit 2
     ;;
   *)
-    echo 'Usage: ./tools/check-integration [--preflight]' >&2
+    usage
     exit 64
     ;;
 esac
