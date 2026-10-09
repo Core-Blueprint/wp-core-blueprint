@@ -2,6 +2,13 @@
 
 > This changelog tracks the public `1.0.0` launch line. Internal pre-v1 development history is retained in `CHANGELOG-HISTORY.md` in the source repository and is not included in production packages.
 
+## Unreleased — Designer public-session API extension (validation pending)
+
+- Add `session.historyStatus()` as a frozen undo/redo/size snapshot for external Designer consumers, without exposing mutable CommandHistory internals.
+- Add `session.setSelection(paths, options)` for atomic multi-path selection, with current-DesignProject validation by default and an explicit `external: true` path for transient consumer-owned element projections. Invalid path and primary shapes are rejected before any mutation.
+- Extend Base public Designer runtime and WordPress boundary tests, and document the additive v1 surface without changing existing session methods, Core API `1.2` or schema behavior.
+- This branch is not an approved Base release; paired Certificates runtime and operator UI acceptance remain open.
+
 ## 1.0.0 — 2026-10-04
 
 ### Secret Protection Foundation v1
