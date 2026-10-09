@@ -63,7 +63,7 @@ unchanged. A future independently reviewed and approved B2 integration
 implementation must introduce owner-verified disposable database semantics and
 re-check paths immediately before any mutation.
 
-The 17 safety fixture tests are included automatically in `./tools/check`.
+The 18 safety fixture tests are included automatically in `./tools/check`.
 They do not access the real Docker daemon or WordPress/database state.
 
 ---
