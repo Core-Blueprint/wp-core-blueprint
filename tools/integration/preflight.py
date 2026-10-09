@@ -73,13 +73,11 @@ def validate_docker_metadata(entries: object) -> tuple[list[str], str]:
     if not isinstance(binding, list) or not binding or not isinstance(external, list):
         raise PreflightError('Docker MariaDB host port is missing.')
     for pair in (binding, external):
-        if len(pair) != len(binding):
-            raise PreflightError('Docker port metadata is inconsistent.')
         for entry in pair:
             if not isinstance(entry, dict) or entry.get('HostPort') != PORT:
                 raise PreflightError('MariaDB must publish only port 3307.')
     warnings = []
-    ips = {item.get('HostIp', '') for item in binding}
+    ips = {item.get('HostIp', '') for item in binding + external}
     if not ips.issubset({'127.0.0.1', '::1'}):
         warnings.append(
             'MariaDB is bound beyond loopback; check workstation firewall/network exposure.'
