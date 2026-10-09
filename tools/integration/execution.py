@@ -70,7 +70,7 @@ def require_owned_parent(path: Path) -> None:
     if target.is_symlink() or not target.is_dir():
         raise preflight.PreflightError("Test parent directory must exist and not be a symlink.")
     info = target.stat()
-    if info.st_uid != os.getuid() or info.st_mode & stat.S_IWOTH:
+    if info.st_uid != os.getuid() or info.st_mode & (stat.S_IWOTH | stat.S_IWGRP):
         raise preflight.PreflightError(
             "Test parent directory must be owned by the operator and not world-writable."
         )
@@ -149,7 +149,7 @@ def create_fresh_database(sha: str) -> None:
     if plan.database_exists():
         raise preflight.PreflightError("Database name collision; refusing to modify existing schema.")
     sql = (
-        f"CREATE DATABASE \`{DB}\` CHARACTER SET utf8mb4 "
+        f"CREATE DATABASE `{DB}` CHARACTER SET utf8mb4 "
         "COLLATE utf8mb4_unicode_ci;"
     )
     plan.read_only(
