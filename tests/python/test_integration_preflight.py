@@ -109,6 +109,16 @@ class SafetyPolicyTest(unittest.TestCase):
         warnings, _ = preflight.validate_docker_metadata(info)
         self.assertTrue(any('beyond loopback' in item for item in warnings))
 
+    def test_docker_dual_stack_network_with_single_config_binding_is_supported(self):
+        info = self.docker_info()
+        info[0]['HostConfig']['PortBindings']['3306/tcp'][0]['HostIp'] = ''
+        info[0]['NetworkSettings']['Ports']['3306/tcp'] = [
+            {'HostIp': '0.0.0.0', 'HostPort': '3307'},
+            {'HostIp': '::', 'HostPort': '3307'},
+        ]
+        warnings, _ = preflight.validate_docker_metadata(info)
+        self.assertTrue(any('beyond loopback' in item for item in warnings))
+
     def test_persistent_mounts_warn_and_do_not_claim_disposability(self):
         warnings, _ = preflight.validate_docker_metadata(self.docker_info(Mounts=[{'Type': 'volume'}]))
         self.assertTrue(any('data ownership' in item for item in warnings))
