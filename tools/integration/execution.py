@@ -341,10 +341,10 @@ def run_full_suite(version: str, sha: str) -> None:
 
 
 def prepared_pipeline() -> None:
-    """Implemented pipeline, intentionally inaccessible from CLI until separate GO.
+    """Run only after CLI opt-in and the complete fail-closed safety preflight.
 
-    Real execution is blocked on the current operator's non-loopback MariaDB
-    binding and the missing post-review activation path.
+    Existing workstation configurations with non-loopback MariaDB bindings
+    remain blocked. No Docker reconfiguration or database reset is attempted.
     """
     version, sha = verify_execution_scope()
     with exclusive_lock():
