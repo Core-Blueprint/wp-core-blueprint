@@ -16,6 +16,9 @@ audit_context(){ wp_cli_eval_args '$q=\CoreBlueprint\Core\Log\AuditLog::query(["
 auth(){ wp_cli_eval_args '$u=get_userdata((int)$args[0]);$e=time()+3600;$t=WP_Session_Tokens::get_instance($u->ID)->create($e);$c=wp_generate_auth_cookie($u->ID,$e,"logged_in",$t);$_COOKIE[LOGGED_IN_COOKIE]=$c;wp_set_current_user($u->ID);echo LOGGED_IN_COOKIE,"\n",$c,"\n",wp_create_nonce("wp_rest"),"\n";' "$1"; }
 
 pid=""
+prune_output="${RUNNER_TEMP:-/tmp}/cb-b2-prune-invalid.txt"
+show_output="${RUNNER_TEMP:-/tmp}/cb-b2-console-show.json"
+scan_output="${RUNNER_TEMP:-/tmp}/cb-b2-console-scan.json"
 cleanup(){
 	if [[ -n "$pid" ]]; then kill "$pid" >/dev/null 2>&1 || true; fi
 	wp_cli config delete DISABLE_WP_CRON >/dev/null 2>&1 || true
@@ -45,8 +48,8 @@ contains "$(audit_context settings_changed)" '"actor":"cli"' 'Terminal show-page
 echo "[B2] Terminal shared-command provenance PASS"
 
 prune0="$(audit_count logs_pruned)"
-if wp_cli cb logs prune --category=not-a-category >/tmp/cb-b2-prune-invalid.txt 2>&1; then
-	cat /tmp/cb-b2-prune-invalid.txt >&2
+if wp_cli cb logs prune --category=not-a-category >"$prune_output" 2>&1; then
+	cat "$prune_output" >&2
 	fail 'Invalid terminal logs prune unexpectedly succeeded'
 fi
 eq "$(audit_count logs_pruned)" "$prune0" 'Rejected terminal logs prune emitted success provenance'
@@ -150,10 +153,10 @@ mapfile -t browser < <(auth "$target_id")
 [[ ${#browser[@]} -ge 3 ]] || fail 'Browser Console auth fixture failed'
 browser_cookie="${browser[0]}=${browser[1]}"
 browser_rest="${browser[2]}"
-browser_request -sS -o /tmp/cb-b2-console-show.json -w '%{http_code}' -X POST -H "Cookie: $browser_cookie" -H "X-WP-Nonce: $browser_rest" -H 'Content-Type: application/json' --data '{"id":"cb-permissions-show","args":{}}' "$site/?rest_route=/core-blueprint/v1/console/run"
+browser_request -sS -o "$show_output" -w '%{http_code}' -X POST -H "Cookie: $browser_cookie" -H "X-WP-Nonce: $browser_rest" -H 'Content-Type: application/json' --data '{"id":"cb-permissions-show","args":{}}' "$site/?rest_route=/core-blueprint/v1/console/run"
 code="$B2_HTTP_CODE"
 eq "$code" 200 'Browser Console show-page failed'
-contains "$(cat /tmp/cb-b2-console-show.json)" '"status":"success"' 'Browser Console show-page did not complete successfully'
+contains "$(cat "$show_output")" '"status":"success"' 'Browser Console show-page did not complete successfully'
 contains "$(audit_context permissions_hide_changed)" '"by":"console"' 'Browser Console specific audit lost console provenance'
 contains "$(audit_context settings_changed)" '"actor":"console"' 'Browser Console settings audit lost console provenance'
 contains "$(audit_context console_executed)" '"via":"console"' 'Browser Console execution audit lost console provenance'
@@ -171,10 +174,10 @@ eq "$(wp_cli eval '$j=\CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository::g
 wp_cli eval '\CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner::cancel_active();' >/dev/null
 eq "$(wp_cli eval 'echo null===\CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository::get()?"empty":"present";')" empty 'Terminal Scanner fixture cleanup failed'
 
-browser_request -sS -o /tmp/cb-b2-console-scan.json -w '%{http_code}' -X POST -H "Cookie: $browser_cookie" -H "X-WP-Nonce: $browser_rest" -H 'Content-Type: application/json' --data "{\"id\":\"cb-scan-run\",\"args\":{\"user\":\"$target_id\"}}" "$site/?rest_route=/core-blueprint/v1/console/run"
+browser_request -sS -o "$scan_output" -w '%{http_code}' -X POST -H "Cookie: $browser_cookie" -H "X-WP-Nonce: $browser_rest" -H 'Content-Type: application/json' --data "{\"id\":\"cb-scan-run\",\"args\":{\"user\":\"$target_id\"}}" "$site/?rest_route=/core-blueprint/v1/console/run"
 code="$B2_HTTP_CODE"
 eq "$code" 200 'Browser Console Scanner failed'
-contains "$(cat /tmp/cb-b2-console-scan.json)" '"status":"success"' 'Browser Console Scanner did not schedule successfully'
+contains "$(cat "$scan_output")" '"status":"success"' 'Browser Console Scanner did not schedule successfully'
 browser_actor="$(wp_cli eval '$j=\CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository::get();echo is_array($j)?(int)($j["started_by_user_id"]??-1):-1;')"
 eq "$browser_actor" "$target_id" 'Browser Console Scanner lost its authenticated WordPress operator attribution'
 wp_cli eval '\CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner::cancel_active();' >/dev/null
