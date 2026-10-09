@@ -27,6 +27,47 @@ The future canonical Level 2 integration runner is a **separately gated B2 task*
 It packages the existing runtime allowlist beneath `core-blueprint/`. The current
 plugin version is `1.0.0`.
 
+## B2 Safety Gate (read-only preview, not integration)
+
+This temporary B2 candidate implements only the **preflight safety boundary**.
+Inspect the existing MariaDB helper, canonical isolated path, and exact Base
+Git source identity without creating files, resetting databases, starting or
+stopping containers, or provisioning WordPress:
+
+~~~bash
+./tools/check-integration --preflight
+~~~
+
+The preflight checks:
+
+- The exact product-owned root `/tmp/core-blueprint-tests/core-blueprint`,
+  forbidding path traversal, symlink components, wrong paths, non-directories
+  and non-empty roots of unproven ownership.
+- The existing `cb-base-test-db` Docker container (image
+  `mariadb:10.11.19`, running state, container port 3306 published
+  through host port 3307); it does not change Docker state.
+- Exact Base source Git HEAD via read-only `git rev-parse`.
+- Potential externally exposed MariaDB port bindings and persistent
+  container mounts as warnings, **not** evidence of disposable database ownership.
+
+Only `docker inspect` and `git rev-parse` are launched by this preflight.
+No database is selected, queried, created, dropped, or reset.
+A preflight PASS never authorizes destructive actions and does not establish
+actual WordPress integration.
+
+Running `./tools/check-integration` **without** `--preflight` deliberately
+returns exit code **2 (BLOCKED)**. Unknown options return **64**. There is
+no opt-in or environment override that enables integration in B2 Safety Gate.
+Existing Base WordPress test tooling and Python customer-release builder are
+unchanged. A future independently reviewed and approved B2 integration
+implementation must introduce owner-verified disposable database semantics and
+re-check paths immediately before any mutation.
+
+The 17 safety fixture tests are included automatically in `./tools/check`.
+They do not access the real Docker daemon or WordPress/database state.
+
+---
+
 ## Required environment
 
 - Python 3.10+, PHP 8.4+, Node.js with `node --test`, Bash and unzip;

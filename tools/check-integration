@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# B2 Safety Gate only. Integration is intentionally unavailable until separately approved.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+case "${1:-}" in
+  --preflight)
+    [[ $# -eq 1 ]] || { echo 'Usage: ./tools/check-integration [--preflight]' >&2; exit 64; }
+    PYTHONDONTWRITEBYTECODE=1 python3 -B "$ROOT/tools/integration/preflight.py" --preflight
+    ;;
+  '')
+    [[ $# -eq 0 ]] || { echo 'Usage: ./tools/check-integration [--preflight]' >&2; exit 64; }
+    echo 'BLOCKED: Base Level 2 WordPress integration is not implemented or authorized by B2 Safety Gate.' >&2
+    echo 'For non-destructive environment inspection use: ./tools/check-integration --preflight' >&2
+    exit 2
+    ;;
+  *)
+    echo 'Usage: ./tools/check-integration [--preflight]' >&2
+    exit 64
+    ;;
+esac
