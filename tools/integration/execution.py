@@ -167,18 +167,23 @@ def safe_extract(data: bytes, destination: Path, archive_root: str) -> None:
     try:
         with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as archive:
             for member in archive:
-                parts = PurePosixPath(member.name).parts
-                if not parts or parts[0] != archive_root or any(
-                    segment in (".", "..", "") for segment in parts
-                ) or member.name.startswith("/"):
+                name = member.name.rstrip("/")
+                if name.startswith("/") or not name or "//" in name:
+                    raise preflight.PreflightError("Archive entry has an unsafe path.")
+                parts = name.split("/")
+                if any(segment in ("", ".", "..") for segment in parts):
                     raise preflight.PreflightError("Archive entry escapes the pinned root.")
+                if archive_root:
+                    if parts[0] != archive_root:
+                        raise preflight.PreflightError("Archive entry escapes the pinned root.")
+                    parts = parts[1:]
                 if not (member.isdir() or member.isfile()):
                     raise preflight.PreflightError("Archive contains link or unsupported entry.")
                 expanded += member.size if member.isfile() else 0
                 if expanded > MAX_UNPACK_BYTES:
                     raise preflight.PreflightError("Archive expansion size limit exceeded.")
-                if len(parts) > 1:
-                    validated.append((member, Path(*parts[1:])))
+                if parts:
+                    validated.append((member, Path(*parts)))
             destination.mkdir(mode=0o700)
             for member, relative in validated:
                 path = destination / relative
@@ -203,12 +208,12 @@ def safe_extract(data: bytes, destination: Path, archive_root: str) -> None:
 
 def download_pinned_archive(url: str) -> bytes:
     """Bounded HTTPS-only downloads of exact WordPress and wp-phpunit versions."""
-    if not url.startswith((
+    if url not in (
         "https://wordpress.org/wordpress-7.0.tar.gz",
         "https://wordpress.org/wordpress-7.1.tar.gz",
         "https://codeload.github.com/wp-phpunit/wp-phpunit/tar.gz/refs/tags/7.0.0",
         "https://codeload.github.com/wp-phpunit/wp-phpunit/tar.gz/refs/tags/7.1.0",
-    )):
+    ):
         raise preflight.PreflightError("Unapproved external fixture URL.")
     try:
         with urllib.request.urlopen(url, timeout=60) as response:
