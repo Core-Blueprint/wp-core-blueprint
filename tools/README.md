@@ -109,6 +109,66 @@ and network exposure assessment.
 
 ---
 
+## B2c prepared integration engine, EXECUTION NOT AUTHORIZED
+
+The B2c feature branch introduces `tools/integration/execution.py` and isolated
+safety regressions. The engine contains the future WordPress integration stages,
+but **no CLI execution entrypoint has been enabled**. The publicly available
+`./tools/check-integration --execute` continues to return exit code 2.
+
+Important differences from the legacy Base installer:
+
+- Never run `tests/bin/install-wp-tests.sh` from this engine: it contains
+  directory deletion. Prepare only **new** `/tmp/core-blueprint-tests/core-blueprint/`
+  paths and use verified archive extraction that rejects links and traversal.
+- Acquire an exclusive, owner-only lock. Existing locks, workspaces and test
+  databases are hard failures. The lock is not automatically removed after
+  either success or failure. Manual reconciliation is mandatory before retry.
+- Record the exact Git HEAD, product name, WordPress version and new-only
+  database in an owner marker. Stage exactly the committed Base source and
+  check runtime parity against the Python release-builder's manifest before
+  and after the suite.
+- The only planned SQL mutation is CREATE DATABASE
+  `core_blueprint_base_test` without IF NOT EXISTS. Reusing, dropping and
+  cleaning an existing database are forbidden. The established
+  `wordpress_test` database and shared MariaDB volume remain untouched.
+- Reuse existing `cb-base-test-db` only. **Execution refuses the currently
+  detected non-loopback 3307 binding**. Fixing Docker's port publication
+  requires a separate, reviewed operator action. Persistent volumes alone
+  are not proof of database ownership, and no volume reset is performed.
+- Provision WordPress 7.0 or 7.1 and matching wp-phpunit into the new
+  Base-owned directory. The staged source and WordPress test copy must match.
+  The full PHPUnit, lifecycle, Starter, modules, performance, WP-CLI,
+  provenance and Media Replace conformance matrix is present. Destructive
+  uninstall is explicitly outside this runner.
+- Override the default `TMPDIR`, `RUNNER_TEMP`, WP-CLI download path and
+  performance result directory into the dedicated workspace. Audit any
+  remaining historical hard-coded paths before authorizing live execution.
+- Keep the workspace, database and lock for operator review on failure.
+  There is **no automatic rollback**, reset, deletion, CI or customer build.
+
+B2c operator acceptance remains strictly read-only:
+
+~~~bash
+./tools/check
+./tools/check-integration --preflight
+./tools/check-integration --dry-run
+./tools/check-integration --execute  # expected BLOCKED, exit 2
+~~~
+
+The newly added `tests/python/test_integration_execution.py` suite exercises
+workspace ownership, lock collision, new-only SQL, pinned archive extraction,
+runtime suite selection and blocked CLI behaviour using disposable Python
+fixtures and mocks. It does not call Docker or download WordPress.
+
+**This is development evidence, not a WordPress integration PASS.** Before
+activating B2c in a separate reviewed patch, resolve the non-loopback Docker
+publication, audit older downstream request-boundary scripts for hardcoded
+filesystem paths/HTTP ports, and locally accept all fail-closed regressions.
+Retain B3 customer builder harmonization as a separate future gate.
+
+---
+
 ## Required environment
 
 - Python 3.10+, PHP 8.4+, Node.js with `node --test`, Bash and unzip;
