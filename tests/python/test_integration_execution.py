@@ -308,9 +308,33 @@ class ExecutionSafetyTest(unittest.TestCase):
         result = subprocess.run(
             ["bash", str(execution.SOURCE / "tools/check-integration"), "--execute"],
             capture_output=True, text=True, check=False,
+            env={**os.environ, "CB_BASE_INTEGRATION_APPROVAL": ""},
         )
         self.assertEqual(2, result.returncode)
         self.assertIn("BLOCKED", result.stderr)
+
+
+    def test_explicit_approval_calls_prepared_pipeline_without_test_side_effects(self):
+        with mock.patch.dict(os.environ, {
+            "CB_BASE_INTEGRATION_APPROVAL": "I_APPROVE_FRESH_BASE_TEST_DATABASE"
+        }), mock.patch.object(execution, "prepared_pipeline") as pipeline:
+            self.assertEqual(0, execution.main(["--execute"]))
+            pipeline.assert_called_once_with()
+
+    def test_invalid_approval_cannot_reach_pipeline(self):
+        for approval in ("", "yes", "I_APPROVE_FRESH_BASE_TEST_DATABASE_EXTRA"):
+            with self.subTest(approval=approval):
+                with mock.patch.dict(os.environ, {"CB_BASE_INTEGRATION_APPROVAL": approval}), \
+                     mock.patch.object(execution, "prepared_pipeline") as pipeline:
+                    self.assertEqual(2, execution.main(["--execute"]))
+                    pipeline.assert_not_called()
+
+    def test_failure_does_not_report_success_or_cleanup(self):
+        with mock.patch.dict(os.environ, {
+            "CB_BASE_INTEGRATION_APPROVAL": "I_APPROVE_FRESH_BASE_TEST_DATABASE"
+        }), mock.patch.object(execution, "prepared_pipeline",
+                             side_effect=preflight.PreflightError("unsafe network")):
+            self.assertEqual(1, execution.main(["--execute"]))
 
 
 if __name__ == "__main__":
