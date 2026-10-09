@@ -252,6 +252,53 @@ test('session selection lifecycle validates paths, reconciles replacement and ex
 	session.dispose();
 });
 
+test('public historyStatus exposes frozen undo/redo capability without CommandHistory access', () => {
+	const session = publicEditor.createSession({ project: flowProject(), profile: 'document-flow' });
+	assert.deepEqual(session.historyStatus(), { canUndo: false, canRedo: false, size: 0 });
+	assert.equal(Object.isFrozen(session.historyStatus()), true);
+
+	session.execute(publicEditor.setPropertyCommand([0], ['value', 'text'], 'Revised'));
+	assert.deepEqual(session.historyStatus(), { canUndo: true, canRedo: false, size: 1 });
+	assert.equal(session.undo(), true);
+	assert.deepEqual(session.historyStatus(), { canUndo: false, canRedo: true, size: 0 });
+	assert.equal(session.redo(), true);
+	assert.deepEqual(session.historyStatus(), { canUndo: true, canRedo: false, size: 1 });
+	session.replace(flowProject(), { source: 'server-refresh' });
+	assert.deepEqual(session.historyStatus(), { canUndo: false, canRedo: false, size: 0 });
+	session.dispose();
+	assert.throws(() => session.historyStatus(), /disposed/);
+});
+
+test('public setSelection provides atomic multi-path and external projection without persisting selection', () => {
+	const events = [];
+	const session = publicEditor.createSession({
+		project: flowProject(),
+		profile: 'document-flow',
+		onSelectionChange: (snapshot, context) => events.push({ snapshot, action: context.event.action }),
+	});
+	assert.equal(session.setSelection([[0]], { primary: [0], source: 'layers' }), true);
+	assert.deepEqual(session.selection(), { paths: [[0]], primary: [0] });
+	assert.equal(session.setSelection([[0]], { primary: [0], source: 'layers' }), false);
+	assert.equal(events.length, 1);
+
+	const before = session.selection();
+	assert.throws(() => session.setSelection([[0], [42]], { source: 'layers' }), /outside the current project/);
+	assert.deepEqual(session.selection(), before, 'invalid project paths must not partially mutate selection');
+
+	assert.equal(session.setSelection([[0], [42], [42]], { primary: [42], source: 'external-projection', external: true }), true);
+	assert.deepEqual(session.selection(), { paths: [[0], [42]], primary: [42] });
+	assert.equal(events.length, 2, 'one coherent event must publish the external set');
+	assert.equal(events[1].action, 'set');
+	assert.deepEqual(Object.keys(session.snapshot()).includes('editor_state'), false, 'selection must not be persisted');
+	assert.throws(() => session.setSelection([[-1]], { external: true }), /non-negative integers/);
+	assert.deepEqual(session.selection().primary, [42], 'invalid external paths must not mutate selection');
+
+	assert.equal(session.clearSelection({ source: 'external-projection' }), true);
+	assert.deepEqual(session.selection(), { paths: [], primary: null });
+	session.dispose();
+	assert.throws(() => session.setSelection([[0]], { external: true }), /disposed/);
+});
+
 test('canonical selection controller synchronizes Layers Inspector and canvas and opens Inspector for UI and insert selection', () => {
 	const session = publicEditor.createSession({ project: flowProject(), profile: 'document-flow' });
 	const order = [];
