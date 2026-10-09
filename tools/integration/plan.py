@@ -88,7 +88,7 @@ def plan_steps(version: str, sha: str) -> tuple[str, ...]:
         "Run lifecycle, pinned Starter consumer and module-conformance scenarios "
         "under the isolated test configuration",
         "Record exact-head evidence and every gate; do NOT include destructive uninstall",
-        "Keep customer ZIP, CI, field tests, database cleanup and uninstall independently gated",
+        "Keep customer ZIP, CI, field tests, database cleanup and destructive uninstall independently gated",
     )
 
 
@@ -108,7 +108,10 @@ def dry_run() -> int:
         print("No filesystem, Docker or database changes were attempted.", file=sys.stderr)
         return 1
 
-    print("Base Level 2 dry-run: PASS (read-only inspection, not integration)")
+    print("Base Level 2 dry-run: " + (
+        "BLOCKED (existing test database)" if occupied
+        else "PASS (read-only inspection, not integration)"
+    ))
     print(f"Exact Base HEAD: {sha}")
     print(f"WordPress target: {version}; PHP baseline: 8.4+")
     print(f"Canonical workspace: {target} ({state}; untouched)")
