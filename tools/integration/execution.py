@@ -6,7 +6,7 @@ Safety contract:
 - NEW dedicated database only (CREATE without IF NOT EXISTS; never DROP);
 - refuse Docker bindings outside loopback, never start/replace containers;
 - no automatic cleanup on failure, preserve evidence for manual review;
-- current CLI --execute remains BLOCKED until separate operator authorization.
+- CLI execution requires an explicit operator opt-in and safe environment preflight.
 """
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ import os
 from pathlib import Path
 import stat
 import subprocess
+import sys
 import tarfile
 import urllib.request
 from urllib.parse import urlparse
@@ -356,8 +357,27 @@ def prepared_pipeline() -> None:
         run_full_suite(version, sha)
 
 
+def main(args: list[str] | None = None) -> int:
+    """Opt-in entrypoint; no filesystem, Docker or SQL work before authorization."""
+    args = sys.argv[1:] if args is None else args
+    if args != ["--execute"]:
+        print("Usage: python3 -B -m tools.integration.execution --execute", file=sys.stderr)
+        return 64
+    if os.environ.get("CB_BASE_INTEGRATION_APPROVAL") != "I_APPROVE_FRESH_BASE_TEST_DATABASE":
+        print("BLOCKED: explicit fresh Base test-database approval is missing.", file=sys.stderr)
+        return 2
+    try:
+        prepared_pipeline()
+    except preflight.PreflightError as error:
+        print(f"Base Level 2: BLOCKED: {error}", file=sys.stderr)
+        print("No automatic cleanup; inspect any owned test workspace/database before retrying.", file=sys.stderr)
+        return 1
+    print("Base Level 2: PASS (isolated WordPress integration and full matrix).")
+    print(f"Exact Base HEAD: {preflight.read_source_commit(SOURCE)}")
+    print("Release builder requires the matching isolated environment variables.")
+    print("Never point tools/build-release at a production or staging database.")
+    return 0
+
+
 if __name__ == "__main__":
-    raise SystemExit(
-        "BLOCKED: Base B2c integration engine is prepared, but no execution CLI is "
-        "authorized. Review safety tests and request a separate execution GO."
-    )
+    raise SystemExit(main())
