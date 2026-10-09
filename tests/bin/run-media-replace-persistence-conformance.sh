@@ -114,7 +114,7 @@ perform_replace(){
 
 success0="$(audit_count media_file_replaced)"
 failure0="$(audit_count media_replace_failed)"
-code="$(perform_replace "$fixture_dir/replacement.wav" /tmp/cb-c2c-success.html)"
+code="$(perform_replace "$fixture_dir/replacement.wav" "$fixture_dir/success.html")"
 eq "$code" 302 'Real browser Media Replace success request did not redirect'
 eq "$(audit_count media_file_replaced)" "$((success0+1))" 'Successful replacement did not emit exactly one success audit'
 eq "$(audit_count media_replace_failed)" "$failure0" 'Successful replacement emitted a failure audit'
@@ -159,7 +159,7 @@ wp_cli option update cb_c2c_fault_attachment "$attachment_id" >/dev/null
 wp_cli option update cb_c2c_fault_key _wp_attachment_metadata >/dev/null
 success_before="$(audit_count media_file_replaced)"
 failure_before="$(audit_count media_replace_failed)"
-code="$(perform_replace "$fixture_dir/failure.wav" /tmp/cb-c2c-metadata-failure.html)"
+code="$(perform_replace "$fixture_dir/failure.wav" "$fixture_dir/metadata-failure.html")"
 eq "$code" 302 'Metadata persistence failure request did not return through the handler'
 eq "$(audit_count media_file_replaced)" "$success_before" 'Rejected metadata persistence emitted a false success audit'
 eq "$(audit_count media_replace_failed)" "$((failure_before+1))" 'Rejected metadata persistence did not emit exactly one failure audit'
@@ -174,7 +174,7 @@ echo "[C2-C] Metadata-write mismatch rollback PASS"
 wp_cli option update cb_c2c_fault_key _cb_media_replace_revision >/dev/null
 success_before="$(audit_count media_file_replaced)"
 failure_before="$(audit_count media_replace_failed)"
-code="$(perform_replace "$fixture_dir/failure.wav" /tmp/cb-c2c-revision-failure.html)"
+code="$(perform_replace "$fixture_dir/failure.wav" "$fixture_dir/revision-failure.html")"
 eq "$code" 302 'Replacement-meta persistence failure request did not return through the handler'
 eq "$(audit_count media_file_replaced)" "$success_before" 'Rejected replacement-meta persistence emitted a false success audit'
 eq "$(audit_count media_replace_failed)" "$((failure_before+1))" 'Rejected replacement-meta persistence did not emit exactly one failure audit'
