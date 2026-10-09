@@ -19,7 +19,7 @@ It requires PHP 8.4+, Composer, Node.js, Python 3 and Bash and executes:
 
 No Docker commands, WordPress test setup, database access, customer ZIP construction or `dist/` writes are performed by this entrypoint. The Python tests use disposable temporary fixtures outside the source tree. B1 does not replace the full WordPress integration, release or field gates; it does not modify the existing Python release builder.
 
-The future canonical Level 2 integration runner is a **separately gated B2 task**. Until it is implemented and accepted, the existing Base test/bootstrap procedure and the fail-closed production builder below remain the actual Level 2/3 authority. Never report `./tools/check` PASS as WordPress integration or customer-release PASS.
+The Level 2 integration runner is separately gated below. Never report `./tools/check` PASS as WordPress integration or customer-release PASS.
 
 ---
 
@@ -27,145 +27,77 @@ The future canonical Level 2 integration runner is a **separately gated B2 task*
 It packages the existing runtime allowlist beneath `core-blueprint/`. The current
 plugin version is `1.0.0`.
 
-## B2 Safety Gate (read-only preview, not integration)
+## Base Level 2: safe inspection and separately approved execution
 
-This temporary B2 candidate implements only the **preflight safety boundary**.
-Inspect the existing MariaDB helper, canonical isolated path, and exact Base
-Git source identity without creating files, resetting databases, starting or
-stopping containers, or provisioning WordPress:
+The canonical integration entrypoint is `./tools/check-integration`.
 
-~~~bash
-./tools/check-integration --preflight
-~~~
-
-The preflight checks:
-
-- The exact product-owned root `/tmp/core-blueprint-tests/core-blueprint`,
-  forbidding path traversal, symlink components, wrong paths, non-directories
-  and non-empty roots of unproven ownership.
-- The existing `cb-base-test-db` Docker container (image
-  `mariadb:10.11.19`, running state, container port 3306 published
-  through host port 3307); it does not change Docker state.
-- Exact Base source Git HEAD via read-only `git rev-parse`.
-- Potential externally exposed MariaDB port bindings and persistent
-  container mounts as warnings, **not** evidence of disposable database ownership.
-
-Only `docker inspect` and `git rev-parse` are launched by this preflight.
-No database is selected, queried, created, dropped, or reset.
-A preflight PASS never authorizes destructive actions and does not establish
-actual WordPress integration.
-
-Running `./tools/check-integration` **without** `--preflight` deliberately
-returns exit code **2 (BLOCKED)**. Unknown options return **64**. There is
-no opt-in or environment override that enables integration in B2 Safety Gate.
-Existing Base WordPress test tooling and Python customer-release builder are
-unchanged. A future independently reviewed and approved B2 integration
-implementation must introduce owner-verified disposable database semantics and
-re-check paths immediately before any mutation.
-
-The 18 safety fixture tests are included automatically in `./tools/check`.
-They do not access the real Docker daemon or WordPress/database state.
-
----
-
-## B2b plan-only dry-run candidate
-
-This review branch adds **no integration executor**. Run:
+Read-only commands, safe to use before operator approval:
 
 ~~~bash
 ./tools/check-integration --preflight
 ./tools/check-integration --dry-run
 ~~~
 
-`--dry-run` is read-only. It verifies the canonical (empty/absent) isolated
-root, exact clean Base Git HEAD, locked PHPUnit dependencies, PHP 8.4+, the
-existing Docker container and WordPress target 7.0 or 7.1. It also makes one
-fixed SQL **SELECT** against `INFORMATION_SCHEMA.SCHEMATA` through the
-existing helper to check whether the dedicated `core_blueprint_base_test`
-database already exists. No arbitrary SQL/name/host override is accepted and
-nothing is created, reset, downloaded or removed. This new dedicated candidate
-is **intentionally not** the legacy `wordpress_test` database; reconcile
-that operator convention with the Base runbook before enabling execution.
+The preflight checks the exact Base Git HEAD and canonical test root. The dry-run
+also checks Composer/PHP prerequisites and uses only a fixed SQL SELECT to
+determine whether the dedicated test database already exists. These commands
+never create, reset, drop or reuse a database or alter the Docker container.
 
-- If `core_blueprint_base_test` exists, the dry-run exits nonzero. A matching
-  name is NOT proof that the database is disposable.
-- Existing filesystem content or symlink components are rejected.
-- Network exposure and persistent container mounts remain warnings visible to
-  the operator, not claims that database ownership has been established. They
-  remain explicit blockers for future execution authorization.
-- The dry-run prints the planned full integration suite and request-boundary
-  scenarios with the exact Base source commit. It does not run them.
-- `./tools/check-integration` and `--execute` both return exit 2 (BLOCKED).
-  Unknown modes return 64. There is **no** environment override that activates
-  WordPress provisioning or database mutations in this branch.
-- The independent uninstall scenario, CI, customer ZIP and field acceptance
-  remain outside B2b. Base's existing Python builder is unchanged.
+**Opt-in is deliberately separate.** No-argument invocation and unauthorised
+`--execute` return exit 2 (BLOCKED). Before considering execution, review
+Docker port exposure and persistent mounts, workspace ownership, an existing
+schema and any local data. The runner refuses non-loopback MariaDB publication;
+it does not reconfigure the container or remove files/volumes.
 
-Review the new tests under `tests/python/test_integration_plan.py` through
-`./tools/check` before approving any future integration-execution patch.
-Real execution will require a separate GO, exclusive ownership and concurrent
-run protection, mutation-time revalidation, database provenance safeguards,
-and network exposure assessment.
-
----
-
-## B2c prepared integration engine, EXECUTION NOT AUTHORIZED
-
-The B2c feature branch introduces `tools/integration/execution.py` and isolated
-safety regressions. The engine contains the future WordPress integration stages,
-but **no CLI execution entrypoint has been enabled**. The publicly available
-`./tools/check-integration --execute` continues to return exit code 2.
-
-Important differences from the legacy Base installer:
-
-- Never run `tests/bin/install-wp-tests.sh` from this engine: it contains
-  directory deletion. Prepare only **new** `/tmp/core-blueprint-tests/core-blueprint/`
-  paths and use verified archive extraction that rejects links and traversal.
-- Acquire an exclusive, owner-only lock. Existing locks, workspaces and test
-  databases are hard failures. The lock is not automatically removed after
-  either success or failure. Manual reconciliation is mandatory before retry.
-- Record the exact Git HEAD, product name, WordPress version and new-only
-  database in an owner marker. Stage exactly the committed Base source and
-  check runtime parity against the Python release-builder's manifest before
-  and after the suite.
-- The only planned SQL mutation is CREATE DATABASE
-  `core_blueprint_base_test` without IF NOT EXISTS. Reusing, dropping and
-  cleaning an existing database are forbidden. The established
-  `wordpress_test` database and shared MariaDB volume remain untouched.
-- Reuse existing `cb-base-test-db` only. **Execution refuses the currently
-  detected non-loopback 3307 binding**. Fixing Docker's port publication
-  requires a separate, reviewed operator action. Persistent volumes alone
-  are not proof of database ownership, and no volume reset is performed.
-- Provision WordPress 7.0 or 7.1 and matching wp-phpunit into the new
-  Base-owned directory. The staged source and WordPress test copy must match.
-  The full PHPUnit, lifecycle, Starter, modules, performance, WP-CLI,
-  provenance and Media Replace conformance matrix is present. Destructive
-  uninstall is explicitly outside this runner.
-- Override the default `TMPDIR`, `RUNNER_TEMP`, WP-CLI download path and
-  performance result directory into the dedicated workspace. Audit any
-  remaining historical hard-coded paths before authorizing live execution.
-- Keep the workspace, database and lock for operator review on failure.
-  There is **no automatic rollback**, reset, deletion, CI or customer build.
-
-B2c operator acceptance remains strictly read-only:
+Only after an explicit operator approval **and** a safe dry-run may the operator
+invoke:
 
 ~~~bash
-./tools/check
-./tools/check-integration --preflight
-./tools/check-integration --dry-run
-./tools/check-integration --execute  # expected BLOCKED, exit 2
+CB_BASE_INTEGRATION_APPROVAL=I_APPROVE_FRESH_BASE_TEST_DATABASE ./tools/check-integration --execute
 ~~~
 
-The newly added `tests/python/test_integration_execution.py` suite exercises
-workspace ownership, lock collision, new-only SQL, pinned archive extraction,
-runtime suite selection and blocked CLI behaviour using disposable Python
-fixtures and mocks. It does not call Docker or download WordPress.
+This opt-in permits **new test resources**, not production or staging changes.
+The real runner creates only a new Base-owned workspace at
+`/tmp/core-blueprint-tests/core-blueprint/` and a previously nonexistent
+`core_blueprint_base_test` schema on the existing loopback-only
+`cb-base-test-db` container (port 3307). It stages pinned WordPress and
+wp-phpunit, checks exact-source runtime parity and runs the full integration
+matrix. It never touches the existing `wordpress_test` database, never uses
+the legacy destructive WordPress installer, never drops an existing schema and
+never automatically deletes its workspace or lock. A failure requires manual
+review; do not bypass a collision or rerun blindly.
 
-**This is development evidence, not a WordPress integration PASS.** Before
-activating B2c in a separate reviewed patch, resolve the non-loopback Docker
-publication, audit older downstream request-boundary scripts for hardcoded
-filesystem paths/HTTP ports, and locally accept all fail-closed regressions.
-Retain B3 customer builder harmonization as a separate future gate.
+The B2/B3 browser regression temporary outputs are scoped into `RUNNER_TEMP`
+under that protected workspace when called from the runner. The dedicated
+uninstall scenario and customer deployment are outside this command.
+
+After successful Level 2 execution, the existing official Base customer
+builder still requires the matching isolated test environment in the current
+shell. For this exact local runner, configure its environment explicitly:
+
+~~~bash
+export WP_CORE_DIR=/tmp/core-blueprint-tests/core-blueprint/wp
+export WP_TESTS_DIR=/tmp/core-blueprint-tests/core-blueprint/wp-tests
+export CB_PLUGIN_FILE=/tmp/core-blueprint-tests/core-blueprint/wp/wp-content/plugins/core-blueprint/core-blueprint.php
+export WP_DB_NAME=core_blueprint_base_test
+export WP_DB_USER=root
+export WP_DB_PASSWORD=root
+export WP_DB_HOST=127.0.0.1:3307
+python3 tools/build-release
+~~~
+
+The builder still independently reruns its mandatory PHPUnit integration
+gate and all package checks; it is NOT weakened or bypassed by the opt-in.
+Exact source HEAD, isolated WordPress runtime and package parity remain required.
+Only `tools/build-release` can produce the accepted
+`dist/core-blueprint-1.0.0.zip` with SHA-256 sidecar. Verify the archive
+and Base public Designer APIs before any field deployment.
+
+**Status:** this branch prepares the explicit runner entrypoint and regression
+fixtures for review. Until the new exact-head tests, safe localhost-only Docker
+preflight, real Level 2 execution and canonical build all PASS, customer
+release remains BLOCKED. Do not claim integration or field PASS from source
+inspection or mock-based unit tests.
 
 ---
 
