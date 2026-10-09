@@ -36,6 +36,8 @@ Supported v1 session methods and state accessors are:
 - `snapshot()`
 - `replace(project, options)`
 - `selection()`
+- `setSelection(paths, options)` (additive v1, atomic multi-path selection)
+- `historyStatus()` (additive v1, frozen undo/redo/size snapshot)
 - `select(path, options)`
 - `clearSelection(options)`
 - `subscribeSelection(listener, options)`
@@ -48,6 +50,18 @@ Supported v1 session methods and state accessors are:
 - `dispose()`
 
 The session owns project validation against the selected profile, command history and editor-only selection/validation state. Consumers must not persist editor-session state into their domain document.
+
+### Additive v1 selection and history APIs (2026-10-09)
+
+`session.historyStatus()` returns a frozen, non-persisted `{ canUndo, canRedo, size }` snapshot. Unlike the internal `session.history` implementation member, it does not expose mutable history controls or stack details. Call it after a successful command/undo/redo/replacement when updating domain chrome.
+
+`session.setSelection(paths, { primary = null, source = 'consumer', external = false })` atomically updates a multi-path selection. Each path is an array of non-negative integer child indices; duplicate paths are deduplicated. The optional `primary` must be one of the selected paths to remain primary; if omitted the most recently specified selected path becomes primary. A successful change produces one selection event with `action: 'set'`. No-op changes do not publish an event. Invalid path shape throws without mutating the existing selection.
+
+**Default `external: false` is fail-closed:** all paths must resolve to actual nodes in the current DesignProject, otherwise a `RangeError` is raised before any mutation.
+
+**Explicit `external: true`** is solely for consumers, such as Certificates, that project a live, transient domain editor list onto path indices while the DesignProject stores separate session authoring state. This relaxes *existence* validation only; path shape remains validated, selection remains session-only, and the consumer is responsible for mapping IDs and reconciling when the external list changes. It does **not** relax DesignProject validation, authorise a command or change the normal `select()` contract. Base commands/replacements may reconcile or clear project-foreign paths; external projection consumers must reconcile by stable domain IDs after each authoring mutation. Do not use external selections as a permissions check.
+
+Neither API exposes `EditorState`, `SelectionState` or `CommandHistory`. Existing public session APIs remain unchanged.
 
 ### Shell
 
