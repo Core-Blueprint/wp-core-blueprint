@@ -187,6 +187,37 @@ export const createSession = ({
 			return next;
 		},
 		selection: () => editorState.selection.snapshot(),
+		/**
+		 * Atomic public multi-path selection, including external-domain projections.
+		 *
+		 * By default every path must exist in the current DesignProject. Consumers
+		 * whose ephemeral authoring model is projected outside the project tree
+		 * may opt in to external paths; this does not authorise project mutations
+		 * or persist selection as document data.
+		 */
+		setSelection(paths, { primary = null, source = 'consumer', external = false } = {}) {
+			assertActive();
+			if (!Array.isArray(paths)) throw new TypeError('Design editor selection paths must be an array.');
+			if (external !== true && paths.some((path) => !nodeAt(projectState.current().root, path))) {
+				throw new RangeError('Design editor selection contains a path outside the current project.');
+			}
+			if (primary !== null && !Array.isArray(primary)) {
+				throw new TypeError('Design editor primary selection must be a path or null.');
+			}
+			return editorState.selection.set(paths, primary, { source, action: 'set' });
+		},
+		/**
+		 * Immutable snapshot of the command history state. This API does not
+		 * expose CommandHistory or its implementation to consumers.
+		 */
+		historyStatus() {
+			assertActive();
+			return Object.freeze({
+				canUndo: history.canUndo,
+				canRedo: history.canRedo,
+				size: history.size,
+			});
+		},
 		select(path, { additive = false, source = 'consumer' } = {}) {
 			assertActive();
 			if (!Array.isArray(path) || !nodeAt(projectState.current().root, path)) return false;
