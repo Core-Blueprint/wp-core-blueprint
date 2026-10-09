@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Core Blueprint Base Level 1: source/product checks only. No WP or database setup.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+fail() {
+  printf 'Base Level 1 checks failed: %s\n' "$*" >&2
+  exit 1
+}
+
+for command_name in bash php node python3 composer; do
+  command -v "$command_name" >/dev/null 2>&1 \
+    || fail "missing required tool: $command_name"
+done
+
+php -r 'exit(PHP_VERSION_ID >= 80400 ? 0 : 1);' \
+  || fail 'PHP 8.4 or newer is required'
+
+for required in \
+  tests/bin/php-lint.sh \
+  tests/public-admin-navigation-foundation-regression.php \
+  tests/public-tile-foundation-regression.php; do
+  [[ -f "$ROOT/$required" ]] || fail "required source check missing: $required"
+done
+[[ -d "$ROOT/tests/python" ]] || fail 'Python source-regression directory is missing'
+
+printf '== Composer metadata ==\n'
+composer validate --strict --no-check-publish
+
+printf '== PHP syntax and canonical read-only translations ==\n'
+bash tests/bin/php-lint.sh
+
+printf '== Standalone public foundation regressions ==\n'
+php tests/public-admin-navigation-foundation-regression.php
+php tests/public-tile-foundation-regression.php
+
+shopt -s globstar nullglob
+js_sources=( "$ROOT"/assets/**/*.js )
+(( ${#js_sources[@]} > 0 )) || fail 'shipped JavaScript source files are missing'
+printf '== Shipped JavaScript syntax: %d files ==\n' "${#js_sources[@]}"
+for script in "${js_sources[@]}"; do
+  node --check "$script"
+done
+
+js_tests=( "$ROOT"/tests/js/*.test.mjs )
+(( ${#js_tests[@]} > 0 )) || fail 'JavaScript regression suite is missing'
+printf '== JavaScript regression suite: %d files ==\n' "${#js_tests[@]}"
+node --test "${js_tests[@]}"
+
+printf '== Python builder and localization failure-path regressions ==\n'
+PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover \
+  -s tests/python -p 'test*.py' -v
+
+printf 'Core Blueprint Base Level 1 checks: PASS\n'

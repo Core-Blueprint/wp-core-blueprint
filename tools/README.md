@@ -1,5 +1,28 @@
 # Core Blueprint release tooling
 
+## Canonical Base Level 1 check (B1 candidate)
+
+The independent, **read-only source/product** entrypoint is:
+
+~~~bash
+./tools/check
+~~~
+
+It requires PHP 8.4+, Composer, Node.js, Python 3 and Bash and executes:
+
+1. Strict Composer metadata validation (existing system Composer versions may print PHP deprecation notices while returning 0).
+2. Existing PHP syntax and read-only canonical translation check via `tests/bin/php-lint.sh`.
+3. The two standalone public Admin Navigation and Tile Foundation regressions.
+4. Syntax checks for all shipped JavaScript files in `assets/`.
+5. All `tests/js/*.test.mjs` runtime regressions.
+6. The isolated Python release-builder/localization failure-path suite, including Level 1 runner orchestration tests.
+
+No Docker commands, WordPress test setup, database access, customer ZIP construction or `dist/` writes are performed by this entrypoint. The Python tests use disposable temporary fixtures outside the source tree. B1 does not replace the full WordPress integration, release or field gates; it does not modify the existing Python release builder.
+
+The future canonical Level 2 integration runner is a **separately gated B2 task**. Until it is implemented and accepted, the existing Base test/bootstrap procedure and the fail-closed production builder below remain the actual Level 2/3 authority. Never report `./tools/check` PASS as WordPress integration or customer-release PASS.
+
+---
+
 `tools/build-release` is the canonical fail-closed Base customer-release entrypoint.
 It packages the existing runtime allowlist beneath `core-blueprint/`. The current
 plugin version is `1.0.0`.
