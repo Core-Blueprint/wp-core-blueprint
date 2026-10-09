@@ -165,7 +165,7 @@ class BaseIntegrationPlanTest(unittest.TestCase):
         self.assertIn("performance baseline", steps)
         self.assertIn("WP-CLI", steps)
         self.assertIn("Media Replace", steps)
-        self.assertIn("run-cli-provenance-conformance.sh", plan.REQUIRED)
+        self.assertIn("tests/bin/run-cli-provenance-conformance.sh", plan.REQUIRED)
 
     def test_execution_plan_has_no_destructive_uninstall_gate(self):
         steps = plan.plan_steps("7.0", "f" * 40)
