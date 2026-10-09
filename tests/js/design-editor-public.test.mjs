@@ -291,7 +291,8 @@ test('public setSelection provides atomic multi-path and external projection wit
 	assert.equal(events[1].action, 'set');
 	assert.deepEqual(Object.keys(session.snapshot()).includes('editor_state'), false, 'selection must not be persisted');
 	assert.throws(() => session.setSelection([[-1]], { external: true }), /non-negative integers/);
-	assert.deepEqual(session.selection().primary, [42], 'invalid external paths must not mutate selection');
+	assert.throws(() => session.setSelection([[0]], { primary: [-1], external: true }), /non-negative integers/);
+	assert.deepEqual(session.selection(), { paths: [[0], [42]], primary: [42] }, 'invalid external paths or primary must not mutate selection');
 
 	assert.equal(session.clearSelection({ source: 'external-projection' }), true);
 	assert.deepEqual(session.selection(), { paths: [], primary: null });
