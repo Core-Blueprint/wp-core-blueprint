@@ -152,10 +152,26 @@ def create_fresh_database(sha: str) -> None:
         f"CREATE DATABASE `{DB}` CHARACTER SET utf8mb4 "
         "COLLATE utf8mb4_unicode_ci;"
     )
-    plan.read_only(
-        ["docker", "exec", preflight.CONTAINER, "mariadb", "-uroot", "-proot", "-e", sql],
-        "Creation of a strictly new, isolated Base test database",
+    # Recheck the container immediately before the sole permitted SQL mutation.
+    warnings, _ = preflight.validate_docker_metadata(
+        preflight.read_docker_metadata()
     )
+    if any("beyond loopback" in warning for warning in warnings):
+        raise preflight.PreflightError("MariaDB network exposure changed before database creation.")
+    if preflight.read_source_commit(SOURCE) != sha:
+        raise preflight.PreflightError("Source changed before database creation.")
+    try:
+        result = subprocess.run(
+            ["docker", "exec", preflight.CONTAINER, "mariadb",
+             "-uroot", "-proot", "-e", sql],
+            capture_output=True, text=True, check=False, timeout=20,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise preflight.PreflightError("Creating the new isolated schema failed.") from error
+    if result.returncode != 0:
+        raise preflight.PreflightError(
+            "CREATE DATABASE did not succeed; existing schemas were not modified."
+        )
 
 
 def safe_extract(data: bytes, destination: Path, archive_root: str) -> None:
