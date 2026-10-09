@@ -97,7 +97,10 @@ class ExecutionSafetyTest(unittest.TestCase):
         patches = self.patch_root()
         with patches[0], patches[1], patches[2], patches[3], \
              mock.patch.object(execution.plan, "database_exists", return_value=False), \
-             mock.patch.object(execution.plan, "read_only", return_value="") as run:
+             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_docker_metadata", return_value=([], "MariaDB")), \
+             mock.patch.object(execution.preflight, "read_source_commit", return_value=self.sha), \
+             mock.patch.object(execution.subprocess, "run", return_value=mock.Mock(returncode=0)) as run:
             execution.create_new_workspace(self.sha, "7.0")
             execution.create_fresh_database(self.sha)
         run.assert_called_once()
@@ -112,11 +115,54 @@ class ExecutionSafetyTest(unittest.TestCase):
         patches = self.patch_root()
         with patches[0], patches[1], patches[2], patches[3], \
              mock.patch.object(execution.plan, "database_exists", return_value=True), \
-             mock.patch.object(execution.plan, "read_only") as run:
+             mock.patch.object(execution.subprocess, "run") as run:
             execution.create_new_workspace(self.sha, "7.0")
             with self.assertRaisesRegex(preflight.PreflightError, "collision"):
                 execution.create_fresh_database(self.sha)
         run.assert_not_called()
+
+    def test_network_exposure_change_blocks_database_creation(self):
+        patches = self.patch_root()
+        with patches[0], patches[1], patches[2], patches[3], \
+             mock.patch.object(execution.plan, "database_exists", return_value=False), \
+             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_docker_metadata",
+                               return_value=(["MariaDB is bound beyond loopback"], "MariaDB")), \
+             mock.patch.object(execution.subprocess, "run") as run:
+            execution.create_new_workspace(self.sha, "7.0")
+            with self.assertRaisesRegex(preflight.PreflightError, "network exposure changed"):
+                execution.create_fresh_database(self.sha)
+        run.assert_not_called()
+
+    def test_git_head_change_blocks_database_creation(self):
+        patches = self.patch_root()
+        with patches[0], patches[1], patches[2], patches[3], \
+             mock.patch.object(execution.plan, "database_exists", return_value=False), \
+             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_docker_metadata",
+                               return_value=([], "MariaDB")), \
+             mock.patch.object(execution.preflight, "read_source_commit", return_value="b" * 40), \
+             mock.patch.object(execution.subprocess, "run") as run:
+            execution.create_new_workspace(self.sha, "7.0")
+            with self.assertRaisesRegex(preflight.PreflightError, "Source changed"):
+                execution.create_fresh_database(self.sha)
+        run.assert_not_called()
+
+    def test_failed_create_database_does_not_attempt_recovery_or_drop(self):
+        patches = self.patch_root()
+        with patches[0], patches[1], patches[2], patches[3], \
+             mock.patch.object(execution.plan, "database_exists", return_value=False), \
+             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_docker_metadata",
+                               return_value=([], "MariaDB")), \
+             mock.patch.object(execution.preflight, "read_source_commit", return_value=self.sha), \
+             mock.patch.object(execution.subprocess, "run",
+                               return_value=mock.Mock(returncode=1)) as run:
+            execution.create_new_workspace(self.sha, "7.0")
+            with self.assertRaisesRegex(preflight.PreflightError, "not succeed"):
+                execution.create_fresh_database(self.sha)
+        run.assert_called_once()
+        self.assertNotIn("DROP", run.call_args.args[0][-1])
 
     def test_external_docker_port_binding_blocks_all_mutations(self):
         with mock.patch.object(execution.preflight, "validate_test_root", return_value="absent"), \
