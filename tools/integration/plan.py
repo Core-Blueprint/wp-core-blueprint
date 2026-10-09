@@ -22,6 +22,12 @@ REQUIRED = (
     "tests/bin/install-pinned-starter.sh",
     "tests/bin/run-consumer-scenario.sh",
     "tests/bin/run-module-conformance-scenario.sh",
+    "tests/bin/run-performance-baseline.sh",
+    "tests/bin/install-wp-cli.sh",
+    "tests/bin/run-cli-smoke-scenario.sh",
+    "tests/bin/run-cli-role-policy-failsafe-conformance.sh",
+    "tests/bin/run-cli-provenance-conformance.sh",
+    "tests/bin/run-media-replace-persistence-conformance.sh",
 )
 
 
@@ -87,6 +93,8 @@ def plan_steps(version: str, sha: str) -> tuple[str, ...]:
         "--do-not-cache-result --fail-on-skipped --fail-on-incomplete",
         "Run lifecycle, pinned Starter consumer and module-conformance scenarios "
         "under the isolated test configuration",
+        "Run existing performance baseline, pinned WP-CLI smoke, role-policy/failsafe, "
+        "provenance and Media Replace persistence scenarios without skipping gates",
         "Record exact-head evidence and every gate; do NOT include destructive uninstall",
         "Keep customer ZIP, CI, field tests, database cleanup and destructive uninstall independently gated",
     )
