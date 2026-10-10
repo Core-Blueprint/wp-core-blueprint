@@ -54,7 +54,9 @@ The session owns project validation against the selected profile, command histor
 The stable shell helpers are:
 
 - `createDesignerShell(root, options)`
+- `createDesignerNavigation(options)` — opt-in accessible left task/stage navigation (see [Designer Navigation](DESIGNER-NAVIGATION.md))
 - `configureDesignerSidebar(root, configuration)`
+- `DESIGNER_PALETTE_ROLES` — optional canonical left-role order: `navigation`, `elements`, `dynamic-data`
 - `configureDesignerViewports(root, options)`
 - `createDesignerInspectorIdentity(options)`
 - `createDesignerInspectorControls(options)`
@@ -66,6 +68,8 @@ The stable shell helpers are:
 - `decorateDesignerControl(control, name, options)`
 
 The global facade exposes the same capabilities under `window.cbCore.designEditor.shell`.
+
+Navigation is available as `window.cbCore.designEditor.shell.navigation.create` and the frozen extension as `shell.paletteRoles`. Existing palettes are unchanged unless a consumer opts in; Navigation is not Layers or a new editor profile.
 
 A shell controller returned by `createDesignerShell()` is idempotent per root/session pair and exposes `destroy()`. Consumers that dispose or replace a Designer instance must release their shell/selection controllers rather than layering a second controller over the same DOM root.
 
