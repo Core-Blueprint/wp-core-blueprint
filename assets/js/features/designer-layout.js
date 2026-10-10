@@ -138,6 +138,7 @@
 				'data-cb-design-shell-context',
 				'data-cb-design-shell-panel',
 				'data-cb-design-shell-palette-role',
+				'data-cb-design-shell-palette-label',
 			],
 		});
 	};
