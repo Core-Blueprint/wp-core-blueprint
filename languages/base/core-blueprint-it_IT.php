@@ -1618,6 +1618,7 @@ Abbiamo ricevuto una richiesta di reimpostazione della password per il tuo accou
     'My preference' => 'Mio scelto',
     'Name' => 'Nome',
     'Native WordPress Import' => 'Importazione WordPress nativa',
+    'Navigation' => 'Navigazione',
     'Navigation-menu visibility cannot be represented exactly.' => 'La visibilità nei menu di navigazione non può essere rappresentata esattamente.',
     'Needs attention' => 'Richiede attenzione',
     'Needs attention:' => 'Richiede attenzione:',
