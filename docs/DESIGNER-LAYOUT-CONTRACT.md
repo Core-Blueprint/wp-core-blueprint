@@ -19,7 +19,8 @@ Header
 
 Workspace
 ├── Left rail
-│   ├── Elements
+│   ├── Navigation, when supported (task/stage outline)
+│   ├── Elements, when supported
 │   └── Dynamic data, when supported
 ├── Canvas
 └── Right rail
@@ -80,16 +81,17 @@ Normal URL state may be updated with the History API after a successful switch, 
 
 ## Left rail
 
-The canonical left roles are:
+The canonical, optional left roles are:
 
-- `elements`
-- `dynamic-data`
+- `navigation` — task/stage navigation, when needed (new additive v1 capability)
+- `elements` — element catalogue, when needed
+- `dynamic-data` — data tokens, when supported
 
-Consumers provide their own element catalog and data tokens. Mail elements, financial-document elements, certificate elements and other domain elements are intentionally different; the rail structure is not.
+**Existing consumers remain unchanged:** their Elements/Dynamic Data order stays the same and Navigation is not injected unless requested. A workflow-only Designer may use the canonical Base-owned Navigation component directly inside the palette without adding inactive Elements tabs. Mixed-role Designers declare matching canonical palette panels/tabs and Base owns their order, labels and keyboard behavior.
 
-Declare semantic panels with `data-cb-design-shell-panel` and, where useful, the explicit `data-cb-design-shell-palette-role` marker. Base owns canonical role order and labels.
+Consumers provide stage items, element catalogs and data tokens. Base owns navigation markup, active-state representation, scoped scrolling/focus and palette presentation. A consumer may set its localized Navigation panel label through `data-cb-design-shell-palette-label`; this does not alter other canonical labels.
 
-A consumer may omit `dynamic-data` when the domain truly has no dynamic-data capability. It must not replace the canonical rail with a product-specific Structure panel.
+See [Designer Navigation](DESIGNER-NAVIGATION.md) for the exact public API, item contract and safe single-/multi-role composition. Navigation represents tasks/sections, **not** the object hierarchy in Layers. Consumers must not replace Base's palette geometry or invent a product-specific left rail.
 
 ## Right rail
 
