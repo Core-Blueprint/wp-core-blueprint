@@ -1618,6 +1618,7 @@ wir haben eine Anfrage zum Zurücksetzen des Passworts für Ihr Konto erhalten. 
     'My preference' => 'Mein gewählt',
     'Name' => 'Name',
     'Native WordPress Import' => 'Nativer WordPress-Import',
+    'Navigation' => 'Navigation',
     'Navigation-menu visibility cannot be represented exactly.' => 'Die Sichtbarkeit in Navigationsmenüs kann nicht exakt dargestellt werden.',
     'Needs attention' => 'Aufmerksamkeit erforderlich',
     'Needs attention:' => 'Benötigt aufmerksamkeit:',
