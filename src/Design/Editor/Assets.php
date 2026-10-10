@@ -189,6 +189,7 @@ final class Assets {
 					'expand'   => __( 'Expand', 'core-blueprint' ),
 				],
 				'paletteLabels' => [
+					'navigation'   => __( 'Navigation', 'core-blueprint' ),
 					'elements'     => __( 'Elements', 'core-blueprint' ),
 					'dynamic-data' => __( 'Dynamic data', 'core-blueprint' ),
 				],
