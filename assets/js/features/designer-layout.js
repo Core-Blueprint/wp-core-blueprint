@@ -2,13 +2,14 @@
 	'use strict';
 
 	const config = window.cbCoreDesignerLaunch || {};
-	const PALETTE_ROLE_ORDER = Object.freeze(['elements', 'dynamic-data']);
+	const PALETTE_ROLE_ORDER = Object.freeze(['navigation', 'elements', 'dynamic-data']);
 	const observedRoots = new WeakSet();
 	const pendingRoots = new WeakSet();
 
-	const canonicalPaletteLabel = (role) => String(
-		config.paletteLabels?.[role]
-		|| (role === 'dynamic-data' ? 'Dynamic data' : 'Elements')
+	const canonicalPaletteLabel = (role, panel) => String(
+		(role === 'navigation' ? panel?.dataset.cbDesignShellPaletteLabel : '')
+		|| config.paletteLabels?.[role]
+		|| (role === 'navigation' ? 'Navigation' : role === 'dynamic-data' ? 'Dynamic data' : 'Elements')
 	).trim();
 
 	const setData = (node, key, value) => {
@@ -76,7 +77,7 @@
 			setData(panel, 'cbDesignShellGroup', 'palette');
 			setData(tab, 'cbDesignShellPaletteRole', role);
 			setData(tab, 'cbDesignShellGroup', 'palette');
-			const label = canonicalPaletteLabel(role);
+			const label = canonicalPaletteLabel(role, panel);
 			if (tab.textContent?.trim() !== label) tab.textContent = label;
 		});
 
