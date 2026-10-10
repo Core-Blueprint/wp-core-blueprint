@@ -222,6 +222,136 @@
 }
 
 /*
+ * Optional Designer Navigation role. The same task-stage list works inside a
+ * palette panel or as the sole content of the left rail. Labels, stage status
+ * and semantic targets are supplied by consumers; visual grammar is Base-owned.
+ */
+.cb-core-design-shell__navigation,
+.cb-core-design-shell__navigation-list {
+	min-width: 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.cb-core-design-shell__navigation-list {
+	display: grid;
+	gap: var(--cb-space-1);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.cb-core-design-shell__navigation-link {
+	appearance: none;
+	display: flex;
+	align-items: center;
+	gap: var(--cb-space-2);
+	width: 100%;
+	min-width: 0;
+	min-height: 44px;
+	padding: var(--cb-space-2);
+	border: 1px solid transparent;
+	border-radius: var(--cb-radius-md);
+	box-sizing: border-box;
+	background: transparent;
+	color: var(--cb-text);
+	font: inherit;
+	text-align: start;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.cb-core-design-shell__navigation-link:hover,
+.cb-core-design-shell__navigation-link:focus-visible {
+	border-color: var(--cb-border);
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-design-shell__navigation-link.is-active,
+.cb-core-design-shell__navigation-link[aria-current="location"] {
+	border-color: var(--cb-accent);
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-design-shell__navigation-link:focus-visible {
+	outline: 2px solid var(--cb-accent);
+	outline-offset: 1px;
+}
+
+.cb-core-design-shell__navigation-link:disabled,
+.cb-core-design-shell__navigation-link[aria-disabled="true"] {
+	opacity: .55;
+	cursor: not-allowed;
+}
+
+.cb-core-design-shell__navigation-step {
+	display: grid;
+	place-items: center;
+	flex: 0 0 28px;
+	width: 28px;
+	height: 28px;
+	border: 1px solid var(--cb-border);
+	border-radius: 50%;
+	color: var(--cb-text-strong);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-semibold);
+}
+
+.cb-core-design-shell__navigation-link.is-active .cb-core-design-shell__navigation-step {
+	border-color: var(--cb-accent);
+}
+
+.cb-core-design-shell__navigation-copy {
+	display: grid;
+	flex: 1 1 auto;
+	gap: 2px;
+	min-width: 0;
+}
+
+.cb-core-design-shell__navigation-label {
+	color: inherit;
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-semibold);
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.cb-core-design-shell__navigation-description {
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-normal, 400);
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.cb-core-design-shell__navigation-status {
+	flex: 0 1 auto;
+	max-width: 42%;
+	padding: 2px 6px;
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-sm);
+	line-height: 1.3;
+	text-align: end;
+	overflow-wrap: anywhere;
+}
+
+.cb-core-design-shell__navigation-status[data-tone="success"] {
+	color: var(--cb-success, var(--cb-text-strong));
+}
+
+.cb-core-design-shell__navigation-status[data-tone="warning"] {
+	color: var(--cb-warning, var(--cb-text-strong));
+}
+
+.cb-core-design-shell__navigation-status[data-tone="danger"] {
+	color: var(--cb-danger, var(--cb-text-strong));
+}
+
+/*
  * Canonical Layers tree. Layers are structural navigation, not content cards.
  * Base owns compact density, hierarchy guides, disclosure geometry, selection
  * presentation and action overlays for flat and nested Designer consumers.
