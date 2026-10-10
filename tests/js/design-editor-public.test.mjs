@@ -73,6 +73,10 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof publicEditor.createSession, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.createSession, 'function');
 	assert.equal(typeof publicEditor.createDesignerShell, 'function');
+	assert.equal(typeof publicEditor.createDesignerNavigation, 'function');
+	assert.deepEqual(publicEditor.DESIGNER_PALETTE_ROLES, ['navigation', 'elements', 'dynamic-data']);
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.navigation?.create, 'function');
+	assert.deepEqual(window.cbCore?.designEditor?.shell?.paletteRoles, ['navigation', 'elements', 'dynamic-data']);
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.create, 'function');
 	assert.equal(typeof publicEditor.createDesignerSelectionController, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.selection?.createController, 'function');
