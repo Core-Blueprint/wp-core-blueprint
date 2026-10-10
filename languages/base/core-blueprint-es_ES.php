@@ -1618,6 +1618,7 @@ Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Si ha
     'My preference' => 'Mi hayan',
     'Name' => 'Nombre',
     'Native WordPress Import' => 'Importación nativa de WordPress',
+    'Navigation' => 'Navegación',
     'Navigation-menu visibility cannot be represented exactly.' => 'La visibilidad en los menús de navegación no se puede representar con exactitud.',
     'Needs attention' => 'Requiere atención',
     'Needs attention:' => 'Necesita atención:',
