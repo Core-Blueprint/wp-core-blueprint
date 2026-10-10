@@ -1618,6 +1618,7 @@ Recebemos um pedido para repor a palavra-passe da sua conta. Se foi você, utili
     'My preference' => 'Minha preferência',
     'Name' => 'Nome',
     'Native WordPress Import' => 'Importação WordPress nativa',
+    'Navigation' => 'Navegação',
     'Navigation-menu visibility cannot be represented exactly.' => 'A visibilidade nos menus de navegação não pode ser representada exatamente.',
     'Needs attention' => 'Requer atenção',
     'Needs attention:' => 'Necessita atenção:',
