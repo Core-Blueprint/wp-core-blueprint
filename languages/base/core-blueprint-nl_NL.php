@@ -1618,6 +1618,7 @@ We hebben een verzoek ontvangen om het wachtwoord van je account opnieuw in te s
     'My preference' => 'Mijn voorkeur',
     'Name' => 'Naam',
     'Native WordPress Import' => 'Native WordPress-import',
+    'Navigation' => 'Navigatie',
     'Navigation-menu visibility cannot be represented exactly.' => 'Zichtbaarheid in navigatiemenu’s kan niet exact worden gerepresenteerd.',
     'Needs attention' => 'Aandacht nodig',
     'Needs attention:' => 'Vereist aandacht:',
