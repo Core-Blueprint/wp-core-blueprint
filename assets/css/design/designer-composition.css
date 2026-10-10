@@ -226,6 +226,10 @@
  * palette panel or as the sole content of the left rail. Labels, stage status
  * and semantic targets are supplied by consumers; visual grammar is Base-owned.
  */
+.cb-core-design-shell__palette--composed > .cb-core-design-shell__navigation {
+	padding: var(--cb-space-3);
+}
+
 .cb-core-design-shell__navigation,
 .cb-core-design-shell__navigation-list {
 	min-width: 0;
