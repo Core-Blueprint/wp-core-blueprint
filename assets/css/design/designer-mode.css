@@ -268,7 +268,7 @@
 }
 
 .cb-core-design-shell__toolbar--designer.is-compact {
-	grid-template-columns: auto minmax(0, 1fr) auto;
+	grid-template-columns: minmax(0, 1fr) minmax(0, max-content) max-content;
 	gap: var(--cb-space-2);
 	padding: var(--cb-space-2);
 }
