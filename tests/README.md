@@ -1,5 +1,18 @@
 # Core Blueprint Base test suite
 
+## Designer Toolbar Golden browser gate
+
+From the repository root, with Chromium installed:
+
+```bash
+node --check assets/js/features/designer-toolbar.js
+node --check tests/browser/designer-toolbar-capacity.test.mjs
+node --test tests/browser/designer-toolbar-capacity.test.mjs
+```
+
+If Chromium is not on `PATH`, set `CHROMIUM_BIN=/path/to/chromium`. The test intentionally fails when no real browser is available rather than treating geometry as PASS. It uses actual Base Designer assets in a synthetic, isolated DOM and checks 1600/1280/800/600/360 CSS-pixel containers, action dispatch, state mirroring, Save/Close accessibility and overflow. Passing this fixture **does not** substitute for the installed WordPress Designer and consumer-specific browser acceptance, especially 200%/400% browser zoom, screen reader navigation, RTL/locales, fullscreen lifecycle and server-side Save/reload persistence.
+
+
 This directory contains the pre-v1 automated regression foundation for Core Blueprint Base.
 
 ## Scope
