@@ -31,7 +31,11 @@ function inspectBrowser() {
 		const shown = (el) => Boolean(el && el.getClientRects().length && getComputedStyle(el).display !== 'none');
 		const zones = [...toolbar.querySelectorAll('.cb-core-design-shell__toolbar-zone')];
 		const tools = toolbar.querySelector('[data-cb-design-shell-compact-menu-trigger="actions"]');
+		const disabled = [...toolbar.querySelectorAll('[data-cb-design-shell-action-id="fixture.action-2"]')];
+		const pressed = [...toolbar.querySelectorAll('[data-cb-design-shell-action-id="fixture.action-3"]')];
 		const result = {
+			disabledMirrored: disabled.every((button) => button.disabled),
+			pressedMirrored: pressed.every((button) => button.getAttribute('aria-pressed') === 'true'),
 			booted: toolbar.dataset.cbDesignShellCompactToolbar === 'true',
 			saveVisible: shown(save), closeVisible: shown(close),
 			saveCloseOrdered: close.getBoundingClientRect().right <= save.getBoundingClientRect().left + 1,
@@ -51,7 +55,11 @@ function inspectBrowser() {
 			tools.click();
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 		}
+		const firstSource = document.querySelector('[data-cb-design-shell-toolbar-extension] [data-cb-design-shell-action-id="fixture.action-0"]');
+		if (firstSource) firstSource.dataset.cbDesignShellActionLabel = 'Renamed live';
 		setTimeout(() => {
+			result.dynamicLabelMirrored = !firstSource || [...toolbar.querySelectorAll('[data-cb-design-shell-action-id="fixture.action-0"]')]
+				.some((proxy) => proxy.textContent.includes('Renamed live'));
 			result.actionTriggered = window.fixtureClicks;
 			result.menuDismissed = !tools || tools.getAttribute('aria-expanded') === 'false';
 			document.documentElement.setAttribute('data-capacity-report', encodeURIComponent(JSON.stringify(result)));
@@ -67,7 +75,8 @@ function fixture(width, actionCount) {
 		'<button type="button" data-cb-design-shell-action-id="fixture.action-' + i + '"' +
 		' data-cb-design-shell-action-label="Action ' + i + '"' +
 		' data-cb-design-shell-action-priority="' + (i % 3 === 0 ? 'contextual' : 'utility') + '"' +
-		' title="DO NOT SHOW THIS TOOLTIP: a long detailed explanation">Action ' + i + '</button>'
+		' title="DO NOT SHOW THIS TOOLTIP: a long detailed explanation"' +
+		(i === 2 ? ' disabled' : '') + (i === 3 ? ' aria-pressed="true"' : '') + '>Action ' + i + '</button>'
 	).join('');
 	const toolbarScript = pathToFileURL(join(root, 'assets/js/features/designer-toolbar.js')).href;
 	return '<!doctype html><html><head><meta charset="utf-8"><style>' +
@@ -126,6 +135,9 @@ for (const scenario of [
 			assert.equal(actual.overflow, false, 'Toolbar or one of its zones overflows');
 			assert.equal(actual.longTooltipVisible, false, 'Tooltip must not become button text');
 			assert.equal(actual.menuDismissed, true, 'Tools must close after command/Escape');
+			assert.equal(actual.disabledMirrored, true, 'Disabled state must mirror sources');
+			assert.equal(actual.pressedMirrored, true, 'Pressed state must mirror sources');
+			assert.equal(actual.dynamicLabelMirrored, true, 'Live source label must update proxies');
 			if (scenario.count) {
 				assert.equal(actual.toolsAvailable || actual.inlineAvailable, true, 'Action must be reachable inline or in Tools');
 				assert.equal(actual.actionTriggered, 1, 'Original command must execute once');
