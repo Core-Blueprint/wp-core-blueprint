@@ -66,7 +66,7 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'const overflows = () => {', $runtime );
 		self::assertStringContainsString( 'const toolsMenu = createMenu(', $runtime );
 		self::assertStringContainsString( 'const compact = overflows();', $runtime );
-		self::assertStringContainsString( "toolbar.classList.toggle('is-toolbar-ultra'", $mode . $runtime );
+		self::assertStringContainsString( "toolbar.classList.add('is-toolbar-ultra');", $runtime );
 		self::assertStringNotContainsString( '.is-compact [data-cb-design-shell-close]', $mode );
 		self::assertStringContainsString( '[data-cb-design-shell-close]', $css );
 	}
