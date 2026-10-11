@@ -179,6 +179,30 @@ Supported public values are:
 - `data-cb-design-shell-toolbar-extension="view"`
 - `data-cb-design-shell-toolbar-extension="actions"`
 
+### Action metadata (additive public contract)
+
+The existing `view|actions` source containers and their original button callbacks remain authoritative. Consumer commands may declare these attributes on the original button:
+
+- `data-cb-design-shell-action-id`: stable, consumer-prefixed action identity, for example `certificates.download-kit`. Required for newly registered dynamic consumer commands; older static source buttons continue to work.
+- `data-cb-design-shell-action-label`: short, translated **visible** action label. If absent, Base uses the button's actual text content for existing consumers. Base never uses `title` or a consumer's `aria-label` as the visible product label.
+- `data-cb-design-shell-action-description`: optional longer explanation, exposed separately as help/accessible description and never rendered as visible button text.
+- `data-cb-design-shell-action-priority="contextual|utility"`: `utility` is the default for product commands. `contextual` marks a command as eligible for inline placement **only if space permits**; it is not an entitlement to remain visible.
+- `data-cb-design-shell-icon`: the **existing** optional icon attribute; no second icon interface is introduced.
+
+Set `aria-label` independently when the accessible name needs more precision than the visible label. Icon-only built-in Base commands retain their canonical accessible labels. Extension commands without explicit short labels or text receive a localized generic fallback instead of promoting a long tooltip. Base owns all command proxies, overflow, focus and keyboard behavior. Save and Close are reserved Base commands and never consumer priorities.
+
+Example:
+
+```html
+<div data-cb-design-shell-toolbar-extension="actions">
+    <button type="button" data-cb-design-shell-action-id="certificates.download-kit"
+        data-cb-design-shell-action-label="Download kit"
+        data-cb-design-shell-action-description="Export instructions, schema and the active design."
+        data-cb-design-shell-action-priority="utility"
+        data-cb-design-shell-icon="download">Download kit</button>
+</div>
+```
+
 The command-source buttons remain consumer-owned: attach the domain callback, disabled state and pressed/active state to those buttons as usual. Base mirrors that state into its presentation and forwards activation back to the source button. Consumers do not inject markup into Base's generated toolbar zones and do not need to know the internal toolbar DOM.
 
 If a command source exposes a supported Designer icon through `data-cb-design-shell-icon`, Base may reuse that icon in the generated presentation. Text labels remain required because they provide the accessible action name and the compact disclosure label.

@@ -27,11 +27,23 @@
 			}));
 		});
 	};
+	// Public action metadata is additive. Product descriptions and tooltips are
+	// never promoted into visible command labels.
+	const actionIdFor = (control) => String(control?.dataset?.cbDesignShellActionId || '').trim();
+	const descriptionFor = (control) => String(control?.dataset?.cbDesignShellActionDescription || '').trim();
+	const priorityFor = (control) => control?.dataset?.cbDesignShellActionPriority === 'contextual' ? 'contextual' : 'utility';
+	const builtInCommand = (control) => Boolean(control?.matches?.(
+		'[data-cb-design-shell-undo], [data-cb-design-shell-redo], [data-cb-design-shell-fullscreen], [data-cb-design-shell-close], [data-cb-design-shell-viewport]'
+	));
 	const labelFor = (control) => String(
-		control?.getAttribute?.('aria-label')
-		|| control?.getAttribute?.('title')
+		control?.dataset?.cbDesignShellActionLabel
 		|| control?.textContent
+		|| (builtInCommand(control) ? control?.getAttribute?.('aria-label') : '')
 		|| ''
+	).trim();
+	const accessibleLabelFor = (control, visibleLabel) => String(
+		control?.getAttribute?.('aria-label')
+		|| visibleLabel
 	).trim();
 	const iconFor = (control) => String(
 		control?.dataset?.cbDesignShellIcon
@@ -112,10 +124,22 @@
 		const syncProxy = (record) => {
 			const { source, proxy, iconOnly = false } = record;
 			const label = labelFor(source) || String(config.toolbarLabels?.action || 'Action').trim();
+			const accessibleLabel = accessibleLabelFor(source, label);
+			const description = descriptionFor(source);
 			const icon = iconFor(source);
 			proxy.textContent = label;
-			if (icon) shellApi.icons.decorate(proxy, icon, { iconOnly, label });
-			else proxy.setAttribute('aria-label', label);
+			if (icon) shellApi.icons.decorate(proxy, icon, { iconOnly, label: accessibleLabel });
+			else proxy.setAttribute('aria-label', accessibleLabel);
+			proxy.dataset.cbDesignShellActionPriority = priorityFor(source);
+			if (actionIdFor(source)) proxy.dataset.cbDesignShellActionId = actionIdFor(source);
+			else delete proxy.dataset.cbDesignShellActionId;
+			if (description) {
+				proxy.setAttribute('aria-description', description);
+				proxy.title = description;
+			} else {
+				proxy.removeAttribute('aria-description');
+				proxy.removeAttribute('title');
+			}
 			proxy.disabled = source.disabled === true;
 			const pressed = source.getAttribute('aria-pressed');
 			if (pressed === 'true' || pressed === 'false') proxy.setAttribute('aria-pressed', pressed);
@@ -131,7 +155,7 @@
 				childList: true,
 				characterData: true,
 				subtree: true,
-				attributeFilter: ['aria-pressed', 'aria-label', 'title', 'class', 'disabled', 'data-cb-design-shell-icon'],
+				attributeFilter: ['aria-pressed', 'aria-label', 'title', 'class', 'disabled', 'data-cb-design-shell-icon', 'data-cb-design-shell-action-id', 'data-cb-design-shell-action-label', 'data-cb-design-shell-action-description', 'data-cb-design-shell-action-priority'],
 			});
 			proxy.addEventListener('click', () => {
 				if (proxy.disabled) return;
