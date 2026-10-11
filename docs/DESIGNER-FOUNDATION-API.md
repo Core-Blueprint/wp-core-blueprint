@@ -36,6 +36,8 @@ Supported v1 session methods and state accessors are:
 - `snapshot()`
 - `replace(project, options)`
 - `selection()`
+- `setSelection(paths, options)` (additive v1, atomic multi-path selection)
+- `historyStatus()` (additive v1, frozen undo/redo/size snapshot)
 - `select(path, options)`
 - `clearSelection(options)`
 - `subscribeSelection(listener, options)`
@@ -49,12 +51,24 @@ Supported v1 session methods and state accessors are:
 
 The session owns project validation against the selected profile, command history and editor-only selection/validation state. Consumers must not persist editor-session state into their domain document.
 
+### Additive v1 public selection and history snapshots (integration candidate, 2026-10-11)
+
+`session.historyStatus()` returns a frozen, non-persisted `{ canUndo, canRedo, size }` snapshot of the committed history stack. It does not expose mutable history implementation details. Call again after command/undo/redo/project replacement to obtain current state. After session disposal the method fails closed.
+
+`session.setSelection(paths, { primary = null, source = 'consumer', external = false })` atomically updates transient multi-path selection. Paths are arrays of non-negative integer child indices; duplicates are removed preserving first occurrence. If no primary is given, the last unique path becomes primary. An **explicit primary must be one of the selected paths**, or the method throws a `RangeError` before mutation, with no event. This tightens D3's earlier invalid-primary semantics: Base never silently discards a requested primary. A successful change publishes exactly one `action: 'set'` selection event; unchanged selection publishes none. Invalid path shapes never partially mutate selection.
+
+**Default `external: false` is fail-closed:** every selected path must reference a current node in the DesignProject. **Explicit `external: true`** permits a consumer-owned transient mapping of external domain element IDs to selection path indices (for example, Certificates). It relaxes only project-node existence validation, not path shape, primary membership, profile validity, project validation, command authorization or persistence. External selections must not grant permission, and consumers own stable ID mapping/reconciliation after reorder/removal/undo/redo/project replacement; Base commands may reconcile or clear a nonproject selection.
+
+Both methods live on the existing public session from `createSession({profile})` and preserve existing shell/navigation, history and document-profile semantics. They **do not** provide Evaluator's proposed domain-neutral state/history session (P02), which remains separate. Public class exports such as ProjectState/EditorState/CommandHistory are not thereby promoted to consumer contracts.
+
 ### Shell
 
 The stable shell helpers are:
 
 - `createDesignerShell(root, options)`
+- `createDesignerNavigation(options)` — opt-in accessible left task/stage navigation (see [Designer Navigation](DESIGNER-NAVIGATION.md))
 - `configureDesignerSidebar(root, configuration)`
+- `DESIGNER_PALETTE_ROLES` — optional canonical left-role order: `navigation`, `elements`, `dynamic-data`
 - `configureDesignerViewports(root, options)`
 - `createDesignerInspectorIdentity(options)`
 - `createDesignerInspectorControls(options)`
@@ -66,6 +80,8 @@ The stable shell helpers are:
 - `decorateDesignerControl(control, name, options)`
 
 The global facade exposes the same capabilities under `window.cbCore.designEditor.shell`.
+
+Navigation is available as `window.cbCore.designEditor.shell.navigation.create` and the frozen extension as `shell.paletteRoles`. Existing palettes are unchanged unless a consumer opts in; Navigation is not Layers or a new editor profile.
 
 A shell controller returned by `createDesignerShell()` is idempotent per root/session pair and exposes `destroy()`. Consumers that dispose or replace a Designer instance must release their shell/selection controllers rather than layering a second controller over the same DOM root.
 

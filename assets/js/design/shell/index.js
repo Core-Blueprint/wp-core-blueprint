@@ -8,6 +8,7 @@ import {
 	createDesignerLayerRow,
 	createDesignerLayerTree,
 } from './layers.js';
+import { DESIGNER_PALETTE_ROLES, createDesignerNavigation } from './navigation.js';
 import { createDesignerSelectionController } from './selection-controller.js';
 import {
 	createDesignerInspectorControls,
@@ -565,6 +566,8 @@ export const createDesignerShell = (root, {
 };
 
 export {
+	DESIGNER_PALETTE_ROLES,
+	createDesignerNavigation,
 	DESIGNER_ICON_NAMES,
 	DESIGNER_LAYER_ACTIONS,
 	createDesignerIcon,

@@ -35,7 +35,7 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 	public function test_base_owns_workspace_order_palette_roles_and_context_placement(): void {
 		$layout = $this->source( 'assets/js/features/designer-layout.js' );
 
-		self::assertStringContainsString( "const PALETTE_ROLE_ORDER = Object.freeze(['elements', 'dynamic-data']);", $layout );
+		self::assertStringContainsString( "const PALETTE_ROLE_ORDER = Object.freeze(['navigation', 'elements', 'dynamic-data']);", $layout );
 		self::assertStringContainsString( 'normalizeWorkspace', $layout );
 		self::assertStringContainsString( 'normalizePalette', $layout );
 		self::assertStringContainsString( "setData(workspace, 'cbDesignShellLayout', 'canonical');", $layout );
@@ -49,6 +49,25 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( 'cb-core-mail-', $layout );
 		self::assertStringNotContainsString( 'cb-core-reports-', $layout );
 		self::assertStringNotContainsString( 'cb-ce-', $layout );
+	}
+
+	public function test_optional_navigation_role_is_base_owned_and_safely_opt_in(): void {
+		$layout  = $this->source( 'assets/js/features/designer-layout.js' );
+		$editor  = $this->source( 'assets/js/design/editor.js' );
+		$module  = $this->source( 'assets/js/design/shell/navigation.js' );
+		$css     = $this->source( 'assets/css/design/designer-composition.css' );
+		$assets  = $this->source( 'src/Design/Editor/Assets.php' );
+
+		self::assertStringContainsString( "['navigation', 'elements', 'dynamic-data']", $layout );
+		self::assertStringContainsString( "role === 'navigation' ? panel?.dataset.cbDesignShellPaletteLabel", $layout );
+		self::assertStringContainsString( "'navigation'   => __( 'Navigation', 'core-blueprint' )", $assets );
+		self::assertStringContainsString( 'export const createDesignerNavigation', $module );
+		self::assertStringContainsString( "['navigation', 'elements', 'dynamic-data']", $module );
+		self::assertStringContainsString( 'createDesignerNavigation,', $editor );
+		self::assertStringContainsString( 'navigation: Object.freeze({ create: createDesignerNavigation })', $editor );
+		self::assertStringContainsString( '.cb-core-design-shell__navigation-link:focus-visible', $css );
+		self::assertStringNotContainsString( 'cb-automations', $module );
+		self::assertStringNotContainsString( 'cb-evaluator', $module );
 	}
 
 	public function test_base_localizes_palette_vocabulary_and_centers_context_selector(): void {

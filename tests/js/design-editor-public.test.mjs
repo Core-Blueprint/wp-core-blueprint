@@ -73,6 +73,10 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof publicEditor.createSession, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.createSession, 'function');
 	assert.equal(typeof publicEditor.createDesignerShell, 'function');
+	assert.equal(typeof publicEditor.createDesignerNavigation, 'function');
+	assert.deepEqual(publicEditor.DESIGNER_PALETTE_ROLES, ['navigation', 'elements', 'dynamic-data']);
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.navigation?.create, 'function');
+	assert.deepEqual(window.cbCore?.designEditor?.shell?.paletteRoles, ['navigation', 'elements', 'dynamic-data']);
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.create, 'function');
 	assert.equal(typeof publicEditor.createDesignerSelectionController, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.selection?.createController, 'function');
@@ -249,6 +253,87 @@ test('session selection lifecycle validates paths, reconciles replacement and ex
 	assert.equal(changes[1].context.event.source, 'replace');
 	assert.equal(changes[1].context.event.action, 'context-switch');
 	assert.equal(changes[1].snapshot.primary, null);
+	session.dispose();
+});
+
+test('public historyStatus exposes frozen undo/redo capability without CommandHistory access', () => {
+	const session = publicEditor.createSession({ project: flowProject(), profile: 'document-flow' });
+	assert.deepEqual(session.historyStatus(), { canUndo: false, canRedo: false, size: 0 });
+	assert.equal(Object.isFrozen(session.historyStatus()), true);
+
+	session.execute(publicEditor.setPropertyCommand([0], ['value', 'text'], 'Revised'));
+	assert.deepEqual(session.historyStatus(), { canUndo: true, canRedo: false, size: 1 });
+	assert.equal(session.undo(), true);
+	assert.deepEqual(session.historyStatus(), { canUndo: false, canRedo: true, size: 0 });
+	assert.equal(session.redo(), true);
+	assert.deepEqual(session.historyStatus(), { canUndo: true, canRedo: false, size: 1 });
+	session.replace(flowProject(), { source: 'server-refresh' });
+	assert.deepEqual(session.historyStatus(), { canUndo: false, canRedo: false, size: 0 });
+	session.dispose();
+	assert.throws(() => session.historyStatus(), /disposed/);
+});
+
+test('public setSelection provides atomic multi-path and external projection without persisting selection', () => {
+	const events = [];
+	const session = publicEditor.createSession({
+		project: flowProject(),
+		profile: 'document-flow',
+		onSelectionChange: (snapshot, context) => events.push({ snapshot, action: context.event.action }),
+	});
+	assert.equal(session.setSelection([[0]], { primary: [0], source: 'layers' }), true);
+	assert.deepEqual(session.selection(), { paths: [[0]], primary: [0] });
+	assert.equal(session.setSelection([[0]], { primary: [0], source: 'layers' }), false);
+	assert.equal(events.length, 1);
+
+	const before = session.selection();
+	assert.throws(() => session.setSelection([[0], [42]], { source: 'layers' }), /outside the current project/);
+	assert.deepEqual(session.selection(), before, 'invalid project paths must not partially mutate selection');
+
+	assert.equal(session.setSelection([[0], [42], [42]], { primary: [42], source: 'external-projection', external: true }), true);
+	assert.deepEqual(session.selection(), { paths: [[0], [42]], primary: [42] });
+	assert.equal(events.length, 2, 'one coherent event must publish the external set');
+	assert.equal(events[1].action, 'set');
+	assert.deepEqual(Object.keys(session.snapshot()).includes('editor_state'), false, 'selection must not be persisted');
+	assert.throws(() => session.setSelection([[-1]], { external: true }), /non-negative integers/);
+	assert.throws(() => session.setSelection([[0]], { primary: [-1], external: true }), /non-negative integers/);
+	assert.deepEqual(session.selection(), { paths: [[0], [42]], primary: [42] }, 'invalid external paths or primary must not mutate selection');
+
+	assert.equal(session.clearSelection({ source: 'external-projection' }), true);
+	assert.deepEqual(session.selection(), { paths: [], primary: null });
+	session.dispose();
+	assert.throws(() => session.setSelection([[0]], { external: true }), /disposed/);
+});
+
+test('public setSelection rejects non-member primary atomically in both strict and external modes', () => {
+	const events = [];
+	const session = publicEditor.createSession({
+		project: flowProject(),
+		profile: 'document-flow',
+		onSelectionChange: (snapshot, context) => events.push({ snapshot, action: context.event.action }),
+	});
+	assert.equal(session.setSelection([[0]], { source: 'consumer' }), true);
+	const before = session.selection();
+	const revisionEvents = events.length;
+
+	// [] addresses the existing root, but it was not selected.
+	assert.throws(
+		() => session.setSelection([[0]], { primary: [], source: 'invalid-primary' }),
+		/primary must be one of the selected paths/,
+	);
+	assert.throws(
+		() => session.setSelection([[0], [42]], { primary: [99], external: true }),
+		/primary must be one of the selected paths/,
+	);
+	assert.throws(
+		() => session.setSelection([], { primary: [0], external: true }),
+		/primary must be one of the selected paths/,
+	);
+	assert.deepEqual(session.selection(), before, 'invalid primary must not change state');
+	assert.equal(events.length, revisionEvents, 'invalid primary must not publish an event');
+
+	assert.equal(session.setSelection([[0], [0], [42]], { primary: [42], external: true }), true);
+	assert.deepEqual(session.selection(), { paths: [[0], [42]], primary: [42] }, 'deduplication must preserve valid primary');
+	assert.equal(events.length, revisionEvents + 1);
 	session.dispose();
 });
 

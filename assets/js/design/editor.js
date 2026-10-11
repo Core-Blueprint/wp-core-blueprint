@@ -6,6 +6,7 @@ import {
 	handleEditorShortcut,
 	insertNodeCommand,
 	nodeAt,
+	normalizePath,
 	removeNodeCommand,
 	reorderNodeCommand,
 	setPropertyCommand,
@@ -21,6 +22,7 @@ import * as mailProfile from './mail/index.js';
 import {
 	DESIGNER_ICON_NAMES,
 	DESIGNER_LAYER_ACTIONS,
+	DESIGNER_PALETTE_ROLES,
 	DESIGNER_SIDEBAR_ROLES,
 	configureDesignerSidebar,
 	createDesignerIcon,
@@ -29,6 +31,7 @@ import {
 	createDesignerInspectorToggle,
 	createDesignerLayerRow,
 	createDesignerLayerTree,
+	createDesignerNavigation,
 	createDesignerSelectionController,
 	createDesignerShell,
 	decorateDesignerControl,
@@ -187,6 +190,38 @@ export const createSession = ({
 			return next;
 		},
 		selection: () => editorState.selection.snapshot(),
+		/**
+		 * Set the transient selection atomically without mutating document data.
+		 * An explicitly opted-in external projection relaxes only node existence
+		 * checks; path shape and primary membership always fail closed.
+		 */
+		setSelection(paths, { primary = null, source = 'consumer', external = false } = {}) {
+			assertActive();
+			if (!Array.isArray(paths)) throw new TypeError('Design editor selection paths must be an array.');
+			const normalized = paths.map(normalizePath);
+			const normalizedPrimary = primary === null ? null : normalizePath(primary);
+			if (external !== true && normalized.some((path) => !nodeAt(projectState.current().root, path))) {
+				throw new RangeError('Design editor selection contains a path outside the current project.');
+			}
+			if (normalizedPrimary !== null && !normalized.some((path) => (
+				path.length === normalizedPrimary.length
+				&& path.every((segment, index) => segment === normalizedPrimary[index])
+			))) {
+				throw new RangeError('Design editor selection primary must be one of the selected paths.');
+			}
+			return editorState.selection.set(normalized, normalizedPrimary, { source, action: 'set' });
+		},
+		/**
+		 * Read-only status of the committed history stack, not its mutable internals.
+		 */
+		historyStatus() {
+			assertActive();
+			return Object.freeze({
+				canUndo: history.canUndo,
+				canRedo: history.canRedo,
+				size: history.size,
+			});
+		},
 		select(path, { additive = false, source = 'consumer' } = {}) {
 			assertActive();
 			if (!Array.isArray(path) || !nodeAt(projectState.current().root, path)) return false;
@@ -250,6 +285,7 @@ export {
 	DESIGNER_LAYER_ACTIONS,
 	DESIGNER_MOTION_DEFAULTS,
 	DESIGNER_MOTION_KEY_ATTRIBUTE,
+	DESIGNER_PALETTE_ROLES,
 	DESIGNER_SIDEBAR_ROLES,
 	DESIGNER_VIEWPORT_ORDER,
 	EditorState,
@@ -263,6 +299,7 @@ export {
 	createDesignerInspectorToggle,
 	createDesignerLayerRow,
 	createDesignerLayerTree,
+	createDesignerNavigation,
 	createDesignerSelectionController,
 	createDesignerShell,
 	decorateDesignerControl,
@@ -288,6 +325,8 @@ const publicApi = Object.freeze({
 		configureViewports: configureDesignerViewports,
 		sidebarRoles: DESIGNER_SIDEBAR_ROLES,
 		viewportOrder: DESIGNER_VIEWPORT_ORDER,
+		paletteRoles: DESIGNER_PALETTE_ROLES,
+		navigation: Object.freeze({ create: createDesignerNavigation }),
 		icons: Object.freeze({
 			names: DESIGNER_ICON_NAMES,
 			create: createDesignerIcon,

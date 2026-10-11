@@ -1618,6 +1618,7 @@ Nous avons reçu une demande de réinitialisation du mot de passe de votre compt
     'My preference' => 'Mon choisi',
     'Name' => 'Nom',
     'Native WordPress Import' => 'Import WordPress natif',
+    'Navigation' => 'Navigation',
     'Navigation-menu visibility cannot be represented exactly.' => 'La visibilité dans les menus de navigation ne peut pas être représentée exactement.',
     'Needs attention' => 'Nécessite une attention',
     'Needs attention:' => 'Nécessite attention:',

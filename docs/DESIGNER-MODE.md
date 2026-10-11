@@ -91,6 +91,10 @@ Base must:
 
 Consumers must not add their own retry loops, fallback overlays or duplicate launch error presentation around this lifecycle.
 
+## Optional left Navigation role
+
+The Base Designer palette may optionally expose a task/stage Navigation role alongside Elements and Dynamic Data. This extends the existing left rail without changing its geometry, responsive drawer or canonical focus behavior. Navigation content uses the public `createDesignerNavigation()` helper; business stages and statuses belong to the consumer. See [Designer Navigation](DESIGNER-NAVIGATION.md) and [Designer Layout Contract](DESIGNER-LAYOUT-CONTRACT.md).
+
 ## Canonical responsive geometry
 
 Designer Mode has one Base-owned responsive contract:

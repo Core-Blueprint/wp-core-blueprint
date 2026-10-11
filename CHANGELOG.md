@@ -2,6 +2,14 @@
 
 > This changelog tracks the public `1.0.0` launch line. Internal pre-v1 development history is retained in `CHANGELOG-HISTORY.md` in the source repository and is not included in production packages.
 
+## Unreleased — Designer Navigation P01 + public session reconciliation (candidate only)
+
+- Preserve the optional Base Designer left Navigation role and canonical palette ordering from Navigation P01, without changing existing editor profiles or default palettes.
+- Add `session.historyStatus()` as a frozen, non-persisted undo/redo/size snapshot instead of requiring consumers to touch history implementation details.
+- Add `session.setSelection(paths, {primary, source, external})` for atomic multi-path selection. Default validation remains project-scoped; explicit `external: true` supports transient consumer-managed element projections only. Invalid primary membership now fails closed before mutation or event publication.
+- Reconcile JavaScript public-session and PHP boundary regression tests while preserving the Base Navigation and existing Shell contracts. Certificates RC1.2 is an independently validated prospective consumer, not a merged dependency.
+- Evaluator P02 neutral state/history, browser field testing, CI/Actions, merges, WordPress.org resubmission and production deployment are separately gated and not part of this source candidate.
+
 ## 1.0.0 — 2026-10-04
 
 ### Secret Protection Foundation v1
