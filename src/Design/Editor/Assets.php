@@ -205,6 +205,7 @@ final class Assets {
 				],
 				'toolbarLabels' => [
 					'view'    => __( 'View', 'core-blueprint' ),
+					'tools'   => __( 'Tools', 'core-blueprint' ),
 					'actions' => __( 'Actions', 'core-blueprint' ),
 					'action'  => __( 'Action', 'core-blueprint' ),
 				],
