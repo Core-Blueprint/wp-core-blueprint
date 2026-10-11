@@ -204,7 +204,18 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 	min-inline-size: 0;
 	max-inline-size: 100%;
 }
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-zone--start { overflow: hidden; }
+/* Keep keyboard focus visible: shrink the identity text instead of clipping controls. */
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__brand {
+	flex: 0 1 auto;
+	min-inline-size: 0;
+	max-inline-size: 100%;
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__brand-wordmark {
+	display: inline-block;
+	max-inline-size: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
 .cb-core-design-shell__toolbar--designer :is(
 	[data-cb-design-shell-close],
 	[data-cb-design-shell-fullscreen],
