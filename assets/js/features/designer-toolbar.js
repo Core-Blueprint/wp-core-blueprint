@@ -325,8 +325,11 @@
 					updateMenu(toolsMenu, () => true);
 				}
 			}
-			if (openRecord && openRecord.wrapper.classList.contains(hiddenClass)) {
-				closeMenu(openRecord, { restoreFocus: true });
+			if (openRecord && (openRecord.wrapper.classList.contains(hiddenClass) || !menuHasItems(openRecord))) {
+				const wasFocused = openRecord.wrapper.contains(document.activeElement);
+				const fallback = toolsMenu?.wrapper.classList.contains(hiddenClass) ? closeControl || save : toolsMenu?.trigger;
+				closeMenu(openRecord);
+				if (wasFocused) (fallback || closeControl || save)?.focus();
 			}
 		};
 		let framePending = false;
