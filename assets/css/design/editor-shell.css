@@ -74,7 +74,7 @@ html.cb-core-design-shell-focus-mode body {
 .cb-core-design-shell__toolbar--designer {
 	position: relative;
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr) minmax(0, max-content) minmax(0, max-content);
 	align-items: center;
 	gap: var(--cb-space-3);
 }

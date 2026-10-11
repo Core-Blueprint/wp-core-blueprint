@@ -121,7 +121,7 @@ Consumers must not redefine the Designer Shell column/drawer model, reorder thes
 
 The canonical Designer toolbar is capability-driven. Consumers declare controls and actions; Base decides whether those controls remain explicit or are compressed into compact disclosures when horizontal space becomes constrained.
 
-Base measures the **actual toolbar composition** rather than relying on a product-specific viewport breakpoint. Responsive Designer identity compression is content-driven and separate from full toolbar compaction: Base measures the preferred inline size of the START-zone identity + context without allowing those children to shrink. The textual Designer wordmark is hidden only when that preferred content no longer fits the available START-zone width, while the Core Blueprint mark, context selector and explicit toolbar controls remain visible. Full compact toolbar behavior remains a later state with its own Base-owned threshold. Consumers do not configure either behavior.
+Base measures the **actual toolbar composition** rather than relying on a product-specific viewport breakpoint. Responsive Designer identity compression is content-driven and separate from full toolbar compaction: Base measures the preferred inline size of the START-zone identity + context without allowing those children to shrink. The textual Designer wordmark is hidden only when that preferred content no longer fits the available START-zone width, while the Core Blueprint mark, context selector and explicit toolbar controls remain visible. Full compact toolbar behavior is triggered by measured zone overflow after moving lower-priority contextual commands to Base-owned Tools/View disclosures. Consumers do not configure either behavior.
 
 ### Toolbar zone ownership
 
@@ -138,15 +138,15 @@ Wide toolbar behavior:
 - viewport controls remain explicit when the consumer exposes `data-cb-design-shell-viewport` controls;
 - Undo/Redo, fullscreen/exit and the primary Save action remain explicit;
 - desktop palette/sidebar collapse controls keep their normal shell presentation;
-- declared toolbar extensions receive a Base-owned wide presentation.
+- contextual toolbar extensions receive a Base-owned wide presentation only when they fit; utility commands remain inside bounded Tools/View disclosures.
 
 Compact toolbar behavior:
 
 - viewport controls are represented by one **View** disclosure whose trigger follows the active viewport icon;
-- Undo/Redo plus fullscreen/exit are represented by one **Actions** disclosure;
+- Undo/Redo are represented in a **Tools** disclosure; the dedicated fullscreen/exit control remains visible and reachable;
 - the primary action declared with `data-cb-design-shell-primary-action` stays pinned and is never moved into an overflow disclosure;
 - responsive left/right drawer openers stay pinned;
-- status text and redundant explicit controls are hidden while their compact equivalents are active;
+- status text and redundant history/viewport controls are hidden while their compact equivalents are active; Save and explicit Close/Exit never disappear;
 - only one disclosure may be open at a time;
 - clicking outside closes the open disclosure;
 - Escape closes the disclosure first and restores focus to its trigger before drawer/fullscreen Escape behavior may continue.
@@ -155,7 +155,7 @@ The compact disclosure uses Base-owned proxy controls that forward activation to
 
 ### Extending the toolbar
 
-Additional consumer actions are declared as **command sources**, outside the internal toolbar structure. Base keeps those sources hidden and creates both the wide toolbar presentation and the compact disclosure presentation.
+Additional consumer actions are declared as **command sources**, outside the internal toolbar structure. Base keeps those sources hidden and creates the appropriate space-budgeted inline presentation and bounded disclosure presentation.
 
 For an additional action:
 
