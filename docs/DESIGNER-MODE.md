@@ -121,7 +121,7 @@ Consumers must not redefine the Designer Shell column/drawer model, reorder thes
 
 The canonical Designer toolbar is capability-driven. Consumers declare controls and actions; Base decides whether those controls remain explicit or are compressed into compact disclosures when horizontal space becomes constrained.
 
-Base measures the **actual toolbar composition** rather than relying on a product-specific viewport breakpoint. Responsive Designer identity compression is content-driven and separate from full toolbar compaction: Base measures the preferred inline size of the START-zone identity + context without allowing those children to shrink. The textual Designer wordmark is hidden only when that preferred content no longer fits the available START-zone width, while the Core Blueprint mark, context selector and explicit toolbar controls remain visible. Full compact toolbar behavior remains a later state with its own Base-owned threshold. Consumers do not configure either behavior.
+Base measures the **actual toolbar composition** rather than relying on a product-specific viewport breakpoint. Responsive Designer identity compression is content-driven and separate from full toolbar compaction: Base measures the preferred inline size of the START-zone identity + context without allowing those children to shrink. The textual Designer wordmark is hidden only when that preferred content no longer fits the available START-zone width, while the Core Blueprint mark, context selector and explicit toolbar controls remain visible. Full compact toolbar behavior is triggered by measured zone overflow after moving lower-priority contextual commands to Base-owned Tools/View disclosures. Consumers do not configure either behavior.
 
 ### Toolbar zone ownership
 
@@ -138,15 +138,15 @@ Wide toolbar behavior:
 - viewport controls remain explicit when the consumer exposes `data-cb-design-shell-viewport` controls;
 - Undo/Redo, fullscreen/exit and the primary Save action remain explicit;
 - desktop palette/sidebar collapse controls keep their normal shell presentation;
-- declared toolbar extensions receive a Base-owned wide presentation.
+- contextual toolbar extensions receive a Base-owned wide presentation only when they fit; utility commands remain inside bounded Tools/View disclosures.
 
 Compact toolbar behavior:
 
 - viewport controls are represented by one **View** disclosure whose trigger follows the active viewport icon;
-- Undo/Redo plus fullscreen/exit are represented by one **Actions** disclosure;
+- Undo/Redo are represented in a **Tools** disclosure; the dedicated fullscreen/exit control remains visible and reachable;
 - the primary action declared with `data-cb-design-shell-primary-action` stays pinned and is never moved into an overflow disclosure;
 - responsive left/right drawer openers stay pinned;
-- status text and redundant explicit controls are hidden while their compact equivalents are active;
+- status text and redundant history/viewport controls are hidden while their compact equivalents are active; Save and explicit Close/Exit never disappear;
 - only one disclosure may be open at a time;
 - clicking outside closes the open disclosure;
 - Escape closes the disclosure first and restores focus to its trigger before drawer/fullscreen Escape behavior may continue.
@@ -155,7 +155,7 @@ The compact disclosure uses Base-owned proxy controls that forward activation to
 
 ### Extending the toolbar
 
-Additional consumer actions are declared as **command sources**, outside the internal toolbar structure. Base keeps those sources hidden and creates both the wide toolbar presentation and the compact disclosure presentation.
+Additional consumer actions are declared as **command sources**, outside the internal toolbar structure. Base keeps those sources hidden and creates the appropriate space-budgeted inline presentation and bounded disclosure presentation.
 
 For an additional action:
 
@@ -178,6 +178,30 @@ Supported public values are:
 
 - `data-cb-design-shell-toolbar-extension="view"`
 - `data-cb-design-shell-toolbar-extension="actions"`
+
+### Action metadata (additive public contract)
+
+The existing `view|actions` source containers and their original button callbacks remain authoritative. Consumer commands may declare these attributes on the original button:
+
+- `data-cb-design-shell-action-id`: stable, consumer-prefixed action identity, for example `certificates.download-kit`. Required for newly registered dynamic consumer commands; older static source buttons continue to work.
+- `data-cb-design-shell-action-label`: short, translated **visible** action label. If absent, Base uses the button's actual text content for existing consumers. Base never uses `title` or a consumer's `aria-label` as the visible product label.
+- `data-cb-design-shell-action-description`: optional longer explanation, exposed separately as help/accessible description and never rendered as visible button text.
+- `data-cb-design-shell-action-priority="contextual|utility"`: `utility` is the default for product commands. `contextual` marks a command as eligible for inline placement **only if space permits**; it is not an entitlement to remain visible.
+- `data-cb-design-shell-icon`: the **existing** optional icon attribute; no second icon interface is introduced.
+
+Set `aria-label` independently when the accessible name needs more precision than the visible label. Icon-only built-in Base commands retain their canonical accessible labels. Extension commands without explicit short labels or text receive a localized generic fallback instead of promoting a long tooltip. Base owns all command proxies, overflow, focus and keyboard behavior. Save and Close are reserved Base commands and never consumer priorities.
+
+Example:
+
+```html
+<div data-cb-design-shell-toolbar-extension="actions">
+    <button type="button" data-cb-design-shell-action-id="certificates.download-kit"
+        data-cb-design-shell-action-label="Download kit"
+        data-cb-design-shell-action-description="Export instructions, schema and the active design."
+        data-cb-design-shell-action-priority="utility"
+        data-cb-design-shell-icon="download">Download kit</button>
+</div>
+```
 
 The command-source buttons remain consumer-owned: attach the domain callback, disabled state and pressed/active state to those buttons as usual. Base mirrors that state into its presentation and forwards activation back to the source button. Consumers do not inject markup into Base's generated toolbar zones and do not need to know the internal toolbar DOM.
 

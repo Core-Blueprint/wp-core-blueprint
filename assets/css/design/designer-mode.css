@@ -268,7 +268,7 @@
 }
 
 .cb-core-design-shell__toolbar--designer.is-compact {
-	grid-template-columns: auto minmax(0, 1fr) auto;
+	grid-template-columns: minmax(0, 1fr) minmax(0, max-content) max-content;
 	gap: var(--cb-space-2);
 	padding: var(--cb-space-2);
 }
@@ -277,14 +277,20 @@
 .cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-status,
 .cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--viewport,
 .cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--history,
-.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-fullscreen],
-.cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-close],
 .cb-core-design-shell__toolbar--designer.is-compact [data-cb-design-shell-compact-group] {
 	display: none !important;
 }
 
-.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__compact-menu {
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__compact-menu--view:not(.is-toolbar-hidden),
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__compact-menu--view:not(.is-toolbar-hidden),
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__compact-menu--actions:not(.is-toolbar-hidden) {
 	display: block;
+}
+.cb-core-design-shell__toolbar--designer .is-toolbar-hidden {
+	display: none !important;
+}
+.cb-core-design-shell__toolbar--designer.is-toolbar-ultra .cb-core-design-shell__compact-menu--view {
+	display: none !important;
 }
 
 .cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-zone {
@@ -400,3 +406,5 @@
 		transition: none;
 	}
 }
+
+.cb-core-design-shell__compact-menu-item { overflow-wrap: anywhere; min-width: 0; }

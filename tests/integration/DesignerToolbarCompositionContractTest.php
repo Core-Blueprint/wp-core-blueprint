@@ -35,14 +35,14 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		$runtime = $this->source( 'assets/js/features/designer-toolbar.js' );
 
 		self::assertStringNotContainsString( 'IDENTITY_CONDENSED_WIDTH', $runtime );
-		self::assertStringContainsString( 'const COMPACT_WIDTH = 800;', $runtime );
+		self::assertStringNotContainsString( 'COMPACT_WIDTH', $runtime );
 		self::assertStringContainsString( 'const needsIdentityCondensation = (toolbar, start) => {', $runtime );
 		self::assertStringContainsString( "toolbar.classList.add('is-measuring-identity');", $runtime );
 		self::assertStringContainsString( 'const requiredWidth = start.scrollWidth;', $runtime );
 		self::assertStringContainsString( 'const availableWidth = start.clientWidth;', $runtime );
-		self::assertStringContainsString( 'const condensedIdentity = compact || needsIdentityCondensation(toolbar, start);', $runtime );
-		self::assertStringContainsString( "toolbar.classList.toggle('is-identity-condensed', condensedIdentity);", $runtime );
-		self::assertStringContainsString( 'new ResizeObserver(applyCompactState).observe(toolbar)', $runtime );
+		self::assertStringContainsString( 'const condensed = needsIdentityCondensation(toolbar, start);', $runtime );
+		self::assertStringContainsString( "toolbar.classList.toggle('is-identity-condensed', condensed);", $runtime );
+		self::assertStringContainsString( 'new ResizeObserver(requestLayout).observe(toolbar)', $runtime );
 		self::assertStringContainsString( '[data-cb-design-shell-viewport]', $runtime );
 		self::assertStringContainsString( 'controlsInExtension(shell, \'view\')', $runtime );
 		self::assertStringContainsString( 'controlsInExtension(shell, \'actions\')', $runtime );
@@ -52,7 +52,23 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'before: actionAnchor', $runtime );
 		self::assertStringNotContainsString( 'before: save', $runtime );
 		self::assertStringContainsString( 'source.click();', $runtime );
-		self::assertStringContainsString( 'new MutationObserver(() => syncProxy(record))', $runtime );
+		self::assertStringContainsString( 'new MutationObserver(() => { syncProxy(record); requestLayout(); })', $runtime );
+	}
+
+	public function test_toolbar_capacity_contract_reserves_essential_actions_and_separates_metadata(): void {
+		$runtime = $this->source( 'assets/js/features/designer-toolbar.js' );
+		$mode    = $this->source( 'assets/css/design/designer-mode.css' );
+		$css     = $this->source( 'assets/css/design/designer-toolbar.css' );
+
+		self::assertStringContainsString( 'data-cb-design-shell-action-label', $runtime );
+		self::assertStringContainsString( 'data-cb-design-shell-action-description', $runtime );
+		self::assertStringContainsString( 'data-cb-design-shell-action-priority', $runtime );
+		self::assertStringContainsString( 'const overflows = () => {', $runtime );
+		self::assertStringContainsString( 'const toolsMenu = createMenu(', $runtime );
+		self::assertStringContainsString( 'const compact = overflows();', $runtime );
+		self::assertStringContainsString( "toolbar.classList.add('is-toolbar-ultra');", $runtime );
+		self::assertStringNotContainsString( '.is-compact [data-cb-design-shell-close]', $mode );
+		self::assertStringContainsString( '[data-cb-design-shell-close]', $css );
 	}
 
 	public function test_base_chrome_owns_context_close_and_layer_presentation(): void {

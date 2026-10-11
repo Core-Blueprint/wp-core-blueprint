@@ -2,7 +2,6 @@
 	'use strict';
 
 	const config = window.cbCoreDesignerLaunch || {};
-	const COMPACT_WIDTH = 800;
 	const READY_RETRY_DELAY_MS = 50;
 	const READY_RETRY_LIMIT = 200;
 	const FAILURE_EVENT = 'cb:design-shell:failure';
@@ -27,11 +26,23 @@
 			}));
 		});
 	};
+	// Public action metadata is additive. Product descriptions and tooltips are
+	// never promoted into visible command labels.
+	const actionIdFor = (control) => String(control?.dataset?.cbDesignShellActionId || '').trim();
+	const descriptionFor = (control) => String(control?.dataset?.cbDesignShellActionDescription || '').trim();
+	const priorityFor = (control) => control?.dataset?.cbDesignShellActionPriority === 'contextual' ? 'contextual' : 'utility';
+	const builtInCommand = (control) => Boolean(control?.matches?.(
+		'[data-cb-design-shell-undo], [data-cb-design-shell-redo], [data-cb-design-shell-fullscreen], [data-cb-design-shell-close], [data-cb-design-shell-viewport]'
+	));
 	const labelFor = (control) => String(
-		control?.getAttribute?.('aria-label')
-		|| control?.getAttribute?.('title')
+		control?.dataset?.cbDesignShellActionLabel
 		|| control?.textContent
+		|| (builtInCommand(control) ? control?.getAttribute?.('aria-label') : '')
 		|| ''
+	).trim();
+	const accessibleLabelFor = (control, visibleLabel) => String(
+		control?.getAttribute?.('aria-label')
+		|| visibleLabel
 	).trim();
 	const iconFor = (control) => String(
 		control?.dataset?.cbDesignShellIcon
@@ -97,7 +108,9 @@
 		]).filter((control) => !control.hasAttribute('data-cb-design-shell-primary-action'));
 
 		let openRecord = null;
+		let requestLayout = () => {};
 		const menuRecords = [];
+		const inlineRecords = [];
 		const closeMenu = (record = openRecord, { restoreFocus = false } = {}) => {
 			if (!record) return;
 			record.panel.hidden = true;
@@ -112,10 +125,22 @@
 		const syncProxy = (record) => {
 			const { source, proxy, iconOnly = false } = record;
 			const label = labelFor(source) || String(config.toolbarLabels?.action || 'Action').trim();
+			const accessibleLabel = accessibleLabelFor(source, label);
+			const description = descriptionFor(source);
 			const icon = iconFor(source);
 			proxy.textContent = label;
-			if (icon) shellApi.icons.decorate(proxy, icon, { iconOnly, label });
-			else proxy.setAttribute('aria-label', label);
+			if (icon) shellApi.icons.decorate(proxy, icon, { iconOnly, label: accessibleLabel });
+			else proxy.setAttribute('aria-label', accessibleLabel);
+			proxy.dataset.cbDesignShellActionPriority = priorityFor(source);
+			if (actionIdFor(source)) proxy.dataset.cbDesignShellActionId = actionIdFor(source);
+			else delete proxy.dataset.cbDesignShellActionId;
+			if (description) {
+				proxy.setAttribute('aria-description', description);
+				proxy.title = description;
+			} else {
+				proxy.removeAttribute('aria-description');
+				proxy.removeAttribute('title');
+			}
 			proxy.disabled = source.disabled === true;
 			const pressed = source.getAttribute('aria-pressed');
 			if (pressed === 'true' || pressed === 'false') proxy.setAttribute('aria-pressed', pressed);
@@ -126,12 +151,12 @@
 		const bindProxy = (source, proxy, { iconOnly = false, afterActivate = null } = {}) => {
 			const record = { source, proxy, iconOnly };
 			syncProxy(record);
-			new MutationObserver(() => syncProxy(record)).observe(source, {
+			new MutationObserver(() => { syncProxy(record); requestLayout(); }).observe(source, {
 				attributes: true,
 				childList: true,
 				characterData: true,
 				subtree: true,
-				attributeFilter: ['aria-pressed', 'aria-label', 'title', 'class', 'disabled', 'data-cb-design-shell-icon'],
+				attributeFilter: ['aria-pressed', 'aria-label', 'title', 'class', 'disabled', 'data-cb-design-shell-icon', 'data-cb-design-shell-action-id', 'data-cb-design-shell-action-label', 'data-cb-design-shell-action-description', 'data-cb-design-shell-action-priority'],
 			});
 			proxy.addEventListener('click', () => {
 				if (proxy.disabled) return;
@@ -161,6 +186,7 @@
 				proxy.type = 'button';
 				proxy.className = 'button cb-core-button cb-core-design-shell__toolbar-extension-action';
 				bindProxy(source, proxy, { iconOnly: Boolean(iconFor(source)) });
+				inlineRecords.push({ source, proxy });
 				wrapper.append(proxy);
 			});
 			if (before && before.parentElement === mount) mount.insertBefore(wrapper, before);
@@ -194,8 +220,12 @@
 			panel.id = `cb-core-design-shell-compact-menu-${name}-${sequence}`;
 			trigger.setAttribute('aria-controls', panel.id);
 
-			const record = { name, wrapper, trigger, panel, controls };
-			controls.forEach((control) => panel.append(createCompactProxy(control, record)));
+			const record = { name, wrapper, trigger, panel, controls, items: new Map() };
+			controls.forEach((control) => {
+				const item = createCompactProxy(control, record);
+				record.items.set(control, item);
+				panel.append(item);
+			});
 			trigger.addEventListener('click', () => {
 				const opening = panel.hidden;
 				closeAll();
@@ -213,9 +243,11 @@
 		};
 
 		const viewLabel = String(config.toolbarLabels?.view || 'View').trim();
-		const actionsLabel = String(config.toolbarLabels?.actions || 'Actions').trim();
+		const toolsLabel = String(config.toolbarLabels?.tools || config.toolbarLabels?.actions || 'Tools').trim();
 		const viewMenu = createMenu({ name: 'view', label: viewLabel, icon: 'monitor', controls: viewControls, mount: center });
-		createMenu({ name: 'actions', label: actionsLabel, icon: 'ellipsis', controls: actionControls, mount: end, before: actionAnchor });
+		const toolsControls = uniqueControls([...actionControls, ...viewControls]).filter((control) =>
+			control !== closeControl && !control.hasAttribute('data-cb-design-shell-close'));
+		const toolsMenu = createMenu({ name: 'actions', label: toolsLabel, icon: 'ellipsis', controls: toolsControls, mount: end, before: actionAnchor });
 
 		const syncViewTrigger = () => {
 			if (!viewMenu) return;
@@ -234,20 +266,88 @@
 		});
 		syncViewTrigger();
 
-		const applyCompactState = () => {
-			const width = toolbar.getBoundingClientRect().width;
-			const compact = width <= COMPACT_WIDTH;
-			toolbar.classList.toggle('is-compact', compact);
-			const condensedIdentity = compact || needsIdentityCondensation(toolbar, start);
-			toolbar.classList.toggle('is-identity-condensed', condensedIdentity);
-			if (!compact) closeAll();
+
+		const hiddenClass = 'is-toolbar-hidden';
+		const setVisible = (node, shown, redirect = null) => {
+			if (!node) return;
+			if (!shown && node.contains(document.activeElement)) (redirect || toolsMenu?.trigger || closeControl || save)?.focus();
+			node.classList.toggle(hiddenClass, !shown);
 		};
-		if (typeof ResizeObserver === 'function') {
-			new ResizeObserver(applyCompactState).observe(toolbar);
-		} else {
-			window.addEventListener('resize', applyCompactState, { passive: true });
-		}
-		shell.addEventListener('cb:design-shell:fullscreenchange', () => window.requestAnimationFrame(applyCompactState));
+		const menuHasItems = (menu) => Boolean(menu && [...menu.items.values()].some((item) => !item.classList.contains(hiddenClass)));
+		const gap = (node) => parseFloat(window.getComputedStyle(node)?.gap) || 0;
+		const overflows = () => {
+			const tolerance = 1;
+			if (toolbar.scrollWidth > toolbar.clientWidth + tolerance) return true;
+			if ([start, center, end].some((zone) => zone.scrollWidth > zone.clientWidth + tolerance)) return true;
+			const s = start.getBoundingClientRect(), c = center.getBoundingClientRect(), e = end.getBoundingClientRect();
+			return (center.scrollWidth > 0 && s.right + gap(toolbar) > c.left + tolerance)
+				|| (center.scrollWidth > 0 && c.right + gap(toolbar) > e.left + tolerance)
+				|| s.right + gap(toolbar) > e.left + tolerance;
+		};
+		const applyCompactState = () => {
+			if (!toolbar.isConnected) return;
+			toolbar.classList.remove('is-compact', 'is-toolbar-ultra', 'is-identity-condensed');
+			inlineRecords.forEach(({ source, proxy }) => setVisible(proxy, priorityFor(source) === 'contextual'));
+			const updateMenu = (menu, shouldShow) => {
+				if (!menu) return;
+				for (const [source, item] of menu.items) setVisible(item, shouldShow(source), menu.trigger);
+				setVisible(menu.wrapper, menuHasItems(menu), menu.trigger);
+			};
+			const inlineVisible = (source) => inlineRecords.some((entry) => entry.source === source &&
+				!entry.proxy.classList.contains(hiddenClass));
+			const wideVisible = (source) => Boolean(
+				(extensionActionControls.includes(source) || extensionViewControls.includes(source)) &&
+				!inlineVisible(source)
+			);
+			updateMenu(viewMenu, wideVisible);
+			updateMenu(toolsMenu, (source) => !viewControls.includes(source) && wideVisible(source));
+			const condensed = needsIdentityCondensation(toolbar, start);
+			toolbar.classList.toggle('is-identity-condensed', condensed);
+			// Move lowest-priority contextual proxies to their source-preserving overflow
+			// before switching the whole toolbar to compact layout.
+			for (const { source, proxy } of [...inlineRecords].reverse()) {
+				if (!overflows()) break;
+				if (priorityFor(source) !== 'contextual') continue;
+				setVisible(proxy, false, (viewControls.includes(source) ? viewMenu : toolsMenu)?.trigger);
+				updateMenu(viewMenu, wideVisible);
+				updateMenu(toolsMenu, (command) => !viewControls.includes(command) && wideVisible(command));
+			}
+			const compact = overflows();
+			toolbar.classList.toggle('is-compact', compact);
+			if (compact) {
+				inlineRecords.forEach(({ proxy }) => setVisible(proxy, false));
+				updateMenu(viewMenu, () => true);
+				updateMenu(toolsMenu, (source) => !viewControls.includes(source));
+				toolbar.classList.add('is-identity-condensed');
+				if (overflows()) {
+					toolbar.classList.add('is-toolbar-ultra');
+					updateMenu(viewMenu, () => false);
+					updateMenu(toolsMenu, () => true);
+				}
+			}
+			if (openRecord && (openRecord.wrapper.classList.contains(hiddenClass) || !menuHasItems(openRecord))) {
+				const wasFocused = openRecord.wrapper.contains(document.activeElement);
+				const fallback = toolsMenu?.wrapper.classList.contains(hiddenClass) ? closeControl || save : toolsMenu?.trigger;
+				closeMenu(openRecord);
+				if (wasFocused) (fallback || closeControl || save)?.focus();
+			}
+		};
+		let framePending = false;
+		requestLayout = () => {
+			if (framePending) return;
+			framePending = true;
+			window.requestAnimationFrame(() => {
+				framePending = false;
+				applyCompactState();
+			});
+		};
+		if (typeof ResizeObserver === 'function') new ResizeObserver(requestLayout).observe(toolbar);
+		window.addEventListener('resize', requestLayout, { passive: true });
+		if (document.fonts?.ready) document.fonts.ready.then(requestLayout);
+		document.fonts?.addEventListener?.('loadingdone', requestLayout);
+		shell.addEventListener('cb:design-shell:fullscreenchange', requestLayout);
+		const context = start.querySelector('[data-cb-design-shell-context]');
+		if (context) new MutationObserver(requestLayout).observe(context, { attributes: true, childList: true, subtree: true, characterData: true });
 		applyCompactState();
 
 		window.addEventListener('keydown', (event) => {

@@ -45,7 +45,10 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "cb:design-shell:viewportchange", $viewports );
 		self::assertStringContainsString( 'data-cb-design-shell-viewport="tablet"', $template );
 		self::assertStringContainsString( 'cb-core-design-shell__toolbar--designer', $launch );
-		self::assertStringContainsString( 'grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);', $shell_css );
+		// Capacity-aware Base toolbar keeps a flexible identity zone and reserves
+		// intrinsic space for View/Tools and terminal Save/Close controls.
+		self::assertStringContainsString( 'grid-template-columns: minmax(0, 1fr) minmax(0, max-content) minmax(0, max-content);', $shell_css );
+		self::assertStringNotContainsString( 'grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);', $shell_css );
 		self::assertStringContainsString( '.cb-core-mail-designer__preview-frame.is-tablet iframe', $mail_css );
 		self::assertStringContainsString( 'max-width: 782px;', $mail_css );
 	}

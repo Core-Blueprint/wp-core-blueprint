@@ -197,3 +197,43 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 		max-width: min(16rem, 48vw);
 	}
 }
+
+/* Base capacity layout reserves terminal Save/Close before contextual controls. */
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-zone--start,
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-zone--end {
+	min-inline-size: 0;
+	max-inline-size: 100%;
+}
+/* Keep keyboard focus visible: shrink the identity text instead of clipping controls. */
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__brand {
+	flex: 0 1 auto;
+	min-inline-size: 0;
+	max-inline-size: 100%;
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__brand-wordmark {
+	display: inline-block;
+	max-inline-size: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.cb-core-design-shell__toolbar--designer :is(
+	[data-cb-design-shell-close],
+	[data-cb-design-shell-fullscreen],
+	[data-cb-design-shell-primary-action]
+) { flex-shrink: 0; }
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-extension-action {
+	max-inline-size: min(18rem, 28vw);
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
+@media (max-width: 480px) {
+	.cb-core-design-shell__toolbar--designer [data-cb-design-shell-primary-action] {
+		max-inline-size: 11ch !important;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-context {
+		max-inline-size: min(8rem, 25vw);
+	}
+}
