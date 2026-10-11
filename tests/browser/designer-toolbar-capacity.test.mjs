@@ -41,7 +41,10 @@ function inspectBrowser() {
 			longTooltipVisible: [...toolbar.querySelectorAll('button')].some((el) =>
 				el.textContent.includes('DO NOT SHOW THIS TOOLTIP')),
 		};
-		if (shown(tools)) {
+		const inline = toolbar.querySelector('.cb-core-design-shell__toolbar-extension-action[data-cb-design-shell-action-id="fixture.action-0"]');
+		result.inlineAvailable = shown(inline);
+		if (shown(inline)) inline.click();
+		else if (shown(tools)) {
 			tools.click();
 			const first = toolbar.querySelector('[data-cb-design-shell-compact-menu-popover="actions"] [data-cb-design-shell-action-id="fixture.action-0"]');
 			if (shown(first)) first.click();
@@ -124,7 +127,7 @@ for (const scenario of [
 			assert.equal(actual.longTooltipVisible, false, 'Tooltip must not become button text');
 			assert.equal(actual.menuDismissed, true, 'Tools must close after command/Escape');
 			if (scenario.count) {
-				assert.equal(actual.toolsAvailable, true, 'At least one overflow command must be reachable');
+				assert.equal(actual.toolsAvailable || actual.inlineAvailable, true, 'Action must be reachable inline or in Tools');
 				assert.equal(actual.actionTriggered, 1, 'Original command must execute once');
 			}
 		} finally {
