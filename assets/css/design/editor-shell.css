@@ -408,6 +408,29 @@ html.cb-core-design-shell-focus-mode body {
 	min-height: 0;
 }
 
+/* Composed Designer sidebars keep header/tabs fixed; only the selected panel
+ * scrolls. This mirrors the palette contract in direct and fullscreen modes. */
+.cb-core-design-shell.is-fullscreen .cb-core-design-shell__sidebar--composed,
+[data-cb-design-launch-root][data-cb-design-launch-mode="direct"][data-cb-design-exit-url]:not([data-cb-design-exit-url=""]) .cb-core-design-shell .cb-core-design-shell__sidebar--composed {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.cb-core-design-shell.is-fullscreen .cb-core-design-shell__sidebar--composed > .cb-core-design-shell__tabs,
+[data-cb-design-launch-root][data-cb-design-launch-mode="direct"][data-cb-design-exit-url]:not([data-cb-design-exit-url=""]) .cb-core-design-shell .cb-core-design-shell__sidebar--composed > .cb-core-design-shell__tabs {
+	flex: 0 0 auto;
+}
+
+.cb-core-design-shell.is-fullscreen .cb-core-design-shell__sidebar--composed > .cb-core-design-shell__sidebar-panel:not([hidden]),
+[data-cb-design-launch-root][data-cb-design-launch-mode="direct"][data-cb-design-exit-url]:not([data-cb-design-exit-url=""]) .cb-core-design-shell .cb-core-design-shell__sidebar--composed > .cb-core-design-shell__sidebar-panel:not([hidden]) {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.cb-core-design-shell.is-fullscreen,
 	.cb-core-design-shell.is-fullscreen.is-entering,
