@@ -14,6 +14,14 @@ const composedRule = (target) => rules.find(({ selectors }) => (
 	&& selectors.includes('.cb-core-design-shell__sidebar--composed' + target)
 ));
 
+const modeStylesheet = await readFile(new URL('../../assets/css/design/designer-mode.css', import.meta.url), 'utf8');
+
+test('responsive Designer drawers retain composed flex rails under the generic block override', () => {
+	const responsive = modeStylesheet.split('@media (max-width: 1280px) {')[1]?.split('@media (prefers-reduced-motion: reduce)')[0];
+	assert.ok(responsive, 'The shared Designer must declare responsive drawer layout.');
+	assert.match(responsive, /\.cb-core-design-shell__workspace--collapsible\s*>\s*\.cb-core-design-shell__palette--tabbed\s*,\s*\.cb-core-design-shell__workspace--collapsible\s*>\s*\.cb-core-design-shell__sidebar--composed\s*\{\s*display:\s*flex\s*!important;\s*flex-direction:\s*column;\s*overflow:\s*hidden;/);
+});
+
 test('composed Designer sidebar itself never scrolls in direct or fullscreen mode', () => {
 	const rule = composedRule('');
 	assert.ok(rule, 'Expected a shared direct/fullscreen sidebar composition rule.');
