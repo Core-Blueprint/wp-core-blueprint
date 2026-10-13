@@ -341,6 +341,16 @@
 		transition: transform 170ms cubic-bezier(.2, .8, .2, 1), visibility 170ms linear;
 	}
 
+	/* Drawer rails must preserve the same fixed header/tabs and scrolling
+	 * panel composition as the desktop Designer. The generic drawer uses
+	 * display:block!important, so restore flex specifically for tabbed rails. */
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette--tabbed,
+	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar--composed {
+		display: flex !important;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
 	.cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
 		inset-inline-start: 0;
 		grid-column: 1;
