@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-usage() { echo 'Usage: ./tools/check-integration [--preflight|--dry-run|--execute]' >&2; }
+usage() { echo 'Usage: ./tools/check-integration [--preflight|--dry-run|--inspect|--execute]' >&2; }
 
 case "${1:-}" in
   --preflight)
@@ -14,6 +14,11 @@ case "${1:-}" in
     [[ $# -eq 1 ]] || { usage; exit 64; }
     cd "$ROOT"
     PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.plan --dry-run
+    ;;
+  --inspect)
+    [[ $# -eq 1 ]] || { usage; exit 64; }
+    cd "$ROOT"
+    PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.inspect --inspect
     ;;
   --execute)
     [[ $# -eq 1 ]] || { usage; exit 64; }
@@ -29,7 +34,7 @@ case "${1:-}" in
   '')
     [[ $# -eq 0 ]] || { usage; exit 64; }
     echo 'BLOCKED: Base Level 2 WordPress integration is not active.' >&2
-    echo 'Use --preflight or --dry-run for read-only inspection.' >&2
+    echo 'Use --preflight, --dry-run or --inspect for read-only inspection.' >&2
     exit 2
     ;;
   *)

@@ -320,19 +320,65 @@ def integration_commands(version: str) -> tuple[tuple[str, ...], ...]:
     )
 
 
+def record_receipt(name: str, sha: str, version: str, status: str,
+                   gate: str = "", exit_code: int | None = None,
+                   gate_count: int | None = None) -> None:
+    """Write immutable gate evidence inside the strictly owned test workspace.
+
+    Files are new-only; no existing record can be overwritten or post-edited.
+    The final PASS record is written *only* after all gates and parity succeed.
+    """
+    assert_owner(sha)
+    if not name or any(char not in "abcdefghijklmnopqrstuvwxyz0123456789-" for char in name):
+        raise preflight.PreflightError("Invalid immutable evidence filename.")
+    record = {
+        "schema": 1, "product": "core-blueprint", "git_sha": sha,
+        "wordpress": version, "database": DB, "status": status,
+        "gate": gate, "exit_code": exit_code, "gate_count": gate_count,
+    }
+    path = TEST_ROOT / "evidence" / f"{name}.json"
+    fd = None
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+                     getattr(os, "O_NOFOLLOW", 0), 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as output:
+            fd = None
+            json.dump(record, output, sort_keys=True)
+            output.write("\n")
+            output.flush()
+            os.fsync(output.fileno())
+    except OSError as error:
+        raise preflight.PreflightError("Unable to persist immutable Level 2 evidence.") from error
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
 def run_full_suite(version: str, sha: str) -> None:
-    """Full local suite. Never invoked by any public B2c CLI mode."""
+    """Full local suite with persistent fail-closed per-gate evidence."""
     verify_runtime_parity(sha)
     env = test_environment(version)
     (TEST_ROOT / "tmp").mkdir(exist_ok=False)
-    for command in integration_commands(version):
+    (TEST_ROOT / "evidence").mkdir(mode=0o700, exist_ok=False)
+    commands = integration_commands(version)
+    record_receipt("00-start", sha, version, "running", gate_count=len(commands))
+    for index, command in enumerate(commands, start=1):
         assert_owner(sha)
+        gate = command[1]
+        record_receipt(f"{index:02d}-start", sha, version, "running", gate=gate)
         result = subprocess.run(command, cwd=SOURCE, env=env, check=False)
         if result.returncode:
+            record_receipt(f"{index:02d}-fail", sha, version, "fail",
+                           gate=gate, exit_code=result.returncode)
             raise preflight.PreflightError(
-                f"Required Base integration gate failed (exit {result.returncode}): {command[1]}"
+                f"Required Base integration gate failed (exit {result.returncode}): {gate}"
             )
+        record_receipt(f"{index:02d}-pass", sha, version, "pass",
+                       gate=gate, exit_code=0)
     verify_runtime_parity(sha)
+    record_receipt("99-final-pass", sha, version, "pass",
+                   gate="final-runtime-parity", exit_code=0,
+                   gate_count=len(commands))
 
 
 def prepared_pipeline() -> None:

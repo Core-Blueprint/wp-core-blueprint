@@ -69,3 +69,36 @@ Do not execute this final block before the exact Level 2 prerequisites are accep
 6. Validate Base Designer Navigation public API in installed sandbox; then consume it in Evaluator E2 and Automations separately.
 
 **Not done:** direct WordPress integration, release build, field acceptance, CI matrix, merge. No customer artifact has been produced by this patch.
+
+## Owned historical workspace diagnosis (2026-10-13)
+
+The first approved fresh execution had already created
+`/tmp/core-blueprint-base-e2_20261013`, its matching dedicated DB and lock.
+The workspace owner marker identifies `a81ebd3606b6ccd0fa5d2c01537c124bfcf933bd`
+and WordPress 7.0. Local evidence includes PHPUnit fixtures, a complete
+performance report, pinned WP-CLI, HTTP logs through the last Media Replace
+gate, and 34 dedicated schema tables. These artifacts show progress but **do
+not prove** that every gate exited 0 or that final parity passed.
+
+The historical runner had no persistent per-gate terminal summary. **Never
+infer Level 2 PASS from file presence.** Never run `--execute` on this slot
+again, clear the lock, or reset its schema/workspace.
+
+`CB_BASE_TEST_SLOT=e2_20261013 bash tools/check-integration --inspect`
+is explicitly read-only. It validates the Base-owned workspace, owner marker,
+dedicated schema presence, and absence/presence of durable end evidence.
+It works even when the current source HEAD has advanced, without silently
+relabeling the older result as current-HEAD PASS.
+
+Future fresh `--execute` runs create append-only 0600 JSON gate receipts
+under the owned 0700 `evidence/` directory. Only a fully completed run with
+verified parity writes `99-final-pass.json`; inspections validate the
+recorded source/database/version and every required gate receipt. There is
+**no retroactive repair** for a run performed before evidence recording existed.
+
+A controlled retest of the already-owned historical schema requires a separately
+reviewed rerun/recovery design and operator approval; it is not authorized
+by the new-only executor or the read-only inspect command. Do not rerun
+destructive or non-idempotent scenarios against an existing schema. The
+release builder can later use a valid fixture, but it is **not** proof of the
+complete Level 2 extended matrix.
