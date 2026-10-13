@@ -1,0 +1,69 @@
+# Base validation workflow reconciliation (candidate)
+
+**Source:** `Core-Blueprint/wp-core-blueprint main@caa8daf1e677ed688d2d253108b6021895e1df33`.
+**Branch:** `feature/base-validation-workflow-reconciliation-v1`.
+**Status:** source candidate, NOT local WordPress Level 2 PASS, NOT release-ready.
+
+## Boundaries
+
+- Level 1: executable read-only `./tools/check`, source and standalone regressions.
+- Level 2: `./tools/check-integration --preflight` and `--dry-run` are diagnostic. `--execute` is separately approved and creates a NEW isolated database/workspace only. No database reset/drop, Docker start/replace, or automatic cleanup is implemented.
+- Level 3: current strict Python `python3 tools/build-release` still requires verified `WP_CORE_DIR`, `WP_TESTS_DIR`, `CB_PLUGIN_FILE` and dedicated database environment. It reruns Level 1 and the existing independent release/WordPress gates. Existing release packaging, checksum and Design module graph stamping remain intact.
+- Level 4: WordPress sandbox Designer compatibility (Base/Automations/Evaluator) requires separate operator acceptance.
+- Other Base ongoing branches remain untouched. No CI, PR, merge or deploy is implied.
+
+## Safety reconciliation and current workstation context
+
+The historical `wordpress_test` and `core_blueprint_base_test` schemas are **PROTECTED** and already contain tables. The shared `cb-base-test-db` container has a persistent volume; do not replace or reset it. The current loopback port is `127.0.0.1:3307`.
+
+The candidate supports `CB_BASE_TEST_SLOT` as a strictly allowlisted lowercase identifier (max 24 characters; letter first; separated underscores allowed). A slot is used consistently to derive a separate **new-only** test schema, worktree and lock. It cannot override an arbitrary database or filesystem path.
+
+Example **read-only** candidate inspection for the specifically proposed slot, not an approval to create it:
+
+```bash
+cd ~/Downloads/wp-core-blueprint
+git status --short
+git fetch origin --prune
+git switch --track origin/feature/base-validation-workflow-reconciliation-v1
+git pull --ff-only
+git rev-parse HEAD
+
+bash tools/check
+
+export CB_BASE_TEST_SLOT=e2_20261013
+bash tools/check-integration --preflight
+bash tools/check-integration --dry-run
+```
+
+Do not use `--execute` unless the operator first grants **separate explicit GO for this exact schema and workspace** after clean dry-run, container ownership, persistent mounts and exact source checks. A slot collision or leftover lock/workspace is a hard blocker requiring manual review. The candidate does not perform a reset to make repeated runs green.
+
+If, later, the operator explicitly authorizes fresh resources and Level 2 reports true PASS, the build environment for the **same slot and exact HEAD** is:
+
+```bash
+export CB_BASE_TEST_SLOT=e2_20261013
+export WP_CORE_DIR=/tmp/core-blueprint-tests/core-blueprint-e2_20261013/wp
+export WP_TESTS_DIR=/tmp/core-blueprint-tests/core-blueprint-e2_20261013/wp-tests
+export CB_PLUGIN_FILE=/tmp/core-blueprint-tests/core-blueprint-e2_20261013/wp/wp-content/plugins/core-blueprint/core-blueprint.php
+export WP_DB_NAME=core_blueprint_base_e2_20261013_test
+export WP_DB_USER=root
+export WP_DB_PASSWORD=root
+export WP_DB_HOST=127.0.0.1:3307
+
+python3 tools/build-release
+unzip -tqq dist/core-blueprint-1.0.0.zip
+sha256sum dist/core-blueprint-1.0.0.zip
+cat dist/core-blueprint-1.0.0.zip.sha256
+```
+
+Do not execute this final block before the exact Level 2 prerequisites are accepted. `CB_BASE_TEST_SLOT` is an opt-in identifier; passing it alone does not authorize database creation. The CLI refuses `--execute` without `CB_BASE_INTEGRATION_APPROVAL=I_APPROVE_FRESH_BASE_TEST_DATABASE`, and the operator approval boundary is separate from that technical check.
+
+## Test matrix
+
+1. `bash tools/check` including Python mocked runner safety failures, PHP syntax/public foundation, JS source and JS regressions.
+2. `bash tools/check-integration --preflight` confirms the actual Docker metadata is **localhost-only** and reports persistent mounts without claiming they are disposable.
+3. `bash tools/check-integration --dry-run` checks the new-only slot against real schema/workspace collisions without mutating them.
+4. Following separately authorized Level 2 execute, verify full WordPress/PHPUnit, lifecycle, pinned Starter, performance, WP-CLI and Media Replace tests. No destructive uninstall inside normal runner.
+5. Execute fail-closed Level 3 builder on the *same* exact-head WP runtime copy; independently verify canonical ZIP and sidecar.
+6. Validate Base Designer Navigation public API in installed sandbox; then consume it in Evaluator E2 and Automations separately.
+
+**Not done:** direct WordPress integration, release build, field acceptance, CI matrix, merge. No customer artifact has been produced by this patch.
