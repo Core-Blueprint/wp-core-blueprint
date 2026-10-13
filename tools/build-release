@@ -172,11 +172,11 @@ def package_hashes(source: Path, files: list[Path], design_revision: str) -> dic
 
 
 def preflight(source: Path, expected: dict[str, str]) -> None:
-    for tool in ("php", "node", "bash", "unzip"):
+    for tool in ("php", "node", "bash", "unzip", "composer"):
         if shutil.which(tool) is None:
             fail(f"Required tool is missing: {tool}.")
     for relative in (
-        "tools/check-translations.php", "tests/bin/php-lint.sh",
+        "tools/check", "tools/check-translations.php", "tests/bin/php-lint.sh",
         "tests/bin/run-release-package-scenario.sh", "vendor/bin/phpunit",
         "vendor/autoload.php", "phpunit.xml.dist", "tests/python/test_build_release.py",
     ):
@@ -204,6 +204,9 @@ def preflight(source: Path, expected: dict[str, str]) -> None:
         'foreach (["dom", "xml", "xmlwriter", "mbstring", "mysqli", "gd", "sodium"] as $extension) '
         '{ if (!extension_loaded($extension)) { fwrite(STDERR, "Missing PHP extension: " . $extension . "\\n"); exit(1); } }',
     ], source, "PHP baseline and integration extensions")
+    # The source-only Level 1 gate is canonical and must pass before
+    # the builder's existing independent release/WordPress gates.
+    run_gate(["bash", "tools/check"], source, "Canonical Base Level 1", quiet=True)
     run_gate([sys.executable, "-m", "unittest", "discover", "-s", "tests/python"],
              source, "Release builder failure paths", quiet=True)
     run_gate(["bash", "tests/bin/php-lint.sh"], source, "PHP syntax and read-only localization")
