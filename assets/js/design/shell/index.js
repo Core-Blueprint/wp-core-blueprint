@@ -13,7 +13,9 @@ import { createDesignerSelectionController } from './selection-controller.js';
 import {
 	createDesignerInspectorControls,
 	createDesignerInspectorIdentity,
+	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
+	enableDesignerTextareaAutosize,
 } from './inspector.js';
 
 const element = (root, selector) => root?.querySelector?.(selector) ?? null;
@@ -573,7 +575,9 @@ export {
 	createDesignerIcon,
 	createDesignerInspectorControls,
 	createDesignerInspectorIdentity,
+	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
+	enableDesignerTextareaAutosize,
 	createDesignerLayerRow,
 	createDesignerLayerTree,
 	createDesignerSelectionController,
