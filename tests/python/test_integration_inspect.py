@@ -120,7 +120,6 @@ class BaseEvidenceInspectionTest(unittest.TestCase):
             self.assertEqual(original, receipt.read_bytes())
 
     def test_missing_root_is_read_only_and_not_success(self):
-        self.root.rmdir() if not any(self.root.iterdir()) else None
         # Use a separate absent path to avoid touching the fixture marker.
         missing = self.root.parent / "not-created"
         with mock.patch.object(execution, "TEST_ROOT", missing), \

@@ -303,6 +303,26 @@ class ExecutionSafetyTest(unittest.TestCase):
             with self.assertRaisesRegex(preflight.PreflightError, "Required Base integration gate failed"):
                 execution.run_full_suite("7.0", self.sha)
         run.assert_called_once()
+        self.assertTrue((self.area / "evidence/01-fail.json").is_file())
+        self.assertFalse((self.area / "evidence/99-final-pass.json").exists())
+
+    def test_successful_full_matrix_records_final_pass_only_after_parity(self):
+        with mock.patch.object(execution, "verify_runtime_parity") as parity, \
+             mock.patch.object(execution, "assert_owner"), \
+             mock.patch.object(execution, "integration_commands", return_value=(
+                 ("php", "tests/fixture.php"), ("bash", "tests/fixture.sh"),
+             )), \
+             mock.patch.object(execution.subprocess, "run", return_value=mock.Mock(returncode=0)) as run, \
+             mock.patch.object(execution, "TEST_ROOT", self.area):
+            execution.run_full_suite("7.0", self.sha)
+        self.assertEqual(2, run.call_count)
+        self.assertEqual(2, parity.call_count)
+        record = json.loads((self.area / "evidence/99-final-pass.json").read_text())
+        self.assertEqual("pass", record["status"])
+        self.assertEqual(2, record["gate_count"])
+        self.assertEqual(self.sha, record["git_sha"])
+        self.assertTrue((self.area / "evidence/01-pass.json").exists())
+        self.assertTrue((self.area / "evidence/02-pass.json").exists())
 
     def test_cli_execute_remains_blocked_without_any_changes(self):
         result = subprocess.run(
@@ -327,9 +347,12 @@ class ExecutionSafetyTest(unittest.TestCase):
     def test_explicit_approval_calls_prepared_pipeline_without_test_side_effects(self):
         with mock.patch.dict(os.environ, {
             "CB_BASE_INTEGRATION_APPROVAL": "I_APPROVE_FRESH_BASE_TEST_DATABASE"
-        }), mock.patch.object(execution, "prepared_pipeline") as pipeline:
+        }), mock.patch.object(execution, "prepared_pipeline") as pipeline, \
+             mock.patch("sys.stdout", new_callable=io.StringIO) as stdout:
             self.assertEqual(0, execution.main(["--execute"]))
             pipeline.assert_called_once_with()
+        # The test's mocked PASS is not emitted as misleading Level 2 evidence.
+        self.assertIn("Base Level 2: PASS", stdout.getvalue())
 
     def test_invalid_approval_cannot_reach_pipeline(self):
         for approval in ("", "yes", "I_APPROVE_FRESH_BASE_TEST_DATABASE_EXTRA"):
