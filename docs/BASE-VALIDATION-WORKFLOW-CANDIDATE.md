@@ -16,7 +16,9 @@
 
 The historical `wordpress_test` and `core_blueprint_base_test` schemas are **PROTECTED** and already contain tables. The shared `cb-base-test-db` container has a persistent volume; do not replace or reset it. The current loopback port is `127.0.0.1:3307`.
 
-The candidate supports `CB_BASE_TEST_SLOT` as a strictly allowlisted lowercase identifier (max 24 characters; letter first; separated underscores allowed). A slot is used consistently to derive a separate **new-only** test schema, worktree and lock. It cannot override an arbitrary database or filesystem path.
+The candidate supports `CB_BASE_TEST_SLOT` as a strictly allowlisted lowercase identifier (max 24 characters; letter first; separated underscores allowed). A slot is used consistently to derive a separate **new-only** test schema, workspace and lock. It cannot override an arbitrary database or filesystem path.
+
+**Workspace security reconciliation:** On 2026-10-13 the real Level 2 run stopped before database creation because the suite-shared `/tmp/core-blueprint-tests` directory was operator-owned but mode `775` and already contained Work test data. The runner must **not** chmod/chown it or weaken lock ownership requirements. Instead Base now uses an exclusive `/tmp/core-blueprint-base-<slot>` directory directly beneath the root-owned sticky `/tmp` (mode `1777`); its 0700 workspace and 0600 new-only lock are protected by Linux sticky-directory semantics. Preflight and dry-run enforce the identical parent-security rule used during execution. Any unexpected ownership, symlink, mode, workspace or lock collision blocks. The previous operator GO for the old workspace does not authorize this changed path; obtain a renewed scoped GO before Level 2 execute. Other Base, Work and extension test resources remain protected.
 
 Example **read-only** candidate inspection for the specifically proposed slot, not an approval to create it:
 
@@ -41,9 +43,9 @@ If, later, the operator explicitly authorizes fresh resources and Level 2 report
 
 ```bash
 export CB_BASE_TEST_SLOT=e2_20261013
-export WP_CORE_DIR=/tmp/core-blueprint-tests/core-blueprint-e2_20261013/wp
-export WP_TESTS_DIR=/tmp/core-blueprint-tests/core-blueprint-e2_20261013/wp-tests
-export CB_PLUGIN_FILE=/tmp/core-blueprint-tests/core-blueprint-e2_20261013/wp/wp-content/plugins/core-blueprint/core-blueprint.php
+export WP_CORE_DIR=/tmp/core-blueprint-base-e2_20261013/wp
+export WP_TESTS_DIR=/tmp/core-blueprint-base-e2_20261013/wp-tests
+export CB_PLUGIN_FILE=/tmp/core-blueprint-base-e2_20261013/wp/wp-content/plugins/core-blueprint/core-blueprint.php
 export WP_DB_NAME=core_blueprint_base_e2_20261013_test
 export WP_DB_USER=root
 export WP_DB_PASSWORD=root

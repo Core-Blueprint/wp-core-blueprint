@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import stat
 from pathlib import Path
 import subprocess
 import sys
@@ -26,8 +27,11 @@ def validate_slot(value: str) -> str:
 
 
 RUN_SLOT = validate_slot(os.environ.get("CB_BASE_TEST_SLOT", ""))
-CANONICAL_TEST_ROOT = Path('/tmp/core-blueprint-tests') / (
-    f'core-blueprint-{RUN_SLOT}' if RUN_SLOT else 'core-blueprint'
+# This Base-specific workspace lives directly under the OS sticky /tmp.
+# The shared /tmp/core-blueprint-tests parent also hosts Work, and may be
+# group-writable; Base must not mutate its permissions or place locks there.
+CANONICAL_TEST_ROOT = Path('/tmp') / (
+    f'core-blueprint-base-{RUN_SLOT}' if RUN_SLOT else 'core-blueprint-base'
 )
 CONTAINER = 'cb-base-test-db'
 IMAGE = 'mariadb:10.11.19'
@@ -56,6 +60,30 @@ def validate_test_root(candidate: str, required_root: Path = CANONICAL_TEST_ROOT
             'Existing non-empty Base test root is not proven disposable; manual review required.'
         )
     return 'empty' if root.is_dir() else 'absent'
+
+
+def verify_parent_security(test_root: Path) -> str:
+    """Accept an owner-private directory or precisely the root-owned sticky /tmp.
+
+    A shared, group-writable parent is *not* an acceptable place for Base
+    locks/workspace. We do not chmod it or inherit other product ownership.
+    """
+    parent = test_root.parent
+    if parent.is_symlink() or not parent.is_dir():
+        raise PreflightError("Test parent directory is missing, not a directory or a symlink.")
+    info = parent.stat()
+    mode = stat.S_IMODE(info.st_mode)
+    if (info.st_uid == os.getuid()
+            and not (mode & (stat.S_IWGRP | stat.S_IWOTH))):
+        return 'operator-owned private parent'
+    if parent == Path('/tmp') and info.st_uid == 0 and mode == 0o1777:
+        # Sticky bit prevents other UIDs from replacing our 0600 lock
+        # or 0700 workspace, even though /tmp itself is world-writable.
+        return 'root-owned sticky /tmp (1777)'
+    raise PreflightError(
+        'Test parent must be operator-owned without group/other write access, '
+        'or precisely root-owned sticky /tmp (1777).'
+    )
 
 
 def validate_docker_metadata(entries: object) -> tuple[list[str], str]:
@@ -139,6 +167,7 @@ def preflight() -> int:
             raise PreflightError('Base source checkout or canonical entrypoint is missing.')
         root = os.environ.get('CB_TEST_ROOT', str(CANONICAL_TEST_ROOT))
         state = validate_test_root(root)
+        parent_state = verify_parent_security(Path(root))
         sha = read_source_commit(source)
         warnings, description = validate_docker_metadata(read_docker_metadata())
     except PreflightError as error:
@@ -148,6 +177,7 @@ def preflight() -> int:
     print('Base integration safety preflight: PASS (read-only)')
     print(f'Base source commit: {sha}')
     print(f'Test root: {root} ({state}; no files touched)')
+    print(f'Test parent: {parent_state}; permissions unchanged')
     print(f'MariaDB: {description} (not started or modified)')
     for warning in warnings:
         print(f'WARNING: {warning}', file=sys.stderr)

@@ -73,6 +73,34 @@ class SafetyPolicyTest(unittest.TestCase):
         with self.assertRaisesRegex(preflight.PreflightError, 'Non-directory'):
             self.check_root(self.target)
 
+    def test_root_owned_sticky_tmp_parent_is_allowed_for_base_workspace(self):
+        result = preflight.verify_parent_security(preflight.CANONICAL_TEST_ROOT)
+        self.assertIn('sticky /tmp', result)
+        self.assertEqual(preflight.CANONICAL_TEST_ROOT.parent, Path('/tmp'))
+
+    def test_group_writable_shared_parent_is_refused_before_execution(self):
+        shared = self.folder / 'shared'
+        shared.mkdir(mode=0o775)
+        shared.chmod(0o775)
+        with self.assertRaisesRegex(preflight.PreflightError, 'Test parent'):
+            preflight.verify_parent_security(shared / 'core-blueprint')
+        self.assertEqual(0o775, shared.stat().st_mode & 0o777)
+
+    def test_private_operator_parent_is_allowed(self):
+        private = self.folder / 'private'
+        private.mkdir(mode=0o700)
+        self.assertIn(
+            'operator-owned private', preflight.verify_parent_security(private / 'core-blueprint')
+        )
+
+    def test_symlink_parent_is_refused(self):
+        target = self.folder / 'private-real'
+        target.mkdir(mode=0o700)
+        linked = self.folder / 'private-link'
+        linked.symlink_to(target, target_is_directory=True)
+        with self.assertRaisesRegex(preflight.PreflightError, 'symlink'):
+            preflight.verify_parent_security(linked / 'core-blueprint')
+
     def docker_info(self, **overrides):
         obj = {
             'Name': '/cb-base-test-db',

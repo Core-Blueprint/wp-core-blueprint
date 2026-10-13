@@ -18,7 +18,6 @@ import io
 import json
 import os
 from pathlib import Path
-import stat
 import subprocess
 import sys
 import tarfile
@@ -49,6 +48,7 @@ def verify_execution_scope() -> tuple[str, str]:
     state = preflight.validate_test_root(
         os.environ.get("CB_TEST_ROOT", str(TEST_ROOT))
     )
+    preflight.verify_parent_security(TEST_ROOT)
     if state != "absent":
         raise preflight.PreflightError("A fresh Base workspace must be absent before execution.")
     plan.verify_source(SOURCE)
@@ -69,24 +69,16 @@ def verify_execution_scope() -> tuple[str, str]:
 
 
 def require_owned_parent(path: Path) -> None:
-    """Prevent lock-file manipulation through other users' or symlinked directories."""
-    target = path.parent
-    if target.is_symlink() or not target.is_dir():
-        raise preflight.PreflightError("Test parent directory must exist and not be a symlink.")
-    info = target.stat()
-    if info.st_uid != os.getuid() or info.st_mode & (stat.S_IWOTH | stat.S_IWGRP):
-        raise preflight.PreflightError(
-            "Test parent directory must be owned by the operator and not world-writable."
-        )
+    """Use the same parent safety contract as read-only preflight/dry-run."""
+    preflight.verify_parent_security(path)
 
 
 @contextmanager
 def exclusive_lock():
     """Exclusive lock file, no symlinks/reuse. Leave stale locks for manual review."""
     preflight.validate_test_root(str(TEST_ROOT))
-    # /tmp/core-blueprint-tests is the established shared parent across products.
-    if not TEST_ROOT.parent.exists():
-        TEST_ROOT.parent.mkdir(mode=0o700)
+    # Locks are new-only in the OS sticky /tmp; shared Work directories
+    # and their permissions are never modified.
     require_owned_parent(TEST_ROOT)
     fd = None
     try:

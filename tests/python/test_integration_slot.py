@@ -31,7 +31,7 @@ class TestBaseSlotIsolation(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
         info = json.loads(run.stdout)
         self.assertEqual(info["schema"], "core_blueprint_base_test")
-        self.assertEqual(info["root"], "/tmp/core-blueprint-tests/core-blueprint")
+        self.assertEqual(info["root"], "/tmp/core-blueprint-base")
         self.assertEqual(info["runtime_db"], info["schema"])
 
     def test_named_slot_is_consistent_across_preflight_plan_execution(self):
@@ -39,7 +39,7 @@ class TestBaseSlotIsolation(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
         info = json.loads(run.stdout)
         self.assertEqual(info["schema"], "core_blueprint_base_e2_20261013_test")
-        self.assertEqual(info["root"], "/tmp/core-blueprint-tests/core-blueprint-e2_20261013")
+        self.assertEqual(info["root"], "/tmp/core-blueprint-base-e2_20261013")
         self.assertEqual(info["runtime_db"], info["schema"])
         self.assertIn(info["schema"], info["query"])
         self.assertIn("e2_20261013", info["lock"])

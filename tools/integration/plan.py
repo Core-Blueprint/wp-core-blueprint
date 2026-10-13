@@ -105,6 +105,7 @@ def dry_run() -> int:
         version = validate_version(os.environ.get("CB_TEST_WP_VERSION", "7.0"))
         target = os.environ.get("CB_TEST_ROOT", str(TEST_ROOT))
         state = preflight.validate_test_root(target)
+        parent_state = preflight.verify_parent_security(Path(target))
         verify_source(SOURCE)
         sha = preflight.read_source_commit(SOURCE)
         warnings, description = preflight.validate_docker_metadata(
@@ -123,6 +124,7 @@ def dry_run() -> int:
     print(f"Exact Base HEAD: {sha}")
     print(f"WordPress target: {version}; PHP baseline: 8.4+")
     print(f"Canonical workspace: {target} ({state}; untouched)")
+    print(f"Test parent: {parent_state}; permissions unchanged")
     print(f"Test database: {DATABASE} at {DATABASE_HOST}")
     print(f"Schema collision: {'YES, existing database must be protected' if occupied else 'NO'}")
     print(f"MariaDB: {description}")
