@@ -71,6 +71,8 @@ const fixedProject = () => ({
 
 test('public facade exposes stable session, shell, motion, commands and profile APIs without consumer private-path imports', () => {
 	assert.equal(typeof publicEditor.createSession, 'function');
+	assert.equal(typeof publicEditor.createDesignerStateHistory, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.createStateHistory, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.createSession, 'function');
 	assert.equal(typeof publicEditor.createDesignerShell, 'function');
 	assert.equal(typeof publicEditor.createDesignerNavigation, 'function');
