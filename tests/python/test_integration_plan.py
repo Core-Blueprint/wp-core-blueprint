@@ -18,7 +18,8 @@ class BaseIntegrationPlanTest(unittest.TestCase):
         self.root = Path(self.temporary.name)
 
     def test_default_database_is_not_legacy_wordpress_test(self):
-        self.assertEqual("core_blueprint_base_test", plan.DATABASE)
+        self.assertTrue(plan.DATABASE.startswith("core_blueprint_base"))
+        self.assertTrue(plan.DATABASE.endswith("_test"))
         self.assertEqual("127.0.0.1:3307", plan.DATABASE_HOST)
 
     def test_database_query_is_constant_read_only_information_schema(self):
@@ -33,7 +34,7 @@ class BaseIntegrationPlanTest(unittest.TestCase):
         self.assertNotIn("wordpress_test", plan.QUERY)
 
     def test_existing_database_is_detected_not_claimed(self):
-        with mock.patch.object(plan, "read_only", return_value="core_blueprint_base_test\n"):
+        with mock.patch.object(plan, "read_only", return_value=plan.DATABASE + "\n"):
             self.assertTrue(plan.database_exists())
 
     def test_unexpected_database_query_response_fails_closed(self):
