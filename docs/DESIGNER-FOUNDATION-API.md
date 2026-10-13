@@ -61,6 +61,20 @@ The session owns project validation against the selected profile, command histor
 
 Both methods live on the existing public session from `createSession({profile})` and preserve existing shell/navigation, history and document-profile semantics. They **do not** provide Evaluator's proposed domain-neutral state/history session (P02), which remains separate. Public class exports such as ProjectState/EditorState/CommandHistory are not thereby promoted to consumer contracts.
 
+### Domain-neutral state history (additive v1)
+
+`createDesignerStateHistory({ initialState, onApply, limit = 100 })` is the
+public transient history adapter for JSON-safe domain models without a DesignProject
+profile. The global facade is `window.cbCore.designEditor.createStateHistory`.
+Consumers own validation, authority and persistence; Base owns history semantics.
+
+The adapter exposes `record(state)`, `undo()`, `redo()`,
+`reset(baseline, { current = null })`, `snapshot()`, `status()`,
+and `dispose()`. The frozen status reports `canUndo`, `canRedo`, and `size`.
+The bounded stack is never persisted. `onApply` is called before advancing the
+history cursor, so a failed render cannot consume a history entry. Reset when
+switching document contexts so undo cannot cross two workflows.
+
 ### Shell
 
 The stable shell helpers are:

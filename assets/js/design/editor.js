@@ -36,12 +36,14 @@ import {
 	createDesignerNavigation,
 	createDesignerSelectionController,
 	createDesignerShell,
+	createDesignerStateHistory,
 	decorateDesignerControl,
 } from './shell/index.js';
 import {
 	DESIGNER_VIEWPORT_ORDER,
 	configureDesignerViewports,
 } from './shell/viewports.js';
+import { createDesignerStateHistory } from './shell/state-history.js';
 
 const PROFILE_APIS = Object.freeze({
 	'document-fixed': Object.freeze({ ...fixedProfile }),
@@ -321,6 +323,7 @@ const motion = Object.freeze({
 
 const publicApi = Object.freeze({
 	createSession,
+	createStateHistory: createDesignerStateHistory,
 	profiles,
 	motion,
 	shell: Object.freeze({
