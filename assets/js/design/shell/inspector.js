@@ -16,16 +16,32 @@ const text = (value) => String(value ?? '').trim();
  */
 export const createDesignerInspectorIdentity = ({
 	label = '',
+	eyebrow = '',
+	context = '',
+	compact = false,
 	documentRef = null,
 } = {}) => {
 	const doc = resolveDocument(documentRef);
 	const element = doc.createElement('div');
 	element.className = 'cb-core-design-shell__inspector-identity';
+	if (compact === true) element.classList.add('cb-core-design-shell__inspector-identity--compact');
 
+	if (text(eyebrow)) {
+		const meta = doc.createElement('span');
+		meta.className = 'cb-core-design-shell__inspector-eyebrow';
+		meta.textContent = text(eyebrow);
+		element.append(meta);
+	}
 	const title = doc.createElement('h3');
 	title.className = 'cb-core-design-shell__inspector-title';
 	title.textContent = text(label);
 	element.append(title);
+	if (text(context)) {
+		const location = doc.createElement('span');
+		location.className = 'cb-core-design-shell__inspector-context';
+		location.textContent = text(context);
+		element.append(location);
+	}
 
 	return Object.freeze({
 		element,
@@ -81,4 +97,64 @@ export const createDesignerInspectorToggle = ({
 
 	element.append(labelElement, control);
 	return Object.freeze({ element, label: labelElement, control });
+};
+
+/**
+ * Optional, session-owned Inspector group. No domain data or open state is
+ * persisted by Base. A consumer may restore expanded state on rerender.
+ */
+export const createDesignerInspectorSection = ({
+	title = '',
+	summary = '',
+	expanded = false,
+	onToggle = null,
+	documentRef = null,
+} = {}) => {
+	const doc = resolveDocument(documentRef);
+	const element = doc.createElement('details');
+	element.className = 'cb-core-design-shell__inspector-section';
+	element.open = expanded === true;
+
+	const heading = doc.createElement('summary');
+	heading.className = 'cb-core-design-shell__inspector-section-heading';
+	const label = doc.createElement('span');
+	label.className = 'cb-core-design-shell__inspector-section-label';
+	label.textContent = text(title);
+	heading.append(label);
+	if (text(summary)) {
+		const status = doc.createElement('span');
+		status.className = 'cb-core-design-shell__inspector-section-status';
+		status.textContent = text(summary);
+		heading.append(status);
+	}
+
+	const body = doc.createElement('div');
+	body.className = 'cb-core-design-shell__inspector-section-body';
+	element.append(heading, body);
+	if (typeof onToggle === 'function') {
+		element.addEventListener('toggle', () => onToggle(element.open));
+	}
+	return Object.freeze({ element, heading, body });
+};
+
+/**
+ * Opt-in textarea auto-growth, scoped to the supplied control only.
+ * The consumer owns its value and change transport; Base only adjusts height.
+ */
+export const enableDesignerTextareaAutosize = (control) => {
+	if (!control || String(control.tagName || '').toUpperCase() !== 'TEXTAREA'
+		|| typeof control.addEventListener !== 'function' || !control.style) {
+		throw new TypeError('Designer textarea autosize requires a textarea control.');
+	}
+	const resize = () => {
+		control.style.height = 'auto';
+		control.style.overflowY = 'hidden';
+		if (Number.isFinite(control.scrollHeight) && control.scrollHeight > 0) {
+			control.style.height = `${control.scrollHeight}px`;
+		}
+	};
+	control.addEventListener('input', resize);
+	if (typeof requestAnimationFrame === 'function') requestAnimationFrame(resize);
+	else Promise.resolve().then(resize);
+	return resize;
 };
