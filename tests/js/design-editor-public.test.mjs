@@ -83,9 +83,13 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof publicEditor.createDesignerInspectorIdentity, 'function');
 	assert.equal(typeof publicEditor.createDesignerInspectorControls, 'function');
 	assert.equal(typeof publicEditor.createDesignerInspectorToggle, 'function');
+	assert.equal(typeof publicEditor.createDesignerInspectorSection, 'function');
+	assert.equal(typeof publicEditor.enableDesignerTextareaAutosize, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createIdentity, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createControls, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createToggle, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.createSection, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.inspector?.autosizeTextarea, 'function');
 	assert.equal(typeof publicEditor.animateLayoutChange, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.motion?.animateLayoutChange, 'function');
 	assert.equal(typeof publicEditor.commands?.insertNode, 'function');
@@ -137,6 +141,51 @@ test('canonical Inspector helpers own identity and one-row boolean control marku
 	assert.equal(toggle.control.checked, true);
 	assert.equal(toggle.control.dataset.cbFixture, 'visible');
 	assert.deepEqual(toggle.element.children, [toggle.label, toggle.control]);
+});
+
+test('compact Inspector primitives preserve session-owned disclosure and optional textarea sizing', async () => {
+	const createElement = (tagName) => {
+		const el = {
+			tagName: tagName.toUpperCase(),
+			className: '', textContent: '', open: false, scrollHeight: 84,
+			style: {}, children: [], listeners: new Map(),
+			append(...items) { this.children.push(...items); },
+			addEventListener(type, handler) { this.listeners.set(type, handler); },
+			fire(type) { this.listeners.get(type)?.(); },
+		};
+		el.classList = { add(name) { el.className += ' ' + name; } };
+		return el;
+	};
+	const documentRef = { createElement };
+	const identity = publicEditor.createDesignerInspectorIdentity({
+		label: 'Question', eyebrow: 'Multiple Choice', context: 'Your current stack',
+		compact: true, documentRef,
+	});
+	assert.match(identity.element.className, /inspector-identity--compact/);
+	assert.equal(identity.title.textContent, 'Question');
+	assert.equal(identity.element.children.length, 3);
+
+	let toggled = null;
+	const section = publicEditor.createDesignerInspectorSection({
+		title: 'Behavior', summary: '2 settings', expanded: false,
+		documentRef, onToggle: (open) => { toggled = open; },
+	});
+	assert.equal(section.element.open, false);
+	assert.equal(section.heading.children[0].textContent, 'Behavior');
+	assert.equal(section.heading.children[1].textContent, '2 settings');
+	section.element.open = true;
+	section.element.fire('toggle');
+	assert.equal(toggled, true);
+
+	const textarea = createElement('textarea');
+	const resize = publicEditor.enableDesignerTextareaAutosize(textarea);
+	await Promise.resolve();
+	assert.equal(textarea.style.height, '84px');
+	textarea.scrollHeight = 140;
+	textarea.fire('input');
+	assert.equal(textarea.style.height, '140px');
+	assert.equal(typeof resize, 'function');
+	assert.throws(() => publicEditor.enableDesignerTextareaAutosize(createElement('input')), TypeError);
 });
 
 test('flow consumer session owns history while persistence remains consumer-controlled', () => {
