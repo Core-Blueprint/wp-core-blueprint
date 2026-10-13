@@ -202,7 +202,7 @@ class ExecutionSafetyTest(unittest.TestCase):
 
     def test_group_writable_lock_parent_is_refused(self):
         self.area.chmod(0o770)
-        with self.assertRaisesRegex(preflight.PreflightError, "not world-writable"):
+        with self.assertRaisesRegex(preflight.PreflightError, "Test parent"):
             execution.require_owned_parent(self.area / ".base-lock")
 
     def test_successful_scope_inspection_has_no_writes(self):
