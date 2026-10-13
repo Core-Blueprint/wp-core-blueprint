@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Base Level 2: explicit operator opt-in, fail-closed test-environment safety.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+usage() { echo 'Usage: ./tools/check-integration [--preflight|--dry-run|--execute]' >&2; }
+
+case "${1:-}" in
+  --preflight)
+    [[ $# -eq 1 ]] || { usage; exit 64; }
+    PYTHONDONTWRITEBYTECODE=1 python3 -B "$ROOT/tools/integration/preflight.py" --preflight
+    ;;
+  --dry-run)
+    [[ $# -eq 1 ]] || { usage; exit 64; }
+    cd "$ROOT"
+    PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.plan --dry-run
+    ;;
+  --execute)
+    [[ $# -eq 1 ]] || { usage; exit 64; }
+    if [[ "${CB_BASE_INTEGRATION_APPROVAL:-}" != "I_APPROVE_FRESH_BASE_TEST_DATABASE" ]]; then
+      echo 'BLOCKED: Base Level 2 requires explicit operator approval for a NEW isolated test database.' >&2
+      echo 'Only after reviewing the Docker binding, ownership, mounts and dry-run:' >&2
+      echo 'CB_BASE_INTEGRATION_APPROVAL=I_APPROVE_FRESH_BASE_TEST_DATABASE ./tools/check-integration --execute' >&2
+      exit 2
+    fi
+    cd "$ROOT"
+    PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.execution --execute
+    ;;
+  '')
+    [[ $# -eq 0 ]] || { usage; exit 64; }
+    echo 'BLOCKED: Base Level 2 WordPress integration is not active.' >&2
+    echo 'Use --preflight or --dry-run for read-only inspection.' >&2
+    exit 2
+    ;;
+  *)
+    usage
+    exit 64
+    ;;
+esac
