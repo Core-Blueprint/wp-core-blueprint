@@ -57,7 +57,7 @@ class ExecutionSafetyTest(unittest.TestCase):
             execution.assert_owner(self.sha)
             record = json.loads(execution.OWNER_FILE.read_text())
             self.assertEqual("new-only-no-cleanup", record["policy"])
-            self.assertEqual("core_blueprint_base_test", record["database"])
+            self.assertEqual(execution.DB, record["database"])
             with self.assertRaises(preflight.PreflightError):
                 execution.create_new_workspace(self.sha, "7.0")
             with self.assertRaises(preflight.PreflightError):
@@ -107,7 +107,7 @@ class ExecutionSafetyTest(unittest.TestCase):
         command = run.call_args.args[0]
         self.assertEqual(["docker", "exec", "cb-base-test-db"], command[:3])
         self.assertEqual("-e", command[-2])
-        self.assertTrue(command[-1].startswith("CREATE DATABASE `core_blueprint_base_test`"))
+        self.assertTrue(command[-1].startswith(f"CREATE DATABASE `{execution.DB}`"))
         self.assertNotIn("DROP", command[-1])
         self.assertNotIn("IF NOT EXISTS", command[-1])
 
@@ -288,7 +288,7 @@ class ExecutionSafetyTest(unittest.TestCase):
 
     def test_environment_scopes_wordpress_database_and_tmp(self):
         env = execution.test_environment("7.0")
-        self.assertEqual("core_blueprint_base_test", env["WP_DB_NAME"])
+        self.assertEqual(execution.DB, env["WP_DB_NAME"])
         self.assertEqual("127.0.0.1:3307", env["WP_DB_HOST"])
         self.assertEqual(str(execution.TEST_ROOT / "tmp"), env["TMPDIR"])
         self.assertTrue(env["CB_PLUGIN_FILE"].startswith(str(execution.TEST_ROOT)))
