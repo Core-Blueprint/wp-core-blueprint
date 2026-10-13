@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {createDesignerStateHistory} from '../../assets/js/design/shell/state-history.js';
+import { readFile } from 'node:fs/promises';
+const source = await readFile(new URL('../../assets/js/design/shell/state-history.js', import.meta.url), 'utf8');
+const { createDesignerStateHistory } = await import('data:text/javascript;charset=utf-8,' + encodeURIComponent(source));
 
 test('public state history snapshots isolate consumer data and bound undo', () => {
   const source = {steps: []};
