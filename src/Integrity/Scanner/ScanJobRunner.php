@@ -73,6 +73,7 @@ final class ScanJobRunner {
 				'plugin_files'       => self::plugin_files(),
 				'plugin_index'       => 0,
 				'plugin_state'       => [],
+				'mu_plugins_state'   => [],
 				'theme_stylesheets'  => self::theme_stylesheets(),
 				'theme_index'        => 0,
 				'theme_state'        => [],
@@ -171,6 +172,15 @@ final class ScanJobRunner {
 
 					if ( 'plugins' === $phase ) {
 						if ( self::run_plugin_step( $job, $reporter ) ) {
+							self::save_and_refresh( $job );
+							continue;
+						}
+						self::save_and_refresh( $job );
+						break;
+					}
+
+					if ( 'mu_plugins' === $phase ) {
+						if ( self::run_mu_plugins_step( $job, $reporter ) ) {
 							self::save_and_refresh( $job );
 							continue;
 						}
@@ -298,7 +308,7 @@ final class ScanJobRunner {
 			$job['coverage']['plugins']   = [ 'state' => 'skipped' ];
 			$job['phase_durations']['plugins'] = 0.0;
 			$reporter->complete_phase( 'plugins' );
-			self::advance_phase( $job, 'themes' );
+			self::advance_phase( $job, 'mu_plugins' );
 			return true;
 		}
 
@@ -308,7 +318,7 @@ final class ScanJobRunner {
 		}
 
 		if ( $index >= count( $files ) ) {
-			self::finish_component_phase( $job, $reporter, 'plugins', 'themes' );
+			self::finish_component_phase( $job, $reporter, 'plugins', 'mu_plugins' );
 			return true;
 		}
 
@@ -348,6 +358,39 @@ final class ScanJobRunner {
 		if ( $index + 1 >= count( $files ) ) {
 			self::finish_component_phase( $job, $reporter, 'plugins', 'themes' );
 		}
+		return true;
+	}
+
+	private static function run_mu_plugins_step( array &$job, ProgressReporter $reporter ): bool {
+		if ( empty( $job['mu_plugins_state'] ) ) {
+			$reporter->start_phase( 'mu_plugins', 0 );
+			$job['phase_started_micro'] = microtime( true );
+		}
+		try {
+			$result = ( new MuPluginScanner() )->scan_batch(
+				is_array( $job['mu_plugins_state'] ?? null ) ? $job['mu_plugins_state'] : [],
+				750,
+				4.0
+			);
+			$job['mu_plugins_state'] = is_array( $result['state'] ?? null ) ? $result['state'] : [];
+			$job['coverage']['mu_plugins'] = is_array( $result['coverage'] ?? null ) ? $result['coverage'] : [ 'state' => 'incomplete' ];
+			$job['checks'] = array_merge( (array) $job['checks'], (array) ( $result['checks'] ?? [] ) );
+			$job['components']['mu_plugins'] = self::merge_status(
+				(string) ( $job['components']['mu_plugins'] ?? 'ok' ),
+				(string) ( $result['status'] ?? 'warning' )
+			);
+			$reporter->tick( 'mu_plugins', (int) ( $job['coverage']['mu_plugins']['files_inspected'] ?? 0 ) );
+			if ( empty( $result['done'] ) ) {
+				return false;
+			}
+		} catch ( Throwable $throwable ) {
+			$job['components']['mu_plugins'] = 'failed';
+			$job['coverage']['mu_plugins'] = [ 'state' => 'failed', 'reason' => 'scanner_exception' ];
+			$job['checks'][] = self::error_finding( 'mu_plugin', 'mu-plugins', __( 'MU-plugins', 'core-blueprint' ), 'wp-content/mu-plugins/', sprintf( __( 'MU-plugin integrity scan failed: %s', 'core-blueprint' ), $throwable->getMessage() ) );
+		}
+		$job['phase_durations']['mu_plugins'] = round( max( 0.0, microtime( true ) - (float) ( $job['phase_started_micro'] ?? microtime( true ) ) ), 3 );
+		$reporter->complete_phase( 'mu_plugins' );
+		self::advance_phase( $job, 'themes' );
 		return true;
 	}
 
