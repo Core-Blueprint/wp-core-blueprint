@@ -30,15 +30,16 @@ final class CB_Template_Library_Registry_Contract_Test extends WP_UnitTestCase {
 		TemplateSourceRegistry::register( $this->source( 'core-blueprint-fixture-mail', 'mail', 2 ) );
 	}
 
-	private function source( string $id, string $designer, int $count ): TemplateSourceInterface {
-		return new class( $id, $designer, $count ) implements TemplateSourceInterface {
+	private function source( string $id, string $designer, int $count, string $extension = 'core-blueprint' ): TemplateSourceInterface {
+		return new class( $id, $designer, $count, $extension ) implements TemplateSourceInterface {
 			public function __construct(
 				private string $id,
 				private string $designer,
-				private int $count
+				private int $count,
+				private string $extension
 			) {}
 			public function source_id(): string { return $this->id; }
-			public function extension_id(): string { return 'core-blueprint'; }
+			public function extension_id(): string { return $this->extension; }
 			public function designer_type(): string { return $this->designer; }
 			public function can_browse( int $user_id ): bool {
 				return $user_id > 0 && user_can( $user_id, 'manage_options' );
@@ -52,7 +53,7 @@ final class CB_Template_Library_Registry_Contract_Test extends WP_UnitTestCase {
 				$items = [];
 				for ( $i = $offset; $i < $end; ++$i ) {
 					$items[] = new TemplateMetadata(
-						$this->id, 'core-blueprint', $this->designer,
+						$this->id, $this->extension, $this->designer,
 						sprintf( 'example-%04d', $i + 1 ),
 						'Example ' . ( $i + 1 ), 'A safe metadata-only template',
 						'built-in', 'example', 'en', '1'
@@ -66,13 +67,16 @@ final class CB_Template_Library_Registry_Contract_Test extends WP_UnitTestCase {
 	public function test_registration_requires_exact_lifecycle_and_known_extension(): void {
 		self::assertFalse( TemplateSourceRegistry::register( $this->source( 'out-of-lifecycle', 'workflow', 1 ) ) );
 		$accepted = null;
-		$duplicate = function () use ( &$accepted ): void {
+		$unknown = null;
+		$duplicate = function () use ( &$accepted, &$unknown ): void {
+			$unknown = TemplateSourceRegistry::register( $this->source( 'unknown-owner', 'workflow', 1, 'missing-extension' ) );
 			$accepted = TemplateSourceRegistry::register( $this->source( 'core-blueprint-fixture-workflow', 'workflow', 1 ) );
 			self::assertFalse( TemplateSourceRegistry::register( $this->source( 'core-blueprint-fixture-mail', 'mail', 1 ) ) );
 		};
 		add_action( 'core_blueprint_register_template_sources', $duplicate, 20 );
 		TemplateSourceRegistry::collect();
 		remove_action( 'core_blueprint_register_template_sources', $duplicate, 20 );
+		self::assertFalse( $unknown, 'Unregistered extension cannot own a source.' );
 		self::assertFalse( $accepted, 'Duplicate source must fail closed.' );
 		self::assertCount( 2, TemplateSourceRegistry::sources() );
 	}
@@ -81,6 +85,8 @@ final class CB_Template_Library_Registry_Contract_Test extends WP_UnitTestCase {
 		$global = TemplateSourceRegistry::browse_global( new TemplateQuery( limit: 24 ) );
 		self::assertNotEmpty( $global->items );
 		self::assertSame( 'mail', $global->items[0]->designer );
+		self::assertCount( 1, TemplateSourceRegistry::browse_designer( 'core-blueprint', 'mail', new TemplateQuery() )->items );
+		self::assertSame( [], TemplateSourceRegistry::browse_designer( 'core-blueprint', 'unknown', new TemplateQuery() )->items );
 		$workflow = TemplateSourceRegistry::browse_designer( 'core-blueprint', 'workflow', new TemplateQuery() );
 		self::assertNotEmpty( $workflow->items );
 		foreach ( $workflow->items as $item ) {
