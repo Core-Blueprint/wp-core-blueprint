@@ -34,6 +34,10 @@ final class ThreatCorrelator {
 			$meta = (array) ( $loader['meta'] ?? [] );
 			foreach ( (array) ( $meta['referenced_media'] ?? [] ) as $referenced ) {
 				$name = strtolower( basename( (string) $referenced ) );
+				// Same-name files in different upload folders cannot be linked reliably.
+				if ( count( (array) ( $payloads[ $name ] ?? [] ) ) !== 1 ) {
+					continue;
+				}
 				foreach ( (array) ( $payloads[ $name ] ?? [] ) as $payload ) {
 					$loader_target = (array) ( $loader['target'] ?? [] );
 					$payload_target = (array) ( $payload['target'] ?? [] );
