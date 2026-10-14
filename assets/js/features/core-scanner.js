@@ -217,7 +217,7 @@ function computePercentage( state ) {
 	let totalItems = 0;
 	let doneItems  = 0;
 
-	for ( const name of [ 'core', 'plugins', 'themes', 'uploads' ] ) {
+	for ( const name of [ 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ] ) {
 		const p = phases[ name ];
 		if ( ! p ) {
 			continue;
@@ -239,12 +239,12 @@ function computePercentage( state ) {
 		// while still running). Equal-weight fallback at phase level:
 		// each completed phase = 25%.
 		let phaseDone = 0;
-		for ( const name of [ 'core', 'plugins', 'themes', 'uploads' ] ) {
+		for ( const name of [ 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ] ) {
 			if ( phases[ name ] && phases[ name ].status === 'done' ) {
 				phaseDone++;
 			}
 		}
-		return Math.min( 95, phaseDone * 25 );
+		return Math.min( 95, phaseDone * 20 );
 	}
 
 	return Math.min( 100, Math.round( ( doneItems / totalItems ) * 100 ) );
@@ -258,6 +258,7 @@ function phaseLabel( state ) {
 		core:    i18n.phaseCore    || 'Verifying core files',
 		plugins: i18n.phasePlugins || 'Verifying plugins',
 		themes:  i18n.phaseThemes  || 'Verifying themes',
+		mu_plugins: i18n.phaseMuPlugins || 'Verifying MU-plugins',
 		uploads: i18n.phaseUploads || 'Scanning uploads',
 	};
 	const phase = state.current_phase || '';
