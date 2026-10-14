@@ -26,7 +26,7 @@ final class MuPluginScanner {
 		}
 		if ( ! is_dir( $root ) ) {
 			if ( [] !== $baseline ) {
-				return $this->failure( $root, 'missing', __( 'Previously approved MU-plugin directory is missing.', 'core-blueprint' ), 'critical' );
+				return $this->failure( $root, 'missing', __( 'Previously approved MU-plugin directory is missing.', 'core-blueprint' ), 'critical', (string) ( $baseline['id'] ?? '' ) );
 			}
 			return [
 				'done' => true, 'state' => [ 'root' => $root, 'done' => true ],
@@ -170,6 +170,14 @@ final class MuPluginScanner {
 				[ 'method' => 'local_baseline', 'source' => 'approved_local_baseline', 'scope' => 'component', 'confidence' => 'medium', 'label' => __( 'Explicit MU-plugin baseline', 'core-blueprint' ) ]
 			);
 		}
+		if ( [] !== $baseline && ! $changed && $complete ) {
+			$findings[] = $this->finding(
+				'ok', 'ok', '',
+				__( 'MU-plugin directory matches the explicitly approved SHA-256 baseline.', 'core-blueprint' ),
+				[ 'baseline_entry_id' => (string) ( $baseline['id'] ?? '' ), 'baseline_snapshot_files' => $verified ],
+				[ 'method' => 'local_baseline', 'source' => 'approved_local_baseline', 'scope' => 'component', 'confidence' => 'high', 'label' => __( 'Approved MU-plugin SHA-256 baseline', 'core-blueprint' ) ]
+			);
+		}
 		return [
 			'done' => true, 'state' => $state,
 			'status' => $this->severity( $findings ),
@@ -198,11 +206,11 @@ final class MuPluginScanner {
 		];
 	}
 
-	private function failure( string $root, string $status, string $message, string $severity = 'warning' ): array {
+	private function failure( string $root, string $status, string $message, string $severity = 'warning', string $baseline_id = '' ): array {
 		return [
 			'done' => true, 'state' => [ 'root' => $root, 'done' => true ],
 			'status' => $severity,
-			'checks' => [ $this->finding( $severity, $status, '', $message ) ],
+			'checks' => [ $this->finding( $severity, $status, '', $message, '' !== $baseline_id ? [ 'baseline_entry_id' => $baseline_id ] : [] ) ],
 			'coverage' => [ 'state' => 'incomplete', 'files_inspected' => 0 ],
 		];
 	}
@@ -220,11 +228,15 @@ final class MuPluginScanner {
 
 	private function finding( string $severity, string $status, string $file, string $message, array $meta = [], array $verification = [] ): array {
 		$meta['identity'] = $status;
-		return Finding::make( [
+		$args = [
 			'type' => 'mu_plugin', 'status' => $status, 'severity' => $severity,
 			'target' => [ 'slug' => self::SLUG, 'label' => __( 'MU-plugins', 'core-blueprint' ), 'path' => $this->relative_root(), 'file' => $file ],
 			'message' => $message, 'meta' => $meta, 'verification' => $verification,
-		] );
+		];
+		if ( ! empty( $meta['baseline_entry_id'] ) ) {
+			$args['id'] = (string) $meta['baseline_entry_id'];
+		}
+		return Finding::make( $args );
 	}
 
 	private function relative_root(): string {
