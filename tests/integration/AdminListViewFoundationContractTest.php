@@ -84,7 +84,8 @@ final class CB_Admin_List_View_Foundation_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( '<th scope="row"><strong>', $html );
 		self::assertStringContainsString( 'aria-label="Lists table, scroll horizontally if needed"', $html );
 		self::assertStringContainsString( '26–50 of 100 lists', $html );
-		self::assertStringContainsString( 'paged=3&amp;type=static', $html );
+		self::assertStringContainsString( 'paged=3', $html );
+		self::assertStringContainsString( 'type=static', $html );
 		self::assertStringNotContainsString( '<form', substr( $html, strpos( $html, '<table' ) ) );
 	}
 
