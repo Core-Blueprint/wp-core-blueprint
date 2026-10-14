@@ -50,12 +50,13 @@ final class ScannerEngine {
 		$previous        = ResultRepository::getLatest();
 
 		$findings   = $this->normalize_findings( $findings );
+		$findings   = ThreatCorrelator::correlate( $findings );
 		$findings   = $this->apply_baseline( $findings, $components );
 		$completed_at = current_time( 'mysql' );
 		$findings   = ( new FindingLifecycle() )->enrich( $previous, $findings, $completed_at );
 		$coverage   = $this->finalize_coverage( $coverage, $findings );
 		$total_files = 0;
-		foreach ( [ 'core', 'plugins', 'themes', 'uploads' ] as $coverage_key ) {
+		foreach ( [ 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ] as $coverage_key ) {
 			if ( is_array( $coverage[ $coverage_key ] ?? null ) ) {
 				$total_files += $this->coverage_file_count( $coverage[ $coverage_key ] );
 			}
@@ -131,7 +132,7 @@ final class ScannerEngine {
 	 * authoritative signal for whether a component could actually be verified.
 	 */
 	private function finalize_coverage( array $coverage, array $findings ): array {
-		foreach ( [ 'plugins' => 'plugin', 'themes' => 'theme' ] as $key => $type ) {
+		foreach ( [ 'plugins' => 'plugin', 'mu_plugins' => 'mu_plugin', 'themes' => 'theme' ] as $key => $type ) {
 			if ( ! isset( $coverage[ $key ] ) || 'skipped' === (string) ( $coverage[ $key ]['state'] ?? '' ) ) {
 				continue;
 			}
@@ -168,7 +169,7 @@ final class ScannerEngine {
 		$state = 'complete';
 		$enabled_components = 0;
 		$incomplete_components = [];
-		foreach ( [ 'core', 'plugins', 'themes', 'uploads' ] as $key ) {
+		foreach ( [ 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ] as $key ) {
 			$component_state = (string) ( $coverage[ $key ]['state'] ?? 'incomplete' );
 			if ( 'skipped' === $component_state ) {
 				continue;
@@ -340,7 +341,7 @@ final class ScannerEngine {
 		$verification = is_array( $finding['verification'] ?? null ) ? $finding['verification'] : [];
 
 		return in_array( (string) ( $finding['status'] ?? '' ), [ 'baseline_required', 'verification_failed', 'new', 'changed' ], true )
-			&& in_array( (string) ( $finding['type'] ?? '' ), [ 'plugin', 'theme' ], true )
+			&& in_array( (string) ( $finding['type'] ?? '' ), [ 'plugin', 'mu_plugin', 'theme' ], true )
 			&& 'local_baseline' === (string) ( $verification['method'] ?? '' )
 			&& 'component' === (string) ( $verification['scope'] ?? '' );
 	}
@@ -353,6 +354,7 @@ final class ScannerEngine {
 	private function component_is_enabled( string $type, array $components ): bool {
 		$key = match ( $type ) {
 			'plugin' => 'plugins',
+			'mu_plugin' => 'mu_plugins',
 			'theme'  => 'themes',
 			'uploads' => 'uploads',
 			default  => $type,
@@ -374,6 +376,7 @@ final class ScannerEngine {
 			$type = (string) ( $finding['type'] ?? '' );
 			$key  = match ( $type ) {
 				'plugin' => 'plugins',
+			'mu_plugin' => 'mu_plugins',
 				'theme'  => 'themes',
 				'uploads' => 'uploads',
 				default  => $type,
