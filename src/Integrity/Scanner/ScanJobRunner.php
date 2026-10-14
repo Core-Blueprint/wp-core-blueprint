@@ -356,7 +356,7 @@ final class ScanJobRunner {
 		$reporter->tick( 'plugins', $index + 1 );
 
 		if ( $index + 1 >= count( $files ) ) {
-			self::finish_component_phase( $job, $reporter, 'plugins', 'themes' );
+			self::finish_component_phase( $job, $reporter, 'plugins', 'mu_plugins' );
 		}
 		return true;
 	}
@@ -375,14 +375,16 @@ final class ScanJobRunner {
 			$job['mu_plugins_state'] = is_array( $result['state'] ?? null ) ? $result['state'] : [];
 			$job['coverage']['mu_plugins'] = is_array( $result['coverage'] ?? null ) ? $result['coverage'] : [ 'state' => 'incomplete' ];
 			$job['checks'] = array_merge( (array) $job['checks'], (array) ( $result['checks'] ?? [] ) );
-			$job['components']['mu_plugins'] = self::merge_status(
-				(string) ( $job['components']['mu_plugins'] ?? 'ok' ),
-				(string) ( $result['status'] ?? 'warning' )
-			);
 			$reporter->tick( 'mu_plugins', (int) ( $job['coverage']['mu_plugins']['files_inspected'] ?? 0 ) );
 			if ( empty( $result['done'] ) ) {
+				// A partial slice cannot determine final severity. Preserve only
+				// actionable findings; do not permanently promote pending to warning.
 				return false;
 			}
+			$job['components']['mu_plugins'] = self::merge_status(
+				(string) ( $job['components']['mu_plugins'] ?? 'ok' ),
+				(string) ( $result['status'] ?? 'failed' )
+			);
 		} catch ( Throwable $throwable ) {
 			$job['components']['mu_plugins'] = 'failed';
 			$job['coverage']['mu_plugins'] = [ 'state' => 'failed', 'reason' => 'scanner_exception' ];
