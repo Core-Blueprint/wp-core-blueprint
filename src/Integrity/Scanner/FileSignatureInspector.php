@@ -9,7 +9,8 @@ namespace CoreBlueprint\Core\Integrity\Scanner;
  * extension, MIME label, or isolated "MZ" prefix.
  */
 final class FileSignatureInspector {
-	private const HEADER_BYTES = 4096;
+	private const INITIAL_HEADER_BYTES = 512;
+	private const MAX_HEADER_BYTES = 4096;
 	private const SCRIPT_EXTENSIONS = [ 'php', 'phtml', 'php3', 'php4', 'php5', 'phar', 'cgi', 'pl', 'py', 'sh', 'exe', 'dll', 'bat', 'cmd', 'ps1' ];
 
 	/** @return array{checked:bool,detected:string,anomaly:string,reason:string} */
@@ -21,7 +22,16 @@ final class FileSignatureInspector {
 			return $result;
 		}
 		try {
-			$header = @fread( $handle, self::HEADER_BYTES );
+			$header = @fread( $handle, self::INITIAL_HEADER_BYTES );
+			if ( is_string( $header ) && strlen( $header ) >= 64 && str_starts_with( $header, 'MZ' ) ) {
+				$offset = unpack( 'Voffset', substr( $header, 0x3c, 4 ) );
+				$pe_at = (int) ( $offset['offset'] ?? 0 );
+				$required = $pe_at + 4;
+				if ( $pe_at >= self::INITIAL_HEADER_BYTES && $required <= self::MAX_HEADER_BYTES ) {
+					$extra = @fread( $handle, $required - strlen( $header ) );
+					$header = is_string( $extra ) ? $header . $extra : false;
+				}
+			}
 		} finally {
 			fclose( $handle );
 		}
