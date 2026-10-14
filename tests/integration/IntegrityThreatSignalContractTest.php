@@ -5,6 +5,8 @@ use CoreBlueprint\Core\Integrity\Scanner\FileSignatureInspector;
 use CoreBlueprint\Core\Integrity\Scanner\ThreatCorrelator;
 use CoreBlueprint\Core\Integrity\Scanner\MuPluginScanner;
 use CoreBlueprint\Core\Integrity\Scanner\LoaderPatternInspector;
+use CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner;
+use CoreBlueprint\Core\Integrity\Scanner\NullProgressReporter;
 use CoreBlueprint\Core\Integrity\Support\Finding;
 use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
 
@@ -74,6 +76,31 @@ final class IntegrityThreatSignalContractTest extends WP_UnitTestCase {
 		$this->assertTrue( LoaderPatternInspector::inspect( $source )['suspected'] );
 	}
 
+	public function test_regular_plugin_completion_always_enters_mu_plugin_phase(): void {
+		$method = new ReflectionMethod( ScanJobRunner::class, 'run_plugin_step' );
+		$reporter = new NullProgressReporter();
+		$finished = [
+			'settings' => [ 'plugin_checksums' => true ],
+			'plugin_files' => [ 'synthetic/entry.php' ],
+			'plugin_index' => 1,
+			'components' => [],
+			'coverage' => [],
+			'phase_durations' => [],
+			'phase_started_micro' => microtime( true ),
+		];
+		$this->assertTrue( $method->invokeArgs( null, [ &$finished, $reporter ] ) );
+		$this->assertSame( 'mu_plugins', $finished['phase'] );
+
+		$disabled = [
+			'settings' => [ 'plugin_checksums' => false ],
+			'components' => [],
+			'coverage' => [],
+			'phase_durations' => [],
+		];
+		$this->assertTrue( $method->invokeArgs( null, [ &$disabled, $reporter ] ) );
+		$this->assertSame( 'mu_plugins', $disabled['phase'] );
+	}
+
 	public function test_mu_plugin_baseline_is_explicit_and_no_untrusted_code_is_executed(): void {
 		$root = (string) ( defined( 'WPMU_PLUGIN_DIR' ) ? WPMU_PLUGIN_DIR : WP_CONTENT_DIR . '/mu-plugins' );
 		if ( is_link( $root ) || ( is_dir( $root ) && ! is_writable( $root ) ) ) {
@@ -84,7 +111,7 @@ final class IntegrityThreatSignalContractTest extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Cannot create MU-plugin directory.' );
 		}
 		$file = $root . '/cb-threat-fixture-' . wp_generate_password( 12, false, false ) . '.php';
-		file_put_contents( $file, "<?php\nrename( 'hero-background.png', 'payload.exe' );\nexec( 'echo TEST_ONLY' );\n" );
+		file_put_contents( $file, "<?php\nif ( false ) { rename( 'hero-background.png', 'payload.exe' ); exec( 'TEST_NOT_EXECUTED' ); }\n" );
 		$this->temporary_files[] = $file;
 		try {
 			$scanner = new MuPluginScanner();
