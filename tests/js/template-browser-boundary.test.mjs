@@ -30,3 +30,16 @@ test('browser is metadata-only and uses inert DOM presentation', () => {
   assert.match(browser, /await onChoose\( \{ \.\.\.selected \} \)/);
   assert.doesNotMatch(browser, /create[_-]workflow|activate[_-]workflow/i);
 });
+
+test('Load more carries the signed page cursor through the GET query and keeps filters', () => {
+  assert.match(browser, /queryString\( filters, cursor \)/);
+  assert.match(browser, /request\( 'templates', state\.filters, token, controller\.signal, state\.cursor \|\| '' \)/);
+  const implementation = browser.match(/function queryString\( filters, cursor = '' \) \{[\s\S]+?\n\}/);
+  assert.ok(implementation, 'Browser query encoder must exist');
+  const encode = new Function('URLSearchParams', implementation[0] + '\nreturn queryString;')(URLSearchParams);
+  const params = new URLSearchParams(encode({ limit: 24, origin: 'built-in', search: 'starter' }, 'signed.cursor'));
+  assert.equal(params.get('cursor'), 'signed.cursor');
+  assert.equal(params.get('limit'), '24');
+  assert.equal(params.get('origin'), 'built-in');
+  assert.equal(params.get('search'), 'starter');
+});
