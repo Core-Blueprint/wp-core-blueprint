@@ -116,6 +116,7 @@ final class Core {
 
 		// Shared Template Library collection runs at init:6, after extension identities.
 		\CoreBlueprint\Core\TemplateLibrary\TemplateSourceRegistry::init();
+		\CoreBlueprint\Core\TemplateLibrary\BrowserController::init();
 
 		// Normal wp-admin HTML screens own menus, registered Core Admin pages
 		// and their visual shell. admin-ajax.php and admin-post.php are request

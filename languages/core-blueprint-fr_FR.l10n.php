@@ -335,4 +335,10 @@ if ( ! is_array( $routing ) || ! isset( $routing['messages'] ) || ! is_array( $r
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $routing['messages'] );
 
+$template_library = require __DIR__ . '/template-library/core-blueprint-fr_FR.php';
+if ( ! is_array( $template_library ) || ! isset( $template_library['messages'] ) || ! is_array( $template_library['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $template_library['messages'] );
+
 return $catalog;
