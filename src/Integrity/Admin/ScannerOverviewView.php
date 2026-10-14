@@ -261,7 +261,7 @@ trait ScannerOverviewView {
 						class="cb-core-integrity-component cb-core-integrity-component-filter<?php echo $is_active_component ? ' cb-core-integrity-component-filter-active' : ''; ?>"
 						data-cb-integrity-component-filter="<?php echo esc_attr( $component_key ); ?>"
 						<?php echo $is_active_component ? 'aria-current="page"' : ''; ?>>
-						<span><?php echo esc_html( ucfirst( (string) $component ) ); ?></span>
+						<span><?php echo esc_html( 'mu_plugins' === (string) $component ? __( 'MU-plugins', 'core-blueprint' ) : ucfirst( (string) $component ) ); ?></span>
 						<?php echo StateBadge::render( (string) $state_value, [ 'variant' => self::state_badge_variant( (string) $state_value ) ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 					</a>
 				<?php endforeach; ?>
@@ -298,7 +298,7 @@ trait ScannerOverviewView {
 				<?php echo StateBadge::render( strtoupper( $state ), [ 'variant' => 'complete' === $state ? StateBadge::SUCCESS : StateBadge::WARNING ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 			</div>
 			<div class="cb-core-integrity-component-grid">
-				<?php foreach ( [ 'core', 'plugins', 'themes', 'uploads' ] as $component ) : ?>
+				<?php foreach ( [ 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ] as $component ) : ?>
 					<?php
 					$component_coverage = is_array( $coverage[ $component ] ?? null ) ? $coverage[ $component ] : [];
 					$component_state = (string) ( $component_coverage['state'] ?? 'unknown' );
@@ -313,11 +313,11 @@ trait ScannerOverviewView {
 					$missing = (int) ( $component_coverage['missing_files'] ?? 0 );
 					$unreadable = (int) ( $component_coverage['unreadable_files'] ?? $component_coverage['unreadable'] ?? 0 );
 					/* translators: 1: checked file count, 2: unexpected file count, 3: missing file count, 4: unreadable file count. */
-					$coverage_label = sprintf( __( 'Checked %1$d · unexpected %2$d · missing %3$d · unreadable %4$d', 'core-blueprint' ), $checked, $unexpected, $missing, $unreadable );
+					$coverage_label = sprintf( __( 'Traversed %1$d · unexpected %2$d · missing %3$d · unreadable %4$d', 'core-blueprint' ), $checked, $unexpected, $missing, $unreadable );
 					?>
 					<?php $component_url = self::scanner_view_url( 'findings', [ 'cb_integrity_component' => $component ] ); ?>
 					<a class="cb-core-integrity-component cb-core-integrity-component-filter" href="<?php echo esc_url( $component_url ); ?>">
-						<span><?php echo esc_html( ucfirst( $component ) ); ?></span>
+						<span><?php echo esc_html( 'mu_plugins' === $component ? __( 'MU-plugins', 'core-blueprint' ) : ucfirst( $component ) ); ?></span>
 						<?php echo StateBadge::render( strtoupper( $component_state ), [ 'variant' => self::state_badge_variant( $component_state ) ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 						<small class="cb-core-integrity-muted"><?php echo esc_html( $coverage_label ); ?></small>
 					</a>
