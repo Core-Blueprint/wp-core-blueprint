@@ -311,7 +311,7 @@ final class ResultFormatter {
 	}
 
 	private static function group_key( string $component, string $slug, string $type ): string {
-		if ( 'plugin' === $component || 'theme' === $component ) {
+		if ( 'plugin' === $component || 'mu_plugin' === $component || 'theme' === $component ) {
 			return '' !== $slug ? $slug : $component . '-unknown';
 		}
 
@@ -387,7 +387,7 @@ final class ResultFormatter {
 			return $message;
 		}
 
-		if ( ( 'unsupported' === $type || 'baseline_required' === $type ) && ( 'plugin' === $component || 'theme' === $component ) ) {
+		if ( ( 'unsupported' === $type || 'baseline_required' === $type ) && ( 'plugin' === $component || 'mu_plugin' === $component || 'theme' === $component ) ) {
 			return sprintf(
 				/* translators: 1: component type, 2: component label. */
 				__( '%1$s %2$s needs a local approved baseline because no official checksum is available.', 'core-blueprint' ),
@@ -396,7 +396,7 @@ final class ResultFormatter {
 			);
 		}
 
-		if ( 'verification_failed' === $type && ( 'plugin' === $component || 'theme' === $component ) ) {
+		if ( 'verification_failed' === $type && ( 'plugin' === $component || 'mu_plugin' === $component || 'theme' === $component ) ) {
 			return sprintf(
 				/* translators: 1: component type, 2: component label. */
 				__( '%1$s %2$s is installed from WordPress.org, but checksum verification could not be completed.', 'core-blueprint' ),
