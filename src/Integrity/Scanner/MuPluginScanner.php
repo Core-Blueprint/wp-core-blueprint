@@ -130,8 +130,17 @@ final class MuPluginScanner {
 				}
 			}
 		}
-		$changed = [] !== $baseline && $observed !== $expected;
-		if ( [] === $baseline || $changed || ! $complete ) {
+		// File hashes are authoritative; mtime-only changes are not integrity drift.
+		$changed = [] !== $baseline && count( $observed ) !== count( $expected );
+		if ( [] !== $baseline && ! $changed ) {
+			foreach ( $observed as $name => $entry ) {
+				if ( ! isset( $expected[ $name ] ) || ! hash_equals( (string) ( $expected[ $name ]['hash'] ?? '' ), (string) ( $entry['hash'] ?? '' ) ) ) {
+					$changed = true;
+					break;
+				}
+			}
+		}
+		if ( count( $observed ) > 0 && ( [] === $baseline || $changed || ! $complete ) ) {
 			$findings[] = $this->finding(
 				'warning',
 				! $complete ? 'scan_incomplete' : ( $changed ? 'changed' : 'baseline_required' ),
