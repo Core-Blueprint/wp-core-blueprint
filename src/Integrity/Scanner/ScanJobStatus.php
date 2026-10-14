@@ -18,7 +18,7 @@ use function microtime;
  * at all.
  */
 final class ScanJobStatus {
-	private const PHASES = [ 'core', 'plugins', 'themes', 'uploads' ];
+	private const PHASES = [ 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ];
 
 	/** Return the authoritative active job, or null when no valid job owns the lock. */
 	public static function active_job(): ?array {
@@ -63,6 +63,11 @@ final class ScanJobStatus {
 		$plugin_done  = max( 0, (int) ( $job['plugin_index'] ?? 0 ) );
 		$phases['plugins']['items_total'] = $plugin_total;
 		$phases['plugins']['items_done']  = 'done' === $phases['plugins']['status'] ? $plugin_total : min( $plugin_total, $plugin_done );
+
+		$mu_coverage = is_array( $job['coverage']['mu_plugins'] ?? null ) ? $job['coverage']['mu_plugins'] : [];
+		$mu_done = max( 0, (int) ( $mu_coverage['files_inspected'] ?? 0 ) );
+		$phases['mu_plugins']['items_done'] = $mu_done;
+		$phases['mu_plugins']['items_total'] = 'done' === $phases['mu_plugins']['status'] ? $mu_done : 0;
 
 		$theme_total = count( is_array( $job['theme_stylesheets'] ?? null ) ? $job['theme_stylesheets'] : [] );
 		$theme_done  = max( 0, (int) ( $job['theme_index'] ?? 0 ) );
