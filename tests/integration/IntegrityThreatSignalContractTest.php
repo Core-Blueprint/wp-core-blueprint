@@ -58,7 +58,7 @@ final class IntegrityThreatSignalContractTest extends WP_UnitTestCase {
 		$payload = Finding::make( [
 			'type' => 'uploads', 'status' => 'disguised_executable', 'severity' => 'critical',
 			'target' => [ 'slug' => 'uploads', 'path' => 'wp-content/uploads/', 'file' => '2026/03/hero-background.png' ],
-			'meta' => [ 'actual_sha256' => str_repeat( 'a', 64 ) ],
+			'meta' => [ 'actual_sha256' => str_repeat( 'a', 64 ), 'signature_stable' => true ],
 		] );
 		$linked = ThreatCorrelator::correlate( [ $loader, $payload ] );
 		$this->assertCount( 3, $linked );
