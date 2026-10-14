@@ -52,7 +52,7 @@ final class TransientProgressReporter implements ProgressReporter {
 	public const TTL_SECONDS      = 900;     // 15 min
 	public const DEBOUNCE_MS      = 500;
 
-	private const PHASES = [ 'core', 'plugins', 'themes', 'uploads' ];
+	private const PHASES = [ 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ];
 
 	private string $job_id;
 	private float  $started_at;
