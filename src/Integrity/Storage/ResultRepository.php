@@ -138,7 +138,7 @@ final class ResultRepository {
 			'incomplete_components' => is_array( $coverage['incomplete_components'] ?? null ) ? $coverage['incomplete_components'] : [],
 		];
 
-		foreach ( [ 'core', 'plugins', 'themes', 'uploads' ] as $component ) {
+		foreach ( [ 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ] as $component ) {
 			if ( ! is_array( $coverage[ $component ] ?? null ) ) {
 				continue;
 			}
@@ -148,6 +148,8 @@ final class ResultRepository {
 				'state'             => (string) ( $component_coverage['state'] ?? 'unknown' ),
 				'files_observed'    => (int) ( $component_coverage['files_observed'] ?? $component_coverage['files_inspected'] ?? 0 ),
 				'verified_files'    => (int) ( $component_coverage['verified_files'] ?? 0 ),
+				'signature_checked' => (int) ( $component_coverage['signature_checked'] ?? 0 ),
+				'signature_unreadable' => (int) ( $component_coverage['signature_unreadable'] ?? 0 ),
 				'snapshot_files_inspected' => (int) ( $component_coverage['snapshot_files_inspected'] ?? 0 ),
 				'modified_files'    => (int) ( $component_coverage['modified_files'] ?? 0 ),
 				'missing_files'     => (int) ( $component_coverage['missing_files'] ?? 0 ),
