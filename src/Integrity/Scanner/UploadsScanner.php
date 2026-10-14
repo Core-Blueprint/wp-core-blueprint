@@ -31,7 +31,7 @@ use function wp_normalize_path;
  * it never limits how many files a complete scan may inspect.
  */
 final class UploadsScanner {
-	private const EXECUTABLE_EXTENSIONS = [ 'php', 'phtml', 'php3', 'php4', 'php5', 'phar', 'cgi', 'pl', 'py', 'sh' ];
+	private const EXECUTABLE_EXTENSIONS = [ 'php', 'phtml', 'php3', 'php4', 'php5', 'phar', 'cgi', 'pl', 'py', 'sh', 'exe', 'dll', 'bat', 'cmd', 'ps1' ];
 	private const SUSPICIOUS_PATTERNS   = [
 		'/eval\s*\(/i',
 		'/base64_decode\s*\(/i',
@@ -64,6 +64,8 @@ final class UploadsScanner {
 					'root'              => $base_dir,
 					'files_encountered' => 0,
 					'files_inspected'   => 0,
+					'signature_checked' => 0,
+					'signature_unreadable' => 0,
 					'unreadable'        => 1,
 					'symlinks_skipped'  => 0,
 					'path_escapes'      => 0,
@@ -77,15 +79,19 @@ final class UploadsScanner {
 				'root'            => $base_dir,
 				'walker'          => [],
 				'files_inspected' => 0,
+				'signature_checked' => 0,
+				'signature_unreadable' => 0,
 			];
 		}
 
 		$inspected = max( 0, (int) ( $state['files_inspected'] ?? 0 ) );
+		$signature_checked = max( 0, (int) ( $state['signature_checked'] ?? 0 ) );
+		$signature_unreadable = max( 0, (int) ( $state['signature_unreadable'] ?? 0 ) );
 		$walker_state = is_array( $state['walker'] ?? null ) ? $state['walker'] : [];
 
 		$batch = BatchedFilesystemWalker::walk_batch(
 			$base_dir,
-			function ( string $relative, array $meta ) use ( &$findings, &$inspected ): void {
+			function ( string $relative, array $meta ) use ( &$findings, &$inspected, &$signature_checked, &$signature_unreadable ): void {
 				$path      = (string) ( $meta['absolute_path'] ?? '' );
 				$readable  = ! empty( $meta['readable'] );
 				$extension = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
@@ -102,6 +108,31 @@ final class UploadsScanner {
 				}
 
 				$inspected++;
+				$signature = FileSignatureInspector::inspect( $path, $extension );
+				if ( empty( $signature['checked'] ) ) {
+					$signature_unreadable++;
+					$findings[] = $this->finding(
+						'warning',
+						'signature_unreadable',
+						$relative,
+						__( 'File header could not be inspected. Signature coverage is incomplete.', 'core-blueprint' )
+					);
+				} else {
+					$signature_checked++;
+					if ( 'disguised_executable' === (string) ( $signature['anomaly'] ?? '' ) ) {
+						$context = $this->file_context( $path, $meta, true );
+						$context['detected_format'] = (string) ( $signature['detected'] ?? 'unknown' );
+						$context['declared_extension'] = $extension;
+						$context['detection_method'] = 'bounded_file_signature';
+						$findings[] = $this->finding(
+							'critical',
+							'disguised_executable',
+							$relative,
+							__( 'An executable file signature was found inside a non-executable upload. This is a confirmed format anomaly, not proof of malware execution.', 'core-blueprint' ),
+							$context
+						);
+					}
+				}
 				if ( ! in_array( $extension, self::EXECUTABLE_EXTENSIONS, true ) ) {
 					return;
 				}
@@ -161,12 +192,16 @@ final class UploadsScanner {
 		$walker_state = is_array( $batch['state'] ?? null ) ? $batch['state'] : [];
 		$state['walker']          = $walker_state;
 		$state['files_inspected'] = $inspected;
+		$state['signature_checked'] = $signature_checked;
+		$state['signature_unreadable'] = $signature_unreadable;
 
 		$coverage = [
 			'state'             => ! empty( $walker_state['done'] ) && ! empty( $walker_state['complete'] ) ? 'complete' : 'incomplete',
 			'root'              => $base_dir,
 			'files_encountered' => (int) ( $walker_state['files_encountered'] ?? 0 ),
 			'files_inspected'   => $inspected,
+			'signature_checked' => $signature_checked,
+			'signature_unreadable' => $signature_unreadable,
 			'unreadable'        => (int) ( $walker_state['unreadable_count'] ?? 0 ),
 			'symlinks_skipped'  => (int) ( $walker_state['symlink_count'] ?? 0 ),
 			'path_escapes'      => (int) ( $walker_state['outside_count'] ?? 0 ),
