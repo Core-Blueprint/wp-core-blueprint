@@ -77,14 +77,9 @@ final class MuPluginScanner {
 				continue;
 			}
 			$state['signature_checked']++;
-			// A shell API alone is not a malware verdict. This conjunction
-			// specifically models the rename-then-execute loader technique.
-			$has_execution = preg_match( '/\b(?:exec|shell_exec|system|passthru|proc_open|popen)\s*\(/i', $source ) === 1
-				|| preg_match( '/new\s+COM\s*\(/i', $source ) === 1;
-			$has_rename = preg_match( '/\brename\s*\(/i', $source ) === 1;
-			$has_exe = stripos( $source, '.exe' ) !== false;
-			if ( $has_execution && $has_rename && $has_exe ) {
-				preg_match_all( '/[A-Za-z0-9_.-]+\.(?:png|jpe?g|gif|webp)/i', $source, $matched );
+			// PHP lexer ignores commented-out examples and quoted function names.
+			$indicators = LoaderPatternInspector::inspect( $source );
+			if ( $indicators['suspected'] ) {
 				$findings[] = $this->finding(
 					'warning',
 					'suspicious_loader_chain',
@@ -93,7 +88,7 @@ final class MuPluginScanner {
 					[
 						'actual_sha256' => (string) ( $manifest[ $relative ]['hash'] ?? '' ),
 						'filesystem_path' => $absolute,
-						'referenced_media' => array_values( array_unique( (array) ( $matched[0] ?? [] ) ) ),
+						'referenced_media' => $indicators['referenced_media'],
 						'detection_method' => 'bounded_php_loader_indicators',
 					]
 				);
@@ -170,7 +165,7 @@ final class MuPluginScanner {
 			'status' => $this->severity( $findings ),
 			'checks' => $findings,
 			'coverage' => [
-				'state' => ! $complete || [] === $baseline ? 'incomplete' : 'complete',
+				'state' => ! $complete || ( [] === $baseline && count( $observed ) > 0 ) ? 'incomplete' : 'complete',
 				'files_inspected' => count( $observed ),
 				'signature_checked' => (int) $state['signature_checked'],
 				'verified_files' => $verified,
