@@ -37,11 +37,11 @@ function queryString( filters, cursor = '' ) {
     if ( cursor ) query.set( 'cursor', cursor );
     return query.toString();
 }
-async function request( route, filters, contextToken, signal ) {
+async function request( route, filters, contextToken, signal, cursor = '' ) {
     if ( !settings.restRoot || !settings.nonce ) throw safeError();
     const headers = { 'X-WP-Nonce': settings.nonce };
     if ( contextToken ) headers['X-CB-Designer-Scope'] = contextToken;
-    const response = await fetch( settings.restRoot + route + '?' + queryString( filters ), {
+    const response = await fetch( settings.restRoot + route + '?' + queryString( filters, cursor ), {
         method: 'GET', credentials: 'same-origin', headers, signal,
     } );
     if ( !response.ok ) throw safeError();
@@ -196,7 +196,7 @@ function createBrowser( root, options = {} ) {
         message.textContent = label( 'loading', 'Loading templates…' );
         more.hidden = true;
         try {
-            const payload = await request( 'templates', state.filters, token, controller.signal );
+            const payload = await request( 'templates', state.filters, token, controller.signal, state.cursor || '' );
             if ( state.destroyed || generation !== state.requestGeneration ) return;
             if ( !Array.isArray( payload.items ) || ( payload.next_cursor !== null && typeof payload.next_cursor !== 'string' ) ) {
                 throw safeError();
