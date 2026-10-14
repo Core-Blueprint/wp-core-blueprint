@@ -1,0 +1,158 @@
+/**
+ * List View A2: additive Core Admin composition.
+ * Opt-in only through PageRegistry's list-view requirement or ListView::enqueue.
+ * All selectors stay inside .cb-core-list-view, never WordPress admin chrome.
+ */
+.cb-core-list-view {
+	--cb-list-row-pad: var(--cb-space-3, 12px);
+	color: var(--cb-text);
+	min-width: 0;
+	max-width: 100%;
+}
+.cb-core-list-view__head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--cb-space-4, 16px);
+	flex-wrap: wrap;
+	margin-block-end: var(--cb-space-4, 16px);
+}
+.cb-core-list-view__heading {
+	min-width: min(100%, 280px);
+	flex: 1;
+}
+.cb-core-list-view__head .cb-core-title {
+	margin-block: 0 var(--cb-space-1, 4px);
+}
+.cb-core-list-view__head .cb-core-intro {
+	margin: 0;
+}
+.cb-core-list-view__head > .button {
+	flex-shrink: 0;
+}
+.cb-core-list-view__filters {
+	margin-block-end: var(--cb-space-4, 16px);
+}
+.cb-core-list-view__scroll {
+	max-width: 100%;
+	overflow-x: auto;
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md, 10px);
+	background: var(--cb-surface-1);
+	overscroll-behavior-inline: contain;
+}
+.cb-core-list-view__scroll:focus-visible,
+.cb-core-list-view :is(a, button, input, select):focus-visible {
+	outline: 2px solid var(--cb-accent);
+	outline-offset: 2px;
+}
+.cb-core-list-view__table {
+	width: 100%;
+	border-spacing: 0;
+	border-collapse: separate;
+	font-size: var(--cb-fs-sm, .875rem);
+	line-height: var(--cb-lh-normal, 1.4);
+	text-align: start;
+}
+.cb-core-list-view__table :is(th, td) {
+	padding: var(--cb-list-row-pad) var(--cb-space-3, 12px);
+	border-block-end: 1px solid var(--cb-border);
+	text-align: start;
+	vertical-align: middle;
+	overflow-wrap: anywhere;
+}
+.cb-core-list-view__table thead th {
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+	font-weight: var(--cb-fw-semibold, 600);
+	white-space: nowrap;
+}
+.cb-core-list-view__table tbody th {
+	font-weight: var(--cb-fw-semibold, 600);
+}
+.cb-core-list-view__table tbody tr:last-child :is(th, td) {
+	border-block-end: 0;
+}
+.cb-core-list-view__table tbody tr:hover {
+	background: var(--cb-surface-2);
+}
+.cb-core-list-view__table a {
+	color: var(--cb-accent);
+}
+.cb-core-list-view__table th[aria-sort] a {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+.cb-core-list-view__actions {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--cb-space-2, 8px);
+}
+.cb-core-list-view__pill {
+	display: inline-flex;
+	align-items: center;
+	max-width: 100%;
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-pill, 999px);
+	padding: 3px 9px;
+	font-size: var(--cb-fs-xs, .75rem);
+	overflow-wrap: anywhere;
+}
+.cb-core-list-view__pill--info { color: var(--cb-accent); }
+.cb-core-list-view__pill--success { color: var(--cb-success); }
+.cb-core-list-view__pill--warning { color: var(--cb-warning); }
+.cb-core-list-view__pill--danger { color: var(--cb-danger); }
+.cb-core-list-view__state {
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md, 10px);
+	background: var(--cb-surface-1);
+	padding: var(--cb-space-5, 24px);
+	color: var(--cb-text-muted);
+}
+.cb-core-list-view__state--error {
+	border-color: var(--cb-danger);
+	color: var(--cb-danger);
+}
+.cb-core-list-view__pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: var(--cb-space-3, 12px);
+	margin-block-start: var(--cb-space-3, 12px);
+	color: var(--cb-text-muted);
+}
+.cb-core-list-view__pagination-actions {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--cb-space-2, 8px);
+}
+@media (max-width: 782px) {
+	.cb-core-list-view__head {
+		align-items: stretch;
+	}
+	.cb-core-list-view__head > .button {
+		width: auto;
+	}
+	.cb-core-list-view__scroll {
+		max-width: 100%;
+	}
+}
+@media (max-width: 480px) {
+	.cb-core-list-view__head > .button,
+	.cb-core-list-view__filters,
+	.cb-core-list-view__pagination-actions {
+		width: 100%;
+	}
+	.cb-core-list-view__pagination-actions > .button {
+		flex: 1;
+		text-align: center;
+	}
+	.cb-core-list-view__table :is(th, td) {
+		padding: var(--cb-space-2, 8px);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.cb-core-list-view * { transition: none !important; }
+}

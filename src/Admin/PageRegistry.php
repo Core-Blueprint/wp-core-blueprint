@@ -56,6 +56,7 @@ final class PageRegistry {
 		'icon-picker',
 		'icon-control',
 		'icons',
+		'list-view',
 		'modal',
 		'object-picker',
 		'interactive-grid',
@@ -391,6 +392,9 @@ final class PageRegistry {
 				break;
 			case 'design-editor':
 				DesignEditorAssets::enqueue();
+				break;
+			case 'list-view':
+				\CoreBlueprint\Core\UI\ListView::enqueue();
 				break;
 			case 'time-picker':
 				UiAssets::enqueue_time_picker( UiAssets::TIME_PICKER_PRESENTATION_CORE );
