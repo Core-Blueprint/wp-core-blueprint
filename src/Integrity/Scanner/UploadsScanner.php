@@ -124,11 +124,21 @@ final class UploadsScanner {
 						$context['detected_format'] = (string) ( $signature['detected'] ?? 'unknown' );
 						$context['declared_extension'] = $extension;
 						$context['detection_method'] = 'bounded_file_signature';
+						$confirm = FileSignatureInspector::inspect( $path, $extension );
+						$stable = ! empty( $confirm['checked'] )
+							&& (string) ( $confirm['detected'] ?? '' ) === (string) ( $signature['detected'] ?? '' )
+							&& '' !== (string) ( $context['actual_sha256'] ?? '' );
+						$context['signature_stable'] = $stable;
+						if ( ! $stable ) {
+							$signature_unreadable++;
+						}
 						$findings[] = $this->finding(
-							'critical',
-							'disguised_executable',
+							$stable ? 'critical' : 'warning',
+							$stable ? 'disguised_executable' : 'signature_unverified',
 							$relative,
-							__( 'An executable file signature was found inside a non-executable upload. This is a confirmed format anomaly, not proof of malware execution.', 'core-blueprint' ),
+							$stable
+								? __( 'An executable file signature was found inside a non-executable upload. This is a confirmed format anomaly, not proof of malware execution.', 'core-blueprint' )
+								: __( 'Executable header evidence could not be confirmed against a stable SHA-256. Inspect manually; signature coverage is incomplete.', 'core-blueprint' ),
 							$context
 						);
 					}
