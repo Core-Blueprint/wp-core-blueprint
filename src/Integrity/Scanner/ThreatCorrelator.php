@@ -21,7 +21,7 @@ final class ThreatCorrelator {
 			$status = (string) ( $finding['status'] ?? '' );
 			$type = (string) ( $finding['type'] ?? '' );
 			$target = (array) ( $finding['target'] ?? [] );
-			if ( 'uploads' === $type && 'disguised_executable' === $status ) {
+			if ( 'uploads' === $type && 'disguised_executable' === $status && ! empty( $finding['meta']['signature_stable'] ) ) {
 				$name = strtolower( basename( (string) ( $target['file'] ?? '' ) ) );
 				if ( '' !== $name ) {
 					$payloads[ $name ][] = $finding;
