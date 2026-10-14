@@ -36,7 +36,6 @@ import {
 	createDesignerNavigation,
 	createDesignerSelectionController,
 	createDesignerShell,
-	createDesignerStateHistory,
 	decorateDesignerControl,
 } from './shell/index.js';
 import {
@@ -308,6 +307,7 @@ export {
 	createDesignerNavigation,
 	createDesignerSelectionController,
 	createDesignerShell,
+	createDesignerStateHistory,
 	decorateDesignerControl,
 	insertNodeCommand,
 	removeNodeCommand,
