@@ -242,13 +242,14 @@ final class ResultFormatter {
 
 	private static function normalise_component_filter( string $component_filter ): string {
 		$component_filter = sanitize_key( $component_filter );
-		return in_array( $component_filter, [ 'core', 'plugins', 'themes', 'uploads' ], true ) ? $component_filter : '';
+		return in_array( $component_filter, [ 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ], true ) ? $component_filter : '';
 	}
 
 	private static function finding_component_filter_key( array $finding ): string {
 		$component = sanitize_key( (string) ( $finding['type'] ?? '' ) );
 		return match ( $component ) {
 			'plugin' => 'plugins',
+			'mu_plugin' => 'mu_plugins',
 			'theme'  => 'themes',
 			default  => $component,
 		};
