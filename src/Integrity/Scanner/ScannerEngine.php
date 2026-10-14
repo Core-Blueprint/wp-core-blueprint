@@ -183,6 +183,7 @@ final class ScannerEngine {
 		}
 
 				if ( (int) ( $coverage['uploads']['signature_unreadable'] ?? 0 ) > 0 ) {
+			$coverage['uploads']['state'] = 'incomplete';
 			$state = 'incomplete';
 			if ( ! in_array( 'uploads', $incomplete_components, true ) ) {
 				$incomplete_components[] = 'uploads';
