@@ -578,7 +578,7 @@ final class ResultRepository {
 		$method       = sanitize_key( (string) ( $verification['method'] ?? '' ) );
 		$scope        = sanitize_key( (string) ( $verification['scope'] ?? '' ) );
 
-		return in_array( $type, [ 'plugin', 'theme' ], true )
+		return in_array( $type, [ 'plugin', 'mu_plugin', 'theme' ], true )
 			&& 'local_baseline' === $method
 			&& 'component' === $scope
 			&& in_array( $status, [ 'baseline_required', 'verification_failed', 'new', 'changed' ], true );
@@ -603,7 +603,7 @@ final class ResultRepository {
 		$target = is_array( $record['target'] ?? null ) ? $record['target'] : [];
 		$slug   = sanitize_key( (string) ( $target['slug'] ?? '' ) );
 
-		if ( ! in_array( $type, [ 'plugin', 'theme' ], true ) || '' === $slug ) {
+		if ( ! in_array( $type, [ 'plugin', 'mu_plugin', 'theme' ], true ) || '' === $slug ) {
 			return '';
 		}
 
