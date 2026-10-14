@@ -6,6 +6,7 @@ namespace CoreBlueprint\Core\Integrity\Scanner;
 use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
 use CoreBlueprint\Core\Integrity\Support\DirectoryHasher;
 use CoreBlueprint\Core\Integrity\Support\Finding;
+use CoreBlueprint\Core\Integrity\Support\FileHashProbe;
 use CoreBlueprint\Core\Integrity\Support\PathGuard;
 
 /**
@@ -73,6 +74,15 @@ final class MuPluginScanner {
 			$source = @file_get_contents( $absolute, false, null, 0, 200000 );
 			if ( ! is_string( $source ) ) {
 				$findings[] = $this->finding( 'warning', 'unreadable', $relative, __( 'MU-plugin PHP source could not be inspected.', 'core-blueprint' ) );
+				$state['inspection_failures'] = (int) ( $state['inspection_failures'] ?? 0 ) + 1;
+				continue;
+			}
+			// The source must still match the SHA-256 manifest captured by the
+			// resumable walker; otherwise the loader inference is not stable.
+			$probe = FileHashProbe::probe( $absolute, [ 'sha256' ] );
+			$read_hash = (string) ( $probe['hashes']['sha256'] ?? '' );
+			if ( empty( $probe['ok'] ) || ! hash_equals( (string) ( $manifest[ $relative ]['hash'] ?? '' ), $read_hash ) ) {
+				$findings[] = $this->finding( 'warning', 'scan_incomplete', $relative, __( 'MU-plugin PHP file changed between hashing and loader inspection.', 'core-blueprint' ) );
 				$state['inspection_failures'] = (int) ( $state['inspection_failures'] ?? 0 ) + 1;
 				continue;
 			}
@@ -212,9 +222,17 @@ final class MuPluginScanner {
 		$meta['identity'] = $status;
 		return Finding::make( [
 			'type' => 'mu_plugin', 'status' => $status, 'severity' => $severity,
-			'target' => [ 'slug' => self::SLUG, 'label' => __( 'MU-plugins', 'core-blueprint' ), 'path' => self::RELATIVE_ROOT, 'file' => $file ],
+			'target' => [ 'slug' => self::SLUG, 'label' => __( 'MU-plugins', 'core-blueprint' ), 'path' => $this->relative_root(), 'file' => $file ],
 			'message' => $message, 'meta' => $meta, 'verification' => $verification,
 		] );
+	}
+
+	private function relative_root(): string {
+		$root = wp_normalize_path( defined( 'WPMU_PLUGIN_DIR' ) ? WPMU_PLUGIN_DIR : WP_CONTENT_DIR . '/mu-plugins' );
+		$wp_root = rtrim( wp_normalize_path( ABSPATH ), '/' ) . '/';
+		return str_starts_with( $root, $wp_root )
+			? trim( substr( $root, strlen( $wp_root ) ), '/' ) . '/'
+			: self::RELATIVE_ROOT;
 	}
 
 	private function severity( array $findings ): string {
