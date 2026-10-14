@@ -104,6 +104,21 @@ final class IntegrityThreatSignalContractTest extends WP_UnitTestCase {
 			$candidates = array_filter( $findings, [ ResultRepository::class, 'isBaselineCandidateCheck' ] );
 			$this->assertCount( 1, $candidates );
 			$this->assertSame( 'incomplete', $result['coverage']['state'] );
+			$approved = ResultRepository::saveBaselineComponent( [ 'checks' => $findings, 'summary' => [] ], 'mu_plugin', 'mu-plugins' );
+			$this->assertTrue( (bool) ( $approved['_component_saved'] ?? false ) );
+			$state = [];
+			$verified_findings = [];
+			$done = false;
+			for ( $i = 0; $i < 20 && ! $done; $i++ ) {
+				$verified = $scanner->scan_batch( $state, 100, 2.0 );
+				$state = $verified['state'];
+				$verified_findings = array_merge( $verified_findings, $verified['checks'] );
+				$done = $verified['done'];
+			}
+			$this->assertTrue( $done );
+			$this->assertContains( 'ok', array_column( $verified_findings, 'status' ) );
+			$this->assertNotContains( 'missing', array_column( $verified_findings, 'status' ) );
+			$this->assertSame( 'complete', $verified['coverage']['state'] );
 		} finally {
 			unlink( $file );
 			$this->temporary_files = array_values( array_diff( $this->temporary_files, [ $file ] ) );
