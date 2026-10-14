@@ -53,7 +53,7 @@ trait ScannerFindingsView {
 		$component = isset( $_GET['cb_integrity_component'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter.
 			? sanitize_key( wp_unslash( $_GET['cb_integrity_component'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			: '';
-		if ( ! in_array( $component, [ '', 'core', 'plugins', 'themes', 'uploads' ], true ) ) {
+		if ( ! in_array( $component, [ '', 'core', 'plugins', 'mu_plugins', 'themes', 'uploads' ], true ) ) {
 			$component = '';
 		}
 		$severity = isset( $_GET['cb_integrity_severity'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter.
@@ -89,6 +89,7 @@ trait ScannerFindingsView {
 			$finding_component = sanitize_key( (string) ( $finding['type'] ?? '' ) );
 			$finding_component = match ( $finding_component ) {
 				'plugin' => 'plugins',
+				'mu_plugin' => 'mu_plugins', 
 				'theme'  => 'themes',
 				default  => $finding_component,
 			};
@@ -195,7 +196,7 @@ trait ScannerFindingsView {
 				<input type="hidden" name="tab" value="core-scanner" />
 				<input type="hidden" name="cb_integrity_view" value="findings" />
 				<label class="cb-core-toolbar__field cb-core-toolbar__field--grow cb-core-integrity-search-field"><span class="screen-reader-text"><?php echo esc_html__( 'Search findings', 'core-blueprint' ); ?></span><input type="search" name="cb_integrity_search" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php echo esc_attr__( 'Search path, component or message…', 'core-blueprint' ); ?>" /></label>
-				<label class="cb-core-toolbar__field"><span class="screen-reader-text"><?php echo esc_html__( 'Component', 'core-blueprint' ); ?></span><select name="cb_integrity_component"><option value=""><?php echo esc_html__( 'All components', 'core-blueprint' ); ?></option><?php foreach ( [ 'core' => __( 'Core', 'core-blueprint' ), 'plugins' => __( 'Plugins', 'core-blueprint' ), 'themes' => __( 'Themes', 'core-blueprint' ), 'uploads' => __( 'Uploads', 'core-blueprint' ) ] as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $component, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
+				<label class="cb-core-toolbar__field"><span class="screen-reader-text"><?php echo esc_html__( 'Component', 'core-blueprint' ); ?></span><select name="cb_integrity_component"><option value=""><?php echo esc_html__( 'All components', 'core-blueprint' ); ?></option><?php foreach ( [ 'core' => __( 'Core', 'core-blueprint' ), 'plugins' => __( 'Plugins', 'core-blueprint' ), 'mu_plugins' => __( 'MU-plugins', 'core-blueprint' ), 'themes' => __( 'Themes', 'core-blueprint' ), 'uploads' => __( 'Uploads', 'core-blueprint' ) ] as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $component, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
 				<label class="cb-core-toolbar__field"><span class="screen-reader-text"><?php echo esc_html__( 'Severity', 'core-blueprint' ); ?></span><select name="cb_integrity_severity"><option value=""><?php echo esc_html__( 'All severities', 'core-blueprint' ); ?></option><option value="critical" <?php selected( $severity, 'critical' ); ?>><?php echo esc_html__( 'Critical', 'core-blueprint' ); ?></option><option value="warning" <?php selected( $severity, 'warning' ); ?>><?php echo esc_html__( 'Warning', 'core-blueprint' ); ?></option></select></label>
 				<label class="cb-core-toolbar__field"><span class="screen-reader-text"><?php echo esc_html__( 'Status', 'core-blueprint' ); ?></span><select name="cb_integrity_status"><option value=""><?php echo esc_html__( 'All statuses', 'core-blueprint' ); ?></option><?php foreach ( array_keys( $status_options ) as $key ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $status, $key ); ?>><?php echo esc_html( self::finding_status_label( $key ) ); ?></option><?php endforeach; ?></select></label>
 				<label class="cb-core-toolbar__toggle"><input type="checkbox" name="cb_integrity_actionable" value="1" <?php checked( $actionable_only ); ?> /><span><?php echo esc_html__( 'Actionable only', 'core-blueprint' ); ?></span></label>
