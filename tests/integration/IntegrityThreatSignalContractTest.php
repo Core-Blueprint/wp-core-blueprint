@@ -4,6 +4,7 @@ declare(strict_types=1);
 use CoreBlueprint\Core\Integrity\Scanner\FileSignatureInspector;
 use CoreBlueprint\Core\Integrity\Scanner\ThreatCorrelator;
 use CoreBlueprint\Core\Integrity\Scanner\MuPluginScanner;
+use CoreBlueprint\Core\Integrity\Scanner\LoaderPatternInspector;
 use CoreBlueprint\Core\Integrity\Support\Finding;
 use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
 
@@ -64,6 +65,13 @@ final class IntegrityThreatSignalContractTest extends WP_UnitTestCase {
 		$this->assertSame( 'linked_execution_chain', $linked[2]['status'] );
 		$loader['meta']['referenced_media'] = [ 'not-a-match.png' ];
 		$this->assertCount( 2, ThreatCorrelator::correlate( [ $loader, $payload ] ) );
+	}
+
+	public function test_loader_patterns_ignore_comments_and_quoted_examples(): void {
+		$comment = "<?php\n/* rename( 'fake.png', 'fake.exe' ); exec( 'ignored' ); */\n";
+		$this->assertFalse( LoaderPatternInspector::inspect( $comment )['suspected'] );
+		$source = "<?php\nrename( 'hero-background.png', 'payload.exe' );\nexec( 'TEST_NOT_EXECUTED' );\n";
+		$this->assertTrue( LoaderPatternInspector::inspect( $source )['suspected'] );
 	}
 
 	public function test_mu_plugin_baseline_is_explicit_and_no_untrusted_code_is_executed(): void {
