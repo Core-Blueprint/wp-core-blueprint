@@ -101,6 +101,14 @@ label.cb-template-browser__card { cursor: pointer; }
     overflow-wrap: anywhere;
 }
 .cb-template-browser__card-body { display: flex; flex-direction: column; height: 100%; }
+.cb-template-browser__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-block-start: 14px;
+}
+.cb-template-browser__action { max-width: 100%; }
+.cb-template-browser__action:focus-visible { outline: 2px solid var(--cb-accent, #2271b1); outline-offset: 3px; }
 .cb-template-browser__status { display: inline-block; margin-top: 11px; font-size: 11px; }
 .cb-template-browser__status--blocked { color: #b02c2c; }
 .cb-template-browser__footer {

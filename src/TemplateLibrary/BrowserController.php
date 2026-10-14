@@ -105,6 +105,7 @@ final class BrowserController {
 				'origin' => $item->origin, 'category' => $item->category,
 				'locale' => $item->locale, 'version' => $item->version,
 				'compatible' => $item->compatible,
+				'navigation' => TemplateSourceRegistry::navigation( $item, null === $scope )->public_links( null === $scope ),
 			], $page->items ),
 			'next_cursor' => $page->next_cursor,
 		] );

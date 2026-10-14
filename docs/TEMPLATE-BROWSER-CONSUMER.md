@@ -90,5 +90,5 @@ in metadata results; no vendor network access.
 - Automations owner-only save/apply and disabled-workflow E2E after its adapter.
 - No merge, CI or deployment without separate explicit GO.
 
-T3 owns personal/site save and management, T4 owns declarative offline pack
+T3A now offers optional owner-delegated Preview/Manage navigation in the global browser (see docs/TEMPLATE-MANAGEMENT-CONSUMER.md), but T3B still owns consumer-side personal/site save, duplicate, export and deletion; T4 owns declarative offline pack
 import, and T7 optional explicitly configured Updates network distribution.

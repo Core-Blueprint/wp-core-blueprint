@@ -176,6 +176,29 @@ function createBrowser( root, options = {} ) {
         );
         body.append( stateBadge );
         article.append( body );
+        // T3: management is navigation to the owning extension, never a
+        // Base-owned write/export/delete request. Contextual Designer selection
+        // remains a single radio interaction without nested interactive links.
+        if ( !contextual && item.navigation && typeof item.navigation === 'object' ) {
+            const actions = el( 'div', 'cb-template-browser__actions' );
+            for ( const kind of [ 'preview', 'manage' ] ) {
+                const entry = item.navigation[kind];
+                if ( !entry || typeof entry.url !== 'string' || typeof entry.label !== 'string'
+                    || !entry.label.trim() ) continue;
+                try {
+                    const destination = new URL( entry.url, window.location.href );
+                    if ( ![ 'http:', 'https:' ].includes( destination.protocol )
+                        || destination.origin !== window.location.origin
+                        || !destination.pathname.includes( '/wp-admin/' ) ) continue;
+                    const link = el( 'a', 'button cb-template-browser__action', entry.label );
+                    link.href = destination.href;
+                    actions.append( link );
+                } catch {
+                    // Malformed provider navigation fails closed.
+                }
+            }
+            if ( actions.childElementCount ) article.append( actions );
+        }
         return article;
     }
 

@@ -38,3 +38,13 @@ test('Load more carries the signed page cursor through the GET query and keeps f
   assert.match(browser, /if \( cursor \) query\.set\( 'cursor', cursor \)/);
   assert.match(browser, /const response = await fetch\( settings\.restRoot \+ route \+ '\?' \+ queryString\( filters, cursor \)/);
 });
+
+test('T3 global management stays delegated to local owner screens', () => {
+  assert.match(browser, /if \( !contextual && item\.navigation/);
+  assert.match(browser, /for \( const kind of \[ 'preview', 'manage' \] \)/);
+  assert.match(browser, /destination\.origin !== window\.location\.origin/);
+  assert.match(browser, /destination\.pathname\.includes\( '\/wp-admin\/' \)/);
+  assert.match(browser, /el\( 'a', 'button cb-template-browser__action'/);
+  assert.doesNotMatch(browser, /fetch\([^\n]*method: 'POST'/);
+  assert.doesNotMatch(browser, /onDelete|deleteTemplate|exportTemplate/);
+});

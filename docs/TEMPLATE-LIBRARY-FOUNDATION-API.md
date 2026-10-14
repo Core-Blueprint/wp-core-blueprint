@@ -1,6 +1,6 @@
 # Template Library Foundation: T0/T1 public PHP contract
 
-Status: **additive T0+T1 + T2 browser implementation candidate**, subject to WordPress/runtime acceptance; pack format and personal/site management remain **not implemented**. PHP 8.4+; single-site Base v1 only. See docs/TEMPLATE-BROWSER-CONSUMER.md for the browser and first-consumer contract.
+Status: **additive T0+T1 + T2 browser implementation candidate**, subject to WordPress/runtime acceptance; pack format and consumer-owned personal/site operations remain **not implemented**. T3A delegated safe management navigation is now an additional source candidate; it does not persist or mutate templates in Base. PHP 8.4+; single-site Base v1 only. See docs/TEMPLATE-BROWSER-CONSUMER.md for the browser and first-consumer contract.
 
 ## Ownership and presentation
 
@@ -45,4 +45,4 @@ Registry cursor is opaque, HMAC authenticated with the local WordPress auth salt
 5. No premature translation during plugin load, no private Designer or Modal asset imports, unchanged existing public APIs.
 6. Source and WordPress integration tests, PHP/JS static checks, 6 locales when new UI strings arrive, reproducible release ZIP + checksum, installed WordPress role/functional acceptance.
 
-**T2 implementation:** The central Admin page, shared @cb-core/template-browser module, bounded read-only REST routes, and workspace modal are now included in this feature candidate. They require actual WordPress, browser and source/package acceptance before being called released. T3 adds delegated personal/site management. T4 defines bounded declarative packs and offline import. T5 is Automations' first consumer after browser acceptance. T7 (optional Updates distribution) is separately audited and opt-in per vendor; entirely outside this Foundation.
+**T2 implementation:** The central Admin page, shared @cb-core/template-browser module, bounded read-only REST routes, and workspace modal are now included in this feature candidate. They require actual WordPress, browser and source/package acceptance before being called released. T3A adds guarded links to owning Designer management screens; T3B consumer-owned Save/Duplicate/Export/Delete still remains to be implemented. T4 defines bounded declarative packs and offline import. T5 is Automations' first consumer after browser acceptance. T7 (optional Updates distribution) is separately audited and opt-in per vendor; entirely outside this Foundation.

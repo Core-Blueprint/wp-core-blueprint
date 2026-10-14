@@ -52,6 +52,37 @@ final class TemplateSourceRegistry {
 		return $found;
 	}
 
+	/**
+	 * T3 optional local navigation. Rechecks the CURRENT actor and item even
+	 * after a prior browse result; a client-provided metadata object is never
+	 * authorization. No domain writes, redirects or outbound requests.
+	 */
+	public static function navigation( TemplateMetadata $item, bool $include_manage = false ): TemplateNavigation {
+		self::collect_if_ready();
+		$user = get_current_user_id();
+		$source = self::$sources[ $item->source ] ?? null;
+		if ( $user < 1 || ! $source instanceof TemplateManagementSourceInterface
+			|| $source->extension_id() !== $item->extension
+			|| $source->designer_type() !== $item->designer
+			|| ! self::allowed( $source ) ) {
+			return new TemplateNavigation();
+		}
+		try {
+			if ( ! $source->can_view( $item->id, $user ) ) {
+				return new TemplateNavigation();
+			}
+			$links = $source->navigation( $item, $user );
+			$can_manage = $include_manage
+				&& in_array( $item->origin, [ 'personal', 'site' ], true )
+				&& $source->can_manage( $item->id, $user );
+			return new TemplateNavigation( $links->preview, $can_manage ? $links->manage : null );
+		} catch ( \Throwable ) {
+			// A bad provider must not leak a URL, expose private items or
+			// break discovery from other installed extensions.
+			return new TemplateNavigation();
+		}
+	}
+
 	/** All authorized Base and extension templates. For trusted server-side Admin callers. */
 	public static function browse_global( TemplateQuery $query, ?string $cursor = null ): TemplatePage {
 		return self::browse( $query, null, null, $cursor );
