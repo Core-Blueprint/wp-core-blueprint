@@ -320,6 +320,7 @@ trait ScannerOverviewView {
 						<span><?php echo esc_html( 'mu_plugins' === $component ? __( 'MU-plugins', 'core-blueprint' ) : ucfirst( $component ) ); ?></span>
 						<?php echo StateBadge::render( strtoupper( $component_state ), [ 'variant' => self::state_badge_variant( $component_state ) ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
 						<small class="cb-core-integrity-muted"><?php echo esc_html( $coverage_label ); ?></small>
+						<?php if ( 'uploads' === $component ) : ?><small class="cb-core-integrity-muted"><?php echo esc_html( sprintf( __( 'Headers inspected: %1$d of %2$d traversed files', 'core-blueprint' ), (int) ( $component_coverage['signature_checked'] ?? 0 ), $checked ) ); ?></small><?php endif; ?>
 					</a>
 				<?php endforeach; ?>
 			</div>
