@@ -98,6 +98,7 @@ final class IncidentLifecycle {
 		$type = sanitize_key( (string) ( $finding['type'] ?? '' ) );
 		$key = match ( $type ) {
 			'plugin'  => 'plugins',
+			'mu_plugin' => 'mu_plugins',
 			'theme'   => 'themes',
 			'uploads' => 'uploads',
 			default   => $type,
