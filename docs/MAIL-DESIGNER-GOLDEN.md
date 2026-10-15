@@ -12,6 +12,33 @@
 - Base Mail Designer currently relies on a feature-level inspector with plain textarea for body text and one-section palette insertion. It lacks proper rich-text WYSIWYG, true layout columns, client parity certificates and polished validation/preflight.
 - Template Library is being developed by Base Luna on separate feature branches. Its integration is a later reconciliation/acceptance item, not permission to create a second library.
 
+## UX product contract: approachable for beginners, precise for professionals
+
+One canonical Mail Designer, **not separate Basic vs Pro editing engines**.
+The editor reveals complexity progressively rather than forcing users to choose a permanent mode.
+
+**Beginner flow**:
+- Choose a good starter template when the approved Base Template Library is ready. Begin immediately with a readable layout, not a blank maze.
+- Select a Heading, Text, Image, Button or Column block using clear names and previews.
+- Edit text visually with bold, italic, underline, numbered/bulleted lists and a link field. HTML syntax should never be required.
+- Use preset spacing, alignment, mobile stacking and coordinated colors; preview the real outgoing HTML with confidence.
+- See helpful, actionable validation messages (such as missing ALT, unsafe links or required consumer content) without technical jargon. Save and undo must be predictable.
+
+**Professional flow**:
+- Adjust typography, widths, spacing, backgrounds, column ratios and responsive behavior through the same Inspector.
+- Inspect the allowlisted HTML source within individual rich-text blocks via an **Advanced** disclosure. No arbitrary CSS or executable HTML is exposed.
+- Use structured bindings, reusable templates and registered extension components; adjust source only within the renderer-safe contract.
+- Preview/inspect HTML and client compatibility; recognize mail-client limitations rather than implying pixel-identical output.
+
+**Accessibility and quality gates**:
+- Keyboard/selection, focus retention, toolbar naming, screen-reader feedback, paste sanitization and no-loss editing must be tested in a real browser.
+- All controls share Base Design System components and fit both light and dark WP Admin themes.
+- Changing Advanced visibility cannot lose unsaved content; undo should group an individual authoring operation, not each keystroke.
+- No telemetry, tracking, remote fonts or external editor runtimes.
+- Mail Designer should meet WCAG-oriented keyboard and contrast expectations before Golden acceptance.
+
+**Source implementation milestone:** a first Visual/Advanced rich-text control has been added to the Base Mail inspector. It currently commits edits on leaving the control; full live WYSIWYG canvas editing, keyboard traversal, focus regression and WordPress integration are still OPEN. This is not acceptance of the complete beginner/pro UX.
+
 ## Target milestones and acceptance
 
 - **M0** Exact source/API audit and freeze the independent feature branch. Completed as document-only source reconciliation; visual browser audit and conflict analysis with current Base Luna branches OPEN.
