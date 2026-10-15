@@ -8,34 +8,34 @@ plugin version is `1.0.0`.
 ## Engineering DX: proven local Level 2 handoff (candidate)
 
 For an exact-head Base checkout use the repository-owned gates, not a manually
-constructed PHPUnit command or a guessed \`wordpress_test\` database:
+constructed PHPUnit command or a guessed `wordpress_test` database:
 
-\`\`\`sh
+```sh
 ./tools/check
 ./tools/check-integration --preflight
 ./tools/check-integration --dry-run
-\`\`\`
+```
 
 **Provisioning is never implicit.** On a genuinely fresh, inspected and
 separately approved Base test slot, the operator can authorize:
 
-\`\`\`sh
+```sh
 CB_BASE_INTEGRATION_APPROVAL=I_APPROVE_FRESH_BASE_TEST_DATABASE \
   ./tools/check-integration --execute
-\`\`\`
+```
 
 This creates only a new dedicated Base test schema and workspace, runs the full
 Level 2 matrix and records immutable exact-head receipts. Do not run
-\`--execute\` on an occupied slot; use \`--inspect\` to review an existing one.
+`--execute` on an occupied slot; use `--inspect` to review an existing one.
 Existing test schemas/workspaces/locks remain protected. The historical
-\`wordpress_test\` database is **not** a canonical automatic selection.
+`wordpress_test` database is **not** a canonical automatic selection.
 
 After a full Level 2 PASS, the **canonical** Python release builder can resolve
 the matching owned workspace itself:
 
-\`\`\`sh
+```sh
 python3 tools/build-release --output-dir dist/dx-candidate
-\`\`\`
+```
 
 It verifies exact source HEAD, WordPress version, owner record and lock,
 localhost-only database binding, dedicated schema presence, immutable per-gate
@@ -44,12 +44,12 @@ It then runs the usual complete release gates, including PHPUnit, before
 writing the customer ZIP and SHA-256 sidecar. It does **not** accept an old
 receipt for a newer commit, create a database, install WordPress or reset data.
 
-If the shell contains stale \`WP_*\` / \`CB_PLUGIN_FILE\` exports, explicitly
+If the shell contains stale `WP_*` / `CB_PLUGIN_FILE` exports, explicitly
 select the proven environment instead of mixing configurations:
 
-\`\`\`sh
+```sh
 CB_BASE_USE_PROVEN_LEVEL2=1 python3 tools/build-release --output-dir dist/dx-candidate
-\`\`\`
+```
 
 A fully specified manual environment still follows the historical explicit
 path; a partial one fails closed. Never override the proof failure or force
