@@ -51,15 +51,37 @@ def resolve(source: Path) -> dict[str, str]:
         raise preflight.PreflightError(
             "Full exact-head Level 2 PASS receipts are missing or incomplete."
         )
-    for path in (
-        execution.WP, execution.WP_TESTS, execution.PLUGIN_DIR,
+    # Validate each staged fixture component, not just its leaf. Reject
+    # symlinks anywhere in the WordPress plugin ancestor path; a symlinked
+    # wp-content/ or plugins/ could otherwise redirect the release runtime.
+    directories = (
+        execution.WP,
+        execution.WP / "wp-content",
+        execution.WP / "wp-content/plugins",
+        execution.WP_TESTS,
+        execution.WP_TESTS / "includes",
+        execution.PLUGIN_DIR,
+    )
+    files = (
         execution.WP / "wp-load.php",
         execution.WP_TESTS / "includes/bootstrap.php",
         execution.PLUGIN_DIR / "core-blueprint.php",
+    )
+    for path, expected_kind in (
+        *((directory, "directory") for directory in directories),
+        *((file, "file") for file in files),
     ):
         if path.is_symlink() or not path.exists():
             raise preflight.PreflightError(
                 "Required Level 2 fixture missing or replaced by a symlink."
+            )
+        info = path.stat()
+        if info.st_uid != os.getuid() or not (
+            stat.S_ISDIR(info.st_mode) if expected_kind == "directory"
+            else stat.S_ISREG(info.st_mode)
+        ):
+            raise preflight.PreflightError(
+                "Required Level 2 fixture has untrusted owner or file type."
             )
     # The builder rechecks runtime manifest, PHP and all mandatory gates.
     # Check parity here too, before providing any connection settings.
