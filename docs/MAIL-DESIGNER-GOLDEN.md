@@ -60,11 +60,11 @@ The editor reveals complexity progressively rather than forcing users to choose 
 ## Current isolated source batch (M0 / early M1-M2)
 
 Implemented without touching the operator's occupied Base clone:
-- Optional `mail.rich-text` node with **bounded allowlisted HTML fragment**, no scripts/styles/images, escaped binding substitution and an initial **source textarea inspector**. Real visual WYSIWYG interaction, robust text selection and keyboard editing are still open. Existing `mail.text` behavior is not changed.
+- Optional `mail.rich-text` node with **bounded allowlisted HTML fragment**, no scripts/styles/images, escaped binding substitution, a **beginner-facing visual contenteditable inspector** (bold, italic, underline, lists, safe links, plain-text paste), and an **Advanced** controlled-source disclosure. Changes commit through the Base session/history on leaving the field. Source editing and visual editing use the same sanitized value. This first visual implementation is **not** full canvas-level WYSIWYG, keyboard/accessibility or no-loss acceptance; those require installed runtime tests. Existing `mail.text` behavior is not changed.
 - Optional `mail.columns` containing exactly two `mail.column` containers. Section-level placement enforced by Validator, bounded ratio/gap, table-based Outlook structure, responsive stacked `td` style, editor selection markers and insertion into the selected column. Multi-column live browser rendering still requires confirmation.
 - `tests/integration/MailDesignerGoldenM1M2ContractTest.php` proposes PHP9.6/WP tests (allowlist/XSS, old text, valid/invalid columns).
-- `tests/js/mail-designer-golden-m1-m2.test.mjs` proposes JavaScript profile/palette/render-contract checks.
-- **GitHub source readback:** 9 focused guards verified; **NOT a PHP syntax, full test suite, browser or release-build PASS**.
+- `tests/js/mail-designer-golden-m1-m2.test.mjs` proposes JavaScript profile/palette/render-contract checks, visual/pro source behavior and link validation. Base Mail page styling is scoped in `assets/css/pages/mail-designer.css`.
+- **Independent source checks:** V8-parsed both modified Mail JavaScript modules; the pure safe-link validator correctly rejects script/data/invalid addresses while retaining valid HTTPS and mailto references. This is **NOT PHP syntax, full test suite, WordPress browser or release-build PASS**.
 
 This is a compatibility-oriented first code batch, not completion of the entire professional Designer. Do not release or merge until the full M1/M2 Golden and Base Luna branch reconciliation are complete.
 
