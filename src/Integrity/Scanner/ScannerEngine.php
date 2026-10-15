@@ -163,7 +163,10 @@ final class ScannerEngine {
 				|| (int) ( $coverage[ $key ]['path_escapes'] ?? 0 ) > 0
 				|| (int) ( $coverage[ $key ]['filesystem_errors'] ?? 0 ) > 0;
 
-			$coverage[ $key ]['state'] = ( $structural_incomplete || $unverified > 0 ) ? 'incomplete' : 'complete';
+			$previous_state = (string) ( $coverage[ $key ]['state'] ?? 'incomplete' );
+			$coverage[ $key ]['state'] = 'failed' === $previous_state
+				? 'failed'
+				: ( $structural_incomplete || $unverified > 0 || 'incomplete' === $previous_state ? 'incomplete' : 'complete' );
 		}
 
 		$state = 'complete';
@@ -182,7 +185,7 @@ final class ScannerEngine {
 			}
 		}
 
-				if ( (int) ( $coverage['uploads']['signature_unreadable'] ?? 0 ) > 0 ) {
+		if ( (int) ( $coverage['uploads']['signature_unreadable'] ?? 0 ) > 0 ) {
 			$coverage['uploads']['state'] = 'incomplete';
 			$state = 'incomplete';
 			if ( ! in_array( 'uploads', $incomplete_components, true ) ) {
