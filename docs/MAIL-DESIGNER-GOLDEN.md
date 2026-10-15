@@ -68,6 +68,18 @@ Implemented without touching the operator's occupied Base clone:
 
 This is a compatibility-oriented first code batch, not completion of the entire professional Designer. Do not release or merge until the full M1/M2 Golden and Base Luna branch reconciliation are complete.
 
+## M1-A: Inline canvas copy editing (source candidate; browser acceptance OPEN)
+
+UX contract is explicit: **single click selects**, **double click edits text**, **Inspector owns all styling and configuration**. Accessibility entry: F2 when a text block is selected. Escape discards current inline changes, Ctrl/Command+Enter applies, blur commits one session/history command. Headers also commit on Enter. The original Inspector controls remain the fallback for touch and non-inline contexts.
+
+Source code: `assets/js/design/mail/inline-text.js` and `assets/js/features/mail-designer.js` integrate via the Base public session `commands.setProperty` contract, not a separate editor store. Mail preview updates are suspended while editing and in-flight preview fetches are aborted to prevent overwriting the user's cursor. The outgoing Mail renderer emits inline selection outlines **only for editor markers**. The template has a brief guidance label.
+
+Initial inline types: Base `mail.heading`, `mail.text`, `mail.rich-text`. Dynamic binding tokens are **intentionally excluded** from inline editing to avoid replacing `{{binding}}` source with resolved preview data. Other content, including image properties, URLs, colors, font settings, spacing and responsive controls, remains Inspector-only. Advanced HTML editing continues through allowlisted Rich Text Inspector.
+
+Regression: `tests/js/mail-designer-inline-ux.test.mjs` covers node eligibility, binding guard and source integration. V8 compile checks of the changed JS modules PASS; pure inline eligibility checks (5 fixtures) PASS. **These are limited independent checks, not Node full suite, WordPress, browser, email client, integration or release PASS.**
+
+**Remaining before Golden:** contextual inline rich-text formatting controls, reliable focus/selection and keyboard/touch testing, project dirty-state and context-switch protection, full save/reopen evidence, accessibility, responsive/client parity, proper mail health checks. Reconcile Base Luna's concurrent Inspector/Designer changes before operator testing and any merge.
+
 ## Reconciliation handshake
 
 1. Freeze new branch SHA, file list, tests and scope.
