@@ -185,15 +185,19 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
 
     def test_unowned_fixture_rejected(self):
         with self.proved_workspace(), patch.object(release_env.Path, "stat") as fake_stat:
-            fake_stat.return_value.st_mode = stat.S_IFDIR | 0o700
-            fake_stat.return_value.st_uid = os.getuid() + 1
+            fake_stat.side_effect = lambda path: SimpleNamespace(
+                st_mode=(stat.S_IFREG | 0o600) if path.name == "lock" else (stat.S_IFDIR | 0o700),
+                st_uid=os.getuid() if path.name == "lock" else os.getuid() + 1,
+            )
             with self.assertRaisesRegex(preflight.PreflightError, "untrusted owner"):
                 release_env.resolve(Path("/source"))
 
     def test_nonregular_fixture_rejected(self):
         with self.proved_workspace(), patch.object(release_env.Path, "stat") as fake_stat:
-            fake_stat.return_value.st_mode = stat.S_IFDIR | 0o700
-            fake_stat.return_value.st_uid = os.getuid()
+            fake_stat.side_effect = lambda path: SimpleNamespace(
+                st_mode=(stat.S_IFREG | 0o600) if path.name == "lock" else (stat.S_IFDIR | 0o700),
+                st_uid=os.getuid(),
+            )
             with self.assertRaisesRegex(preflight.PreflightError, "untrusted owner or file type"):
                 release_env.resolve(Path("/source"))
 
