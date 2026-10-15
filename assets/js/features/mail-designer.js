@@ -497,6 +497,7 @@ if (root) {
 		select: (path) => selectionController?.select(path),
 		onStatus: setPreviewStatus,
 		onEditingChange: (isEditing) => {
+			syncDirtyIndicator();
 			if (isEditing) {
 				++previewRevision;
 				previewController?.abort();
@@ -688,7 +689,8 @@ if (root) {
 	document.addEventListener('keydown', (event) => {
 		if (event.key !== 'F2' || event.defaultPrevented || inlineEditor?.isEditing()) return;
 		const active = document.activeElement;
-		if (active?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+		if (!active || !shellRoot.contains(active)) return;
+		if (active.closest?.('input, textarea, select, [contenteditable="true"]')) return;
 		if (inlineEditor?.startSelected(preview.contentDocument)) event.preventDefault();
 	});
 	subjectField.addEventListener('input', schedulePreview);
