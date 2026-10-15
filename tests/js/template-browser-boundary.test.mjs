@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const browser = readFileSync(new URL('../../assets/js/core/template-browser.js', import.meta.url), 'utf8');
 const modal = readFileSync(new URL('../../assets/js/core/modal.js', import.meta.url), 'utf8');
+const styles = readFileSync(new URL('../../assets/css/components/template-library.css', import.meta.url), 'utf8');
 
 test('Template Browser exposes the canonical public module and shared workspace modal', () => {
   assert.match(browser, /import \{ show as showModal \} from '@cb-core\/modal'/);
@@ -47,4 +48,14 @@ test('T3 global management stays delegated to local owner screens', () => {
   assert.match(browser, /el\( 'a', 'button cb-template-browser__action'/);
   assert.doesNotMatch(browser, /fetch\([^\n]*method: 'POST'/);
   assert.doesNotMatch(browser, /onDelete|deleteTemplate|exportTemplate/);
+});
+
+test('standalone Template Library uses viewport-filling flex without changing Designer modal layout', () => {
+  assert.match(styles, /\.cb-template-browser\s*\{\s*display: grid;/);
+  assert.match(styles, /\.cb-template-library-page\s*\{[^}]*display: flex;[^}]*flex-direction: column;[^}]*min-height: calc\(100dvh - 80px\);/);
+  assert.match(styles, /\.cb-template-library-page > \[data-cb-template-library-global\]\s*\{[^}]*display: flex;[^}]*flex: 1 1 auto;/);
+  assert.match(styles, /\.cb-template-library-page \.cb-template-browser\s*\{[^}]*display: flex;[^}]*flex: 1 1 auto;/);
+  assert.match(styles, /\.cb-template-library-page \.cb-template-browser__sidebar\s*\{[^}]*flex: 0 0 clamp\(160px, 19%, 236px\);/);
+  assert.match(styles, /\.cb-template-library-page \.cb-template-browser__grid\s*\{[^}]*flex: 1 1 auto;/);
+  assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?\.cb-template-library-page \.cb-template-browser\s*\{ flex-direction: column; \}/);
 });
