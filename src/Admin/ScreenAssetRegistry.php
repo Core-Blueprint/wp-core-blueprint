@@ -258,6 +258,9 @@ final class ScreenAssetRegistry {
 			case 'core-scanner':
 				return array_merge( $items, [
 					'page.safeguards-core-scanner', 'component.panels', 'component.filter-bar', 'component.log-table',
+					// Scanner findings and About use the shared interactive row/disclosure grammar.
+					// Do not leave their summaries to native marker and block layout defaults.
+					'component.interactive-surfaces',
 					'foundation.modal', 'foundation.toast', 'module.core-scanner',
 				] );
 			case 'failsafe':
