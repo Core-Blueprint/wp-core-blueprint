@@ -22,7 +22,8 @@ for required in \
   tests/bin/php-lint.sh \
   tests/public-admin-navigation-foundation-regression.php \
   tests/public-tile-foundation-regression.php \
-  tests/public-core-scanner-threat-regression.php; do
+  tests/public-core-scanner-threat-regression.php \
+  tests/public-core-scanner-ui-regression.php; do
   [[ -f "$ROOT/$required" ]] || fail "required source check missing: $required"
 done
 [[ -d "$ROOT/tests/python" ]] || fail 'Python source-regression directory is missing'
@@ -37,6 +38,7 @@ printf '== Standalone public foundation regressions ==\n'
 php tests/public-admin-navigation-foundation-regression.php
 php tests/public-tile-foundation-regression.php
 php tests/public-core-scanner-threat-regression.php
+php tests/public-core-scanner-ui-regression.php
 
 shopt -s globstar nullglob
 js_sources=( "$ROOT"/assets/**/*.js )
