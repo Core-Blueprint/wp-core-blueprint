@@ -121,7 +121,7 @@ test('M1-D safe inline commands keep global settings in Inspector and finish dra
 	assert.match(toolbar, /documentRef\.addEventListener\('selectionchange', rememberSelection\)/);
 	assert.match(toolbar, /documentRef\.removeEventListener\('selectionchange', rememberSelection\)/);
 	assert.match(toolbar, /if \(key === 'k'\) return openLinkEditor\(\)/);
-	assert.match(toolbar, /selected\[0\]\.replaceWith\(list\)/);
+	assert.match(toolbar, /convertMailSelectionToList\(\{/);
 	assert.doesNotMatch(toolbar, /session\.execute|commands\.setProperty|fontSize|accentColor/);
 });
 
@@ -142,7 +142,10 @@ test('M1-E layers, inspector, palette and Base undo/redo respect unfinished inli
 	assert.match(consumer, /onCommit: \(markup\) => \{/);
 	assert.match(inspector, /if \(onCommit\(clean\) === false\)/);
 	assert.match(inspector, /value = clean;\s*return true;/);
-	assert.match(toolbar, /const paragraphsForRange = \(range\) =>/);
-	assert.match(toolbar, /selected\.slice\(1\)/);
+	assert.match(toolbar, /convertMailSelectionToList\(\{/);
+	assert.match(inspector, /convertMailSelectionToList\(\{/);
+	const listFormatter = await read('assets/js/design/mail/list-format.js');
+	assert.match(listFormatter, /entries\[0\]\.replaceWith\(list\)/);
+	assert.match(listFormatter, /entries\.slice\(1\)/);
 	assert.doesNotMatch(toolbar, /document\.execCommand/);
 });
