@@ -63,6 +63,29 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 			target.focus();
 			return false;
 		}
+		const startNode = range.startContainer?.nodeType === 1
+			? range.startContainer : range.startContainer?.parentElement;
+		const paragraph = startNode?.closest?.('p');
+		if (paragraph && target.contains(paragraph)) {
+			// Inserting a <ul> into a <p> creates invalid email HTML. Convert
+			// only an entire paragraph; partial selections remain unchanged.
+			if (String(range.toString()).trim() !== String(paragraph.textContent || '').trim()) {
+				onStatus('Select the entire paragraph to make it a list.');
+				return false;
+			}
+			const list = documentRef.createElement(type);
+			const item = documentRef.createElement('li');
+			while (paragraph.firstChild) item.append(paragraph.firstChild);
+			list.append(item);
+			paragraph.replaceWith(list);
+			restoreSelection(item);
+			return true;
+		}
+		const startListItem = startNode?.closest?.('li');
+		if (startListItem && target.contains(startListItem)) {
+			onStatus('Finish this list in the Inspector before changing its type.');
+			return false;
+		}
 		const list = documentRef.createElement(type);
 		const item = documentRef.createElement('li');
 		item.append(range.extractContents());
