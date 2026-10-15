@@ -317,8 +317,10 @@ trait ScannerOverviewView {
 					?>
 					<?php $component_url = self::scanner_view_url( 'findings', [ 'cb_integrity_component' => $component ] ); ?>
 					<a class="cb-core-integrity-component cb-core-integrity-component-filter" href="<?php echo esc_url( $component_url ); ?>">
-						<span><?php echo esc_html( 'mu_plugins' === $component ? __( 'MU-plugins', 'core-blueprint' ) : ucfirst( $component ) ); ?></span>
-						<?php echo StateBadge::render( strtoupper( $component_state ), [ 'variant' => self::state_badge_variant( $component_state ) ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
+						<span class="cb-core-integrity-coverage-head">
+							<span><?php echo esc_html( 'mu_plugins' === $component ? __( 'MU-plugins', 'core-blueprint' ) : ucfirst( $component ) ); ?></span>
+							<?php echo StateBadge::render( strtoupper( $component_state ), [ 'variant' => self::state_badge_variant( $component_state ) ] ); ?> <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Proven-safe Core Blueprint UI renderer owns context-specific escaping for its complete public payload. ?>
+						</span>
 						<small class="cb-core-integrity-muted"><?php echo esc_html( $coverage_label ); ?></small>
 						<?php if ( 'uploads' === $component ) : ?><small class="cb-core-integrity-muted"><?php echo esc_html( sprintf( __( 'Headers inspected: %1$d of %2$d traversed files', 'core-blueprint' ), (int) ( $component_coverage['signature_checked'] ?? 0 ), $checked ) ); ?></small><?php endif; ?>
 					</a>
