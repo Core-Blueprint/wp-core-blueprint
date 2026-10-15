@@ -80,7 +80,7 @@ final class TemplateSourceRegistry {
 						continue;
 					}
 					$label = trim( wp_strip_all_tags( $label ) );
-					if ( '' === $label || strlen( $label ) > 96 || preg_match( '/[\\x00-\\x1f\\x7f]/', $label ) ) {
+					if ( '' === $label || strlen( $label ) > 96 || preg_match( '/[\x00-\x1f\x7f]/', $label ) ) {
 						continue;
 					}
 					$items[$id] = [ 'id' => $id, 'label' => $label ];
