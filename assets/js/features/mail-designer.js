@@ -179,12 +179,22 @@ if (root) {
 
 		inlineEditor?.attach(doc);
 		doc.addEventListener('click', (event) => {
-			if (inlineEditor?.isEditing()) {
-				if (event.target?.closest?.('a')) event.preventDefault();
-				return;
-			}
 			const target = event.target && typeof event.target.closest === 'function' ? event.target : null;
 			const marker = target?.closest('[data-cb-mail-editor-node]');
+			if (inlineEditor?.isEditing()) {
+				// Do not navigate a link inside the editable mail canvas.
+				if (target?.closest('a')) event.preventDefault();
+				const active = inlineEditor.activePath();
+				const clicked = marker ? markerPath(marker) : null;
+				if (!clicked || (active && samePath(clicked, active))) return;
+				// A failed inline commit must not silently lose its draft when
+				// the user clicks a different block. Keep the original active.
+				if (!inlineEditor.finish(true)) {
+					event.preventDefault();
+					event.stopPropagation();
+					return;
+				}
+			}
 			if (!marker) return;
 			const path = markerPath(marker);
 			if (!path) return;
