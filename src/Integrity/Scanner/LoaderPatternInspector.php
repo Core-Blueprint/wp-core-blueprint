@@ -36,6 +36,17 @@ final class LoaderPatternInspector {
 			if ( ! in_array( $name, [ 'rename', 'exec', 'shell_exec', 'system', 'passthru', 'proc_open', 'popen', 'com' ], true ) ) {
 				continue;
 			}
+			// Method names, static calls and declarations are not the
+			// global execution/rename functions this heuristic models.
+			$previous = $i - 1;
+			while ( $previous >= 0 && is_array( $tokens[ $previous ] )
+				&& in_array( $tokens[ $previous ][0], [ T_WHITESPACE, T_COMMENT, T_DOC_COMMENT ], true ) ) {
+				$previous--;
+			}
+			if ( $previous >= 0 && is_array( $tokens[ $previous ] )
+				&& in_array( $tokens[ $previous ][0], [ T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION ], true ) ) {
+				continue;
+			}
 			$next = $i + 1;
 			while ( $next < $count && is_array( $tokens[ $next ] )
 				&& in_array( $tokens[ $next ][0], [ T_WHITESPACE, T_COMMENT, T_DOC_COMMENT ], true ) ) {
