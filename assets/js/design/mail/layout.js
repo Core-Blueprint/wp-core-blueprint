@@ -36,14 +36,32 @@ export const normalizeMailLayout = (layout = {}) => {
 	});
 };
 
-const validateNode = (node, depth = 0) => {
+const STRUCTURAL_TYPES = new Set(['mail.root', 'mail.section', 'mail.columns', 'mail.column']);
+const validateNode = (node, depth = 0, parent = null) => {
 	if (depth > 64) throw new RangeError('Mail design tree exceeds the supported nesting depth.');
 	if (!isObject(node)) throw new TypeError('Every mail design node must be an object.');
 	if (typeof node.type !== 'string' || node.type === '') throw new TypeError('Mail design nodes require a type.');
 	if (typeof node.provider !== 'string' || node.provider === '') throw new TypeError('Mail design nodes require a provider.');
 	if (!isObject(node.properties)) throw new TypeError('Mail design node properties must be an object.');
 	if (!Array.isArray(node.children)) throw new TypeError('Mail design node children must be an array.');
-	node.children.forEach((child) => validateNode(child, depth + 1));
+	// Match the server's Mail structural contract without restricting
+	// extension-owned leaf components or changing the shared Designer Shell.
+	if (node.type === 'mail.section' && parent !== 'mail.root') {
+		throw new TypeError('Mail sections must be direct children of the mail root.');
+	}
+	if (node.type === 'mail.columns') {
+		if (parent !== 'mail.section') throw new TypeError('Mail columns must belong directly to a section.');
+		if (node.children.length !== 2 || node.children.some((child) => (
+			!isObject(child) || child.type !== 'mail.column' || child.provider !== 'core'
+		))) throw new TypeError('Mail two-column layouts require two core column containers.');
+	}
+	if (node.type === 'mail.column') {
+		if (parent !== 'mail.columns') throw new TypeError('Mail column containers require a parent columns layout.');
+		if (node.children.some((child) => isObject(child) && STRUCTURAL_TYPES.has(child.type))) {
+			throw new TypeError('Mail columns may contain content blocks, not structural layouts.');
+		}
+	}
+	node.children.forEach((child) => validateNode(child, depth + 1, node.type));
 };
 
 export const validateProject = (project) => {

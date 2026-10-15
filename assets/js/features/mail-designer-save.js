@@ -47,12 +47,16 @@ if (root) {
 
 	if (form && ajaxUrl && typeof fetch === 'function' && typeof FormData === 'function') {
 		form.addEventListener('submit', (event) => {
+			// The Mail consumer may cancel an invalid inline-text commit.
+			if (event.defaultPrevented) return;
 			event.preventDefault();
 			void saveInPlace();
 		});
 	}
 
-	window.addEventListener('beforeunload', () => {
+	// beforeunload can be cancelled: never abort an in-flight save until the
+	// browser is actually leaving the editor.
+	window.addEventListener('pagehide', () => {
 		saveController?.abort();
 	}, { once: true });
 }
