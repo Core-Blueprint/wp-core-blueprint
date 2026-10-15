@@ -1,5 +1,6 @@
 """Fail-closed release-environment binding: no Docker or WordPress required."""
 import os
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 import sys
 import unittest
@@ -76,6 +77,82 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
             status.return_value.st_mode = 0o100600
             with self.assertRaisesRegex(preflight.PreflightError, "PASS receipts"):
                 release_env.resolve(Path("/source"))
+
+
+    @contextmanager
+    def proved_workspace(self):
+        """Simulate all read-only external evidence, without invoking Docker."""
+        env = {key: "verified_" + key for key in release_env.REQUIRED}
+        env["WP_PHPUNIT__TABLE_PREFIX"] = "cbtests_"
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(release_env.plan, "SOURCE", Path("/source")))
+            stack.enter_context(patch.object(release_env.execution, "TEST_ROOT", Path("/tmp/core-blueprint-base")))
+            stack.enter_context(patch.object(release_env.execution, "OWNER_FILE", Path("/tmp/owner")))
+            stack.enter_context(patch.object(release_env.execution, "LOCK_FILE", Path("/tmp/lock")))
+            stack.enter_context(patch.object(release_env.preflight, "verify_parent_security"))
+            stack.enter_context(patch.object(release_env.inspect, "owner_record", return_value={
+                "git_sha": "a" * 40, "wordpress": "7.0"
+            }))
+            stack.enter_context(patch.object(release_env.plan, "verify_source"))
+            stack.enter_context(patch.object(release_env.preflight, "read_source_commit", return_value="a" * 40))
+            stack.enter_context(patch.object(release_env.inspect, "require_file"))
+            stack.enter_context(patch.object(release_env.Path, "is_symlink", return_value=False))
+            stack.enter_context(patch.object(release_env.Path, "exists", return_value=True))
+            stat_mock = stack.enter_context(patch.object(release_env.Path, "stat"))
+            stat_mock.return_value.st_mode = 0o100600
+            stack.enter_context(patch.object(release_env.preflight, "read_docker_metadata", return_value={}))
+            docker = stack.enter_context(patch.object(
+                release_env.preflight, "validate_docker_metadata", return_value=([], "safe")
+            ))
+            database = stack.enter_context(patch.object(release_env.plan, "database_exists", return_value=True))
+            receipts = stack.enter_context(patch.object(
+                release_env.inspect, "final_evidence", return_value="PASS (recorded full Level 2 matrix)"
+            ))
+            parity = stack.enter_context(patch.object(release_env.execution, "verify_runtime_parity"))
+            stack.enter_context(patch.object(release_env.execution, "test_environment", return_value=env))
+            yield docker, database, receipts, parity
+
+    def test_verified_workspace_can_resolve_without_manual_paths(self):
+        with self.proved_workspace() as (_, _, _, parity):
+            result = release_env.resolve(Path("/source"))
+        self.assertEqual(result["WP_DB_NAME"], "verified_WP_DB_NAME")
+        parity.assert_called_once_with("a" * 40)
+
+    def test_wrong_head_is_blocked_before_database_contact(self):
+        with self.proved_workspace() as (_, database, _, _), patch.object(
+            release_env.preflight, "read_source_commit", return_value="b" * 40
+        ):
+            with self.assertRaisesRegex(preflight.PreflightError, "different source SHA"):
+                release_env.resolve(Path("/source"))
+            database.assert_not_called()
+
+    def test_unsafe_docker_binding_blocks_database_access(self):
+        with self.proved_workspace() as (docker, database, _, _):
+            docker.side_effect = preflight.PreflightError("beyond loopback")
+            with self.assertRaisesRegex(preflight.PreflightError, "beyond loopback"):
+                release_env.resolve(Path("/source"))
+            database.assert_not_called()
+
+    def test_missing_dedicated_database_blocks_receipt_reuse(self):
+        with self.proved_workspace() as (_, database, receipts, _):
+            database.return_value = False
+            with self.assertRaisesRegex(preflight.PreflightError, "database is missing"):
+                release_env.resolve(Path("/source"))
+            receipts.assert_not_called()
+
+    def test_modified_plugin_runtime_blocks_release(self):
+        with self.proved_workspace() as (_, _, _, parity):
+            parity.side_effect = preflight.PreflightError("runtime bytes differ")
+            with self.assertRaisesRegex(preflight.PreflightError, "runtime bytes differ"):
+                release_env.resolve(Path("/source"))
+
+    def test_symlinked_fixture_blocks_release(self):
+        with self.proved_workspace(), patch.object(
+            release_env.Path, "is_symlink", side_effect=lambda p: p.name == "core-blueprint.php"
+        ):
+            with self.assertRaisesRegex(preflight.PreflightError, "symlink"):
+                release_env.resolve(Path("/source"))
+
 
 
 if __name__ == "__main__":
