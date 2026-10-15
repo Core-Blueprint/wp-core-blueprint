@@ -40,9 +40,9 @@ test('One click remains selection, double click enables text, Escape cancels, bl
 	assert.match(inline, /documentRef\.addEventListener\('dblclick'/);
 	assert.match(inline, /target\.setAttribute\('contenteditable'/);
 	assert.match(inline, /event\.key === 'Escape'/);
-	assert.match(inline, /finish\(false\)/);
+	assert.match(inline, /finishFromKeyboard\(false\)/);
 	assert.match(inline, /target\.addEventListener\('blur'/);
-	assert.match(inline, /finish\(true\)/);
+	assert.match(inline, /finishFromKeyboard\(true\)/);
 	assert.match(inline, /executeProperty\(active\.path, active\.property, next\)/);
 	assert.match(inline, /!HAS_DYNAMIC_BINDING\.test/);
 	assert.match(inline, /serializeMailMarkup/);
