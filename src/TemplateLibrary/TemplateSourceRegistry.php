@@ -87,7 +87,7 @@ final class TemplateSourceRegistry {
 				}
 				ksort( $items, SORT_STRING );
 				$catalog[$source_id] = array_values( $items );
-			} catch ( \\Throwable ) {
+			} catch ( \Throwable ) {
 				// A failing provider cannot expose facets or affect other sources.
 			}
 		}
