@@ -13,7 +13,8 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 		const current = selection();
 		if (!current?.rangeCount || current.isCollapsed) return null;
 		const range = current.getRangeAt(0);
-		return target.contains(range.commonAncestorContainer) ? range : null;
+		return target.contains(range.commonAncestorContainer)
+			&& String(range.toString?.() ?? '').trim() ? range : null;
 	};
 	const toolbar = documentRef.createElement('div');
 	toolbar.className = 'cb-mail-inline-format';
@@ -30,27 +31,51 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 		toolbar.append(control);
 		return control;
 	};
+	const restoreSelection = (node) => {
+		const current = selection();
+		if (!current) return;
+		current.removeAllRanges();
+		const caret = documentRef.createRange();
+		caret.selectNodeContents(node);
+		caret.collapse(false);
+		current.addRange(caret);
+		target.focus();
+	};
 	const wrapSelection = (tag) => {
 		const range = selectedRange();
 		if (!range) {
 			onStatus('Select some text first.');
 			target.focus();
-			return;
+			return false;
 		}
 		const wrapper = documentRef.createElement(tag);
 		wrapper.append(range.extractContents());
 		range.insertNode(wrapper);
-		const current = selection();
-		current?.removeAllRanges();
-		const caret = documentRef.createRange();
-		caret.selectNodeContents(wrapper);
-		caret.collapse(false);
-		current?.addRange(caret);
-		target.focus();
+		restoreSelection(wrapper);
+		return true;
+	};
+	// Creating a list modifies only the selected content; no layout/typography
+	// properties are ever changed by the contextual formatting toolbar.
+	const listSelection = (type) => {
+		const range = selectedRange();
+		if (!range) {
+			onStatus('Select the text to place in a list.');
+			target.focus();
+			return false;
+		}
+		const list = documentRef.createElement(type);
+		const item = documentRef.createElement('li');
+		item.append(range.extractContents());
+		list.append(item);
+		range.insertNode(list);
+		restoreSelection(item);
+		return true;
 	};
 	button('B', 'Bold selected text', () => wrapSelection('strong'));
 	button('I', 'Italicize selected text', () => wrapSelection('em'));
 	button('U', 'Underline selected text', () => wrapSelection('u'));
+	button('• List', 'Create bulleted list from selected text', () => listSelection('ul'));
+	button('1. List', 'Create numbered list from selected text', () => listSelection('ol'));
 
 	const linkPanel = documentRef.createElement('div');
 	linkPanel.className = 'cb-mail-inline-format__link';
@@ -66,16 +91,18 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 	const linkStatus = documentRef.createElement('span');
 	linkStatus.setAttribute('role', 'status');
 	let linkRange = null;
-	button('Link', 'Link selected text', () => {
+	const openLinkEditor = () => {
 		linkRange = selectedRange()?.cloneRange() || null;
 		if (!linkRange) {
 			onStatus('Select some text first.');
-			return;
+			return false;
 		}
 		linkStatus.textContent = '';
 		linkPanel.hidden = false;
 		linkInput.focus();
-	});
+		return true;
+	};
+	button('Link', 'Link selected text', openLinkEditor);
 	const apply = documentRef.createElement('button');
 	apply.type = 'button';
 	apply.textContent = 'Apply';
@@ -105,6 +132,7 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 		anchor.append(linkRange.extractContents());
 		linkRange.insertNode(anchor);
 		closeLink();
+		restoreSelection(anchor);
 	});
 	cancel.addEventListener('click', closeLink);
 	linkInput.addEventListener('keydown', (event) => {
@@ -148,6 +176,15 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 		element: toolbar,
 		contains: (node) => Boolean(node && toolbar.contains(node)),
 		reposition,
+		applyShortcut: (event) => {
+			if (!(event?.ctrlKey || event?.metaKey) || event.altKey) return false;
+			const key = String(event.key || '').toLowerCase();
+			if (key === 'b') return wrapSelection('strong');
+			if (key === 'i') return wrapSelection('em');
+			if (key === 'u') return wrapSelection('u');
+			if (key === 'k') return openLinkEditor();
+			return false;
+		},
 		destroy: () => toolbar.remove(),
 	};
 };
