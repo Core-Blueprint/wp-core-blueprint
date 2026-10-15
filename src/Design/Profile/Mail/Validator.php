@@ -102,6 +102,21 @@ final class Validator {
 		if ( 'mail.column' === $type && 'mail.columns' !== $parent_type ) {
 			$diagnostics->error( 'mail.column_parent', 'Mail columns cannot exist outside a columns layout.', $location );
 		}
+		if ( 'mail.column' === $type ) {
+			// Column contents render inside a table of rows; nested structural
+			// containers would produce invalid mail table markup.
+			foreach ( $children as $child_index => $child ) {
+				if (
+					is_array( $child )
+					&& in_array( $child['type'] ?? null, [ 'mail.root', 'mail.section', 'mail.columns', 'mail.column' ], true )
+				) {
+					$diagnostics->error( 'mail.column_structural_child', 'A column can contain content blocks, not another mail layout.', $location . '.children.' . $child_index );
+				}
+			}
+		}
+		if ( 'mail.section' === $type && 'mail.root' !== $parent_type ) {
+			$diagnostics->error( 'mail.section_parent', 'Mail sections must belong directly to the mail root.', $location );
+		}
 		if ( 'mail.rich-text' === $type && is_array( $properties ) ) {
 			if ( ! is_string( $properties['markup'] ?? null ) || strlen( $properties['markup'] ) > 100000 ) {
 				$diagnostics->error( 'mail.rich_text_markup', 'Rich text requires bounded markup.', $location . '.properties.markup' );
