@@ -94,6 +94,20 @@ Source implementation:
 
 **Golden acceptance OPEN:** source parses and focused readback cannot verify actual caret position, toolbar/link focus, undo/redo granularity, clipboard behavior, user cancellation, AJAX races, i18n, form save/reopen, mobile/touch, accessibility or WordPress Mail context switching. Run clean isolated browser + WP7.0/7.1 tests only after Base Luna's concurrent work is reconciled. Do not merge this branch or claim a Golden milestone yet.
 
+## M1-C: Interaction hardening (isolated source + simulated runtime)
+
+This batch adds resilience around the initial M1-A/M1-B inline edit candidate:
+
+- **Single-click selection remains in the canonical canvas selection controller; double-click or F2 opens direct editing.** F2 now works from the outer Designer Layers/controls as well as the iframe, but is scoped to the active Designer Shell so it does not capture shortcuts elsewhere in WordPress Admin.
+- Source bindings are never reverse-interpolated from preview: **all** `{{` / `}}` token fragments are excluded, even unrecognized or malformed tokens, not just the known registry format. Their original content stays editable in the Inspector.
+- While a text edit is active, **preview fetches are aborted and revision-guarded**. Late responses cannot overwrite the current contenteditable element. Aborted/stale errors do not replace a newer status message.
+- Switching the inline target commits the old text first; if that commit fails, the new target is not opened. A failed command, unreadable markup or text exceeding the length limit leaves the current draft **in its editable DOM**, rather than discarding it.
+- Escape from the inline toolbar cancels editing, and keyboard completion restores focus to the edited element. The inline text session continues to issue **one property command per completed edit**, allowing the existing Base history to record changes.
+- Source test additions: `tests/js/mail-designer-inline-runtime.test.mjs` uses a small isolated DOM boundary mock to invoke the actual inline controller across commit, cancel, F2, failed/retried save, oversize, bindings and focus. `tests/js/mail-designer-inline-ux.test.mjs` verifies preview revision guards and selector/Inspector integration.
+- Isolated execution evidence: V8 syntax compilation of the four relevant JS modules PASS; **8/8 mocked-controller behavioral cases PASS**; **6/6 focused source/pure assertions PASS**. These were executed outside the Base WordPress runtime and are not substitutes for the complete Node/WordPress/browser/Outlook or build/release suites.
+
+**Open reconciliation acceptance:** rich-text DOM selection and link-focus with a real browser, WebKit/mobile touch, canvas/Inspector editing round trip, consecutive undo/redo, cancellation of invalid edits during actual AJAX submits, save failure/retry, full email-client HTML compatibility and tests with Base Luna's concurrent Designer changes. Never label Golden based only on isolated tests.
+
 ## Reconciliation handshake
 
 1. Freeze new branch SHA, file list, tests and scope.
