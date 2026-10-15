@@ -13,8 +13,18 @@ const MAX_MARKUP_LENGTH = 100000;
 export const safeMailLink = (raw) => {
 	const url = String(raw || '').trim();
 	if (!url || /[\u0000-\u001f\u007f]/.test(url)) return '';
-	// Absolute addresses only. The server still validates protocols with wp_kses.
-	return /^(https?:\/\/|mailto:)/i.test(url) ? url : '';
+	try {
+		const parsed = new URL(url);
+		if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+			return parsed.hostname ? url : '';
+		}
+		if (parsed.protocol === 'mailto:') {
+			return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsed.pathname) ? url : '';
+		}
+	} catch {
+		return '';
+	}
+	return '';
 };
 
 export const sanitizeMailMarkup = (source, documentRef) => {
