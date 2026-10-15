@@ -108,6 +108,20 @@ This batch adds resilience around the initial M1-A/M1-B inline edit candidate:
 
 **Open reconciliation acceptance:** rich-text DOM selection and link-focus with a real browser, WebKit/mobile touch, canvas/Inspector editing round trip, consecutive undo/redo, cancellation of invalid edits during actual AJAX submits, save failure/retry, full email-client HTML compatibility and tests with Base Luna's concurrent Designer changes. Never label Golden based only on isolated tests.
 
+## M1-D: Composer usability, contextual lists and selection handling (source candidate)
+
+The Base Mail inline editing toolbar now supports a deliberate small set of **content commands only**: B/I/U, a link field with existing `safeMailLink` validation, single-item bulleted and numbered lists, and Ctrl/Command+B/I/U/K. Global layout, typography, alignment, spacing, image and CTA link properties remain Inspector-owned.
+
+- Mail toolbar `assets/js/design/mail/inline-toolbar.js` only acts on a **nonempty selection within the current editable block**. It retains an editor-owned Range while focus moves to a button, drops it after an action, and removes its `selectionchange` listener on toolbar teardown. No range outside the active text block is accepted.
+- List conversion avoids nesting `<ul>` or `<ol>` inside `<p>`: a whole paragraph can be converted; a partial paragraph selection stays unchanged with explanatory status. Multi-paragraph list UX and actual Outlook/HTML parity remain acceptance work.
+- `assets/js/design/mail/inline-text.js` forwards rich-text shortcuts to the toolbar, exposes the active path, and leaves plain Heading/Text nodes in copy-only mode.
+- `assets/js/features/mail-designer.js` commits the previous inline edit before selecting another canvas node with a single click. A failed commit leaves editing active and blocks the new selection, rather than silently dropping data.
+- `tests/js/mail-designer-inline-format.test.mjs` covers toolbar selection, B/I/U, bullet/number list creation, safe vs invalid links, shortcut scope, retained focus-range teardown and partial-paragraph protection. The existing M1-A/B/C source tests were reconciled to the controller's current return shape and keyboard finish wrapper.
+
+**Evidence:** Isolated V8 compilation of the touched JavaScript modules and test source PASS; **7/7** new toolbar mock-DOM behavioral cases PASS and **15/15** prior inline-controller/source cases PASS. These are not a real browser, Node full suite, PHP/WP integration, Outlook compatibility or a distribution build. Operator's Base workspace remains with Base Luna; no merge, CI or release.
+
+**Next after Base Luna:** reconcile shared Designer, Mail profile, Inspector and Template Library APIs; test actual selection/caret, focused/blurred toolbar link form, multi-paragraph lists, inline/Inspector round trips, undo/redo, persistent save/reopen and mobile/keyboard accessibility in staging. Expand M2/M3 only after these are assessed.
+
 ## Reconciliation handshake
 
 1. Freeze new branch SHA, file list, tests and scope.
