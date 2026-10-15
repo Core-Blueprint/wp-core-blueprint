@@ -101,7 +101,7 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
             stack.enter_context(patch.object(release_env.inspect, "require_file"))
             stack.enter_context(patch.object(release_env.Path, "is_symlink", return_value=False))
             stack.enter_context(patch.object(release_env.Path, "exists", return_value=True))
-            stat_mock = stack.enter_context(patch.object(release_env.Path, "stat"))
+            stat_mock = stack.enter_context(patch.object(release_env.Path, "stat", autospec=True))
             stat_mock.side_effect = lambda path: SimpleNamespace(
                 st_mode=(stat.S_IFDIR | 0o700)
                 if path.name in ("wp", "wp-tests", "wp-content", "plugins", "includes", "core-blueprint")
@@ -184,20 +184,24 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
                 release_env.resolve(Path("/source"))
 
     def test_unowned_fixture_rejected(self):
-        with self.proved_workspace(), patch.object(release_env.Path, "stat") as fake_stat:
-            fake_stat.side_effect = lambda path: SimpleNamespace(
+        def unowned_stat(path):
+            return SimpleNamespace(
                 st_mode=(stat.S_IFREG | 0o600) if path.name == "lock" else (stat.S_IFDIR | 0o700),
                 st_uid=os.getuid() if path.name == "lock" else os.getuid() + 1,
             )
+
+        with self.proved_workspace(), patch.object(release_env.Path, "stat", new=unowned_stat):
             with self.assertRaisesRegex(preflight.PreflightError, "untrusted owner"):
                 release_env.resolve(Path("/source"))
 
     def test_nonregular_fixture_rejected(self):
-        with self.proved_workspace(), patch.object(release_env.Path, "stat") as fake_stat:
-            fake_stat.side_effect = lambda path: SimpleNamespace(
+        def wrong_type_stat(path):
+            return SimpleNamespace(
                 st_mode=(stat.S_IFREG | 0o600) if path.name == "lock" else (stat.S_IFDIR | 0o700),
                 st_uid=os.getuid(),
             )
+
+        with self.proved_workspace(), patch.object(release_env.Path, "stat", new=wrong_type_stat):
             with self.assertRaisesRegex(preflight.PreflightError, "untrusted owner or file type"):
                 release_env.resolve(Path("/source"))
 
