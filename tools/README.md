@@ -71,15 +71,19 @@ customer artifact verification, and runtime acceptance are recorded.
 - Python 3.10+, PHP 8.4+, Node.js with `node --test`, Bash and unzip;
 - PHP DOM, XML, XMLWriter, mbstring, mysqli, GD and sodium extensions;
 - locked development dependencies installed with `composer install`;
-- an isolated WordPress test runtime/database prepared using `tests/README.md`;
-- explicit `WP_CORE_DIR`, `WP_TESTS_DIR`, `CB_PLUGIN_FILE`, `WP_DB_NAME`,
-  `WP_DB_USER`, `WP_DB_PASSWORD` and `WP_DB_HOST` environment variables.
+- an exact-head isolated WordPress test runtime/database with complete Level 2 proof;
+- either the automatically verified owned Level 2 workspace (preferred) or
+  a separately inspected, complete explicit `WP_CORE_DIR`, `WP_TESTS_DIR`,
+  `CB_PLUGIN_FILE`, `WP_DB_NAME`, `WP_DB_USER`, `WP_DB_PASSWORD`
+  and `WP_DB_HOST` configuration.
 
 Never point the integration suite at a real site database. The builder neither
-installs dependencies nor downloads WordPress nor chooses a database for you.
-`CB_PLUGIN_FILE` must identify a canonical `core-blueprint/core-blueprint.php`
-test copy whose runtime manifest and bytes match the source being packaged.
-Refresh that copy with the existing test installer when source changes.
+installs dependencies nor downloads WordPress nor creates/resets a database.
+On the proven path, the selected dedicated database comes only from signed-off
+runner ownership and exact-head Level 2 receipts. `CB_PLUGIN_FILE` must
+identify a canonical `core-blueprint/core-blueprint.php` test copy whose runtime
+manifest and bytes match the source being packaged. Never refresh it using a
+historical destructive installer without separate explicit operator approval.
 
 ## Build
 
