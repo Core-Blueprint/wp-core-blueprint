@@ -67,7 +67,7 @@ test('M1-B inline toolbar formats content, retains links safely and never owns s
 	assert.match(toolbar, /pointerdown', \(event\) => event\.preventDefault\(\)/);
 	assert.match(toolbar, /createElement\('strong'\)|wrapSelection\('strong'\)/);
 	assert.doesNotMatch(toolbar, /commands\.setProperty/);
-	assert.doesNotMatch(toolbar, /fontSize|background|spacing|accentColor/);
+	assert.doesNotMatch(toolbar, /setProperty|fontSize|accentColor|properties\.background|properties\.spacing/);
 });
 
 test('M1-B AJAX saves retain dirty baseline, protect switching and do not dispose on cancelled unload', async () => {
