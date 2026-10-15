@@ -8,6 +8,7 @@ import {
 	createSession,
 	profiles,
 } from '@cb-core/design-editor';
+import { createMailRichTextControls } from '../design/mail/rich-text-controls.js';
 
 const root = document.querySelector('[data-cb-mail-designer]');
 
@@ -242,6 +243,16 @@ if (root) {
 		label.textContent = field.label || field.key;
 		wrapper.append(label);
 
+		if (field.key === 'markup' && field.type === 'textarea') {
+			const richText = createMailRichTextControls({
+				documentRef: document,
+				value: String(value ?? ''),
+				onCommit: (markup) => session.execute(commands.setProperty(path, ['markup'], markup)),
+			});
+			wrapper.append(richText.element);
+			return wrapper;
+		}
+
 		let input;
 		if (field.type === 'textarea') {
 			input = document.createElement('textarea');
@@ -368,8 +379,8 @@ if (root) {
 
 	const nodeSummary = (node, definition) => {
 		const properties = node?.properties || {};
-		const source = properties.text || properties.label || properties.alt || properties.url || '';
-		const text = String(source).replace(/\s+/g, ' ').trim();
+		const source = properties.text || properties.markup || properties.label || properties.alt || properties.url || '';
+		const text = String(source).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 		return text ? text.slice(0, 70) : (definition?.label || node?.type || 'Element');
 	};
 
