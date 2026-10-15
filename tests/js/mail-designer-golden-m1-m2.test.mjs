@@ -73,6 +73,8 @@ test('beginner-facing link helper refuses active and unsupported URLs', () => {
 	assert.equal(safeMailLink('javascript:alert(1)'), '');
 	assert.equal(safeMailLink('data:text/html,evil'), '');
 	assert.equal(safeMailLink('file:///etc/passwd'), '');
+	assert.equal(safeMailLink('https://'), '');
+	assert.equal(safeMailLink('mailto:not-an-email'), '');
 	assert.equal(safeMailLink('https://example.org/news'), 'https://example.org/news');
 	assert.equal(safeMailLink('mailto:help@example.org'), 'mailto:help@example.org');
 });
