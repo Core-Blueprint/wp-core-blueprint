@@ -19,6 +19,7 @@
 ## Regression evidence / gates
 
 - New standalone read-only `tests/public-core-scanner-ui-regression.php` guards the Scanner asset selection, shared native-marker overrides, renderer classes, tab overflow and coverage geometry.
+- The isolated `tests/python/test_check_entrypoint.py` Level 1 orchestration fixtures now include that required UI source test and assert its invocation/order, absence fail-closed behavior, and failure short-circuiting. This resolves seven reported Python failures caused by a stale mocked source inventory; it does not weaken the gate.
 - `bash tools/check` includes this new source gate after the existing Scanner security gate. The security regression stays mandatory.
 - New WordPress `tests/integration/IntegrityScannerPresentationContractTest.php` checks tab-scoped asset requirements and canonical stylesheet enqueue.
 - The GitHub-authored patch has not been run against the operator's local PHP/Node/WordPress browser environment. Do not classify any check as PASS based solely on static source inspection or the parent ZIP.
