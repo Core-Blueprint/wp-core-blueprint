@@ -83,7 +83,7 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 		if (from < 0 || to < from) return null;
 		const selected = children.slice(from, to + 1);
 		if (selected.some((node) => node.tagName?.toLowerCase() !== 'p')) return null;
-		const normalize = (value) => String(value || '').replace(/\\s+/g, '');
+		const normalize = (value) => String(value || '').replace(/\s+/g, '');
 		if (!selected.length || normalize(range.toString()) !== normalize(selected.map((node) => node.textContent).join(''))) return null;
 		return selected;
 	};
