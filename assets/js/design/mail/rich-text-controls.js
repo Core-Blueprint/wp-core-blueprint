@@ -3,6 +3,8 @@
  * A controlled HTML subset is shared by Visual and Advanced source views.
  * Server-side Mail RichText remains authoritative on save and rendering.
  */
+import { convertMailSelectionToList } from './list-format.js';
+
 export const MAIL_INLINE_TAGS = Object.freeze(['STRONG', 'EM', 'U']);
 const ALLOWED_TAGS = new Set([
 	'P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'A',
@@ -149,24 +151,16 @@ export const createMailRichTextControls = ({
 	const changeList = (tag) => {
 		const range = selectedRange();
 		if (!range) return;
-		const selection = documentRef.getSelection();
-		const anchor = selection?.anchorNode?.nodeType === 1
-			? selection.anchorNode : selection?.anchorNode?.parentElement;
-		const paragraph = anchor?.closest?.('p');
-		if (paragraph && editor.contains(paragraph) && range.toString() === paragraph.textContent) {
-			const list = documentRef.createElement(tag);
-			const li = documentRef.createElement('li');
-			while (paragraph.firstChild) li.append(paragraph.firstChild);
-			list.append(li);
-			paragraph.replaceWith(list);
-		} else {
-			const list = documentRef.createElement(tag);
-			const li = documentRef.createElement('li');
-			li.append(range.extractContents());
-			list.append(li);
-			range.insertNode(list);
-		}
-		focusEditor();
+		const item = convertMailSelectionToList({
+			documentRef,
+			target: editor,
+			range,
+			type: tag,
+			onStatus: (message) => {
+				linkError.textContent = message;
+			},
+		});
+		if (item) focusEditor();
 	};
 
 	addButton(documentRef, toolbar, 'B', 'Bold selected text', () => wrapSelection('strong'));
