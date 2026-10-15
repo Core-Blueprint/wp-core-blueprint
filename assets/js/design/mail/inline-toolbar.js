@@ -9,12 +9,27 @@ import { safeMailLink } from './rich-text-controls.js';
 export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => {} }) => {
 	if (!documentRef?.createElement || !target) throw new TypeError('Inline toolbar requires the active preview document and text target.');
 	const selection = () => documentRef.getSelection?.() || null;
+	let retainedRange = null;
+	const isInTarget = (range) => Boolean(range
+		&& target.contains(range.commonAncestorContainer)
+		&& String(range.toString?.() ?? '').trim());
+	// Focus can move to a toolbar button before its click handler fires.
+	// Retain only ranges proven to belong to the current editable block.
+	const rememberSelection = () => {
+		const current = selection();
+		if (current?.rangeCount && !current.isCollapsed) {
+			const range = current.getRangeAt(0);
+			if (isInTarget(range)) retainedRange = range.cloneRange();
+		} else if (documentRef.activeElement === target) {
+			retainedRange = null;
+		}
+	};
+	documentRef.addEventListener('selectionchange', rememberSelection);
 	const selectedRange = () => {
 		const current = selection();
-		if (!current?.rangeCount || current.isCollapsed) return null;
-		const range = current.getRangeAt(0);
-		return target.contains(range.commonAncestorContainer)
-			&& String(range.toString?.() ?? '').trim() ? range : null;
+		const live = current?.rangeCount && !current.isCollapsed ? current.getRangeAt(0) : null;
+		if (isInTarget(live)) return live;
+		return isInTarget(retainedRange) ? retainedRange.cloneRange() : null;
 	};
 	const toolbar = documentRef.createElement('div');
 	toolbar.className = 'cb-mail-inline-format';
@@ -39,6 +54,7 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 		caret.selectNodeContents(node);
 		caret.collapse(false);
 		current.addRange(caret);
+		retainedRange = null;
 		target.focus();
 	};
 	const wrapSelection = (tag) => {
@@ -208,6 +224,10 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 			if (key === 'k') return openLinkEditor();
 			return false;
 		},
-		destroy: () => toolbar.remove(),
+		destroy: () => {
+			documentRef.removeEventListener('selectionchange', rememberSelection);
+			retainedRange = null;
+			toolbar.remove();
+		},
 	};
 };
