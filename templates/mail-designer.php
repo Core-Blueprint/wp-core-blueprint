@@ -148,7 +148,7 @@ foreach ( (array) $templates as $definition ) {
 								<div class="cb-core-design-shell__canvas-header">
 									<div class="cb-core-design-shell__canvas-heading">
 										<strong class="cb-core-design-shell__canvas-title"><?php esc_html_e( 'Visual canvas', 'core-blueprint' ); ?></strong>
-										<span class="cb-core-design-shell__canvas-description"><?php esc_html_e( 'Click an email element to inspect and edit it.', 'core-blueprint' ); ?></span>
+										<span class="cb-core-design-shell__canvas-description"><?php esc_html_e( 'Click an element to inspect it. Double-click text to edit it.', 'core-blueprint' ); ?></span>
 									</div>
 								</div>
 								<div class="cb-core-design-shell__canvas-workarea cb-core-mail-designer__preview-frame" data-cb-mail-preview-frame>
