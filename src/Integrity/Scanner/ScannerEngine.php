@@ -166,7 +166,7 @@ final class ScannerEngine {
 			$previous_state = (string) ( $coverage[ $key ]['state'] ?? 'incomplete' );
 			$coverage[ $key ]['state'] = 'failed' === $previous_state
 				? 'failed'
-				: ( $structural_incomplete || $unverified > 0 || 'incomplete' === $previous_state ? 'incomplete' : 'complete' );
+				: ( $structural_incomplete || $unverified > 0 || ( 'mu_plugins' === $key && 'incomplete' === $previous_state ) ? 'incomplete' : 'complete' );
 		}
 
 		$state = 'complete';
