@@ -179,7 +179,12 @@ export const createMailInlineTextController = ({
 				finishFromKeyboard(true);
 				return;
 			}
-			if (event.key === 'Enter' && node.type === 'mail.heading') {
+			if (editing.toolbar?.applyShortcut(event)) {
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		}
+		if (event.key === 'Enter' && node.type === 'mail.heading') {
 				event.preventDefault();
 				event.stopPropagation();
 				finishFromKeyboard(true);
@@ -251,5 +256,11 @@ export const createMailInlineTextController = ({
 			}
 		}, true);
 	};
-	return { attach, startSelected, finish, isEditing: () => Boolean(editing) };
+	return {
+		attach,
+		startSelected,
+		finish,
+		isEditing: () => Boolean(editing),
+		activePath: () => editing ? [...editing.path] : null,
+	};
 };
