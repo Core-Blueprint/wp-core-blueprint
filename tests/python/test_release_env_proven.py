@@ -1,5 +1,7 @@
 """Fail-closed release-environment binding: no Docker or WordPress required."""
 import os
+import stat
+from types import SimpleNamespace
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 import sys
@@ -100,7 +102,12 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
             stack.enter_context(patch.object(release_env.Path, "is_symlink", return_value=False))
             stack.enter_context(patch.object(release_env.Path, "exists", return_value=True))
             stat_mock = stack.enter_context(patch.object(release_env.Path, "stat"))
-            stat_mock.return_value.st_mode = 0o100600
+            stat_mock.side_effect = lambda path: SimpleNamespace(
+                st_mode=(stat.S_IFDIR | 0o700)
+                if path.name in ("wp", "wp-tests", "wp-content", "plugins", "includes", "core-blueprint")
+                else (stat.S_IFREG | 0o600),
+                st_uid=os.getuid(),
+            )
             stack.enter_context(patch.object(release_env.preflight, "read_docker_metadata", return_value={}))
             docker = stack.enter_context(patch.object(
                 release_env.preflight, "validate_docker_metadata", return_value=([], "safe")
@@ -174,6 +181,27 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
         with self.proved_workspace(), patch.object(release_env.Path, "stat") as fake_stat:
             fake_stat.return_value.st_mode = 0o100644
             with self.assertRaisesRegex(preflight.PreflightError, "lock permissions"):
+                release_env.resolve(Path("/source"))
+
+    def test_unowned_fixture_rejected(self):
+        with self.proved_workspace(), patch.object(release_env.Path, "stat") as fake_stat:
+            fake_stat.return_value.st_mode = stat.S_IFDIR | 0o700
+            fake_stat.return_value.st_uid = os.getuid() + 1
+            with self.assertRaisesRegex(preflight.PreflightError, "untrusted owner"):
+                release_env.resolve(Path("/source"))
+
+    def test_nonregular_fixture_rejected(self):
+        with self.proved_workspace(), patch.object(release_env.Path, "stat") as fake_stat:
+            fake_stat.return_value.st_mode = stat.S_IFDIR | 0o700
+            fake_stat.return_value.st_uid = os.getuid()
+            with self.assertRaisesRegex(preflight.PreflightError, "untrusted owner or file type"):
+                release_env.resolve(Path("/source"))
+
+    def test_symlinked_plugin_ancestor_blocks_release(self):
+        with self.proved_workspace(), patch.object(
+            release_env.Path, "is_symlink", new=lambda path: path.name == "wp-content"
+        ):
+            with self.assertRaisesRegex(preflight.PreflightError, "symlink"):
                 release_env.resolve(Path("/source"))
 
     def test_symlinked_fixture_blocks_release(self):
