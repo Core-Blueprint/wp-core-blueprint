@@ -69,6 +69,9 @@ if (root) {
 	const parentPath = (path) => Array.isArray(path) ? path.slice(0, -1) : [];
 
 	const definitionForNode = (node) => {
+		if (node?.type === 'mail.column' && node?.provider === 'core') {
+			return { label: 'Column', node_type: 'mail.column', provider: 'core', defaults: {}, inspector: [] };
+		}
 		if (node?.type === sectionDefinition.node_type && node?.provider === sectionDefinition.provider) {
 			return sectionDefinition;
 		}
@@ -88,12 +91,23 @@ if (root) {
 		return index < 0 ? null : { index, node: children[index] };
 	};
 
-	const makeNode = (definition) => ({
-		type: String(definition.node_type || ''),
-		provider: String(definition.provider || ''),
-		properties: structuredClone(definition.defaults || {}),
-		children: [],
-	});
+	const makeNode = (definition) => {
+		const node = {
+			type: String(definition.node_type || ''),
+			provider: String(definition.provider || ''),
+			properties: structuredClone(definition.defaults || {}),
+			children: [],
+		};
+		if (node.type === 'mail.columns' && node.provider === 'core') {
+			node.children = [0, 1].map(() => ({
+				type: 'mail.column',
+				provider: 'core',
+				properties: {},
+				children: [],
+			}));
+		}
+		return node;
+	};
 
 	const updateSerializedProject = () => {
 		projectField.value = JSON.stringify(session.snapshot());
@@ -522,13 +536,38 @@ if (root) {
 		event.detail.respondWith(loadTemplateContext(event.detail.value));
 	});
 
+	const nodeForPath = (path) => {
+		let node = session.project()?.root;
+		for (const index of path) {
+			if (!node || !Array.isArray(node.children) || !Number.isInteger(index)) return null;
+			node = node.children[index];
+		}
+		return node || null;
+	};
+	const insertionContainer = (definition) => {
+		const section = primarySection();
+		if (!section) return null;
+		// Columns are intentionally a section-level structural component.
+		if (definition.node_type === 'mail.columns') return [section.index];
+		const selected = session.selection().primary;
+		if (Array.isArray(selected)) {
+			for (let length = selected.length; length > 0; length--) {
+				const path = selected.slice(0, length);
+				const node = nodeForPath(path);
+				if (node?.type === 'mail.column' && node.provider === 'core') return path;
+			}
+		}
+		return [section.index];
+	};
 	root.querySelectorAll('[data-cb-mail-add]').forEach((button) => {
 		button.addEventListener('click', () => {
 			const definition = components[button.dataset.cbMailAdd || ''];
-			const section = primarySection();
-			if (!definition || !section) return;
-			const newIndex = section.node.children.length;
-			session.execute(commands.insertNode([section.index], newIndex, makeNode(definition)));
+			if (!definition) return;
+			const path = insertionContainer(definition);
+			if (!path) return;
+			const parent = nodeForPath(path);
+			if (!Array.isArray(parent?.children)) return;
+			session.execute(commands.insertNode(path, parent.children.length, makeNode(definition)));
 		});
 	});
 
