@@ -157,7 +157,8 @@ export const createMailRichTextControls = ({
 			range,
 			type: tag,
 			onStatus: (message) => {
-				linkError.textContent = message;
+				note.textContent = message;
+				note.setAttribute('role', 'status');
 			},
 		});
 		if (item) focusEditor();
