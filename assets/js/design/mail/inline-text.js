@@ -67,6 +67,7 @@ export const createMailInlineTextController = ({
 	}
 
 	let editing = null;
+	const attachedDocuments = new WeakSet();
 
 	const finish = (save = true) => {
 		const active = editing;
@@ -107,8 +108,14 @@ export const createMailInlineTextController = ({
 		// can regenerate the Inspector and preview as a consequence.
 		onEditingChange(false);
 		if (next !== active.original) {
-			executeProperty(active.path, active.property, next);
-			onStatus('Text updated. Save the template to keep your changes.');
+			try {
+				executeProperty(active.path, active.property, next);
+				onStatus('Text updated. Save the template to keep your changes.');
+			} catch {
+				active.target.innerHTML = active.originalHtml;
+				onStatus('Text could not be updated. The original preview has been restored.');
+				return false;
+			}
 		}
 		return true;
 	};
@@ -185,10 +192,9 @@ export const createMailInlineTextController = ({
 	};
 
 	const attach = (documentRef) => {
-		if (!documentRef || documentRef.__cbMailInlineAttached) return;
-		// The iframe is replaced on every preview refresh; attach to that
-		// document only, not to the globally shared Designer Shell.
-		Object.defineProperty(documentRef, '__cbMailInlineAttached', { value: true });
+		if (!documentRef || attachedDocuments.has(documentRef)) return;
+		// Each preview iframe receives its own document and event handling.
+		attachedDocuments.add(documentRef);
 		documentRef.addEventListener('dblclick', (event) => {
 			const target = event.target?.nodeType === 1 ? event.target : event.target?.parentElement;
 			const marker = target?.closest?.('[data-cb-mail-editor-node]');
