@@ -204,6 +204,20 @@ export const createMailInlineTextController = ({
 				event.stopPropagation();
 			}
 		}, true);
+		documentRef.addEventListener('keydown', (event) => {
+			if (event.key !== 'F2' || editing) return;
+			const selected = session.selection()?.primary;
+			if (!Array.isArray(selected)) return;
+			const marker = [...documentRef.querySelectorAll('[data-cb-mail-editor-node]')]
+				.find((candidate) => {
+					const path = pathFromMarker(candidate);
+					return path?.length === selected.length && path.every((index, i) => index === selected[i]);
+				});
+			if (marker && start(marker)) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+		}, true);
 	};
 	return { attach, finish, isEditing: () => Boolean(editing) };
 };
