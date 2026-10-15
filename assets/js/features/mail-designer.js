@@ -9,6 +9,7 @@ import {
 	profiles,
 } from '@cb-core/design-editor';
 import { createMailRichTextControls } from '../design/mail/rich-text-controls.js';
+import { createMailInlineTextController } from '../design/mail/inline-text.js';
 
 const root = document.querySelector('[data-cb-mail-designer]');
 
@@ -64,6 +65,8 @@ if (root) {
 	let layerTree = null;
 	let selectionController = null;
 	let contextHydrating = false;
+	let inlineEditor = null;
+	let previewPending = false;
 
 	const pathKey = (path) => JSON.stringify(Array.isArray(path) ? path : []);
 	const samePath = (left, right) => pathKey(left) === pathKey(right);
@@ -151,7 +154,12 @@ if (root) {
 		const doc = preview.contentDocument;
 		if (!doc) return;
 
+		inlineEditor?.attach(doc);
 		doc.addEventListener('click', (event) => {
+			if (inlineEditor?.isEditing()) {
+				if (event.target?.closest?.('a')) event.preventDefault();
+				return;
+			}
 			const target = event.target && typeof event.target.closest === 'function' ? event.target : null;
 			const marker = target?.closest('[data-cb-mail-editor-node]');
 			if (!marker) return;
@@ -178,6 +186,7 @@ if (root) {
 	};
 
 	const refreshPreview = async () => {
+		if (inlineEditor?.isEditing()) { previewPending = true; return; }
 		if (!ajaxUrl || !nonce || !templateId) return;
 		previewController?.abort();
 		previewController = new AbortController();
@@ -212,6 +221,7 @@ if (root) {
 	};
 
 	const schedulePreview = () => {
+		if (inlineEditor?.isEditing()) { previewPending = true; return; }
 		window.clearTimeout(previewTimer);
 		previewTimer = window.setTimeout(refreshPreview, 250);
 	};
@@ -452,6 +462,18 @@ if (root) {
 		profile: 'mail',
 		onChange: render,
 	});
+	inlineEditor = createMailInlineTextController({
+		session,
+		executeProperty: (path, key, value) => session.execute(commands.setProperty(path, [key], value)),
+		select: (path) => selectionController?.select(path),
+		onStatus: setPreviewStatus,
+		onEditingChange: (isEditing) => {
+			if (!isEditing && previewPending) {
+				previewPending = false;
+				schedulePreview();
+			}
+		},
+	});
 
 	shell = createDesignerShell(shellRoot, {
 		session,
@@ -610,9 +632,13 @@ if (root) {
 
 	preview.addEventListener('load', bindPreviewInteractions);
 	subjectField.addEventListener('input', schedulePreview);
-	form.addEventListener('submit', updateSerializedProject);
+	form.addEventListener('submit', () => {
+		inlineEditor?.finish(true);
+		updateSerializedProject();
+	});
 
 	window.addEventListener('beforeunload', () => {
+		inlineEditor?.finish(false);
 		previewController?.abort();
 		selectionController?.destroy();
 		session.dispose();
