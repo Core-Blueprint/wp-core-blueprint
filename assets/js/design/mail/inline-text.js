@@ -144,7 +144,7 @@ export const createMailInlineTextController = ({
 			original: node.properties[property],
 			originalHtml: target.innerHTML,
 		};
-		target.setAttribute('contenteditable', property === 'markup' ? 'true' : 'plaintext-only');
+		target.setAttribute('contenteditable', 'true');
 		target.setAttribute('role', 'textbox');
 		target.setAttribute('aria-multiline', property === 'text' && node.type !== 'mail.heading' ? 'true' : 'false');
 		target.dataset.cbMailInlineEditing = 'true';
