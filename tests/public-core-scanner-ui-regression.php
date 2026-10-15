@@ -9,8 +9,6 @@ declare(strict_types=1);
  * The remaining layout rules are deliberately scoped to Scanner.
  */
 
-$root = dirname( __DIR__ );
-
 function scanner_ui_assert( bool $condition, string $message ): void {
 	if ( ! $condition ) {
 		fwrite( STDERR, "Core Scanner UI regression FAILED: {$message}\n" );
@@ -46,11 +44,11 @@ scanner_ui_assert( str_contains( $overview, 'cb-core-integrity-about-scan cb-cor
 
 $css = scanner_ui_source( 'assets/css/pages/safeguards-core-scanner.css' );
 scanner_ui_assert(
-	1 === preg_match( '/\\.cb-core-integrity-local-nav\\s*\\{[^}]*overflow-y:\\s*hidden\\s*;/s', $css ),
+	1 === preg_match( '/[.]cb-core-integrity-local-nav[[:space:]]*[{][^}]*overflow-y:[[:space:]]*hidden[[:space:]]*;/s', $css ),
 	'tab bar hides unwanted vertical overflow'
 );
 scanner_ui_assert(
-	1 === preg_match( '/\\.cb-core-integrity-coverage-panel\\s+\\.cb-core-integrity-component\\s*\\{[^}]*flex-direction:\\s*column\\s*;/s', $css ),
+	1 === preg_match( '/[.]cb-core-integrity-coverage-panel[[:space:]]+[.]cb-core-integrity-component[[:space:]]*[{][^}]*flex-direction:[[:space:]]*column[[:space:]]*;/s', $css ),
 	'coverage cards stack their content vertically'
 );
 scanner_ui_assert( str_contains( $css, '.cb-core-integrity-coverage-head {' ), 'coverage status and title share one row' );
