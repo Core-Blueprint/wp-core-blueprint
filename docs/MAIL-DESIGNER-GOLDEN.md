@@ -122,6 +122,17 @@ The Base Mail inline editing toolbar now supports a deliberate small set of **co
 
 **Next after Base Luna:** reconcile shared Designer, Mail profile, Inspector and Template Library APIs; test actual selection/caret, focused/blurred toolbar link form, multi-paragraph lists, inline/Inspector round trips, undo/redo, persistent save/reopen and mobile/keyboard accessibility in staging. Expand M2/M3 only after these are assessed.
 
+## M1-E: Composer cross-surface completion (isolated source candidate, NOT Golden)
+
+- **One validated list operation:** new `assets/js/design/mail/list-format.js` is shared by canvas contextual toolbar and Base Mail Inspector. A contiguous selection of whole sibling paragraphs becomes one `ul` / `ol` with one `li` per paragraph. Mixed, partial and nested selections fail closed with author-facing guidance. This is a Mail-only formatting primitive, not a new Designer rendering engine.
+- **Protected cross-surface editing:** `assets/js/features/mail-designer.js` now uses `finishActiveText()` and `selectAfterTextCommit()` around Layers, Inspector property changes, palette insertion, node deletion/reorder and the shared Designer Shell undo/redo click actions. Invalid/unfinished draft text prevents destructive navigation. Settings continue to belong to the Inspector; one committed inline edit remains one canonical `session.execute(commands.setProperty(...))`.
+- **Inspector commit retention:** `assets/js/design/mail/rich-text-controls.js` does not advance its locally acknowledged value until the Base session accepts the change. On failure, the field preserves its content and announces a visible error.
+- **Tests:** shared list selection tested for two paragraphs and partial multi-paragraph refusal, with prior inline toolbar/controller tests rechecked. M1-E source contracts confirm that undo/redo, Layers, deletion, palette and Inspector must pass a finish gate and that both surfaces use the same formatter.
+- **Isolated evidence:** 9/9 parsed JavaScript files/test modules and 25/25 focused behavioral/source assertions PASS using GitHub-source readback and a restricted V8 mock-DOM harness. These do not amount to a full Node suite, PHP lint, WordPress tests, real browser/editor input, mail-client output or a distribution ZIP.
+- **Acceptation OPEN:** Chrome/Firefox/Safari genuine Range/selection, pasted line breaks, multiple paragraphs with inline links, accessibility, pointer/touch behavior, Inspector↔Canvas content fidelity, keyboard/native undo vs canonical Base history, save/failure/reopen, RTL/language, and integration with Base Luna's concurrent Inspector, modal and Template Library work.
+
+No direct changes to Base Luna's active branch, `main`, Newsletter production consumer or the shared Designer Shell; no merges, CI, publication, customer sends or release build.
+
 ## Reconciliation handshake
 
 1. Freeze new branch SHA, file list, tests and scope.
