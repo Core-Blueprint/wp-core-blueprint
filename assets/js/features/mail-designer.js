@@ -51,6 +51,18 @@ if (root) {
 			Object.freeze({ key: 'padding', label: 'Padding', type: 'number', min: 0, max: 80, step: 1 }),
 		]),
 	});
+	// Structural columns are selected through the existing Base Layers/Inspector.
+	// They are not standalone palette blocks or a second layout editor.
+	const columnDefinition = Object.freeze({
+		label: 'Column',
+		node_type: 'mail.column',
+		provider: 'core',
+		defaults: Object.freeze({ background: '#ffffff', padding: 12 }),
+		inspector: Object.freeze([
+			Object.freeze({ key: 'background', label: 'Column background', type: 'color' }),
+			Object.freeze({ key: 'padding', label: 'Inner padding', type: 'number', min: 0, max: 32, step: 1 }),
+		]),
+	});
 
 	if (!form || !shellRoot || !projectField || !subjectField || !emailInspector || !structure || !inspector || !preview || !project) {
 		throw new Error('Mail Designer could not initialize because its editor payload is incomplete.');
@@ -107,7 +119,7 @@ if (root) {
 
 	const definitionForNode = (node) => {
 		if (node?.type === 'mail.column' && node?.provider === 'core') {
-			return { label: 'Column', node_type: 'mail.column', provider: 'core', defaults: {}, inspector: [] };
+			return columnDefinition;
 		}
 		if (node?.type === sectionDefinition.node_type && node?.provider === sectionDefinition.provider) {
 			return sectionDefinition;
@@ -139,7 +151,7 @@ if (root) {
 			node.children = [0, 1].map(() => ({
 				type: 'mail.column',
 				provider: 'core',
-				properties: {},
+				properties: structuredClone(columnDefinition.defaults),
 				children: [],
 			}));
 		}
