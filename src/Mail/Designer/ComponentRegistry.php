@@ -149,6 +149,8 @@ final class ComponentRegistry {
 			'inspector' => [
 				[ 'key' => 'ratio', 'label' => __( 'Column widths', 'core-blueprint' ), 'type' => 'select', 'options' => [
 					'equal' => __( '50 / 50', 'core-blueprint' ),
+					'left-wide' => __( '60 / 40', 'core-blueprint' ),
+					'right-wide' => __( '40 / 60', 'core-blueprint' ),
 					'left-third' => __( '33 / 67', 'core-blueprint' ),
 					'right-third' => __( '67 / 33', 'core-blueprint' ),
 				] ],
