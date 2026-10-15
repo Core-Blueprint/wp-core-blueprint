@@ -313,7 +313,7 @@ trait ScannerOverviewView {
 					$missing = (int) ( $component_coverage['missing_files'] ?? 0 );
 					$unreadable = (int) ( $component_coverage['unreadable_files'] ?? $component_coverage['unreadable'] ?? 0 );
 					/* translators: 1: checked file count, 2: unexpected file count, 3: missing file count, 4: unreadable file count. */
-					$coverage_label = sprintf( __( 'Traversed %1$d · unexpected %2$d · missing %3$d · unreadable %4$d', 'core-blueprint' ), $checked, $unexpected, $missing, $unreadable );
+					$coverage_label = sprintf( __( 'Checked %1$d · unexpected %2$d · missing %3$d · unreadable %4$d', 'core-blueprint' ), $checked, $unexpected, $missing, $unreadable );
 					?>
 					<?php $component_url = self::scanner_view_url( 'findings', [ 'cb_integrity_component' => $component ] ); ?>
 					<a class="cb-core-integrity-component cb-core-integrity-component-filter" href="<?php echo esc_url( $component_url ); ?>">
