@@ -169,5 +169,48 @@ test('partial paragraph selection is not converted to invalid nested list markup
 	f.target.contains = (node) => node === f.target || node === paragraph;
 	f.action('Create bulleted list from selected text');
 	assert.deepEqual(f.inserted, []);
-	assert.equal(f.status.at(-1), 'Select the entire paragraph to make it a list.');
+	assert.equal(f.status.at(-1), 'Select complete paragraphs to make a list.');
+});
+
+test('two fully selected adjacent paragraphs become two list items in one list', () => {
+	const f = fixture('Alpha\nBeta');
+	const paragraph = (text) => ({
+		tagName: 'P',
+		parentElement: f.target,
+		textContent: text,
+		firstChild: null,
+		replaceWith(node) { this.replacement = node; },
+		remove() { this.removed = true; },
+	});
+	const first = paragraph('Alpha');
+	const second = paragraph('Beta');
+	f.target.children = [first, second];
+	f.target.contains = (node) => node === f.target || node === first || node === second;
+	f.range.startContainer = { nodeType: 3, parentElement: { closest: () => first } };
+	f.range.endContainer = { nodeType: 3, parentElement: { closest: () => second } };
+	f.action('Create numbered list from selected text');
+	assert.equal(first.replacement.tagName, 'OL');
+	assert.equal(first.replacement.children.length, 2);
+	assert.equal(first.replacement.children[0].tagName, 'LI');
+	assert.equal(first.replacement.children[1].tagName, 'LI');
+	assert.equal(second.removed, true);
+	assert.equal(f.inserted.length, 0, 'no nested list fragment is inserted into a paragraph');
+});
+
+test('partial multi-paragraph selection fails closed without modifying the document', () => {
+	const f = fixture('Alpha\nBet');
+	const paragraph = (text) => ({
+		tagName: 'P', parentElement: f.target, textContent: text,
+		firstChild: null, replaceWith(node) { this.replacement = node; }, remove() { this.removed = true; },
+	});
+	const first = paragraph('Alpha');
+	const second = paragraph('Beta');
+	f.target.children = [first, second];
+	f.target.contains = (node) => node === f.target || node === first || node === second;
+	f.range.startContainer = { nodeType: 3, parentElement: { closest: () => first } };
+	f.range.endContainer = { nodeType: 3, parentElement: { closest: () => second } };
+	f.action('Create bulleted list from selected text');
+	assert.equal(first.replacement, undefined);
+	assert.equal(second.removed, undefined);
+	assert.equal(f.status.at(-1), 'Select complete paragraphs to make a list.');
 });
