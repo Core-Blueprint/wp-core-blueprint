@@ -157,24 +157,32 @@ export const createMailInlineTextController = ({
 		onEditingChange(true);
 		onStatus('Editing text. Press Escape to discard, Ctrl+Enter to finish, or click outside to apply.');
 
+		const finishFromKeyboard = (save) => {
+			const complete = finish(save);
+			if (complete) {
+				target.setAttribute('tabindex', '-1');
+				target.focus();
+			}
+			return complete;
+		};
 		target.addEventListener('keydown', (event) => {
 			if (!editing || editing.target !== target) return;
 			if (event.key === 'Escape') {
 				event.preventDefault();
 				event.stopPropagation();
-				finish(false);
+				finishFromKeyboard(false);
 				return;
 			}
 			if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
 				event.preventDefault();
 				event.stopPropagation();
-				finish(true);
+				finishFromKeyboard(true);
 				return;
 			}
 			if (event.key === 'Enter' && node.type === 'mail.heading') {
 				event.preventDefault();
 				event.stopPropagation();
-				finish(true);
+				finishFromKeyboard(true);
 			}
 		});
 		target.addEventListener('paste', (event) => {
@@ -194,6 +202,12 @@ export const createMailInlineTextController = ({
 			// Moving focus to the inline Link field is still part of authoring.
 			if (editing.toolbar?.contains(event.relatedTarget)) return;
 			finish(true);
+		});
+		editing.toolbar?.element.addEventListener('keydown', (event) => {
+			if (event.key !== 'Escape' || editing?.target !== target) return;
+			event.preventDefault();
+			event.stopPropagation();
+			finishFromKeyboard(false);
 		});
 		editing.toolbar?.element.addEventListener('focusout', (event) => {
 			if (editing?.target !== target) return;
