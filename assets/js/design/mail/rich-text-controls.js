@@ -233,11 +233,20 @@ export const createMailRichTextControls = ({
 	editor.addEventListener('drop', (event) => event.preventDefault());
 
 	const commit = () => {
-		const clean = serializeMailMarkup(editor, documentRef);
-		if (clean !== source.value) source.value = clean;
-		if (clean !== String(value ?? '')) {
+		let clean;
+		try {
+			clean = serializeMailMarkup(editor, documentRef);
+			if (clean !== source.value) source.value = clean;
+			if (clean === String(value ?? '')) return true;
+			// Keep both visual and Advanced source data until the canonical Base
+			// session accepts the change. Never mark failed Inspector commits done.
+			if (onCommit(clean) === false) throw new Error('The current edit could not be applied.');
 			value = clean;
-			onCommit(clean);
+			return true;
+		} catch {
+			note.textContent = 'Unable to apply your changes. Your text is still in this field; correct it and try again.';
+			note.setAttribute('role', 'alert');
+			return false;
 		}
 	};
 	editor.addEventListener('focusout', (event) => {
