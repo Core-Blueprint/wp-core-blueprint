@@ -6,6 +6,7 @@ use CoreBlueprint\Core\Integrity\Scanner\ThreatCorrelator;
 use CoreBlueprint\Core\Integrity\Scanner\MuPluginScanner;
 use CoreBlueprint\Core\Integrity\Scanner\LoaderPatternInspector;
 use CoreBlueprint\Core\Integrity\Scanner\ScanJobRunner;
+use CoreBlueprint\Core\Integrity\Scanner\ScannerEngine;
 use CoreBlueprint\Core\Integrity\Scanner\NullProgressReporter;
 use CoreBlueprint\Core\Integrity\Support\Finding;
 use CoreBlueprint\Core\Integrity\Storage\ResultRepository;
@@ -74,6 +75,31 @@ final class IntegrityThreatSignalContractTest extends WP_UnitTestCase {
 		$this->assertFalse( LoaderPatternInspector::inspect( $comment )['suspected'] );
 		$source = "<?php\nrename( 'hero-background.png', 'payload.exe' );\nexec( 'TEST_NOT_EXECUTED' );\n";
 		$this->assertTrue( LoaderPatternInspector::inspect( $source )['suspected'] );
+	}
+
+	public function test_loader_heuristic_ignores_object_methods_and_declarations(): void {
+		$methods = <<<'PHP'
+<?php
+$runner->rename('media.png', 'payload.exe');
+$runner->exec('not-a-global-exec');
+function exec($command) { return $command; }
+PHP;
+		$this->assertFalse( LoaderPatternInspector::inspect( $methods )['suspected'] );
+	}
+
+	public function test_failed_mu_scan_never_becomes_complete_at_finalization(): void {
+		$method = new ReflectionMethod( ScannerEngine::class, 'finalize_coverage' );
+		$coverage = [
+			'core' => [ 'state' => 'skipped' ],
+			'plugins' => [ 'state' => 'skipped' ],
+			'mu_plugins' => [ 'state' => 'failed', 'reason' => 'scanner_exception' ],
+			'themes' => [ 'state' => 'skipped' ],
+			'uploads' => [ 'state' => 'skipped' ],
+		];
+		$result = $method->invoke( new ScannerEngine(), $coverage, [] );
+		$this->assertSame( 'failed', $result['mu_plugins']['state'] );
+		$this->assertSame( 'incomplete', $result['state'] );
+		$this->assertContains( 'mu_plugins', $result['incomplete_components'] );
 	}
 
 	public function test_regular_plugin_completion_always_enters_mu_plugin_phase(): void {
