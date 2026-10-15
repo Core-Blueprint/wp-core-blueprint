@@ -93,6 +93,16 @@ if (root) {
 	};
 	const pathKey = (path) => JSON.stringify(Array.isArray(path) ? path : []);
 	const samePath = (left, right) => pathKey(left) === pathKey(right);
+	const finishActiveText = () => {
+		if (!inlineEditor?.isEditing()) return true;
+		if (inlineEditor.finish(true)) return true;
+		setPreviewStatus('Please finish or correct the current text before continuing.', true);
+		return false;
+	};
+	const selectAfterTextCommit = (path, options) => {
+		if (!finishActiveText()) return false;
+		return selectionController?.select(path, options) ?? false;
+	};
 	const parentPath = (path) => Array.isArray(path) ? path.slice(0, -1) : [];
 
 	const definitionForNode = (node) => {
@@ -200,7 +210,7 @@ if (root) {
 			if (!path) return;
 			event.preventDefault();
 			event.stopPropagation();
-			selectionController?.select(path);
+			selectAfterTextCommit(path);
 		}, true);
 
 		doc.addEventListener('pointermove', (event) => {
@@ -295,7 +305,10 @@ if (root) {
 			const richText = createMailRichTextControls({
 				documentRef: document,
 				value: String(value ?? ''),
-				onCommit: (markup) => session.execute(commands.setProperty(path, ['markup'], markup)),
+				onCommit: (markup) => {
+					if (!finishActiveText()) return false;
+					return session.execute(commands.setProperty(path, ['markup'], markup));
+				},
 			});
 			wrapper.append(richText.element);
 			return wrapper;
@@ -320,6 +333,7 @@ if (root) {
 		input.id = id;
 		input.value = value ?? '';
 		input.addEventListener('change', () => {
+			if (!finishActiveText()) { input.value = value ?? ''; return; }
 			session.execute(commands.setProperty(path, [field.key], fieldValue(input, field.type)));
 		});
 		wrapper.append(input);
@@ -350,6 +364,7 @@ if (root) {
 		input.id = id;
 		input.value = field.value;
 		input.addEventListener('change', () => {
+			if (!finishActiveText()) { input.value = field.value; return; }
 			session.execute(commands.setProperty([], field.propertyPath, fieldValue(input, field.type)));
 		});
 		wrapper.append(label, input);
@@ -437,6 +452,7 @@ if (root) {
 		const parent = parentPath(path);
 		const fromIndex = path.at(-1);
 		if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex === toIndex) return false;
+		if (!finishActiveText()) return false;
 		session.execute(commands.reorderNode(parent, fromIndex, toIndex));
 		return true;
 	};
@@ -455,7 +471,7 @@ if (root) {
 			selected: samePath(path, session.selection().primary),
 			actions: {
 				remove: node.type !== 'mail.section'
-					? () => session.execute(commands.removeNode(path))
+					? () => finishActiveText() && session.execute(commands.removeNode(path))
 					: false,
 			},
 			reorder: canMove ? {
@@ -504,7 +520,7 @@ if (root) {
 	inlineEditor = createMailInlineTextController({
 		session,
 		executeProperty: (path, key, value) => session.execute(commands.setProperty(path, [key], value)),
-		select: (path) => selectionController?.select(path),
+		select: (path) => selectAfterTextCommit(path),
 		onStatus: setPreviewStatus,
 		onEditingChange: (isEditing) => {
 			syncDirtyIndicator();
@@ -530,7 +546,7 @@ if (root) {
 		documentRef: document,
 		ariaLabel: 'Layers',
 		emptyMessage: 'This mail template does not contain editable elements.',
-		onSelectItem: (path, options) => selectionController?.select(path, options),
+		onSelectItem: (path, options) => selectAfterTextCommit(path, options),
 	});
 	structure.replaceChildren(layerTree.element);
 	selectionController = createDesignerSelectionController({
@@ -658,7 +674,7 @@ if (root) {
 	root.querySelectorAll('[data-cb-mail-add]').forEach((button) => {
 		button.addEventListener('click', () => {
 			const definition = components[button.dataset.cbMailAdd || ''];
-			if (!definition) return;
+			if (!definition || !finishActiveText()) return;
 			const path = insertionContainer(definition);
 			if (!path) return;
 			const parent = nodeForPath(path);
