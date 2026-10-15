@@ -147,6 +147,35 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
             with self.assertRaisesRegex(preflight.PreflightError, "runtime bytes differ"):
                 release_env.resolve(Path("/source"))
 
+    def test_different_wordpress_minor_blocks_prior_receipts(self):
+        with self.proved_workspace(), patch.dict(
+            os.environ, {"CB_TEST_WP_VERSION": "7.1"}
+        ):
+            with self.assertRaisesRegex(preflight.PreflightError, "WordPress version"):
+                release_env.resolve(Path("/source"))
+
+    def test_dirty_source_blocks_before_database_contact(self):
+        with self.proved_workspace() as (_, database, _, _), patch.object(
+            release_env.plan, "verify_source", side_effect=preflight.PreflightError("dirty checkout")
+        ):
+            with self.assertRaisesRegex(preflight.PreflightError, "dirty checkout"):
+                release_env.resolve(Path("/source"))
+            database.assert_not_called()
+
+    def test_missing_owned_lock_blocks_release(self):
+        with self.proved_workspace() as (_, database, _, _), patch.object(
+            release_env.inspect, "require_file", side_effect=preflight.PreflightError("missing lock")
+        ):
+            with self.assertRaisesRegex(preflight.PreflightError, "missing lock"):
+                release_env.resolve(Path("/source"))
+            database.assert_not_called()
+
+    def test_unsafe_lock_permissions_block_release(self):
+        with self.proved_workspace(), patch.object(release_env.Path, "stat") as fake_stat:
+            fake_stat.return_value.st_mode = 0o100644
+            with self.assertRaisesRegex(preflight.PreflightError, "lock permissions"):
+                release_env.resolve(Path("/source"))
+
     def test_symlinked_fixture_blocks_release(self):
         with self.proved_workspace(), patch.object(
             release_env.Path, "is_symlink", new=lambda path: path.name == "core-blueprint.php"
