@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { MAIL_DESIGN_TYPE, validateProject } from '../../assets/js/design/mail/index.js';
+import { safeMailLink } from '../../assets/js/design/mail/rich-text-controls.js';
 
 const get = async (name) => readFile(new URL('../../' + name, import.meta.url), 'utf8');
 const example = () => ({
@@ -66,4 +67,33 @@ test('Renderer sanitizes rich-text HTML and uses table-based responsive columns'
 	assert.match(validator, /mail\.columns_count/);
 	assert.match(validator, /mail\.column_parent/);
 	assert.match(validator, /mail\.rich_text_markup/);
+});
+
+test('beginner-facing link helper refuses active and unsupported URLs', () => {
+	assert.equal(safeMailLink('javascript:alert(1)'), '');
+	assert.equal(safeMailLink('data:text/html,evil'), '');
+	assert.equal(safeMailLink('file:///etc/passwd'), '');
+	assert.equal(safeMailLink('https://example.org/news'), 'https://example.org/news');
+	assert.equal(safeMailLink('mailto:help@example.org'), 'mailto:help@example.org');
+});
+
+test('Mail rich-text inspector has visual editing by default with safe Advanced source disclosure', async () => {
+	const client = await get('assets/js/design/mail/rich-text-controls.js');
+	const consumer = await get('assets/js/features/mail-designer.js');
+	const css = await get('assets/css/pages/mail-designer.css');
+	assert.match(consumer, /createMailRichTextControls/);
+	assert.match(consumer, /onCommit: \(markup\) => session\.execute\(commands\.setProperty/);
+	assert.match(client, /editor\.contentEditable = 'true'/);
+	assert.match(client, /role', 'textbox'/);
+	assert.match(client, /aria-label', 'Formatted email content'/);
+	assert.match(client, /Advanced: HTML source/);
+	assert.match(client, /documentRef\.createElement\('template'\)/);
+	assert.match(client, /template\.content\.childNodes/);
+	assert.match(client, /event\.clipboardData\?\.getData\('text\/plain'\)/);
+	assert.match(client, /editor\.addEventListener\('drop'/);
+	assert.match(client, /sanitizeMailMarkup\(element\.innerHTML/);
+	assert.match(client, /onCommit\(clean\)/);
+	assert.match(css, /\.cb-mail-rich-text-controls__editor:focus-visible/);
+	assert.doesNotMatch(client, /document\.execCommand/);
+	assert.doesNotMatch(client, /dangerouslySetInnerHTML/);
 });
