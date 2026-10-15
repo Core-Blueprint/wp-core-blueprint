@@ -35,7 +35,7 @@ test('One click remains selection, double click enables text, Escape cancels, bl
 	assert.match(consumer, /if \(inlineEditor\?\.isEditing\(\)\)/);
 	assert.match(consumer, /commands\.setProperty\(path, \[key\], value\)/);
 	assert.match(consumer, /previewPending = true/);
-	assert.match(consumer, /inlineEditor\?\.finish\(true\)/);
+	assert.match(consumer, /inlineEditor\.finish\(true\)/);
 
 	assert.match(inline, /documentRef\.addEventListener\('dblclick'/);
 	assert.match(inline, /target\.setAttribute\('contenteditable'/);
@@ -56,7 +56,7 @@ test('M1-B inline toolbar formats content, retains links safely and never owns s
 	const inline = await read('assets/js/design/mail/inline-text.js');
 	const toolbar = await read('assets/js/design/mail/inline-toolbar.js');
 	assert.match(inline, /createMailInlineToolbar\(/);
-	assert.match(inline, /editing\.toolbar\?\.destroy\(\)/);
+	assert.match(inline, /active\.toolbar\?\.destroy\(\)/);
 	assert.match(inline, /editing\.toolbar\?\.contains\(event\.relatedTarget\)/);
 	assert.match(toolbar, /role', 'toolbar'/);
 	assert.match(toolbar, /Bold selected text/);
@@ -89,4 +89,21 @@ test('M1-B AJAX saves retain dirty baseline, protect switching and do not dispos
 	assert.match(save, /if \(event\.defaultPrevented\) return/);
 	assert.match(save, /window\.addEventListener\('pagehide'/);
 	assert.doesNotMatch(save, /window\.addEventListener\('beforeunload'/);
+});
+
+test('M1-C authoring gate rejects stale preview HTTP replies and unrelated keyboard F2', async () => {
+	const consumer = await read('assets/js/features/mail-designer.js');
+	const inline = await read('assets/js/design/mail/inline-text.js');
+	assert.match(consumer, /let previewRevision = 0/);
+	assert.match(consumer, /const revision = \+\+previewRevision/);
+	assert.match(consumer, /controller\.signal\.aborted \|\| revision !== previewRevision \|\| inlineEditor\?\.isEditing\(\)/);
+	assert.match(consumer, /\+\+previewRevision;\s*previewController\?\.abort\(\)/);
+	assert.match(consumer, /inlineEditor\?\.startSelected\(preview\.contentDocument\)/);
+	assert.match(consumer, /!shellRoot\.contains\(active\)/);
+	assert.match(consumer, /syncDirtyIndicator\(\);\s*if \(isEditing\)/);
+	assert.match(inline, /const startSelected = \(documentRef\) =>/);
+	assert.match(inline, /if \(!finish\(true\)\) return false/);
+	assert.match(inline, /Text exceeds the allowed length\. Shorten it before finishing/);
+	assert.match(inline, /const HAS_DYNAMIC_BINDING = \//);
+	assert.match(inline, /return \{ attach, startSelected, finish/);
 });
