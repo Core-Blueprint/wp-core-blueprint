@@ -145,3 +145,29 @@ test('invalid link is rejected before creating any anchor', () => {
 	apply.events.click();
 	assert.equal(f.inserted.length, 0);
 });
+
+test('valid absolute HTTPS link is inserted only into the selected rich text', () => {
+	const f = fixture('Linked copy');
+	assert.equal(f.toolbar.applyShortcut({ ctrlKey: true, key: 'k' }), true);
+	const input = f.nodes.find((node) => node.tagName === 'INPUT' && node.attributes.get('aria-label') === 'Link address');
+	assert.ok(input);
+	input.value = 'https://example.org/article';
+	const panel = f.toolbar.element.children.find((node) => node.className === 'cb-mail-inline-format__link');
+	assert.equal(panel.hidden, false);
+	const apply = panel.children.find((node) => node.tagName === 'BUTTON' && node.textContent === 'Apply');
+	apply.events.click();
+	assert.equal(f.inserted.length, 1);
+	assert.equal(f.inserted[0].tagName, 'A');
+	assert.equal(f.inserted[0].attributes.get('href'), 'https://example.org/article');
+	assert.equal(panel.hidden, true);
+});
+
+test('partial paragraph selection is not converted to invalid nested list markup', () => {
+	const f = fixture('Part');
+	const paragraph = { textContent: 'Full paragraph', firstChild: null };
+	f.range.startContainer = { nodeType: 3, parentElement: { closest: () => paragraph } };
+	f.target.contains = (node) => node === f.target || node === paragraph;
+	f.action('Create bulleted list from selected text');
+	assert.deepEqual(f.inserted, []);
+	assert.equal(f.status.at(-1), 'Select the entire paragraph to make it a list.');
+});
