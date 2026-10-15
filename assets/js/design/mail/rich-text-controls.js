@@ -20,7 +20,10 @@ export const safeMailLink = (raw) => {
 export const sanitizeMailMarkup = (source, documentRef) => {
 	const markup = String(source ?? '');
 	if (markup.length > MAX_MARKUP_LENGTH) throw new RangeError('Mail content is too long.');
-	const parsed = new DOMParser().parseFromString(markup, 'text/html');
+	// HTMLTemplateElement is inert: parsing source must not trigger remote
+	// image/iframe resource loads or execute scripts before sanitization.
+	const template = documentRef.createElement('template');
+	template.innerHTML = markup;
 	const fragment = documentRef.createDocumentFragment();
 
 	const appendSafe = (target, original) => {
@@ -45,7 +48,7 @@ export const sanitizeMailMarkup = (source, documentRef) => {
 		for (const child of [...original.childNodes]) appendSafe(node, child);
 		target.append(node);
 	};
-	for (const child of [...parsed.body.childNodes]) appendSafe(fragment, child);
+	for (const child of [...template.content.childNodes]) appendSafe(fragment, child);
 	return fragment;
 };
 
