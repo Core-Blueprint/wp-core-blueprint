@@ -67,6 +67,7 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
                  "git_sha": "a" * 40, "wordpress": "7.0"
              }), \
              patch.object(release_env.preflight, "read_source_commit", return_value="a" * 40), \
+             patch.object(release_env.plan, "verify_source"), \
              patch.object(release_env.inspect, "require_file"), \
              patch.object(release_env.Path, "is_symlink", return_value=False), \
              patch.object(release_env.Path, "stat") as status, \
