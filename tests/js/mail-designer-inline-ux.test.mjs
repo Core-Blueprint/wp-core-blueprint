@@ -51,3 +51,42 @@ test('One click remains selection, double click enables text, Escape cancels, bl
 	assert.match(inline, /const EDITABLE_PROPERTIES/);
 	assert.doesNotMatch(inline, /document\.execCommand/);
 });
+
+test('M1-B inline toolbar formats content, retains links safely and never owns styling', async () => {
+	const inline = await read('assets/js/design/mail/inline-text.js');
+	const toolbar = await read('assets/js/design/mail/inline-toolbar.js');
+	assert.match(inline, /createMailInlineToolbar\(/);
+	assert.match(inline, /editing\.toolbar\?\.destroy\(\)/);
+	assert.match(inline, /editing\.toolbar\?\.contains\(event\.relatedTarget\)/);
+	assert.match(toolbar, /role', 'toolbar'/);
+	assert.match(toolbar, /Bold selected text/);
+	assert.match(toolbar, /Italicize selected text/);
+	assert.match(toolbar, /Underline selected text/);
+	assert.match(toolbar, /Link selected text/);
+	assert.match(toolbar, /safeMailLink\(linkInput\.value\)/);
+	assert.match(toolbar, /pointerdown', \(event\) => event\.preventDefault\(\)/);
+	assert.match(toolbar, /createElement\('strong'\)|wrapSelection\('strong'\)/);
+	assert.doesNotMatch(toolbar, /commands\.setProperty/);
+	assert.doesNotMatch(toolbar, /fontSize|background|spacing|accentColor/);
+});
+
+test('M1-B AJAX saves retain dirty baseline, protect switching and do not dispose on cancelled unload', async () => {
+	const consumer = await read('assets/js/features/mail-designer.js');
+	const save = await read('assets/js/features/mail-designer-save.js');
+	assert.match(consumer, /const currentFingerprint = \(\) => JSON\.stringify\(/);
+	assert.match(consumer, /const hasUnsavedChanges = \(\)/);
+	assert.match(consumer, /persistedFingerprint !== null/);
+	assert.match(consumer, /event\.returnValue = ''/);
+	assert.match(consumer, /cb:design-shell:savechange/);
+	assert.match(consumer, /pendingSaveFingerprint = currentFingerprint\(\)/);
+	assert.match(consumer, /persistedFingerprint = pendingSaveFingerprint/);
+	assert.match(consumer, /if \(hasUnsavedChanges\(\)\)/);
+	assert.match(consumer, /Discard them and switch templates/);
+	assert.match(consumer, /originalFingerprint = currentFingerprint\(\)/);
+	assert.match(consumer, /currentFingerprint\(\) !== originalFingerprint/);
+	assert.match(consumer, /window\.addEventListener\('pagehide'/);
+	assert.doesNotMatch(consumer, /window\.addEventListener\('beforeunload', \(\) =>/);
+	assert.match(save, /if \(event\.defaultPrevented\) return/);
+	assert.match(save, /window\.addEventListener\('pagehide'/);
+	assert.doesNotMatch(save, /window\.addEventListener\('beforeunload'/);
+});
