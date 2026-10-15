@@ -4,6 +4,68 @@
 It packages the existing runtime allowlist beneath `core-blueprint/`. The current
 plugin version is `1.0.0`.
 
+
+## Engineering DX: proven local Level 2 handoff (candidate)
+
+For an exact-head Base checkout use the repository-owned gates, not a manually
+constructed PHPUnit command or a guessed \`wordpress_test\` database:
+
+\`\`\`sh
+./tools/check
+./tools/check-integration --preflight
+./tools/check-integration --dry-run
+\`\`\`
+
+**Provisioning is never implicit.** On a genuinely fresh, inspected and
+separately approved Base test slot, the operator can authorize:
+
+\`\`\`sh
+CB_BASE_INTEGRATION_APPROVAL=I_APPROVE_FRESH_BASE_TEST_DATABASE \
+  ./tools/check-integration --execute
+\`\`\`
+
+This creates only a new dedicated Base test schema and workspace, runs the full
+Level 2 matrix and records immutable exact-head receipts. Do not run
+\`--execute\` on an occupied slot; use \`--inspect\` to review an existing one.
+Existing test schemas/workspaces/locks remain protected. The historical
+\`wordpress_test\` database is **not** a canonical automatic selection.
+
+After a full Level 2 PASS, the **canonical** Python release builder can resolve
+the matching owned workspace itself:
+
+\`\`\`sh
+python3 tools/build-release --output-dir dist/dx-candidate
+\`\`\`
+
+It verifies exact source HEAD, WordPress version, owner record and lock,
+localhost-only database binding, dedicated schema presence, immutable per-gate
+and final PASS receipts, fixture ownership and runtime manifest parity.
+It then runs the usual complete release gates, including PHPUnit, before
+writing the customer ZIP and SHA-256 sidecar. It does **not** accept an old
+receipt for a newer commit, create a database, install WordPress or reset data.
+
+If the shell contains stale \`WP_*\` / \`CB_PLUGIN_FILE\` exports, explicitly
+select the proven environment instead of mixing configurations:
+
+\`\`\`sh
+CB_BASE_USE_PROVEN_LEVEL2=1 python3 tools/build-release --output-dir dist/dx-candidate
+\`\`\`
+
+A fully specified manual environment still follows the historical explicit
+path; a partial one fails closed. Never override the proof failure or force
+a source mismatch. The builder does not run the entire extended Level 2 matrix
+again; that matrix must already have a verified PASS receipt, and the builder
+reruns PHPUnit as part of Level 3.
+
+**Repeatability boundary:** proven workspace reuse here is for Level 3
+validation of the **same exact source SHA**. Safe cross-HEAD staging/replay
+is a separate migration requiring an explicit ownership/table-prefix contract;
+it is *not* implemented by this candidate. For a different SHA use a reviewed
+new-only slot, never reset/relabel an old schema merely to proceed.
+
+Status remains PRE-FIELD / MERGE PENDING until real workstation gates,
+customer artifact verification, and runtime acceptance are recorded.
+
 ## Required environment
 
 - Python 3.10+, PHP 8.4+, Node.js with `node --test`, Bash and unzip;
