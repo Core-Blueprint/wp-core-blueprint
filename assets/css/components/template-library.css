@@ -2,7 +2,41 @@
  * Theme-neutral properties with canonical Core tokens where available.
  * Modal geometry and focus trap are owned by @cb-core/modal.
  */
-.cb-template-library-page { max-width: 1440px; }
+/* Only the standalone WP Admin page fills the viewport.
+ * Designer workspace modals retain their intrinsic browser geometry.
+ * The offset reserves room for the WordPress admin chrome and page gutters.
+ */
+.cb-template-library-page {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-width: 1440px;
+    min-height: calc(100vh - 80px);
+    min-height: calc(100dvh - 80px);
+}
+.cb-template-library-page > [data-cb-template-library-global] {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.cb-template-library-page .cb-template-browser {
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+}
+.cb-template-library-page .cb-template-browser__sidebar {
+    box-sizing: border-box;
+    flex: 0 0 clamp(160px, 19%, 236px);
+}
+.cb-template-library-page .cb-template-browser__content {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    min-height: 0;
+}
+.cb-template-library-page .cb-template-browser__grid {
+    flex: 1 1 auto;
+}
 .cb-template-browser {
     display: grid;
     grid-template-columns: clamp(160px, 19%, 236px) minmax(0, 1fr);
@@ -120,6 +154,11 @@ label.cb-template-browser__card { cursor: pointer; }
 .cb-template-browser__modal-body { min-width: 0; }
 @media (max-width: 720px) {
     .cb-template-browser { grid-template-columns: minmax(0, 1fr); }
+    .cb-template-library-page .cb-template-browser { flex-direction: column; }
+    .cb-template-library-page .cb-template-browser__sidebar {
+        flex: 0 0 auto;
+        width: 100%;
+    }
     .cb-template-browser__sidebar {
         flex-direction: row; flex-wrap: nowrap; overflow-x: auto;
         padding: 10px 0;
