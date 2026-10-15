@@ -30,6 +30,17 @@
 - Keep WP Admin canonical, Base Designer Shell authoritative, EN source/locales later via project i18n.
 - No new transfer of GDPR/privacy responsibility into Base. Consumer supplies personalizations and consent policy.
 
+## Current isolated source batch (M0 / early M1-M2)
+
+Implemented without touching the operator's occupied Base clone:
+- Optional `mail.rich-text` node with **bounded allowlisted HTML fragment**, no scripts/styles/images, escaped binding substitution and an initial **source textarea inspector**. Real visual WYSIWYG interaction, robust text selection and keyboard editing are still open. Existing `mail.text` behavior is not changed.
+- Optional `mail.columns` containing exactly two `mail.column` containers. Section-level placement enforced by Validator, bounded ratio/gap, table-based Outlook structure, responsive stacked `td` style, editor selection markers and insertion into the selected column. Multi-column live browser rendering still requires confirmation.
+- `tests/integration/MailDesignerGoldenM1M2ContractTest.php` proposes PHP9.6/WP tests (allowlist/XSS, old text, valid/invalid columns).
+- `tests/js/mail-designer-golden-m1-m2.test.mjs` proposes JavaScript profile/palette/render-contract checks.
+- **GitHub source readback:** 9 focused guards verified; **NOT a PHP syntax, full test suite, browser or release-build PASS**.
+
+This is a compatibility-oriented first code batch, not completion of the entire professional Designer. Do not release or merge until the full M1/M2 Golden and Base Luna branch reconciliation are complete.
+
 ## Reconciliation handshake
 
 1. Freeze new branch SHA, file list, tests and scope.
