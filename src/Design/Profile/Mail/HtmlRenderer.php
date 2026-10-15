@@ -116,6 +116,8 @@ final class HtmlRenderer {
 			'mail.section' => $this->render_section( $node, $bindings, $theme, $path, $editor_markers ),
 			'mail.heading' => $this->render_heading( $properties, $bindings, $theme ),
 			'mail.text' => $this->render_text( $properties, $bindings, $theme ),
+			'mail.rich-text' => $this->render_rich_text( $properties, $bindings, $theme ),
+			'mail.columns' => $this->render_columns( $node, $bindings, $theme, $path, $editor_markers ),
 			'mail.button' => $this->render_button( $properties, $bindings, $theme ),
 			'mail.image' => $this->render_image( $properties, $bindings ),
 			'mail.divider' => $this->render_divider( $properties ),
