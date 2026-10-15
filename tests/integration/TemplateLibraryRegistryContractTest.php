@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\TemplateLibrary\TemplateMetadata;
 use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
@@ -13,7 +14,11 @@ final class CB_Template_Library_Registry_Contract_Test extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 		$this->operator = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$user = get_userdata( $this->operator );
+		self::assertInstanceOf( WP_User::class, $user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $user, 0, 'template_library_test_fixture' ) );
 		wp_set_current_user( $this->operator );
+		self::assertTrue( current_user_can( 'manage_options' ), 'The source fixture must represent an explicitly approved administrator.' );
 		TemplateSourceRegistry::_reset_for_testing();
 		add_action( 'core_blueprint_register_template_sources', [ $this, 'register_sources' ] );
 	}
