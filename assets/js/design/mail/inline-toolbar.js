@@ -70,6 +70,23 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 		restoreSelection(wrapper);
 		return true;
 	};
+	// Only convert complete, consecutive top-level paragraphs. Partial
+	// multi-paragraph selections are left intact to prevent invalid mail HTML.
+	const paragraphsForRange = (range) => {
+		const elementOf = (node) => node?.nodeType === 1 ? node : node?.parentElement;
+		const first = elementOf(range.startContainer)?.closest?.('p');
+		const last = elementOf(range.endContainer)?.closest?.('p');
+		if (!first || !last || first.parentElement !== target || last.parentElement !== target) return null;
+		const children = [...(target.children || [])];
+		const from = children.indexOf(first);
+		const to = children.indexOf(last);
+		if (from < 0 || to < from) return null;
+		const selected = children.slice(from, to + 1);
+		if (selected.some((node) => node.tagName?.toLowerCase() !== 'p')) return null;
+		const normalize = (value) => String(value || '').replace(/\\s+/g, '');
+		if (!selected.length || normalize(range.toString()) !== normalize(selected.map((node) => node.textContent).join(''))) return null;
+		return selected;
+	};
 	// Creating a list modifies only the selected content; no layout/typography
 	// properties are ever changed by the contextual formatting toolbar.
 	const listSelection = (type) => {
@@ -83,18 +100,22 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 			? range.startContainer : range.startContainer?.parentElement;
 		const paragraph = startNode?.closest?.('p');
 		if (paragraph && target.contains(paragraph)) {
-			// Inserting a <ul> into a <p> creates invalid email HTML. Convert
-			// only an entire paragraph; partial selections remain unchanged.
-			if (String(range.toString()).trim() !== String(paragraph.textContent || '').trim()) {
-				onStatus('Select the entire paragraph to make it a list.');
+			const selected = paragraphsForRange(range);
+			if (!selected) {
+				onStatus('Select complete paragraphs to make a list.');
 				return false;
 			}
 			const list = documentRef.createElement(type);
-			const item = documentRef.createElement('li');
-			while (paragraph.firstChild) item.append(paragraph.firstChild);
-			list.append(item);
-			paragraph.replaceWith(list);
-			restoreSelection(item);
+			const items = [];
+			for (const entry of selected) {
+				const item = documentRef.createElement('li');
+				while (entry.firstChild) item.append(entry.firstChild);
+				list.append(item);
+				items.push(item);
+			}
+			selected[0].replaceWith(list);
+			for (const entry of selected.slice(1)) entry.remove();
+			restoreSelection(items[items.length - 1]);
 			return true;
 		}
 		const startListItem = startNode?.closest?.('li');
