@@ -54,6 +54,7 @@ class ReleaseBuilderTest(unittest.TestCase):
         binding.assert_called_once_with(self.source)
         self.assertTrue(archive.is_file())
         self.assertTrue(checksum.is_file())
+
     def test_failed_preflight_preserves_previous_artifact(self):
         self.output.mkdir()
         archive = self.output / 'core-blueprint-1.0.0-rc1.zip'
