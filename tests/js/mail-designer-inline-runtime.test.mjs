@@ -131,3 +131,39 @@ test('preview listener attachment is idempotent and unrelated F2 has no edit eff
 	assert.equal(f.controller.isEditing(), false);
 	assert.equal(f.controller.finish(false), false);
 });
+
+test('Escape from inline text restores content and keyboard focus', () => {
+	const f = fixture();
+	assert.equal(f.controller.startSelected(f.doc), true);
+	f.target.innerText = 'Unsaved';
+	f.target.innerHTML = '<div>Unsaved</div>';
+	const event = {
+		key: 'Escape',
+		defaultPrevented: false,
+		preventDefault() { this.defaultPrevented = true; },
+		stopPropagation() {},
+	};
+	f.target.listeners.keydown(event);
+	assert.equal(event.defaultPrevented, true);
+	assert.equal(f.controller.isEditing(), false);
+	assert.equal(f.target.innerHTML, '<div>Hello</div>');
+	assert.equal(f.target.attributes.get('tabindex'), '-1');
+	assert.equal(f.target.focused, true);
+	assert.deepEqual(f.changes, []);
+});
+
+test('Ctrl/Command+Enter commits one edit and returns focus without saving another node', () => {
+	const f = fixture();
+	assert.equal(f.controller.startSelected(f.doc), true);
+	f.target.innerText = 'Ready';
+	const event = {
+		key: 'Enter', ctrlKey: true, metaKey: false,
+		preventDefault() { this.defaultPrevented = true; },
+		stopPropagation() {},
+	};
+	f.target.listeners.keydown(event);
+	assert.equal(event.defaultPrevented, true);
+	assert.equal(f.controller.isEditing(), false);
+	assert.equal(f.target.attributes.get('tabindex'), '-1');
+	assert.deepEqual(f.changes, [{ path: [0, 0], key: 'text', value: 'Ready' }]);
+});
