@@ -28,6 +28,15 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
             self.assertFalse(release_env.bind(Path("/unused")))
         self.assertEqual(os.environ["WP_DB_NAME"], "manual")
 
+    def test_explicit_proven_mode_replaces_stale_shell_database(self):
+        os.environ["WP_DB_NAME"] = "wordpress_test"
+        os.environ["CB_BASE_USE_PROVEN_LEVEL2"] = "1"
+        verified = {key: "proven_" + key for key in release_env.REQUIRED}
+        verified["WP_PHPUNIT__TABLE_PREFIX"] = "cbtests_"
+        with patch.object(release_env, "resolve", return_value=verified):
+            self.assertTrue(release_env.bind(Path("/unused")))
+        self.assertEqual(os.environ["WP_DB_NAME"], "proven_WP_DB_NAME")
+
     def test_unproved_workspace_cannot_populate_environment(self):
         with patch.object(release_env, "resolve", side_effect=preflight.PreflightError("No PASS")):
             with self.assertRaisesRegex(preflight.PreflightError, "No PASS"):
