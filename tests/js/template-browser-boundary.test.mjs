@@ -75,3 +75,11 @@ test('Load more is hidden for zero results and only shown with a populated next 
   assert.match(browser, /more\.hidden = !state\.cursor \|\| !state\.entries\.length;/);
   assert.match(styles, /\.cb-template-browser__more\[hidden\]\s*\{\s*display: none !important;\s*\}/);
 });
+
+test('category facets use declared authorized sources, including scoped Designer browsers', () => {
+  assert.match(browser, /addSelect\( 'category', 'category', 'Category' \)/);
+  assert.match(browser, /request\( 'sources', \{\}, token, undefined \)/);
+  assert.match(browser, /Array\.isArray\( source\.categories \)/);
+  assert.match(browser, /categorySelect\.replaceChildren/);
+  assert.doesNotMatch(browser, /const categoryInput = el\( 'input'/);
+});

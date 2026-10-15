@@ -4,6 +4,7 @@ declare(strict_types=1);
 use CoreBlueprint\Core\Admin\PageRegistry;
 use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\TemplateLibrary\Assets;
+use CoreBlueprint\Core\TemplateLibrary\TemplateCategorySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\BrowserController;
 use CoreBlueprint\Core\TemplateLibrary\DesignerScope;
 use CoreBlueprint\Core\TemplateLibrary\TemplateMetadata;
@@ -38,12 +39,13 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 
 	public function register_sources(): void {
 		foreach ( [ 'workflow', 'mail' ] as $type ) {
-			TemplateSourceRegistry::register( new class( $type ) implements TemplateSourceInterface {
+			TemplateSourceRegistry::register( new class( $type ) implements TemplateSourceInterface, TemplateCategorySourceInterface {
 				public function __construct( private string $type ) {}
 				public function source_id(): string { return 'core-blueprint-test-' . $this->type; }
 				public function extension_id(): string { return 'core-blueprint'; }
 				public function designer_type(): string { return $this->type; }
 				public function can_browse( int $user_id ): bool { return user_can( $user_id, 'manage_options' ); }
+				public function categories( int $user_id ): array { return $this->can_browse( $user_id ) ? [ 'example' => 'Example' ] : []; }
 				public function can_view( string $template_id, int $user_id ): bool {
 					return 'example' === $template_id && $this->can_browse( $user_id );
 				}
@@ -106,6 +108,24 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 		self::assertFalse( BrowserController::permitted( $request ) );
 		$request->set_header( 'X-CB-Designer-Scope', '' );
 		self::assertFalse( BrowserController::permitted( $request ) );
+	}
+
+	public function test_category_facets_stay_authorized_and_designer_scoped(): void {
+		$request = new WP_REST_Request( 'GET', '/core-blueprint/v1/template-library/sources' );
+		$global = BrowserController::sources( $request )->get_data()['sources'];
+		self::assertCount( 2, $global );
+		foreach ( $global as $source ) {
+			self::assertSame( [ [ 'id' => 'example', 'label' => 'Example' ] ], $source['categories'] );
+		}
+		$token = DesignerScope::issue( 'core-blueprint', 'workflow' );
+		self::assertIsString( $token );
+		$request->set_header( 'X-CB-Designer-Scope', $token );
+		$scoped = BrowserController::sources( $request )->get_data()['sources'];
+		self::assertCount( 1, $scoped );
+		self::assertSame( 'workflow', $scoped[0]['designer'] );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'subscriber' ] ) );
+		self::assertFalse( BrowserController::permitted( $request ) );
+		self::assertSame( 403, BrowserController::sources( $request )->get_status() );
 	}
 
 	public function test_sources_endpoint_never_leaks_second_designer_in_context(): void {

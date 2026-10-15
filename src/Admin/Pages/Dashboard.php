@@ -29,6 +29,7 @@ use CoreBlueprint\Core\Permissions\UserRolesState;
 use CoreBlueprint\Core\Modules\Status;
 use CoreBlueprint\Core\Security\AccessMode;
 use CoreBlueprint\Core\Setup\Admin\Page as SetupPage;
+use CoreBlueprint\Core\TemplateLibrary\AdminPage as TemplateLibraryPage;
 use CoreBlueprint\Core\Setup\ReviewRepository as SetupReviewRepository;
 use CoreBlueprint\Core\UI\StatusMenu;
 
@@ -203,6 +204,16 @@ final class Dashboard extends PageBase {
 				'title' => __( 'Core Profiles', 'core-blueprint' ),
 				'meta'  => __( 'Transfer governed Base configuration between sites', 'core-blueprint' ),
 				'url'   => admin_url( 'admin.php?page=' . Profiles::SLUG ),
+			];
+		}
+
+		// Shared navigation-only Library tile follows Core Profiles.
+		if ( current_user_can( 'manage_options' ) ) {
+			$operations_cards[] = [
+				'id'    => 'template-library',
+				'title' => __( 'Template Library', 'core-blueprint' ),
+				'meta'  => __( 'Browse templates', 'core-blueprint' ),
+				'url'   => admin_url( 'admin.php?page=' . TemplateLibraryPage::SLUG ),
 			];
 		}
 

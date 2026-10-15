@@ -45,6 +45,7 @@ final class BrowserController {
 			return new WP_REST_Response( [ 'code' => 'invalid_scope' ], 403 );
 		}
 		$sources = TemplateSourceRegistry::sources();
+		$categories = TemplateSourceRegistry::source_categories();
 		if ( null !== $scope ) {
 			$sources = array_filter( $sources, static fn ( array $item ): bool =>
 				$item['extension'] === $scope['extension'] && $item['designer'] === $scope['designer'] );
@@ -52,6 +53,7 @@ final class BrowserController {
 		return new WP_REST_Response( [
 			'sources' => array_map( static fn ( string $id, array $source ): array => [
 				'id' => $id, 'extension' => $source['extension'], 'designer' => $source['designer'],
+				'categories' => $categories[$id] ?? [],
 			], array_keys( $sources ), array_values( $sources ) ),
 		] );
 	}

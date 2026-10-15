@@ -60,7 +60,7 @@ function createBrowser( root, options = {} ) {
     const token = contextual ? options.contextToken : '';
     const state = {
         filters: { limit: 24, search: '', source: '', extension: '', designer: '', origin: '', category: '' },
-        cursor: null, entries: [], selected: null, pending: false,
+        cursor: null, entries: [], sources: [], selected: null, pending: false,
         requestGeneration: 0, controller: null, timer: null, destroyed: false,
     };
     const shell = el( 'section', 'cb-template-browser' );
@@ -92,6 +92,7 @@ function createBrowser( root, options = {} ) {
         button.dataset.origin = value;
         button.addEventListener( 'click', () => {
             state.filters.origin = value;
+            updateCategoryOptions();
             originButtons.forEach( ( item ) => item.setAttribute( 'aria-current', String( item === button ) ) );
             refresh();
         } );
@@ -115,6 +116,7 @@ function createBrowser( root, options = {} ) {
         choices.forEach( ( [ value, title ] ) => select.append( option( value, title ) ) );
         select.addEventListener( 'change', () => {
             state.filters[name] = select.value;
+            if ( name !== 'category' ) updateCategoryOptions();
             refresh();
         } );
         wrapper.append( select );
@@ -124,26 +126,41 @@ function createBrowser( root, options = {} ) {
     const sourceSelect = contextual ? null : addSelect( 'source', 'source', 'Source' );
     const extensionSelect = contextual ? null : addSelect( 'extension', 'plugin', 'Plugin' );
     const designerSelect = contextual ? null : addSelect( 'designer', 'designer', 'Designer type' );
-    const categoryInput = el( 'input', 'cb-template-browser__category' );
-    categoryInput.type = 'text';
-    categoryInput.maxLength = 96;
-    categoryInput.placeholder = label( 'category', 'Category' );
-    categoryInput.setAttribute( 'aria-label', label( 'category', 'Category' ) );
-    const categoryField = el( 'label', 'cb-template-browser__field' );
-    categoryField.append( el( 'span', '', label( 'category', 'Category' ) ), categoryInput );
+    const categorySelect = addSelect( 'category', 'category', 'Category' );
+    categorySelect.disabled = true;
+
+    // Provider-declared facets avoid missing categories on later result pages.
+    function updateCategoryOptions() {
+        const available = new Map();
+        for ( const source of state.sources ) {
+            if ( state.filters.source && source.id !== state.filters.source ) continue;
+            if ( state.filters.extension && source.extension !== state.filters.extension ) continue;
+            if ( state.filters.designer && source.designer !== state.filters.designer ) continue;
+            if ( !Array.isArray( source.categories ) ) continue;
+            for ( const category of source.categories ) {
+                if ( !category || typeof category.id !== 'string' || typeof category.label !== 'string'
+                    || !/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/.test( category.id ) ) continue;
+                if ( !available.has( category.id ) ) available.set( category.id, category.label );
+            }
+        }
+        categorySelect.replaceChildren( option( '', label( 'all', 'All templates' ) ) );
+        [ ...available.entries() ].sort( ( a, b ) => a[1].localeCompare( b[1] ) )
+            .forEach( ( [ id, title ] ) => categorySelect.append( option( id, title ) ) );
+        categorySelect.disabled = available.size === 0;
+        if ( state.filters.category && !available.has( state.filters.category ) ) {
+            state.filters.category = '';
+            refresh();
+        }
+        categorySelect.value = state.filters.category;
+    }
 
     search.addEventListener( 'input', () => {
         clearTimeout( state.timer );
         state.timer = setTimeout( () => { state.filters.search = search.value.trim(); refresh(); }, 250 );
     } );
-    categoryInput.addEventListener( 'change', () => {
-        state.filters.category = categoryInput.value.trim();
-        refresh();
-    } );
     const searchField = el( 'label', 'cb-template-browser__field cb-template-browser__field--search' );
     searchField.append( el( 'span', '', label( 'search', 'Search templates' ) ), search );
     toolbar.prepend( searchField );
-    toolbar.append( categoryField );
     content.append( toolbar, message, results, footer );
     shell.append( sidebar, content );
     root.replaceChildren( shell );
@@ -244,19 +261,20 @@ function createBrowser( root, options = {} ) {
     function refresh() { return load( true ); }
     more.addEventListener( 'click', () => { if ( state.cursor ) load(); } );
 
-    if ( !contextual ) {
-        request( 'sources', {}, '', undefined ).then( ( data ) => {
-            if ( state.destroyed || !Array.isArray( data.sources ) ) return;
-            const sources = data.sources;
+    request( 'sources', {}, token, undefined ).then( ( data ) => {
+        if ( state.destroyed || !Array.isArray( data.sources ) ) return;
+        state.sources = data.sources;
+        if ( !contextual ) {
             const fill = ( select, items ) => {
                 if ( !select ) return;
                 items.forEach( ( item ) => select.append( option( item, item ) ) );
             };
-            fill( sourceSelect, [ ...new Set( sources.map( ( item ) => item.id ).filter( Boolean ) ) ] );
-            fill( extensionSelect, [ ...new Set( sources.map( ( item ) => item.extension ).filter( Boolean ) ) ] );
-            fill( designerSelect, [ ...new Set( sources.map( ( item ) => item.designer ).filter( Boolean ) ) ] );
-        } ).catch( () => {} );
-    }
+            fill( sourceSelect, [ ...new Set( state.sources.map( ( item ) => item.id ).filter( Boolean ) ) ] );
+            fill( extensionSelect, [ ...new Set( state.sources.map( ( item ) => item.extension ).filter( Boolean ) ) ] );
+            fill( designerSelect, [ ...new Set( state.sources.map( ( item ) => item.designer ).filter( Boolean ) ) ] );
+        }
+        updateCategoryOptions();
+    } ).catch( () => {} );
 
     refresh();
     return {

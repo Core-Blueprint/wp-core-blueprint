@@ -24,6 +24,17 @@ Consumers attach to `core_blueprint_register_template_sources` during plugin loa
 
 Provider implementations must be local-only, no outbound calls. Return `TemplateMetadata` records with source/extension/designer matching the registered source. No secrets, workflow principals, body HTML, credentials, customer content or serialized domain documents are permitted in metadata.
 
+### Optional category facet contract
+
+Sources may implement `TemplateCategorySourceInterface::categories(int $user_id): array`
+with at most 48 visible `slug => display label` pairs, without modifying the
+frozen `TemplateSourceInterface`. Base validates category IDs, strips markup
+and returns authorized, bounded `categories: [{id, label}]` alongside each
+source in the existing read-only `sources` REST endpoint. No template counts,
+bodies or credentials are exposed. Global UI unions only categories from
+currently selected sources/plugins/designers; contextual UI uses the verified
+Designer scope. Unadapted sources offer no selectable categories until adapted.
+
 ### Request-scoped PHP API
 
 - `TemplateSourceRegistry::sources()`: current-user authorized source identities and types.

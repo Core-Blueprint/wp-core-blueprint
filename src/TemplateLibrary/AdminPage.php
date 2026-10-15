@@ -14,7 +14,7 @@ final class AdminPage implements Page {
 	public function slug(): string { return self::SLUG; }
 	public function title(): string { return __( 'Template Library', 'core-blueprint' ); }
 	public function menu_title(): string { return __( 'Template Library', 'core-blueprint' ); }
-	public function position(): ?int { return 27; }
+	public function position(): ?int { return 97; }
 	public function capability(): string { return 'manage_options'; }
 
 	public function render(): void {
