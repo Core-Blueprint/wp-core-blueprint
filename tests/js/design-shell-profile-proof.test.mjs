@@ -165,3 +165,51 @@ test('document-fixed consumer session remains unchanged across shared shell full
 
 	session.dispose();
 });
+
+
+test('P02 public history facade drives Base-owned toolbar history without exposing private classes', async () => {
+	const project = {
+		schema_version: 1,
+		design_type: 'fixture.shell-proof.domain',
+		root: { type: 'domain', props: { label: 'Initial' }, children: [] },
+	};
+	const session = publicEditor.createDomainSession({ project });
+	const root = new FakeElement(document);
+	const undo = new FakeButton(document);
+	const redo = new FakeButton(document);
+	root.querySelector = (selector) => ({
+		'[data-cb-design-shell-undo]': undo,
+		'[data-cb-design-shell-redo]': redo,
+	}[selector] ?? null);
+	const facade = Object.freeze({
+		historyStatus: () => session.historyStatus(),
+		subscribe: (listener) => session.subscribe(listener),
+		undo: () => session.undo(),
+		redo: () => session.redo(),
+	});
+	const shell = publicEditor.createDesignerShell(root, { session: facade });
+	shell.syncHistory();
+	assert.equal(undo.disabled, true);
+	assert.equal(redo.disabled, true);
+	session.execute({
+		label: 'edit-domain',
+		apply(current) {
+			const next = structuredClone(current);
+			next.root.props.label = 'Updated';
+			return { project: next };
+		},
+	});
+	await Promise.resolve();
+	assert.equal(undo.disabled, false);
+	assert.equal(redo.disabled, true);
+	facade.undo();
+	await Promise.resolve();
+	assert.equal(undo.disabled, true);
+	assert.equal(redo.disabled, false);
+	facade.redo();
+	await Promise.resolve();
+	assert.equal(undo.disabled, false);
+	assert.equal(redo.disabled, true);
+	shell.destroy();
+	session.dispose();
+});

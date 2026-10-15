@@ -453,3 +453,70 @@ test('project change consumers observe reconciled selection for structural comma
 	assert.deepEqual(observed[1], { source: 'context-switch', count: 0, primary: null });
 	session.dispose();
 });
+
+
+const domainProject = (description = 'First') => ({
+	schema_version: 1,
+	design_type: 'fixture.domain',
+	root: { id: 'domain', type: 'domain', props: { description }, children: [] },
+});
+
+const editDomain = (description) => ({
+	label: 'edit-domain',
+	apply(project) {
+		const next = structuredClone(project);
+		next.root.props.description = description;
+		return { project: next };
+	},
+});
+
+test('P02 domain session validates consumer commands and owns isolated reversible history', () => {
+	assert.equal(typeof publicEditor.createDomainSession, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.createDomainSession, 'function');
+	const changes = [];
+	const session = publicEditor.createDomainSession({
+		project: domainProject(),
+		validateProject(project) {
+			if (project.root.type !== 'domain') throw new TypeError('Only domain projects allowed');
+		},
+		allowCommand: (command) => command.label !== 'forbidden',
+		onChange: (project, event) => changes.push([project.root.props.description, event.source]),
+		historyLimit: 2,
+	});
+	const snapshot = session.snapshot();
+	snapshot.root.props.description = 'Mutated externally';
+	assert.equal(session.project().root.props.description, 'First');
+	assert.throws(() => { session.project().root.props.description = 'Mutation'; }, TypeError);
+	assert.throws(() => session.execute({ label: 'forbidden', apply: () => ({ project: domainProject('Forbidden') }) }), /denied/);
+	assert.equal(session.historyStatus().size, 0);
+	session.execute(editDomain('Second'));
+	assert.deepEqual({ ...session.historyStatus() }, { canUndo: true, canRedo: false, size: 1 });
+	assert.equal(session.project().root.props.description, 'Second');
+	assert.equal(session.undo(), true);
+	assert.equal(session.project().root.props.description, 'First');
+	assert.equal(session.redo(), true);
+	assert.equal(session.project().root.props.description, 'Second');
+	assert.deepEqual(changes.map(([name]) => name), ['Second', 'First', 'Second']);
+	assert.throws(() => session.replace({ ...domainProject(), root: { ...domainProject().root, type: 'document' } }), /Only domain projects/);
+	assert.equal(session.project().root.props.description, 'Second');
+	session.replace(domainProject('Server'), { source: 'baseline' });
+	assert.deepEqual({ ...session.historyStatus() }, { canUndo: false, canRedo: false, size: 0 });
+	session.execute(editDomain('Draft'));
+	session.clearHistory();
+	assert.equal(session.historyStatus().size, 0);
+	session.dispose();
+	assert.throws(() => session.snapshot(), /disposed/);
+	assert.throws(() => session.historyStatus(), /disposed/);
+	assert.throws(() => session.execute(editDomain('Later')), /disposed/);
+});
+
+test('P02 concurrent domain sessions isolate snapshots and undo stacks', () => {
+	const first = publicEditor.createDomainSession({ project: domainProject('One') });
+	const second = publicEditor.createDomainSession({ project: domainProject('Two') });
+	first.execute(editDomain('Changed'));
+	assert.equal(first.historyStatus().canUndo, true);
+	assert.equal(second.historyStatus().canUndo, false);
+	assert.equal(second.project().root.props.description, 'Two');
+	first.dispose();
+	second.dispose();
+});

@@ -11,6 +11,7 @@ The only supported browser module identifier for the Designer Foundation is:
 ```js
 import {
 	createSession,
+	createDomainSession,
 	createDesignerShell,
 	createDesignerLayerTree,
 	createDesignerSelectionController,
@@ -28,7 +29,7 @@ The equivalent global facade is `window.cbCore.designEditor`. Consumers should p
 
 ### Sessions
 
-`createSession(options)` is the canonical editor-session factory.
+`createSession(options)` is the canonical profile-bound editor-session factory.
 
 Supported v1 session methods and state accessors are:
 
@@ -59,7 +60,21 @@ The session owns project validation against the selected profile, command histor
 
 **Default `external: false` is fail-closed:** every selected path must reference a current node in the DesignProject. **Explicit `external: true`** permits a consumer-owned transient mapping of external domain element IDs to selection path indices (for example, Certificates). It relaxes only project-node existence validation, not path shape, primary membership, profile validity, project validation, command authorization or persistence. External selections must not grant permission, and consumers own stable ID mapping/reconciliation after reorder/removal/undo/redo/project replacement; Base commands may reconcile or clear a nonproject selection.
 
-Both methods live on the existing public session from `createSession({profile})` and preserve existing shell/navigation, history and document-profile semantics. They **do not** provide Evaluator's proposed domain-neutral state/history session (P02), which remains separate. Public class exports such as ProjectState/EditorState/CommandHistory are not thereby promoted to consumer contracts.
+Both methods live on the existing public session from `createSession({profile})` and preserve existing shell/navigation, history and document-profile semantics. They do not substitute for the separate public domain-neutral state/history session (P02) documented below. Public class exports such as ProjectState/EditorState/CommandHistory are not thereby promoted to consumer contracts.
+
+### Domain-neutral sessions (P02, additive public v1 API)
+
+`createDomainSession({ project, validateProject = null, allowCommand = null, onChange = null, historyLimit = 100 })` is the supported public session for non-document/non-mail consumers. No document/mail profile, evaluator-specific engine, selection model, or persistence is introduced.
+
+- `project()` returns the frozen DesignProject; `snapshot()` clones it for consumer-controlled persistence. Only the DesignProject belongs in portable data.
+- `replace(project, { source = 'consumer' })` validates and replaces the project. Replacement resets history by default. `validateProject(project)` is a synchronous domain-owned validator: throw on invalid data. Base additionally validates the DesignProject envelope.
+- `execute({ label, apply(project) })` commits a domain-owned reversible transition. The command returns `{ project }`. `allowCommand(command, project)` may deny by returning `false`. Consumers must not mutate the frozen input.
+- `undo()`, `redo()`, `clearHistory()`, `historyStatus()`, and `dispose()` are Base-owned, session-only mechanics. `historyStatus()` returns a frozen `{ canUndo, canRedo, size }` snapshot; never persist history.
+- `subscribe(listener)` (with unsubscribe return) and `onChange(project, event)` observe project revisions. History events may fire before the stack finishes changing; re-read `historyStatus()` after the command/undo/redo or in a microtask.
+- The shared Designer shell supports a session facade with `historyStatus()`, `subscribe(listener)`, `undo()` and `redo()`; consumers can intercept the two actions to update domain UI.
+- Public PHP capability gate: `CoreBlueprint\\Core\\Design\\Editor\\Assets::DOMAIN_SESSION_API >= 1`. Public JS module and global facade expose `createDomainSession`. The low-level `ProjectState`, `EditorState`, and `CommandHistory` classes stay outside consumer contracts; the v1 profile-based `createSession()` is unchanged.
+
+A consumer adopting P02 must install a compatible Base and extension together. This does not change which Evaluation data may be stored or transmitted.
 
 ### Shell
 
