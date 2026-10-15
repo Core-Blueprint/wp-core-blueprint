@@ -468,7 +468,13 @@ if (root) {
 		select: (path) => selectionController?.select(path),
 		onStatus: setPreviewStatus,
 		onEditingChange: (isEditing) => {
-			if (!isEditing && previewPending) {
+			if (isEditing) {
+				previewController?.abort();
+				window.clearTimeout(previewTimer);
+				previewPending = true;
+				return;
+			}
+			if (previewPending) {
 				previewPending = false;
 				schedulePreview();
 			}
