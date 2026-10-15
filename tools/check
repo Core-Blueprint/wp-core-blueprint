@@ -35,6 +35,7 @@ bash tests/bin/php-lint.sh
 printf '== Standalone public foundation regressions ==\n'
 php tests/public-admin-navigation-foundation-regression.php
 php tests/public-tile-foundation-regression.php
+php tests/public-core-scanner-threat-regression.php
 
 shopt -s globstar nullglob
 js_sources=( "$ROOT"/assets/**/*.js )
