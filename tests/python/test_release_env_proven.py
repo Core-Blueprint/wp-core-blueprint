@@ -148,7 +148,7 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
 
     def test_symlinked_fixture_blocks_release(self):
         with self.proved_workspace(), patch.object(
-            release_env.Path, "is_symlink", side_effect=lambda p: p.name == "core-blueprint.php"
+            release_env.Path, "is_symlink", new=lambda path: path.name == "core-blueprint.php"
         ):
             with self.assertRaisesRegex(preflight.PreflightError, "symlink"):
                 release_env.resolve(Path("/source"))
