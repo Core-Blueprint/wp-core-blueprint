@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\TemplateLibrary\BrowserController;
 use CoreBlueprint\Core\TemplateLibrary\DesignerScope;
 use CoreBlueprint\Core\TemplateLibrary\TemplateManagementSourceInterface;
@@ -16,7 +17,11 @@ final class CB_Template_Library_Management_Contract_Test extends WP_UnitTestCase
 	public function set_up(): void {
 		parent::set_up();
 		$this->operator = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$operator = get_userdata( $this->operator );
+		self::assertInstanceOf( WP_User::class, $operator );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $operator, 0, 'template_library_test_fixture' ) );
 		wp_set_current_user( $this->operator );
+		self::assertTrue( current_user_can( 'manage_options' ), 'The management fixture must use an explicitly approved administrator.' );
 		set_current_screen( 'core-blueprint_page_core-blueprint-template-library' );
 		TemplateSourceRegistry::_reset_for_testing();
 		add_action( 'core_blueprint_register_template_sources', [ $this, 'register_source' ] );
@@ -126,9 +131,22 @@ final class CB_Template_Library_Management_Contract_Test extends WP_UnitTestCase
 			'personal-one', 'Forbidden', '', 'personal', 'demo', 'en', '1'
 		);
 		self::assertSame( [], TemplateSourceRegistry::navigation( $forged, true )->public_links( true ) );
-		self::assertSame( [], BrowserController::templates( new WP_REST_Request(
+		$response = BrowserController::templates( new WP_REST_Request(
 			'GET', '/core-blueprint/v1/template-library/templates'
-		) )->get_data()['items'] );
+		) );
+		self::assertSame( 403, $response->get_status(), 'Subscriber may not use the privileged global browser.' );
+		self::assertArrayNotHasKey( 'items', $response->get_data(), 'A denied response must not expose template metadata.' );
+	}
+
+	public function test_unapproved_privileged_administrator_is_denied_global_browser(): void {
+		$unapproved = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		wp_set_current_user( $unapproved );
+		self::assertFalse( current_user_can( 'manage_options' ), 'Privileged Access Guard must restrict an unapproved administrator.' );
+		$request = new WP_REST_Request( 'GET', '/core-blueprint/v1/template-library/templates' );
+		self::assertFalse( BrowserController::permitted( $request ) );
+		$response = BrowserController::templates( $request );
+		self::assertSame( 403, $response->get_status() );
+		self::assertArrayNotHasKey( 'items', $response->get_data() );
 	}
 
 	public function test_legacy_provider_without_management_contract_stays_compatible(): void {
