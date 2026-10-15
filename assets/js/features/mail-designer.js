@@ -61,6 +61,7 @@ if (root) {
 
 	let previewTimer = 0;
 	let previewController = null;
+	let previewRevision = 0;
 	let shell = null;
 	let layerTree = null;
 	let selectionController = null;
@@ -211,7 +212,9 @@ if (root) {
 		if (inlineEditor?.isEditing()) { previewPending = true; return; }
 		if (!ajaxUrl || !nonce || !templateId) return;
 		previewController?.abort();
-		previewController = new AbortController();
+		const revision = ++previewRevision;
+		const controller = new AbortController();
+		previewController = controller;
 		setPreviewStatus('Updating preview…');
 
 		const body = new URLSearchParams({
@@ -228,22 +231,25 @@ if (root) {
 				credentials: 'same-origin',
 				headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
 				body: body.toString(),
-				signal: previewController.signal,
+				signal: controller.signal,
 			});
 			const payload = await response.json();
 			if (!response.ok || !payload?.success || typeof payload?.data?.html !== 'string') {
 				throw new Error(payload?.data?.message || 'Preview failed.');
 			}
+			if (controller.signal.aborted || revision !== previewRevision || inlineEditor?.isEditing() || contextHydrating) return;
 			preview.srcdoc = payload.data.html;
 			setPreviewStatus('Preview updated');
 		} catch (error) {
-			if (error?.name === 'AbortError') return;
+			if (controller.signal.aborted || revision !== previewRevision || error?.name === 'AbortError') return;
 			setPreviewStatus(error?.message || 'Preview failed.', true);
 		}
 	};
 
 	const schedulePreview = () => {
 		if (inlineEditor?.isEditing()) { previewPending = true; return; }
+		++previewRevision;
+		previewController?.abort();
 		window.clearTimeout(previewTimer);
 		previewTimer = window.setTimeout(refreshPreview, 250);
 	};
@@ -492,6 +498,7 @@ if (root) {
 		onStatus: setPreviewStatus,
 		onEditingChange: (isEditing) => {
 			if (isEditing) {
+				++previewRevision;
 				previewController?.abort();
 				window.clearTimeout(previewTimer);
 				previewPending = true;
@@ -554,6 +561,7 @@ if (root) {
 		}
 		const originalFingerprint = currentFingerprint();
 
+		++previewRevision;
 		previewController?.abort();
 		window.clearTimeout(previewTimer);
 		const body = new URLSearchParams({
@@ -675,6 +683,14 @@ if (root) {
 	});
 
 	preview.addEventListener('load', bindPreviewInteractions);
+	// F2 is also available when focus remains on the outer Layers panel.
+	// Do not steal the key from an ordinary text input or other editable UI.
+	document.addEventListener('keydown', (event) => {
+		if (event.key !== 'F2' || event.defaultPrevented || inlineEditor?.isEditing()) return;
+		const active = document.activeElement;
+		if (active?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+		if (inlineEditor?.startSelected(preview.contentDocument)) event.preventDefault();
+	});
 	subjectField.addEventListener('input', schedulePreview);
 	form.addEventListener('submit', (event) => {
 		const editingNow = Boolean(inlineEditor?.isEditing());
