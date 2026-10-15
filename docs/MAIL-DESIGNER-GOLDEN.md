@@ -133,6 +133,20 @@ The Base Mail inline editing toolbar now supports a deliberate small set of **co
 
 No direct changes to Base Luna's active branch, `main`, Newsletter production consumer or the shared Designer Shell; no merges, CI, publication, customer sends or release build.
 
+## M2-A: Column Styling & Structural Parity (isolated source candidate)
+
+The first M2 batch extends the existing two-column Mail renderer and Inspector without adding separate styling controls to the canvas:
+
+- **Ratios:** new 60/40 and 40/60 options alongside the existing 50/50, 33/67 and 67/33 in the existing `mail.columns` Inspector and deterministic PHP renderer.
+- **Per-column presentation:** `mail.column` now exposes background color and inner padding (0–32 px) in the existing Base Inspector/Layers. New column containers start with optional white background and 12 px padding; previously stored columns lacking these properties retain their original markup/behavior. The renderer sanitizes background colors and bounds padding.
+- **Email-safe renderer:** a padded column uses an inner table and TD (rather than increasing the outer declared percentage-width cell). Background color uses a sanitized `bgcolor` attribute and inline style for email-client fallback; Outlook still gets table cells, not a CSS grid. Mobile stacking retains its previous base CSS and requires real-client verification.
+- **Structural validity:** PHP and JavaScript Mail validators now both reject nested sections, orphan columns, a columns layout outside a section, invalid column count/provider and structural layouts inside a column. Registered extension-owned content leaf blocks remain allowed. This prevents invalid table nesting from being accepted by the editor and then rejected by the server.
+- **Contracts/tests:** proposed PHP WordPress integration tests cover styled ratios, background/padding, sanitizer bounds, legacy columns and nesting; new `tests/js/mail-designer-m2-layout.test.mjs` and updated M1 tests check Inspector integration and JS validation.
+- **Evidence:** 6/6 JavaScript source/test syntax checks and 14/14 targeted M1/M2 profile+source assertions PASS in a restricted V8 harness. Full PHP lint, PHPUnit, npm/Node suite, desktop/mobile email client and staging visual acceptance were **not run**. Our isolated container cannot resolve github.com for cloning, and the operator's local Base clone remains with Base Luna.
+- **Next gates:** compare Base Luna's actual changes to `src/Design/Profile/Mail`, Registry, Inspector and JS Mail profile; run PHP8.4 lint, WP7.0/7.1 integration, Node, visual/screen reader, mobile stacking in Gmail/Outlook/Apple Mail, dist/checksum and legacy template fixture comparisons. Do not merge until explicit GO.
+
+M2-A is not Golden. No Base Luna/main changes, no CI, no sends and no release build.
+
 ## Reconciliation handshake
 
 1. Freeze new branch SHA, file list, tests and scope.
