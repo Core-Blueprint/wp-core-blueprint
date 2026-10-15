@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const browser = readFileSync(new URL('../../assets/js/core/template-browser.js', import.meta.url), 'utf8');
+const assets = readFileSync(new URL('../../src/TemplateLibrary/Assets.php', import.meta.url), 'utf8');
 const modal = readFileSync(new URL('../../assets/js/core/modal.js', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../../assets/css/components/template-library.css', import.meta.url), 'utf8');
 
@@ -52,10 +53,25 @@ test('T3 global management stays delegated to local owner screens', () => {
 
 test('standalone Template Library uses viewport-filling flex without changing Designer modal layout', () => {
   assert.match(styles, /\.cb-template-browser\s*\{\s*display: grid;/);
+  assert.match(styles, /\.cb-template-library-page\s*\{[^}]*max-width: none;/);
+  assert.doesNotMatch(styles, /\.cb-template-library-page\s*\{[^}]*max-width:\s*1440px;/);
   assert.match(styles, /\.cb-template-library-page\s*\{[^}]*display: flex;[^}]*flex-direction: column;[^}]*min-height: calc\(100dvh - 80px\);/);
   assert.match(styles, /\.cb-template-library-page > \[data-cb-template-library-global\]\s*\{[^}]*display: flex;[^}]*flex: 1 1 auto;/);
   assert.match(styles, /\.cb-template-library-page \.cb-template-browser\s*\{[^}]*display: flex;[^}]*flex: 1 1 auto;/);
   assert.match(styles, /\.cb-template-library-page \.cb-template-browser__sidebar\s*\{[^}]*flex: 0 0 clamp\(160px, 19%, 236px\);/);
   assert.match(styles, /\.cb-template-library-page \.cb-template-browser__grid\s*\{[^}]*flex: 1 1 auto;/);
   assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?\.cb-template-library-page \.cb-template-browser\s*\{ flex-direction: column; \}/);
+});
+
+test('global filters distinguish translated Source and Plugin without changing their query keys', () => {
+  assert.match(browser, /addSelect\( 'source', 'source', 'Source' \)/);
+  assert.match(browser, /addSelect\( 'extension', 'plugin', 'Plugin' \)/);
+  assert.match(assets, /'plugin'\s*=> __\( 'Plugin', 'core-blueprint' \)/);
+  assert.doesNotMatch(browser, /addSelect\( 'extension', 'source'/);
+});
+
+test('Load more is hidden for zero results and only shown with a populated next page', () => {
+  assert.match(browser, /more\.hidden = true;/);
+  assert.match(browser, /more\.hidden = !state\.cursor \|\| !state\.entries\.length;/);
+  assert.match(styles, /\.cb-template-browser__more\[hidden\]\s*\{\s*display: none !important;\s*\}/);
 });

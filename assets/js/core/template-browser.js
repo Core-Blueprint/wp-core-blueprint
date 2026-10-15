@@ -122,7 +122,7 @@ function createBrowser( root, options = {} ) {
         return select;
     }
     const sourceSelect = contextual ? null : addSelect( 'source', 'source', 'Source' );
-    const extensionSelect = contextual ? null : addSelect( 'extension', 'source', 'Extension' );
+    const extensionSelect = contextual ? null : addSelect( 'extension', 'plugin', 'Plugin' );
     const designerSelect = contextual ? null : addSelect( 'designer', 'designer', 'Designer type' );
     const categoryInput = el( 'input', 'cb-template-browser__category' );
     categoryInput.type = 'text';
@@ -232,7 +232,7 @@ function createBrowser( root, options = {} ) {
             state.cursor = payload.next_cursor;
             message.textContent = state.entries.length ? '' : label( 'noResults', 'No templates found.' );
             summary.textContent = String( state.entries.length );
-            more.hidden = !state.cursor;
+            more.hidden = !state.cursor || !state.entries.length;
         } catch ( error ) {
             if ( !controller.signal.aborted && !state.destroyed && generation === state.requestGeneration ) {
                 message.textContent = label( 'error', 'Could not load templates.' );

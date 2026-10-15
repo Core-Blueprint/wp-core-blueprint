@@ -51,6 +51,7 @@ final class Assets {
 			'all'         => __( 'All templates', 'core-blueprint' ),
 			'origin'      => __( 'Origin', 'core-blueprint' ),
 			'source'      => __( 'Source', 'core-blueprint' ),
+			'plugin'      => __( 'Plugin', 'core-blueprint' ),
 			'designer'    => __( 'Designer type', 'core-blueprint' ),
 			'category'    => __( 'Category', 'core-blueprint' ),
 			'builtin'     => __( 'Built-in', 'core-blueprint' ),
