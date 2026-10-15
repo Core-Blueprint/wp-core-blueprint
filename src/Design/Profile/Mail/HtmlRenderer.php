@@ -58,7 +58,7 @@ final class HtmlRenderer {
 			esc_html( $preheader )
 		);
 		$editor_css = $editor_markers
-			? '[data-cb-mail-editor-node][data-cb-mail-selected="true"]>tr>td{outline:2px solid #2271b1;outline-offset:-2px}[data-cb-mail-editor-node][data-cb-mail-hovered="true"]>tr>td{outline:2px dashed #2271b1;outline-offset:-2px}.cb-mail-column[data-cb-mail-selected="true"]{outline:2px solid #2271b1;outline-offset:-2px}.cb-mail-column[data-cb-mail-hovered="true"]{outline:2px dashed #2271b1;outline-offset:-2px}'
+			? '[data-cb-mail-editor-node][data-cb-mail-selected="true"]>tr>td{outline:2px solid #2271b1;outline-offset:-2px}[data-cb-mail-editor-node][data-cb-mail-hovered="true"]>tr>td{outline:2px dashed #2271b1;outline-offset:-2px}.cb-mail-column[data-cb-mail-selected="true"]{outline:2px solid #2271b1;outline-offset:-2px}.cb-mail-column[data-cb-mail-hovered="true"]{outline:2px dashed #2271b1;outline-offset:-2px}[data-cb-mail-inline-editing="true"]{outline:2px solid #2271b1;outline-offset:2px;min-height:1em;cursor:text}[data-cb-mail-inline-active="true"]{outline:2px solid #2271b1;outline-offset:-2px}'
 			: '';
 
 		return '<!doctype html><html><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
