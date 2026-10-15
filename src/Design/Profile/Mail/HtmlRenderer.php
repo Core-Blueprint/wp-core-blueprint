@@ -62,7 +62,7 @@ final class HtmlRenderer {
 			: '';
 
 		return '<!doctype html><html><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-			. '<meta name="x-apple-disable-message-reformatting"><style>table{mso-table-lspace:0pt;mso-table-rspace:0pt}@media only screen and (max-width:640px){.cb-mail-container{width:100%!important}.cb-mail-pad{padding-left:20px!important;padding-right:20px!important}.cb-mail-button-table{width:100%!important}.cb-mail-button{display:block!important;width:100%!important;box-sizing:border-box!important}}' . $editor_css . '</style>'
+			. '<meta name="x-apple-disable-message-reformatting"><style>table{mso-table-lspace:0pt;mso-table-rspace:0pt}@media only screen and (max-width:640px){.cb-mail-container{width:100%!important}.cb-mail-pad{padding-left:20px!important;padding-right:20px!important}.cb-mail-button-table{width:100%!important}.cb-mail-button{display:block!important;width:100%!important;box-sizing:border-box!important}.cb-mail-column{display:block!important;width:100%!important;box-sizing:border-box!important;padding-right:0!important}}' . $editor_css . '</style>'
 			. '<!--[if mso]><noscript><xml><o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office"><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]--></head>'
 			. '<body style="margin:0;padding:0;background:' . esc_attr( $background ) . ';font-family:' . esc_attr( $font ) . ';color:' . esc_attr( $text_color ) . ';">'
 			. $preheader_html
@@ -182,6 +182,65 @@ final class HtmlRenderer {
 		$spacing = $this->int_range( $properties['spacing'] ?? 16, 0, 48, 16 );
 		return '<tr><td style="padding:0 0 ' . esc_attr( (string) $spacing ) . 'px;text-align:' . esc_attr( $align ) . ';font-family:' . esc_attr( $theme['font'] ) . ';font-size:' . esc_attr( (string) $size ) . 'px;line-height:1.6;color:' . esc_attr( $color ) . ';">'
 			. nl2br( esc_html( $text ) ) . '</td></tr>';
+	}
+
+	/** @param array<string,mixed> $properties @param array<string,scalar|null> $bindings @param array{text:string,accent:string,font:string} $theme */
+	private function render_rich_text( array $properties, array $bindings, array $theme ): string {
+		$markup = RichText::render( (string) ( $properties['markup'] ?? '' ), $bindings );
+		$size = $this->int_range( $properties['fontSize'] ?? 16, 12, 28, 16 );
+		$align = $this->align( $properties['align'] ?? 'left' );
+		$color = $this->color( $properties['color'] ?? $theme['text'], $theme['text'] );
+		$spacing = $this->int_range( $properties['spacing'] ?? 16, 0, 48, 16 );
+		return '<tr><td style="padding:0 0 ' . esc_attr( (string) $spacing ) . 'px;text-align:' . esc_attr( $align ) . ';font-family:' . esc_attr( $theme['font'] ) . ';font-size:' . esc_attr( (string) $size ) . 'px;line-height:1.6;color:' . esc_attr( $color ) . ';">'
+			. $markup . '</td></tr>';
+	}
+
+	/**
+	 * A two-column mail-native table layout with viewport-only CSS stacking.
+	 * Old Outlook versions see ordinary table cells; mobile clients may stack.
+	 * A column is a structural container, never an independent palette block.
+	 *
+	 * @param array<string,mixed> $node
+	 * @param array<string,scalar|null> $bindings
+	 * @param array{text:string,accent:string,font:string} $theme
+	 * @param list<int> $path
+	 */
+	private function render_columns( array $node, array $bindings, array $theme, array $path, bool $editor_markers ): string {
+		$properties = is_array( $node['properties'] ?? null ) ? $node['properties'] : [];
+		$ratio = (string) ( $properties['ratio'] ?? 'equal' );
+		$widths = match ( $ratio ) {
+			'left-third' => [ 33, 67 ],
+			'right-third' => [ 67, 33 ],
+			default => [ 50, 50 ],
+		};
+		$gap = $this->int_range( $properties['gap'] ?? 16, 0, 40, 16 );
+		$spacing = $this->int_range( $properties['spacing'] ?? 20, 0, 48, 20 );
+		$cells = '';
+		foreach ( (array) ( $node['children'] ?? [] ) as $index => $column ) {
+			if ( ! is_array( $column ) || 'mail.column' !== ( $column['type'] ?? '' ) || $index > 1 ) {
+				continue;
+			}
+			$contents = '';
+			$column_path = [ ...$path, (int) $index ];
+			foreach ( (array) ( $column['children'] ?? [] ) as $child_index => $child ) {
+				if ( is_array( $child ) ) {
+					$contents .= $this->render_node( $child, $bindings, $theme, [ ...$column_path, (int) $child_index ], $editor_markers );
+				}
+			}
+			$width = $widths[ $index ];
+			$cell_padding = 0 === $index ? 'padding-right:' . esc_attr( (string) $gap ) . 'px;' : '';
+			$markers = '';
+			if ( $editor_markers ) {
+				$path_json = wp_json_encode( $column_path );
+				$markers = ' data-cb-mail-editor-node="1" data-cb-mail-path="' . esc_attr( is_string( $path_json ) ? $path_json : '[]' ) . '" data-cb-mail-type="mail.column" data-cb-mail-provider="core"';
+			}
+			$cells .= '<td class="cb-mail-column" width="' . esc_attr( (string) $width ) . '%" valign="top"' . $markers . ' style="width:' . esc_attr( (string) $width ) . '%;vertical-align:top;' . $cell_padding . '">'
+				. '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;width:100%;">'
+				. $contents . '</table></td>';
+		}
+		return '<tr><td style="padding:0 0 ' . esc_attr( (string) $spacing ) . 'px;">'
+			. '<table role="presentation" class="cb-mail-columns" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;"><tr>'
+			. $cells . '</tr></table></td></tr>';
 	}
 
 	/** @param array<string,mixed> $properties @param array<string,scalar|null> $bindings @param array{text:string,accent:string,font:string} $theme */
