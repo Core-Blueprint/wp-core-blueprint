@@ -542,6 +542,17 @@ if (root) {
 		session,
 		defaultPanel: 'email',
 	});
+	// Shared Base history remains authoritative. Flush an active inline draft
+	// before the Shell's undo/redo action, or block that action when invalid.
+	// The capture phase runs before the Shell button click handler.
+	shellRoot.addEventListener('click', (event) => {
+		const target = event.target?.nodeType === 1 ? event.target : event.target?.parentElement;
+		if (!target?.closest?.('[data-cb-design-shell-undo], [data-cb-design-shell-redo]')) return;
+		if (finishActiveText()) return;
+		event.preventDefault();
+		event.stopImmediatePropagation();
+	}, true);
+
 	layerTree = createDesignerLayerTree({
 		documentRef: document,
 		ariaLabel: 'Layers',
