@@ -5,6 +5,7 @@
  * This code executes within the same-origin authoring preview, never in sent mail.
  */
 import { safeMailLink } from './rich-text-controls.js';
+import { convertMailSelectionToList } from './list-format.js';
 
 export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => {} }) => {
 	if (!documentRef?.createElement || !target) throw new TypeError('Inline toolbar requires the active preview document and text target.');
@@ -70,25 +71,6 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 		restoreSelection(wrapper);
 		return true;
 	};
-	// Only convert complete, consecutive top-level paragraphs. Partial
-	// multi-paragraph selections are left intact to prevent invalid mail HTML.
-	const paragraphsForRange = (range) => {
-		const elementOf = (node) => node?.nodeType === 1 ? node : node?.parentElement;
-		const first = elementOf(range.startContainer)?.closest?.('p');
-		const last = elementOf(range.endContainer)?.closest?.('p');
-		if (!first || !last || first.parentElement !== target || last.parentElement !== target) return null;
-		const children = [...(target.children || [])];
-		const from = children.indexOf(first);
-		const to = children.indexOf(last);
-		if (from < 0 || to < from) return null;
-		const selected = children.slice(from, to + 1);
-		if (selected.some((node) => node.tagName?.toLowerCase() !== 'p')) return null;
-		const normalize = (value) => String(value || '').replace(/\s+/g, '');
-		if (!selected.length || normalize(range.toString()) !== normalize(selected.map((node) => node.textContent).join(''))) return null;
-		return selected;
-	};
-	// Creating a list modifies only the selected content; no layout/typography
-	// properties are ever changed by the contextual formatting toolbar.
 	const listSelection = (type) => {
 		const range = selectedRange();
 		if (!range) {
@@ -96,38 +78,8 @@ export const createMailInlineToolbar = ({ documentRef, target, onStatus = () => 
 			target.focus();
 			return false;
 		}
-		const startNode = range.startContainer?.nodeType === 1
-			? range.startContainer : range.startContainer?.parentElement;
-		const paragraph = startNode?.closest?.('p');
-		if (paragraph && target.contains(paragraph)) {
-			const selected = paragraphsForRange(range);
-			if (!selected) {
-				onStatus('Select complete paragraphs to make a list.');
-				return false;
-			}
-			const list = documentRef.createElement(type);
-			const items = [];
-			for (const entry of selected) {
-				const item = documentRef.createElement('li');
-				while (entry.firstChild) item.append(entry.firstChild);
-				list.append(item);
-				items.push(item);
-			}
-			selected[0].replaceWith(list);
-			for (const entry of selected.slice(1)) entry.remove();
-			restoreSelection(items[items.length - 1]);
-			return true;
-		}
-		const startListItem = startNode?.closest?.('li');
-		if (startListItem && target.contains(startListItem)) {
-			onStatus('Finish this list in the Inspector before changing its type.');
-			return false;
-		}
-		const list = documentRef.createElement(type);
-		const item = documentRef.createElement('li');
-		item.append(range.extractContents());
-		list.append(item);
-		range.insertNode(list);
+		const item = convertMailSelectionToList({ documentRef, target, range, type, onStatus });
+		if (!item) return false;
 		restoreSelection(item);
 		return true;
 	};
