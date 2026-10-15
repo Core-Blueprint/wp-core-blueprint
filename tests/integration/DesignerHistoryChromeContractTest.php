@@ -12,8 +12,15 @@ final class CB_Designer_History_Chrome_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( 'const scheduleHistorySync = () => {', $shell );
 		self::assertStringContainsString( "if (typeof queueMicrotask === 'function') queueMicrotask(syncHistory);", $shell );
-		self::assertStringContainsString( 'const unsubscribeProject = session?.projectState?.subscribe?.(scheduleHistorySync) ?? null;', $shell );
-		self::assertStringContainsString( 'if (destroyed || !session?.history) return;', $shell );
+		// P02 consumes the public domain-session facade, while document/mail sessions
+		// retain their established projectState fallback. Both defer the UI sync.
+		self::assertStringContainsString( 'const historyStatus = () => {', $shell );
+		self::assertStringContainsString( "if (typeof session?.historyStatus === 'function') return session.historyStatus();", $shell );
+		self::assertStringContainsString( 'if (session?.history) return { canUndo: session.history.canUndo, canRedo: session.history.canRedo };', $shell );
+		self::assertStringContainsString( 'if (!status) return;', $shell );
+		self::assertStringContainsString( "const unsubscribeProject = typeof session?.subscribe === 'function'", $shell );
+		self::assertStringContainsString( '? session.subscribe(scheduleHistorySync)', $shell );
+		self::assertStringContainsString( ': session?.projectState?.subscribe?.(scheduleHistorySync) ?? null;', $shell );
 		self::assertStringContainsString( 'unsubscribeProject?.();', $shell );
 	}
 }
