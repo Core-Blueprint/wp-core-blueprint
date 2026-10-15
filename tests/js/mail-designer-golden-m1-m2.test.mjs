@@ -84,7 +84,8 @@ test('Mail rich-text inspector has visual editing by default with safe Advanced 
 	const consumer = await get('assets/js/features/mail-designer.js');
 	const css = await get('assets/css/pages/mail-designer.css');
 	assert.match(consumer, /createMailRichTextControls/);
-	assert.match(consumer, /onCommit: \(markup\) => session\.execute\(commands\.setProperty/);
+	assert.match(consumer, /onCommit: \(markup\) => \{/);
+	assert.match(consumer, /return session\.execute\(commands\.setProperty\(path, \['markup'\], markup\)\)/);
 	assert.match(client, /editor\.contentEditable = 'true'/);
 	assert.match(client, /role', 'textbox'/);
 	assert.match(client, /aria-label', 'Formatted email content'/);
