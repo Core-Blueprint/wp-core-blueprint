@@ -121,6 +121,28 @@ test('M1-D safe inline commands keep global settings in Inspector and finish dra
 	assert.match(toolbar, /documentRef\.addEventListener\('selectionchange', rememberSelection\)/);
 	assert.match(toolbar, /documentRef\.removeEventListener\('selectionchange', rememberSelection\)/);
 	assert.match(toolbar, /if \(key === 'k'\) return openLinkEditor\(\)/);
-	assert.match(toolbar, /paragraph\.replaceWith\(list\)/);
+	assert.match(toolbar, /selected\[0\]\.replaceWith\(list\)/);
 	assert.doesNotMatch(toolbar, /session\.execute|commands\.setProperty|fontSize|accentColor/);
+});
+
+test('M1-E layers, inspector, palette and Base undo/redo respect unfinished inline drafts', async () => {
+	const consumer = await read('assets/js/features/mail-designer.js');
+	const toolbar = await read('assets/js/design/mail/inline-toolbar.js');
+	const inspector = await read('assets/js/design/mail/rich-text-controls.js');
+	assert.match(consumer, /const finishActiveText = \(\) => \{/);
+	assert.match(consumer, /const selectAfterTextCommit = \(path, options\) => \{/);
+	assert.match(consumer, /onSelectItem: \(path, options\) => selectAfterTextCommit\(path, options\)/);
+	assert.match(consumer, /select: \(path\) => selectAfterTextCommit\(path\)/);
+	assert.match(consumer, /finishActiveText\(\) && session\.execute\(commands\.removeNode\(path\)\)/);
+	assert.match(consumer, /!definition \|\| !finishActiveText\(\)/);
+	assert.match(consumer, /\[data-cb-design-shell-undo\], \[data-cb-design-shell-redo\]/);
+	assert.match(consumer, /event\.stopImmediatePropagation\(\)/);
+	assert.match(consumer, /if \(!finishActiveText\(\)\) \{ input\.value = value \?\? ''; return; \}/);
+	assert.match(consumer, /if \(!finishActiveText\(\)\) \{ input\.value = field\.value; return; \}/);
+	assert.match(consumer, /onCommit: \(markup\) => \{/);
+	assert.match(inspector, /if \(onCommit\(clean\) === false\)/);
+	assert.match(inspector, /value = clean;\s*return true;/);
+	assert.match(toolbar, /const paragraphsForRange = \(range\) =>/);
+	assert.match(toolbar, /selected\.slice\(1\)/);
+	assert.doesNotMatch(toolbar, /document\.execCommand/);
 });
