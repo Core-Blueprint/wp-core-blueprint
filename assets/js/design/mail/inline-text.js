@@ -6,6 +6,7 @@
  * Session commands are the only persistence/undo boundary.
  */
 import { serializeMailMarkup } from './rich-text-controls.js';
+import { createMailInlineToolbar } from './inline-toolbar.js';
 
 const EDITABLE_PROPERTIES = Object.freeze({
 	'mail.heading': 'text',
@@ -73,6 +74,7 @@ export const createMailInlineTextController = ({
 		const active = editing;
 		if (!active) return false;
 		editing = null;
+		active.toolbar?.destroy();
 		active.target.removeAttribute('contenteditable');
 		active.target.removeAttribute('role');
 		active.target.removeAttribute('aria-multiline');
@@ -149,6 +151,13 @@ export const createMailInlineTextController = ({
 		target.setAttribute('aria-multiline', property === 'text' && node.type !== 'mail.heading' ? 'true' : 'false');
 		target.dataset.cbMailInlineEditing = 'true';
 		marker.setAttribute('data-cb-mail-inline-active', 'true');
+		if (property === 'markup') {
+			editing.toolbar = createMailInlineToolbar({
+				documentRef: target.ownerDocument,
+				target,
+				onStatus,
+			});
+		}
 		onEditingChange(true);
 		onStatus('Editing text. Press Escape to discard, Ctrl+Enter to finish, or click outside to apply.');
 
@@ -184,8 +193,16 @@ export const createMailInlineTextController = ({
 			range.collapse(false);
 		});
 		target.addEventListener('drop', (event) => event.preventDefault());
-		target.addEventListener('blur', () => {
-			if (editing?.target === target) finish(true);
+		target.addEventListener('blur', (event) => {
+			if (editing?.target !== target) return;
+			// Moving focus to the inline Link field is still part of authoring.
+			if (editing.toolbar?.contains(event.relatedTarget)) return;
+			finish(true);
+		});
+		editing.toolbar?.element.addEventListener('focusout', (event) => {
+			if (editing?.target !== target) return;
+			if (editing.toolbar?.contains(event.relatedTarget) || event.relatedTarget === target) return;
+			finish(true);
 		});
 		target.focus();
 		return true;
