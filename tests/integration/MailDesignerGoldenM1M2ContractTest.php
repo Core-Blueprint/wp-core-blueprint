@@ -99,6 +99,83 @@ final class CB_Mail_Designer_Golden_M1_M2_Contract_Test extends WP_UnitTestCase 
 		self::assertTrue( ( new Validator() )->validate( $nested )->has_errors() );
 	}
 
+	public function test_styled_columns_have_safe_background_padding_and_wider_presets(): void {
+		$project = $this->project( [
+			$this->node( 'mail.columns', [ 'ratio' => 'left-wide', 'gap' => 16 ], [
+				$this->node( 'mail.column', [ 'background' => '#f8fafc', 'padding' => 12 ], [
+					$this->node( 'mail.heading', [ 'text' => 'Editorial feature' ] ),
+				] ),
+				$this->node( 'mail.column', [ 'background' => '#eef2ff', 'padding' => 8 ], [
+					$this->node( 'mail.text', [ 'text' => 'Secondary column' ] ),
+				] ),
+			] ),
+		] );
+		self::assertFalse( ( new Validator() )->validate( $project )->has_errors() );
+		$html = ( new HtmlRenderer() )->render( $project );
+		self::assertStringContainsString( 'width="60%"', $html );
+		self::assertStringContainsString( 'width="40%"', $html );
+		self::assertStringContainsString( 'bgcolor="#f8fafc"', $html );
+		self::assertStringContainsString( 'bgcolor="#eef2ff"', $html );
+		self::assertStringContainsString( 'style="padding:12px;"', $html );
+		self::assertStringContainsString( 'style="padding:8px;"', $html );
+		self::assertStringContainsString( 'Editorial feature', $html );
+		self::assertStringContainsString( 'Secondary column', $html );
+	}
+
+	public function test_legacy_unstyled_columns_remain_untouched(): void {
+		$project = $this->project( [
+			$this->node( 'mail.columns', [ 'ratio' => 'equal', 'gap' => 0 ], [
+				$this->node( 'mail.column', [], [ $this->node( 'mail.text', [ 'text' => 'Left' ] ) ] ),
+				$this->node( 'mail.column', [], [ $this->node( 'mail.text', [ 'text' => 'Right' ] ) ] ),
+			] ),
+		] );
+		$html = ( new HtmlRenderer() )->render( $project );
+		self::assertStringContainsString( 'width="50%"', $html );
+		self::assertStringNotContainsString( 'class="cb-mail-column" width="50%" valign="top" bgcolor=', $html );
+		self::assertStringNotContainsString( 'style="padding:12px;"', $html );
+	}
+
+	public function test_column_background_is_sanitized_and_padding_is_bounded(): void {
+		$project = $this->project( [
+			$this->node( 'mail.columns', [ 'ratio' => 'right-wide' ], [
+				$this->node( 'mail.column', [ 'background' => 'javascript:alert(1)', 'padding' => 999 ], [
+					$this->node( 'mail.text', [ 'text' => 'No unsafe styling' ] ),
+				] ),
+				$this->node( 'mail.column', [ 'background' => [ 'invalid' ], 'padding' => -100 ], [
+					$this->node( 'mail.text', [ 'text' => 'Fallback' ] ),
+				] ),
+			] ),
+		] );
+		$html = ( new HtmlRenderer() )->render( $project );
+		self::assertStringContainsString( 'width="40%"', $html );
+		self::assertStringContainsString( 'width="60%"', $html );
+		self::assertStringContainsString( 'style="padding:32px;"', $html );
+		self::assertStringNotContainsString( 'javascript:', $html );
+		self::assertStringNotContainsString( 'bgcolor="invalid"', $html );
+	}
+
+	public function test_mail_column_rejects_nested_sections_and_nested_columns(): void {
+		$nested_section = $this->project( [
+			$this->node( 'mail.columns', [], [
+				$this->node( 'mail.column', [], [ $this->node( 'mail.section' ) ] ),
+				$this->node( 'mail.column' ),
+			] ),
+		] );
+		self::assertTrue( ( new Validator() )->validate( $nested_section )->has_errors() );
+		$nested_layout = $this->project( [
+			$this->node( 'mail.columns', [], [
+				$this->node( 'mail.column', [], [
+					$this->node( 'mail.columns', [], [
+						$this->node( 'mail.column' ),
+						$this->node( 'mail.column' ),
+					] ),
+				] ),
+				$this->node( 'mail.column' ),
+			] ),
+		] );
+		self::assertTrue( ( new Validator() )->validate( $nested_layout )->has_errors() );
+	}
+
 	public function test_oversized_rich_text_is_rejected_before_rendering(): void {
 		$project = $this->project( [
 			$this->node( 'mail.rich-text', [ 'markup' => str_repeat( 'x', 100001 ) ] ),
