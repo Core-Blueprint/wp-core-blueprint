@@ -24,12 +24,13 @@ def resolve(source: Path) -> dict[str, str]:
         raise preflight.PreflightError(
             "Proven Level 2 workspace belongs to another Base checkout."
         )
-    version = plan.validate_version(os.environ.get("CB_TEST_WP_VERSION", "7.0"))
     root = execution.TEST_ROOT
     if os.environ.get("CB_TEST_ROOT", str(root)) != str(root):
         raise preflight.PreflightError("Only the canonical Base test slot is eligible.")
     preflight.verify_parent_security(root)
     owner = inspect.owner_record(root, execution.OWNER_FILE)
+    version = plan.validate_version(os.environ.get("CB_TEST_WP_VERSION") or owner["wordpress"])
+    plan.verify_source(source)
     sha = preflight.read_source_commit(source)
     if sha != owner["git_sha"] or version != owner["wordpress"]:
         raise preflight.PreflightError(
