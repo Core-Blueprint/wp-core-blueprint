@@ -80,6 +80,20 @@ Regression: `tests/js/mail-designer-inline-ux.test.mjs` covers node eligibility,
 
 **Remaining before Golden:** contextual inline rich-text formatting controls, reliable focus/selection and keyboard/touch testing, project dirty-state and context-switch protection, full save/reopen evidence, accessibility, responsive/client parity, proper mail health checks. Reconcile Base Luna's concurrent Inspector/Designer changes before operator testing and any merge.
 
+## M1-B: Inline rich-text toolbar and save reliability (source candidate)
+
+The approved UX contract remains unchanged: single click selects, double click edits copy, and **all styling/configuration stays in the Inspector**. The inline toolbar appears only for `mail.rich-text` and exposes **bold, italic, underline, and a validated link action**. For legacy `mail.heading` / `mail.text`, the in-preview editor changes plain copy only. Rich-text lists continue to be available in the Inspector; a polished contextual list toolbar remains an open M1 follow-up.
+
+Source implementation:
+- `assets/js/design/mail/inline-toolbar.js`: iframe-preview-only formatting surface, accessible button labels and safe HTTP/HTTPS/email links (via existing `safeMailLink`). Selection is preserved when toolbar actions are activated. Toolbar HTML/CSS is **not included in sent e-mail**.
+- `assets/js/design/mail/inline-text.js`: mounts the toolbar for rich-text only, skips committing when focus moves to the toolbar link input, and destroys transient controls on finish/cancel.
+- `assets/js/features/mail-designer.js`: tracks a fingerprint of template ID + subject + canonical session project, displays an unobtrusive unsaved indicator, suspends preview while editing, warns on browser navigation and asks before switching templates with unsaved changes. It blocks template switches during an in-flight save and ignores stale switch fetches after edits.
+- `assets/js/features/mail-designer-save.js`: respects a Mail consumer's cancelled submit and aborts in-flight AJAX only on actual `pagehide`, not a cancellable `beforeunload`.
+- `assets/css/pages/mail-designer.css`: the unsaved indicator uses Base text tokens.
+- `tests/js/mail-designer-inline-ux.test.mjs`: source-contract regression for formatting, focus, consent to discard, confirmed AJAX save fingerprint, correct unload and save event ordering.
+
+**Golden acceptance OPEN:** source parses and focused readback cannot verify actual caret position, toolbar/link focus, undo/redo granularity, clipboard behavior, user cancellation, AJAX races, i18n, form save/reopen, mobile/touch, accessibility or WordPress Mail context switching. Run clean isolated browser + WP7.0/7.1 tests only after Base Luna's concurrent work is reconciled. Do not merge this branch or claim a Golden milestone yet.
+
 ## Reconciliation handshake
 
 1. Freeze new branch SHA, file list, tests and scope.
