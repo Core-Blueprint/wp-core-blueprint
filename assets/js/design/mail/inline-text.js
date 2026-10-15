@@ -14,7 +14,8 @@ const EDITABLE_PROPERTIES = Object.freeze({
 	'mail.rich-text': 'markup',
 });
 const MAX_MAIL_TEXT = 100000;
-const HAS_DYNAMIC_BINDING = /\{\{\s*[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*\s*\}\}/i;
+// Unknown or malformed tokens are also protected. Preview values cannot be reverse-interpolated.
+const HAS_DYNAMIC_BINDING = /\{\{|\}\}/;
 
 export const inlineMailProperty = (node) => (
 	node?.provider === 'core' ? EDITABLE_PROPERTIES[node?.type] || null : null
@@ -73,6 +74,31 @@ export const createMailInlineTextController = ({
 	const finish = (save = true) => {
 		const active = editing;
 		if (!active) return false;
+		let next = active.original;
+		if (save) {
+			try {
+				next = active.property === 'markup'
+					? serializeMailMarkup(active.target, active.target.ownerDocument)
+					: String(active.target.innerText ?? active.target.textContent ?? '').replace(/\r\n?/g, '\n');
+			} catch {
+				onStatus('The edited text could not be read. Your changes are still available for correction.');
+				return false;
+			}
+			if (next.length > MAX_MAIL_TEXT) {
+				onStatus('Text exceeds the allowed length. Shorten it before finishing.');
+				return false;
+			}
+			// Keep editing active while Base commits. This postpones preview
+			// replacement until after the canonical undoable session command.
+			if (next !== active.original) {
+				try {
+					executeProperty(active.path, active.property, next);
+				} catch {
+					onStatus('The edited text could not be saved to this session. Your changes are still in the editor.');
+					return false;
+				}
+			}
+		}
 		editing = null;
 		active.toolbar?.destroy();
 		active.target.removeAttribute('contenteditable');
@@ -80,51 +106,23 @@ export const createMailInlineTextController = ({
 		active.target.removeAttribute('aria-multiline');
 		delete active.target.dataset.cbMailInlineEditing;
 		active.marker.removeAttribute('data-cb-mail-inline-active');
-
-		if (!save) {
-			// Restore only server-rendered original preview HTML (no user input).
-			active.target.innerHTML = active.originalHtml;
-			onEditingChange(false);
-			onStatus('Text changes discarded.');
-			return true;
-		}
-
-		let next;
-		try {
-			next = active.property === 'markup'
-				? serializeMailMarkup(active.target, active.target.ownerDocument)
-				: String(active.target.innerText ?? active.target.textContent ?? '').replace(/\r\n?/g, '\n');
-		} catch {
-			active.target.innerHTML = active.originalHtml;
-			onEditingChange(false);
-			onStatus('Unable to read edited text. Changes were discarded.');
-			return false;
-		}
-		if (next.length > MAX_MAIL_TEXT) {
-			active.target.innerHTML = active.originalHtml;
-			onEditingChange(false);
-			onStatus('Text exceeds the allowed length. Changes were discarded.');
-			return false;
-		}
-		// Leave edit mode before dispatching the session change, because Base
-		// can regenerate the Inspector and preview as a consequence.
+		if (!save) active.target.innerHTML = active.originalHtml;
 		onEditingChange(false);
-		if (next !== active.original) {
-			try {
-				executeProperty(active.path, active.property, next);
-				onStatus('Text updated. Save the template to keep your changes.');
-			} catch {
-				active.target.innerHTML = active.originalHtml;
-				onStatus('Text could not be updated. The original preview has been restored.');
-				return false;
-			}
-		}
+		onStatus(!save ? 'Text changes discarded.' : (
+			next !== active.original ? 'Text updated. Save the template to keep your changes.' : 'Text editing finished.'
+		));
 		return true;
 	};
 
 	const start = (marker) => {
 		const path = pathFromMarker(marker);
 		if (!path) return false;
+		if (editing) {
+			if (editing.path.length === path.length && editing.path.every((value, i) => value === path[i])) return true;
+			// A failed edit must remain available to correct; never silently
+			// throw it away when another node is selected.
+			if (!finish(true)) return false;
+		}
 		const node = nodeAtPath(session.project(), path);
 		const property = inlineMailProperty(node);
 		if (!property) return false;
@@ -132,10 +130,8 @@ export const createMailInlineTextController = ({
 			onStatus('This text contains dynamic values. Edit its source in the Inspector to preserve bindings.');
 			return false;
 		}
-
 		const target = targetForMarker(marker, node.type);
 		if (!target) return false;
-		if (editing) finish(true);
 		select(path);
 
 		editing = {
@@ -208,6 +204,18 @@ export const createMailInlineTextController = ({
 		return true;
 	};
 
+	const startSelected = (documentRef) => {
+		if (editing || !documentRef) return false;
+		const path = session.selection()?.primary;
+		if (!Array.isArray(path)) return false;
+		const marker = [...documentRef.querySelectorAll('[data-cb-mail-editor-node]')]
+			.find((candidate) => {
+				const candidatePath = pathFromMarker(candidate);
+				return candidatePath?.length === path.length && candidatePath.every((item, i) => item === path[i]);
+			});
+		return marker ? start(marker) : false;
+	};
+
 	const attach = (documentRef) => {
 		if (!documentRef || attachedDocuments.has(documentRef)) return;
 		// Each preview iframe receives its own document and event handling.
@@ -223,18 +231,11 @@ export const createMailInlineTextController = ({
 		}, true);
 		documentRef.addEventListener('keydown', (event) => {
 			if (event.key !== 'F2' || editing) return;
-			const selected = session.selection()?.primary;
-			if (!Array.isArray(selected)) return;
-			const marker = [...documentRef.querySelectorAll('[data-cb-mail-editor-node]')]
-				.find((candidate) => {
-					const path = pathFromMarker(candidate);
-					return path?.length === selected.length && path.every((index, i) => index === selected[i]);
-				});
-			if (marker && start(marker)) {
+			if (startSelected(documentRef)) {
 				event.preventDefault();
 				event.stopPropagation();
 			}
 		}, true);
 	};
-	return { attach, finish, isEditing: () => Boolean(editing) };
+	return { attach, startSelected, finish, isEditing: () => Boolean(editing) };
 };
