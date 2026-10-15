@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use CoreBlueprint\Core\Admin\PageRegistry;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\TemplateLibrary\Assets;
 use CoreBlueprint\Core\TemplateLibrary\BrowserController;
 use CoreBlueprint\Core\TemplateLibrary\DesignerScope;
@@ -17,7 +18,11 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 		$this->admin_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$admin = get_userdata( $this->admin_id );
+		self::assertInstanceOf( WP_User::class, $admin );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $admin, 0, 'template_library_test_fixture' ) );
 		wp_set_current_user( $this->admin_id );
+		self::assertTrue( current_user_can( 'manage_options' ), 'An explicit approved administrator is required for the browser fixture.' );
 		set_current_screen( 'core-blueprint_page_core-blueprint-template-library' );
 		TemplateSourceRegistry::_reset_for_testing();
 		add_action( 'core_blueprint_register_template_sources', [ $this, 'register_sources' ] );
@@ -68,7 +73,11 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 		self::assertNull( DesignerScope::issue( 'core-blueprint', 'missing-designer' ) );
 		self::assertNull( DesignerScope::verify( $token . 'tampered' ) );
 		$other = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$other_user = get_userdata( $other );
+		self::assertInstanceOf( WP_User::class, $other_user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $other_user, 0, 'template_library_test_fixture' ) );
 		wp_set_current_user( $other );
+		self::assertTrue( current_user_can( 'manage_options' ), 'Token isolation must not rely on denying an unapproved second administrator.' );
 		self::assertNull( DesignerScope::verify( $token ) );
 		wp_set_current_user( $this->admin_id );
 	}
