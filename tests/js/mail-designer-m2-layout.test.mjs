@@ -78,3 +78,31 @@ test('Legacy columns are optional style additions, no migration required', async
 	assert.match(renderer, /'' !== \$column_bg \? ' bgcolor="/);
 	assert.match(renderer, /default => \[ 50, 50 \]/);
 });
+
+test('Client-side Mail validator rejects orphan and nested structural containers', () => {
+	const make = () => documentWithColumns();
+	const malformed = [
+		(project) => { project.root.children[0].children[0].children.pop(); },
+		(project) => { project.root.children[0].children[0].children[0].type = 'mail.section'; },
+		(project) => { project.root.children[0].children[0].children[0].children.push(node('mail.section')); },
+		(project) => { project.root.children[0].children[0].children[0].children.push(node('mail.columns')); },
+		(project) => { project.root.children.push(node('mail.column')); },
+		(project) => { project.root.children[0].children[0].type = 'mail.column'; },
+	];
+	for (const mutate of malformed) {
+		const project = make();
+		mutate(project);
+		assert.throws(() => validateProject(project), TypeError);
+	}
+});
+
+test('M2 structural guards still allow ordinary provider-owned leaves in a column', () => {
+	const project = documentWithColumns();
+	project.root.children[0].children[0].children[0].children.push({
+		type: 'example.product',
+		provider: 'example',
+		properties: { id: 'sku-1' },
+		children: [],
+	});
+	assert.equal(validateProject(project).design_type, MAIL_DESIGN_TYPE);
+});
