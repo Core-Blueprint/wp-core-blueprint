@@ -307,3 +307,15 @@
 	margin-top: var(--cb-space-2, 8px);
 	font-family: var(--cb-ff-mono, monospace);
 }
+
+
+/* Persisted-save feedback is independent of the preview renderer status. */
+.cb-core-mail-designer__dirty {
+	display: inline-block;
+	margin-top: var(--cb-space-1, 4px);
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-xs, 12px);
+}
+.cb-core-mail-designer__dirty[hidden] {
+	display: none !important;
+}
