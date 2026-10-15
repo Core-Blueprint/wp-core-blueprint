@@ -21,7 +21,8 @@ php -r 'exit(PHP_VERSION_ID >= 80400 ? 0 : 1);' \
 for required in \
   tests/bin/php-lint.sh \
   tests/public-admin-navigation-foundation-regression.php \
-  tests/public-tile-foundation-regression.php; do
+  tests/public-tile-foundation-regression.php \
+  tests/public-core-scanner-threat-regression.php; do
   [[ -f "$ROOT/$required" ]] || fail "required source check missing: $required"
 done
 [[ -d "$ROOT/tests/python" ]] || fail 'Python source-regression directory is missing'
