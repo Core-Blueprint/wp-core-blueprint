@@ -71,9 +71,12 @@ def bind(source: Path) -> bool:
 
     A partial explicit configuration fails closed in the builder's own
     preflight rather than silently mixing two database authorities.
+    CB_BASE_USE_PROVEN_LEVEL2=1 explicitly selects proof instead of stale
+    shell exports, but never bypasses proof checks.
     """
     populated = [key for key in REQUIRED if os.environ.get(key)]
-    if populated:
+    force_proven = os.environ.get("CB_BASE_USE_PROVEN_LEVEL2") == "1"
+    if populated and not force_proven:
         if len(populated) != len(REQUIRED):
             raise preflight.PreflightError(
                 "Partial WordPress/database environment: unset all WP_* and "
