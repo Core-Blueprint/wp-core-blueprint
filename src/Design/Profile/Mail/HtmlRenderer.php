@@ -232,8 +232,8 @@ final class HtmlRenderer {
 			$width = $widths[ $index ];
 			$column_properties = is_array( $column['properties'] ?? null ) ? $column['properties'] : [];
 			$column_padding = $this->int_range( $column_properties['padding'] ?? 0, 0, 32, 0 );
-			$column_color = isset( $column_properties['background'] )
-				? sanitize_hex_color( (string) $column_properties['background'] )
+			$column_color = is_string( $column_properties['background'] ?? null )
+				? sanitize_hex_color( $column_properties['background'] )
 				: false;
 			$column_bg = is_string( $column_color ) && '' !== $column_color ? $column_color : '';
 			$cell_padding = 0 === $index ? 'padding-right:' . esc_attr( (string) $gap ) . 'px;' : '';
