@@ -865,6 +865,7 @@
   margin: 0 0 var(--cb-space-5);
   padding: 0;
   overflow-x: auto;
+  overflow-y: hidden; /* Prevent the stray vertical scrollbar from the tab underline. */
   border-bottom: 1px solid var(--cb-border);
   background: transparent;
 }
@@ -874,7 +875,7 @@
   align-items: center;
   gap: 8px;
   min-height: 36px;
-  margin-bottom: -1px;
+  margin-bottom: 0;
   padding: 7px 10px;
   border-bottom: 2px solid transparent;
   color: var(--cb-text-muted);
@@ -1180,4 +1181,43 @@
   .cb-core-integrity-baseline-review-footer {
     flex-direction: column;
   }
+}
+
+/* ─── Scanner field acceptance: coverage presentation ────────────────
+ * Coverage uses the ordinary component link elsewhere on the page.
+ * Scope the column layout to this panel so other component cards retain
+ * their established horizontal title/status grammar.
+ */
+.cb-core-integrity-coverage-panel .cb-core-integrity-component {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-width: 0;
+  gap: var(--cb-space-2);
+}
+
+.cb-core-integrity-coverage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: var(--cb-space-2);
+}
+
+.cb-core-integrity-coverage-head > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cb-core-integrity-coverage-panel .cb-core-integrity-component > small {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  line-height: var(--cb-lh-relaxed);
+  overflow-wrap: anywhere;
+}
+
+.cb-core-integrity-coverage-panel .cb-core-integrity-component > small + small {
+  margin-top: var(--cb-space-1);
 }
