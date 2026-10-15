@@ -105,5 +105,22 @@ test('M1-C authoring gate rejects stale preview HTTP replies and unrelated keybo
 	assert.match(inline, /if \(!finish\(true\)\) return false/);
 	assert.match(inline, /Text exceeds the allowed length\. Shorten it before finishing/);
 	assert.match(inline, /const HAS_DYNAMIC_BINDING = \//);
-	assert.match(inline, /return \{ attach, startSelected, finish/);
+	assert.match(inline, /startSelected,\s*finish,\s*isEditing:/);
+});
+
+test('M1-D safe inline commands keep global settings in Inspector and finish drafts on cross-block selection', async () => {
+	const consumer = await read('assets/js/features/mail-designer.js');
+	const inline = await read('assets/js/design/mail/inline-text.js');
+	const toolbar = await read('assets/js/design/mail/inline-toolbar.js');
+	assert.match(consumer, /inlineEditor\.activePath\(\)/);
+	assert.match(consumer, /if \(!inlineEditor\.finish\(true\)\)/);
+	assert.match(inline, /editing\.toolbar\?\.applyShortcut\(event\)/);
+	assert.match(inline, /activePath: \(\) => editing \? \[\.\.\.editing\.path\] : null/);
+	assert.match(toolbar, /Create bulleted list from selected text/);
+	assert.match(toolbar, /Create numbered list from selected text/);
+	assert.match(toolbar, /documentRef\.addEventListener\('selectionchange', rememberSelection\)/);
+	assert.match(toolbar, /documentRef\.removeEventListener\('selectionchange', rememberSelection\)/);
+	assert.match(toolbar, /if \(key === 'k'\) return openLinkEditor\(\)/);
+	assert.match(toolbar, /paragraph\.replaceWith\(list\)/);
+	assert.doesNotMatch(toolbar, /session\.execute|commands\.setProperty|fontSize|accentColor/);
 });
