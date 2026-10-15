@@ -20,6 +20,8 @@ defined( 'ABSPATH' ) || exit;
 final class Assets {
 
 	public const MODULE_ID = '@cb-core/design-editor';
+	/** Public domain-neutral editor-session contract (P02). */
+	public const DOMAIN_SESSION_API = 1;
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */
 	public const INSPECTOR_COMPOSITION_API = 1;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
