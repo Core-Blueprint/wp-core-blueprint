@@ -67,7 +67,29 @@ if (root) {
 	let contextHydrating = false;
 	let inlineEditor = null;
 	let previewPending = false;
+	let persistedFingerprint = null;
+	let pendingSaveFingerprint = null;
+	let savePending = false;
 
+	const currentFingerprint = () => JSON.stringify([
+		templateId,
+		subjectField.value,
+		session.snapshot(),
+	]);
+	const hasUnsavedChanges = () => (
+		Boolean(inlineEditor?.isEditing())
+		|| savePending
+		|| (persistedFingerprint !== null && currentFingerprint() !== persistedFingerprint)
+	);
+	const dirtyIndicator = document.createElement('span');
+	dirtyIndicator.className = 'cb-core-mail-designer__dirty';
+	dirtyIndicator.hidden = true;
+	dirtyIndicator.textContent = 'Unsaved changes';
+	dirtyIndicator.setAttribute('role', 'status');
+	subjectField.insertAdjacentElement('afterend', dirtyIndicator);
+	const syncDirtyIndicator = () => {
+		dirtyIndicator.hidden = !hasUnsavedChanges();
+	};
 	const pathKey = (path) => JSON.stringify(Array.isArray(path) ? path : []);
 	const samePath = (left, right) => pathKey(left) === pathKey(right);
 	const parentPath = (path) => Array.isArray(path) ? path.slice(0, -1) : [];
@@ -455,6 +477,7 @@ if (root) {
 		renderInspector();
 		shell?.syncHistory();
 		if (!contextHydrating) schedulePreview();
+		syncDirtyIndicator();
 	};
 
 	const session = createSession({
@@ -520,6 +543,16 @@ if (root) {
 		const selection = resolveTemplateSelection(selectionValue);
 		if (!selection.templateId) throw new Error('The selected mail template is invalid.');
 		if (!ajaxUrl || !nonce) throw new Error('Mail Designer context switching is unavailable.');
+		if (savePending) throw new Error('Wait for the current save to finish before switching templates.');
+		if (selection.templateId === templateId) return { templateId, customized: false };
+		if (hasUnsavedChanges()) {
+			if (!window.confirm('This mail template has unsaved changes. Discard them and switch templates?')) {
+				throw new Error('Template switch cancelled. Your edits are still here.');
+			}
+			// No session mutation until a different template has loaded successfully.
+			inlineEditor?.finish(false);
+		}
+		const originalFingerprint = currentFingerprint();
 
 		previewController?.abort();
 		window.clearTimeout(previewTimer);
@@ -549,6 +582,9 @@ if (root) {
 			throw new Error(data?.message || 'The selected mail template could not be loaded.');
 		}
 
+		if (savePending || inlineEditor?.isEditing() || currentFingerprint() !== originalFingerprint) {
+			throw new Error('The current template changed while another template was loading. Switch cancelled.');
+		}
 		templateId = data.template_id;
 		root.dataset.templateId = templateId;
 		templateIdFields.forEach((field) => { field.value = templateId; });
@@ -562,6 +598,8 @@ if (root) {
 		}
 
 		preview.srcdoc = data.html;
+		persistedFingerprint = currentFingerprint();
+		syncDirtyIndicator();
 		setPreviewStatus('Preview updated');
 		shell.syncHistory();
 		if (selection.url) window.history.replaceState(window.history.state, '', selection.url);
@@ -638,21 +676,49 @@ if (root) {
 
 	preview.addEventListener('load', bindPreviewInteractions);
 	subjectField.addEventListener('input', schedulePreview);
-	form.addEventListener('submit', () => {
-		inlineEditor?.finish(true);
+	form.addEventListener('submit', (event) => {
+		const editingNow = Boolean(inlineEditor?.isEditing());
+		if (editingNow && inlineEditor.finish(true) !== true) {
+			event.preventDefault();
+			setPreviewStatus('Finish editing your text before saving.', true);
+			return;
+		}
 		updateSerializedProject();
 	});
 
-	window.addEventListener('beforeunload', () => {
+	window.addEventListener('beforeunload', (event) => {
+		if (!hasUnsavedChanges()) return;
+		event.preventDefault();
+		event.returnValue = '';
+	});
+	window.addEventListener('pagehide', () => {
 		inlineEditor?.finish(false);
 		previewController?.abort();
 		selectionController?.destroy();
 		session.dispose();
 	}, { once: true });
+	shellRoot.addEventListener('cb:design-shell:savechange', (event) => {
+		const state = String(event.detail?.state || '');
+		if (state === 'saving') {
+			pendingSaveFingerprint = currentFingerprint();
+			savePending = true;
+		} else if (state === 'saved') {
+			if (pendingSaveFingerprint !== null) persistedFingerprint = pendingSaveFingerprint;
+			pendingSaveFingerprint = null;
+			savePending = false;
+		} else if (state === 'error') {
+			pendingSaveFingerprint = null;
+			savePending = false;
+		}
+		syncDirtyIndicator();
+	});
+	subjectField.addEventListener('input', syncDirtyIndicator);
 
 	renderEmailInspector();
 	updateSerializedProject();
 	shell.syncHistory();
+	persistedFingerprint = currentFingerprint();
+	syncDirtyIndicator();
 	if (preview.contentDocument?.readyState === 'complete') bindPreviewInteractions();
 	else schedulePreview();
 }
