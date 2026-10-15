@@ -211,6 +211,8 @@ final class HtmlRenderer {
 		$widths = match ( $ratio ) {
 			'left-third' => [ 33, 67 ],
 			'right-third' => [ 67, 33 ],
+			'left-wide' => [ 60, 40 ],
+			'right-wide' => [ 40, 60 ],
 			default => [ 50, 50 ],
 		};
 		$gap = $this->int_range( $properties['gap'] ?? 16, 0, 40, 16 );
@@ -228,13 +230,28 @@ final class HtmlRenderer {
 				}
 			}
 			$width = $widths[ $index ];
+			$column_properties = is_array( $column['properties'] ?? null ) ? $column['properties'] : [];
+			$column_padding = $this->int_range( $column_properties['padding'] ?? 0, 0, 32, 0 );
+			$column_color = isset( $column_properties['background'] )
+				? sanitize_hex_color( (string) $column_properties['background'] )
+				: false;
+			$column_bg = is_string( $column_color ) && '' !== $column_color ? $column_color : '';
 			$cell_padding = 0 === $index ? 'padding-right:' . esc_attr( (string) $gap ) . 'px;' : '';
+			$cell_background = '' !== $column_bg ? ' background:' . esc_attr( $column_bg ) . ';' : '';
+			// The inner TD contains column padding so fixed-width MSO table cells
+			// do not expand beyond their declared percentage widths.
+			if ( $column_padding > 0 ) {
+				$contents = '<tr><td style="padding:' . esc_attr( (string) $column_padding ) . 'px;">'
+					. '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;">'
+					. $contents . '</table></td></tr>';
+			}
 			$markers = '';
 			if ( $editor_markers ) {
 				$path_json = wp_json_encode( $column_path );
 				$markers = ' data-cb-mail-editor-node="1" data-cb-mail-path="' . esc_attr( is_string( $path_json ) ? $path_json : '[]' ) . '" data-cb-mail-type="mail.column" data-cb-mail-provider="core"';
 			}
-			$cells .= '<td class="cb-mail-column" width="' . esc_attr( (string) $width ) . '%" valign="top"' . $markers . ' style="width:' . esc_attr( (string) $width ) . '%;vertical-align:top;' . $cell_padding . '">'
+			$background_attribute = '' !== $column_bg ? ' bgcolor="' . esc_attr( $column_bg ) . '"' : '';
+			$cells .= '<td class="cb-mail-column" width="' . esc_attr( (string) $width ) . '%" valign="top"' . $background_attribute . $markers . ' style="width:' . esc_attr( (string) $width ) . '%;vertical-align:top;' . $cell_padding . $cell_background . '">'
 				. '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;width:100%;">'
 				. $contents . '</table></td>';
 		}
