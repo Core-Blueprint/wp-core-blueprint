@@ -188,12 +188,41 @@ export const createDesignerShell = (root, {
 			diagnosticNode.setAttribute('role', 'status');
 			diagnosticNode.setAttribute('aria-live', 'polite');
 			diagnosticNode.dataset.cbDesignShellDiagnostic = '1';
-			diagnosticNode.textContent = 'The editor view needs refreshing. Your changes are preserved.';
+			const labels = typeof window !== 'undefined'
+				? (window.cbCoreDesignerLaunch?.diagnosticLabels ?? {})
+				: {};
+			diagnosticNode.textContent = String(
+				root.dataset.cbDesignShellDiagnosticMessage
+				|| labels.message
+				|| 'The editor view needs refreshing. Your changes are preserved.',
+			);
 			const retry = root.ownerDocument.createElement('button');
 			retry.type = 'button';
-			retry.textContent = 'Refresh editor view';
+			retry.textContent = String(
+				root.dataset.cbDesignShellDiagnosticRetry
+				|| labels.retry
+				|| 'Refresh editor view',
+			);
 			retry.addEventListener('click', () => {
-				root.dispatchEvent(new CustomEvent('cb:design-shell:refreshrequest', { bubbles: true }));
+				let response = null;
+				let accepted = false;
+				let closed = false;
+				const respondWith = (promise) => {
+					if (closed || accepted) throw new Error('Designer refresh response is already settled.');
+					accepted = true;
+					response = Promise.resolve(promise);
+				};
+				root.dispatchEvent(new CustomEvent('cb:design-shell:refreshrequest', {
+					bubbles: true,
+					detail: Object.freeze({ respondWith }),
+				}));
+				closed = true;
+				if (response) response.then(() => {
+					diagnosticNode?.remove?.();
+					diagnosticNode = null;
+				}).catch(() => {
+					// A failed repaint keeps the diagnostic and retry available.
+				});
 			}, { signal });
 			diagnosticNode.append(retry);
 			root.append(diagnosticNode);
