@@ -74,7 +74,7 @@ final class Schema {
 			return false;
 		}
 		$columns = $wpdb->get_results( $wpdb->prepare(
-			'SELECT COLUMN_NAME AS column_name, DATA_TYPE AS data_type, COLUMN_TYPE AS column_type, IS_NULLABLE AS nullable, CHARACTER_MAXIMUM_LENGTH AS max_length FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+			'SELECT COLUMN_NAME AS column_name, DATA_TYPE AS data_type, COLUMN_TYPE AS column_type, IS_NULLABLE AS nullable, CHARACTER_MAXIMUM_LENGTH AS max_length, COLLATION_NAME AS collation_name, EXTRA AS extra FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
 			$table
 		), ARRAY_A );
 		if ( ! is_array( $columns ) ) {
@@ -102,7 +102,9 @@ final class Schema {
 				return false;
 			}
 		}
-		if ( (int) $actual['identity_hash']['max_length'] !== 64
+		if ( strtolower( (string) ( $actual['identity_hash']['collation_name'] ?? '' ) ) !== 'ascii_bin'
+			|| ! str_contains( strtolower( (string) ( $actual['id']['extra'] ?? '' ) ), 'auto_increment' )
+			|| (int) $actual['identity_hash']['max_length'] !== 64
 			|| (int) $actual['document_type']['max_length'] !== 48
 			|| (int) $actual['document_key']['max_length'] !== 191 ) {
 			return false;
@@ -116,7 +118,7 @@ final class Schema {
 			return false;
 		}
 		$indexes = $wpdb->get_results( $wpdb->prepare(
-			'SELECT INDEX_NAME AS index_name, NON_UNIQUE AS non_unique, SEQ_IN_INDEX AS seq, COLUMN_NAME AS column_name FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+			'SELECT INDEX_NAME AS index_name, NON_UNIQUE AS non_unique, SEQ_IN_INDEX AS seq, COLUMN_NAME AS column_name, SUB_PART AS sub_part FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
 			$table
 		), ARRAY_A );
 		if ( ! is_array( $indexes ) ) {
@@ -129,7 +131,8 @@ final class Schema {
 		foreach ( [ 'PRIMARY' => 'id', 'identity_hash' => 'identity_hash' ] as $index_name => $column_name ) {
 			$parts = $by_name[$index_name] ?? [];
 			if ( count( $parts ) !== 1 || ! isset( $parts[1] ) || (int) ( $parts[1]['non_unique'] ?? 1 ) !== 0
-				|| $column_name !== (string) ( $parts[1]['column_name'] ?? '' ) ) {
+				|| $column_name !== (string) ( $parts[1]['column_name'] ?? '' )
+				|| null !== ( $parts[1]['sub_part'] ?? null ) ) {
 				return false;
 			}
 		}
