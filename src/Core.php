@@ -77,6 +77,8 @@ final class Core {
 
 		// Request-hot option policy, then DB/settings migrations.
 		add_action( 'plugins_loaded', [ OptionPolicy::class, 'maybe_sync' ], 3 );
+		// Register the Base-internal Designer document table before the central schema sweep.
+		add_action( 'plugins_loaded', [ \CoreBlueprint\Core\Design\Document\Schema::class, 'register_schema' ], 4 );
 		add_action( 'plugins_loaded', [ DB::class,               'maybe_upgrade' ], 5 );
 		add_action( 'plugins_loaded', [ SettingsMigrator::class, 'maybe_migrate' ], 6 );
 		add_action( 'plugins_loaded', [ Retention::class,        'init' ],          7 );
