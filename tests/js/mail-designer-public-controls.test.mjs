@@ -13,8 +13,8 @@ test('public opt-in Mail CSS and consumer boundaries are explicit', async () => 
 	const mail = await readFile(new URL('../../src/Mail/Admin/DesignerAssets.php', import.meta.url), 'utf8');
 	const css = await readFile(new URL('../../assets/css/design/mail-rich-text-controls.css', import.meta.url), 'utf8');
 	assert.match(assets, /function enqueue_mail_rich_text_controls/);
-	assert.match(assets, /mail-rich-text-controls\\.css/);
+	assert.match(assets, /mail-rich-text-controls\.css/);
 	assert.match(mail, /DesignEditorAssets::enqueue_mail_rich_text_controls/);
-	assert.match(css, /\\.cb-mail-rich-text-controls__editor/);
+	assert.match(css, /\.cb-mail-rich-text-controls__editor/);
 	assert.doesNotMatch(css, /cb-core-mail-designer__preview-frame/);
 });
