@@ -99,6 +99,13 @@ returns `false` if the edit was rejected. The server remains authoritative
 for rendering and policy. Consumers must not import private Mail JS modules
 or implement a competing rich-text renderer.
 
+For the Base Mail canvas, `profiles.mail.createMailInlineTextController({ session,
+executeProperty, select, onStatus, onEditingChange })` is exposed on the same
+public profile object. It preserves the existing selection/inline draft lifecycle,
+but is **not** an independent extension editing framework. First-party consumers
+must use the public Mail profile factory instead of importing
+`assets/js/design/mail/inline-text.js` or other private Mail implementation files.
+
 The matching opt-in PHP style boundary is
 `CoreBlueprint\\Core\\Design\\Editor\\Assets::enqueue_mail_rich_text_controls()`.
 This enqueues Base-owned Mail editor styling and the public Design Editor

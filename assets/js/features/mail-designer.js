@@ -8,8 +8,6 @@ import {
 	createSession,
 	profiles,
 } from '@cb-core/design-editor';
-import { createMailRichTextControls } from '../design/mail/rich-text-controls.js';
-import { createMailInlineTextController } from '../design/mail/inline-text.js';
 
 const root = document.querySelector('[data-cb-mail-designer]');
 
@@ -67,7 +65,9 @@ if (root) {
 	if (!form || !shellRoot || !projectField || !subjectField || !emailInspector || !structure || !inspector || !preview || !project) {
 		throw new Error('Mail Designer could not initialize because its editor payload is incomplete.');
 	}
-	if (!mailProfile || typeof mailProfile.normalizeMailLayout !== 'function' || !Array.isArray(mailProfile.MAIL_FONT_FAMILIES)) {
+	if (!mailProfile || typeof mailProfile.normalizeMailLayout !== 'function' || !Array.isArray(mailProfile.MAIL_FONT_FAMILIES)
+		|| typeof mailProfile.createMailRichTextControls !== 'function'
+		|| typeof mailProfile.createMailInlineTextController !== 'function') {
 		throw new Error('Mail Designer could not initialize because the Mail profile styling contract is unavailable.');
 	}
 
@@ -314,7 +314,7 @@ if (root) {
 		wrapper.append(label);
 
 		if (field.key === 'markup' && field.type === 'textarea') {
-			const richText = createMailRichTextControls({
+			const richText = mailProfile.createMailRichTextControls({
 				documentRef: document,
 				value: String(value ?? ''),
 				onCommit: (markup) => {
@@ -529,7 +529,7 @@ if (root) {
 		profile: 'mail',
 		onChange: render,
 	});
-	inlineEditor = createMailInlineTextController({
+	inlineEditor = mailProfile.createMailInlineTextController({
 		session,
 		executeProperty: (path, key, value) => session.execute(commands.setProperty(path, [key], value)),
 		select: (path) => selectAfterTextCommit(path),

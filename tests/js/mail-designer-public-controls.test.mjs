@@ -5,6 +5,7 @@ import * as profile from '../../assets/js/design/mail/index.js';
 
 test('Mail profile exposes Base-owned visual rich-text controls to public Designer consumers', () => {
 	assert.equal(typeof profile.createMailRichTextControls, 'function');
+	assert.equal(typeof profile.createMailInlineTextController, 'function');
 	assert.equal(typeof profile.validateProject, 'function');
 });
 
@@ -17,4 +18,12 @@ test('public opt-in Mail CSS and consumer boundaries are explicit', async () => 
 	assert.match(mail, /DesignEditorAssets::enqueue_mail_rich_text_controls/);
 	assert.match(css, /\.cb-mail-rich-text-controls__editor/);
 	assert.doesNotMatch(css, /cb-core-mail-designer__preview-frame/);
+});
+
+test('Base Mail consumer uses only public profile factories without importing Design source paths', async () => {
+	const mailFeature = await readFile(new URL('../../assets/js/features/mail-designer.js', import.meta.url), 'utf8');
+	assert.match(mailFeature, /from '@cb-core\\/design-editor'/);
+	assert.match(mailFeature, /mailProfile\\.createMailRichTextControls\\(\\{/);
+	assert.match(mailFeature, /mailProfile\\.createMailInlineTextController\\(\\{/);
+	assert.doesNotMatch(mailFeature, /from ['"]\\.\\.\\/design\\//);
 });
