@@ -159,11 +159,11 @@ export const createSession = ({
 			throw new TypeError('Design editor execute() requires an editor command.');
 		}
 		if (typeof allowCommand === 'function') {
-			const allowed = allowCommand(editorCommand, Object.freeze({
+			const allowed = history.guardPolicy(() => allowCommand(editorCommand, Object.freeze({
 				project: projectState.current(),
 				editorState,
 				profile: profileContext,
-			}));
+			})));
 			if (allowed === false) {
 				throw new Error(`Design editor command denied by consumer policy: ${String(editorCommand.label || 'command')}.`);
 			}
@@ -336,7 +336,9 @@ export const createDomainSession = ({
 				throw new TypeError('Domain session execute() requires a command with apply(project).');
 			}
 			history.assertWritable();
-			if (allowCommand && allowCommand(command, projectState.current()) === false) {
+			if (allowCommand && history.guardPolicy(
+				() => allowCommand(command, projectState.current()),
+			) === false) {
 				throw new Error('Domain session command denied by consumer policy.');
 			}
 			return history.execute(command);
