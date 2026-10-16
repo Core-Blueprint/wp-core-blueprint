@@ -180,6 +180,54 @@ export class SelectionState {
 		return true;
 	}
 
+
+	/**
+	 * Internal coordinated-transaction boundary. Validated stage selection is
+	 * applied silently so project subscribers always see the final selection.
+	 */
+	commitSnapshot(snapshot, metadata = {}) {
+		if (!snapshot || !Array.isArray(snapshot.paths)) {
+			throw new TypeError('Committed selection requires staged paths.');
+		}
+		const before = this.snapshot();
+		const unique = [];
+		const keys = new Set();
+		for (const path of snapshot.paths) {
+			const normalized = normalizePath(path);
+			const key = pathKey(normalized);
+			if (!keys.has(key)) {
+				keys.add(key);
+				unique.push(normalized);
+			}
+		}
+		const primary = snapshot.primary === null ? null : normalizePath(snapshot.primary);
+		if (primary && !keys.has(pathKey(primary))) {
+			throw new RangeError('Staged primary selection must be a member of staged paths.');
+		}
+		const after = { paths: unique, primary };
+		const changed = !sameSnapshot(before, after) || metadata.force === true;
+		if (!changed) return null;
+		this.#paths = unique;
+		this.#primary = primary;
+		this.#revision += 1;
+		return Object.freeze({
+			revision: this.#revision,
+			source: metadata.source || 'command',
+			action: metadata.action || 'sync',
+		});
+	}
+
+	notify(event, onObserverFailure = null) {
+		for (const listener of [...this.#listeners]) {
+			if (!this.#listeners.has(listener)) continue;
+			try {
+				listener(event, this.snapshot());
+			} catch (error) {
+				if (typeof onObserverFailure === 'function') onObserverFailure('selection');
+			}
+		}
+	}
+
 	toJSON() {
 		throw new TypeError('SelectionState is editor-session state and must not be persisted in DesignProject.');
 	}
