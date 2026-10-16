@@ -92,13 +92,14 @@ export const createSession = ({
 	onSelectionChange = null,
 	allowCommand = null,
 	historyLimit = 100,
+	verifyRebase = null,
 } = {}) => {
 	const profileContext = resolveProfile(profile);
 	const projectState = new ProjectState(project, {
 		validate: (candidate) => validateProfileProject(profileContext, candidate),
 	});
 	const editorState = new EditorState();
-	const history = new CommandHistory(projectState, editorState, { limit: historyLimit });
+	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase });
 	let disposed = false;
 
 	const validationContext = (event = null) => Object.freeze({
@@ -178,18 +179,11 @@ export const createSession = ({
 		snapshot: () => projectState.snapshot(),
 		replace(nextProject, options = {}) {
 			assertActive();
-			const source = String(options?.source || 'editor');
-			let next = null;
-			editorState.selection.batch({
-				source: 'replace',
-				action: source,
-				force: editorState.selection.paths().length > 0,
-			}, () => {
-				if (options?.resetSelection === true) editorState.selection.clear();
-				else editorState.reconcile(nextProject?.root);
-				next = projectState.replace(nextProject, { source });
+			return history.replace(nextProject, {
+				source: options?.source || 'editor',
+				resetSelection: options?.resetSelection === true,
+				contextChanged: options?.contextChanged === true,
 			});
-			return next;
 		},
 		selection: () => editorState.selection.snapshot(),
 		/**
@@ -218,11 +212,31 @@ export const createSession = ({
 		 */
 		historyStatus() {
 			assertActive();
-			return Object.freeze({
-				canUndo: history.canUndo,
-				canRedo: history.canRedo,
-				size: history.size,
-			});
+			return history.status();
+		},
+		subscribeHistory(listener) {
+			assertActive();
+			return history.subscribeHistory(listener);
+		},
+		subscribeDiagnostics(listener) {
+			assertActive();
+			return history.subscribeDiagnostics(listener);
+		},
+		captureSave() {
+			assertActive();
+			return history.captureSave();
+		},
+		baselineSnapshot() {
+			assertActive();
+			return history.baselineSnapshot();
+		},
+		rebase(options) {
+			assertActive();
+			return history.rebase(options);
+		},
+		clearHistory() {
+			assertActive();
+			return history.clear();
 		},
 		select(path, { additive = false, source = 'consumer' } = {}) {
 			assertActive();
@@ -275,24 +289,25 @@ export const createSession = ({
 };
 
 /**
- * P02: public domain-neutral session with Base-owned history, consumer-owned
- * command semantics and persistence. Does not select a document/mail profile.
+ * The single domain-neutral session backed by Base's canonical transaction
+ * engine. Consumers retain authority over domain schema and persistence.
  */
 export const createDomainSession = ({
 	project,
 	validateProject = null,
 	allowCommand = null,
 	onChange = null,
+	verifyRebase = null,
 	historyLimit = 100,
 } = {}) => {
-	for (const [name, candidate] of Object.entries({ validateProject, allowCommand, onChange })) {
+	for (const [name, candidate] of Object.entries({ validateProject, allowCommand, onChange, verifyRebase })) {
 		if (candidate !== null && typeof candidate !== 'function') {
-			throw new TypeError(`Domain session ${name} must be a function or null.`);
+			throw new TypeError('Domain session ' + name + ' must be a function or null.');
 		}
 	}
 	const projectState = new ProjectState(project, { validate: validateProject });
 	const editorState = new EditorState();
-	const history = new CommandHistory(projectState, editorState, { limit: historyLimit });
+	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase });
 	let disposed = false;
 	const assertActive = () => {
 		if (disposed) throw new Error('Domain editor session has been disposed.');
@@ -304,17 +319,11 @@ export const createDomainSession = ({
 	};
 	const unsubscribeConfigured = onChange ? subscribe(onChange) : null;
 	return Object.freeze({
-		project() {
+		project() { assertActive(); return projectState.current(); },
+		snapshot() { assertActive(); return projectState.snapshot(); },
+		replace(nextProject, options = {}) {
 			assertActive();
-			return projectState.current();
-		},
-		snapshot() {
-			assertActive();
-			return projectState.snapshot();
-		},
-		replace(nextProject, { source = 'consumer' } = {}) {
-			assertActive();
-			return projectState.replace(nextProject, { source });
+			return history.replace(nextProject, options);
 		},
 		subscribe,
 		execute(command) {
@@ -322,27 +331,21 @@ export const createDomainSession = ({
 			if (!command || typeof command.apply !== 'function') {
 				throw new TypeError('Domain session execute() requires a command with apply(project).');
 			}
+			history.assertWritable();
 			if (allowCommand && allowCommand(command, projectState.current()) === false) {
 				throw new Error('Domain session command denied by consumer policy.');
 			}
 			return history.execute(command);
 		},
-		undo() {
-			assertActive();
-			return history.undo();
-		},
-		redo() {
-			assertActive();
-			return history.redo();
-		},
-		clearHistory() {
-			assertActive();
-			history.clear();
-		},
-		historyStatus() {
-			assertActive();
-			return Object.freeze({ canUndo: history.canUndo, canRedo: history.canRedo, size: history.size });
-		},
+		undo() { assertActive(); return history.undo(); },
+		redo() { assertActive(); return history.redo(); },
+		clearHistory() { assertActive(); return history.clear(); },
+		historyStatus() { assertActive(); return history.status(); },
+		subscribeHistory(listener) { assertActive(); return history.subscribeHistory(listener); },
+		subscribeDiagnostics(listener) { assertActive(); return history.subscribeDiagnostics(listener); },
+		captureSave() { assertActive(); return history.captureSave(); },
+		baselineSnapshot() { assertActive(); return history.baselineSnapshot(); },
+		rebase(options) { assertActive(); return history.rebase(options); },
 		dispose() {
 			if (disposed) return;
 			disposed = true;
