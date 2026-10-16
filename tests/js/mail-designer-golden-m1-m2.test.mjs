@@ -82,7 +82,10 @@ test('beginner-facing link helper refuses active and unsupported URLs', () => {
 test('Mail rich-text inspector has visual editing by default with safe Advanced source disclosure', async () => {
 	const client = await get('assets/js/design/mail/rich-text-controls.js');
 	const consumer = await get('assets/js/features/mail-designer.js');
-	const css = await get('assets/css/pages/mail-designer.css');
+	const css = await get('assets/css/design/mail-rich-text-controls.css');
+	const baseMailCss = await get('assets/css/pages/mail-designer.css');
+	const assets = await get('src/Mail/Admin/DesignerAssets.php');
+	const publicAssets = await get('src/Design/Editor/Assets.php');
 	assert.match(consumer, /createMailRichTextControls/);
 	assert.match(consumer, /onCommit: \(markup\) => \{/);
 	assert.match(consumer, /return session\.execute\(commands\.setProperty\(path, \['markup'\], markup\)\)/);
@@ -97,6 +100,10 @@ test('Mail rich-text inspector has visual editing by default with safe Advanced 
 	assert.match(client, /sanitizeMailMarkup\(element\.innerHTML/);
 	assert.match(client, /onCommit\(clean\)/);
 	assert.match(css, /\.cb-mail-rich-text-controls__editor:focus-visible/);
+	assert.doesNotMatch(baseMailCss, /\.cb-mail-rich-text-controls__editor/);
+	assert.match(assets, /DesignEditorAssets::enqueue_mail_rich_text_controls\(\)/);
+	assert.match(publicAssets, /function enqueue_mail_rich_text_controls\(\): void/);
+	assert.match(publicAssets, /assets\/css\/design\/mail-rich-text-controls\.css/);
 	assert.doesNotMatch(client, /document\.execCommand/);
 	assert.doesNotMatch(client, /dangerouslySetInnerHTML/);
 });
