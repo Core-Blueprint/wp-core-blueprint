@@ -285,9 +285,9 @@ export class CommandHistory {
 				this.#editorState.selection.snapshot(),
 				editorSnapshot.selection,
 			);
+			if (!differs && !hadHistory && !differsSelection && !contextChanged) return this.#projectState.current();
 			this.#contextEpoch += 1;
 			this.#baselineAcknowledged = false;
-			if (!differs && !hadHistory && !differsSelection && !contextChanged) return this.#projectState.current();
 			return this.#commit({
 				nextProject: next, nextEditor: editorSnapshot,
 				undo: [], redo: [], action: 'replace', source: label,
