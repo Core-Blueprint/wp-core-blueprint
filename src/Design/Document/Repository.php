@@ -85,7 +85,7 @@ final class Repository {
 		}
 		global $wpdb;
 		$affected = $wpdb->query( $wpdb->prepare(
-			'UPDATE %i SET document_json = %s, revision = revision + 1, updated_at = %s WHERE identity_hash = %s AND document_type = %s AND document_key = %s AND revision = %s',
+			'UPDATE %i SET document_json = %s, revision = revision + 1, updated_at = %s WHERE identity_hash = %s AND document_type = %s AND document_key = %s AND revision = CAST(%s AS UNSIGNED)',
 			Schema::table_name(), $encoded, gmdate( 'Y-m-d H:i:s' ), self::identity_hash( $type, $key ), $type, $key, $expected
 		) );
 		if ( false === $affected ) {
