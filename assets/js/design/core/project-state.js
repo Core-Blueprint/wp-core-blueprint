@@ -43,12 +43,33 @@ export class ProjectState {
 		return cloneValue(this.#project);
 	}
 
-	replace(project, { source = 'editor' } = {}) {
-		const next = this.#normalize(project);
+	/** Stage the complete validated project without any public effect. */
+	stage(project) {
+		return this.#normalize(project);
+	}
+
+	/** Commit an already validated frozen project without invoking observers. */
+	commitStaged(next, { source = 'editor' } = {}) {
 		this.#project = next;
 		this.#revision += 1;
-		const event = Object.freeze({ revision: this.#revision, source: String(source || 'editor') });
-		this.#listeners.forEach((listener) => listener(event, this.#project));
+		return Object.freeze({ revision: this.#revision, source: String(source || 'editor') });
+	}
+
+	/** Notify only after all cooperating editor stores have been committed. */
+	notify(event, onObserverFailure = null) {
+		for (const listener of [...this.#listeners]) {
+			if (!this.#listeners.has(listener)) continue;
+			try {
+				listener(event, this.#project);
+			} catch (error) {
+				if (typeof onObserverFailure === 'function') onObserverFailure('project');
+			}
+		}
+	}
+
+	replace(project, { source = 'editor' } = {}) {
+		const event = this.commitStaged(this.stage(project), { source });
+		this.notify(event);
 		return this.#project;
 	}
 
