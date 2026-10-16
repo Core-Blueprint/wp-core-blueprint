@@ -239,6 +239,18 @@ export class CommandHistory {
 		try { return action(); } finally { this.#busy = false; }
 	}
 
+	/** Isolate consumer policy evaluation from nested mutation attempts. */
+	guardPolicy(callback) {
+		if (typeof callback !== 'function') throw new TypeError('Designer policy must be synchronous.');
+		return this.#run(() => {
+			const result = callback();
+			if (result && typeof result.then === 'function') {
+				throw new TypeError('Designer policy must not return a Promise.');
+			}
+			return result;
+		});
+	}
+
 	execute(command) {
 		return this.#run(() => {
 			const beforeProject = this.#projectState.current();
