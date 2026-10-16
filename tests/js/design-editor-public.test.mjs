@@ -520,3 +520,158 @@ test('P02 concurrent domain sessions isolate snapshots and undo stacks', () => {
 	first.dispose();
 	second.dispose();
 });
+
+test('G1b: project observers read fully committed history, ordered before history listeners', () => {
+	const order = [];
+	const session = publicEditor.createDomainSession({
+		project: domainProject('A'),
+		onChange() {
+			order.push('project');
+			assert.equal(session.historyStatus().canUndo, true);
+		},
+	});
+	session.subscribeHistory((event) => {
+		order.push('history');
+		assert.equal(Object.isFrozen(event), true);
+		assert.equal(Object.isFrozen(event.status), true);
+		assert.equal(event.status.canUndo, session.historyStatus().canUndo);
+	});
+	session.execute(editDomain('B'));
+	assert.deepEqual(order, ['project', 'history']);
+	assert.equal(session.historyStatus().size, 1);
+	session.dispose();
+});
+
+test('G1b: observer failures isolate callbacks and publish one sanitized diagnostic', () => {
+	const project = domainProject('A');
+	const session = publicEditor.createDomainSession({ project });
+	const notices = [], diagnostics = [];
+	session.subscribe(() => { throw new Error('PRIVATE SECRET WITH ID 0001'); });
+	session.subscribe(() => notices.push('project'));
+	session.subscribeHistory(() => { throw new Error('SECRET HISTORY'); });
+	session.subscribeHistory(() => notices.push('history'));
+	session.subscribeDiagnostics((d) => {
+		assert.deepEqual(Object.keys(d).sort(), ['code', 'phase', 'recoverable']);
+		assert.equal(d.code, 'CB_DESIGNER_OBSERVER_FAILED');
+		assert.equal(d.phase, 'multiple');
+		assert.equal(Object.isFrozen(d), true);
+		diagnostics.push(d);
+		throw new Error('DIAGNOSTIC FAILURE');
+	});
+	session.subscribeDiagnostics(() => notices.push('diagnostic'));
+	session.execute(editDomain('B'));
+	assert.deepEqual(notices, ['project', 'history', 'diagnostic']);
+	assert.equal(diagnostics.length, 1);
+	assert.equal(session.project().root.props.description, 'B');
+	session.dispose();
+});
+
+test('G1b: normal Save preserves earlier undo and later distinct intent steps', () => {
+	const session = publicEditor.createDomainSession({ project: domainProject('A') });
+	const events = [];
+	session.subscribeHistory((event) => events.push(event));
+	session.execute(editDomain('B'));
+	const save = session.captureSave();
+	assert.equal(Object.isFrozen(save), true);
+	assert.equal(Object.isFrozen(save.submittedProject), true);
+	session.execute(editDomain('C'));
+	session.execute(editDomain('D'));
+	const result = session.rebase({ saveToken: save.token, baselineProject: domainProject('B') });
+	assert.equal(result.normalized, false);
+	assert.equal(result.retainedUndoSteps, 3);
+	assert.equal(session.baselineSnapshot().root.props.description, 'B');
+	assert.equal(session.project().root.props.description, 'D');
+	assert.deepEqual(events.map((e) => e.action), ['execute', 'execute', 'execute', 'rebase']);
+	assert.equal(session.undo(), true);
+	assert.equal(session.project().root.props.description, 'C');
+	assert.equal(session.undo(), true);
+	assert.equal(session.project().root.props.description, 'B');
+	assert.equal(session.undo(), true);
+	assert.equal(session.project().root.props.description, 'A');
+	assert.equal(session.redo(), true);
+	assert.equal(session.redo(), true);
+	assert.equal(session.redo(), true);
+	assert.equal(session.project().root.props.description, 'D');
+	assert.throws(() => session.rebase({ saveToken: save.token, baselineProject: domainProject('B') }), (e) => e.code === 'SAVE_STALE' || e.code === 'SAVE_INVALID');
+	session.dispose();
+});
+
+test('G1b: Save acknowledgement is latest-issued-wins and rejects wrong context', () => {
+	const session = publicEditor.createDomainSession({ project: domainProject('A') });
+	const changes = [];
+	session.subscribeHistory((e) => changes.push(e.action));
+	const first = session.captureSave();
+	session.execute(editDomain('B'));
+	const second = session.captureSave();
+	assert.throws(
+		() => session.rebase({ saveToken: first.token, baselineProject: domainProject('A') }),
+		(e) => e.code === 'SAVE_STALE',
+	);
+	assert.equal(session.project().root.props.description, 'B');
+	assert.equal(session.historyStatus().size, 1);
+	assert.equal(changes.length, 1);
+	session.rebase({ saveToken: second.token, baselineProject: domainProject('B') });
+	assert.equal(session.baselineSnapshot().root.props.description, 'B');
+	const staleContext = session.captureSave();
+	session.replace(domainProject('B'), { source: 'context-switch', contextChanged: true });
+	assert.throws(
+		() => session.rebase({ saveToken: staleContext.token, baselineProject: domainProject('B') }),
+		(e) => e.code === 'SAVE_CONTEXT_CHANGED',
+	);
+	session.dispose();
+});
+
+test('G1b: rejected normalized rebase preserves entire live draft and history', () => {
+	const session = publicEditor.createDomainSession({ project: domainProject('A') });
+	session.execute(editDomain('B'));
+	const save = session.captureSave();
+	session.execute(editDomain('C'));
+	const old = session.snapshot(), status = session.historyStatus(), baseline = session.baselineSnapshot();
+	const events = [];
+	session.subscribeHistory((e) => events.push(e.action));
+	assert.throws(
+		() => session.rebase({ saveToken: save.token, baselineProject: domainProject('Normalized B') }),
+		(e) => e.code === 'SAVE_REPLAY_CONFLICT',
+	);
+	assert.deepEqual(session.snapshot(), old);
+	assert.deepEqual(session.historyStatus(), status);
+	assert.deepEqual(session.baselineSnapshot(), baseline);
+	assert.deepEqual(events, []);
+	session.dispose();
+});
+
+test('G1b: normalized replay requires explicit verified per-intent commands', () => {
+	const session = publicEditor.createDomainSession({
+		project: domainProject('A'),
+		verifyRebase: ({ submittedProject, acceptedBaseline, replayedCurrent }) =>
+			submittedProject.root.props.description === 'A'
+			&& acceptedBaseline.root.props.description === 'A normalized'
+			&& replayedCurrent.root.props.description === 'C',
+	});
+	const save = session.captureSave();
+	session.execute(editDomain('B'));
+	session.execute(editDomain('C'));
+	const result = session.rebase({ saveToken: save.token, baselineProject: domainProject('A normalized') });
+	assert.equal(result.normalized, true);
+	assert.equal(session.project().root.props.description, 'C');
+	assert.equal(session.undo(), true);
+	assert.equal(session.project().root.props.description, 'B');
+	assert.equal(session.undo(), true);
+	assert.equal(session.project().root.props.description, 'A normalized');
+	assert.equal(session.redo(), true);
+	assert.equal(session.redo(), true);
+	assert.equal(session.project().root.props.description, 'C');
+	session.dispose();
+});
+
+test('G1b: new history methods exist on document profiles and preserve Save history', () => {
+	const session = publicEditor.createSession({ project: flowProject(), profile: 'document-flow' });
+	for (const method of ['subscribeHistory', 'subscribeDiagnostics', 'captureSave', 'baselineSnapshot', 'rebase', 'clearHistory']) {
+		assert.equal(typeof session[method], 'function', method);
+	}
+	const checkpoint = session.captureSave();
+	const result = session.rebase({ saveToken: checkpoint.token, baselineProject: checkpoint.submittedProject });
+	assert.equal(result.normalized, false);
+	assert.deepEqual(session.baselineSnapshot(), checkpoint.submittedProject);
+	session.dispose();
+});
