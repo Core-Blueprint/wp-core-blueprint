@@ -365,4 +365,13 @@ if ( ! is_array( $template_library ) || ! isset( $template_library['messages'] )
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $template_library['messages'] );
 
+// Retire the former Mail canvas instruction; its source msgid was replaced.
+unset( $catalog['messages']['Click an email element to inspect and edit it.'] );
+
+$mail_designer = require __DIR__ . '/mail-designer/core-blueprint-pt_PT.php';
+if ( ! is_array( $mail_designer ) || ! isset( $mail_designer['messages'] ) || ! is_array( $mail_designer['messages'] ) ) {
+    return [];
+}
+$catalog['messages'] = array_replace( $catalog['messages'], $mail_designer['messages'] );
+
 return $catalog;
