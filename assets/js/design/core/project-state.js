@@ -55,6 +55,12 @@ export class ProjectState {
 		return Object.freeze({ revision: this.#revision, source: String(source || 'editor') });
 	}
 
+	/** Internal failure-path restoration before any public transaction event. */
+	restoreCommitted(snapshot, revision) {
+		this.#project = snapshot;
+		this.#revision = revision;
+	}
+
 	/** Notify only after all cooperating editor stores have been committed. */
 	notify(event, onObserverFailure = null) {
 		for (const listener of [...this.#listeners]) {
