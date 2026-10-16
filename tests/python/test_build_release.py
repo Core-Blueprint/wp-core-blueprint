@@ -43,6 +43,18 @@ class ReleaseBuilderTest(unittest.TestCase):
             if extra:
                 archive.writestr('other-plugin/unexpected.php', 'unexpected')
 
+    def test_proven_level2_binding_is_invoked_for_runner_sources(self):
+        from tools.integration import release_env
+        marker = self.source / 'tools/integration/release_env.py'
+        marker.parent.mkdir(parents=True)
+        marker.write_text('# contract fixture\n')
+        with mock.patch.object(release_env, 'bind', return_value=True) as binding:
+            with mock.patch.object(builder, 'preflight'), mock.patch.object(builder, 'run_gate'):
+                archive, checksum = builder.build(self.source, self.output)
+        binding.assert_called_once_with(self.source)
+        self.assertTrue(archive.is_file())
+        self.assertTrue(checksum.is_file())
+
     def test_failed_preflight_preserves_previous_artifact(self):
         self.output.mkdir()
         archive = self.output / 'core-blueprint-1.0.0-rc1.zip'
