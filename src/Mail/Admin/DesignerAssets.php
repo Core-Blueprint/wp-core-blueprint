@@ -38,7 +38,7 @@ final class DesignerAssets {
 			return;
 		}
 
-		DesignEditorAssets::enqueue();
+		DesignEditorAssets::enqueue_mail_rich_text_controls();
 		wp_enqueue_script_module(
 			self::MODULE_ID,
 			CB_CORE_URL . 'assets/js/features/mail-designer.js',

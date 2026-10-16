@@ -49,26 +49,78 @@ if (root) {
 			Object.freeze({ key: 'padding', label: 'Padding', type: 'number', min: 0, max: 80, step: 1 }),
 		]),
 	});
+	// Structural columns are selected through the existing Base Layers/Inspector.
+	// They are not standalone palette blocks or a second layout editor.
+	const columnDefinition = Object.freeze({
+		label: 'Column',
+		node_type: 'mail.column',
+		provider: 'core',
+		defaults: Object.freeze({ background: '#ffffff', padding: 12 }),
+		inspector: Object.freeze([
+			Object.freeze({ key: 'background', label: 'Column background', type: 'color' }),
+			Object.freeze({ key: 'padding', label: 'Inner padding', type: 'number', min: 0, max: 32, step: 1 }),
+		]),
+	});
 
 	if (!form || !shellRoot || !projectField || !subjectField || !emailInspector || !structure || !inspector || !preview || !project) {
 		throw new Error('Mail Designer could not initialize because its editor payload is incomplete.');
 	}
-	if (!mailProfile || typeof mailProfile.normalizeMailLayout !== 'function' || !Array.isArray(mailProfile.MAIL_FONT_FAMILIES)) {
+	if (!mailProfile || typeof mailProfile.normalizeMailLayout !== 'function' || !Array.isArray(mailProfile.MAIL_FONT_FAMILIES)
+		|| typeof mailProfile.createMailRichTextControls !== 'function'
+		|| typeof mailProfile.createMailInlineTextController !== 'function') {
 		throw new Error('Mail Designer could not initialize because the Mail profile styling contract is unavailable.');
 	}
 
 	let previewTimer = 0;
 	let previewController = null;
+	let previewRevision = 0;
 	let shell = null;
 	let layerTree = null;
 	let selectionController = null;
 	let contextHydrating = false;
+	let inlineEditor = null;
+	let previewPending = false;
+	let persistedFingerprint = null;
+	let pendingSaveFingerprint = null;
+	let savePending = false;
 
+	const currentFingerprint = () => JSON.stringify([
+		templateId,
+		subjectField.value,
+		session.snapshot(),
+	]);
+	const hasUnsavedChanges = () => (
+		Boolean(inlineEditor?.isEditing())
+		|| savePending
+		|| (persistedFingerprint !== null && currentFingerprint() !== persistedFingerprint)
+	);
+	const dirtyIndicator = document.createElement('span');
+	dirtyIndicator.className = 'cb-core-mail-designer__dirty';
+	dirtyIndicator.hidden = true;
+	dirtyIndicator.textContent = 'Unsaved changes';
+	dirtyIndicator.setAttribute('role', 'status');
+	subjectField.insertAdjacentElement('afterend', dirtyIndicator);
+	const syncDirtyIndicator = () => {
+		dirtyIndicator.hidden = !hasUnsavedChanges();
+	};
 	const pathKey = (path) => JSON.stringify(Array.isArray(path) ? path : []);
 	const samePath = (left, right) => pathKey(left) === pathKey(right);
+	const finishActiveText = () => {
+		if (!inlineEditor?.isEditing()) return true;
+		if (inlineEditor.finish(true)) return true;
+		setPreviewStatus('Please finish or correct the current text before continuing.', true);
+		return false;
+	};
+	const selectAfterTextCommit = (path, options) => {
+		if (!finishActiveText()) return false;
+		return selectionController?.select(path, options) ?? false;
+	};
 	const parentPath = (path) => Array.isArray(path) ? path.slice(0, -1) : [];
 
 	const definitionForNode = (node) => {
+		if (node?.type === 'mail.column' && node?.provider === 'core') {
+			return columnDefinition;
+		}
 		if (node?.type === sectionDefinition.node_type && node?.provider === sectionDefinition.provider) {
 			return sectionDefinition;
 		}
@@ -88,12 +140,23 @@ if (root) {
 		return index < 0 ? null : { index, node: children[index] };
 	};
 
-	const makeNode = (definition) => ({
-		type: String(definition.node_type || ''),
-		provider: String(definition.provider || ''),
-		properties: structuredClone(definition.defaults || {}),
-		children: [],
-	});
+	const makeNode = (definition) => {
+		const node = {
+			type: String(definition.node_type || ''),
+			provider: String(definition.provider || ''),
+			properties: structuredClone(definition.defaults || {}),
+			children: [],
+		};
+		if (node.type === 'mail.columns' && node.provider === 'core') {
+			node.children = [0, 1].map(() => ({
+				type: 'mail.column',
+				provider: 'core',
+				properties: structuredClone(columnDefinition.defaults),
+				children: [],
+			}));
+		}
+		return node;
+	};
 
 	const updateSerializedProject = () => {
 		projectField.value = JSON.stringify(session.snapshot());
@@ -136,15 +199,30 @@ if (root) {
 		const doc = preview.contentDocument;
 		if (!doc) return;
 
+		inlineEditor?.attach(doc);
 		doc.addEventListener('click', (event) => {
 			const target = event.target && typeof event.target.closest === 'function' ? event.target : null;
 			const marker = target?.closest('[data-cb-mail-editor-node]');
+			if (inlineEditor?.isEditing()) {
+				// Do not navigate a link inside the editable mail canvas.
+				if (target?.closest('a')) event.preventDefault();
+				const active = inlineEditor.activePath();
+				const clicked = marker ? markerPath(marker) : null;
+				if (!clicked || (active && samePath(clicked, active))) return;
+				// A failed inline commit must not silently lose its draft when
+				// the user clicks a different block. Keep the original active.
+				if (!inlineEditor.finish(true)) {
+					event.preventDefault();
+					event.stopPropagation();
+					return;
+				}
+			}
 			if (!marker) return;
 			const path = markerPath(marker);
 			if (!path) return;
 			event.preventDefault();
 			event.stopPropagation();
-			selectionController?.select(path);
+			selectAfterTextCommit(path);
 		}, true);
 
 		doc.addEventListener('pointermove', (event) => {
@@ -163,9 +241,12 @@ if (root) {
 	};
 
 	const refreshPreview = async () => {
+		if (inlineEditor?.isEditing()) { previewPending = true; return; }
 		if (!ajaxUrl || !nonce || !templateId) return;
 		previewController?.abort();
-		previewController = new AbortController();
+		const revision = ++previewRevision;
+		const controller = new AbortController();
+		previewController = controller;
 		setPreviewStatus('Updating preview…');
 
 		const body = new URLSearchParams({
@@ -182,21 +263,25 @@ if (root) {
 				credentials: 'same-origin',
 				headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
 				body: body.toString(),
-				signal: previewController.signal,
+				signal: controller.signal,
 			});
 			const payload = await response.json();
 			if (!response.ok || !payload?.success || typeof payload?.data?.html !== 'string') {
 				throw new Error(payload?.data?.message || 'Preview failed.');
 			}
+			if (controller.signal.aborted || revision !== previewRevision || inlineEditor?.isEditing() || contextHydrating) return;
 			preview.srcdoc = payload.data.html;
 			setPreviewStatus('Preview updated');
 		} catch (error) {
-			if (error?.name === 'AbortError') return;
+			if (controller.signal.aborted || revision !== previewRevision || error?.name === 'AbortError') return;
 			setPreviewStatus(error?.message || 'Preview failed.', true);
 		}
 	};
 
 	const schedulePreview = () => {
+		if (inlineEditor?.isEditing()) { previewPending = true; return; }
+		++previewRevision;
+		previewController?.abort();
 		window.clearTimeout(previewTimer);
 		previewTimer = window.setTimeout(refreshPreview, 250);
 	};
@@ -228,6 +313,19 @@ if (root) {
 		label.textContent = field.label || field.key;
 		wrapper.append(label);
 
+		if (field.key === 'markup' && field.type === 'textarea') {
+			const richText = mailProfile.createMailRichTextControls({
+				documentRef: document,
+				value: String(value ?? ''),
+				onCommit: (markup) => {
+					if (!finishActiveText()) return false;
+					return session.execute(commands.setProperty(path, ['markup'], markup));
+				},
+			});
+			wrapper.append(richText.element);
+			return wrapper;
+		}
+
 		let input;
 		if (field.type === 'textarea') {
 			input = document.createElement('textarea');
@@ -247,6 +345,7 @@ if (root) {
 		input.id = id;
 		input.value = value ?? '';
 		input.addEventListener('change', () => {
+			if (!finishActiveText()) { input.value = value ?? ''; return; }
 			session.execute(commands.setProperty(path, [field.key], fieldValue(input, field.type)));
 		});
 		wrapper.append(input);
@@ -277,6 +376,7 @@ if (root) {
 		input.id = id;
 		input.value = field.value;
 		input.addEventListener('change', () => {
+			if (!finishActiveText()) { input.value = field.value; return; }
 			session.execute(commands.setProperty([], field.propertyPath, fieldValue(input, field.type)));
 		});
 		wrapper.append(label, input);
@@ -354,8 +454,8 @@ if (root) {
 
 	const nodeSummary = (node, definition) => {
 		const properties = node?.properties || {};
-		const source = properties.text || properties.label || properties.alt || properties.url || '';
-		const text = String(source).replace(/\s+/g, ' ').trim();
+		const source = properties.text || properties.markup || properties.label || properties.alt || properties.url || '';
+		const text = String(source).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 		return text ? text.slice(0, 70) : (definition?.label || node?.type || 'Element');
 	};
 
@@ -364,6 +464,7 @@ if (root) {
 		const parent = parentPath(path);
 		const fromIndex = path.at(-1);
 		if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex === toIndex) return false;
+		if (!finishActiveText()) return false;
 		session.execute(commands.reorderNode(parent, fromIndex, toIndex));
 		return true;
 	};
@@ -382,7 +483,7 @@ if (root) {
 			selected: samePath(path, session.selection().primary),
 			actions: {
 				remove: node.type !== 'mail.section'
-					? () => session.execute(commands.removeNode(path))
+					? () => finishActiveText() && session.execute(commands.removeNode(path))
 					: false,
 			},
 			reorder: canMove ? {
@@ -420,6 +521,7 @@ if (root) {
 		renderInspector();
 		shell?.syncHistory();
 		if (!contextHydrating) schedulePreview();
+		syncDirtyIndicator();
 	};
 
 	const session = createSession({
@@ -427,16 +529,47 @@ if (root) {
 		profile: 'mail',
 		onChange: render,
 	});
+	inlineEditor = mailProfile.createMailInlineTextController({
+		session,
+		executeProperty: (path, key, value) => session.execute(commands.setProperty(path, [key], value)),
+		select: (path) => selectAfterTextCommit(path),
+		onStatus: setPreviewStatus,
+		onEditingChange: (isEditing) => {
+			syncDirtyIndicator();
+			if (isEditing) {
+				++previewRevision;
+				previewController?.abort();
+				window.clearTimeout(previewTimer);
+				previewPending = true;
+				return;
+			}
+			if (previewPending) {
+				previewPending = false;
+				schedulePreview();
+			}
+		},
+	});
 
 	shell = createDesignerShell(shellRoot, {
 		session,
 		defaultPanel: 'email',
 	});
+	// Shared Base history remains authoritative. Flush an active inline draft
+	// before the Shell's undo/redo action, or block that action when invalid.
+	// The capture phase runs before the Shell button click handler.
+	shellRoot.addEventListener('click', (event) => {
+		const target = event.target?.nodeType === 1 ? event.target : event.target?.parentElement;
+		if (!target?.closest?.('[data-cb-design-shell-undo], [data-cb-design-shell-redo]')) return;
+		if (finishActiveText()) return;
+		event.preventDefault();
+		event.stopImmediatePropagation();
+	}, true);
+
 	layerTree = createDesignerLayerTree({
 		documentRef: document,
 		ariaLabel: 'Layers',
 		emptyMessage: 'This mail template does not contain editable elements.',
-		onSelectItem: (path, options) => selectionController?.select(path, options),
+		onSelectItem: (path, options) => selectAfterTextCommit(path, options),
 	});
 	structure.replaceChildren(layerTree.element);
 	selectionController = createDesignerSelectionController({
@@ -467,7 +600,18 @@ if (root) {
 		const selection = resolveTemplateSelection(selectionValue);
 		if (!selection.templateId) throw new Error('The selected mail template is invalid.');
 		if (!ajaxUrl || !nonce) throw new Error('Mail Designer context switching is unavailable.');
+		if (savePending) throw new Error('Wait for the current save to finish before switching templates.');
+		if (selection.templateId === templateId) return { templateId, customized: false };
+		if (hasUnsavedChanges()) {
+			if (!window.confirm('This mail template has unsaved changes. Discard them and switch templates?')) {
+				throw new Error('Template switch cancelled. Your edits are still here.');
+			}
+			// No session mutation until a different template has loaded successfully.
+			inlineEditor?.finish(false);
+		}
+		const originalFingerprint = currentFingerprint();
 
+		++previewRevision;
 		previewController?.abort();
 		window.clearTimeout(previewTimer);
 		const body = new URLSearchParams({
@@ -496,6 +640,9 @@ if (root) {
 			throw new Error(data?.message || 'The selected mail template could not be loaded.');
 		}
 
+		if (savePending || inlineEditor?.isEditing() || currentFingerprint() !== originalFingerprint) {
+			throw new Error('The current template changed while another template was loading. Switch cancelled.');
+		}
 		templateId = data.template_id;
 		root.dataset.templateId = templateId;
 		templateIdFields.forEach((field) => { field.value = templateId; });
@@ -509,6 +656,8 @@ if (root) {
 		}
 
 		preview.srcdoc = data.html;
+		persistedFingerprint = currentFingerprint();
+		syncDirtyIndicator();
 		setPreviewStatus('Preview updated');
 		shell.syncHistory();
 		if (selection.url) window.history.replaceState(window.history.state, '', selection.url);
@@ -522,13 +671,38 @@ if (root) {
 		event.detail.respondWith(loadTemplateContext(event.detail.value));
 	});
 
+	const nodeForPath = (path) => {
+		let node = session.project()?.root;
+		for (const index of path) {
+			if (!node || !Array.isArray(node.children) || !Number.isInteger(index)) return null;
+			node = node.children[index];
+		}
+		return node || null;
+	};
+	const insertionContainer = (definition) => {
+		const section = primarySection();
+		if (!section) return null;
+		// Columns are intentionally a section-level structural component.
+		if (definition.node_type === 'mail.columns') return [section.index];
+		const selected = session.selection().primary;
+		if (Array.isArray(selected)) {
+			for (let length = selected.length; length > 0; length--) {
+				const path = selected.slice(0, length);
+				const node = nodeForPath(path);
+				if (node?.type === 'mail.column' && node.provider === 'core') return path;
+			}
+		}
+		return [section.index];
+	};
 	root.querySelectorAll('[data-cb-mail-add]').forEach((button) => {
 		button.addEventListener('click', () => {
 			const definition = components[button.dataset.cbMailAdd || ''];
-			const section = primarySection();
-			if (!definition || !section) return;
-			const newIndex = section.node.children.length;
-			session.execute(commands.insertNode([section.index], newIndex, makeNode(definition)));
+			if (!definition || !finishActiveText()) return;
+			const path = insertionContainer(definition);
+			if (!path) return;
+			const parent = nodeForPath(path);
+			if (!Array.isArray(parent?.children)) return;
+			session.execute(commands.insertNode(path, parent.children.length, makeNode(definition)));
 		});
 	});
 
@@ -559,18 +733,59 @@ if (root) {
 	});
 
 	preview.addEventListener('load', bindPreviewInteractions);
+	// F2 is also available when focus remains on the outer Layers panel.
+	// Do not steal the key from an ordinary text input or other editable UI.
+	document.addEventListener('keydown', (event) => {
+		if (event.key !== 'F2' || event.defaultPrevented || inlineEditor?.isEditing()) return;
+		const active = document.activeElement;
+		if (!active || !shellRoot.contains(active)) return;
+		if (active.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+		if (inlineEditor?.startSelected(preview.contentDocument)) event.preventDefault();
+	});
 	subjectField.addEventListener('input', schedulePreview);
-	form.addEventListener('submit', updateSerializedProject);
+	form.addEventListener('submit', (event) => {
+		const editingNow = Boolean(inlineEditor?.isEditing());
+		if (editingNow && inlineEditor.finish(true) !== true) {
+			event.preventDefault();
+			setPreviewStatus('Finish editing your text before saving.', true);
+			return;
+		}
+		updateSerializedProject();
+	});
 
-	window.addEventListener('beforeunload', () => {
+	window.addEventListener('beforeunload', (event) => {
+		if (!hasUnsavedChanges()) return;
+		event.preventDefault();
+		event.returnValue = '';
+	});
+	window.addEventListener('pagehide', () => {
+		inlineEditor?.finish(false);
 		previewController?.abort();
 		selectionController?.destroy();
 		session.dispose();
 	}, { once: true });
+	shellRoot.addEventListener('cb:design-shell:savechange', (event) => {
+		const state = String(event.detail?.state || '');
+		if (state === 'saving') {
+			pendingSaveFingerprint = currentFingerprint();
+			savePending = true;
+		} else if (state === 'saved') {
+			if (pendingSaveFingerprint !== null) persistedFingerprint = pendingSaveFingerprint;
+			pendingSaveFingerprint = null;
+			savePending = false;
+		} else if (state === 'error') {
+			pendingSaveFingerprint = null;
+			savePending = false;
+		}
+		syncDirtyIndicator();
+	});
+	subjectField.addEventListener('input', syncDirtyIndicator);
 
 	renderEmailInspector();
 	updateSerializedProject();
 	shell.syncHistory();
+	persistedFingerprint = currentFingerprint();
+	syncDirtyIndicator();
 	if (preview.contentDocument?.readyState === 'complete') bindPreviewInteractions();
 	else schedulePreview();
 }

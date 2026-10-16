@@ -127,6 +127,38 @@ final class ComponentRegistry {
 			[ 'id' => 'spacer', 'label' => __( 'Spacer', 'core-blueprint' ), 'node_type' => 'mail.spacer', 'defaults' => [ 'height' => 24 ], 'inspector' => [ [ 'key' => 'height', 'label' => __( 'Height', 'core-blueprint' ), 'type' => 'number', 'min' => 0, 'max' => 120 ] ] ],
 		];
 
+		// Golden Mail profile: render-safe rich text, not a generic raw HTML block.
+		$definitions[] = [
+			'id' => 'rich-text',
+			'label' => __( 'Rich text', 'core-blueprint' ),
+			'node_type' => 'mail.rich-text',
+			'defaults' => [ 'markup' => '<p>' . esc_html__( 'Write your message here.', 'core-blueprint' ) . '</p>', 'fontSize' => 16, 'align' => 'left', 'color' => '#1f2937', 'spacing' => 16 ],
+			'inspector' => [
+				[ 'key' => 'markup', 'label' => __( 'Formatted content (allowed HTML)', 'core-blueprint' ), 'type' => 'textarea' ],
+				[ 'key' => 'fontSize', 'label' => __( 'Font size', 'core-blueprint' ), 'type' => 'number', 'min' => 12, 'max' => 28 ],
+				[ 'key' => 'align', 'label' => __( 'Alignment', 'core-blueprint' ), 'type' => 'select', 'options' => $align ],
+				[ 'key' => 'color', 'label' => __( 'Text color', 'core-blueprint' ), 'type' => 'color' ],
+				[ 'key' => 'spacing', 'label' => __( 'Space after', 'core-blueprint' ), 'type' => 'number', 'min' => 0, 'max' => 48 ],
+			],
+		];
+		$definitions[] = [
+			'id' => 'columns',
+			'label' => __( 'Two columns', 'core-blueprint' ),
+			'node_type' => 'mail.columns',
+			'defaults' => [ 'ratio' => 'equal', 'gap' => 16, 'spacing' => 20 ],
+			'inspector' => [
+				[ 'key' => 'ratio', 'label' => __( 'Column widths', 'core-blueprint' ), 'type' => 'select', 'options' => [
+					'equal' => __( '50 / 50', 'core-blueprint' ),
+					'left-wide' => __( '60 / 40', 'core-blueprint' ),
+					'right-wide' => __( '40 / 60', 'core-blueprint' ),
+					'left-third' => __( '33 / 67', 'core-blueprint' ),
+					'right-third' => __( '67 / 33', 'core-blueprint' ),
+				] ],
+				[ 'key' => 'gap', 'label' => __( 'Column gap', 'core-blueprint' ), 'type' => 'number', 'min' => 0, 'max' => 40 ],
+				[ 'key' => 'spacing', 'label' => __( 'Space after', 'core-blueprint' ), 'type' => 'number', 'min' => 0, 'max' => 48 ],
+			],
+		];
+
 		foreach ( $definitions as $definition ) {
 			$definition['provider'] = 'core';
 			self::register( $definition );
