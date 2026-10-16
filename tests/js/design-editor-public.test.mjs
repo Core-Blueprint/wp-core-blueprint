@@ -727,3 +727,127 @@ test('G1b: reentrant observer mutation is rejected without cancelling committed 
 	assert.equal(session.project().root.props.description, 'B');
 	session.dispose();
 });
+
+
+const g1cMailProject = () => ({
+	schema_version: 0,
+	design_type: 'mail-template',
+	root: {
+		type: 'mail-template',
+		provider: 'core',
+		properties: {
+			layout: {
+				width: 600,
+				background: '#f3f4f6',
+				contentBackground: '#ffffff',
+				fontFamily: 'Arial, Helvetica, sans-serif',
+				textColor: '#1f2937',
+				accentColor: '#2563eb',
+			},
+		},
+		children: [{
+			type: 'mail.section',
+			provider: 'core',
+			properties: { padding: 32 },
+			children: [{
+				type: 'mail.text',
+				provider: 'core',
+				properties: { text: 'Hello' },
+				children: [],
+			}],
+		}],
+	},
+});
+
+test('G1c: public v2 session contract parity across domain, Mail, flow and fixed profiles', () => {
+	const cases = [
+		{
+			name: 'domain',
+			create: () => publicEditor.createDomainSession({ project: domainProject('A') }),
+			change: (session) => session.execute(editDomain('B')),
+		},
+		{
+			name: 'mail',
+			create: () => publicEditor.createSession({ profile: 'mail', project: g1cMailProject() }),
+			change: (session) => session.execute(publicEditor.commands.setProperty([0, 0], ['text'], 'Changed')),
+		},
+		{
+			name: 'document-flow',
+			create: () => publicEditor.createSession({ profile: 'document-flow', project: flowProject() }),
+			change: (session) => session.execute(publicEditor.commands.setProperty([0], ['value', 'text'], 'Changed')),
+		},
+		{
+			name: 'document-fixed',
+			create: () => publicEditor.createSession({ profile: 'document-fixed', project: fixedProject() }),
+			change: (session) => session.execute(publicEditor.commands.setProperty([0], ['frame', 'x'], 12)),
+		},
+	];
+	const required = [
+		'project', 'snapshot', 'replace', 'execute', 'undo', 'redo',
+		'historyStatus', 'subscribeHistory', 'clearHistory',
+		'captureSave', 'baselineSnapshot', 'rebase', 'subscribeDiagnostics', 'dispose',
+	];
+	for (const consumer of cases) {
+		const session = consumer.create();
+		try {
+			for (const name of required) assert.equal(typeof session[name], 'function', consumer.name + '.' + name);
+			assert.equal(Object.isFrozen(session), true, consumer.name + ' session');
+			const oldProject = session.project();
+			const before = session.baselineSnapshot();
+			const history = [];
+			const unsubscribe = session.subscribeHistory((e) => history.push(e));
+			const unsubscribeDiagnostics = session.subscribeDiagnostics(() => assert.fail('unexpected diagnostics'));
+			consumer.change(session);
+			assert.equal(history.length, 1, consumer.name + ' execute event');
+			assert.equal(history[0].action, 'execute');
+			assert.equal(Object.isFrozen(history[0]), true);
+			assert.equal(Object.isFrozen(history[0].status), true);
+			assert.equal(session.historyStatus().canUndo, true);
+			const checkpoint = session.captureSave();
+			assert.equal(Object.isFrozen(checkpoint), true);
+			assert.equal(Object.isFrozen(checkpoint.submittedProject), true);
+			assert.notEqual(checkpoint.submittedProject, session.project());
+			assert.equal(Object.getPrototypeOf(checkpoint.token), null);
+			assert.equal(JSON.stringify(checkpoint.token), '{}');
+			const saved = session.rebase({ saveToken: checkpoint.token, baselineProject: checkpoint.submittedProject });
+			assert.equal(saved.normalized, false);
+			assert.equal(saved.retainedUndoSteps, 1);
+			assert.equal(session.historyStatus().canUndo, true, consumer.name + ' retained undo');
+			assert.deepEqual(session.baselineSnapshot(), checkpoint.submittedProject);
+			assert.equal(session.undo(), true);
+			assert.deepEqual(session.project(), oldProject);
+			assert.deepEqual(session.baselineSnapshot(), checkpoint.submittedProject, consumer.name + ' immutable baseline');
+			assert.equal(session.redo(), true);
+			assert.deepEqual(session.project(), checkpoint.submittedProject);
+			assert.equal(session.historyStatus().size, 1);
+			assert.deepEqual(history.map((e) => e.action), ['execute', 'rebase', 'undo', 'redo'], consumer.name);
+			assert.notDeepEqual(before, checkpoint.submittedProject, consumer.name + ' changed project');
+			assert.throws(() => session.rebase({ saveToken: checkpoint.token, baselineProject: checkpoint.submittedProject }), (e) => e.code === 'SAVE_STALE' || e.code === 'SAVE_INVALID');
+			unsubscribe();
+			unsubscribeDiagnostics();
+		} finally {
+			session.dispose();
+			session.dispose();
+		}
+		for (const name of ['project', 'snapshot', 'historyStatus', 'subscribeHistory', 'subscribeDiagnostics', 'captureSave', 'baselineSnapshot', 'rebase']) {
+			assert.throws(() => session[name](), /disposed/, consumer.name + '.' + name + ' disposed');
+		}
+	}
+});
+
+test('G1c: same-value context switch invalidates a pending checkpoint without changing project values', () => {
+	const session = publicEditor.createDomainSession({ project: domainProject('Same') });
+	const before = session.project();
+	const checkpoint = session.captureSave();
+	const events = [];
+	session.subscribeHistory((event) => events.push(event));
+	session.replace(domainProject('Same'), { source: 'context-switch', contextChanged: true });
+	assert.deepEqual(session.project(), before);
+	assert.deepEqual(events.map((e) => [e.action, e.source]), [['replace', 'context-switch']]);
+	assert.throws(
+		() => session.rebase({ saveToken: checkpoint.token, baselineProject: checkpoint.submittedProject }),
+		(error) => error.code === 'SAVE_CONTEXT_CHANGED',
+	);
+	assert.deepEqual(session.baselineSnapshot(), before);
+	session.dispose();
+});
