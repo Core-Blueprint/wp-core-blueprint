@@ -183,7 +183,8 @@ test('P02 public history facade drives Base-owned toolbar history without exposi
 	}[selector] ?? null);
 	const facade = Object.freeze({
 		historyStatus: () => session.historyStatus(),
-		subscribe: (listener) => session.subscribe(listener),
+		subscribeHistory: (listener) => session.subscribeHistory(listener),
+		subscribeDiagnostics: (listener) => session.subscribeDiagnostics(listener),
 		undo: () => session.undo(),
 		redo: () => session.redo(),
 	});
@@ -199,15 +200,12 @@ test('P02 public history facade drives Base-owned toolbar history without exposi
 			return { project: next };
 		},
 	});
-	await Promise.resolve();
 	assert.equal(undo.disabled, false);
 	assert.equal(redo.disabled, true);
 	facade.undo();
-	await Promise.resolve();
 	assert.equal(undo.disabled, true);
 	assert.equal(redo.disabled, false);
 	facade.redo();
-	await Promise.resolve();
 	assert.equal(undo.disabled, false);
 	assert.equal(redo.disabled, true);
 	shell.destroy();
