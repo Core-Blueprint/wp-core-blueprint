@@ -43,6 +43,16 @@ export class EditorState {
 		);
 	}
 
+	/** Roll back an internal commit failure without an observable revision. */
+	restoreCommitted(snapshot, selectionRevision) {
+		this.inspector.restore(snapshot.inspector ?? { activeSection: null, expanded: [] });
+		this.validation.replace(Array.isArray(snapshot.validation) ? snapshot.validation : []);
+		this.selection.restoreCommitted(
+			snapshot.selection ?? { paths: [], primary: null },
+			selectionRevision,
+		);
+	}
+
 	reconcile(root, selectionEvent = {}) {
 		return this.selection.reconcile(root, selectionEvent);
 	}
