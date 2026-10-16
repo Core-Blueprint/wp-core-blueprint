@@ -333,7 +333,7 @@ export class CommandHistory {
 
 	baselineSnapshot() {
 		this.#assertActive();
-		return cloneValue(this.#baseline);
+		return cloneFrozen(this.#baseline);
 	}
 
 	captureSave() {
@@ -409,7 +409,7 @@ export class CommandHistory {
 				nextProject = undo.length ? undo.at(-1).afterProject : accepted;
 				nextEditor = undo.length ? undo.at(-1).afterEditor : editor.snapshot();
 				if (!undo.length && redo.length) nextEditor = replayed[0].beforeEditor;
-				if (this.#verifyRebase && !sameValue(nextProject, checkpoint.submittedProject)) {
+				if (this.#verifyRebase && entries.length > 0) {
 					let verified = false;
 					try {
 						verified = this.#verifyRebase(Object.freeze({
@@ -420,7 +420,7 @@ export class CommandHistory {
 						})) === true;
 					} catch (_) { conflict(); }
 					if (!verified) conflict();
-				} else if (this.#undo.length && !this.#verifyRebase) {
+				} else if (entries.length > 0 && !this.#verifyRebase) {
 					conflict();
 				}
 				// Check active cursor may only change through an explicitly
