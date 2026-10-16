@@ -19,6 +19,7 @@ final class DesignDocumentFakeDb {
 	public bool $bad_index = false;
 	public bool $fail_write = false;
 	public bool $bad_readback = false;
+	public bool $bad_after_write = false;
 	public mixed $before_update = null;
 	public array $rows = [];
 	private array $statements = [];
@@ -102,6 +103,10 @@ final class DesignDocumentFakeDb {
 			}
 			$this->rows[$table][$hash]['revision'] = (string) ( (int) $expected + 1 );
 			$this->rows[$table][$hash]['document_json'] = $json;
+			if ( $this->bad_after_write ) {
+				$this->bad_after_write = false;
+				$this->bad_readback = true;
+			}
 			return 1;
 		}
 		throw new RuntimeException( 'Unexpected source-only write.' );
@@ -151,7 +156,7 @@ check_design_document( 'conflict' === Repository::save( Repository::MAIL, 'a.b',
 $wpdb->fail_write = true;
 check_design_document( 'error' === Repository::save( Repository::MAIL, 'a.b', '4', $other )['status'], 'SQL error is not success' );
 $wpdb->fail_write = false;
-$wpdb->bad_readback = true;
+$wpdb->bad_after_write = true;
 check_design_document( 'uncertain' === Repository::save( Repository::MAIL, 'a.b', '4', $other )['status'], 'failed readback cannot acknowledge' );
 $wpdb->bad_readback = false;
 $wpdb->bad_index = true;
