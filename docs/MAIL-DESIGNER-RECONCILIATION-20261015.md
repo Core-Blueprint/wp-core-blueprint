@@ -1,7 +1,7 @@
 # Mail Designer M0-M2 | Main reconciliation candidate
 
 **Date:** 2026-10-15
-**State:** Exact-blob source integration committed; **Level 1 / Level 2 / Level 3 / field Golden acceptance NOT RUN**.
+**State:** **Level 1 PASS** on exact Mail source `4f691b09548cb247f70cdeb772f24ac4d2c82cc3` (operator evidence 2026-10-16); **Level 2 / Level 3 / field Golden NOT RUN**.
 **Governance:** Feature branch only. No merge, publication, CI/CD, deployment or automated mail delivery.
 
 ## Source authority
@@ -29,9 +29,17 @@ Existing Newsletter branch `feature/newsletter-lists-admin-golden-b22-v1@158e228
 
 Do not silently expand permitted campaign nodes or ship an unfinished Newsletter mail-composer integration as Golden.
 
+## Current exact-head validation receipt
+
+The operator executed canonical `./tools/check` from the existing Base checkout on `4f691b09548cb247f70cdeb772f24ac4d2c82cc3`. PASS: Composer metadata, PHP syntax, canonical i18n **3,945 messages / 6 locales**, four public foundation regressions, JavaScript syntax **101 files**, JavaScript Node tests **198/198**, Python failure-path tests **113/113**. The system-installed Composer prints deprecation notices; Composer metadata validation still returned PASS.
+
+The public shared Rich Text API is an additive `profiles.mail.createMailRichTextControls` factory, styled via `CoreBlueprint\\Core\\Design\\Editor\\Assets::enqueue_mail_rich_text_controls()`. Newsletter M5 consumes that API on its own feature branch, separately gated.
+
+**Release gate clarification:** Base's canonical `tools/build-release` requires the exact-head staged WordPress test copy and all seven `WP_CORE_DIR`, `WP_TESTS_DIR`, `CB_PLUGIN_FILE`, `WP_DB_NAME`, `WP_DB_USER`, `WP_DB_PASSWORD`, `WP_DB_HOST` variables. It runs the full WordPress integration PHPUnit suite before producing an artifact. Do not present a source-only ZIP as release-ready or rerun a destructive/invented database setup. First confirm Level 2 read-only preflight/dry-run and obtain separately scoped approval for fresh isolated integration execution.
+
 ## Exact-head validation to run
 
-At a *separate clean local checkout* on this reconciliation branch:
+From the **existing clean Base checkout** on this reconciliation branch; no worktree is required:
 
 1. `git fetch origin --prune`, `git switch feature/base-mail-designer-main-reconciliation-m0-m2-20261015`, `git pull --ff-only`, inspect `git rev-parse HEAD` and `git status --short`.
 2. `./tools/check` for canonical Level 1 including PHP syntax, JS suite and Python failure-path tests.
@@ -46,4 +54,4 @@ At a *separate clean local checkout* on this reconciliation branch:
 
 ## Handover decision
 
-The independent M0-M2 source candidate is now *available on current Base main as a separate patch*. It is **not** merged into main or the Engineering DX/Template Library branches. The immediate next Gate is source Level 1 on this exact reconciled SHA, followed by read-only Level 2 preflight. Customer release and Newsletter activation remain blocked until evidence closes.
+The independent M0-M2 source candidate is now *available on current Base main as a separate patch*. It is **not** merged into main or the Engineering DX/Template Library branches. Level 1 is PASS at exact HEAD `4f691b09548cb247f70cdeb772f24ac4d2c82cc3`. The next gate is read-only Level 2 preflight/dry-run; actual integration requires separately approved fresh resources. Customer release and Newsletter activation remain blocked until evidence closes.
