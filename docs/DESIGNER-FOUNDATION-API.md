@@ -2,6 +2,8 @@
 
 Status: **public v1 frozen contract**.
 
+**G1c source candidate, not yet an advertised v2 capability:** the implementation branch adds transactional history, `captureSave()` and `rebase()` to both session factories. Public PHP `Assets::DOMAIN_SESSION_API` deliberately remains `1`. Consumers requiring v2 **must not** gate exclusively on the existence of individual JS methods; wait for the same-package PHP capability `>= 2`, executable ESM export proof, and consumer-specific integration acceptance. Existing v1 users remain supported. No consumer may import a low-level history engine as a substitute.
+
 The Designer Foundation is the Base-owned editor engine and shell boundary for Core Blueprint designers. Consumers own domain semantics, persistence, validation and domain rendering. Base owns editor/session mechanics, shared shell behavior and the public integration boundary.
 
 ## Canonical browser module
@@ -70,11 +72,42 @@ Both methods live on the existing public session from `createSession({profile})`
 - `replace(project, { source = 'consumer' })` validates and replaces the project. Replacement resets history by default. `validateProject(project)` is a synchronous domain-owned validator: throw on invalid data. Base additionally validates the DesignProject envelope.
 - `execute({ label, apply(project) })` commits a domain-owned reversible transition. The command returns `{ project }`. `allowCommand(command, project)` may deny by returning `false`. Consumers must not mutate the frozen input.
 - `undo()`, `redo()`, `clearHistory()`, `historyStatus()`, and `dispose()` are Base-owned, session-only mechanics. `historyStatus()` returns a frozen `{ canUndo, canRedo, size }` snapshot; never persist history.
-- `subscribe(listener)` (with unsubscribe return) and `onChange(project, event)` observe project revisions. History events may fire before the stack finishes changing; re-read `historyStatus()` after the command/undo/redo or in a microtask.
-- The shared Designer shell supports a session facade with `historyStatus()`, `subscribe(listener)`, `undo()` and `redo()`; consumers can intercept the two actions to update domain UI.
+- `subscribe(listener)` (with unsubscribe return) and `onChange(project, event)` observe **fully committed** project revisions. Project and selection observers read the final history stack synchronously. `subscribeHistory()` is a **G1c source-candidate** extension, not yet advertised by the PHP v2 capability; do not schedule a microtask to compensate for intermediate history state.
+- The shared Designer shell now requires a public v2-compatible facade with `historyStatus()`, `subscribeHistory()`, `subscribeDiagnostics()`, `undo()` and `redo()`, or explicit `null` for presentation-only mode. A `subscribe(listener)` project observer alone is **not** a history subscription. The shell does not read `.projectState` or `.history` and does not own the session lifecycle.
 - Public PHP capability gate: `CoreBlueprint\\Core\\Design\\Editor\\Assets::DOMAIN_SESSION_API >= 1`. Public JS module and global facade expose `createDomainSession`. The low-level `ProjectState`, `EditorState`, and `CommandHistory` classes stay outside consumer contracts; the v1 profile-based `createSession()` is unchanged.
 
 A consumer adopting P02 must install a compatible Base and extension together. This does not change which Evaluation data may be stored or transmitted.
+
+### Designer v2 candidate: shared sessions, immutable history and guarded saves (G1c)
+
+This section describes the **tested source candidate**, not a released or advertised capability. The normative proposed contract is G1a v2.1, with separate Automations and Evaluator owner sign-off. Do not promote this paragraph into a consumer compatibility guarantee until PHP and ESM have been verified in the same approved release artifact.
+
+**Both** `createDomainSession()` and `createSession({ profile: 'mail' | 'document-flow' | 'document-fixed' })` expose these common methods: `project()`, `snapshot()`, `replace()`, `execute()`, `undo()`, `redo()`, `historyStatus()`, `subscribeHistory()`, `subscribeDiagnostics()`, `clearHistory()`, `captureSave()`, `baselineSnapshot()`, `rebase()`, and `dispose()`. They use one Base history engine; no consumer-owned second history engine or `createDesignerStateHistory` alias is supported.
+
+```js
+const checkpoint = session.captureSave();
+// Consumer saves only a validated, sanitized domain projection of
+// checkpoint.submittedProject, with its OWN authorized document identity,
+// server-side nonce/policy and authoritative persisted version/ETag.
+//
+// Only after the server confirms the matching successful write:
+session.rebase({
+  saveToken: checkpoint.token, // opaque, one-use, in-memory only
+  baselineProject: serverAcceptedProject,
+  source: 'save-baseline',
+});
+const dirtyProject = !sameDomainAuthoringValue(
+  session.project(),
+  session.baselineSnapshot(),
+);
+// Combine dirtyProject with separately persisted subject/settings/status fields.
+```
+
+Do not send the token over HTTP, persist it, or accept a caller-supplied `currentProject`. Base applies latest-issued-wins checkpoint CAS, validates session/context identity and preserves individual Undo/Redo steps after normal Save. Normalized server baselines require validated intent replay (and `verifyRebase` for concurrent edits) or fail closed with `SAVE_REPLAY_CONFLICT`, never silently truncating history. Other safe checkpoint errors: `SAVE_INVALID`, `SAVE_STALE`, `SAVE_CONTEXT_CHANGED`. Base does **not** guarantee server write ordering or authorize persistence; the consumer must implement server-side CAS/version checks and permissions.
+
+`subscribeHistory(listener)` emits frozen `{action,source,revision,historyRevision,status}` **after** project and selection observers see the complete state; there is no initial event (call `historyStatus()` first). `subscribeDiagnostics(listener)` emits only `{code:'CB_DESIGNER_OBSERVER_FAILED',phase,recoverable:true}` for isolated callback failures: never exception stacks, project data, answers or secrets. Failed listeners cannot reverse a committed edit. Dispose the shell/controllers before disposing their consumer-owned session.
+
+Historical source exports such as `ProjectState`, `EditorState`, `CommandHistory` and direct command functions **remain present pending a first-party import impact ledger and separate removal approval**. Their presence does not create public support, and their removal is not part of G1c. Base Mail and Reports preserve their present persistence and preview paths until owner-reviewed v2 save adapters are accepted; this source-capability work does not rewrite subject, email HTML, report snapshots, or server write policy.
 
 ### Shell
 
