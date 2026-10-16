@@ -176,8 +176,8 @@ export const createSession = ({
 		projectState,
 		editorState,
 		history,
-		project: () => projectState.current(),
-		snapshot: () => projectState.snapshot(),
+		project() { assertActive(); return projectState.current(); },
+		snapshot() { assertActive(); return projectState.snapshot(); },
 		replace(nextProject, options = {}) {
 			assertActive();
 			return history.replace(nextProject, {
@@ -186,7 +186,7 @@ export const createSession = ({
 				contextChanged: options?.contextChanged === true,
 			});
 		},
-		selection: () => editorState.selection.snapshot(),
+		selection() { assertActive(); return editorState.selection.snapshot(); },
 		/**
 		 * Set the transient selection atomically without mutating document data.
 		 * An explicitly opted-in external projection relaxes only node existence
