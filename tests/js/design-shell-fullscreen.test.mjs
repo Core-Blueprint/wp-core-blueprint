@@ -221,12 +221,14 @@ test('shared shell initialization is idempotent and destroy permits clean reinit
 	let subscriptions = 0;
 	let unsubscriptions = 0;
 	const session = {
-		projectState: {
-			subscribe() {
-				subscriptions += 1;
-				return () => { unsubscriptions += 1; };
-			},
+		historyStatus: () => Object.freeze({ canUndo: false, canRedo: false, size: 0 }),
+		subscribeHistory() {
+			subscriptions += 1;
+			return () => { unsubscriptions += 1; };
 		},
+		subscribeDiagnostics: () => () => {},
+		undo: () => false,
+		redo: () => false,
 	};
 
 	const first = createDesignerShell(root, { session });
@@ -234,7 +236,7 @@ test('shared shell initialization is idempotent and destroy permits clean reinit
 	assert.equal(duplicate, first);
 	assert.equal(subscriptions, 1);
 	assert.throws(
-		() => createDesignerShell(root, { session: { projectState: session.projectState } }),
+		() => createDesignerShell(root, { session: { ...session } }),
 		/different session/
 	);
 	assert.equal(root.dataset.cbDesignShellInitialized, 'true');
