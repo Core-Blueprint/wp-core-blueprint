@@ -29,4 +29,24 @@ final class CB_Designer_History_Chrome_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'history.subscribeHistory(listener)', $editor );
 		self::assertStringContainsString( 'history.subscribeDiagnostics(listener)', $editor );
 	}
+	/**
+	 * Source parity is a necessary, not sufficient, condition for the v2 ABI.
+	 * The PHP version stays at v1 until a separately approved canonical ZIP
+	 * proves PHP/ESM method parity from that same exact artifact.
+	 */
+	public function test_g1c_php_capability_is_not_advertised_before_artifact_parity(): void {
+		self::assertSame( '@cb-core/design-editor', \CoreBlueprint\Core\Design\Editor\Assets::MODULE_ID );
+		self::assertSame( 1, \CoreBlueprint\Core\Design\Editor\Assets::DOMAIN_SESSION_API );
+
+		$facade = $this->source( 'assets/js/design/editor.js' );
+		foreach ( [ 'createSession', 'createDomainSession', 'subscribeHistory', 'subscribeDiagnostics', 'captureSave', 'baselineSnapshot', 'rebase', 'clearHistory' ] as $symbol ) {
+			self::assertStringContainsString( $symbol, $facade, $symbol . ' must remain available from the public source facade.' );
+		}
+		self::assertStringContainsString( 'new CommandHistory(', $facade );
+
+		$doc = $this->source( 'docs/DESIGNER-FOUNDATION-API.md' );
+		self::assertStringContainsString( 'G1c source candidate', $doc );
+		self::assertStringContainsString( 'not yet an advertised v2 capability', $doc );
+	}
+
 }
