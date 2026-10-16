@@ -45,6 +45,18 @@ The public PHP Assets DOMAIN_SESSION_API value stays at 1. It may be changed to 
 
 Inspect a dirty local worktree before switching. Do not force-checkout/reset. Level 1 checks are source-only. WordPress integration runs require separate isolated database approval.
 
+## Level 1 source acceptance receipt (2026-10-16)
+
+**Operator-reported PASS** (user-provided terminal result, not independently executed by the assistant):
+
+```text
+Core Blueprint Base Level 1 checks: PASS
+```
+
+This closes the **source-only Level 1 execution gate as reported by the operator** for the G1b candidate at HEAD `573f104de7e8be99c702863d8df6c34f1d57234a`. The exact full stdout, individual test totals and PHPUnit/WordPress runtime receipts have not been independently inspected in this handover. Recording this receipt is a documentation-only commit; no application-code change is made. The featurebranch HEAD therefore advances beyond the source/test candidate SHA, while runtime code remains unchanged.
+
+**Remaining on HOLD:** isolated WP integration / database access, complete releasebuild in dist, packaged ESM / JS-PHP ABI parity, activation of `DOMAIN_SESSION_API = 2`, Base Mail/Reports field acceptance, consumer integration, CI, merge, installation, publication and deployment. Explicit separate authorization and proven disposable test environment are mandatory before those actions.
+
 ## Pending acceptance criteria
 
 1. Capture actual syntax, Node, PHP source Level 1 and Composer/Python suite outputs. Repair any failing tests on the feature branch only.
