@@ -169,29 +169,46 @@ export const createDesignerShell = (root, {
 	tabs.forEach((tab) => group(groupIdFor(tab)).tabs.push(tab));
 	panels.forEach((panel) => group(groupIdFor(panel)).panels.push(panel));
 
-	const historyStatus = () => {
-		if (typeof session?.historyStatus === 'function') return session.historyStatus();
-		if (session?.history) return { canUndo: session.history.canUndo, canRedo: session.history.canRedo };
-		return null;
-	};
+	if (session !== null && ['historyStatus', 'subscribeHistory', 'subscribeDiagnostics', 'undo', 'redo']
+		.some((method) => typeof session?.[method] !== 'function')) {
+		throw new TypeError('Designer Shell requires the complete public v2 session contract.');
+	}
 	const syncHistory = () => {
-		if (destroyed) return;
-		const status = historyStatus();
-		if (!status) return;
+		if (destroyed || session === null) return;
+		const status = session.historyStatus();
 		if (undo instanceof HTMLButtonElement) undo.disabled = !status.canUndo;
 		if (redo instanceof HTMLButtonElement) redo.disabled = !status.canRedo;
 	};
 
-	const scheduleHistorySync = () => {
-		if (!session) return;
-		if (typeof queueMicrotask === 'function') queueMicrotask(syncHistory);
-		else Promise.resolve().then(syncHistory);
+	let diagnosticNode = null;
+	const onDiagnostic = (diagnostic) => {
+		if (destroyed || diagnostic?.code !== 'CB_DESIGNER_OBSERVER_FAILED') return;
+		if (!diagnosticNode && root.ownerDocument?.createElement) {
+			diagnosticNode = root.ownerDocument.createElement('div');
+			diagnosticNode.setAttribute('role', 'status');
+			diagnosticNode.setAttribute('aria-live', 'polite');
+			diagnosticNode.dataset.cbDesignShellDiagnostic = '1';
+			diagnosticNode.textContent = 'The editor view needs refreshing. Your changes are preserved.';
+			const retry = root.ownerDocument.createElement('button');
+			retry.type = 'button';
+			retry.textContent = 'Refresh editor view';
+			retry.addEventListener('click', () => {
+				root.dispatchEvent(new CustomEvent('cb:design-shell:refreshrequest', { bubbles: true }));
+			}, { signal });
+			diagnosticNode.append(retry);
+			root.append(diagnosticNode);
+		}
+		root.dispatchEvent(new CustomEvent('cb:design-shell:diagnostic', {
+			bubbles: true,
+			detail: diagnostic,
+		}));
 	};
-	// History commits after project revision events. Defer chrome sync; domain
-	// consumers subscribe through the documented session instead of private state.
-	const unsubscribeProject = typeof session?.subscribe === 'function'
-		? session.subscribe(scheduleHistorySync)
-		: session?.projectState?.subscribe?.(scheduleHistorySync) ?? null;
+	const unsubscribeHistory = session === null
+		? null
+		: session.subscribeHistory(syncHistory);
+	const unsubscribeDiagnostics = session === null
+		? null
+		: session.subscribeDiagnostics(onDiagnostic);
 
 	const syncFullscreenControl = () => {
 		if (!fullscreen) return;
@@ -497,12 +514,10 @@ export const createDesignerShell = (root, {
 	undo?.addEventListener('click', () => {
 		if (!session?.undo) return;
 		session.undo();
-		syncHistory();
 	}, { signal });
 	redo?.addEventListener('click', () => {
 		if (!session?.redo) return;
 		session.redo();
-		syncHistory();
 	}, { signal });
 	fullscreen?.addEventListener('click', toggleFullscreen, { signal });
 	frames.forEach(bindFrameKeyboard);
@@ -538,7 +553,9 @@ export const createDesignerShell = (root, {
 		clearEnterMotion();
 		lifecycle.abort();
 		frameCleanups.splice(0).forEach((cleanup) => cleanup());
-		unsubscribeProject?.();
+		unsubscribeHistory?.();
+		unsubscribeDiagnostics?.();
+		diagnosticNode?.remove?.();
 		pendingSidebarConfigs.delete(root);
 		shellControllers.delete(root);
 		shellSessions.delete(root);
