@@ -175,23 +175,60 @@ export class CommandHistory {
 		});
 	}
 
-	#commit({ nextProject, nextEditor, undo, redo, action, source, forceSelection = false, baseline = null, acknowledge = false }) {
-		// All arguments must have been staged and validated before this call.
-		// No public callbacks run until editor/project/stacks/baseline are final.
-		const projectChanged = !sameValue(nextProject, this.#projectState.current());
-		const projectEvent = projectChanged
-			? this.#projectState.commitStaged(nextProject, { source })
-			: null;
-		const selectionEvent = this.#editorState.commitSnapshot(nextEditor, {
-			source,
-			action,
-			force: forceSelection,
-		});
-		this.#undo = undo;
-		this.#redo = redo;
-		if (baseline !== null) this.#baseline = cloneFrozen(baseline);
-		if (acknowledge) this.#baselineAcknowledged = true;
-		this.#historyRevision += 1;
+	#commit({
+		nextProject, nextEditor, undo, redo, action, source,
+		forceSelection = false, baseline = null, acknowledge = false, contextReset = false,
+	}) {
+		// Clone/validate before even entering the synchronous, silent commit.
+		const nextBaseline = baseline === null ? null : cloneFrozen(baseline);
+		const previous = {
+			project: this.#projectState.current(),
+			revision: this.#projectState.revision,
+			editor: this.#editorState.snapshot(),
+			undo: this.#undo, redo: this.#redo,
+			baseline: this.#baseline, acknowledged: this.#baselineAcknowledged,
+			historyRevision: this.#historyRevision, contextEpoch: this.#contextEpoch,
+		};
+		const projectChanged = !sameValue(nextProject, previous.project);
+		let projectEvent = null;
+		let selectionEvent = null;
+		try {
+			selectionEvent = this.#editorState.commitSnapshot(nextEditor, {
+				source, action, force: forceSelection,
+			});
+			if (projectChanged) {
+				projectEvent = this.#projectState.commitStaged(nextProject, { source });
+			}
+			this.#undo = undo;
+			this.#redo = redo;
+			if (nextBaseline !== null) this.#baseline = nextBaseline;
+			if (contextReset) {
+				this.#contextEpoch += 1;
+				this.#baselineAcknowledged = false;
+			}
+			if (acknowledge) this.#baselineAcknowledged = true;
+			this.#historyRevision += 1;
+		} catch (error) {
+			// No observer has run. If even silent restoration fails, permanently
+			// disable the session instead of presenting half-committed state.
+			try {
+				this.#editorState.commitSnapshot(previous.editor);
+				this.#projectState.restoreCommitted(previous.project, previous.revision);
+				this.#undo = previous.undo;
+				this.#redo = previous.redo;
+				this.#baseline = previous.baseline;
+				this.#baselineAcknowledged = previous.acknowledged;
+				this.#historyRevision = previous.historyRevision;
+				this.#contextEpoch = previous.contextEpoch;
+			} catch (_) {
+				this.#disposed = true;
+				this.#historyListeners.clear();
+				this.#diagnosticListeners.clear();
+			}
+			throw error;
+		}
+		// Only now may a project callback execute, already observing final
+		// selection, baseline, project and both settled history stacks.
 		this.#notify({ projectEvent, selectionEvent, action, source });
 		return this.#projectState.current();
 	}
@@ -213,7 +250,7 @@ export class CommandHistory {
 			const entry = this.#entry(command, beforeProject, beforeEditor, stage.project, nextEditor, this.#nextEntryId + 1);
 			const nextUndo = [...this.#undo, entry];
 			if (nextUndo.length > this.#limit) nextUndo.splice(0, nextUndo.length - this.#limit);
-						const result = this.#commit({
+			const result = this.#commit({
 				nextProject: stage.project,
 				nextEditor,
 				undo: nextUndo,
@@ -286,12 +323,10 @@ export class CommandHistory {
 				editorSnapshot.selection,
 			);
 			if (!differs && !hadHistory && !differsSelection && !contextChanged) return this.#projectState.current();
-			this.#contextEpoch += 1;
-			this.#baselineAcknowledged = false;
 			return this.#commit({
 				nextProject: next, nextEditor: editorSnapshot,
 				undo: [], redo: [], action: 'replace', source: label,
-				baseline: next,
+				baseline: next, contextReset: true,
 			});
 		});
 	}
@@ -393,14 +428,14 @@ export class CommandHistory {
 				this.#projectState.stage(nextProject);
 			}
 			const baselineChanged = !sameValue(this.#baseline, accepted) || !this.#baselineAcknowledged;
-			this.#acceptedSequence = checkpoint.sequence;
-			this.#savepoints.delete(saveToken);
 			if (baselineChanged || normalized) {
 				this.#commit({
 					nextProject, nextEditor, undo, redo, action: 'rebase', source: label,
 					baseline: accepted, acknowledge: true,
 				});
 			}
+			this.#acceptedSequence = checkpoint.sequence;
+			this.#savepoints.delete(saveToken);
 			return Object.freeze({
 				project: this.#projectState.current(),
 				baselineProject: cloneFrozen(accepted),
