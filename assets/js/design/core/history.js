@@ -185,6 +185,7 @@ export class CommandHistory {
 			project: this.#projectState.current(),
 			revision: this.#projectState.revision,
 			editor: this.#editorState.snapshot(),
+			selectionRevision: this.#editorState.selection.revision,
 			undo: this.#undo, redo: this.#redo,
 			baseline: this.#baseline, acknowledged: this.#baselineAcknowledged,
 			historyRevision: this.#historyRevision, contextEpoch: this.#contextEpoch,
@@ -212,8 +213,8 @@ export class CommandHistory {
 			// No observer has run. If even silent restoration fails, permanently
 			// disable the session instead of presenting half-committed state.
 			try {
-				this.#editorState.commitSnapshot(previous.editor);
 				this.#projectState.restoreCommitted(previous.project, previous.revision);
+				this.#editorState.restoreCommitted(previous.editor, previous.selectionRevision);
 				this.#undo = previous.undo;
 				this.#redo = previous.redo;
 				this.#baseline = previous.baseline;
