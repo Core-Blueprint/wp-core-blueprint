@@ -233,6 +233,10 @@ final class Assets {
 					'ready'   => __( 'Design loaded', 'core-blueprint' ),
 					'error'   => __( 'The selected design could not be loaded.', 'core-blueprint' ),
 				],
+				'diagnosticLabels' => [
+					'message' => __( 'The editor view needs refreshing. Your changes are preserved.', 'core-blueprint' ),
+					'retry'   => __( 'Refresh editor view', 'core-blueprint' ),
+				],
 				'failureLabel' => __( 'Designer could not start. Reload the page and try again.', 'core-blueprint' ),
 			]
 		);
