@@ -1,0 +1,174 @@
+/* Shared, scope-contained Template Library browser.
+ * Theme-neutral properties with canonical Core tokens where available.
+ * Modal geometry and focus trap are owned by @cb-core/modal.
+ */
+/* Only the standalone WP Admin page fills the viewport.
+ * Designer workspace modals retain their intrinsic browser geometry.
+ * The offset reserves room for the WordPress admin chrome and page gutters.
+ */
+.cb-template-library-page {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    min-height: calc(100vh - 80px);
+    min-height: calc(100dvh - 80px);
+}
+.cb-template-library-page > [data-cb-template-library-global] {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.cb-template-library-page .cb-template-browser {
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+}
+.cb-template-library-page .cb-template-browser__sidebar {
+    box-sizing: border-box;
+    flex: 0 0 clamp(160px, 19%, 236px);
+}
+.cb-template-library-page .cb-template-browser__content {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    min-height: 0;
+}
+.cb-template-library-page .cb-template-browser__grid {
+    flex: 1 1 auto;
+}
+.cb-template-browser {
+    display: grid;
+    grid-template-columns: clamp(160px, 19%, 236px) minmax(0, 1fr);
+    min-width: 0;
+    min-height: 390px;
+    color: var(--cb-text, inherit);
+    background: var(--cb-surface, transparent);
+}
+.cb-template-browser__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 20px 12px;
+    border-inline-end: 1px solid var(--cb-border, rgba(127,127,127,.24));
+}
+.cb-template-browser__origin {
+    width: 100%;
+    text-align: start;
+    padding: 11px 13px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.cb-template-browser__origin:hover,
+.cb-template-browser__origin:focus-visible { background: var(--cb-surface-2, rgba(127,127,127,.11)); }
+.cb-template-browser__origin[aria-current="true"] {
+    background: var(--cb-surface-2, rgba(127,127,127,.11));
+    border-color: var(--cb-border, rgba(127,127,127,.3));
+    font-weight: 650;
+}
+.cb-template-browser__content { min-width: 0; padding: 22px; }
+.cb-template-browser__toolbar {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.cb-template-browser__field { display: grid; gap: 5px; min-width: 135px; font-size: 12px; }
+.cb-template-browser__field--search { flex: 2 1 230px; }
+.cb-template-browser__field :is(input, select) {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 38px;
+    padding: 6px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--cb-border, #8c8f94);
+    color: inherit;
+    background: var(--cb-surface, transparent);
+    font-size: 14px;
+}
+.cb-template-browser__field :is(input, select):focus-visible,
+.cb-template-browser__origin:focus-visible,
+.cb-template-browser__card:focus-within { outline: 2px solid var(--cb-accent, #2271b1); outline-offset: 2px; }
+.cb-template-browser__message { min-height: 1.4em; margin: 8px 0; font-size: 13px; }
+.cb-template-browser__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 225px), 1fr));
+    gap: 14px;
+}
+.cb-template-browser__card {
+    box-sizing: border-box;
+    position: relative;
+    display: block;
+    min-width: 0;
+    min-height: 175px;
+    border: 1px solid var(--cb-border, rgba(127,127,127,.3));
+    border-radius: 12px;
+    padding: 17px;
+    background: var(--cb-surface-2, rgba(127,127,127,.05));
+    color: inherit;
+}
+label.cb-template-browser__card { cursor: pointer; }
+.cb-template-browser__card:has(.cb-template-browser__choice:checked) {
+    border-color: var(--cb-accent, #2271b1);
+    box-shadow: inset 0 0 0 1px var(--cb-accent, #2271b1);
+}
+.cb-template-browser__choice { position: absolute; inset-block-start: 12px; inset-inline-end: 12px; }
+.cb-template-browser__card:has(.cb-template-browser__choice) .cb-template-browser__card-title { padding-inline-end: 26px; }
+.cb-template-browser__card-title { margin: 0 0 9px; color: inherit; font-size: 16px; font-weight: 650; overflow-wrap: anywhere; }
+.cb-template-browser__card-description {
+    margin: 0 0 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: .82;
+    overflow-wrap: anywhere;
+}
+.cb-template-browser__card-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; font-size: 11px; opacity: .8; }
+.cb-template-browser__card-meta span {
+    padding: 3px 7px;
+    border: 1px solid var(--cb-border, rgba(127,127,127,.3));
+    border-radius: 100px;
+    overflow-wrap: anywhere;
+}
+.cb-template-browser__card-body { display: flex; flex-direction: column; height: 100%; }
+.cb-template-browser__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-block-start: 14px;
+}
+.cb-template-browser__action { max-width: 100%; }
+.cb-template-browser__action:focus-visible { outline: 2px solid var(--cb-accent, #2271b1); outline-offset: 3px; }
+.cb-template-browser__status { display: inline-block; margin-top: 11px; font-size: 11px; }
+.cb-template-browser__status--blocked { color: #b02c2c; }
+.cb-template-browser__footer {
+    display: flex; justify-content: space-between; align-items: center;
+    min-height: 52px; margin-top: 18px; border-top: 1px solid var(--cb-border, rgba(127,127,127,.2));
+}
+.cb-template-browser__more[hidden] { display: none !important; }
+.cb-template-browser__selection-notice:empty { display: none; }
+.cb-template-browser__selection-notice { color: #b02c2c; }
+.cb-template-browser__modal-body { min-width: 0; }
+@media (max-width: 720px) {
+    .cb-template-browser { grid-template-columns: minmax(0, 1fr); }
+    .cb-template-library-page .cb-template-browser { flex-direction: column; }
+    .cb-template-library-page .cb-template-browser__sidebar {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+    .cb-template-browser__sidebar {
+        flex-direction: row; flex-wrap: nowrap; overflow-x: auto;
+        padding: 10px 0;
+        border-inline-end: 0;
+        border-bottom: 1px solid var(--cb-border, rgba(127,127,127,.24));
+    }
+    .cb-template-browser__origin { width: auto; white-space: nowrap; }
+    .cb-template-browser__content { padding: 15px 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .cb-template-browser * { transition: none !important; }
+}

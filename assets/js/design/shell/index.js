@@ -169,20 +169,29 @@ export const createDesignerShell = (root, {
 	tabs.forEach((tab) => group(groupIdFor(tab)).tabs.push(tab));
 	panels.forEach((panel) => group(groupIdFor(panel)).panels.push(panel));
 
+	const historyStatus = () => {
+		if (typeof session?.historyStatus === 'function') return session.historyStatus();
+		if (session?.history) return { canUndo: session.history.canUndo, canRedo: session.history.canRedo };
+		return null;
+	};
 	const syncHistory = () => {
-		if (destroyed || !session?.history) return;
-		if (undo instanceof HTMLButtonElement) undo.disabled = !session.history.canUndo;
-		if (redo instanceof HTMLButtonElement) redo.disabled = !session.history.canRedo;
+		if (destroyed) return;
+		const status = historyStatus();
+		if (!status) return;
+		if (undo instanceof HTMLButtonElement) undo.disabled = !status.canUndo;
+		if (redo instanceof HTMLButtonElement) redo.disabled = !status.canRedo;
 	};
 
 	const scheduleHistorySync = () => {
-		if (!session?.history) return;
+		if (!session) return;
 		if (typeof queueMicrotask === 'function') queueMicrotask(syncHistory);
 		else Promise.resolve().then(syncHistory);
 	};
-	// ProjectState emits during CommandHistory.execute(), before the new history
-	// entry is pushed. Defer one microtask so chrome reflects the committed stack.
-	const unsubscribeProject = session?.projectState?.subscribe?.(scheduleHistorySync) ?? null;
+	// History commits after project revision events. Defer chrome sync; domain
+	// consumers subscribe through the documented session instead of private state.
+	const unsubscribeProject = typeof session?.subscribe === 'function'
+		? session.subscribe(scheduleHistorySync)
+		: session?.projectState?.subscribe?.(scheduleHistorySync) ?? null;
 
 	const syncFullscreenControl = () => {
 		if (!fullscreen) return;

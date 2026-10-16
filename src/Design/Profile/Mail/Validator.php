@@ -39,12 +39,12 @@ final class Validator {
 			$diagnostics->error( 'mail.invalid_root_type', 'Mail project root must be the Base mail root.', 'root' );
 		}
 
-		$this->validate_node( $root, $diagnostics, 'root', 0 );
+		$this->validate_node( $root, $diagnostics, 'root', 0, null );
 		return $diagnostics;
 	}
 
 	/** @param array<string,mixed> $node */
-	private function validate_node( array $node, Diagnostics $diagnostics, string $location, int $depth ): void {
+	private function validate_node( array $node, Diagnostics $diagnostics, string $location, int $depth, ?string $parent_type ): void {
 		if ( $depth > self::MAX_TREE_DEPTH ) {
 			$diagnostics->error( 'mail.tree_depth', 'Mail project exceeds the supported tree depth.', $location );
 			return;
@@ -86,12 +86,49 @@ final class Validator {
 			return;
 		}
 
+		if ( 'mail.columns' === $type ) {
+			if ( 'mail.section' !== $parent_type ) {
+				$diagnostics->error( 'mail.columns_parent', 'Mail columns must belong directly to a section.', $location );
+			}
+			if ( 2 !== count( $children ) ) {
+				$diagnostics->error( 'mail.columns_count', 'A two-column layout requires exactly two columns.', $location . '.children' );
+			}
+			foreach ( $children as $column_index => $column ) {
+				if ( ! is_array( $column ) || 'mail.column' !== ( $column['type'] ?? null ) || 'core' !== ( $column['provider'] ?? null ) ) {
+					$diagnostics->error( 'mail.columns_child', 'Mail columns may contain only Base column containers.', $location . '.children.' . $column_index );
+				}
+			}
+		}
+		if ( 'mail.column' === $type && 'mail.columns' !== $parent_type ) {
+			$diagnostics->error( 'mail.column_parent', 'Mail columns cannot exist outside a columns layout.', $location );
+		}
+		if ( 'mail.column' === $type ) {
+			// Column contents render inside a table of rows; nested structural
+			// containers would produce invalid mail table markup.
+			foreach ( $children as $child_index => $child ) {
+				if (
+					is_array( $child )
+					&& in_array( $child['type'] ?? null, [ 'mail.root', 'mail.section', 'mail.columns', 'mail.column' ], true )
+				) {
+					$diagnostics->error( 'mail.column_structural_child', 'A column can contain content blocks, not another mail layout.', $location . '.children.' . $child_index );
+				}
+			}
+		}
+		if ( 'mail.section' === $type && 'mail.root' !== $parent_type ) {
+			$diagnostics->error( 'mail.section_parent', 'Mail sections must belong directly to the mail root.', $location );
+		}
+		if ( 'mail.rich-text' === $type && is_array( $properties ) ) {
+			if ( ! is_string( $properties['markup'] ?? null ) || strlen( $properties['markup'] ) > 100000 ) {
+				$diagnostics->error( 'mail.rich_text_markup', 'Rich text requires bounded markup.', $location . '.properties.markup' );
+			}
+		}
+
 		foreach ( $children as $index => $child ) {
 			if ( ! is_array( $child ) || [] === $child ) {
 				$diagnostics->error( 'mail.invalid_child', 'Every mail child must be a node object.', $location . '.children.' . $index );
 				continue;
 			}
-			$this->validate_node( $child, $diagnostics, $location . '.children.' . $index, $depth + 1 );
+			$this->validate_node( $child, $diagnostics, $location . '.children.' . $index, $depth + 1, $type );
 		}
 	}
 

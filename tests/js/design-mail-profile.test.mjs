@@ -109,7 +109,13 @@ test('mail designer uses the canonical live preview as its editable canvas', asy
 	const source = await readFile(new URL('../../assets/js/features/mail-designer.js', import.meta.url), 'utf8');
 	assert.match(source, /\[data-cb-mail-editor-node\]/);
 	assert.match(source, /createDesignerSelectionController/);
-	assert.match(source, /selectionController\?\.select\(path\)/);
+	// Canvas and Layers share the guarded selection entry point: unfinished
+	// inline text must commit successfully before selection can change.
+	assert.match(source, /const selectAfterTextCommit = \(path, options\) => \{/);
+	assert.match(source, /if \(!finishActiveText\(\)\) return false;/);
+	assert.match(source, /return selectionController\?\.select\(path, options\) \?\? false;/);
+	assert.match(source, /selectAfterTextCommit\(path\)/);
+	assert.match(source, /onSelectItem: \(path, options\) => selectAfterTextCommit\(path, options\)/);
 	assert.doesNotMatch(source, /session\.editorState\.selection\./);
 	assert.match(source, /data-cb-mail-structure/);
 	assert.match(source, /bindPreviewInteractions/);

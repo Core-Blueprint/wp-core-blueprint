@@ -43,6 +43,7 @@ final class PageRegistry {
 		'core-blueprint-reports',
 		'core-blueprint-safeguards',
 		'core-blueprint-settings',
+		'core-blueprint-template-library',
 		'core-blueprint-setup',
 		'core-blueprint-user-roles',
 	];
@@ -63,6 +64,7 @@ final class PageRegistry {
 		'segmented-control',
 		'select-picker',
 		'time-picker',
+		'template-browser',
 		'toast',
 		'token-input',
 	];
@@ -388,6 +390,9 @@ final class PageRegistry {
 				break;
 			case 'clipboard':
 				UiAssets::enqueue_clipboard( UiAssets::CLIPBOARD_PRESENTATION_CORE );
+				break;
+			case 'template-browser':
+				\CoreBlueprint\Core\TemplateLibrary\Assets::enqueue();
 				break;
 			case 'design-editor':
 				DesignEditorAssets::enqueue();

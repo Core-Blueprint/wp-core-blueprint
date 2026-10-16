@@ -272,6 +272,17 @@ def build(source: Path, output_dir: Path) -> tuple[Path, Path]:
     version = read_version(plugin_file)
     files = collect_files(source)
 
+    # Proven-environment binding is optional for source-only failure-path
+    # fixtures, which deliberately lack the real integration runner. Real
+    # Base sources include this file and must pass its safety gates.
+    if (source / "tools/integration/release_env.py").is_file():
+        sys.path.insert(0, str(source))
+        from tools.integration import release_env
+        try:
+            release_env.bind(source)
+        except Exception as error:
+            fail("Proven Level 2 environment unavailable: " + str(error))
+
     source_expected = runtime_hashes(source)
     preflight(source, source_expected)
     design_revision = design_module_revision(source)

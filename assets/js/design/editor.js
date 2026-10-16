@@ -274,6 +274,84 @@ export const createSession = ({
 	});
 };
 
+/**
+ * P02: public domain-neutral session with Base-owned history, consumer-owned
+ * command semantics and persistence. Does not select a document/mail profile.
+ */
+export const createDomainSession = ({
+	project,
+	validateProject = null,
+	allowCommand = null,
+	onChange = null,
+	historyLimit = 100,
+} = {}) => {
+	for (const [name, candidate] of Object.entries({ validateProject, allowCommand, onChange })) {
+		if (candidate !== null && typeof candidate !== 'function') {
+			throw new TypeError(`Domain session ${name} must be a function or null.`);
+		}
+	}
+	const projectState = new ProjectState(project, { validate: validateProject });
+	const editorState = new EditorState();
+	const history = new CommandHistory(projectState, editorState, { limit: historyLimit });
+	let disposed = false;
+	const assertActive = () => {
+		if (disposed) throw new Error('Domain editor session has been disposed.');
+	};
+	const subscribe = (listener) => {
+		assertActive();
+		if (typeof listener !== 'function') throw new TypeError('Domain session listener must be a function.');
+		return projectState.subscribe((event, current) => listener(current, event));
+	};
+	const unsubscribeConfigured = onChange ? subscribe(onChange) : null;
+	return Object.freeze({
+		project() {
+			assertActive();
+			return projectState.current();
+		},
+		snapshot() {
+			assertActive();
+			return projectState.snapshot();
+		},
+		replace(nextProject, { source = 'consumer' } = {}) {
+			assertActive();
+			return projectState.replace(nextProject, { source });
+		},
+		subscribe,
+		execute(command) {
+			assertActive();
+			if (!command || typeof command.apply !== 'function') {
+				throw new TypeError('Domain session execute() requires a command with apply(project).');
+			}
+			if (allowCommand && allowCommand(command, projectState.current()) === false) {
+				throw new Error('Domain session command denied by consumer policy.');
+			}
+			return history.execute(command);
+		},
+		undo() {
+			assertActive();
+			return history.undo();
+		},
+		redo() {
+			assertActive();
+			return history.redo();
+		},
+		clearHistory() {
+			assertActive();
+			history.clear();
+		},
+		historyStatus() {
+			assertActive();
+			return Object.freeze({ canUndo: history.canUndo, canRedo: history.canRedo, size: history.size });
+		},
+		dispose() {
+			if (disposed) return;
+			disposed = true;
+			unsubscribeConfigured?.();
+			history.dispose();
+		},
+	});
+};
+
 export const profiles = PROFILE_APIS;
 export const commands = Object.freeze({
 	insertNode: insertNodeCommand,
@@ -321,6 +399,7 @@ const motion = Object.freeze({
 
 const publicApi = Object.freeze({
 	createSession,
+	createDomainSession,
 	profiles,
 	motion,
 	shell: Object.freeze({
