@@ -22,8 +22,9 @@ test('public opt-in Mail CSS and consumer boundaries are explicit', async () => 
 
 test('Base Mail consumer uses only public profile factories without importing Design source paths', async () => {
 	const mailFeature = await readFile(new URL('../../assets/js/features/mail-designer.js', import.meta.url), 'utf8');
-	assert.match(mailFeature, /from '@cb-core\\/design-editor'/);
-	assert.match(mailFeature, /mailProfile\\.createMailRichTextControls\\(\\{/);
-	assert.match(mailFeature, /mailProfile\\.createMailInlineTextController\\(\\{/);
-	assert.doesNotMatch(mailFeature, /from ['"]\\.\\.\\/design\\//);
+	assert.ok(mailFeature.includes("from '@cb-core/design-editor'"));
+	assert.ok(mailFeature.includes('mailProfile.createMailRichTextControls({'));
+	assert.ok(mailFeature.includes('mailProfile.createMailInlineTextController({'));
+	assert.ok(!mailFeature.includes("from '../design/"));
+	assert.ok(!mailFeature.includes('from "../design/'));
 });
