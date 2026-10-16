@@ -154,6 +154,7 @@ export const createSession = ({
 
 	const execute = (editorCommand) => {
 		assertActive();
+		history.assertWritable();
 		if (!editorCommand || typeof editorCommand.apply !== 'function') {
 			throw new TypeError('Design editor execute() requires an editor command.');
 		}
@@ -193,6 +194,7 @@ export const createSession = ({
 		 */
 		setSelection(paths, { primary = null, source = 'consumer', external = false } = {}) {
 			assertActive();
+			history.assertWritable();
 			if (!Array.isArray(paths)) throw new TypeError('Design editor selection paths must be an array.');
 			const normalized = paths.map(normalizePath);
 			const normalizedPrimary = primary === null ? null : normalizePath(primary);
@@ -240,12 +242,14 @@ export const createSession = ({
 		},
 		select(path, { additive = false, source = 'consumer' } = {}) {
 			assertActive();
+			history.assertWritable();
 			if (!Array.isArray(path) || !nodeAt(projectState.current().root, path)) return false;
 			editorState.selection.select(path, { additive, source, action: 'select' });
 			return true;
 		},
 		clearSelection({ source = 'consumer' } = {}) {
 			assertActive();
+			history.assertWritable();
 			return editorState.selection.clear({ source, action: 'clear' });
 		},
 		subscribeSelection(listener, options = {}) {
