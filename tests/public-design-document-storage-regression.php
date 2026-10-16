@@ -51,6 +51,8 @@ final class DesignDocumentFakeDb {
 			return array_map( static fn ( array $v ): array => [
 				'column_name' => $v[0], 'data_type' => $v[1], 'column_type' => $v[2],
 				'nullable' => 'NO', 'max_length' => $v[3],
+				'collation_name' => 'identity_hash' === $v[0] ? 'ascii_bin' : null,
+				'extra' => 'id' === $v[0] ? 'auto_increment' : '',
 			], [
 				[ 'id', 'bigint', 'bigint(20) unsigned', null ],
 				[ 'identity_hash', 'char', 'char(64)', 64 ],
@@ -65,8 +67,8 @@ final class DesignDocumentFakeDb {
 		}
 		if ( str_contains( $sql, 'information_schema.STATISTICS' ) ) {
 			return [
-				[ 'index_name' => 'PRIMARY', 'non_unique' => 0, 'seq' => 1, 'column_name' => 'id' ],
-				[ 'index_name' => 'identity_hash', 'non_unique' => $this->bad_index ? 1 : 0, 'seq' => 1, 'column_name' => 'identity_hash' ],
+				[ 'index_name' => 'PRIMARY', 'non_unique' => 0, 'seq' => 1, 'column_name' => 'id', 'sub_part' => null ],
+				[ 'index_name' => 'identity_hash', 'non_unique' => $this->bad_index ? 1 : 0, 'seq' => 1, 'column_name' => 'identity_hash', 'sub_part' => null ],
 			];
 		}
 		throw new RuntimeException( 'Unexpected source-only metadata query.' );
