@@ -675,3 +675,55 @@ test('G1b: new history methods exist on document profiles and preserve Save hist
 	assert.deepEqual(session.baselineSnapshot(), checkpoint.submittedProject);
 	session.dispose();
 });
+
+test('G1b: semantic no-op and rejected command leave redo and revisions untouched', () => {
+	const session = publicEditor.createDomainSession({
+		project: domainProject('A'),
+		validateProject: (project) => {
+			if (project.root.props.description === 'BAD') throw new Error('INVALID');
+		},
+	});
+	const events = [];
+	session.subscribeHistory((event) => events.push(event));
+	session.execute(editDomain('B'));
+	session.undo();
+	assert.equal(session.historyStatus().canRedo, true);
+	session.execute({ label: 'same-value', apply: (project) => ({ project: structuredClone(project) }) });
+	assert.equal(events.length, 2);
+	assert.equal(session.historyStatus().canRedo, true);
+	assert.throws(() => session.execute(editDomain('BAD')), /INVALID/);
+	assert.equal(session.historyStatus().canRedo, true);
+	assert.equal(events.length, 2);
+	session.dispose();
+});
+
+test('G1b: acknowledged Save retains active redo branch and baseline dirty equality', () => {
+	const session = publicEditor.createDomainSession({ project: domainProject('A') });
+	session.execute(editDomain('B'));
+	session.execute(editDomain('C'));
+	session.undo();
+	const checkpoint = session.captureSave();
+	session.rebase({ saveToken: checkpoint.token, baselineProject: checkpoint.submittedProject });
+	assert.equal(session.historyStatus().canRedo, true);
+	assert.equal(session.historyStatus().size, 1);
+	assert.deepEqual(session.baselineSnapshot(), session.project());
+	session.redo();
+	assert.equal(session.project().root.props.description, 'C');
+	assert.equal(session.undo(), true);
+	assert.deepEqual(session.baselineSnapshot(), session.project());
+	session.dispose();
+});
+
+test('G1b: reentrant observer mutation is rejected without cancelling committed edit', () => {
+	const session = publicEditor.createDomainSession({ project: domainProject('A') });
+	const phases = [];
+	session.subscribe(() => {
+		assert.throws(() => session.execute(editDomain('NESTED')), (error) => error.code === 'DESIGNER_REENTRANT');
+		phases.push('guarded');
+	});
+	session.subscribeHistory(() => phases.push('history'));
+	session.execute(editDomain('B'));
+	assert.deepEqual(phases, ['guarded', 'history']);
+	assert.equal(session.project().root.props.description, 'B');
+	session.dispose();
+});
