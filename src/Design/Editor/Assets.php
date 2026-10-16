@@ -23,6 +23,7 @@ final class Assets {
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */
 	public const INSPECTOR_COMPOSITION_API = 1;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
+	public const MAIL_RICH_TEXT_STYLE = 'cb-core-design-mail-rich-text';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
 	public const DESIGNER_COMPOSITION_STYLE = 'cb-core-designer-composition';
 	public const DESIGNER_CONTEXT_STYLE = 'cb-core-designer-context';
@@ -68,6 +69,20 @@ final class Assets {
 			CB_CORE_URL . 'assets/js/design/editor.js',
 			[ self::MOTION_MODULE_ID ],
 			self::asset_version( 'assets/js/design/editor.js' )
+		);
+	}
+
+	/**
+	 * Public Mail profile styling; shared by the Base Mail and Newsletter
+	 * Designers. The styling is opt-in and does not load Base Mail admin chrome.
+	 */
+	public static function enqueue_mail_rich_text_controls(): void {
+		self::enqueue();
+		wp_enqueue_style(
+			self::MAIL_RICH_TEXT_STYLE,
+			CB_CORE_URL . 'assets/css/design/mail-rich-text-controls.css',
+			[ self::SHELL_STYLE ],
+			self::asset_version( 'assets/css/design/mail-rich-text-controls.css' )
 		);
 	}
 

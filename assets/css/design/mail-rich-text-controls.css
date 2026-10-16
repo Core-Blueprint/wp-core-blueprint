@@ -1,0 +1,80 @@
+/* M1: progressive Mail rich-text editing. Shared Designer controls stay Base-owned. */
+.cb-mail-rich-text-controls {
+	display: grid;
+	gap: var(--cb-space-2, 8px);
+	min-width: 0;
+}
+
+.cb-mail-rich-text-controls__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--cb-space-1, 4px);
+	align-items: center;
+}
+
+.cb-mail-rich-text-controls__toolbar .cb-core-button {
+	min-width: 2rem;
+	min-height: 2rem;
+}
+
+.cb-mail-rich-text-controls__editor {
+	min-height: 140px;
+	max-height: 360px;
+	overflow: auto;
+	padding: var(--cb-space-3, 12px);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-sm, 4px);
+	background: var(--cb-surface-1, #fff);
+	color: var(--cb-text);
+	font-size: var(--cb-fs-sm, 14px);
+	line-height: 1.6;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.cb-mail-rich-text-controls__editor:focus-visible {
+	outline: 2px solid var(--cb-accent);
+	outline-offset: 2px;
+}
+
+.cb-mail-rich-text-controls__editor p {
+	margin: 0 0 0.75em;
+}
+
+.cb-mail-rich-text-controls__editor p:last-child {
+	margin-bottom: 0;
+}
+
+.cb-mail-rich-text-controls__link {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--cb-space-2, 8px);
+	align-items: end;
+}
+
+.cb-mail-rich-text-controls__link[hidden] {
+	display: none !important;
+}
+
+.cb-mail-rich-text-controls__link label {
+	display: grid;
+	gap: var(--cb-space-1, 4px);
+	flex: 1 1 180px;
+	min-width: 0;
+}
+
+.cb-mail-rich-text-controls__advanced {
+	padding-top: var(--cb-space-2, 8px);
+	border-top: 1px solid var(--cb-border);
+}
+
+.cb-mail-rich-text-controls__advanced summary {
+	cursor: pointer;
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-xs, 12px);
+}
+
+.cb-mail-rich-text-controls__advanced textarea {
+	margin-top: var(--cb-space-2, 8px);
+	font-family: var(--cb-ff-mono, monospace);
+}

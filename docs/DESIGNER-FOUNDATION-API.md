@@ -87,6 +87,25 @@ A shell controller returned by `createDesignerShell()` is idempotent per root/se
 
 Inspector identity is also Base-owned. Consumers must pass the same semantic element/block label they expose in Layers to `createDesignerInspectorIdentity()` rather than inventing product-local title markup. Boolean Inspector settings use `createDesignerInspectorToggle()` inside `createDesignerInspectorControls()`; this guarantees one setting per row and preserves the shared title/control hierarchy.
 
+### Mail profile rich-text controls (additive candidate)
+
+The public `profiles.mail.createMailRichTextControls({ documentRef, value, onCommit })`
+factory creates Base-owned, allowlisted Rich Text editor controls with the same
+Visual / Advanced source, selection toolbar and HTML sanitization used by the
+built-in Base Mail Designer. Its return value exposes `{ element, commit, editor }`.
+The consumer mounts `element` in the Inspector, performs the authorized
+`commands.setProperty(path, ['markup'], nextValue)` in `onCommit` and
+returns `false` if the edit was rejected. The server remains authoritative
+for rendering and policy. Consumers must not import private Mail JS modules
+or implement a competing rich-text renderer.
+
+The matching opt-in PHP style boundary is
+`CoreBlueprint\\Core\\Design\\Editor\\Assets::enqueue_mail_rich_text_controls()`.
+This enqueues Base-owned Mail editor styling and the public Design Editor
+module without loading Base's Mail template management UI. The Mail profile
+factory and stylesheet are an **additive v1 candidate** pending real browser,
+keyboard, save/reopen and first-party consumer integration acceptance.
+
 ### Commands
 
 `commands` is the supported command namespace. V1 exposes:

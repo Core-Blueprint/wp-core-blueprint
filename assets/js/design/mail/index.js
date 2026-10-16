@@ -8,3 +8,7 @@ export {
 	normalizeMailLayout,
 	validateProject,
 } from './layout.js';
+
+// Additive public Mail profile editor control. Consumers import through
+// profiles.mail on @cb-core/design-editor, never private relative files.
+export { createMailRichTextControls } from './rich-text-controls.js';
