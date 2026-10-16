@@ -30,6 +30,19 @@ export class EditorState {
 		this.validation.replace(Array.isArray(snapshot.validation) ? snapshot.validation : []);
 	}
 
+	/** Apply an already validated staged editor state without any notifications. */
+	commitSnapshot(snapshot, metadata = {}) {
+		if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+			throw new TypeError('Invalid staged editor snapshot.');
+		}
+		this.inspector.restore(snapshot.inspector ?? { activeSection: null, expanded: [] });
+		this.validation.replace(Array.isArray(snapshot.validation) ? snapshot.validation : []);
+		return this.selection.commitSnapshot(
+			snapshot.selection ?? { paths: [], primary: null },
+			metadata,
+		);
+	}
+
 	reconcile(root, selectionEvent = {}) {
 		return this.selection.reconcile(root, selectionEvent);
 	}
