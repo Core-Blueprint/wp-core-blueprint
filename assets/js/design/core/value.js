@@ -33,3 +33,21 @@ export const freezeValue = (value) => {
 };
 
 export const cloneFrozen = (value) => freezeValue(cloneValue(value));
+
+/**
+ * Stable equality for supported plain JSON values. Object key insertion order
+ * is not a user edit; arrays preserve their authorial ordering.
+ */
+export const sameValue = (left, right) => {
+	if (Object.is(left, right)) return true;
+	if (Array.isArray(left) || Array.isArray(right)) {
+		return Array.isArray(left) && Array.isArray(right)
+			&& left.length === right.length
+			&& left.every((entry, index) => sameValue(entry, right[index]));
+	}
+	if (!isPlainObject(left) || !isPlainObject(right)) return false;
+	const leftKeys = Object.keys(left).sort();
+	const rightKeys = Object.keys(right).sort();
+	return leftKeys.length === rightKeys.length
+		&& leftKeys.every((key, index) => key === rightKeys[index] && sameValue(left[key], right[key]));
+};
