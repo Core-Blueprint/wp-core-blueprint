@@ -731,7 +731,7 @@ test('G1b: reentrant observer mutation is rejected without cancelling committed 
 
 const g1cMailProject = () => ({
 	schema_version: 0,
-	design_type: 'mail-template',
+	design_type: 'mail.root',
 	root: {
 		type: 'mail-template',
 		provider: 'core',
