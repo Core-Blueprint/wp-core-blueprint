@@ -17,6 +17,8 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        'The editor view needs refreshing. Your changes are preserved.' => 'De editorweergave moet worden vernieuwd. Je wijzigingen zijn behouden.',
+        'Refresh editor view' => 'Editorweergave vernieuwen',
         'MU-plugin directory cannot be safely inspected within this WordPress root.' => 'De MU-pluginmap kan niet veilig binnen de hoofdmap van deze WordPress-installatie worden onderzocht.',
         'Previously approved MU-plugin directory is missing.' => 'De eerder goedgekeurde MU-pluginmap ontbreekt.',
         'MU-plugin PHP file changed location during inspection.' => 'Een PHP-bestand van een MU-plugin is tijdens de controle van locatie veranderd.',
