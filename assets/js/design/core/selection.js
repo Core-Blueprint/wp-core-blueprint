@@ -217,6 +217,13 @@ export class SelectionState {
 		});
 	}
 
+	/** Silent internal rollback restores the exact precommit revision as well. */
+	restoreCommitted(snapshot, revision) {
+		this.#paths = snapshot.paths.map(clonePath);
+		this.#primary = snapshot.primary === null ? null : clonePath(snapshot.primary);
+		this.#revision = revision;
+	}
+
 	notify(event, onObserverFailure = null) {
 		for (const listener of [...this.#listeners]) {
 			if (!this.#listeners.has(listener)) continue;
