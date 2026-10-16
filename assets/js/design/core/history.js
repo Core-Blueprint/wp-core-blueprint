@@ -178,6 +178,7 @@ export class CommandHistory {
 	#commit({
 		nextProject, nextEditor, undo, redo, action, source,
 		forceSelection = false, baseline = null, acknowledge = false, contextReset = false,
+		selectionSource = source, selectionAction = action,
 	}) {
 		// Clone/validate before even entering the synchronous, silent commit.
 		const nextBaseline = baseline === null ? null : cloneFrozen(baseline);
@@ -195,7 +196,7 @@ export class CommandHistory {
 		let selectionEvent = null;
 		try {
 			selectionEvent = this.#editorState.commitSnapshot(nextEditor, {
-				source, action, force: forceSelection,
+				source: selectionSource, action: selectionAction, force: forceSelection,
 			});
 			if (projectChanged) {
 				projectEvent = this.#projectState.commitStaged(nextProject, { source });
@@ -271,6 +272,7 @@ export class CommandHistory {
 				action: 'execute',
 				source: 'command',
 				forceSelection: stage.forceSelection,
+				selectionAction: String(command.label || 'command'),
 			});
 			this.#nextEntryId = entry.id;
 			return result;
@@ -340,6 +342,7 @@ export class CommandHistory {
 				nextProject: next, nextEditor: editorSnapshot,
 				undo: [], redo: [], action: 'replace', source: label,
 				baseline: next, contextReset: true,
+				selectionSource: 'replace', selectionAction: label,
 			});
 		});
 	}
