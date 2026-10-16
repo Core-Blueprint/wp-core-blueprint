@@ -163,9 +163,9 @@ export class CommandHistory {
 		return { project: next, forceSelection };
 	}
 
-	#entry(command, beforeProject, beforeEditor, afterProject, afterEditor) {
+	#entry(command, beforeProject, beforeEditor, afterProject, afterEditor, id) {
 		return stableEntry({
-			id: ++this.#nextEntryId,
+			id,
 			command,
 			label: String(command.label || 'command'),
 			beforeProject: cloneFrozen(beforeProject),
@@ -210,9 +210,10 @@ export class CommandHistory {
 			const stage = this.#stageCommand(command, beforeProject, editor);
 			if (sameValue(stage.project, beforeProject)) return beforeProject;
 			const nextEditor = editor.snapshot();
-			const nextUndo = [...this.#undo, this.#entry(command, beforeProject, beforeEditor, stage.project, nextEditor)];
+			const entry = this.#entry(command, beforeProject, beforeEditor, stage.project, nextEditor, this.#nextEntryId + 1);
+			const nextUndo = [...this.#undo, entry];
 			if (nextUndo.length > this.#limit) nextUndo.splice(0, nextUndo.length - this.#limit);
-			return this.#commit({
+						const result = this.#commit({
 				nextProject: stage.project,
 				nextEditor,
 				undo: nextUndo,
@@ -221,6 +222,8 @@ export class CommandHistory {
 				source: 'command',
 				forceSelection: stage.forceSelection,
 			});
+			this.#nextEntryId = entry.id;
+			return result;
 		});
 	}
 
@@ -360,7 +363,7 @@ export class CommandHistory {
 						if (sameValue(beforeProject, effect.project)) conflict();
 						cursorProject = effect.project;
 						replayed.push(this.#entry(
-							entry.command, beforeProject, beforeEditor, cursorProject, editor.snapshot(),
+							entry.command, beforeProject, beforeEditor, cursorProject, editor.snapshot(), entry.id,
 						));
 					}
 				} catch (_) { conflict(); }
