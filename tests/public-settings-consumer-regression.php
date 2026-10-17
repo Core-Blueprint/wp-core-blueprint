@@ -11,14 +11,20 @@ namespace {
     define( 'CB_CORE_SETTINGS', 'cb_core_settings' );
 
     $GLOBALS['s1_option_veto'] = false;
+    $GLOBALS['s1_partial_filter'] = false;
     $GLOBALS['s1_pre_write_race'] = null;
     $GLOBALS['s1_actions'] = [];
 
     function maybe_serialize( mixed $value ): string { return serialize( $value ); }
     function sanitize_option( string $key, mixed $value ): mixed { return $value; }
     function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed {
-        return 'pre_update_option_cb_core_settings' === $hook && $GLOBALS['s1_option_veto']
-            ? $args[0] : $value;
+        if ( 'pre_update_option_cb_core_settings' === $hook && $GLOBALS['s1_option_veto'] ) {
+            return $args[0];
+        }
+        if ( 'pre_update_option_cb_core_settings' === $hook && $GLOBALS['s1_partial_filter'] ) {
+            $value['integrity']['admin_can_run'] = false;
+        }
+        return $value;
     }
     function do_action( string $hook, mixed ...$args ): void {
         $GLOBALS['s1_actions'][] = $hook;
@@ -148,6 +154,19 @@ namespace {
     s1_consumer_assert( [] === \CoreBlueprint\Core\Log\AuditLog::$events, 'no success audit on refusal' );
     s1_consumer_assert( ! in_array( 'updated_option', $GLOBALS['s1_actions'], true ), 'no updated hook on refusal' );
     $GLOBALS['s1_option_veto'] = false;
+
+    // A pre-update filter may not silently drop one requested permission
+    // leaf while another still changes. Verify the REAL Settings facade does
+    // not emit a complete-intent audit for a partial attempted write.
+    $GLOBALS['s1_partial_filter'] = true;
+    $writes_before = $wpdb->writes;
+    s1_consumer_assert( ! $settings::set_paths( $changes, 'profile' ), 'partial filter must refuse grouped mutation' );
+    s1_consumer_assert( 'refused' === $settings::last_write_status(), 'partial filter classified as refused' );
+    s1_consumer_assert( $writes_before === $wpdb->writes, 'partial filter performs no SQL' );
+    s1_consumer_assert( $original === $wpdb->value(), 'partial filter persists no group' );
+    s1_consumer_assert( [] === \CoreBlueprint\Core\Log\AuditLog::$events, 'partial filter emits no settings.changed audit' );
+    s1_consumer_assert( ! in_array( 'updated_option', $GLOBALS['s1_actions'], true ), 'partial filter emits no success hook' );
+    $GLOBALS['s1_partial_filter'] = false;
 
     s1_consumer_assert( $settings::set_paths( $changes, 'profile' ), 'accepted grouped mutation saved' );
     $persisted = $wpdb->value();
