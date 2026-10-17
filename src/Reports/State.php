@@ -74,6 +74,9 @@ final class State implements ModuleStateInterface {
 	public static function set_enabled( bool $enabled, string $actor = 'unknown' ): void {
 		$was = self::is_enabled();
 		if ( $was === $enabled ) {
+			if ( ! Settings::matches_paths( [ 'reports.enabled' => $enabled ] ) ) {
+				throw new \RuntimeException( 'Reports state could not be verified.' );
+			}
 			return;
 		}
 
