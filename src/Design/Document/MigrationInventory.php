@@ -203,9 +203,16 @@ final class MigrationInventory {
 
 	/** @param array<string,mixed> $settings */
 	private static function reports_document( array $settings ): ?array {
-		$reports = $settings['reports'] ?? [];
-		if ( ! is_array( $reports ) ) {
+		// A missing setting is not the same as an explicitly stored invalid
+		// null/scalar. Never silently turn legacy content into defaults.
+		if ( array_key_exists( 'reports', $settings ) && ! is_array( $settings['reports'] ) ) {
 			return null;
+		}
+		$reports = $settings['reports'] ?? [];
+		foreach ( [ 'branding', 'composer' ] as $field ) {
+			if ( array_key_exists( $field, $reports ) && ! is_array( $reports[$field] ) ) {
+				return null;
+			}
 		}
 		$branding_raw = $reports['branding'] ?? [];
 		$composer_raw = $reports['composer'] ?? [];
@@ -225,7 +232,8 @@ final class MigrationInventory {
 			}
 		}
 		$maintenance_raw = $composer_raw['maintenance'] ?? [];
-		if ( ! is_array( $maintenance_raw ) ) {
+		if ( ( array_key_exists( 'maintenance', $composer_raw ) && ! is_array( $composer_raw['maintenance'] ) )
+			|| ! is_array( $maintenance_raw ) ) {
 			return null;
 		}
 		$maintenance = [] === $maintenance_raw ? MaintenanceTemplate::defaults() : $maintenance_raw;
