@@ -426,5 +426,100 @@ namespace {
     s2_assert( 'conflict' === $reverse['status'], 'reverse CAS refuses post-apply state changed by another writer' );
     s2_assert( false === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'], 'reverse CAS cannot overwrite independent writer' );
 
+    // Overseer P0-S2-01 (test-first RED): another writer edits only the
+    // canonical document JSON, without advancing its decimal revision.
+    // A stale staged document must not overwrite its omitted branding fields.
+    \CoreBlueprint\Core\Settings\OptionCas::$row = $after_settings;
+    \CoreBlueprint\Core\Settings::accept_cas( $after_settings['value'] );
+    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = $after_document;
+    $wpdb->before_lock = static function (): void {
+        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+        // Deliberately retain the exact previous revision.
+    };
+    $before_option_attempts = $wpdb->option_writes;
+    $before_document_attempts = $wpdb->document_writes;
+    $before_updated_actions = count( array_filter(
+        $GLOBALS['s2_actions'], static fn( string $hook ): bool => 'updated_option' === $hook
+    ) );
+    $document_only_race = $transaction::apply_guarded( $second, $saved['witness'] );
+    s2_assert( 'conflict' === $document_only_race['status'], 'same-revision document JSON race must conflict before either SQL write' );
+    s2_assert( $before_option_attempts === $wpdb->option_writes, 'document JSON race cannot write Settings' );
+    s2_assert( $before_document_attempts === $wpdb->document_writes, 'document JSON race cannot write canonical document' );
+    s2_assert(
+        'compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'],
+        'unrepresented density from independent same-revision writer survives'
+    );
+    s2_assert(
+        $after_document['revision'] === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'],
+        'same-revision writer remains at the same revision'
+    );
+    s2_assert(
+        $before_updated_actions === count( array_filter(
+            $GLOBALS['s2_actions'], static fn( string $hook ): bool => 'updated_option' === $hook
+        ) ),
+        'rejected document race has no postcommit option success hook'
+    );
+
+    // Positive guard: an ordinary writer changes BOTH document content and
+    // revision after preflight; this is still a conflict, not a false save.
+    \CoreBlueprint\Core\Settings\OptionCas::$row = $after_settings;
+    \CoreBlueprint\Core\Settings::accept_cas( $after_settings['value'] );
+    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = $after_document;
+    $wpdb->before_lock = static function (): void {
+        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'] = '9007199254740995';
+    };
+    $revision_race = $transaction::apply_guarded( $second, $saved['witness'] );
+    s2_assert( 'conflict' === $revision_race['status'], 'document content and revision race conflicts' );
+    s2_assert(
+        'compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'],
+        'revision race leaves other writer density unchanged'
+    );
+    s2_assert(
+        '9007199254740995' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'],
+        'independent document revision survives'
+    );
+
+    // Overseer S2-02 (test-first RED): a valid persisted Settings option may
+    // omit reports entirely, or contain only a subset of its default fields.
+    // Materialize ONLY the two explicitly represented Settings leaves.
+    $canonical = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::read()['document'];
+    $sparse = [ 'site_mode' => 'production', 'notes' => [ 'keep' => true ] ];
+    $sparse_stage = $transaction::staged( $sparse, $canonical, $desired );
+    s2_assert( 'ok' === ( $sparse_stage['status'] ?? '' ), 'valid sparse Settings without reports must stage' );
+    s2_assert( [ 'retention_days', 'email_alerts' ] === array_keys( $sparse_stage['settings']['reports'] ), 'sparse stage materializes only represented Reports Settings nodes' );
+    s2_assert( [ 'generation_failed' ] === array_keys( $sparse_stage['settings']['reports']['email_alerts'] ), 'sparse stage writes no unrelated default alerts' );
+    s2_assert( $sparse === array_intersect_key( $sparse_stage['settings'], $sparse ), 'sparse stage keeps every unrelated root setting' );
+
+    $partial = [ 'reports' => [ 'retention_days' => 100, 'branding' => [ 'custom' => 'preserved' ] ] ];
+    $partial_stage = $transaction::staged( $partial, $canonical, $desired );
+    s2_assert( 'ok' === ( $partial_stage['status'] ?? '' ), 'valid Reports option with absent email_alerts must stage' );
+    s2_assert( [ 'custom' => 'preserved' ] === $partial_stage['settings']['reports']['branding'], 'sparse Report branding must be preserved' );
+    s2_assert( [ 'generation_failed' => true ] === $partial_stage['settings']['reports']['email_alerts'], 'missing alert group gets only represented leaf' );
+
+    foreach ( [
+        [ 'reports' => 'malformed' ],
+        [ 'reports' => [ 'email_alerts' => 'malformed' ] ],
+    ] as $malformed ) {
+        s2_assert( 'invalid' === $transaction::staged( $malformed, $canonical, $desired )['status'], 'present malformed Reports Settings nodes must fail closed' );
+    }
+
+    // End-to-end sparse-row transaction: no unrepresented defaults in raw
+    // storage, and no unrelated fields lost, with both existing row locks.
+    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = $after_document;
+    $sparse_row = [ 'status' => 'ok', 'value' => $sparse, 'raw' => serialize( $sparse ), 'autoload' => $after_settings['autoload'], 'table' => 'wp_options' ];
+    \CoreBlueprint\Core\Settings\OptionCas::$row = $sparse_row;
+    \CoreBlueprint\Core\Settings::accept_cas( $sparse );
+    $sparse_expected = [
+        'settings_sha256' => hash( 'sha256', $sparse_row['raw'] ),
+        'document_revision' => $after_document['revision'],
+    ];
+    $sparse_saved = $transaction::apply_guarded( $desired, $sparse_expected );
+    s2_assert( 'saved' === ( $sparse_saved['status'] ?? '' ), 'sparse Settings transaction atomically commits represented leaves' );
+    s2_assert( ! isset( \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['branding'] ), 'sparse Settings transaction does not materialize branding defaults' );
+    s2_assert( ! isset( \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'] ), 'sparse Settings transaction does not materialize other alert defaults' );
+    s2_assert( true === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['notes']['keep'], 'sparse Settings transaction preserves unrelated root settings' );
+    s2_assert( $canonical['branding']['show_logo'] === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['show_logo'], 'sparse transaction preserves nonrepresented canonical branding' );
+
     echo "Core Blueprint Base A2.4-S2 Reports Profile source-only regression PASS\n";
 }
