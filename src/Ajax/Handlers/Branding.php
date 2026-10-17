@@ -153,9 +153,10 @@ final class Branding {
 		self::require_manage_branding();
 
 		try {
+			$live = \\CoreBlueprint\\Core\\Reports\\DesignDocumentAdapter::current();
 			$branding = self::normalized_request();
 			$template = self::normalized_template_request();
-			$html     = ( new DesignerPreview() )->render( $branding, $template );
+			$html = ( new DesignerPreview() )->render( $branding, $template );
 		} catch ( \InvalidArgumentException $error ) {
 			wp_send_json_error( [ 'message' => $error->getMessage() ], 400 );
 		} catch ( \Throwable $error ) {
@@ -164,7 +165,7 @@ final class Branding {
 			], 500 );
 		}
 
-		wp_send_json_success( [ 'html' => $html ] );
+		wp_send_json_success( [ 'html' => $html, 'revision' => $live['revision'], 'authority' => $live['authority'] ] );
 	}
 
 	/** @return array<string,mixed> */
