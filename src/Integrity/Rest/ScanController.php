@@ -646,7 +646,7 @@ final class ScanController {
 			$changes['integrity.distribution_locale_mode'] = $integrity['distribution_locale_mode'];
 		}
 		if ( ! Settings::set_paths( $changes, 'integrity_redetect' ) ) {
-			return new WP_Error( 'cb_integrity_storage_conflict', __( 'Integrity settings were not saved. Reload and retry.', 'core-blueprint' ), [ 'status' => 409 ] );
+			return new WP_Error( 'cb_integrity_storage_conflict', __( 'Could not save - try again', 'core-blueprint' ), [ 'status' => 409 ] );
 		}
 
 		$this->audit( 'integrity_distribution_locale_detected', 'notice', [
@@ -715,7 +715,7 @@ final class ScanController {
 				'integrity.distribution_locale_mode' => $mode,
 				'integrity.distribution_locale_override' => $integrity['distribution_locale_override'],
 			], 'integrity_locale_mode' ) ) {
-				return new WP_Error( 'cb_integrity_storage_conflict', __( 'Integrity settings were not saved. Reload and retry.', 'core-blueprint' ), [ 'status' => 409 ] );
+				return new WP_Error( 'cb_integrity_storage_conflict', __( 'Could not save - try again', 'core-blueprint' ), [ 'status' => 409 ] );
 			}
 		} else {
 			return new WP_REST_Response( [ 'mode' => $mode, 'override' => $integrity['distribution_locale_override'], 'detected' => $integrity['distribution_locale_detected'] ?? '', 'meta' => $integrity['distribution_locale_meta'] ?? [] ], 200 );
