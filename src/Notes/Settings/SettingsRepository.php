@@ -47,8 +47,17 @@ final class SettingsRepository {
 	 * log entry that {@see Settings::set_key()} emits.
 	 */
 	public static function update( array $settings ): void {
-		$merged = array_merge( self::all(), $settings );
-		Settings::set_key( 'notes', Defaults::sanitize( $merged ), 'notes' );
+		$current = self::all();
+		$merged  = Defaults::sanitize( array_merge( $current, $settings ) );
+		$changes = [];
+		foreach ( array_keys( $settings ) as $key ) {
+			if ( array_key_exists( $key, $merged ) && ( $current[ $key ] ?? null ) !== $merged[ $key ] ) {
+				$changes[ 'notes.' . $key ] = $merged[ $key ];
+			}
+		}
+		if ( $changes && ! Settings::set_paths( $changes, 'notes' ) ) {
+			throw new \RuntimeException( 'Notes settings could not be persisted.' );
+		}
 	}
 
 	public static function get( string $key ) {
