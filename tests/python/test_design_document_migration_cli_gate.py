@@ -58,7 +58,7 @@ class DesignDocumentMigrationCliGateTest(unittest.TestCase):
         # WP-CLI executes eval-file inside eval(); a strict_types directive
         # is not permitted here and would abort before the fixture starts.
         source = FIXTURE.read_text(encoding="utf-8")
-        self.assertTrue(source.startswith("<?php\\n"))
+        self.assertTrue(source.startswith("<?php\n"))
         self.assertNotIn("declare(strict_types=1)", source)
 
     def test_fixture_and_runner_do_not_expose_public_migration_endpoint(self):
