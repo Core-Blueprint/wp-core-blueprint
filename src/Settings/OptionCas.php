@@ -128,9 +128,18 @@ final class OptionCas {
         // Clearing all three WordPress option-cache forms is required before
         // any post-write observer can fetch a value; a missed key returns
         // false on many object caches and is not itself a cache failure.
-        wp_cache_delete( $name, 'options' );
-        wp_cache_delete( 'alloptions', 'options' );
-        wp_cache_delete( 'notoptions', 'options' );
+        foreach ( [ $name, 'alloptions', 'notoptions' ] as $cache_key ) {
+            wp_cache_delete( $cache_key, 'options' );
+            // WordPress returns false for both missing keys and some cache
+            // delete failures. Independently inspect the found flag so a
+            // retained stale value can never be certified as a successful
+            // Settings write.
+            $found = false;
+            wp_cache_get( $cache_key, 'options', false, $found );
+            if ( $found ) {
+                return [ 'status' => 'uncertain' ];
+            }
+        }
 
         $confirmed = self::read();
         if ( 'ok' !== $confirmed['status'] || $confirmed['raw'] !== $next_raw
