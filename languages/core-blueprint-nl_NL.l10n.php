@@ -395,6 +395,7 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Reports reset could not be verified.' => 'Het herstellen van Reports kon niet worden geverifieerd.',
     'Reports design could not be saved. Reload if it has changed.' => 'Het Reports-ontwerp kon niet worden opgeslagen. Laad de pagina opnieuw als het is gewijzigd.',
     'Reports save readback failed.' => 'De opgeslagen Reports-gegevens konden niet worden gecontroleerd.',
+    'Canonical Reports design is unavailable. An operator must review its storage before changes can be made.' => 'Het canonieke Reports-ontwerp is niet beschikbaar. Een beheerder moet de opslag controleren voordat er wijzigingen kunnen worden aangebracht.',
 ] );
 // These former source strings were replaced by revision-aware operator guidance.
 unset(
