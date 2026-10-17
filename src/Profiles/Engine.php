@@ -42,12 +42,16 @@ final class Engine {
 		$registry = SectionRegistry::all();
 		$sections = [];
 		$current = [];
+		$witnesses = [];
 		$total_changes = 0;
 		foreach ( $document['sections'] as $id => $payload ) {
 			$section = $registry[ $id ];
 			$incoming = $payload['data'];
 			$current[ $id ] = $section->snapshot();
 			$section->preflight( $incoming, $current[ $id ] );
+			if ( $section instanceof VersionGuardedSectionInterface ) {
+				$witnesses[ $id ] = $section->version_witness();
+			}
 			$changes = $section->preview( $current[ $id ], $incoming );
 			$total_changes += count( $changes );
 			if ( $total_changes > Document::MAX_CHANGES ) {
@@ -68,14 +72,16 @@ final class Engine {
 			];
 		}
 		$fingerprint = hash( 'sha256', CanonicalJson::encode( [
-			'document' => $document,
-			'current'  => $current,
+			'document'  => $document,
+			'current'   => $current,
+			'witnesses' => $witnesses,
 		] ) );
 		return [
 			'fingerprint' => $fingerprint,
 			'total_changes' => $total_changes,
 			'sections' => $sections,
 			'snapshots' => $current,
+			'witnesses' => $witnesses,
 			'document' => $document,
 		];
 	}
@@ -83,6 +89,14 @@ final class Engine {
 	public static function apply( array $document, string $expected_fingerprint, string $actor ): array {
 		$preview = self::preview( $document );
 		$document = $preview['document'];
+		// A read-only canonical Reports preview is not permission to apply.
+		// Check every guarded section before even acquiring the apply lock.
+		foreach ( $document['sections'] as $id => $payload ) {
+			$section = SectionRegistry::all()[ $id ];
+			if ( $section instanceof VersionGuardedSectionInterface ) {
+				$section->assert_apply_allowed();
+			}
+		}
 		if ( '' === $expected_fingerprint || ! hash_equals( $preview['fingerprint'], $expected_fingerprint ) ) {
 			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Configuration changed since this preview was created. Review the profile again before applying it.', 'core-blueprint' ) );
@@ -92,6 +106,8 @@ final class Engine {
 		$lock = ApplyLock::acquire( $actor );
 		$applied = [];
 		$attempted = [];
+		$post_witnesses = [];
+		$before_witnesses = [];
 		$snapshots = [];
 		$registry = SectionRegistry::all();
 		try {
@@ -102,6 +118,13 @@ final class Engine {
 			}
 
 			$snapshots = is_array( $locked_preview['snapshots'] ?? null ) ? $locked_preview['snapshots'] : [];
+			$before_witnesses = is_array( $locked_preview['witnesses'] ?? null ) ? $locked_preview['witnesses'] : [];
+			foreach ( $document['sections'] as $id => $payload ) {
+				$section = $registry[ $id ];
+				if ( $section instanceof VersionGuardedSectionInterface ) {
+					$section->assert_apply_allowed();
+				}
+			}
 
 			foreach ( $document['sections'] as $id => $payload ) {
 				$section = $registry[ $id ];
@@ -111,6 +134,10 @@ final class Engine {
 				if ( ! self::same_state( $section->snapshot(), $snapshots[ $id ] ) ) {
 					throw new \RuntimeException( __( 'Configuration changed while the profile was being applied. The transaction was stopped before touching that section.', 'core-blueprint' ) );
 				}
+				if ( $section instanceof VersionGuardedSectionInterface
+					&& ( $section->version_witness() !== ( $before_witnesses[ $id ] ?? null ) ) ) {
+					throw new \RuntimeException( 'Profile revision conflict' );
+				}
 				$attempted[] = $id;
 				$section->apply( $payload['data'], $actor );
 				if ( ! $section->verify( $payload['data'] ) ) {
@@ -118,11 +145,13 @@ final class Engine {
 					throw new \RuntimeException( sprintf( __( 'Profile section %s did not verify after apply.', 'core-blueprint' ), $id ) );
 				}
 				$applied[] = $id;
+				if ( $section instanceof VersionGuardedSectionInterface ) {
+					$post_witnesses[ $id ] = $section->version_witness();
+				}
 			}
 
 			AuditLog::log( 'profiles.applied', 'notice', [
 				'actor'          => $actor,
-				'profile_name'   => (string) $document['profile']['name'],
 				'sections'       => $applied,
 				'change_count'   => (int) $preview['total_changes'],
 				'fingerprint'    => $expected_fingerprint,
@@ -132,21 +161,29 @@ final class Engine {
 			$rollback_failures = [];
 			foreach ( array_reverse( $attempted ) as $id ) {
 				try {
-					$registry[ $id ]->restore( $snapshots[ $id ], (array) ( $document['sections'][ $id ]['data'] ?? [] ), 'profile-rollback:' . $actor );
+					$section = $registry[ $id ];
+					if ( $section instanceof VersionGuardedSectionInterface ) {
+						$section->restore_guarded(
+							$snapshots[ $id ], (array) ( $document['sections'][ $id ]['data'] ?? [] ),
+							'profile-rollback:' . $actor,
+							$before_witnesses[ $id ] ?? [], $post_witnesses[ $id ] ?? null
+						);
+					} else {
+						$section->restore( $snapshots[ $id ], (array) ( $document['sections'][ $id ]['data'] ?? [] ), 'profile-rollback:' . $actor );
+					}
 					if ( ! self::same_state( $registry[ $id ]->snapshot(), $snapshots[ $id ] ) ) {
 						throw new \RuntimeException( 'restore verification failed' );
 					}
 				} catch ( \Throwable $rollback_error ) {
-					$rollback_failures[ $id ] = substr( sanitize_text_field( $rollback_error->getMessage() ), 0, 500 );
+					$rollback_failures[ $id ] = 'recovery_required';
 				}
 			}
 			AuditLog::log( empty( $rollback_failures ) ? 'profiles.apply_failed' : 'profiles.rollback_failed', empty( $rollback_failures ) ? 'warning' : 'critical', [
 				'actor'             => $actor,
-				'profile_name'      => (string) ( $document['profile']['name'] ?? '' ),
 				'applied_sections'  => $applied,
 				'attempted_sections'=> $attempted,
 				'rollback_failures' => $rollback_failures,
-				'error'             => substr( sanitize_text_field( $error->getMessage() ), 0, 500 ),
+				'reason_code'       => empty( $rollback_failures ) ? 'section_apply_failed' : 'recovery_required',
 			] );
 			if ( ! empty( $rollback_failures ) ) {
 				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
