@@ -416,6 +416,26 @@ if ( FORM ) {
 		...brandingPayload(),
 		template: JSON.stringify( composer ),
 	} );
+	brandingBaseline = brandSignature( brandingPayload() );
+	const dirtyIndicator = document.createElement( 'span' );
+	dirtyIndicator.className = 'cb-core-reports-designer__dirty';
+	dirtyIndicator.setAttribute( 'role', 'status' );
+	dirtyIndicator.textContent = 'Unsaved report design changes';
+	dirtyIndicator.hidden = true;
+	const syncDirtyIndicator = () => {
+		const dirty = saveInFlight || saveUncertain
+			|| brandSignature( brandingPayload() ) !== brandingBaseline
+			|| JSON.stringify( session.snapshot() ) !== JSON.stringify( session.baselineSnapshot() );
+		dirtyIndicator.hidden = ! dirty;
+	};
+	saveBtn?.insertAdjacentElement( 'afterend', dirtyIndicator );
+	FORM.addEventListener( 'input', syncDirtyIndicator );
+	FORM.addEventListener( 'change', syncDirtyIndicator );
+	window.addEventListener( 'beforeunload', ( event ) => {
+		if ( dirtyIndicator.hidden ) return;
+		event.preventDefault();
+		event.returnValue = '';
+	} );
 
 	const applyBranding = ( values ) => {
 		if ( logoIdEl && values.logo_attachment_id !== undefined ) {
@@ -580,6 +600,7 @@ if ( FORM ) {
 		} );
 		serverRevision = payload.revision;
 		brandingBaseline = brandSignature( doc.branding );
+		syncDirtyIndicator();
 		return doc;
 	};
 
@@ -619,6 +640,7 @@ if ( FORM ) {
 			return;
 		}
 		saveInFlight = true;
+		syncDirtyIndicator();
 		setSaveState( 'saving' );
 		saveBtn.disabled = true;
 		if ( resetBtn ) resetBtn.disabled = true;
@@ -638,6 +660,7 @@ if ( FORM ) {
 			setPreviewState( requestErrorMessage( error, 'Reports save outcome requires a reload.' ), 'error' );
 		} finally {
 			saveInFlight = false;
+			syncDirtyIndicator();
 			saveBtn.disabled = false;
 			if ( resetBtn ) resetBtn.disabled = false;
 		}
@@ -684,6 +707,7 @@ if ( FORM ) {
 			setPreviewState( requestErrorMessage( error, 'Reports reset requires reload to reconcile history.' ), 'error' );
 		} finally {
 			saveInFlight = false;
+			syncDirtyIndicator();
 			resetBtn.disabled = false;
 			if ( saveBtn ) saveBtn.disabled = false;
 		}
