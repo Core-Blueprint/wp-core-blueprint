@@ -25,7 +25,7 @@ final class MaintenanceFlowBranding {
 	 */
 	public static function resolve(): array {
 		$resolved   = ReportBranding::current();
-		$configured = Settings::get()['reports']['branding'] ?? [];
+		$configured = DesignDocumentAdapter::current()['branding'];
 		$configured = is_array( $configured ) ? $configured : [];
 
 		return self::resolve_values( [
