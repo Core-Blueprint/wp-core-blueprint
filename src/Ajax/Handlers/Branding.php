@@ -65,14 +65,14 @@ final class Branding {
 		$reports['branding'] = $branding;
 		$composer['maintenance'] = $template;
 		$reports['composer'] = $composer;
-		$updated = Settings::set_key( 'reports', $reports, 'preferences.reports_designer' );
-		$check = Settings::get();
-		if ( ( ! $updated && ( $check['reports'] ?? null ) !== $reports )
-			|| ( $check['reports']['branding'] ?? null ) !== $branding
-			|| ( $check['reports']['composer']['maintenance'] ?? null ) !== $template ) {
-			wp_send_json_error( [ 'message' => __( 'Reports save could not be verified.', 'core-blueprint' ) ], 503 );
+		$updated = Settings::set_paths( [
+			'reports.branding' => $branding,
+			'reports.composer.maintenance' => $template,
+		], 'preferences.reports_designer' );
+		self::verify_legacy_write( $updated, $branding, $template );
+		if ( $updated ) {
+			AuditLog::log( 'reports.designer_updated', 'notice', [ 'by' => get_current_user_id() ] );
 		}
-		AuditLog::log( 'reports.designer_updated', 'notice', [ 'by' => get_current_user_id() ] );
 		self::respond_design( $branding, $template, 'legacy' );
 	}
 
@@ -99,15 +99,30 @@ final class Branding {
 		$reports['branding'] = $defaults;
 		$composer['maintenance'] = $template;
 		$reports['composer'] = $composer;
-		$updated = Settings::set_key( 'reports', $reports, 'preferences.reports_designer' );
-		$check = Settings::get();
-		if ( ( ! $updated && ( $check['reports'] ?? null ) !== $reports )
-			|| ( $check['reports']['branding'] ?? null ) !== $defaults
-			|| ( $check['reports']['composer']['maintenance'] ?? null ) !== $template ) {
-			wp_send_json_error( [ 'message' => __( 'Reports reset could not be verified.', 'core-blueprint' ) ], 503 );
+		$updated = Settings::set_paths( [
+			'reports.branding' => $defaults,
+			'reports.composer.maintenance' => $template,
+		], 'preferences.reports_designer' );
+		self::verify_legacy_write( $updated, $defaults, $template );
+		if ( $updated ) {
+			AuditLog::log( 'reports.designer_reset', 'notice', [ 'by' => get_current_user_id() ] );
 		}
-		AuditLog::log( 'reports.designer_reset', 'notice', [ 'by' => get_current_user_id() ] );
 		self::respond_design( $defaults, $template, 'legacy' );
+	}
+
+	/** Verify the actual stored legacy fields, never a stale request cache. */
+	private static function verify_legacy_write( bool $changed, array $branding, array $template ): void {
+		$status = Settings::last_write_status();
+		if ( ! $changed && 'unchanged' !== $status ) {
+			wp_send_json_error( [ 'message' => __( 'Reports settings changed or the save was refused.', 'core-blueprint' ), 'code' => 'reports_settings_conflict' ], 'conflict' === $status || 'refused' === $status ? 409 : 503 );
+		}
+		$source = \CoreBlueprint\Core\Settings\OptionCas::read();
+		$reports = 'ok' === ( $source['status'] ?? '' ) ? (array) ( $source['value']['reports'] ?? [] ) : [];
+		if ( 'ok' !== ( $source['status'] ?? '' )
+			|| ( $reports['branding'] ?? ReportBranding::settings_defaults() ) !== $branding
+			|| ( $reports['composer']['maintenance'] ?? MaintenanceTemplate::defaults() ) !== $template ) {
+			wp_send_json_error( [ 'message' => __( 'Reports storage readback failed.', 'core-blueprint' ), 'code' => 'reports_settings_unverified' ], 503 );
+		}
 	}
 
 	private static function expected_revision(): string {
