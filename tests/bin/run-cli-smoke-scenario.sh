@@ -91,4 +91,20 @@ fi
 printf '%s\n' "$status_output"
 echo "[B0] Read-only Base CLI command PASS"
 
+
+# Run the A2.2 migration scenario on this exclusively owned CLI fixture site.
+# WP_UnitTestCase normally has an ambient transaction: only this independent
+# WP-CLI request proves START TRANSACTION/COMMIT/ROLLBACK on real InnoDB.
+# The PHP fixture rejects any database other than this exact new A2.2 test slot.
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+echo "[A2.2] starting isolated prepare-only database conformance"
+migration_output="$(wp_cli eval-file "$ROOT/tests/bin/design-document-migration-conformance.php")" || {
+  printf '%s\n' "$migration_output" >&2
+  exit 1
+}
+printf '%s\n' "$migration_output"
+grep -Fq '[A2.2] final prepare-only conformance PASS' <<<"$migration_output" || {
+  echo '[A2.2] required migration proof marker missing' >&2
+  exit 1
+}
 echo "[B0] real WP-CLI smoke scenario PASS"
