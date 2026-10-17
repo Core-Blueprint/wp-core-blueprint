@@ -14,6 +14,7 @@ use CoreBlueprint\Core\Settings\OptionCas;
 $GLOBALS['s1_hooks'] = [];
 $GLOBALS['s1_veto'] = false;
 $GLOBALS['s1_widen'] = false;
+$GLOBALS['s1_cache_stuck'] = false;
 $GLOBALS['s1_reads'] = [];
 
 function maybe_serialize( mixed $value ): string {
@@ -41,7 +42,11 @@ function do_action( string $hook, mixed ...$args ): void {
 }
 function wp_cache_delete( string $key, string $group = '' ): bool {
     $GLOBALS['s1_hooks'][] = 'cache:' . $group . '/' . $key;
-    return true;
+    return ! $GLOBALS['s1_cache_stuck'];
+}
+function wp_cache_get( string $key, string $group = '', bool $force = false, ?bool &$found = null ): mixed {
+    $found = (bool) $GLOBALS['s1_cache_stuck'];
+    return $found ? 'stale-cached-value' : false;
 }
 final class SettingsFakeDb {
     public string $options = 'wp_options';
@@ -122,6 +127,7 @@ function s1_reset(): void {
     $GLOBALS['s1_hooks'] = [];
     $GLOBALS['s1_veto'] = false;
     $GLOBALS['s1_widen'] = false;
+    $GLOBALS['s1_cache_stuck'] = false;
 }
 $wpdb = new SettingsFakeDb();
 $initial = [
@@ -244,5 +250,17 @@ $result = OptionCas::write( $projected, $changed );
 s1_assert( 'saved' === $result['status'], 'default-backed leaf update saved' );
 s1_assert( [ 'reports' => [ 'retention_days' => 60 ] ] === $wpdb->value(), 'untouched defaults not written to storage' );
 s1_assert( [ 'reports' => [ 'retention_days' => 60 ] ] === SettingsProjectionStub::$committed, 'post-commit observer sees committed raw state' );
+
+// A DB write is not a success when cache invalidation leaves a stale item.
+$wpdb->rows = [];
+$wpdb->seed( $initial );
+SettingsProjectionStub::$defaults = [];
+s1_reset();
+$GLOBALS['s1_cache_stuck'] = true;
+$result = OptionCas::write( $initial, $first );
+s1_assert( 'uncertain' === $result['status'], 'cache-stuck write refuses success' );
+s1_assert( 60 === $wpdb->value()['reports']['retention_days'], 'DB update may already be durable despite uncertain cache' );
+s1_assert( ! in_array( 'action:updated_option', $GLOBALS['s1_hooks'], true ), 'cache-stuck write emits no postcommit success hook' );
+s1_reset();
 
 echo "Core Blueprint Settings A2.4-S1 standalone CAS/refusal/no-op regression PASS\n";
