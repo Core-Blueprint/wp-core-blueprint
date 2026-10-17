@@ -79,6 +79,17 @@ final class PermissionsSection extends ExactSection {
 	public function apply( array $incoming, string $actor ): void {
 		$incoming = $this->normalize( $incoming );
 		if ( $this->export() === $incoming ) {
+			if ( ! Settings::matches_paths( [
+				'permissions.hide_from_admins' => $incoming['hide_from_admins'],
+				'permissions.privileged_access_mode' => $incoming['privileged_access_mode'],
+				'reports.admin_can_generate.maintenance' => $incoming['admin_capabilities']['reports_generate_maintenance'],
+				'integrity.admin_can_run' => $incoming['admin_capabilities']['integrity_run'],
+				'permissions.email_alerts.role_change' => $incoming['email_alerts']['role_change'],
+				'permissions.email_alerts.operator_guard_triggered' => $incoming['email_alerts']['operator_guard_triggered'],
+				'permissions.email_alerts.privileged_review' => $incoming['email_alerts']['privileged_review'],
+			] ) ) {
+				throw new \RuntimeException( __( 'Could not apply the Permissions profile policy.', 'core-blueprint' ) );
+			}
 			return;
 		}
 		// One option CAS across all three policy groups. The unrepresented
