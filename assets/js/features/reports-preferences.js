@@ -123,6 +123,24 @@ if ( FORM ) {
 	} );
 
 	let composer = normalizeClientTemplate( data.composer || {} );
+	let serverRevision = String( FORM.dataset.revision || '' );
+	let saveInFlight = false;
+	let saveUncertain = false;
+	let brandingBaseline = null;
+	const validRevision = ( value ) => value === 'legacy'
+		|| ( typeof value === 'string' && /^(0|[1-9][0-9]*)$/.test( value ) );
+	const brandSignature = ( input ) => JSON.stringify( {
+		logo_attachment_id: Number( input?.logo_attachment_id || 0 ),
+		show_logo: input?.show_logo === true || input?.show_logo === '1',
+		provider_name: String( input?.provider_name || '' ),
+		provider_contact: String( input?.provider_contact || '' ),
+		accent_color: String( input?.accent_color || '' ).toLowerCase(),
+		surface_style: String( input?.surface_style || 'cards' ),
+		density: String( input?.density || 'comfortable' ),
+		corner_style: String( input?.corner_style || 'soft' ),
+		text_scale: String( input?.text_scale || 'standard' ),
+	} );
+
 	const composerSchemaVersion = composer.schema_version;
 	const elementTypes = Object.keys( blockLabels ).length
 		? Object.keys( blockLabels )
@@ -538,89 +556,138 @@ if ( FORM ) {
 		schedulePreview();
 	} );
 
+
+	const saveReceipt = ( response, submitted, reset = false ) => {
+		const payload = response?.data;
+		const doc = payload?.document;
+		if ( response?.success !== true || !doc
+			|| !validRevision( payload?.revision )
+			|| !doc?.branding || !doc?.composer?.maintenance
+			|| ( serverRevision !== 'legacy' && payload.revision === 'legacy' ) ) {
+			throw new Error( 'Reports server acknowledgement is incomplete. Reload to verify.' );
+		}
+		if ( ! reset && (
+			brandSignature( doc.branding ) !== brandSignature( submitted.branding )
+			|| JSON.stringify( doc.composer.maintenance ) !== JSON.stringify( submitted.composer )
+		) ) {
+			throw new Error( 'Reports save response differs from the submitted state. Reload to verify.' );
+		}
+		// Only the Base session may reconcile Designer history. Existing and
+		// in-flight Undo/Redo must survive, or rebase rejects the acknowledgement.
+		session.rebase( {
+			saveToken: submitted.checkpoint.token,
+			baselineProject: projectFromComposer( doc.composer.maintenance ),
+		} );
+		serverRevision = payload.revision;
+		brandingBaseline = brandSignature( doc.branding );
+		return doc;
+	};
+
+	const captureRequest = () => {
+		if ( saveInFlight || saveUncertain || !validRevision( serverRevision ) ) {
+			throw new Error( 'Reports save requires a fresh verified editor revision.' );
+		}
+		const checkpoint = session.captureSave();
+		const branding = brandingPayload();
+		const composerSnapshot = composerFromProject( checkpoint.submittedProject, composerSchemaVersion );
+		return Object.freeze( {
+			checkpoint,
+			branding: Object.freeze( branding ),
+			composer: composerSnapshot,
+			revision: serverRevision,
+		} );
+	};
+
 	saveBtn?.addEventListener( 'click', async () => {
 		if ( ! nonce ) {
 			setSaveState( 'error' );
 			setPreviewState( i18n.reportsNonceMissing || 'Nonce missing - reload the page.', 'error' );
 			return;
 		}
-
 		const hex = colorHexEl?.value || colorEl?.value || '';
 		if ( ! /^#[0-9a-fA-F]{6}$/.test( hex ) ) {
 			setSaveState( 'error' );
-			setPreviewState( i18n.brandingInvalidHex || 'Hex colour must be in #RRGGBB form.', 'error' );
+			setPreviewState( i18n.brandingInvalidHex || 'Invalid accent colour.', 'error' );
 			return;
 		}
-
+		let submitted;
+		try {
+			submitted = captureRequest();
+		} catch ( error ) {
+			setSaveState( 'error' );
+			setPreviewState( error.message, 'error' );
+			return;
+		}
+		saveInFlight = true;
 		setSaveState( 'saving' );
 		saveBtn.disabled = true;
 		if ( resetBtn ) resetBtn.disabled = true;
-
 		try {
-			const response = await apiPost( 'cb_core_save_report_branding', nonce, reportsPayload() );
-			if ( ! response?.success ) {
-				setSaveState( 'error' );
-				setPreviewState( response?.data?.message || i18n.saveFailedShort || 'Save failed.', 'error' );
-				return;
-			}
-
-			applyBranding( response.data || {} );
-			applyComposer( response.data?.template );
+			const response = await apiPost( 'cb_core_save_report_branding', nonce, {
+				...submitted.branding,
+				template: JSON.stringify( submitted.composer ),
+				expected_revision: submitted.revision,
+			} );
+			saveReceipt( response, submitted );
 			setSaveState( 'saved' );
 			await renderPreview();
 		} catch ( error ) {
+			// A failed or lost response may still follow a committed server write.
+			saveUncertain = true;
 			setSaveState( 'error' );
-			setPreviewState( requestErrorMessage( error, i18n.saveFailedShort || 'Save failed.' ), 'error' );
+			setPreviewState( requestErrorMessage( error, 'Reports save outcome requires a reload.' ), 'error' );
 		} finally {
+			saveInFlight = false;
 			saveBtn.disabled = false;
 			if ( resetBtn ) resetBtn.disabled = false;
 		}
 	} );
 
 	resetBtn?.addEventListener( 'click', async () => {
-		if ( ! nonce ) {
-			setSaveState( 'error' );
-			setPreviewState( i18n.reportsNonceMissing || 'Nonce missing - reload the page.', 'error' );
-			return;
-		}
-
+		if ( ! nonce || saveInFlight || saveUncertain ) return;
 		const modal = window.cbCore?.modal;
 		if ( typeof modal?.show !== 'function' ) return;
-
 		const confirmed = await modal.show( {
 			title: i18n.brandingConfirmResetTitle || 'Reset report settings?',
-			body: i18n.brandingConfirmReset || 'Logo, report provider details, accent colour, and report layout will be reset to defaults.',
+			body: i18n.brandingConfirmReset || 'Restore Reports design defaults?',
 			confirmLabel: i18n.brandingConfirmResetConfirm || 'Reset to defaults',
 			confirmVariant: 'danger',
 		} );
-
 		if ( ! confirmed ) return;
-
+		let submitted;
+		try {
+			submitted = captureRequest();
+		} catch ( error ) {
+			setSaveState( 'error' );
+			setPreviewState( error.message, 'error' );
+			return;
+		}
+		saveInFlight = true;
 		setSaveState( 'saving' );
 		resetBtn.disabled = true;
-		saveBtn.disabled = true;
-
+		if ( saveBtn ) saveBtn.disabled = true;
 		try {
-			const response = await apiPost( 'cb_core_reset_report_branding', nonce, {} );
-			if ( ! response?.success ) {
-				setSaveState( 'error' );
-				setPreviewState( response?.data?.message || i18n.saveFailedShort || 'Save failed.', 'error' );
-				return;
+			const response = await apiPost( 'cb_core_reset_report_branding', nonce, {
+				expected_revision: submitted.revision,
+			} );
+			const currentBranding = brandSignature( brandingPayload() );
+			const doc = saveReceipt( response, submitted, true );
+			// Only update form inputs if the operator made no newer changes.
+			if ( brandSignature( submitted.branding ) === currentBranding ) {
+				applyBranding( { ...doc.branding, logo_url: response.data?.logo_url || '' } );
 			}
-
-			applyBranding( response.data || {} );
-			applyComposer( response.data?.template );
 			setSaveState( 'saved' );
 			await renderPreview();
 		} catch ( error ) {
+			saveUncertain = true;
 			setSaveState( 'error' );
-			setPreviewState( requestErrorMessage( error, i18n.saveFailedShort || 'Save failed.' ), 'error' );
+			setPreviewState( requestErrorMessage( error, 'Reports reset requires reload to reconcile history.' ), 'error' );
 		} finally {
+			saveInFlight = false;
 			resetBtn.disabled = false;
-			saveBtn.disabled = false;
+			if ( saveBtn ) saveBtn.disabled = false;
 		}
 	} );
-
 	shell?.addEventListener( 'cb:design-shell:fullscreenchange', ( event ) => {
 		if ( event.detail?.fullscreen === true ) schedulePreview();
 	} );
