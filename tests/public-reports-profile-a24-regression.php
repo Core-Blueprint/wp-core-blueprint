@@ -145,6 +145,112 @@ namespace CoreBlueprint\Core\Profiles {
     }
 }
 namespace {
+    /**
+     * Fake transactional SQL store with two independent row identities.
+     * Only the exact prepared queries emitted by the production source pass.
+     */
+    final class S2FakeDb {
+        public string $options = 'wp_options';
+        public string $last_error = '';
+        public bool $fail_document = false;
+        public bool $fail_commit = false;
+        public bool $in_transaction = false;
+        public mixed $before_lock = null;
+        public int $option_writes = 0;
+        public int $document_writes = 0;
+        private array $statements = [];
+        private ?array $backup = null;
+        public function prepare( string $sql, mixed ...$args ): string {
+            $key = 'stmt-' . count( $this->statements );
+            $this->statements[$key] = [ $sql, $args ];
+            return $key;
+        }
+        public function get_var( string $sql ): string {
+            if ( 'SELECT @@in_transaction' !== $sql ) { throw new \RuntimeException( 'Unexpected transaction probe' ); }
+            return $this->in_transaction ? '1' : '0';
+        }
+        public function get_row( string $sql, mixed $output = null ): ?array {
+            [ $query, $args ] = $this->statements[$sql] ?? [ $sql, [] ];
+            if ( str_contains( $query, 'information_schema.TABLES' ) ) { return [ 'engine' => 'InnoDB' ]; }
+            if ( str_contains( $query, 'FROM %i' ) && ( $args[0] ?? null ) === $this->options ) {
+                $row = \CoreBlueprint\Core\Settings\OptionCas::$row;
+                return [
+                    'option_name' => CB_CORE_SETTINGS,
+                    'option_value' => $row['raw'],
+                    'autoload' => $row['autoload'],
+                ];
+            }
+            if ( str_contains( $query, 'FROM %i' )
+                && ( $args[0] ?? null ) === \CoreBlueprint\Core\Design\Document\Schema::table_name() ) {
+                $row = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record;
+                return [
+                    'identity_hash' => hash( 'sha256', \CoreBlueprint\Core\Design\Document\Repository::REPORTS . "\0" . 'maintenance' ),
+                    'document_type' => \CoreBlueprint\Core\Design\Document\Repository::REPORTS,
+                    'document_key' => 'maintenance',
+                    'payload_schema' => 1,
+                    'revision' => $row['revision'],
+                    'document_json' => json_encode( [ 'branding' => $row['branding'], 'composer' => [ 'maintenance' => $row['composer'] ] ] ),
+                ];
+            }
+            throw new \RuntimeException( 'Unexpected S2 read query' );
+        }
+        public function query( string $sql ): int|false {
+            if ( 'START TRANSACTION' === $sql ) {
+                if ( $this->in_transaction ) { return false; }
+                if ( is_callable( $this->before_lock ) ) {
+                    $callback = $this->before_lock;
+                    $this->before_lock = null;
+                    $callback();
+                }
+                $this->backup = [
+                    \CoreBlueprint\Core\Settings\OptionCas::$row,
+                    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record,
+                ];
+                $this->in_transaction = true;
+                return 0;
+            }
+            if ( 'ROLLBACK' === $sql ) {
+                if ( ! $this->in_transaction ) { return false; }
+                \CoreBlueprint\Core\Settings\OptionCas::$row = $this->backup[0];
+                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = $this->backup[1];
+                $this->in_transaction = false;
+                $this->backup = null;
+                return 0;
+            }
+            if ( 'COMMIT' === $sql ) {
+                if ( $this->fail_commit ) { return false; }
+                $this->backup = null;
+                $this->in_transaction = false;
+                return 0;
+            }
+            if ( ! isset( $this->statements[$sql] ) || ! $this->in_transaction ) {
+                throw new \RuntimeException( 'Unexpected S2 SQL or transaction ownership' );
+            }
+            [ $query, $args ] = $this->statements[$sql];
+            if ( str_contains( $query, 'SET option_value = %s' ) ) {
+                [ $table, $raw, $name, $old, $autoload ] = $args;
+                $row = &\CoreBlueprint\Core\Settings\OptionCas::$row;
+                if ( $row['raw'] !== $old || $row['autoload'] !== $autoload ) { return 0; }
+                $row['raw'] = $raw;
+                $row['value'] = unserialize( $raw, [ 'allowed_classes' => false ] );
+                $this->option_writes++;
+                return 1;
+            }
+            if ( str_contains( $query, 'SET document_json = %s' ) ) {
+                if ( $this->fail_document ) { return false; }
+                $before = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record;
+                if ( $before['revision'] !== $args[6] ) { return 0; }
+                $next = json_decode( $args[1], true, 128, JSON_THROW_ON_ERROR );
+                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'] = (string) ( (int) $before['revision'] + 1 );
+                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding'] = $next['branding'];
+                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['composer'] = $next['composer']['maintenance'];
+                $this->document_writes++;
+                return 1;
+            }
+            throw new \RuntimeException( 'Unexpected S2 update query' );
+        }
+    }
+
     require_once dirname( __DIR__ ) . '/src/Profiles/VersionGuardedSectionInterface.php';
     require_once dirname( __DIR__ ) . '/src/Profiles/Sections/ReportsSection.php';
     require_once dirname( __DIR__ ) . '/src/Profiles/ReportsProfileTransaction.php';
