@@ -71,6 +71,7 @@ namespace CoreBlueprint\Core\Reports\Composer {
 }
 namespace CoreBlueprint\Core\Reports {
     final class DesignDocumentAdapter {
+        public const KEY = 'maintenance';
         public static array $record = [
             'revision' => '9007199254740993',
             'branding' => [
