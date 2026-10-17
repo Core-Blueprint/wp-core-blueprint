@@ -583,7 +583,9 @@ final class LoginShield {
 			'block_response_code'  => self::normalize_response_code( $incoming['block_response_code'] ?? self::RESPONSE_CODE_404 ),
 		];
 
-		Settings::set_key( self::SETTINGS_KEY, $normalised, $actor );
+		if ( $previous !== $normalised && ! Settings::set_key( self::SETTINGS_KEY, $normalised, $actor ) ) {
+			throw new \RuntimeException( 'Login Shield configuration could not be committed.' );
+		}
 
 		if ( class_exists( AuditLog::class ) ) {
 			$was_enabled = ! empty( $previous['enabled'] );
