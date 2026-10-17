@@ -34,6 +34,7 @@ class CheckEntrypointTest(unittest.TestCase):
         write('tests/public-core-scanner-threat-regression.php')
         write('tests/public-core-scanner-ui-regression.php')
         write('tests/public-design-document-storage-regression.php')
+        write('tests/public-design-document-migration-regression.php')
         write('tests/python/fixture.py')
         write('tests/js/fixture.test.mjs')
         write('assets/js/editor.js')
@@ -80,6 +81,7 @@ class CheckEntrypointTest(unittest.TestCase):
                 'php|tests/public-core-scanner-threat-regression.php',
                 'php|tests/public-core-scanner-ui-regression.php',
                 'php|tests/public-design-document-storage-regression.php',
+                'php|tests/public-design-document-migration-regression.php',
             ],
             [c for c in commands if c.startswith('php|tests/public-')],
         )
@@ -143,6 +145,19 @@ class CheckEntrypointTest(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertIn('required source check missing', result.stderr)
         self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_missing_migration_regression_fails_closed(self):
+        (self.root / 'tests/public-design-document-migration-regression.php').unlink()
+        result = self.run_check()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn('required source check missing', result.stderr)
+        self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_migration_regression_failure_stops_before_javascript(self):
+        result = self.run_check('php|tests/public-design-document-migration-regression.php')
+        self.assertEqual(23, result.returncode)
+        self.assertFalse(any(x.startswith('node|') for x in self.trace_lines()))
+        self.assertNotIn('Level 1 checks: PASS', result.stdout)
 
     def test_design_document_regression_failure_stops_before_javascript(self):
         result = self.run_check('php|tests/public-design-document-storage-regression.php')
