@@ -78,40 +78,25 @@ final class PermissionsSection extends ExactSection {
 
 	public function apply( array $incoming, string $actor ): void {
 		$incoming = $this->normalize( $incoming );
-		$settings = Settings::get();
-		$permissions = is_array( $settings['permissions'] ?? null ) ? $settings['permissions'] : [];
-		$permissions['hide_from_admins'] = $incoming['hide_from_admins'];
-		$permissions['privileged_access_mode'] = $incoming['privileged_access_mode'];
-		$permissions['email_alerts'] = array_merge( is_array( $permissions['email_alerts'] ?? null ) ? $permissions['email_alerts'] : [], $incoming['email_alerts'] );
-		Settings::set_key( 'permissions', $permissions, $actor );
-		$verified = $this->export();
-		if (
-			$verified['hide_from_admins'] !== $incoming['hide_from_admins']
-			|| $verified['privileged_access_mode'] !== $incoming['privileged_access_mode']
-			|| $verified['email_alerts'] !== $incoming['email_alerts']
-		) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
-			throw new \RuntimeException( __( 'Could not apply the Permissions profile policy.', 'core-blueprint' ) );
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+		if ( $this->export() === $incoming ) {
+			return;
 		}
-
-		$reports = is_array( Settings::get()['reports'] ?? null ) ? Settings::get()['reports'] : [];
-		$reports['admin_can_generate'] = is_array( $reports['admin_can_generate'] ?? null ) ? $reports['admin_can_generate'] : [];
-		$reports['admin_can_generate']['maintenance'] = $incoming['admin_capabilities']['reports_generate_maintenance'];
-		Settings::set_key( 'reports', $reports, $actor );
-		if ( $this->export()['admin_capabilities']['reports_generate_maintenance'] !== $incoming['admin_capabilities']['reports_generate_maintenance'] ) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
-			throw new \RuntimeException( __( 'Could not apply the Permissions profile policy.', 'core-blueprint' ) );
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+		// One option CAS across all three policy groups. The unrepresented
+		// sibling fields remain outside this Profile's write intent.
+		$changes = [
+			'permissions.hide_from_admins' => $incoming['hide_from_admins'],
+			'permissions.privileged_access_mode' => $incoming['privileged_access_mode'],
+			'reports.admin_can_generate.maintenance' => $incoming['admin_capabilities']['reports_generate_maintenance'],
+			'integrity.admin_can_run' => $incoming['admin_capabilities']['integrity_run'],
+		];
+		foreach ( $incoming['email_alerts'] as $key => $enabled ) {
+			$changes[ 'permissions.email_alerts.' . $key ] = $enabled;
 		}
-
-		$integrity = is_array( Settings::get()['integrity'] ?? null ) ? Settings::get()['integrity'] : [];
-		$integrity['admin_can_run'] = $incoming['admin_capabilities']['integrity_run'];
-		Settings::set_key( 'integrity', $integrity, $actor );
-		if ( $this->export()['admin_capabilities']['integrity_run'] !== $incoming['admin_capabilities']['integrity_run'] ) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
+		if ( ! Settings::set_paths( $changes, $actor ) || $this->export() !== $incoming ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output.
 			throw new \RuntimeException( __( 'Could not apply the Permissions profile policy.', 'core-blueprint' ) );
 			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
+
 }
