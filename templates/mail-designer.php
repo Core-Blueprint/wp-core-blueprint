@@ -53,6 +53,7 @@ foreach ( (array) $templates as $definition ) {
 			data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
 			data-preview-nonce="<?php echo esc_attr( wp_create_nonce( 'cb_core_mail_designer_preview' ) ); ?>"
 			data-template-id="<?php echo esc_attr( $template_id ); ?>"
+			data-revision="<?php echo esc_attr( (string) ( $current_template['revision'] ?? '' ) ); ?>"
 		>
 			<section class="cb-core-panel cb-core-mail-designer__context" data-cb-design-launch-context aria-label="<?php esc_attr_e( 'Mail template context', 'core-blueprint' ); ?>">
 				<div class="cb-core-mail-designer__template-control cb-core-field" data-cb-design-shell-context>
@@ -85,6 +86,7 @@ foreach ( (array) $templates as $definition ) {
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cb-core-mail-designer__form" data-cb-mail-designer-form>
 					<input type="hidden" name="action" value="cb_core_mail_template_save" />
 					<input type="hidden" name="template_id" value="<?php echo esc_attr( $template_id ); ?>" />
+					<input type="hidden" name="expected_revision" value="<?php echo esc_attr( (string) ( $current_template['revision'] ?? '' ) ); ?>" data-cb-mail-revision />
 					<?php wp_nonce_field( 'cb_core_mail_template_save' ); ?>
 					<textarea name="project_json" data-cb-mail-project hidden><?php echo esc_textarea( $project_json ); ?></textarea>
 					<textarea data-cb-mail-components hidden><?php echo esc_textarea( $components_json ); ?></textarea>
@@ -182,6 +184,7 @@ foreach ( (array) $templates as $definition ) {
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cb-core-mail-designer__reset-form">
 						<input type="hidden" name="action" value="cb_core_mail_template_reset" />
 						<input type="hidden" name="template_id" value="<?php echo esc_attr( $template_id ); ?>" />
+						<input type="hidden" name="expected_revision" value="<?php echo esc_attr( (string) ( $current_template['revision'] ?? '' ) ); ?>" data-cb-mail-revision />
 						<?php wp_nonce_field( 'cb_core_mail_template_reset' ); ?>
 						<button type="submit" class="button cb-core-button"><?php esc_html_e( 'Reset to provider default', 'core-blueprint' ); ?></button>
 					</form>
