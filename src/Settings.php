@@ -223,6 +223,7 @@ final class Settings {
 
 	public static function apply_recommended_defaults( string $actor = 'unknown' ): void {
 		$settings = self::get();
+		$original = $settings;
 		$shield   = self::shield_enabled();
 		$mode     = self::effective_hardening_mode();
 
@@ -244,9 +245,14 @@ final class Settings {
 			}
 		}
 
-		$saved = self::persist( $settings );
+		if ( $settings === $original ) {
+			return;
+		}
+		if ( ! self::persist( $settings ) ) {
+			throw new \RuntimeException( 'Recommended Base Settings could not be persisted.' );
+		}
 
-		if ( $saved && class_exists( AuditLog::class ) ) {
+		if ( class_exists( AuditLog::class ) ) {
 			AuditLog::log( 'settings.defaults_applied', 'notice', [
 				'shield' => $shield ? 'on' : 'off',
 				'mode'   => $mode,
