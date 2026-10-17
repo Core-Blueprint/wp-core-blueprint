@@ -351,8 +351,20 @@ final class Core {
 
 		Failsafe::ensure_token();
 
-		if ( ! get_option( CB_CORE_SETTINGS, false ) ) {
-			update_option( CB_CORE_SETTINGS, Settings::defaults(), true );
+		// Falsey, invalid existing settings are NOT proof of a missing row.
+		// Initialization is create-once and never overwrites existing state.
+		$settings_row = \CoreBlueprint\Core\Settings\OptionCas::read();
+		if ( 'missing' === $settings_row['status'] ) {
+			$initial = Settings::defaults();
+			if ( ! add_option( CB_CORE_SETTINGS, $initial, '', true ) ) {
+				throw new \RuntimeException( 'Base Settings initialization could not be verified.' );
+			}
+			$created = \CoreBlueprint\Core\Settings\OptionCas::read();
+			if ( 'ok' !== $created['status'] || $created['value'] !== $initial ) {
+				throw new \RuntimeException( 'Base Settings initialization readback failed.' );
+			}
+		} elseif ( 'ok' !== $settings_row['status'] ) {
+			throw new \RuntimeException( 'Existing Base Settings require operator review.' );
 		}
 
 		// Core Setup origin is authoritative only at the activation boundary.
