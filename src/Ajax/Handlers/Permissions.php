@@ -177,6 +177,9 @@ final class Permissions {
 		$before = ! empty( $permissions['hide_from_admins'] );
 		$permissions['hide_from_admins'] = $enabled;
 		if ( $before === $enabled ) {
+			if ( ! Settings::matches_paths( [ 'permissions.hide_from_admins' => $enabled ] ) ) {
+				wp_send_json_error( [ 'code' => 'settings_stale_noop' ], 409 );
+			}
 			wp_send_json_success( [ 'hide_active' => $enabled, 'changed' => false ] );
 		}
 		if ( ! Settings::set_paths( [ 'permissions.hide_from_admins' => $enabled ], 'permissions.tab' ) ) {
@@ -208,6 +211,12 @@ final class Permissions {
 		$before_reports = (bool) ( $settings['reports']['admin_can_generate']['maintenance'] ?? false );
 		$before_integrity = (bool) ( $settings['integrity']['admin_can_run'] ?? false );
 		if ( $before_reports === $reports_enabled && $before_integrity === $integrity_enabled ) {
+			if ( ! Settings::matches_paths( [
+				'reports.admin_can_generate.maintenance' => $reports_enabled,
+				'integrity.admin_can_run' => $integrity_enabled,
+			] ) ) {
+				wp_send_json_error( [ 'code' => 'settings_stale_noop' ], 409 );
+			}
 			wp_send_json_success( [
 				'admin_can_generate_maintenance' => $reports_enabled,
 				'admin_can_run_integrity' => $integrity_enabled,
