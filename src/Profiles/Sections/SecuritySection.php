@@ -178,8 +178,8 @@ final class SecuritySection extends ExactSection {
 
 		foreach ( $incoming['core_modules'] as $slug => $config ) {
 			if ( ! Settings::set_module_enabled( $slug, (bool) $config['enabled'], $actor ) ) {
-				$stored = Settings::get()['modules'][ $slug ]['enabled'] ?? null;
-				if ( (bool) $stored !== (bool) $config['enabled'] ) {
+				if ( 'unchanged' !== Settings::last_write_status()
+					|| ! Settings::matches_paths( [ 'modules.' . $slug . '.enabled' => (bool) $config['enabled'] ] ) ) {
 					// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 					throw new \RuntimeException( __( 'Could not apply a Core Shield module state.', 'core-blueprint' ) );
 					// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
@@ -187,8 +187,8 @@ final class SecuritySection extends ExactSection {
 			}
 			foreach ( $config['features'] as $feature => $enabled ) {
 				if ( ! Settings::set_feature_enabled( $slug, $feature, (bool) $enabled, $actor ) ) {
-					$stored = Settings::get()['modules'][ $slug ]['features'][ $feature ] ?? null;
-					if ( (bool) $stored !== (bool) $enabled ) {
+					if ( 'unchanged' !== Settings::last_write_status()
+						|| ! Settings::matches_paths( [ 'modules.' . $slug . '.features.' . $feature => (bool) $enabled ] ) ) {
 						// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 						throw new \RuntimeException( __( 'Could not apply a Core Shield feature state.', 'core-blueprint' ) );
 						// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
