@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Reports;
 
 use CoreBlueprint\Core\Design\Document\Repository;
+use CoreBlueprint\Core\Design\Document\Authority;
+use CoreBlueprint\Core\Settings;
 use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
 
 defined( 'ABSPATH' ) || exit;
@@ -14,6 +16,40 @@ defined( 'ABSPATH' ) || exit;
  */
 final class DesignDocumentAdapter {
 	public const KEY = 'maintenance';
+
+	/**
+	 * Read the single authoritative live Reports design. Active errors are not
+	 * translated into defaults. This is shared by Designer and PDF callers.
+	 * @return array<string,mixed>
+	 */
+	public static function current(): array {
+		$authority = Authority::inspect();
+		if ( 'active' === $authority['status'] ) {
+			$read = self::read();
+			if ( 'found' !== $read['status'] ) {
+				throw new \\RuntimeException( 'Reports canonical document is unavailable.' );
+			}
+			return [
+				'authority' => 'active',
+				'revision' => $read['revision'],
+				'branding' => $read['document']['branding'],
+				'composer' => $read['document']['composer']['maintenance'],
+			];
+		}
+		if ( ! in_array( $authority['status'], [ 'legacy', 'prepared' ], true ) ) {
+			throw new \\RuntimeException( 'Reports document authority is blocked.' );
+		}
+		$settings = Settings::get();
+		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
+		$branding = $reports['branding'] ?? [];
+		$composer = $reports['composer']['maintenance'] ?? [];
+		return [
+			'authority' => $authority['status'],
+			'revision' => 'legacy',
+			'branding' => is_array( $branding ) ? $branding : [],
+			'composer' => is_array( $composer ) ? $composer : [],
+		];
+	}
 
 	/** @return array<string,mixed> */
 	public static function read(): array {
