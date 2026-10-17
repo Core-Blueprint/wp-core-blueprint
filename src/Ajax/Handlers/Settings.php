@@ -85,6 +85,18 @@ final class Settings {
 		if ( $expected_change && [] === $changed ) {
 			wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
 		}
+		if ( ! $expected_change ) {
+			$expected_modules = [];
+			foreach ( \CoreBlueprint\Core\Security\ModuleRegistry::all() as $registered ) {
+				$expected_modules[ 'modules.' . $registered->slug() . '.enabled' ] = $enabled;
+			}
+			foreach ( $previous as $slug => $state ) {
+				$expected_modules[ 'modules.' . $slug . '.enabled' ] = $enabled;
+			}
+			if ( [] !== $expected_modules && ! CoreSettings::matches_paths( $expected_modules ) ) {
+				wp_send_json_error( [ 'code' => 'settings_stale_noop' ], 409 );
+			}
+		}
 
 		wp_send_json_success( [
 			'enabled' => $enabled,
