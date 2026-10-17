@@ -52,6 +52,9 @@ namespace {
 			if ( str_contains( $sql, 'SELECT option_name, option_value' ) ) {
 				return $this->options_by_site[$args[0]][$args[1]] ?? null;
 			}
+			if ( str_contains( $sql, 'information_schema.TABLES' ) ) {
+				return [ 'engine' => 'InnoDB' ];
+			}
 			throw new \RuntimeException( 'Unexpected get_row SQL.' );
 		}
 		public function get_var( string $query ): mixed {
@@ -64,6 +67,12 @@ namespace {
 		}
 		public function get_results( string $query, mixed $mode = null ): array {
 			[ $sql, $args ] = $this->parts( $query );
+			if ( str_contains( $sql, 'information_schema.STATISTICS' ) ) {
+				return [
+					[ 'index_name' => 'option_name', 'non_unique' => 0,
+						'seq' => 1, 'column_name' => 'option_name', 'sub_part' => null ],
+				];
+			}
 			if ( str_contains( $sql, 'SELECT identity_hash, document_type' ) ) {
 				return array_values( array_map(
 					static fn ( array $row ): array => [
