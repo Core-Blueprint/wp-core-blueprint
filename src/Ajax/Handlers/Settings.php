@@ -51,6 +51,9 @@ final class Settings {
 				wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
 			}
 		}
+		if ( $before === $enabled && ! CoreSettings::matches_paths( [ 'modules.' . $module . '.enabled' => $enabled ] ) ) {
+			wp_send_json_error( [ 'code' => 'settings_stale_noop' ], 409 );
+		}
 		wp_send_json_success( [ 'changed' => $before !== $enabled ] );
 	}
 
@@ -105,6 +108,9 @@ final class Settings {
 			if ( ! CoreSettings::set_feature_enabled( $module, $feature, $enabled, 'admin:' . $user->user_login ) ) {
 				wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
 			}
+		}
+		if ( $before === $enabled && ! CoreSettings::matches_paths( [ 'modules.' . $module . '.features.' . $feature => $enabled ] ) ) {
+			wp_send_json_error( [ 'code' => 'settings_stale_noop' ], 409 );
 		}
 		wp_send_json_success( [ 'changed' => $before !== $enabled ] );
 	}
@@ -185,6 +191,9 @@ final class Settings {
 				wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
 			}
 		}
+		if ( $before === $enabled && ! CoreSettings::matches_paths( [ $group . '.email_alerts.' . $alert_key => $enabled ] ) ) {
+			wp_send_json_error( [ 'code' => 'settings_stale_noop' ], 409 );
+		}
 		wp_send_json_success( [ 'changed' => $before !== $enabled ] );
 	}
 
@@ -254,6 +263,9 @@ final class Settings {
 			if ( ! CoreSettings::set_key( $group, $settings[ $group ], 'admin:' . $user->user_login ) ) {
 				wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
 			}
+		}
+		if ( $before === $clean && ! CoreSettings::matches_paths( [ $group . '.email_recipient' => $clean ] ) ) {
+			wp_send_json_error( [ 'code' => 'settings_stale_noop' ], 409 );
 		}
 		wp_send_json_success( [
 			'group'     => $group,
