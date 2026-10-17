@@ -122,7 +122,9 @@ namespace CoreBlueprint\Core\Profiles {
     }
 }
 namespace {
+    require_once dirname( __DIR__ ) . '/src/Profiles/VersionGuardedSectionInterface.php';
     require_once dirname( __DIR__ ) . '/src/Profiles/Sections/ReportsSection.php';
+    require_once dirname( __DIR__ ) . '/src/Profiles/ReportsProfileTransaction.php';
 
     function s2_assert( bool $pass, string $label ): void {
         if ( ! $pass ) { throw new \RuntimeException( 'A2.4-S2 Reports Profile: ' . $label ); }
@@ -140,6 +142,31 @@ namespace {
     // READ-ONLY preview. It must not activate mutation/import.
     $section->preflight( $incoming, $current );
     s2_assert( $section->export() === $current, 'active read-only preflight leaves state unchanged' );
+    $witness = $section->version_witness();
+    s2_assert(
+        '9007199254740993' === $witness['document_revision'],
+        'decimal revision above JavaScript safe integer is never rounded'
+    );
+
+    // Test the real isolated transaction's pure preparation boundary, not
+    // a fake second document writer. Unrepresented fields remain identical.
+    $desired = $incoming;
+    $desired['retention_days'] = 900;
+    $desired['email_alerts']['generation_failed'] = true;
+    $desired['branding']['provider_name'] = 'new';
+    $document = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::read()['document'];
+    $stage = \CoreBlueprint\Core\Profiles\ReportsProfileTransaction::staged(
+        \CoreBlueprint\Core\Settings::$values, $document, $desired
+    );
+    s2_assert( 'ok' === $stage['status'], 'canonical Reports section stages safely' );
+    s2_assert( 900 === $stage['settings']['reports']['retention_days'], 'represented retention staged' );
+    s2_assert( true === $stage['settings']['reports']['email_alerts']['generation_failed'], 'represented alert staged' );
+    s2_assert( true === $stage['settings']['reports']['email_alerts']['other'], 'other alert preserved' );
+    s2_assert( 420 === $stage['settings']['reports']['branding']['legacy_logo_id'], 'legacy branding preserved' );
+    s2_assert( 'new' === $stage['document']['branding']['provider_name'], 'represented canonical branding staged' );
+    s2_assert( false === $stage['document']['branding']['show_logo'], 'unrepresented show_logo preserved' );
+    s2_assert( 'comfortable' === $stage['document']['branding']['density'], 'unrepresented presentation preserved' );
+    s2_assert( '9007199254740993' === $section->version_witness()['document_revision'], 'stage is read-only' );
     $blocked = false;
     try { $section->apply( $incoming, 'source-test' ); }
     catch ( \RuntimeException $e ) { $blocked = true; }
