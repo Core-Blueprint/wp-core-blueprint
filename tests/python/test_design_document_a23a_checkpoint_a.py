@@ -21,7 +21,7 @@ class A23aCheckpointASourceContract(unittest.TestCase):
         cls.reports = REPORTS.read_text(encoding="utf-8")
 
     def test_authority_does_not_mutate_or_auto_activate(self):
-        source = self.authority
+        source = re.sub(r"//[^\\n]*", "", self.authority)
         self.assertIn("cb_core_design_docs_cutover", source)
         self.assertIn("Migration::PREPARED_OPTION", source)
         self.assertIn("MigrationInventory::read_option", source)
@@ -75,10 +75,7 @@ class A23aCheckpointASourceContract(unittest.TestCase):
             "Repository::reset( Repository::MAIL",
             "Repository::valid_revision(",
             "new Validator()",
-            "TemplateRegistry",
         ):
-            if requirement == "TemplateRegistry":
-                continue
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, self.mail)
         self.assertNotIn("update_option(", self.mail)
