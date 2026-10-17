@@ -15,6 +15,7 @@ $GLOBALS['s1_hooks'] = [];
 $GLOBALS['s1_veto'] = false;
 $GLOBALS['s1_widen'] = false;
 $GLOBALS['s1_cache_stuck'] = false;
+$GLOBALS['s1_in_intent_filter'] = null;
 $GLOBALS['s1_reads'] = [];
 
 function maybe_serialize( mixed $value ): string {
@@ -34,6 +35,14 @@ function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed {
     }
     if ( 'pre_update_option_cb_core_settings' === $hook && $GLOBALS['s1_widen'] ) {
         $value['unrelated'] = 'hook-widened';
+    }
+    if ( 'pre_update_option_cb_core_settings' === $hook && 'partial_revert' === $GLOBALS['s1_in_intent_filter'] ) {
+        // One of two approved leaves is silently restored to the stored value.
+        $value['reports']['email_alerts']['failure'] = false;
+    }
+    if ( 'pre_update_option_cb_core_settings' === $hook && 'partial_transform' === $GLOBALS['s1_in_intent_filter'] ) {
+        // A filter alters an intended leaf to an unrequested third value.
+        $value['reports']['retention_days'] = 75;
     }
     return $value;
 }
@@ -128,6 +137,7 @@ function s1_reset(): void {
     $GLOBALS['s1_veto'] = false;
     $GLOBALS['s1_widen'] = false;
     $GLOBALS['s1_cache_stuck'] = false;
+    $GLOBALS['s1_in_intent_filter'] = null;
 }
 $wpdb = new SettingsFakeDb();
 $initial = [
@@ -250,6 +260,31 @@ $result = OptionCas::write( $projected, $changed );
 s1_assert( 'saved' === $result['status'], 'default-backed leaf update saved' );
 s1_assert( [ 'reports' => [ 'retention_days' => 60 ] ] === $wpdb->value(), 'untouched defaults not written to storage' );
 s1_assert( [ 'reports' => [ 'retention_days' => 60 ] ] === SettingsProjectionStub::$committed, 'post-commit observer sees committed raw state' );
+
+// P0 Overseer A2.4-S1: all requested multi-leaf end values must survive
+// WordPress pre-update filters. A partial in-intent rewrite must be refused
+// BEFORE SQL or transition success hooks. This test is intentionally RED
+// against the pinned unpatched CAS until separate source-fix authorization.
+$wpdb->rows = [];
+$wpdb->seed( $initial );
+SettingsProjectionStub::$defaults = [];
+$two_leaf_target = $initial;
+$two_leaf_target['reports']['retention_days'] = 60;
+$two_leaf_target['reports']['email_alerts']['failure'] = true;
+foreach ( [ 'partial_revert', 'partial_transform' ] as $filter_scenario ) {
+    $wpdb->rows = [];
+    $wpdb->seed( $initial );
+    s1_reset();
+    $GLOBALS['s1_in_intent_filter'] = $filter_scenario;
+    $writes_before = $wpdb->writes;
+    $outcome = OptionCas::write( $initial, $two_leaf_target );
+    s1_assert( 'refused' === $outcome['status'], 'partial in-intent filter must be refused: ' . $filter_scenario );
+    s1_assert( $writes_before === $wpdb->writes, 'partial filter must never reach SQL: ' . $filter_scenario );
+    s1_assert( $initial === $wpdb->value(), 'partial filter must not durably change any leaf: ' . $filter_scenario );
+    s1_assert( ! in_array( 'action:update_option', $GLOBALS['s1_hooks'], true ), 'partial filter no prewrite action: ' . $filter_scenario );
+    s1_assert( ! in_array( 'action:updated_option', $GLOBALS['s1_hooks'], true ), 'partial filter no postwrite success: ' . $filter_scenario );
+}
+s1_reset();
 
 // A DB write is not a success when cache invalidation leaves a stale item.
 $wpdb->rows = [];
