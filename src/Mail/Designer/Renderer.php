@@ -35,7 +35,8 @@ final class Renderer {
 				$bindings
 			);
 		} catch ( \Throwable $exception ) {
-			error_log( sprintf( 'CB Mail Designer [%s]: %s', sanitize_key( str_replace( '.', '-', $template_id ) ), $exception->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- render failure diagnostic, no message body/context.
+			// The caller owns the safe failure policy. Never log raw render
+			// exceptions: provider data may include tokens or message content.
 			return null;
 		}
 	}
