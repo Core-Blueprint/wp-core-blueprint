@@ -23,6 +23,8 @@ namespace {
 		public array $docs_by_site = [];
 		public bool $fail_marker_insert = false;
 		public bool $fail_commit = false;
+		public string $options_engine = 'InnoDB';
+		public bool $unique_option_name = true;
 		public mixed $after_start = null;
 		public bool $active = false;
 		private array $statements = [];
@@ -53,7 +55,7 @@ namespace {
 				return $this->options_by_site[$args[0]][$args[1]] ?? null;
 			}
 			if ( str_contains( $sql, 'information_schema.TABLES' ) ) {
-				return [ 'engine' => 'InnoDB' ];
+				return [ 'engine' => $this->options_engine ];
 			}
 			throw new \RuntimeException( 'Unexpected get_row SQL.' );
 		}
@@ -69,7 +71,7 @@ namespace {
 			[ $sql, $args ] = $this->parts( $query );
 			if ( str_contains( $sql, 'information_schema.STATISTICS' ) ) {
 				return [
-					[ 'index_name' => 'option_name', 'non_unique' => 0,
+					[ 'index_name' => 'option_name', 'non_unique' => $this->unique_option_name ? 0 : 1,
 						'seq' => 1, 'column_name' => 'option_name', 'sub_part' => null ],
 				];
 			}
@@ -311,6 +313,45 @@ namespace {
 	migration_check( 'prepared' === Migration::prepare()['status'], 'fresh installation default-only preparation' );
 	migration_check( count( $wpdb->docs_by_site['wp_6_cb_design_documents'] ) === 1, 'new site seeds only Reports singleton' );
 	migration_check( 'prepared' === Migration::freshness()['status'], 'fresh site verified' );
+
+
+	$wpdb->switch_blog( 7 );
+	$wpdb->put_option( 'cb_core_mail_template_overrides', $mail );
+	$wpdb->put_option( 'cb_core_settings', $settings );
+	$wpdb->docs_by_site['wp_7_cb_design_documents'][hash( 'sha256', Repository::MAIL . "\0active.template" )] = [
+		'identity_hash' => hash( 'sha256', Repository::MAIL . "\0active.template" ),
+		'type' => Repository::MAIL, 'key' => 'active.template',
+		'revision' => '9', 'document' => [ 'subject' => 'unowned', 'project' => [ 'root' => [] ] ],
+	];
+	migration_check( 'conflict' === Migration::prepare()['status'], 'unexpected existing target rejected' );
+	migration_check( ! isset( $wpdb->options_by_site['wp_7_options'][Migration::PREPARED_OPTION] ), 'conflicting target never records prepared' );
+
+	$wpdb->switch_blog( 8 );
+	$wpdb->put_option( 'cb_core_mail_template_overrides', $mail );
+	$wpdb->put_option( 'cb_core_settings', $settings );
+	$inventory8 = MigrationInventory::inspect();
+	migration_check( 'ready' === MigrationBackup::ensure( $inventory8 )['status'], 'backup creation' );
+	$wpdb->options_by_site['wp_8_options'][MigrationBackup::OPTION]['option_value'] .= 'TAMPER';
+	migration_check( 'corrupt' === MigrationBackup::read_verified()['status'], 'tampered snapshot rejected' );
+	migration_check( 'corrupt' === Migration::prepare()['status'], 'corrupt backup blocks prepare' );
+
+	$wpdb->switch_blog( 9 );
+	$wpdb->put_option( 'cb_core_mail_template_overrides', $mail );
+	$wpdb->put_option( 'cb_core_settings', $settings );
+	$wpdb->options_engine = 'MyISAM';
+	migration_check( 'unavailable' === MigrationInventory::inspect()['status'], 'nontransactional legacy options blocked' );
+	$wpdb->options_engine = 'InnoDB';
+	$wpdb->unique_option_name = false;
+	migration_check( 'unavailable' === MigrationInventory::inspect()['status'], 'broken option identity blocked' );
+	$wpdb->unique_option_name = true;
+
+	$wpdb->switch_blog( 10 );
+	$wpdb->put_option( 'cb_core_mail_template_overrides', $mail );
+	$wpdb->put_option( 'cb_core_settings', $settings );
+	$wpdb->fail_commit = true;
+	migration_check( 'uncertain' === Migration::prepare()['status'], 'unknown commit outcome never reports PASS' );
+	$wpdb->fail_commit = false;
+	migration_check( 'prepared' === Migration::prepare()['status'], 'later verified full receipt can reconcile uncertain commit' );
 
 	echo "Base Design Document source-only migration regression: PASS\n";
 }
