@@ -51,13 +51,15 @@ final class Admin {
 			? 'admin:' . $user->user_login
 			: 'admin:unknown';
 
-		Settings::set_key(
+		$changed = Settings::set_key(
 			Governance::POLICY_KEY,
 			[ Governance::PROTECT_SEARCH_INDEXING => $protect ],
 			$actor
 		);
-
-		$saved = Governance::policy()[ Governance::PROTECT_SEARCH_INDEXING ] === $protect;
+		$saved = ( $changed || 'unchanged' === Settings::last_write_status() )
+			&& Settings::matches_paths( [
+				Governance::POLICY_KEY . '.' . Governance::PROTECT_SEARCH_INDEXING => $protect,
+			] );
 		$url   = add_query_arg(
 			[
 				'page'              => CoreAdmin::SAFEGUARDS_SLUG,
