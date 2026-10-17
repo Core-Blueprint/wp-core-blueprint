@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Mail\Admin;
 
 use CoreBlueprint\Core\Mail\Designer\Renderer;
+use CoreBlueprint\Core\Mail\Designer\DocumentUnavailable;
 use CoreBlueprint\Core\Mail\Designer\TemplateRegistry;
 use CoreBlueprint\Core\Mail\Designer\TemplateRepository;
 use CoreBlueprint\Core\Mail\DesignerState;
@@ -27,7 +28,11 @@ final class DesignerAjax {
 		self::guard();
 
 		$template_id = self::template_id();
-		$template    = TemplateRepository::get( $template_id );
+		try {
+			$template = TemplateRepository::get( $template_id );
+		} catch ( DocumentUnavailable $error ) {
+			wp_send_json_error( [ 'message' => __( 'Mail document storage requires operator attention.', 'core-blueprint' ) ], 503 );
+		}
 		if ( null === $template ) {
 			wp_send_json_error( [ 'message' => __( 'Unknown mail template.', 'core-blueprint' ) ], 404 );
 		}
@@ -38,7 +43,11 @@ final class DesignerAjax {
 			wp_send_json_error( [ 'message' => __( 'The selected mail template is incomplete.', 'core-blueprint' ) ], 422 );
 		}
 
-		$preview = Renderer::preview( $template_id, $project, $subject );
+		try {
+			$preview = Renderer::preview( $template_id, $project, $subject );
+		} catch ( DocumentUnavailable $error ) {
+			wp_send_json_error( [ 'message' => __( 'Mail document storage requires operator attention.', 'core-blueprint' ) ], 503 );
+		}
 		if ( null === $preview ) {
 			wp_send_json_error( [ 'message' => __( 'The mail preview could not be rendered.', 'core-blueprint' ) ], 422 );
 		}
@@ -50,6 +59,8 @@ final class DesignerAjax {
 				'project'     => $project,
 				'html'        => $preview['html'],
 				'customized'  => ! empty( $template['customized'] ),
+				'revision' => (string) ( $template['revision'] ?? '' ),
+				'authority' => (string) ( $template['authority'] ?? '' ),
 			],
 			200,
 			JSON_INVALID_UTF8_SUBSTITUTE
