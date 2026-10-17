@@ -16,6 +16,7 @@ namespace CoreBlueprint\Core;
 use CoreBlueprint\Core\Log\AuditLog;
 use CoreBlueprint\Core\Security\AccessMode;
 use CoreBlueprint\Core\Security\ModuleRegistry;
+use CoreBlueprint\Core\Settings\OptionCas;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -243,9 +244,9 @@ final class Settings {
 			}
 		}
 
-		self::persist( $settings );
+		$saved = self::persist( $settings );
 
-		if ( class_exists( AuditLog::class ) ) {
+		if ( $saved && class_exists( AuditLog::class ) ) {
 			AuditLog::log( 'settings.defaults_applied', 'notice', [
 				'shield' => $shield ? 'on' : 'off',
 				'mode'   => $mode,
@@ -295,19 +296,17 @@ final class Settings {
 		}
 	}
 
-	/** Persist the full Base settings document and synchronize the local cache. */
+	/** Persist changed-path intent; never replay a stale whole-document snapshot. */
 	private static function persist( array $settings ): bool {
-		$result = update_option( CB_CORE_SETTINGS, $settings, true );
-		if ( $result ) {
-			self::$cached = self::deep_merge( self::defaults(), $settings );
-			return true;
+		$expected = self::get();
+		$outcome  = OptionCas::write( $expected, $settings );
+		// A rejected save cannot certify a previously cached request snapshot.
+		self::$cached = null;
+		if ( 'saved' !== ( $outcome['status'] ?? '' ) ) {
+			return false;
 		}
-
-		$stored = get_option( CB_CORE_SETTINGS, null );
-		if ( is_array( $stored ) && $stored === $settings ) {
-			self::$cached = self::deep_merge( self::defaults(), $settings );
-		}
-		return false;
+		self::$cached = self::deep_merge( self::defaults(), $outcome['after'] );
+		return true;
 	}
 
 	private static function deep_merge( array $defaults, array $override ): array {
