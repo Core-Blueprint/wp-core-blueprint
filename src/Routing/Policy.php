@@ -47,9 +47,14 @@ final class Policy {
 		$policy = self::get();
 		$policy[ self::CLEAN_ARCHIVE_URLS ] = $enabled;
 
-		Settings::set_key( self::SETTINGS_KEY, $policy, $actor );
+		$saved = Settings::set_key( self::SETTINGS_KEY, $policy, $actor );
+		if ( ! $saved && 'unchanged' !== Settings::last_write_status() ) {
+			return false;
+		}
 
-		return self::enabled() === $enabled;
+		return Settings::matches_paths( [
+			self::SETTINGS_KEY . '.' . self::CLEAN_ARCHIVE_URLS => $enabled,
+		] );
 	}
 
 	private function __construct() {}
