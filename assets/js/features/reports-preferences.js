@@ -123,6 +123,7 @@ if ( FORM ) {
 	} );
 
 	let composer = normalizeClientTemplate( data.composer || {} );
+	let syncDirtyIndicator = () => {};
 	let serverRevision = String( FORM.dataset.revision || '' );
 	let saveInFlight = false;
 	let saveUncertain = false;
@@ -216,6 +217,7 @@ if ( FORM ) {
 			renderComposerControls();
 			syncPreviewSelection();
 			schedulePreview();
+			syncDirtyIndicator();
 		},
 		allowCommand: ( command ) => {
 			if ( command?.label === 'remove-node' || command?.label === 'insert-node' ) return false;
@@ -422,7 +424,7 @@ if ( FORM ) {
 	dirtyIndicator.setAttribute( 'role', 'status' );
 	dirtyIndicator.textContent = 'Unsaved report design changes';
 	dirtyIndicator.hidden = true;
-	const syncDirtyIndicator = () => {
+	syncDirtyIndicator = () => {
 		const dirty = saveInFlight || saveUncertain
 			|| brandSignature( brandingPayload() ) !== brandingBaseline
 			|| JSON.stringify( session.snapshot() ) !== JSON.stringify( session.baselineSnapshot() );
