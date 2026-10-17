@@ -81,8 +81,11 @@ if (root) {
 	let inlineEditor = null;
 	let previewPending = false;
 	let persistedFingerprint = null;
-	let pendingSaveFingerprint = null;
 	let savePending = false;
+	let saveUncertain = false;
+	let serverRevision = String(root.dataset.revision || '');
+	let contextEpoch = 0;
+	let activeSave = null;
 
 	const currentFingerprint = () => JSON.stringify([
 		templateId,
@@ -91,7 +94,7 @@ if (root) {
 	]);
 	const hasUnsavedChanges = () => (
 		Boolean(inlineEditor?.isEditing())
-		|| savePending
+		|| savePending || saveUncertain
 		|| (persistedFingerprint !== null && currentFingerprint() !== persistedFingerprint)
 	);
 	const dirtyIndicator = document.createElement('span');
@@ -600,7 +603,7 @@ if (root) {
 		const selection = resolveTemplateSelection(selectionValue);
 		if (!selection.templateId) throw new Error('The selected mail template is invalid.');
 		if (!ajaxUrl || !nonce) throw new Error('Mail Designer context switching is unavailable.');
-		if (savePending) throw new Error('Wait for the current save to finish before switching templates.');
+		if (savePending || saveUncertain) throw new Error('Resolve the current save outcome before switching templates.');
 		if (selection.templateId === templateId) return { templateId, customized: false };
 		if (hasUnsavedChanges()) {
 			if (!window.confirm('This mail template has unsaved changes. Discard them and switch templates?')) {
@@ -632,6 +635,7 @@ if (root) {
 			|| !payload?.success
 			|| !data
 			|| typeof data.template_id !== 'string'
+			|| typeof data.revision !== 'string'
 			|| typeof data.subject !== 'string'
 			|| typeof data.html !== 'string'
 			|| !data.project
@@ -643,6 +647,8 @@ if (root) {
 		if (savePending || inlineEditor?.isEditing() || currentFingerprint() !== originalFingerprint) {
 			throw new Error('The current template changed while another template was loading. Switch cancelled.');
 		}
+		++contextEpoch;
+		serverRevision = data.revision;
 		templateId = data.template_id;
 		root.dataset.templateId = templateId;
 		templateIdFields.forEach((field) => { field.value = templateId; });
@@ -764,19 +770,70 @@ if (root) {
 		selectionController?.destroy();
 		session.dispose();
 	}, { once: true });
+
+	const fingerprintOf = (id, subject, project) => JSON.stringify([id, subject, project]);
+	const validRevision = (revision) => revision === 'legacy'
+		|| (typeof revision === 'string' && /^(0|[1-9][0-9]*)$/.test(revision));
+
+	root.addEventListener('cb:mail:savecapture', (event) => {
+		if (savePending || saveUncertain || activeSave || !validRevision(serverRevision)) return;
+		if (!finishActiveText()) return;
+		const checkpoint = session.captureSave();
+		const captured = Object.freeze({
+			checkpoint,
+			templateId,
+			revision: serverRevision,
+			epoch: contextEpoch,
+			subject: subjectField.value,
+		});
+		activeSave = captured;
+		event.detail?.accept?.(captured);
+	});
+
+	root.addEventListener('cb:mail:saveack', (event) => {
+		const captured = event.detail?.captured;
+		const data = event.detail?.data;
+		const acknowledged = data?.document;
+		if (!captured || activeSave !== captured || captured.epoch !== contextEpoch
+			|| captured.templateId !== templateId || captured.revision !== serverRevision
+			|| data?.template_id !== templateId || !validRevision(data?.revision)
+			|| !acknowledged || acknowledged.subject !== captured.subject
+			|| JSON.stringify(acknowledged.project) !== JSON.stringify(captured.checkpoint.submittedProject)
+			|| (captured.revision !== 'legacy' && data.revision === 'legacy')) {
+			return;
+		}
+		// Rebase touches only the accepted baseline and keeps independent Undo/Redo.
+		// An unsafe normalized replay raises a guarded error; never discard edits.
+		try {
+			session.rebase({
+				saveToken: captured.checkpoint.token,
+				baselineProject: acknowledged.project,
+			});
+		} catch (error) {
+			saveUncertain = true;
+			setPreviewStatus('Server saved, but editor history requires a reload. Your edits remain intact.', true);
+			return;
+		}
+		serverRevision = data.revision;
+		persistedFingerprint = fingerprintOf(templateId, acknowledged.subject, acknowledged.project);
+		activeSave = null;
+		event.detail.accept?.();
+		syncDirtyIndicator();
+	});
+
+	root.addEventListener('cb:mail:savefailed', (event) => {
+		if (activeSave === event.detail?.captured) {
+			// The server might have committed even if the response was lost.
+			saveUncertain = true;
+			activeSave = null;
+		}
+		syncDirtyIndicator();
+	});
+
 	shellRoot.addEventListener('cb:design-shell:savechange', (event) => {
 		const state = String(event.detail?.state || '');
-		if (state === 'saving') {
-			pendingSaveFingerprint = currentFingerprint();
-			savePending = true;
-		} else if (state === 'saved') {
-			if (pendingSaveFingerprint !== null) persistedFingerprint = pendingSaveFingerprint;
-			pendingSaveFingerprint = null;
-			savePending = false;
-		} else if (state === 'error') {
-			pendingSaveFingerprint = null;
-			savePending = false;
-		}
+		if (state === 'saving') savePending = true;
+		if (state === 'saved' || state === 'error') savePending = false;
 		syncDirtyIndicator();
 	});
 	subjectField.addEventListener('input', syncDirtyIndicator);
