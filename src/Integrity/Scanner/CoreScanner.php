@@ -603,12 +603,20 @@ final class CoreScanner {
 			$integrity['distribution_locale_detected'] = $detection['detected'];
 			$integrity['distribution_locale_mode']     = 'auto';
 
-			Settings::set_key( 'integrity', $integrity, 'integrity_scan' );
+			if ( ! Settings::set_paths( [
+				'integrity.distribution_locale_meta' => $integrity['distribution_locale_meta'],
+				'integrity.distribution_locale_detected' => $detection['detected'],
+				'integrity.distribution_locale_mode' => 'auto',
+			], 'integrity_scan' ) ) {
+				throw new \RuntimeException( 'Core Scanner locale detection could not be persisted.' );
+			}
 			do_action( 'core_blueprint_integrity_locale_detected', $detection['detected'], $detection );
 			return;
 		}
 
-		Settings::set_key( 'integrity', $integrity, 'integrity_scan' );
+		if ( ! Settings::set_paths( [ 'integrity.distribution_locale_meta' => $integrity['distribution_locale_meta'] ], 'integrity_scan' ) ) {
+			throw new \RuntimeException( 'Core Scanner locale detection could not be persisted.' );
+		}
 		do_action( 'core_blueprint_integrity_locale_detection_inconclusive', $detection );
 	}
 
