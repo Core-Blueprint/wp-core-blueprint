@@ -25,12 +25,15 @@ final class CoreShieldState implements ModuleStateInterface {
 	}
 
 	public static function set_enabled( bool $enabled, string $actor = 'unknown' ): void {
-		if ( self::is_enabled() === $enabled ) {
+		$was = self::is_enabled();
+		if ( $was === $enabled && Settings::matches_paths( [ 'shield_enabled' => $enabled ] ) ) {
 			return;
 		}
 
-		Settings::set_shield_enabled( $enabled, $actor );
-		if ( self::is_enabled() !== $enabled ) {
+		// A cached no-op that is not durable must be rejected, not retried
+		// using a snapshot that another worker has already invalidated.
+		$saved = $was !== $enabled && Settings::set_shield_enabled( $enabled, $actor );
+		if ( ! $saved || ! Settings::matches_paths( [ 'shield_enabled' => $enabled ] ) ) {
 			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Could not update Core Shield.', 'core-blueprint' ) );
 			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
