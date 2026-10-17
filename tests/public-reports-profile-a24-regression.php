@@ -178,6 +178,7 @@ namespace {
         public string $last_error = '';
         public bool $fail_document = false;
         public bool $fail_commit = false;
+        public bool $fail_rollback = false;
         public bool $in_transaction = false;
         public mixed $before_lock = null;
         public int $option_writes = 0;
@@ -234,7 +235,7 @@ namespace {
                 return 0;
             }
             if ( 'ROLLBACK' === $sql ) {
-                if ( ! $this->in_transaction ) { return false; }
+                if ( ! $this->in_transaction || $this->fail_rollback ) { return false; }
                 \CoreBlueprint\Core\Settings\OptionCas::$row = $this->backup[0];
                 \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = $this->backup[1];
                 $this->in_transaction = false;
@@ -385,6 +386,13 @@ namespace {
     s2_assert( $after_settings === \CoreBlueprint\Core\Settings\OptionCas::$row, 'failed second write restores entire Settings row' );
     s2_assert( $after_document === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record, 'failed second write preserves canonical document and revision' );
     s2_assert( $actions_before + 1 === count( $GLOBALS['s2_actions'] ), 'failed transaction has prewrite only, not success hooks' );
+    // Failed rollback must never be misclassified as a safe failed write.
+    $wpdb->fail_rollback = true;
+    $rolled_uncertain = $transaction::apply_guarded( $second, $saved['witness'] );
+    s2_assert( 'recovery_required' === $rolled_uncertain['status'], 'failed rollback requires operator recovery' );
+    s2_assert( true === $wpdb->in_transaction, 'failed rollback cannot claim ownership release' );
+    $wpdb->fail_rollback = false;
+    s2_assert( false !== $wpdb->query( 'ROLLBACK' ), 'test harness cleans up failed rollback injection' );
     $wpdb->fail_document = false;
 
     $wpdb->fail_commit = true;
