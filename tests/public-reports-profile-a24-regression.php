@@ -109,6 +109,24 @@ namespace CoreBlueprint\Core\Profiles {
     final class CanonicalJson {
         public static function encode( array $array ): string { return json_encode( $array, JSON_THROW_ON_ERROR ); }
     }
+    final class Document {
+        public const FORMAT = 'core-blueprint-profile';
+        public const FORMAT_VERSION = 1;
+        public const MAX_CHANGES = 100;
+        public static function decode( string $json ): array { return json_decode( $json, true, 32, JSON_THROW_ON_ERROR ); }
+    }
+    final class SectionRegistry {
+        public static function all(): array {
+            return [ 'reports' => new \CoreBlueprint\Core\Profiles\Sections\ReportsSection() ];
+        }
+    }
+    final class ApplyLock {
+        public static int $acquisitions = 0;
+        public static function acquire( string $actor ): string {
+            self::$acquisitions++;
+            throw new \RuntimeException( 'Active Profile test must never acquire a lock' );
+        }
+    }
     final class SchemaGuard {
         public static function exact_keys( array $v, array $allowed, string $label ): void {
             if ( array_diff( array_keys( $v ), $allowed ) || array_diff( $allowed, array_keys( $v ) ) ) {
@@ -254,6 +272,7 @@ namespace {
     require_once dirname( __DIR__ ) . '/src/Profiles/VersionGuardedSectionInterface.php';
     require_once dirname( __DIR__ ) . '/src/Profiles/Sections/ReportsSection.php';
     require_once dirname( __DIR__ ) . '/src/Profiles/ReportsProfileTransaction.php';
+    require_once dirname( __DIR__ ) . '/src/Profiles/Engine.php';
 
     function s2_assert( bool $pass, string $label ): void {
         if ( ! $pass ) { throw new \RuntimeException( 'A2.4-S2 Reports Profile: ' . $label ); }
@@ -271,6 +290,24 @@ namespace {
     // READ-ONLY preview. It must not activate mutation/import.
     $section->preflight( $incoming, $current );
     s2_assert( $section->export() === $current, 'active read-only preflight leaves state unchanged' );
+    $profile_document = [
+        'format' => \CoreBlueprint\Core\Profiles\Document::FORMAT,
+        'format_version' => \CoreBlueprint\Core\Profiles\Document::FORMAT_VERSION,
+        'profile' => [ 'name' => 'Reports fixture', 'description' => '' ],
+        'sections' => [ 'reports' => [ 'schema_version' => 1, 'data' => $current ] ],
+    ];
+    $preview = \CoreBlueprint\Core\Profiles\Engine::preview( $profile_document );
+    s2_assert( isset( $preview['fingerprint'], $preview['witnesses']['reports'] ), 'preview binds opaque Reports revision' );
+    $before_revision = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'];
+    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'] = '9007199254740994';
+    $advanced = \CoreBlueprint\Core\Profiles\Engine::preview( $profile_document );
+    s2_assert( $preview['fingerprint'] !== $advanced['fingerprint'], 'same content at newer document revision invalidates preview' );
+    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'] = $before_revision;
+    $active_blocked = false;
+    try { \CoreBlueprint\Core\Profiles\Engine::apply( $profile_document, $preview['fingerprint'], 'fixture' ); }
+    catch ( \RuntimeException $error ) { $active_blocked = true; }
+    s2_assert( $active_blocked, 'Profiles Engine blocks active Reports apply' );
+    s2_assert( 0 === \CoreBlueprint\Core\Profiles\ApplyLock::$acquisitions, 'active apply blocked before mutation lock' );
     $witness = $section->version_witness();
     s2_assert(
         '9007199254740993' === $witness['document_revision'],
