@@ -13,7 +13,12 @@ namespace {
     function maybe_serialize( mixed $s ): string { return serialize( $s ); }
     function wp_json_encode( mixed $s, int $flags = 0 ): string|false { return json_encode( $s, $flags ); }
     function sanitize_option( string $name, mixed $value ): mixed { return $value; }
-    function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed { return $value; }
+    function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed {
+        if ( 'pre_update_option_cb_core_settings' === $hook && ! empty( $GLOBALS['s2_filter_rewrite'] ) ) {
+            $value['reports']['retention_days'] = 777;
+        }
+        return $value;
+    }
     function do_action( string $hook, mixed ...$args ): void { $GLOBALS['s2_actions'][] = $hook; }
     function wp_cache_delete( string $key, string $group = '' ): bool { return true; }
     function wp_cache_get( string $key, string $group = '', bool $force = false, ?bool &$found = null ): mixed {
@@ -22,6 +27,7 @@ namespace {
     define( 'CB_CORE_SETTINGS', 'cb_core_settings' );
     define( 'ARRAY_A', 'ARRAY_A' );
     $GLOBALS['s2_actions'] = [];
+    $GLOBALS['s2_filter_rewrite'] = false;
 }
 namespace CoreBlueprint\Core {
     final class Settings {
@@ -365,6 +371,13 @@ namespace {
     $second = $desired;
     $second['retention_days'] = 901;
     $second['branding']['provider_name'] = 'second';
+    // Native prefilter attempted rewrite may never partially confirm Reports.
+    $GLOBALS['s2_filter_rewrite'] = true;
+    $prefiltered = $transaction::apply_guarded( $second, $saved['witness'] );
+    s2_assert( 'refused' === $prefiltered['status'], 'partial native prefilter rewrite refused before SQL' );
+    s2_assert( $after_settings === \CoreBlueprint\Core\Settings\OptionCas::$row, 'prefilter refusal leaves Settings unchanged' );
+    s2_assert( $after_document === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record, 'prefilter refusal leaves document unchanged' );
+    $GLOBALS['s2_filter_rewrite'] = false;
     $wpdb->fail_document = true;
     $actions_before = count( $GLOBALS['s2_actions'] );
     $failed = $transaction::apply_guarded( $second, $saved['witness'] );
@@ -400,6 +413,9 @@ namespace {
     s2_assert( 'conflict' === $race['status'], 'cross-row prelock race refused' );
     s2_assert( false === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'], 'independent writer survives conflict' );
     s2_assert( $after_document === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record, 'cross-row conflict preserves doc' );
+    $reverse = $transaction::reverse_guarded( $current, $saved['witness'] );
+    s2_assert( 'conflict' === $reverse['status'], 'reverse CAS refuses post-apply state changed by another writer' );
+    s2_assert( false === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'], 'reverse CAS cannot overwrite independent writer' );
 
     echo "Core Blueprint Base A2.4-S2 Reports Profile source-only regression PASS\n";
 }
