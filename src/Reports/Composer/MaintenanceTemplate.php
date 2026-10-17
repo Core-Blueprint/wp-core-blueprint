@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Reports\Composer;
 
-use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Reports\DesignDocumentAdapter;
 defined( 'ABSPATH' ) || exit;
 
 final class MaintenanceTemplate {
@@ -20,8 +20,7 @@ final class MaintenanceTemplate {
 
 	/** @return array{schema_version:int,blocks:list<array{id:string,type:string,enabled:bool,settings:array<string,mixed>}>} */
 	public static function current(): array {
-		$settings = Settings::get();
-		$raw      = $settings['reports']['composer']['maintenance'] ?? [];
+		$raw = DesignDocumentAdapter::current()['composer'];
 		return self::normalize( is_array( $raw ) ? $raw : [] );
 	}
 
