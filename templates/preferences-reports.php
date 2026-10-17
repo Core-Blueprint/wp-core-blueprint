@@ -81,6 +81,7 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 		<form
 			id="cb-core-branding-form"
 			data-nonce="<?php echo esc_attr( $nonce ); ?>"
+		data-revision="<?php echo esc_attr( (string) ( $design['revision'] ?? '' ) ); ?>"
 			data-cb-reports-designer
 		>
 			<div class="cb-core-design-shell" data-cb-design-shell hidden>
