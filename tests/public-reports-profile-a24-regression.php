@@ -127,6 +127,11 @@ namespace {
     function s2_assert( bool $pass, string $label ): void {
         if ( ! $pass ) { throw new \RuntimeException( 'A2.4-S2 Reports Profile: ' . $label ); }
     }
+    \CoreBlueprint\Core\Settings\OptionCas::$row = [
+        'status' => 'ok', 'raw' => serialize( \CoreBlueprint\Core\Settings::$values ),
+        'autoload' => 'on', 'table' => 'wp_options',
+        'value' => \CoreBlueprint\Core\Settings::$values,
+    ];
     $section = new \CoreBlueprint\Core\Profiles\Sections\ReportsSection();
     $current = $section->export();
     $incoming = $section->normalize( $current );
