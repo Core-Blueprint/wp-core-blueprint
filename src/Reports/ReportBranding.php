@@ -56,7 +56,7 @@ final class ReportBranding {
 	 * @return array<string,mixed>
 	 */
 	public static function current(): array {
-		$configured = Settings::get()['reports']['branding'] ?? [];
+		$configured = DesignDocumentAdapter::current()['branding'];
 		$configured = is_array( $configured ) ? $configured : [];
 		$fallback   = self::fallback();
 
@@ -113,7 +113,7 @@ final class ReportBranding {
 	 */
 	public static function for_pdf(): array {
 		$resolved   = self::current();
-		$configured = Settings::get()['reports']['branding'] ?? [];
+		$configured = DesignDocumentAdapter::current()['branding'];
 		$configured = is_array( $configured ) ? $configured : [];
 		$logo_id    = (int) ( $configured['logo_attachment_id'] ?? 0 );
 
