@@ -49,7 +49,12 @@ final class TemplateActions {
 		}
 
 		wp_send_json_success(
-			[ 'message' => $result['message'] ],
+			[
+				'message' => $result['message'],
+				'template_id' => $result['template_id'],
+				'revision' => $result['revision'],
+				'document' => $result['document'],
+			],
 			200,
 			JSON_INVALID_UTF8_SUBSTITUTE
 		);
@@ -58,8 +63,13 @@ final class TemplateActions {
 	public static function reset(): void {
 		self::guard( 'cb_core_mail_template_reset' );
 		$template_id = self::template_id();
-		if ( ! DesignerState::is_enabled() || ! TemplateRepository::reset( $template_id ) ) {
-			self::fail( __( 'The mail template could not be reset.', 'core-blueprint' ), $template_id );
+		$expected = isset( $_POST['expected_revision'] ) && is_string( $_POST['expected_revision'] )
+			? (string) wp_unslash( $_POST['expected_revision'] ) : '';
+		$result = DesignerState::is_enabled()
+			? TemplateRepository::reset_revisioned( $template_id, $expected )
+			: [ 'status' => 'blocked' ];
+		if ( 'saved' !== $result['status'] ) {
+			self::fail( __( 'The mail template could not be reset. Reload before trying again.', 'core-blueprint' ), $template_id );
 		}
 
 		AuditLog::log( 'mail_template_reset', 'warning', [ 'template_id' => $template_id ] );
@@ -67,37 +77,50 @@ final class TemplateActions {
 		self::redirect( $template_id );
 	}
 
-	/** @return array{success:bool,message:string,status:int} */
+	/** @return array<string,mixed> */
 	private static function persist( string $template_id ): array {
 		if ( ! DesignerState::is_enabled() || null === TemplateRegistry::get( $template_id ) ) {
-			return [
-				'success' => false,
-				'message' => __( 'Mail Designer is disabled or the template is unavailable.', 'core-blueprint' ),
-				'status'  => 409,
-			];
+			return self::error( 'invalid', __( 'Mail Designer is disabled or the template is unavailable.', 'core-blueprint' ) );
 		}
-
-		$subject = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
-		$json = isset( $_POST['project_json'] ) ? (string) wp_unslash( $_POST['project_json'] ) : '';
+		$subject = isset( $_POST['subject'] ) && is_string( $_POST['subject'] )
+			? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
+		$json = isset( $_POST['project_json'] ) && is_string( $_POST['project_json'] )
+			? (string) wp_unslash( $_POST['project_json'] ) : '';
+		$expected = isset( $_POST['expected_revision'] ) && is_string( $_POST['expected_revision'] )
+			? (string) wp_unslash( $_POST['expected_revision'] ) : '';
 		try {
 			$project = json_decode( $json, true, self::JSON_DEPTH, JSON_THROW_ON_ERROR );
-		} catch ( \JsonException $exception ) {
+		} catch ( \\JsonException $exception ) {
 			$project = null;
 		}
-
-		if ( ! is_array( $project ) || array_is_list( $project ) || ! TemplateRepository::save( $template_id, $subject, $project ) ) {
-			return [
-				'success' => false,
-				'message' => __( 'The mail template could not be saved. Review the design and try again.', 'core-blueprint' ),
-				'status'  => 422,
-			];
+		if ( ! is_array( $project ) || array_is_list( $project ) ) {
+			return self::error( 'invalid', __( 'The mail design is invalid.', 'core-blueprint' ) );
 		}
-
+		$result = TemplateRepository::mutate( $template_id, $expected, $subject, $project );
+		if ( 'saved' !== $result['status'] ) {
+			return self::error( (string) $result['status'], __( 'The mail template could not be saved. Reload if the document changed.', 'core-blueprint' ) );
+		}
+		$ack = $result['document'] ?? null;
+		if ( ! is_array( $ack ) || ! is_string( $result['revision'] ?? null )
+			|| ( $ack['subject'] ?? null ) !== $subject || ( $ack['project'] ?? null ) !== $project ) {
+			return self::error( 'uncertain', __( 'The mail template save could not be verified.', 'core-blueprint' ) );
+		}
 		AuditLog::log( 'mail_template_saved', 'notice', [ 'template_id' => $template_id ] );
 		return [
 			'success' => true,
+			'status' => 200,
 			'message' => __( 'Mail template saved.', 'core-blueprint' ),
-			'status'  => 200,
+			'template_id' => $template_id,
+			'revision' => $result['revision'],
+			'document' => [ 'subject' => $ack['subject'], 'project' => $ack['project'] ],
+		];
+	}
+
+	private static function error( string $reason, string $message ): array {
+		return [
+			'success' => false,
+			'status' => 'conflict' === $reason ? 409 : ( 'invalid' === $reason ? 422 : 503 ),
+			'message' => $message,
 		];
 	}
 
