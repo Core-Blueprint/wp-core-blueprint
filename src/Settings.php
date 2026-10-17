@@ -24,6 +24,7 @@ final class Settings {
 
 	/** Request-local merged settings cache. */
 	private static ?array $cached = null;
+	private static string $last_write_status = 'not_attempted';
 
 	/** Current public settings schema version. */
 	const SCHEMA_VERSION = 1;
@@ -59,6 +60,11 @@ final class Settings {
 	/** @internal Synchronize the request cache before post-commit option observers. */
 	public static function accept_cas( array $persisted ): void {
 		self::$cached = self::deep_merge( self::defaults(), $persisted );
+	}
+
+	/** @internal Last attempted source-level Settings write outcome. */
+	public static function last_write_status(): string {
+		return self::$last_write_status;
 	}
 
 	public static function site_mode(): string {
@@ -141,7 +147,11 @@ final class Settings {
 			$node[ $last ] = $value;
 			unset( $node );
 		}
-		if ( $before === $settings || ! self::persist( $settings ) ) {
+		if ( $before === $settings ) {
+			self::$last_write_status = 'unchanged';
+			return false;
+		}
+		if ( ! self::persist( $settings ) ) {
 			return false;
 		}
 		if ( class_exists( AuditLog::class ) ) {
@@ -355,6 +365,7 @@ final class Settings {
 	private static function persist( array $settings ): bool {
 		$expected = self::get();
 		$outcome  = OptionCas::write( $expected, $settings );
+		self::$last_write_status = (string) ( $outcome['status'] ?? 'failed' );
 		// A rejected save cannot certify a previously cached request snapshot.
 		self::$cached = null;
 		if ( 'saved' !== ( $outcome['status'] ?? '' ) ) {
