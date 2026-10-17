@@ -37,6 +37,7 @@ class CheckEntrypointTest(unittest.TestCase):
         write('tests/public-design-document-migration-regression.php')
         write('tests/public-design-document-consumer-adoption-regression.php')
         write('tests/public-settings-cas-regression.php')
+        write('tests/public-settings-consumer-regression.php')
         write('tests/python/fixture.py')
         write('tests/js/fixture.test.mjs')
         write('assets/js/editor.js')
@@ -86,6 +87,7 @@ class CheckEntrypointTest(unittest.TestCase):
                 'php|tests/public-design-document-migration-regression.php',
                 'php|tests/public-design-document-consumer-adoption-regression.php',
                 'php|tests/public-settings-cas-regression.php',
+                'php|tests/public-settings-consumer-regression.php',
             ],
             [c for c in commands if c.startswith('php|tests/public-')],
         )
@@ -141,6 +143,13 @@ class CheckEntrypointTest(unittest.TestCase):
         result = self.run_check()
         self.assertNotEqual(0, result.returncode)
         self.assertIn('required source check missing', result.stderr)
+        self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_missing_settings_consumer_regression_fails_closed(self):
+        (self.root / 'tests/public-settings-consumer-regression.php').unlink()
+        result = self.run_check()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn('required source check missing: tests/public-settings-consumer-regression.php', result.stderr)
         self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
 
     def test_missing_settings_cas_regression_fails_closed(self):
