@@ -25,7 +25,7 @@ final class MigrationInventory {
 	public static function inspect( bool $lock = false ): array {
 		global $wpdb;
 
-		if ( ! Schema::healthy() || ! self::valid_site() ) {
+		if ( ! Schema::healthy() || ! self::valid_site() || ! self::source_store_healthy() ) {
 			return [ 'status' => 'unavailable' ];
 		}
 
@@ -234,6 +234,44 @@ final class MigrationInventory {
 			return null;
 		}
 		return [ 'branding' => $branding, 'composer' => [ 'maintenance' => $maintenance ] ];
+	}
+
+
+	/**
+	 * Legacy wp_options participates in the migration transaction. Refuse a
+	 * nontransactional/missing options table or a broken option_name identity.
+	 */
+	private static function source_store_healthy(): bool {
+		global $wpdb;
+		$wpdb->last_error = '';
+		$table = $wpdb->get_row( $wpdb->prepare(
+			'SELECT ENGINE AS engine FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s LIMIT 1',
+			$wpdb->options
+		), ARRAY_A );
+		if ( ! is_array( $table ) || 'innodb' !== strtolower( (string) ( $table['engine'] ?? '' ) )
+			|| '' !== (string) $wpdb->last_error ) {
+			return false;
+		}
+		$indexes = $wpdb->get_results( $wpdb->prepare(
+			'SELECT INDEX_NAME AS index_name, NON_UNIQUE AS non_unique, SEQ_IN_INDEX AS seq, COLUMN_NAME AS column_name, SUB_PART AS sub_part FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+			$wpdb->options
+		), ARRAY_A );
+		if ( ! is_array( $indexes ) || '' !== (string) $wpdb->last_error ) {
+			return false;
+		}
+		$by_name = [];
+		foreach ( $indexes as $index ) {
+			$by_name[(string) ( $index['index_name'] ?? '' )][] = $index;
+		}
+		foreach ( $by_name as $parts ) {
+			if ( 1 === count( $parts ) && 1 === (int) ( $parts[0]['seq'] ?? 0 )
+				&& 0 === (int) ( $parts[0]['non_unique'] ?? 1 )
+				&& 'option_name' === ( $parts[0]['column_name'] ?? null )
+				&& null === ( $parts[0]['sub_part'] ?? null ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static function valid_site(): bool {
