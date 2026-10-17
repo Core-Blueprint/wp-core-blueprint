@@ -44,6 +44,10 @@ function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed {
         // A filter alters an intended leaf to an unrequested third value.
         $value['reports']['retention_days'] = 75;
     }
+    if ( 'pre_update_option' === $hook && 'generic_partial_revert' === $GLOBALS['s1_in_intent_filter'] ) {
+        // The second WordPress pre-update hook has the same exact-intent bound.
+        $value['reports']['email_alerts']['failure'] = false;
+    }
     return $value;
 }
 function do_action( string $hook, mixed ...$args ): void {
@@ -271,7 +275,7 @@ SettingsProjectionStub::$defaults = [];
 $two_leaf_target = $initial;
 $two_leaf_target['reports']['retention_days'] = 60;
 $two_leaf_target['reports']['email_alerts']['failure'] = true;
-foreach ( [ 'partial_revert', 'partial_transform' ] as $filter_scenario ) {
+foreach ( [ 'partial_revert', 'partial_transform', 'generic_partial_revert' ] as $filter_scenario ) {
     $wpdb->rows = [];
     $wpdb->seed( $initial );
     s1_reset();
@@ -284,6 +288,19 @@ foreach ( [ 'partial_revert', 'partial_transform' ] as $filter_scenario ) {
     s1_assert( ! in_array( 'action:update_option', $GLOBALS['s1_hooks'], true ), 'partial filter no prewrite action: ' . $filter_scenario );
     s1_assert( ! in_array( 'action:updated_option', $GLOBALS['s1_hooks'], true ), 'partial filter no postwrite success: ' . $filter_scenario );
 }
+// An unmodified two-leaf intent must still commit both values in one CAS.
+$wpdb->rows = [];
+$wpdb->seed( $initial );
+s1_reset();
+$writes_before = $wpdb->writes;
+$result = OptionCas::write( $initial, $two_leaf_target );
+s1_assert( 'saved' === $result['status'], 'complete two-leaf intent may be saved' );
+s1_assert( $writes_before + 1 === $wpdb->writes, 'complete intent uses one conditional SQL write' );
+s1_assert( 60 === $wpdb->value()['reports']['retention_days'], 'first requested leaf saved' );
+s1_assert( true === $wpdb->value()['reports']['email_alerts']['failure'], 'second requested leaf saved' );
+s1_assert( array_slice( $GLOBALS['s1_hooks'], -2 ) === [
+    'action:update_option_cb_core_settings', 'action:updated_option',
+], 'completed intent emits postcommit hooks only after a complete save' );
 s1_reset();
 
 // A DB write is not a success when cache invalidation leaves a stale item.
