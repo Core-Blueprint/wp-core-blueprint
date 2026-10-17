@@ -50,13 +50,19 @@ final class ReportsProfileTransaction {
      * @return array{status:string,settings?:array,document?:array}
      */
     public static function staged( array $stored_settings, array $stored_document, array $incoming ): array {
+        // Settings::get() projects defaults but the raw option may omit
+        // default-only nodes. Missing is valid; a present non-array is not.
         if ( ! DesignDocumentAdapter::valid_document( $stored_document )
-            || ! isset( $stored_settings['reports'] ) || ! is_array( $stored_settings['reports'] )
-            || ! isset( $stored_settings['reports']['email_alerts'] )
-            || ! is_array( $stored_settings['reports']['email_alerts'] ) ) {
+            || ( array_key_exists( 'reports', $stored_settings )
+                && ! is_array( $stored_settings['reports'] ) )
+            || ( isset( $stored_settings['reports'] )
+                && array_key_exists( 'email_alerts', $stored_settings['reports'] )
+                && ! is_array( $stored_settings['reports']['email_alerts'] ) ) ) {
             return [ 'status' => 'invalid' ];
         }
         $settings = $stored_settings;
+        $settings['reports'] ??= [];
+        $settings['reports']['email_alerts'] ??= [];
         $settings['reports']['retention_days'] = $incoming['retention_days'];
         $settings['reports']['email_alerts']['generation_failed'] = $incoming['email_alerts']['generation_failed'];
 
@@ -188,6 +194,26 @@ final class ReportsProfileTransaction {
             || (string) ( $locked_document['payload_schema'] ?? '' ) !== '1'
             || (string) ( $locked_document['revision'] ?? '' ) !== $revision_before ) {
             return self::abort( 'conflict', 'revision_mismatch' );
+        }
+
+        // Independent writers can update document_json without advancing the
+        // revision. Compare the locked payload to the EXACT document used
+        // for staging, not merely to the revision or the now-locked JSON that
+        // would otherwise become the later conditional UPDATE predicate.
+        // Strict decoded equivalence tolerates innocuous JSON whitespace
+        // without allowing any loss of unrepresented branding or Composer.
+        if ( ! is_string( $locked_document['document_json'] ?? null ) ) {
+            return self::abort( 'recovery_required', 'document_corrupt' );
+        }
+        try {
+            $locked_payload = json_decode(
+                $locked_document['document_json'], true, 128, JSON_THROW_ON_ERROR
+            );
+        } catch ( \JsonException $error ) {
+            return self::abort( 'recovery_required', 'document_corrupt' );
+        }
+        if ( $locked_payload !== $doc['document'] ) {
+            return self::abort( 'conflict', 'document_payload_mismatch' );
         }
 
         if ( $settings_changed ) {
