@@ -14,17 +14,21 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Mail\Designer;
 
 use CoreBlueprint\Core\Mail\DesignerState;
+use CoreBlueprint\Core\Design\Document\Authority;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 
 final class WordPressIntegration {
 	private static bool $booted = false;
+	private const DIAGNOSTIC_KEY = 'cb_core_mail_design_integrity_notice';
 
 	public static function boot(): void {
 		if ( self::$booted || ! DesignerState::is_enabled() ) {
 			return;
 		}
 		self::$booted = true;
+		add_action( 'admin_notices', [ __CLASS__, 'integrity_notice' ] );
 
 		add_filter( 'retrieve_password_notification_email', [ __CLASS__, 'password_reset' ], 20, 4 );
 		add_filter( 'wp_new_user_notification_email', [ __CLASS__, 'new_user' ], 20, 3 );
@@ -94,8 +98,19 @@ final class WordPressIntegration {
 
 	/** @param array<string,mixed> $email @param array<string,mixed> $context @return array<string,mixed> */
 	private static function apply_template( array $email, string $template_id, array $context ): array {
-		$rendered = Renderer::render( $template_id, $context );
-		if ( null === $rendered || '' === trim( $rendered['html'] ) || '' === trim( $rendered['subject'] ) ) {
+		try {
+			$rendered = Renderer::render( $template_id, $context );
+		} catch ( DocumentUnavailable $error ) {
+			self::record_integrity_fault( $error->reason );
+			// WordPress owns this security notification. Keep the *exact* array
+			// received from upstream WordPress/plugin filters, including all keys.
+			return $email;
+		}
+		if ( null === $rendered || '' === trim( $rendered['html'] )
+			|| '' === trim( $rendered['subject'] ) ) {
+			if ( in_array( Authority::inspect()['status'], [ 'active', 'blocked' ], true ) ) {
+				self::record_integrity_fault( 'render_invalid' );
+			}
 			return $email;
 		}
 
@@ -103,6 +118,43 @@ final class WordPressIntegration {
 		$email['message'] = $rendered['html'];
 		$email['headers'] = Renderer::html_headers( $email['headers'] ?? '' );
 		return $email;
+	}
+
+
+	/** One bounded diagnostic per site/time window. Never logs mail metadata. */
+	private static function record_integrity_fault( string $reason ): void {
+		$allowed = [ 'missing', 'blocked', 'corrupt', 'unavailable', 'error',
+			'invalid', 'uncertain', 'render_invalid' ];
+		$safe = in_array( $reason, $allowed, true ) ? $reason : 'blocked';
+		try {
+			if ( get_transient( self::DIAGNOSTIC_KEY ) ) {
+				return;
+			}
+			set_transient( self::DIAGNOSTIC_KEY, $safe, HOUR_IN_SECONDS );
+			AuditLog::log( 'mail.designer_integrity_fallback', 'warning', [
+				'reason_code' => $safe,
+			] );
+		} catch ( \\Throwable $ignored ) {
+			// Audit failures must not prevent WordPress from sending its own mail.
+		}
+	}
+
+	/** Visible only to authorized administrators; no recipients or keys shown. */
+	public static function integrity_notice(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		try {
+			$reason = get_transient( self::DIAGNOSTIC_KEY );
+		} catch ( \\Throwable $ignored ) {
+			return;
+		}
+		if ( ! is_string( $reason ) || '' === $reason ) {
+			return;
+		}
+		echo '<div class="notice notice-warning"><p>'
+			. esc_html__( 'Core Blueprint Mail Designer could not safely load a saved template. WordPress handled the original system notification unchanged. Review the Mail Designer storage before editing this template.', 'core-blueprint' )
+			. '</p></div>';
 	}
 
 	/** @return array<string,mixed> */
