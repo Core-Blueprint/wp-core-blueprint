@@ -41,15 +41,15 @@ final class Branding {
 		try {
 			$branding = self::normalized_request();
 			$template = self::normalized_template_request();
-		} catch ( \\InvalidArgumentException $error ) {
+		} catch ( \InvalidArgumentException $error ) {
 			wp_send_json_error( [ 'message' => __( 'The Reports design is invalid.', 'core-blueprint' ) ], 422 );
-		} catch ( \\Throwable $error ) {
+		} catch ( \Throwable $error ) {
 			wp_send_json_error( [ 'message' => __( 'Reports storage is unavailable.', 'core-blueprint' ) ], 503 );
 		}
 		$expected = self::expected_revision();
-		$authority = \\CoreBlueprint\\Core\\Design\\Document\\Authority::inspect();
+		$authority = \CoreBlueprint\Core\Design\Document\Authority::inspect();
 		if ( 'active' === $authority['status'] ) {
-			$result = \\CoreBlueprint\\Core\\Reports\\DesignDocumentAdapter::save( $expected, $branding, $template );
+			$result = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::save( $expected, $branding, $template );
 			self::respond_canonical( $result );
 		}
 		if ( ! in_array( $authority['status'], [ 'legacy', 'prepared' ], true ) ) {
@@ -80,9 +80,9 @@ final class Branding {
 		Request::nonce( 'cb_core_admin' );
 		self::require_manage_branding();
 		$expected = self::expected_revision();
-		$authority = \\CoreBlueprint\\Core\\Design\\Document\\Authority::inspect();
+		$authority = \CoreBlueprint\Core\Design\Document\Authority::inspect();
 		if ( 'active' === $authority['status'] ) {
-			$result = \\CoreBlueprint\\Core\\Reports\\DesignDocumentAdapter::reset( $expected );
+			$result = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::reset( $expected );
 			self::respond_canonical( $result );
 		}
 		if ( ! in_array( $authority['status'], [ 'legacy', 'prepared' ], true ) ) {
@@ -125,7 +125,7 @@ final class Branding {
 		}
 		$document = $result['document'] ?? null;
 		if ( ! is_array( $document ) || ! is_string( $result['revision'] ?? null )
-			|| ! \\CoreBlueprint\\Core\\Reports\\DesignDocumentAdapter::valid_document( $document ) ) {
+			|| ! \CoreBlueprint\Core\Reports\DesignDocumentAdapter::valid_document( $document ) ) {
 			wp_send_json_error( [ 'message' => __( 'Reports save readback failed.', 'core-blueprint' ) ], 503 );
 		}
 		self::respond_design( $document['branding'], $document['composer']['maintenance'], $result['revision'] );
@@ -153,7 +153,7 @@ final class Branding {
 		self::require_manage_branding();
 
 		try {
-			$live = \\CoreBlueprint\\Core\\Reports\\DesignDocumentAdapter::current();
+			$live = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::current();
 			$branding = self::normalized_request();
 			$template = self::normalized_template_request();
 			$html = ( new DesignerPreview() )->render( $branding, $template );
