@@ -48,7 +48,9 @@ final class AuditNotificationsSection extends ExactSection {
 		$audit = is_array( $settings['audit'] ?? null ) ? $settings['audit'] : [];
 		$audit['email_alerts'] = $incoming['email_alerts'];
 
-		if ( ! Settings::set_key( 'audit', $audit, $actor ) && $this->export() !== $incoming ) {
+		if ( ! Settings::set_key( 'audit', $audit, $actor )
+			&& ( 'unchanged' !== Settings::last_write_status()
+				|| ! Settings::matches_paths( [ 'audit.email_alerts' => $incoming['email_alerts'] ] ) ) ) {
 			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Could not apply the audit notification policy.', 'core-blueprint' ) );
 			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
