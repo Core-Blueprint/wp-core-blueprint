@@ -104,7 +104,7 @@ final class PolicyMutation {
 			$config,
 			'two_factor:' . $source
 		);
-		if ( ! $saved && Policy::mode() !== $mode ) {
+		if ( ! $saved ) {
 			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new RuntimeException( __( 'Could not persist the two-factor policy.', 'core-blueprint' ) );
 			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
