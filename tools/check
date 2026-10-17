@@ -44,6 +44,7 @@ php tests/public-core-scanner-threat-regression.php
 php tests/public-core-scanner-ui-regression.php
 php tests/public-design-document-storage-regression.php
 php tests/public-design-document-migration-regression.php
+php tests/public-design-document-consumer-adoption-regression.php
 
 shopt -s globstar nullglob
 js_sources=( "$ROOT"/assets/**/*.js )
