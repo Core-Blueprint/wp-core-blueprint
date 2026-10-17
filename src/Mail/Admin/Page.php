@@ -20,6 +20,7 @@ use CoreBlueprint\Core\Mail\DeliveryState;
 use CoreBlueprint\Core\Mail\Designer\BindingRegistry;
 use CoreBlueprint\Core\Mail\Designer\ComponentRegistry;
 use CoreBlueprint\Core\Mail\Designer\Renderer as DesignerRenderer;
+use CoreBlueprint\Core\Mail\Designer\DocumentUnavailable;
 use CoreBlueprint\Core\Mail\Designer\TemplateRepository;
 use CoreBlueprint\Core\Mail\Designer\TemplateRegistry;
 use CoreBlueprint\Core\Mail\DesignerState;
@@ -126,14 +127,23 @@ final class Page extends PageBase {
 			if ( ! isset( $templates[ $template_id ] ) ) {
 				$template_id = (string) ( $template_ids[0] ?? '' );
 			}
-			$current_template = '' !== $template_id ? TemplateRepository::get( $template_id ) : null;
+			try {
+				$current_template = '' !== $template_id ? TemplateRepository::get( $template_id ) : null;
 			$bindings = BindingRegistry::all();
 			$components = ComponentRegistry::all();
 			$preview = is_array( $current_template ) ? DesignerRenderer::preview( $template_id ) : null;
 			if ( $designer_enabled && is_array( $current_template ) ) {
 				DesignEditorAssets::enqueue_designer_mode( __( 'Mail Designer', 'core-blueprint' ) );
 			}
-			include CB_CORE_DIR . 'templates/mail-designer.php';
+				include CB_CORE_DIR . 'templates/mail-designer.php';
+			} catch ( DocumentUnavailable $error ) {
+				// Fail closed: never show the provider default as a stored design.
+				ob_clean();
+				echo Notice::render( [
+					'variant' => Notice::ERROR,
+					'message' => __( 'Mail Designer storage is unavailable. Contact a Core Blueprint operator; no template data was changed.', 'core-blueprint' ),
+				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shared notice renderer.
+			}
 		} elseif ( 'settings' === $tab ) {
 			include CB_CORE_DIR . 'templates/mail-settings.php';
 		} else {
