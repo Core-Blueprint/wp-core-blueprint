@@ -304,5 +304,65 @@ namespace {
         true === \CoreBlueprint\Core\Settings\OptionCas::read()['value']['reports']['email_alerts']['other'],
         'unrepresented alert stays unchanged'
     );
+    // Direct INTERNAL transaction fixture. ReportsSection::apply() above remains
+    // blocked for active authority; this does not enable a real WP import.
+    $wpdb = new S2FakeDb();
+    $transaction = \CoreBlueprint\Core\Profiles\ReportsProfileTransaction::class;
+    $before_settings = \CoreBlueprint\Core\Settings\OptionCas::$row;
+    $before_doc = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record;
+    $expected = [
+        'settings_sha256' => hash( 'sha256', $before_settings['raw'] ),
+        'document_revision' => $before_doc['revision'],
+    ];
+    $saved = $transaction::apply_guarded( $desired, $expected );
+    s2_assert( 'saved' === $saved['status'], 'atomic two-row transaction committed' );
+    s2_assert( 1 === $wpdb->option_writes && 1 === $wpdb->document_writes, 'each intended row updated once' );
+    s2_assert( 900 === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['retention_days'], 'committed retention verified' );
+    s2_assert( true === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'], 'unrepresented Settings alert retained' );
+    s2_assert( false === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['show_logo'], 'unrepresented canonical logo field retained' );
+    s2_assert( '9007199254740994' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'], 'decimal revision increment is exact' );
+    s2_assert( [ 'update_option', 'update_option_cb_core_settings', 'updated_option' ] === $GLOBALS['s2_actions'], 'native prewrite and postcommit ordering preserved' );
+
+    $after_settings = \CoreBlueprint\Core\Settings\OptionCas::$row;
+    $after_document = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record;
+    $second = $desired;
+    $second['retention_days'] = 901;
+    $second['branding']['provider_name'] = 'second';
+    $wpdb->fail_document = true;
+    $actions_before = count( $GLOBALS['s2_actions'] );
+    $failed = $transaction::apply_guarded( $second, $saved['witness'] );
+    s2_assert( 'failed' === $failed['status'], 'document SQL failure triggers rollback' );
+    s2_assert( $after_settings === \CoreBlueprint\Core\Settings\OptionCas::$row, 'failed second write restores entire Settings row' );
+    s2_assert( $after_document === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record, 'failed second write preserves canonical document and revision' );
+    s2_assert( $actions_before + 1 === count( $GLOBALS['s2_actions'] ), 'failed transaction has prewrite only, not success hooks' );
+    $wpdb->fail_document = false;
+
+    $wpdb->fail_commit = true;
+    $uncertain = $transaction::apply_guarded( $second, $saved['witness'] );
+    s2_assert( 'recovery_required' === $uncertain['status'], 'uncertain COMMIT is never success' );
+    s2_assert( $after_settings === \CoreBlueprint\Core\Settings\OptionCas::$row, 'fake failed COMMIT rollback restores Settings' );
+    s2_assert( $after_document === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record, 'fake failed COMMIT rollback restores design row' );
+    $wpdb->fail_commit = false;
+
+    $stale = $saved['witness'];
+    $stale['document_revision'] = '9007199254740993';
+    s2_assert( 'conflict' === $transaction::apply_guarded( $second, $stale )['status'], 'stale document revision blocked before transaction' );
+
+    $wpdb->in_transaction = true;
+    s2_assert( 'recovery_required' === $transaction::apply_guarded( $second, $saved['witness'] )['status'], 'borrowed transaction refused' );
+    s2_assert( true === $wpdb->in_transaction, 'never roll back someone else transaction' );
+    $wpdb->in_transaction = false;
+
+    // A writer arriving after preflight but before lock must not be overwritten.
+    $wpdb->before_lock = static function (): void {
+        $row = &\CoreBlueprint\Core\Settings\OptionCas::$row;
+        $row['value']['reports']['email_alerts']['other'] = false;
+        $row['raw'] = serialize( $row['value'] );
+    };
+    $race = $transaction::apply_guarded( $second, $saved['witness'] );
+    s2_assert( 'conflict' === $race['status'], 'cross-row prelock race refused' );
+    s2_assert( false === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'], 'independent writer survives conflict' );
+    s2_assert( $after_document === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record, 'cross-row conflict preserves doc' );
+
     echo "Core Blueprint Base A2.4-S2 Reports Profile source-only regression PASS\n";
 }
