@@ -60,7 +60,11 @@ final class EnvironmentGovernanceSection extends ExactSection {
 	public function apply( array $incoming, string $actor ): void {
 		$incoming = $this->normalize( $incoming );
 
-		if ( ! Settings::set_key( Governance::POLICY_KEY, $incoming, $actor ) && $this->export() !== $incoming ) {
+		if ( ! Settings::set_key( Governance::POLICY_KEY, $incoming, $actor )
+			&& ( 'unchanged' !== Settings::last_write_status()
+				|| ! Settings::matches_paths( [
+					Governance::POLICY_KEY . '.' . Governance::PROTECT_SEARCH_INDEXING => $incoming[ Governance::PROTECT_SEARCH_INDEXING ],
+				] ) ) ) {
 			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 			throw new \RuntimeException( __( 'Could not apply the Environment Governance policy.', 'core-blueprint' ) );
 			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
