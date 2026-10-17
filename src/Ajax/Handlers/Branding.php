@@ -38,73 +38,107 @@ final class Branding {
 	public static function save(): void {
 		Request::nonce( 'cb_core_admin' );
 		self::require_manage_branding();
-
 		try {
 			$branding = self::normalized_request();
 			$template = self::normalized_template_request();
-		} catch ( \InvalidArgumentException $error ) {
-			wp_send_json_error( [ 'message' => $error->getMessage() ], 400 );
+		} catch ( \\InvalidArgumentException $error ) {
+			wp_send_json_error( [ 'message' => __( 'The Reports design is invalid.', 'core-blueprint' ) ], 422 );
+		} catch ( \\Throwable $error ) {
+			wp_send_json_error( [ 'message' => __( 'Reports storage is unavailable.', 'core-blueprint' ) ], 503 );
+		}
+		$expected = self::expected_revision();
+		$authority = \\CoreBlueprint\\Core\\Design\\Document\\Authority::inspect();
+		if ( 'active' === $authority['status'] ) {
+			$result = \\CoreBlueprint\\Core\\Reports\\DesignDocumentAdapter::save( $expected, $branding, $template );
+			self::respond_canonical( $result );
+		}
+		if ( ! in_array( $authority['status'], [ 'legacy', 'prepared' ], true ) ) {
+			wp_send_json_error( [ 'message' => __( 'Reports storage is blocked.', 'core-blueprint' ) ], 503 );
+		}
+		if ( 'legacy' !== $expected ) {
+			wp_send_json_error( [ 'message' => __( 'Reload the Reports Designer before saving.', 'core-blueprint' ) ], 409 );
 		}
 
 		$settings = Settings::get();
-		$reports  = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
+		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
 		$composer = is_array( $reports['composer'] ?? null ) ? $reports['composer'] : [];
-
-		$reports['branding']               = $branding;
-		$composer['maintenance']           = $template;
-		$reports['composer']               = $composer;
-
-		Settings::set_key( 'reports', $reports, 'preferences.reports_designer' );
-
-		AuditLog::log( 'reports.designer_updated', 'notice', [
-			'logo_attachment_id'  => $branding['logo_attachment_id'],
-			'show_logo'           => $branding['show_logo'],
-			'has_provider_name'    => '' !== $branding['provider_name'],
-			'has_provider_contact' => '' !== $branding['provider_contact'],
-			'accent_color'         => $branding['accent_color'],
-			'surface_style'        => $branding['surface_style'],
-			'density'              => $branding['density'],
-			'corner_style'         => $branding['corner_style'],
-			'text_scale'           => $branding['text_scale'],
-			'composer_version'     => $template['schema_version'],
-			'enabled_blocks'       => count( array_filter( $template['blocks'], static fn ( array $block ): bool => ! empty( $block['enabled'] ) ) ),
-			'by'                   => get_current_user_id(),
-		] );
-
-		$logo_url = $branding['logo_attachment_id'] > 0
-			? ReportBranding::attachment_url( $branding['logo_attachment_id'], 'medium' )
-			: '';
-
-		wp_send_json_success( $branding + [
-			'logo_url' => $logo_url,
-			'template' => $template,
-		] );
+		$reports['branding'] = $branding;
+		$composer['maintenance'] = $template;
+		$reports['composer'] = $composer;
+		$updated = Settings::set_key( 'reports', $reports, 'preferences.reports_designer' );
+		$check = Settings::get();
+		if ( ( ! $updated && ( $check['reports'] ?? null ) !== $reports )
+			|| ( $check['reports']['branding'] ?? null ) !== $branding
+			|| ( $check['reports']['composer']['maintenance'] ?? null ) !== $template ) {
+			wp_send_json_error( [ 'message' => __( 'Reports save could not be verified.', 'core-blueprint' ) ], 503 );
+		}
+		AuditLog::log( 'reports.designer_updated', 'notice', [ 'by' => get_current_user_id() ] );
+		self::respond_design( $branding, $template, 'legacy' );
 	}
 
 	public static function reset(): void {
 		Request::nonce( 'cb_core_admin' );
 		self::require_manage_branding();
-
+		$expected = self::expected_revision();
+		$authority = \\CoreBlueprint\\Core\\Design\\Document\\Authority::inspect();
+		if ( 'active' === $authority['status'] ) {
+			$result = \\CoreBlueprint\\Core\\Reports\\DesignDocumentAdapter::reset( $expected );
+			self::respond_canonical( $result );
+		}
+		if ( ! in_array( $authority['status'], [ 'legacy', 'prepared' ], true ) ) {
+			wp_send_json_error( [ 'message' => __( 'Reports storage is blocked.', 'core-blueprint' ) ], 503 );
+		}
+		if ( 'legacy' !== $expected ) {
+			wp_send_json_error( [ 'message' => __( 'Reload the Reports Designer before resetting.', 'core-blueprint' ) ], 409 );
+		}
 		$defaults = ReportBranding::settings_defaults();
 		$template = MaintenanceTemplate::defaults();
-
 		$settings = Settings::get();
-		$reports  = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
+		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
 		$composer = is_array( $reports['composer'] ?? null ) ? $reports['composer'] : [];
-
-		$reports['branding']     = $defaults;
+		$reports['branding'] = $defaults;
 		$composer['maintenance'] = $template;
-		$reports['composer']     = $composer;
-		Settings::set_key( 'reports', $reports, 'preferences.reports_designer' );
+		$reports['composer'] = $composer;
+		$updated = Settings::set_key( 'reports', $reports, 'preferences.reports_designer' );
+		$check = Settings::get();
+		if ( ( ! $updated && ( $check['reports'] ?? null ) !== $reports )
+			|| ( $check['reports']['branding'] ?? null ) !== $defaults
+			|| ( $check['reports']['composer']['maintenance'] ?? null ) !== $template ) {
+			wp_send_json_error( [ 'message' => __( 'Reports reset could not be verified.', 'core-blueprint' ) ], 503 );
+		}
+		AuditLog::log( 'reports.designer_reset', 'notice', [ 'by' => get_current_user_id() ] );
+		self::respond_design( $defaults, $template, 'legacy' );
+	}
 
-		AuditLog::log( 'reports.designer_reset', 'notice', [
-			'by' => get_current_user_id(),
-		] );
+	private static function expected_revision(): string {
+		return isset( $_POST['expected_revision'] ) && is_string( $_POST['expected_revision'] )
+			? (string) wp_unslash( $_POST['expected_revision'] ) : '';
+	}
 
-		wp_send_json_success( $defaults + [
-			'logo_attachment_id' => (int) ( $defaults['logo_attachment_id'] ?? 0 ),
-			'logo_url'           => '',
-			'template'           => $template,
+	private static function respond_canonical( array $result ): never {
+		if ( 'saved' !== ( $result['status'] ?? '' ) ) {
+			$reason = (string) ( $result['status'] ?? 'error' );
+			wp_send_json_error(
+				[ 'message' => __( 'Reports design could not be saved. Reload if it has changed.', 'core-blueprint' ) ],
+				'conflict' === $reason ? 409 : ( 'invalid' === $reason ? 422 : 503 )
+			);
+		}
+		$document = $result['document'] ?? null;
+		if ( ! is_array( $document ) || ! is_string( $result['revision'] ?? null )
+			|| ! \\CoreBlueprint\\Core\\Reports\\DesignDocumentAdapter::valid_document( $document ) ) {
+			wp_send_json_error( [ 'message' => __( 'Reports save readback failed.', 'core-blueprint' ) ], 503 );
+		}
+		self::respond_design( $document['branding'], $document['composer']['maintenance'], $result['revision'] );
+	}
+
+	private static function respond_design( array $branding, array $template, string $revision ): never {
+		$logo_id = (int) ( $branding['logo_attachment_id'] ?? 0 );
+		$logo_url = $logo_id > 0 ? ReportBranding::attachment_url( $logo_id, 'medium' ) : '';
+		wp_send_json_success( $branding + [
+			'logo_url' => $logo_url,
+			'template' => $template,
+			'revision' => $revision,
+			'document' => [ 'branding' => $branding, 'composer' => [ 'maintenance' => $template ] ],
 		] );
 	}
 
