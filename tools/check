@@ -25,7 +25,8 @@ for required in \
   tests/public-core-scanner-threat-regression.php \
   tests/public-core-scanner-ui-regression.php \
   tests/public-design-document-storage-regression.php \
-  tests/public-design-document-migration-regression.php; do
+  tests/public-design-document-migration-regression.php \
+  tests/public-design-document-consumer-adoption-regression.php; do
   [[ -f "$ROOT/$required" ]] || fail "required source check missing: $required"
 done
 [[ -d "$ROOT/tests/python" ]] || fail 'Python source-regression directory is missing'
