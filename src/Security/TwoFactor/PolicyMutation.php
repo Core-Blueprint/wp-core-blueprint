@@ -56,6 +56,9 @@ final class PolicyMutation {
 		$mode = self::normalize_mode( $mode );
 		$before = Policy::mode();
 		if ( $before === $mode ) {
+			if ( ! Settings::matches_paths( [ 'two_factor.mode' => $mode ] ) ) {
+				throw new RuntimeException( __( 'Could not persist the two-factor policy.', 'core-blueprint' ) );
+			}
 			return true;
 		}
 
