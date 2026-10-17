@@ -228,8 +228,13 @@ namespace {
     s1_consumer_assert( true === $after_disjoint['integrity']['admin_can_run'], 'requested Integrity leaf commits true' );
     s1_consumer_assert( 'independent-writer' === $after_disjoint['reports']['branding']['provider_name'], 'unrequested concurrent branding edit survives' );
     s1_consumer_assert( $before_audits + 1 === count( \CoreBlueprint\Core\Log\AuditLog::$events ), 'disjoint saved intent has one audit' );
+    $audit_event = \CoreBlueprint\Core\Log\AuditLog::$events[ array_key_last( \CoreBlueprint\Core\Log\AuditLog::$events ) ];
+    s1_consumer_assert(
+        'integrity.admin_can_run' === $audit_event[2]['changed'],
+        'audit names only the actual changed leaf, not the cache-equal explicit guard'
+    );
 
-    // NEGATIVE / intentionally RED until expressly authorized CAS fix:
+    // NEGATIVE / previously RED without explicit CAS guard:
     // a competing writer changes an explicitly requested, cache-equal leaf.
     // Saving only the other changed leaf must NEVER count as full success.
     $wpdb->seed( $explicit_baseline );
@@ -253,6 +258,37 @@ namespace {
     s1_consumer_assert( $raced === $wpdb->value(), 'unchanged explicit leaf race preserves complete competing row' );
     s1_consumer_assert( $before_audits === count( \CoreBlueprint\Core\Log\AuditLog::$events ), 'unchanged explicit leaf race emits no settings.changed audit' );
     s1_consumer_assert( $before_actions === count( $GLOBALS['s1_actions'] ), 'unchanged explicit leaf race emits no prewrite or success option hooks' );
+
+    // Same-path mutation between fresh row read and conditional SQL is also
+    // denied: pre-write observers may run, but there is no committed write,
+    // success audit or post-commit notification for the losing worker.
+    $wpdb->seed( $explicit_baseline );
+    $settings::accept_cas( $explicit_baseline );
+    $GLOBALS['s1_pre_write_race'] = static function ( S1ConsumerFakeDb $db ): void {
+        $interleaved = $db->value();
+        $interleaved['reports']['admin_can_generate']['maintenance'] = false;
+        $db->seed( $interleaved );
+    };
+    $before_audits = count( \CoreBlueprint\Core\Log\AuditLog::$events );
+    $before_updated = count( array_filter(
+        $GLOBALS['s1_actions'],
+        static fn( string $hook ): bool => 'updated_option' === $hook
+    ) );
+    s1_consumer_assert(
+        ! $settings::set_paths( $explicit_changes, 'permissions.tab' ),
+        'interleaved explicitly requested path race must not commit'
+    );
+    s1_consumer_assert( 'conflict' === $settings::last_write_status(), 'interleaved explicit race is a conflict' );
+    s1_consumer_assert( false === $wpdb->value()['reports']['admin_can_generate']['maintenance'], 'interleaved Reports writer survives' );
+    s1_consumer_assert( false === $wpdb->value()['integrity']['admin_can_run'], 'interleaved race cannot partially commit Integrity' );
+    s1_consumer_assert( $before_audits === count( \CoreBlueprint\Core\Log\AuditLog::$events ), 'interleaved race creates no settings.changed audit' );
+    s1_consumer_assert(
+        $before_updated === count( array_filter(
+            $GLOBALS['s1_actions'],
+            static fn( string $hook ): bool => 'updated_option' === $hook
+        ) ),
+        'interleaved race creates no postcommit success hook'
+    );
 
     echo "Core Blueprint Settings A2.4-S1 facade/consumer regression PASS\n";
 }
