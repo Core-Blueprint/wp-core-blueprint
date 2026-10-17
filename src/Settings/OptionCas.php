@@ -45,7 +45,9 @@ final class OptionCas {
             $current = self::deep_merge( \CoreBlueprint\Core\Settings::defaults(), $stored );
         }
 
-        $candidate = $current;
+        // Base defaults are a READ projection, never an implicit write intent.
+        // Persist only the raw stored document plus expressly changed paths.
+        $candidate = $stored;
         foreach ( $intent as $change ) {
             [ $present, $value ] = self::at( $current, $change['path'] );
             if ( $present !== $change['before_exists']
@@ -58,13 +60,14 @@ final class OptionCas {
         }
 
         $name = CB_CORE_SETTINGS;
+        $proposed = $candidate;
         $candidate = sanitize_option( $name, $candidate );
         $candidate = apply_filters( "pre_update_option_{$name}", $candidate, $stored, $name );
         $candidate = apply_filters( 'pre_update_option', $candidate, $name, $stored );
 
         // The existing pre_update_option_cb_core_settings old-value veto must
         // remain meaningful, including for the first-party Level 2 fixtures.
-        if ( $candidate === $stored && $candidate !== $current ) {
+        if ( $candidate === $stored && $candidate !== $proposed ) {
             return [ 'status' => 'refused' ];
         }
         if ( ! is_array( $candidate ) ) {
@@ -72,7 +75,7 @@ final class OptionCas {
         }
 
         $actual = [];
-        if ( ! self::collect( $current, $candidate, [], $actual ) ) {
+        if ( ! self::collect( $proposed, $candidate, [], $actual ) ) {
             return [ 'status' => 'invalid' ];
         }
         foreach ( $actual as $change ) {
@@ -136,6 +139,10 @@ final class OptionCas {
             return [ 'status' => 'uncertain' ];
         }
 
+        // Post-commit observers must never see a stale Settings request cache.
+        if ( class_exists( \CoreBlueprint\Core\Settings::class, false ) ) {
+            \CoreBlueprint\Core\Settings::accept_cas( $candidate );
+        }
         do_action( "update_option_{$name}", $stored, $candidate, $name );
         do_action( 'updated_option', $name, $stored, $candidate );
         return [ 'status' => 'saved', 'before' => $stored, 'after' => $candidate ];
@@ -248,7 +255,13 @@ final class OptionCas {
         $last = array_pop( $path );
         $cursor = &$root;
         foreach ( $path as $key ) {
-            if ( ! isset( $cursor[$key] ) || ! is_array( $cursor[$key] ) ) {
+            if ( ! array_key_exists( $key, $cursor ) ) {
+                if ( ! $exists ) {
+                    return true;
+                }
+                $cursor[$key] = [];
+            }
+            if ( ! is_array( $cursor[$key] ) ) {
                 return false;
             }
             $cursor = &$cursor[$key];
