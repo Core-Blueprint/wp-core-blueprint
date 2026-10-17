@@ -102,14 +102,23 @@ cb_a22_assert(
 	&& is_string( $root ) && str_starts_with( $root, '/tmp/core-blueprint-base-' . $slot . '/' )
 	&& $wpdb->prefix === (string) getenv( 'CB_CLI_TABLE_PREFIX' )
 	&& $wpdb->prefix === 'cbcli_'
+	&& getenv( 'WP_DB_HOST' ) === '127.0.0.1:3307'
+	&& defined( 'WP_CLI' ) && WP_CLI === true
 	&& str_contains( $cli_url, 'core-blueprint-cli.test' ),
 	'fresh isolated CLI database and WP installation guard'
 );
-cb_a22_assert( is_plugin_active( 'core-blueprint/core-blueprint.php' ), 'Base active in test WP site' );
+cb_a22_assert( in_array( 'core-blueprint/core-blueprint.php', (array) get_option( 'active_plugins', [] ), true ), 'Base active in test WP site' );
 cb_a22_assert( Schema::healthy(), 'A2.1 document table InnoDB health' );
 cb_a22_assert( 0 === cb_a22_count(), 'dedicated table initially empty' );
 cb_a22_assert( null === cb_a22_raw_option( Migration::PREPARED_OPTION ), 'prepared marker absent' );
 cb_a22_assert( null === cb_a22_raw_option( MigrationBackup::OPTION ), 'backup absent' );
+// Never adopt/remove an unexpected trigger from an earlier failed test run.
+$wpdb->last_error = '';
+$trigger_count = $wpdb->get_var( $wpdb->prepare(
+	'SELECT COUNT(*) FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME = %s',
+	'cb_a22_migration_abort_reports'
+) );
+cb_a22_assert( '' === (string) $wpdb->last_error && '0' === (string) $trigger_count, 'no preexisting SQL fault trigger' );
 
 $old_mail = cb_a22_raw_option( TemplateRepository::OPTION );
 $old_settings = cb_a22_raw_option( MigrationInventory::SETTINGS_OPTION );
