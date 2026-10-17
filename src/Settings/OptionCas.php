@@ -24,7 +24,7 @@ final class OptionCas {
      *
      * @return array{status:string,before?:array,after?:array}
      */
-    public static function write( array $expected, array $desired ): array {
+    public static function write( array $expected, array $desired, ?string $exact_raw = null ): array {
         $intent = [];
         if ( ! self::collect( $expected, $desired, [], $intent ) ) {
             return [ 'status' => 'invalid' ];
@@ -33,6 +33,10 @@ final class OptionCas {
         $row = self::read();
         if ( 'ok' !== $row['status'] ) {
             return [ 'status' => $row['status'] ];
+        }
+
+        if ( null !== $exact_raw && ! hash_equals( $exact_raw, $row['raw'] ) ) {
+            return [ 'status' => 'conflict' ];
         }
 
         $stored = $row['value'];
