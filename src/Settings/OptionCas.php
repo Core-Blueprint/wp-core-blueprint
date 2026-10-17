@@ -22,9 +22,14 @@ final class OptionCas {
      * snapshots. A fresh row supplies every sibling value; stale intended
      * paths fail instead of overwriting a concurrent edit.
      *
+     * @param array<string,mixed> $explicit_paths Caller-supplied trusted leaf targets, including cache-equal paths.
      * @return array{status:string,before?:array,after?:array}
      */
-    public static function write( array $expected, array $desired, ?string $exact_raw = null ): array {
+    public static function write( array $expected, array $desired, ?string $exact_raw = null, array $explicit_paths = [] ): array {
+        if ( count( $explicit_paths ) > 64 ) {
+            return [ 'status' => 'invalid' ];
+        }
+
         $intent = [];
         if ( ! self::collect( $expected, $desired, [], $intent ) ) {
             return [ 'status' => 'invalid' ];
@@ -43,6 +48,27 @@ final class OptionCas {
         $current = $stored;
         if ( class_exists( \CoreBlueprint\Core\Settings::class, false ) ) {
             $current = self::deep_merge( \CoreBlueprint\Core\Settings::defaults(), $stored );
+        }
+
+        // A cache-equal leaf can still be an explicit part of a multi-path
+        // intent. Compare every submitted target against this same fresh row
+        // that the binary SQL CAS later guards; never check only diff paths.
+        foreach ( $explicit_paths as $path => $wanted ) {
+            if ( ! is_string( $path )
+                || ! preg_match( '/^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,7}$/D', $path ) ) {
+                return [ 'status' => 'invalid' ];
+            }
+            $parts = explode( '.', $path );
+            [ $desired_exists, $desired_value ] = self::at( $desired, $parts );
+            if ( ! $desired_exists || $desired_value !== $wanted ) {
+                return [ 'status' => 'invalid' ];
+            }
+            [ $expected_exists, $expected_value ] = self::at( $expected, $parts );
+            [ $live_exists, $live_value ] = self::at( $current, $parts );
+            if ( $expected_exists !== $live_exists
+                || ( $expected_exists && $expected_value !== $live_value ) ) {
+                return [ 'status' => 'conflict' ];
+            }
         }
 
         // Base defaults are a READ projection, never an implicit write intent.
@@ -81,6 +107,20 @@ final class OptionCas {
             [ $present, $value ] = self::at( $candidate, $requested['path'] );
             if ( $present !== $requested['after_exists']
                 || ( $present && $value !== $requested['after'] ) ) {
+                return [ 'status' => 'refused' ];
+            }
+        }
+
+        // Also hold filters to the caller's cache-equal explicit leaves.
+        // Project defaults for a leaf that was never stored rather than
+        // accidentally materializing unrelated defaults in the option row.
+        $filtered_view = $candidate;
+        if ( class_exists( \CoreBlueprint\Core\Settings::class, false ) ) {
+            $filtered_view = self::deep_merge( \CoreBlueprint\Core\Settings::defaults(), $candidate );
+        }
+        foreach ( $explicit_paths as $path => $wanted ) {
+            [ $present, $value ] = self::at( $filtered_view, explode( '.', $path ) );
+            if ( ! $present || $value !== $wanted ) {
                 return [ 'status' => 'refused' ];
             }
         }
