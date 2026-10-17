@@ -124,7 +124,7 @@ final class Authority {
 		$backup = MigrationBackup::read_verified();
 		if ( 'found' !== ( $backup['status'] ?? '' )
 			|| ! hash_equals( (string) ( $authority['fingerprint'] ?? '' ), (string) ( $backup['fingerprint'] ?? '' ) )
-			|| ! hash_equals( (string) ( $authority['target_hash'] ?? '' ), (string) ( $backup['target_hash'] ?? '' ) ) {
+			|| ! hash_equals( (string) ( $authority['target_hash'] ?? '' ), (string) ( $backup['target_hash'] ?? '' ) ) ) {
 			return false;
 		}
 		$entry = $backup['source'][\CoreBlueprint\Core\Mail\Designer\TemplateRepository::OPTION] ?? null;
