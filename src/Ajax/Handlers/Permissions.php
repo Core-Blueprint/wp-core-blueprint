@@ -174,8 +174,14 @@ final class Permissions {
 
 		$settings    = Settings::get();
 		$permissions = is_array( $settings['permissions'] ?? null ) ? $settings['permissions'] : [];
+		$before = ! empty( $permissions['hide_from_admins'] );
 		$permissions['hide_from_admins'] = $enabled;
-		Settings::set_key( 'permissions', $permissions, 'permissions.tab' );
+		if ( $before === $enabled ) {
+			wp_send_json_success( [ 'hide_active' => $enabled, 'changed' => false ] );
+		}
+		if ( ! Settings::set_paths( [ 'permissions.hide_from_admins' => $enabled ], 'permissions.tab' ) ) {
+			wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
+		}
 
 		AuditLog::log( 'permissions.hide_toggled', 'notice', [
 			'enabled' => $enabled,
@@ -199,18 +205,21 @@ final class Permissions {
 
 		$settings = Settings::get();
 
-		// reports.admin_can_generate.maintenance
-		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
-		if ( ! isset( $reports['admin_can_generate'] ) || ! is_array( $reports['admin_can_generate'] ) ) {
-			$reports['admin_can_generate'] = [];
+		$before_reports = (bool) ( $settings['reports']['admin_can_generate']['maintenance'] ?? false );
+		$before_integrity = (bool) ( $settings['integrity']['admin_can_run'] ?? false );
+		if ( $before_reports === $reports_enabled && $before_integrity === $integrity_enabled ) {
+			wp_send_json_success( [
+				'admin_can_generate_maintenance' => $reports_enabled,
+				'admin_can_run_integrity' => $integrity_enabled,
+				'changed' => false,
+			] );
 		}
-		$reports['admin_can_generate']['maintenance'] = $reports_enabled;
-		Settings::set_key( 'reports', $reports, 'permissions.tab' );
-
-		// integrity.admin_can_run
-		$integrity                  = is_array( $settings['integrity'] ?? null ) ? $settings['integrity'] : [];
-		$integrity['admin_can_run'] = $integrity_enabled;
-		Settings::set_key( 'integrity', $integrity, 'permissions.tab' );
+		if ( ! Settings::set_paths( [
+			'reports.admin_can_generate.maintenance' => $reports_enabled,
+			'integrity.admin_can_run' => $integrity_enabled,
+		], 'permissions.tab' ) ) {
+			wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
+		}
 
 		AuditLog::log( 'permissions.admin_caps_changed', 'notice', [
 			'admin_can_generate_maintenance' => $reports_enabled,
