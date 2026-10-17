@@ -239,7 +239,7 @@ try {
 	echo "[A2.2] final prepare-only conformance PASS\n";
 } finally {
 	if ( $trigger_created ) {
-		$wpdb->query( "DROP TRIGGER IF EXISTS {$trigger}" );
+		cb_a22_assert( false !== $wpdb->query( "DROP TRIGGER IF EXISTS {$trigger}" ), 'test fault trigger removed on failure' );
 	}
 	// Fixture-only cleanup, bounded to a proven new local test database and
 	// prefix. Never remove arbitrary pre-existing recovery or customer data.
@@ -253,5 +253,6 @@ try {
 				$wpdb->options, $old['option_value'], $old['autoload'], $name
 			) );
 		}
+		cb_a22_assert( cb_a22_raw_option( $name ) === $old, 'exact fixture source restored' );
 	}
 }
