@@ -94,18 +94,24 @@ $slot = getenv( 'CB_BASE_TEST_SLOT' );
 $target = getenv( 'WP_DB_NAME' );
 $root = (string) getenv( 'WP_CORE_DIR' );
 $cli_url = (string) get_option( 'siteurl', '' );
-cb_a22_assert(
-	is_string( $slot ) && 1 === preg_match( '/^g1d_a22_[a-z0-9_]+$/D', $slot )
-	&& $target === 'core_blueprint_base_' . $slot . '_test'
-	&& defined( 'DB_NAME' ) && DB_NAME === $target
-	&& is_string( $root ) && str_starts_with( $root, '/tmp/core-blueprint-base-' . $slot . '/' )
-	&& $wpdb->prefix === (string) getenv( 'CB_CLI_TABLE_PREFIX' )
-	&& $wpdb->prefix === 'cbcli_'
-	&& getenv( 'WP_DB_HOST' ) === '127.0.0.1:3307'
-	&& defined( 'WP_CLI' ) && WP_CLI === true
-	&& str_contains( $cli_url, 'core-blueprint-cli.test' ),
-	'fresh isolated CLI database and WP installation guard'
-);
+// Report the exact failed NON-SENSITIVE guard label, rather than consuming
+// another one-shot database just to diagnose a combined boolean failure.
+// Each predicate must pass BEFORE any test data is written.
+$isolation_guards = [
+	'approved A2.2 test slot' => is_string( $slot )
+		&& 1 === preg_match( '/^g1d_a22(?:r[1-9][0-9]*)?_[0-9]{8}$/D', $slot ),
+	'isolated database name' => $target === 'core_blueprint_base_' . $slot . '_test'
+		&& defined( 'DB_NAME' ) && DB_NAME === $target,
+	'isolated test workspace' => str_starts_with( $root, '/tmp/core-blueprint-base-' . $slot . '/' ),
+	'isolated WordPress table prefix' => $wpdb->prefix === 'cbcli_'
+		&& $wpdb->prefix === (string) getenv( 'CB_CLI_TABLE_PREFIX' ),
+	'loopback MariaDB binding' => getenv( 'WP_DB_HOST' ) === '127.0.0.1:3307',
+	'real WP-CLI runtime' => defined( 'WP_CLI' ) && WP_CLI === true,
+	'isolated WordPress site URL' => 'core-blueprint-cli.test' === parse_url( $cli_url, PHP_URL_HOST ),
+];
+foreach ( $isolation_guards as $label => $passes ) {
+	cb_a22_assert( $passes, 'isolation guard: ' . $label );
+}
 cb_a22_assert( in_array( 'core-blueprint/core-blueprint.php', (array) get_option( 'active_plugins', [] ), true ), 'Base active in test WP site' );
 cb_a22_assert( Schema::healthy(), 'A2.1 document table InnoDB health' );
 cb_a22_assert( 0 === cb_a22_count(), 'dedicated table initially empty' );
