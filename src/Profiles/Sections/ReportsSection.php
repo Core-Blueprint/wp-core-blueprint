@@ -133,7 +133,9 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 		$changes = self::represented_paths( $this->normalize( $incoming ) );
 		if ( ! Settings::set_paths( $changes, $actor )
 			&& ( 'unchanged' !== Settings::last_write_status() || ! Settings::matches_paths( $changes ) ) ) {
-			throw new \RuntimeException( 'Reports Profile apply failed: settings_conflict' );
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception text is translated and escaped at presentation.
+			throw new \RuntimeException( __( 'Could not apply the Reports profile policy.', 'core-blueprint' ) );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
