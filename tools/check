@@ -32,6 +32,15 @@ for required in \
   tests/public-settings-six-consumer-regression.php; do
   [[ -f "$ROOT/$required" ]] || fail "required source check missing: $required"
 done
+# The full Base source always contains src/Profiles. The isolated Python
+# orchestration fixture deliberately does not mount any production PHP tree.
+# Fail closed when the S2 production boundary exists without its regression.
+if [[ -d "$ROOT/src/Profiles" ]]; then
+  [[ -f "$ROOT/src/Profiles/ReportsProfileTransaction.php" ]] \
+    || fail 'S2 Reports Profile transaction source is missing'
+  [[ -f "$ROOT/tests/public-reports-profile-a24-regression.php" ]] \
+    || fail 'S2 Reports Profile source regression is missing'
+fi
 [[ -d "$ROOT/tests/python" ]] || fail 'Python source-regression directory is missing'
 
 printf '== Composer metadata ==\n'
@@ -51,6 +60,9 @@ php tests/public-design-document-consumer-adoption-regression.php
 php tests/public-settings-cas-regression.php
 php tests/public-settings-consumer-regression.php
 php tests/public-settings-six-consumer-regression.php
+if [[ -d "$ROOT/src/Profiles" ]]; then
+  php tests/public-reports-profile-a24-regression.php
+fi
 
 shopt -s globstar nullglob
 js_sources=( "$ROOT"/assets/**/*.js )
