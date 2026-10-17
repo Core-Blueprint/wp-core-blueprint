@@ -35,6 +35,7 @@ class CheckEntrypointTest(unittest.TestCase):
         write('tests/public-core-scanner-ui-regression.php')
         write('tests/public-design-document-storage-regression.php')
         write('tests/public-design-document-migration-regression.php')
+        write('tests/public-design-document-consumer-adoption-regression.php')
         write('tests/python/fixture.py')
         write('tests/js/fixture.test.mjs')
         write('assets/js/editor.js')
