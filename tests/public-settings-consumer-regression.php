@@ -194,5 +194,65 @@ namespace {
     s1_consumer_assert( $wpdb->value() === $fresh, 'failed grouped intent cannot partially write' );
     s1_consumer_assert( 1 === count( \CoreBlueprint\Core\Log\AuditLog::$events ), 'no false audit on stale conflict' );
 
+    // Test-first P0: an explicitly submitted leaf which already matched
+    // the request cache must still be guarded against a concurrent writer.
+    // Both leaves are part of one administrative capability intent.
+    $explicit_baseline = $original;
+    $explicit_baseline['reports']['admin_can_generate']['maintenance'] = true;
+    $explicit_changes = [
+        'reports.admin_can_generate.maintenance' => true,
+        'integrity.admin_can_run' => true,
+    ];
+
+    // Positive control: a concurrent edit to a NON-requested leaf is safe.
+    // CAS must preserve it while committing the complete explicit intent.
+    $wpdb->seed( $explicit_baseline );
+    $settings::accept_cas( $explicit_baseline );
+    s1_consumer_assert(
+        true === $settings::get()['reports']['admin_can_generate']['maintenance']
+        && false === $settings::get()['integrity']['admin_can_run'],
+        'explicit-path positive fixture primes the request cache'
+    );
+    $disjoint = $explicit_baseline;
+    $disjoint['reports']['branding']['provider_name'] = 'independent-writer';
+    $wpdb->seed( $disjoint );
+    $before_writes = $wpdb->writes;
+    $before_audits = count( \CoreBlueprint\Core\Log\AuditLog::$events );
+    s1_consumer_assert(
+        $settings::set_paths( $explicit_changes, 'permissions.tab' ),
+        'disjoint unrequested concurrent edit must allow complete explicit intent'
+    );
+    $after_disjoint = $wpdb->value();
+    s1_consumer_assert( 1 === $wpdb->writes - $before_writes, 'disjoint intent commits once' );
+    s1_consumer_assert( true === $after_disjoint['reports']['admin_can_generate']['maintenance'], 'requested unchanged Reports leaf remains true' );
+    s1_consumer_assert( true === $after_disjoint['integrity']['admin_can_run'], 'requested Integrity leaf commits true' );
+    s1_consumer_assert( 'independent-writer' === $after_disjoint['reports']['branding']['provider_name'], 'unrequested concurrent branding edit survives' );
+    s1_consumer_assert( $before_audits + 1 === count( \CoreBlueprint\Core\Log\AuditLog::$events ), 'disjoint saved intent has one audit' );
+
+    // NEGATIVE / intentionally RED until expressly authorized CAS fix:
+    // a competing writer changes an explicitly requested, cache-equal leaf.
+    // Saving only the other changed leaf must NEVER count as full success.
+    $wpdb->seed( $explicit_baseline );
+    $settings::accept_cas( $explicit_baseline );
+    s1_consumer_assert(
+        true === $settings::get()['reports']['admin_can_generate']['maintenance'],
+        'Reports is already true in A request-local cache'
+    );
+    $raced = $explicit_baseline;
+    $raced['reports']['admin_can_generate']['maintenance'] = false;
+    $wpdb->seed( $raced );
+    $before_writes = $wpdb->writes;
+    $before_audits = count( \CoreBlueprint\Core\Log\AuditLog::$events );
+    $before_actions = count( $GLOBALS['s1_actions'] );
+    s1_consumer_assert(
+        ! $settings::set_paths( $explicit_changes, 'permissions.tab' ),
+        'stale explicitly requested unchanged Reports leaf must reject entire intent'
+    );
+    s1_consumer_assert( 'conflict' === $settings::last_write_status(), 'unchanged explicit leaf race is a conflict' );
+    s1_consumer_assert( $before_writes === $wpdb->writes, 'unchanged explicit leaf race makes no SQL write' );
+    s1_consumer_assert( $raced === $wpdb->value(), 'unchanged explicit leaf race preserves complete competing row' );
+    s1_consumer_assert( $before_audits === count( \CoreBlueprint\Core\Log\AuditLog::$events ), 'unchanged explicit leaf race emits no settings.changed audit' );
+    s1_consumer_assert( $before_actions === count( $GLOBALS['s1_actions'] ), 'unchanged explicit leaf race emits no prewrite or success option hooks' );
+
     echo "Core Blueprint Settings A2.4-S1 facade/consumer regression PASS\n";
 }
