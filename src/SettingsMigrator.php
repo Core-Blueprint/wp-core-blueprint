@@ -54,11 +54,11 @@ final class SettingsMigrator {
 	 * never attempts an implicit downgrade.
 	 */
 	public static function maybe_migrate(): void {
-		$stored = get_option( CB_CORE_SETTINGS, null );
-
-		if ( ! is_array( $stored ) ) {
+		$source = \CoreBlueprint\Core\Settings\OptionCas::read();
+		if ( 'ok' !== $source['status'] ) {
 			return;
 		}
+		$stored = $source['value'];
 
 		$current = max( 1, (int) ( $stored['schema_version'] ?? 1 ) );
 		$target  = (int) Settings::SCHEMA_VERSION;
@@ -67,8 +67,9 @@ final class SettingsMigrator {
 			return;
 		}
 
-		$migrations = self::migrations();
-		$working    = $stored;
+		$migrations    = self::migrations();
+		$working       = $stored;
+		$audit_versions = [];
 
 		for ( $version = $current + 1; $version <= $target; $version++ ) {
 			if ( ! isset( $migrations[ $version ] ) || ! is_callable( $migrations[ $version ] ) ) {
@@ -90,12 +91,7 @@ final class SettingsMigrator {
 				$migrated['schema_version'] = $version;
 				$working                    = $migrated;
 
-				if ( class_exists( AuditLog::class ) ) {
-					AuditLog::log( 'settings.migrated', 'notice', [
-						'from' => $version - 1,
-						'to'   => $version,
-					] );
-				}
+				$audit_versions[] = [ 'from' => $version - 1, 'to' => $version ];
 			} catch ( \Throwable $e ) {
 				if ( class_exists( AuditLog::class ) ) {
 					AuditLog::log( 'settings.migration_failed', 'critical', [
@@ -107,8 +103,22 @@ final class SettingsMigrator {
 			}
 		}
 
-		// cb_core_settings is request-hot by policy; preserve that policy when a
-		// future public migration writes the migrated settings document.
-		update_option( CB_CORE_SETTINGS, $working, true );
+		// Preserve original option bytes/autoload and refuse any concurrent
+		// update, even one to a field outside the migration's changed paths.
+		$outcome = \CoreBlueprint\Core\Settings\OptionCas::write( $stored, $working, $source['raw'] );
+		if ( 'saved' !== ( $outcome['status'] ?? '' ) ) {
+			if ( class_exists( AuditLog::class ) ) {
+				AuditLog::log( 'settings.migration_failed', 'critical', [
+					'target' => $target,
+					'reason' => 'storage_not_verified',
+				] );
+			}
+			return;
+		}
+		foreach ( $audit_versions as $event ) {
+			if ( class_exists( AuditLog::class ) ) {
+				AuditLog::log( 'settings.migrated', 'notice', $event );
+			}
+		}
 	}
 }
