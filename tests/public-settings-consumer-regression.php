@@ -1,0 +1,179 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * A2.4-S1 executable source-only Settings facade and first-party consumer
+ * contract. No WordPress boot, actual database, Docker, network or disk writes.
+ */
+namespace {
+    define( 'ABSPATH', __DIR__ . '/' );
+    define( 'ARRAY_A', 'ARRAY_A' );
+    define( 'CB_CORE_SETTINGS', 'cb_core_settings' );
+
+    $GLOBALS['s1_option_veto'] = false;
+    $GLOBALS['s1_pre_write_race'] = null;
+    $GLOBALS['s1_actions'] = [];
+
+    function maybe_serialize( mixed $value ): string { return serialize( $value ); }
+    function sanitize_option( string $key, mixed $value ): mixed { return $value; }
+    function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed {
+        return 'pre_update_option_cb_core_settings' === $hook && $GLOBALS['s1_option_veto']
+            ? $args[0] : $value;
+    }
+    function do_action( string $hook, mixed ...$args ): void {
+        $GLOBALS['s1_actions'][] = $hook;
+    }
+    function wp_cache_delete( string $key, string $group = '' ): bool { return true; }
+    function wp_cache_get( string $key, string $group = '', bool $force = false, ?bool &$found = null ): mixed {
+        $found = false;
+        return false;
+    }
+    function sanitize_key( string $value ): string { return strtolower( $value ); }
+
+    final class S1ConsumerFakeDb {
+        public string $options = 'wp_options';
+        public string $last_error = '';
+        public array $rows = [];
+        public int $writes = 0;
+        public bool $deny = false;
+        private array $prepared = [];
+
+        public function prepare( string $sql, mixed ...$args ): string {
+            $id = 'statement-' . count( $this->prepared );
+            $this->prepared[$id] = [ $sql, $args ];
+            return $id;
+        }
+        public function get_row( string $id, mixed $output = null ): ?array {
+            [ $sql, $args ] = $this->prepared[$id];
+            if ( ! str_starts_with( $sql, 'SELECT option_name' ) ) {
+                throw new \RuntimeException( 'Unexpected fake SELECT.' );
+            }
+            return $this->rows[$args[0]][$args[1]] ?? null;
+        }
+        public function query( string $id ): int|false {
+            [ $sql, $args ] = $this->prepared[$id];
+            if ( ! str_contains( $sql, 'BINARY option_value' ) ) {
+                throw new \RuntimeException( 'Conditional binary CAS required.' );
+            }
+            $this->writes++;
+            if ( $this->deny ) {
+                $this->last_error = 'injected failure';
+                return false;
+            }
+            if ( is_callable( $GLOBALS['s1_pre_write_race'] ) ) {
+                $race = $GLOBALS['s1_pre_write_race'];
+                $GLOBALS['s1_pre_write_race'] = null;
+                $race( $this );
+            }
+            [ $table, $new, $name, $old, $autoload ] = $args;
+            $row = $this->rows[$table][$name] ?? null;
+            if ( ! is_array( $row ) || $row['option_value'] !== $old || $row['autoload'] !== $autoload ) {
+                return 0;
+            }
+            $this->rows[$table][$name]['option_value'] = $new;
+            return 1;
+        }
+        public function seed( array $value ): void {
+            $this->rows[$this->options][CB_CORE_SETTINGS] = [
+                'option_name' => CB_CORE_SETTINGS,
+                'option_value' => serialize( $value ),
+                'autoload' => 'on',
+            ];
+            $this->last_error = '';
+        }
+        public function value(): array {
+            return unserialize( $this->rows[$this->options][CB_CORE_SETTINGS]['option_value'], [
+                'allowed_classes' => false,
+            ] );
+        }
+    }
+
+    function get_option( string $key, mixed $default = false ): mixed {
+        global $wpdb;
+        return isset( $wpdb->rows[$wpdb->options][$key] )
+            ? unserialize( $wpdb->rows[$wpdb->options][$key]['option_value'], [
+                'allowed_classes' => false,
+            ] ) : $default;
+    }
+}
+namespace CoreBlueprint\Core {
+    final class SettingsDefaults {
+        public static function all(): array {
+            return [
+                'permissions' => [
+                    'hide_from_admins' => false,
+                    'privileged_access_mode' => 'enforce',
+                    'email_alerts' => [ 'role_change' => true ],
+                ],
+                'reports' => [ 'admin_can_generate' => [ 'maintenance' => false ] ],
+                'integrity' => [ 'admin_can_run' => false ],
+            ];
+        }
+    }
+}
+namespace CoreBlueprint\Core\Log {
+    final class AuditLog {
+        public static array $events = [];
+        public static function log( string $type, string $level, array $details = [] ): void {
+            self::$events[] = [ $type, $level, $details ];
+        }
+    }
+}
+namespace {
+    require_once dirname( __DIR__ ) . '/src/Settings/OptionCas.php';
+    require_once dirname( __DIR__ ) . '/src/Settings.php';
+
+    function s1_consumer_assert( bool $condition, string $reason ): void {
+        if ( ! $condition ) {
+            throw new \RuntimeException( 'A2.4-S1 consumer regression: ' . $reason );
+        }
+    }
+
+    $wpdb = new S1ConsumerFakeDb();
+    $original = \CoreBlueprint\Core\SettingsDefaults::all();
+    $original['reports']['branding'] = [ 'provider_name' => 'untouched' ];
+    $wpdb->seed( $original );
+
+    $changes = [
+        'permissions.hide_from_admins' => true,
+        'permissions.privileged_access_mode' => 'monitor',
+        'reports.admin_can_generate.maintenance' => true,
+        'integrity.admin_can_run' => true,
+    ];
+    $settings = \CoreBlueprint\Core\Settings::class;
+
+    $GLOBALS['s1_option_veto'] = true;
+    s1_consumer_assert( ! $settings::set_paths( $changes, 'profile' ), 'refused grouped mutation is not saved' );
+    s1_consumer_assert( $wpdb->value() === $original, 'refusal changes no group' );
+    s1_consumer_assert( [] === \CoreBlueprint\Core\Log\AuditLog::$events, 'no success audit on refusal' );
+    s1_consumer_assert( ! in_array( 'updated_option', $GLOBALS['s1_actions'], true ), 'no updated hook on refusal' );
+    $GLOBALS['s1_option_veto'] = false;
+
+    s1_consumer_assert( $settings::set_paths( $changes, 'profile' ), 'accepted grouped mutation saved' );
+    $persisted = $wpdb->value();
+    s1_consumer_assert( true === $persisted['permissions']['hide_from_admins'], 'permissions leaf committed' );
+    s1_consumer_assert( 'monitor' === $persisted['permissions']['privileged_access_mode'], 'policy leaf committed' );
+    s1_consumer_assert( true === $persisted['reports']['admin_can_generate']['maintenance'], 'reports access committed' );
+    s1_consumer_assert( true === $persisted['integrity']['admin_can_run'], 'integrity access committed' );
+    s1_consumer_assert( 'untouched' === $persisted['reports']['branding']['provider_name'], 'unrelated branding preserved' );
+    s1_consumer_assert( 1 === count( \CoreBlueprint\Core\Log\AuditLog::$events ), 'one confirmed audit for grouped mutation' );
+
+    s1_consumer_assert( ! $settings::set_paths( $changes, 'profile' ), 'no-op is distinct from durable mutation' );
+    s1_consumer_assert( 'unchanged' === $settings::last_write_status(), 'unchanged confirmed by fresh row' );
+    s1_consumer_assert( 1 === count( \CoreBlueprint\Core\Log\AuditLog::$events ), 'no false audit on no-op' );
+
+    // Simulate another worker committing between this request's snapshot and a
+    // proposed update to the same policy leaf. A stale intent must be rejected.
+    $fresh = $persisted;
+    $fresh['permissions']['privileged_access_mode'] = 'enforce';
+    $wpdb->seed( $fresh );
+    s1_consumer_assert( ! $settings::matches_paths( [ 'permissions.privileged_access_mode' => 'monitor' ] ), 'fresh-row check rejects stale no-op' );
+    s1_consumer_assert( ! $settings::set_paths( [
+        'permissions.hide_from_admins' => false,
+        'permissions.privileged_access_mode' => 'enforce',
+    ], 'profile' ), 'stale grouped source intent rejected' );
+    s1_consumer_assert( $wpdb->value() === $fresh, 'failed grouped intent cannot partially write' );
+    s1_consumer_assert( 1 === count( \CoreBlueprint\Core\Log\AuditLog::$events ), 'no false audit on stale conflict' );
+
+    echo "Core Blueprint Settings A2.4-S1 facade/consumer regression PASS\n";
+}
