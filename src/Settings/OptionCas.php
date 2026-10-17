@@ -74,6 +74,17 @@ final class OptionCas {
             return [ 'status' => 'refused' ];
         }
 
+        // Pre-update filters may veto an option write, but may not silently
+        // attenuate or transform any requested leaf in a multi-path intent.
+        // A partial match is not a successful Settings mutation.
+        foreach ( $intent as $requested ) {
+            [ $present, $value ] = self::at( $candidate, $requested['path'] );
+            if ( $present !== $requested['after_exists']
+                || ( $present && $value !== $requested['after'] ) ) {
+                return [ 'status' => 'refused' ];
+            }
+        }
+
         $actual = [];
         if ( ! self::collect( $proposed, $candidate, [], $actual ) ) {
             return [ 'status' => 'invalid' ];
