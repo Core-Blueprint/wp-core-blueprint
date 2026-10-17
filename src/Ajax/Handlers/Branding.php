@@ -69,7 +69,7 @@ final class Branding {
 			'reports.branding' => $branding,
 			'reports.composer.maintenance' => $template,
 		], 'preferences.reports_designer' );
-		self::verify_legacy_write( $updated, $branding, $template );
+		self::verify_legacy_write( $updated, $branding, $template, __( 'Reports save could not be verified.', 'core-blueprint' ) );
 		if ( $updated ) {
 			AuditLog::log( 'reports.designer_updated', 'notice', [ 'by' => get_current_user_id() ] );
 		}
@@ -103,7 +103,7 @@ final class Branding {
 			'reports.branding' => $defaults,
 			'reports.composer.maintenance' => $template,
 		], 'preferences.reports_designer' );
-		self::verify_legacy_write( $updated, $defaults, $template );
+		self::verify_legacy_write( $updated, $defaults, $template, __( 'Reports reset could not be verified.', 'core-blueprint' ) );
 		if ( $updated ) {
 			AuditLog::log( 'reports.designer_reset', 'notice', [ 'by' => get_current_user_id() ] );
 		}
@@ -111,17 +111,17 @@ final class Branding {
 	}
 
 	/** Verify the actual stored legacy fields, never a stale request cache. */
-	private static function verify_legacy_write( bool $changed, array $branding, array $template ): void {
+	private static function verify_legacy_write( bool $changed, array $branding, array $template, string $failure_message ): void {
 		$status = Settings::last_write_status();
 		if ( ! $changed && 'unchanged' !== $status ) {
-			wp_send_json_error( [ 'message' => __( 'Reports settings changed or the save was refused.', 'core-blueprint' ), 'code' => 'reports_settings_conflict' ], 'conflict' === $status || 'refused' === $status ? 409 : 503 );
+			wp_send_json_error( [ 'message' => $failure_message, 'code' => 'reports_settings_conflict' ], 'conflict' === $status || 'refused' === $status ? 409 : 503 );
 		}
 		$source = \CoreBlueprint\Core\Settings\OptionCas::read();
 		$reports = 'ok' === ( $source['status'] ?? '' ) ? (array) ( $source['value']['reports'] ?? [] ) : [];
 		if ( 'ok' !== ( $source['status'] ?? '' )
 			|| ( $reports['branding'] ?? ReportBranding::settings_defaults() ) !== $branding
 			|| ( $reports['composer']['maintenance'] ?? MaintenanceTemplate::defaults() ) !== $template ) {
-			wp_send_json_error( [ 'message' => __( 'Reports storage readback failed.', 'core-blueprint' ), 'code' => 'reports_settings_unverified' ], 503 );
+			wp_send_json_error( [ 'message' => $failure_message, 'code' => 'reports_settings_unverified' ], 503 );
 		}
 	}
 
