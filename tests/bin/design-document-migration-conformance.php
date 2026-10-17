@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 /**
  * G1d-A2.2 isolated WordPress/MariaDB transactional conformance.
