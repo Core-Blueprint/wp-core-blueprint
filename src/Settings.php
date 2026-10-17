@@ -67,6 +67,39 @@ final class Settings {
 		return self::$last_write_status;
 	}
 
+	/**
+	 * @internal Confirm read-only no-op intent against the actual current row.
+	 * Never treat a stale request-local snapshot as authoritative proof.
+	 *
+	 * @param array<string,mixed> $expected Trusted dot paths or top-level keys.
+	 */
+	public static function matches_paths( array $expected ): bool {
+		if ( [] === $expected || count( $expected ) > 64 ) {
+			return false;
+		}
+		$row = OptionCas::read();
+		if ( 'ok' !== ( $row['status'] ?? '' ) ) {
+			return false;
+		}
+		$live = self::deep_merge( self::defaults(), $row['value'] );
+		foreach ( $expected as $path => $value ) {
+			if ( ! is_string( $path ) || ! preg_match( '/^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){0,7}$/D', $path ) ) {
+				return false;
+			}
+			$node = $live;
+			foreach ( explode( '.', $path ) as $part ) {
+				if ( ! is_array( $node ) || ! array_key_exists( $part, $node ) ) {
+					return false;
+				}
+				$node = $node[ $part ];
+			}
+			if ( $node !== $value ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public static function site_mode(): string {
 		$mode = self::get()['site_mode'] ?? 'production';
 		return in_array( $mode, self::SITE_MODES, true ) ? $mode : 'production';
@@ -87,6 +120,10 @@ final class Settings {
 	public static function set_key( string $key, $value, string $actor = 'unknown' ): bool {
 		$settings = self::get();
 		$before   = $settings[ $key ] ?? null;
+		if ( $before === $value ) {
+			self::$last_write_status = self::matches_paths( [ $key => $value ] ) ? 'unchanged' : 'conflict';
+			return false;
+		}
 
 		$before_hint      = self::hint( $before );
 		$settings[ $key ] = $value;
@@ -148,7 +185,7 @@ final class Settings {
 			unset( $node );
 		}
 		if ( $before === $settings ) {
-			self::$last_write_status = 'unchanged';
+			self::$last_write_status = self::matches_paths( $changes ) ? 'unchanged' : 'conflict';
 			return false;
 		}
 		if ( ! self::persist( $settings ) ) {
