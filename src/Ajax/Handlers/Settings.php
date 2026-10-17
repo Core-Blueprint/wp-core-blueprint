@@ -41,10 +41,17 @@ final class Settings {
 		$module  = Request::sanitize_key( 'module' );
 		$enabled = Request::bool( 'enabled' );
 
-		$user = wp_get_current_user();
-		CoreSettings::set_module_enabled( $module, $enabled, 'admin:' . $user->user_login );
-
-		wp_send_json_success();
+		$before = (bool) ( CoreSettings::get()['modules'][ $module ]['enabled'] ?? false );
+		if ( '' === $module ) {
+			wp_send_json_error( [ 'code' => 'settings_invalid_module' ], 400 );
+		}
+		if ( $before !== $enabled ) {
+			$user = wp_get_current_user();
+			if ( ! CoreSettings::set_module_enabled( $module, $enabled, 'admin:' . $user->user_login ) ) {
+				wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
+			}
+		}
+		wp_send_json_success( [ 'changed' => $before !== $enabled ] );
 	}
 
 	/**
@@ -57,8 +64,24 @@ final class Settings {
 		self::require_admin();
 		$enabled = Request::bool( 'enabled' );
 
+		$previous = (array) ( CoreSettings::get()['modules'] ?? [] );
+		$expected_change = false;
+		foreach ( \CoreBlueprint\Core\Security\ModuleRegistry::all() as $registered ) {
+			$slug = $registered->slug();
+			if ( (bool) ( $previous[ $slug ]['enabled'] ?? false ) !== $enabled ) {
+				$expected_change = true;
+			}
+		}
+		foreach ( $previous as $state ) {
+			if ( (bool) ( $state['enabled'] ?? false ) !== $enabled ) {
+				$expected_change = true;
+			}
+		}
 		$user    = wp_get_current_user();
 		$changed = CoreSettings::set_all_modules_enabled( $enabled, 'admin:' . $user->user_login );
+		if ( $expected_change && [] === $changed ) {
+			wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
+		}
 
 		wp_send_json_success( [
 			'enabled' => $enabled,
@@ -73,10 +96,17 @@ final class Settings {
 		$feature = Request::sanitize_key( 'feature' );
 		$enabled = Request::bool( 'enabled' );
 
-		$user = wp_get_current_user();
-		CoreSettings::set_feature_enabled( $module, $feature, $enabled, 'admin:' . $user->user_login );
-
-		wp_send_json_success();
+		if ( '' === $module || '' === $feature ) {
+			wp_send_json_error( [ 'code' => 'settings_invalid_feature' ], 400 );
+		}
+		$before = (bool) ( CoreSettings::get()['modules'][ $module ]['features'][ $feature ] ?? false );
+		if ( $before !== $enabled ) {
+			$user = wp_get_current_user();
+			if ( ! CoreSettings::set_feature_enabled( $module, $feature, $enabled, 'admin:' . $user->user_login ) ) {
+				wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
+			}
+		}
+		wp_send_json_success( [ 'changed' => $before !== $enabled ] );
 	}
 
 	public static function apply_defaults(): void {
@@ -84,7 +114,11 @@ final class Settings {
 		self::require_admin();
 
 		$user = wp_get_current_user();
-		CoreSettings::apply_recommended_defaults( 'admin:' . $user->user_login );
+		try {
+			CoreSettings::apply_recommended_defaults( 'admin:' . $user->user_login );
+		} catch ( \Throwable $error ) {
+			wp_send_json_error( [ 'code' => 'settings_save_unverified' ], 503 );
+		}
 
 		wp_send_json_success( [
 			'message' => __( 'Recommended defaults applied.', 'core-blueprint' ),
@@ -142,12 +176,16 @@ final class Settings {
 		if ( ! isset( $block['email_alerts'] ) || ! is_array( $block['email_alerts'] ) ) {
 			$block['email_alerts'] = [];
 		}
+		$before = (bool) ( $block['email_alerts'][ $alert_key ] ?? false );
 		$block['email_alerts'][ $alert_key ] = $enabled;
 
-		$user = wp_get_current_user();
-		CoreSettings::set_key( $group, $block, 'admin:' . $user->user_login );
-
-		wp_send_json_success();
+		if ( $before !== $enabled ) {
+			$user = wp_get_current_user();
+			if ( ! CoreSettings::set_key( $group, $block, 'admin:' . $user->user_login ) ) {
+				wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
+			}
+		}
+		wp_send_json_success( [ 'changed' => $before !== $enabled ] );
 	}
 
 	/**
@@ -208,11 +246,15 @@ final class Settings {
 		if ( ! isset( $settings[ $group ] ) || ! is_array( $settings[ $group ] ) ) {
 			$settings[ $group ] = [];
 		}
+		$before = (string) ( $settings[ $group ]['email_recipient'] ?? '' );
 		$settings[ $group ]['email_recipient'] = $clean;
 
-		$user = wp_get_current_user();
-		CoreSettings::set_key( $group, $settings[ $group ], 'admin:' . $user->user_login );
-
+		if ( $before !== $clean ) {
+			$user = wp_get_current_user();
+			if ( ! CoreSettings::set_key( $group, $settings[ $group ], 'admin:' . $user->user_login ) ) {
+				wp_send_json_error( [ 'code' => 'settings_save_conflict' ], 409 );
+			}
+		}
 		wp_send_json_success( [
 			'group'     => $group,
 			'recipient' => $clean,
