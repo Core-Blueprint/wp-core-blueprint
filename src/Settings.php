@@ -104,6 +104,50 @@ final class Settings {
 		return $result;
 	}
 
+	/**
+	 * Apply a fixed first-party set of nested Settings leaf intents atomically.
+	 * @internal Existing public entrypoints and return contracts are unchanged.
+	 *
+	 * @param array<string,mixed> $changes Dot-delimited keys supplied by
+	 *                                     trusted Base consumers, never request input.
+	 */
+	public static function set_paths( array $changes, string $actor = 'unknown' ): bool {
+		if ( [] === $changes || count( $changes ) > 64 ) {
+			return false;
+		}
+		$settings = self::get();
+		$before   = $settings;
+		foreach ( $changes as $path => $value ) {
+			if ( ! is_string( $path ) || ! preg_match( '/^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*){1,7}$/D', $path ) ) {
+				return false;
+			}
+			$parts = explode( '.', $path );
+			$last  = array_pop( $parts );
+			$node  = &$settings;
+			foreach ( $parts as $part ) {
+				if ( ! isset( $node[ $part ] ) ) {
+					$node[ $part ] = [];
+				}
+				if ( ! is_array( $node[ $part ] ) ) {
+					return false;
+				}
+				$node = &$node[ $part ];
+			}
+			$node[ $last ] = $value;
+			unset( $node );
+		}
+		if ( $before === $settings || ! self::persist( $settings ) ) {
+			return false;
+		}
+		if ( class_exists( AuditLog::class ) ) {
+			AuditLog::log( 'settings.changed', 'notice', [
+				'changed' => implode( ', ', array_keys( $changes ) ),
+				'actor'   => $actor,
+			] );
+		}
+		return true;
+	}
+
 	public static function set_module_enabled( string $module_slug, bool $enabled, string $actor = 'unknown' ): bool {
 		$settings    = self::get();
 		$module_slug = sanitize_key( $module_slug );
