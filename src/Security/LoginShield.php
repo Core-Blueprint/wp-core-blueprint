@@ -583,7 +583,11 @@ final class LoginShield {
 			'block_response_code'  => self::normalize_response_code( $incoming['block_response_code'] ?? self::RESPONSE_CODE_404 ),
 		];
 
-		if ( $previous !== $normalised && ! Settings::set_key( self::SETTINGS_KEY, $normalised, $actor ) ) {
+		if ( $previous === $normalised ) {
+			if ( ! Settings::matches_paths( [ self::SETTINGS_KEY => $normalised ] ) ) {
+				throw new \RuntimeException( 'Login Shield configuration could not be verified.' );
+			}
+		} elseif ( ! Settings::set_key( self::SETTINGS_KEY, $normalised, $actor ) ) {
 			throw new \RuntimeException( 'Login Shield configuration could not be committed.' );
 		}
 
