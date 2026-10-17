@@ -8,6 +8,8 @@ use CoreBlueprint\Core\Profiles\ExactSection;
 use CoreBlueprint\Core\Profiles\SchemaGuard;
 use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
 use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Design\Document\Authority;
+use CoreBlueprint\Core\Reports\DesignDocumentAdapter;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,7 +21,8 @@ final class ReportsSection extends ExactSection {
 
 	public function export(): array {
 		$reports = Settings::get()['reports'] ?? [];
-		$branding = is_array( $reports['branding'] ?? null ) ? $reports['branding'] : [];
+		$live = DesignDocumentAdapter::current();
+		$branding = $live['branding'];
 		$alerts = is_array( $reports['email_alerts'] ?? null ) ? $reports['email_alerts'] : [];
 		return [
 			'retention_days' => max( 7, min( 3650, (int) ( $reports['retention_days'] ?? 365 ) ) ),
@@ -72,7 +75,29 @@ final class ReportsSection extends ExactSection {
 		];
 	}
 
+	/** The Base Profiles engine runs all selected-section preflights before mutation. */
+	public function preflight( array $incoming, array $current ): void {
+		unset( $incoming, $current );
+		self::require_legacy_profile_authority();
+	}
+
+	/** Repeat policy at direct apply and rollback boundaries. */
+	public function restore( array $snapshot, array $incoming, string $actor ): void {
+		self::require_legacy_profile_authority();
+		parent::restore( $snapshot, $incoming, $actor );
+	}
+
+	private static function require_legacy_profile_authority(): void {
+		$state = Authority::inspect()['status'];
+		if ( ! in_array( $state, [ 'legacy', 'prepared' ], true ) ) {
+			throw new \\RuntimeException(
+				__( 'Reports Profile import is temporarily unavailable while canonical Reports storage is active or requires recovery. No Profile sections were changed. Review the Reports storage policy.', 'core-blueprint' )
+			);
+		}
+	}
+
 	public function apply( array $incoming, string $actor ): void {
+		self::require_legacy_profile_authority();
 		$incoming = $this->normalize( $incoming );
 		$settings = Settings::get();
 		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
