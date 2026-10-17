@@ -640,7 +640,14 @@ final class ScanController {
 			$integrity['distribution_locale_mode']     = 'auto';
 		}
 
-		Settings::set_key( 'integrity', $integrity, 'integrity_redetect' );
+		$changes = [ 'integrity.distribution_locale_meta' => $integrity['distribution_locale_meta'] ];
+		if ( isset( $integrity['distribution_locale_detected'] ) ) {
+			$changes['integrity.distribution_locale_detected'] = $integrity['distribution_locale_detected'];
+			$changes['integrity.distribution_locale_mode'] = $integrity['distribution_locale_mode'];
+		}
+		if ( ! Settings::set_paths( $changes, 'integrity_redetect' ) ) {
+			return new WP_Error( 'cb_integrity_storage_conflict', __( 'Integrity settings were not saved. Reload and retry.', 'core-blueprint' ), [ 'status' => 409 ] );
+		}
 
 		$this->audit( 'integrity_distribution_locale_detected', 'notice', [
 			'detected'    => $detection['detected'],
@@ -702,7 +709,17 @@ final class ScanController {
 		$integrity['distribution_locale_mode']     = $mode;
 		$integrity['distribution_locale_override'] = 'override' === $mode ? $override : '';
 
-		Settings::set_key( 'integrity', $integrity, 'integrity_locale_mode' );
+		if ( $mode !== (string) ( Settings::get()['integrity']['distribution_locale_mode'] ?? '' )
+			|| $integrity['distribution_locale_override'] !== (string) ( Settings::get()['integrity']['distribution_locale_override'] ?? '' ) ) {
+			if ( ! Settings::set_paths( [
+				'integrity.distribution_locale_mode' => $mode,
+				'integrity.distribution_locale_override' => $integrity['distribution_locale_override'],
+			], 'integrity_locale_mode' ) ) {
+				return new WP_Error( 'cb_integrity_storage_conflict', __( 'Integrity settings were not saved. Reload and retry.', 'core-blueprint' ), [ 'status' => 409 ] );
+			}
+		} else {
+			return new WP_REST_Response( [ 'mode' => $mode, 'override' => $integrity['distribution_locale_override'], 'detected' => $integrity['distribution_locale_detected'] ?? '', 'meta' => $integrity['distribution_locale_meta'] ?? [] ], 200 );
+		}
 
 		$this->audit( 'integrity_distribution_locale_changed', 'notice', [
 			'mode'     => $mode,
