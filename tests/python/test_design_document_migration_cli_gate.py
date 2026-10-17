@@ -1,0 +1,65 @@
+"""A2.2: prove the canonical Level 2 runner actually invokes the real SQL gate.
+
+Source-only. No WordPress, Docker, database, network or test-fixture execution.
+The independently authorized Level 2 run supplies runtime evidence later.
+"""
+
+from pathlib import Path
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[2]
+CLI = ROOT / "tests" / "bin" / "run-cli-smoke-scenario.sh"
+FIXTURE = ROOT / "tests" / "bin" / "design-document-migration-conformance.php"
+RUNNER = ROOT / "tools" / "integration" / "execution.py"
+
+
+class DesignDocumentMigrationCliGateTest(unittest.TestCase):
+    def test_fixture_is_called_after_real_wp_cli_install(self):
+        shell = CLI.read_text(encoding="utf-8")
+        self.assertIn("wp_cli plugin activate core-blueprint", shell)
+        self.assertIn(
+            'wp_cli eval-file "$ROOT/tests/bin/design-document-migration-conformance.php"',
+            shell,
+        )
+        self.assertLess(
+            shell.index("wp_cli plugin activate core-blueprint"),
+            shell.index("design-document-migration-conformance.php"),
+        )
+        self.assertIn("[A2.2] final prepare-only conformance PASS", shell)
+
+    def test_canonical_level2_runs_the_cli_gate(self):
+        runner = RUNNER.read_text(encoding="utf-8")
+        self.assertIn('"tests/bin/run-cli-smoke-scenario.sh"', runner)
+
+    def test_fixture_rejects_non_isolated_database_and_proves_rollback(self):
+        source = FIXTURE.read_text(encoding="utf-8")
+        for required in (
+            "CB_BASE_TEST_SLOT",
+            "core_blueprint_base_",
+            "CB_CLI_TABLE_PREFIX",
+            "Migration::prepare()",
+            "Migration::freshness()",
+            "MigrationBackup::read_verified()",
+            "START TRANSACTION",  # fixture description, no manual transaction
+            "CREATE TRIGGER",
+            "SIGNAL SQLSTATE '45000'",
+            "partial inserts fully rolled back",
+            "source_changed",
+            "target_changed",
+            "no active cutover marker",
+            "preexisting target-row conflict",
+            "cb_a22_clear_preparation",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, source)
+
+    def test_fixture_and_runner_do_not_expose_public_migration_endpoint(self):
+        source = FIXTURE.read_text(encoding="utf-8")
+        self.assertNotIn("register_rest_route(", source)
+        self.assertNotIn("register_activation_hook(", source)
+        self.assertNotIn("wp_ajax_cb_core_design_docs", source)
+
+
+if __name__ == "__main__":
+    unittest.main()
