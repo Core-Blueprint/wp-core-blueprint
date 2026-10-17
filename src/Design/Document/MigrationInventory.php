@@ -185,13 +185,15 @@ final class MigrationInventory {
 		return $value;
 	}
 
-	private static function has_object( mixed $value ): bool {
-		if ( is_object( $value ) || is_resource( $value ) ) {
+	private static function has_object( mixed $value, int $depth = 0 ): bool {
+		// PHP serialized arrays may contain recursive references. Treat
+		// excessive nesting as invalid instead of risking an unbounded walk.
+		if ( $depth > 64 || is_object( $value ) || is_resource( $value ) ) {
 			return true;
 		}
 		if ( is_array( $value ) ) {
 			foreach ( $value as $item ) {
-				if ( self::has_object( $item ) ) {
+				if ( self::has_object( $item, $depth + 1 ) ) {
 					return true;
 				}
 			}
