@@ -517,7 +517,15 @@ final class ResultRepository {
 		$next['uploads_scan']         = (bool) $next['uploads_scan'];
 		$next['max_visible_findings'] = max( 10, min( 200, (int) $next['max_visible_findings'] ) );
 
-		Settings::set_key( 'integrity', $next, 'integrity' );
+		$changes = [];
+		foreach ( array_keys( self::settingsDefaults() ) as $key ) {
+			if ( ( $current[ $key ] ?? null ) !== ( $next[ $key ] ?? null ) ) {
+				$changes[ 'integrity.' . $key ] = $next[ $key ];
+			}
+		}
+		if ( $changes && ! Settings::set_paths( $changes, 'integrity' ) ) {
+			throw new \RuntimeException( 'Core Scanner settings could not be persisted.' );
+		}
 	}
 
 	/**
