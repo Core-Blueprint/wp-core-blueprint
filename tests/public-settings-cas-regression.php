@@ -100,6 +100,18 @@ final class SettingsFakeDb {
     }
 }
 
+/**
+ * Tiny Settings projection and observer stand-in. Installed WordPress behavior
+ * remains a separate Level 2 gate, not inferred from these source fixtures.
+ */
+final class SettingsProjectionStub {
+    public static array $defaults = [];
+    public static ?array $committed = null;
+    public static function defaults(): array { return self::$defaults; }
+    public static function accept_cas( array $value ): void { self::$committed = $value; }
+}
+class_alias( SettingsProjectionStub::class, 'CoreBlueprint\\Core\\Settings' );
+
 require_once dirname( __DIR__ ) . '/src/Settings/OptionCas.php';
 function s1_assert( bool $pass, string $label ): void {
     if ( ! $pass ) {
@@ -215,4 +227,22 @@ s1_reset();
 $result = OptionCas::write( $initial, $first );
 s1_assert( 'failed' === $result['status'], 'SQL write failure is not success' );
 s1_assert( ! in_array( 'action:updated_option', $GLOBALS['s1_hooks'], true ), 'failed SQL has no post-commit hook' );
+// The read projection may contain defaults that were never persisted.
+// Committing one intended leaf must not insert all those defaults into storage.
+$wpdb->fail_write = false;
+$wpdb->rows = [];
+$wpdb->seed( [ 'reports' => [ 'retention_days' => 30 ] ] );
+SettingsProjectionStub::$defaults = [
+    'reports' => [ 'retention_days' => 30, 'branding' => [ 'contact' => 'never-persisted' ] ],
+    'modules' => [ 'scanner' => [ 'enabled' => true ] ],
+];
+$projected = SettingsProjectionStub::defaults();
+$changed = $projected;
+$changed['reports']['retention_days'] = 60;
+s1_reset();
+$result = OptionCas::write( $projected, $changed );
+s1_assert( 'saved' === $result['status'], 'default-backed leaf update saved' );
+s1_assert( [ 'reports' => [ 'retention_days' => 60 ] ] === $wpdb->value(), 'untouched defaults not written to storage' );
+s1_assert( [ 'reports' => [ 'retention_days' => 60 ] ] === SettingsProjectionStub::$committed, 'post-commit observer sees committed raw state' );
+
 echo "Core Blueprint Settings A2.4-S1 standalone CAS/refusal/no-op regression PASS\n";
