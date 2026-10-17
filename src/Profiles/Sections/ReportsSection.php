@@ -90,7 +90,7 @@ final class ReportsSection extends ExactSection {
 	private static function require_legacy_profile_authority(): void {
 		$state = Authority::inspect()['status'];
 		if ( ! in_array( $state, [ 'legacy', 'prepared' ], true ) ) {
-			throw new \\RuntimeException(
+			throw new \RuntimeException(
 				__( 'Reports Profile import is temporarily unavailable while canonical Reports storage is active or requires recovery. No Profile sections were changed. Review the Reports storage policy.', 'core-blueprint' )
 			);
 		}
