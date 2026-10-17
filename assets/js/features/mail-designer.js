@@ -584,6 +584,12 @@ if (root) {
 	});
 
 	const templateIdFields = Array.from(root.querySelectorAll('input[name="template_id"]'));
+	const revisionFields = Array.from(root.querySelectorAll('[data-cb-mail-revision]'));
+	const setServerRevision = (revision) => {
+		serverRevision = revision;
+		root.dataset.revision = revision;
+		revisionFields.forEach((field) => { field.value = revision; });
+	};
 	const resolveTemplateSelection = (value) => {
 		const raw = String(value || '').trim();
 		if (!raw) return { templateId: '', url: '' };
@@ -648,7 +654,7 @@ if (root) {
 			throw new Error('The current template changed while another template was loading. Switch cancelled.');
 		}
 		++contextEpoch;
-		serverRevision = data.revision;
+		setServerRevision(data.revision);
 		templateId = data.template_id;
 		root.dataset.templateId = templateId;
 		templateIdFields.forEach((field) => { field.value = templateId; });
@@ -814,7 +820,7 @@ if (root) {
 			setPreviewStatus('Server saved, but editor history requires a reload. Your edits remain intact.', true);
 			return;
 		}
-		serverRevision = data.revision;
+		setServerRevision(data.revision);
 		persistedFingerprint = fingerprintOf(templateId, acknowledged.subject, acknowledged.project);
 		activeSave = null;
 		event.detail.accept?.();
