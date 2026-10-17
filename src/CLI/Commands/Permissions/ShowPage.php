@@ -38,7 +38,7 @@ final class ShowPage implements CommandInterface {
 		$origin = self::execution_origin();
 		$permissions['hide_from_admins'] = false;
 		if ( ! Settings::set_paths( [ 'permissions.hide_from_admins' => false ], $origin ) ) {
-			return Result::error( __( 'Permissions settings could not be saved. Reload and retry.', 'core-blueprint' ), [ 'Conflict or storage failure; no change confirmed.' ], [ 'changed' => false ] );
+			return Result::error( __( 'Could not save - try again', 'core-blueprint' ), [ 'Conflict or storage failure; no change confirmed.' ], [ 'changed' => false ] );
 		}
 
 		AuditLog::log( 'permissions.hide_changed', 'notice', [
