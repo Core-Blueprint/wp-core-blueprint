@@ -6,6 +6,8 @@ namespace CoreBlueprint\Core\Profiles\Sections;
 use CoreBlueprint\Core\Profiles\CanonicalJson;
 use CoreBlueprint\Core\Profiles\ExactSection;
 use CoreBlueprint\Core\Profiles\SchemaGuard;
+use CoreBlueprint\Core\Profiles\VersionGuardedSectionInterface;
+use CoreBlueprint\Core\Settings\OptionCas;
 use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
 use CoreBlueprint\Core\Settings;
 use CoreBlueprint\Core\Design\Document\Authority;
@@ -13,7 +15,7 @@ use CoreBlueprint\Core\Reports\DesignDocumentAdapter;
 
 defined( 'ABSPATH' ) || exit;
 
-final class ReportsSection extends ExactSection {
+final class ReportsSection extends ExactSection implements VersionGuardedSectionInterface {
 	public function id(): string { return 'reports'; }
 	public function label(): string { return __( 'Reports policy', 'core-blueprint' ); }
 	public function description(): string { return __( 'Report retention, branding and composer policy. Report snapshots, recipient addresses and attachment IDs are not included.', 'core-blueprint' ); }
@@ -75,9 +77,39 @@ final class ReportsSection extends ExactSection {
 		];
 	}
 
-	/** The Base Profiles engine runs all selected-section preflights before mutation. */
+	/** Preview is read-only for a healthy active authority. */
 	public function preflight( array $incoming, array $current ): void {
 		unset( $incoming, $current );
+		$this->version_witness();
+	}
+
+	/** @return array<string,string> */
+	public function version_witness(): array {
+		$authority = (string) ( Authority::inspect()['status'] ?? 'blocked' );
+		if ( ! in_array( $authority, [ 'legacy', 'prepared', 'active' ], true ) ) {
+			throw new \RuntimeException( 'Reports Profile recovery_required: authority' );
+		}
+		$row = OptionCas::read();
+		if ( 'ok' !== ( $row['status'] ?? '' ) ) {
+			throw new \RuntimeException( 'Reports Profile recovery_required: settings_unavailable' );
+		}
+		$revision = 'legacy';
+		if ( 'active' === $authority ) {
+			$document = DesignDocumentAdapter::read();
+			if ( 'found' !== ( $document['status'] ?? '' ) ) {
+				throw new \RuntimeException( 'Reports Profile recovery_required: document_unavailable' );
+			}
+			$revision = (string) $document['revision'];
+		}
+		return [
+			'authority'         => $authority,
+			'settings_sha256'   => hash( 'sha256', $row['raw'] ),
+			'document_revision' => $revision,
+		];
+	}
+
+	/** Active Profiles Apply remains explicitly blocked. */
+	public function assert_apply_allowed(): void {
 		self::require_legacy_profile_authority();
 	}
 
@@ -97,20 +129,71 @@ final class ReportsSection extends ExactSection {
 	}
 
 	public function apply( array $incoming, string $actor ): void {
-		self::require_legacy_profile_authority();
-		$incoming = $this->normalize( $incoming );
-		$settings = Settings::get();
-		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
-		$reports['retention_days'] = $incoming['retention_days'];
-		$reports['email_alerts']['generation_failed'] = $incoming['email_alerts']['generation_failed'];
-		$reports['branding']['provider_name'] = $incoming['branding']['provider_name'];
-		$reports['branding']['provider_contact'] = $incoming['branding']['provider_contact'];
-		$reports['branding']['accent_color'] = $incoming['branding']['accent_color'];
-		$reports['composer']['maintenance'] = $incoming['composer']['maintenance'];
-		if ( ! Settings::set_key( 'reports', $reports, $actor ) && $this->export() !== $incoming ) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
-			throw new \RuntimeException( __( 'Could not apply the Reports profile policy.', 'core-blueprint' ) );
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+		$this->assert_apply_allowed();
+		$changes = self::represented_paths( $this->normalize( $incoming ) );
+		if ( ! Settings::set_paths( $changes, $actor )
+			&& ( 'unchanged' !== Settings::last_write_status() || ! Settings::matches_paths( $changes ) ) ) {
+			throw new \RuntimeException( 'Reports Profile apply failed: settings_conflict' );
+		}
+	}
+
+	/** @return array<string,mixed> */
+	private static function represented_paths( array $data ): array {
+		return [
+			'reports.retention_days'                 => $data['retention_days'],
+			'reports.email_alerts.generation_failed' => $data['email_alerts']['generation_failed'],
+			'reports.branding.provider_name'         => $data['branding']['provider_name'],
+			'reports.branding.provider_contact'      => $data['branding']['provider_contact'],
+			'reports.branding.accent_color'          => $data['branding']['accent_color'],
+			'reports.composer.maintenance'           => $data['composer']['maintenance'],
+		];
+	}
+
+	/** Compensate only from exact post-apply Settings bytes. */
+	public function restore_guarded(
+		array $snapshot,
+		array $incoming,
+		string $actor,
+		array $before_witness,
+		?array $after_witness
+	): void {
+		unset( $incoming, $actor );
+		$now = $this->version_witness();
+		if ( null === $after_witness ) {
+			if ( $now === $before_witness ) {
+				return;
+			}
+			throw new \RuntimeException( 'Reports Profile recovery_required: missing_post_witness' );
+		}
+		if ( $now !== $after_witness ) {
+			throw new \RuntimeException( 'Reports Profile recovery_required: concurrent_revision' );
+		}
+		$this->assert_apply_allowed();
+		$row = OptionCas::read();
+		if ( 'ok' !== ( $row['status'] ?? '' )
+			|| hash( 'sha256', $row['raw'] ) !== $after_witness['settings_sha256'] ) {
+			throw new \RuntimeException( 'Reports Profile recovery_required: settings_revision' );
+		}
+		$changes = self::represented_paths( $this->normalize( $snapshot ) );
+		$desired = $row['value'];
+		foreach ( $changes as $path => $value ) {
+			$node = &$desired;
+			foreach ( explode( '.', $path ) as $part ) {
+				if ( ! is_array( $node ) || ! array_key_exists( $part, $node ) ) {
+					throw new \RuntimeException( 'Reports Profile recovery_required: invalid_settings' );
+				}
+				$node = &$node[ $part ];
+			}
+			$node = $value;
+			unset( $node );
+		}
+		$result = OptionCas::write( $row['value'], $desired, $row['raw'], $changes );
+		if ( 'saved' !== ( $result['status'] ?? '' )
+			&& 'unchanged' !== ( $result['status'] ?? '' ) ) {
+			throw new \RuntimeException( 'Reports Profile recovery_required: compensation_conflict' );
+		}
+		if ( ! $this->verify( $snapshot ) ) {
+			throw new \RuntimeException( 'Reports Profile recovery_required: compensation_unverified' );
 		}
 	}
 
