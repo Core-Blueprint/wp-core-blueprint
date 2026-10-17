@@ -84,7 +84,7 @@ final class Authority {
 		}
 		try {
 			$witness = json_decode( (string) ( $witness_row['option_value'] ?? '' ), true, 16, JSON_THROW_ON_ERROR );
-		} catch ( \\Throwable $error ) {
+		} catch ( \Throwable $error ) {
 			return [ 'status' => 'blocked' ];
 		}
 		if ( ! self::valid_receipt( $witness, 'ever-active' )
