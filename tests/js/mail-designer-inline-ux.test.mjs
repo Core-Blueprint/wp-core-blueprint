@@ -78,8 +78,22 @@ test('M1-B AJAX saves retain dirty baseline, protect switching and do not dispos
 	assert.match(consumer, /persistedFingerprint !== null/);
 	assert.match(consumer, /event\.returnValue = ''/);
 	assert.match(consumer, /cb:design-shell:savechange/);
-	assert.match(consumer, /pendingSaveFingerprint = currentFingerprint\(\)/);
-	assert.match(consumer, /persistedFingerprint = pendingSaveFingerprint/);
+	// G1d: persist the captured server-acknowledged checkpoint, not the live editor.
+	assert.match(consumer, /if \(savePending \|\| saveUncertain \|\| activeSave \|\| !validRevision\(serverRevision\)\) return/);
+	assert.match(consumer, /const checkpoint = session\.captureSave\(\)/);
+	assert.match(consumer, /activeSave = captured/);
+	assert.match(consumer, /activeSave !== captured \|\| captured\.epoch !== contextEpoch/);
+	assert.match(consumer, /captured\.templateId !== templateId \|\| captured\.revision !== serverRevision/);
+	assert.match(consumer, /acknowledged\.subject !== captured\.subject/);
+	assert.match(consumer, /JSON\.stringify\(acknowledged\.project\) !== JSON\.stringify\(captured\.checkpoint\.submittedProject\)/);
+	assert.match(consumer, /session\.rebase\(\{/);
+	assert.match(consumer, /saveToken: captured\.checkpoint\.token/);
+	assert.match(consumer, /persistedFingerprint = fingerprintOf\(templateId, acknowledged\.subject, acknowledged\.project\)/);
+	assert.match(consumer, /saveUncertain = true/);
+	assert.match(save, /body\.set\('subject', captured\.subject\)/);
+	assert.match(save, /body\.set\('project_json', JSON\.stringify\(captured\.checkpoint\.submittedProject\)\)/);
+	assert.match(save, /body\.set\('expected_revision', captured\.revision\)/);
+	assert.match(save, /if \(!accepted\) throw new Error/);
 	assert.match(consumer, /if \(hasUnsavedChanges\(\)\)/);
 	assert.match(consumer, /Discard them and switch templates/);
 	assert.match(consumer, /originalFingerprint = currentFingerprint\(\)/);
