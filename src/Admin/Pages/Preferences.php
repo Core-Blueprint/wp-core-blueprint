@@ -621,16 +621,16 @@ final class Preferences extends PageBase {
 			return;
 		}
 
-		// Read branding straight from Settings, not via ReportBranding::current().
-		// current() returns a renderable branding shape with the logo URL resolved,
-		// but
-		// strips logo_attachment_id - the form needs the raw stored ID to
-		// populate the hidden input correctly. Use the raw stored shape
-		// here, fall back to the raw Reports branding defaults for missing keys.
-		$settings    = \CoreBlueprint\Core\Settings::get();
-		$branding    = is_array( $settings['reports']['branding'] ?? null )
-			? $settings['reports']['branding']
-			: [];
+		// Use the exact raw saved design, not resolved/rendered logo URLs.
+		// On an active site a missing/corrupt document fails closed, never
+		// quietly fills the form from legacy settings.
+		try {
+			$design = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::current();
+		} catch ( \RuntimeException $error ) {
+			$this->render_subsystem_missing( __( 'Canonical Reports design is unavailable. An operator must review its storage before changes can be made.', 'core-blueprint' ) );
+			return;
+		}
+		$branding = $design['branding'];
 		$fallback    = \CoreBlueprint\Core\Reports\ReportBranding::settings_defaults();
 		$nonce       = wp_create_nonce( 'cb_core_admin' );
 		$is_enabled  = class_exists( '\CoreBlueprint\Core\\Reports\\State' )
