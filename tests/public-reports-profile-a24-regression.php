@@ -11,6 +11,17 @@ namespace {
     function sanitize_text_field( string $s ): string { return $s; }
     function sanitize_hex_color( string $s ): ?string { return preg_match( '/^#[0-9a-fA-F]{6}$/D', $s ) ? strtolower( $s ) : null; }
     function maybe_serialize( mixed $s ): string { return serialize( $s ); }
+    function wp_json_encode( mixed $s, int $flags = 0 ): string|false { return json_encode( $s, $flags ); }
+    function sanitize_option( string $name, mixed $value ): mixed { return $value; }
+    function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed { return $value; }
+    function do_action( string $hook, mixed ...$args ): void { $GLOBALS['s2_actions'][] = $hook; }
+    function wp_cache_delete( string $key, string $group = '' ): bool { return true; }
+    function wp_cache_get( string $key, string $group = '', bool $force = false, ?bool &$found = null ): mixed {
+        $found = false; return false;
+    }
+    define( 'CB_CORE_SETTINGS', 'cb_core_settings' );
+    define( 'ARRAY_A', 'ARRAY_A' );
+    $GLOBALS['s2_actions'] = [];
 }
 namespace CoreBlueprint\Core {
     final class Settings {
@@ -20,6 +31,7 @@ namespace CoreBlueprint\Core {
             'branding' => [ 'legacy_logo_id' => 420 ],
         ] ];
         public static function get(): array { return self::$values; }
+        public static function accept_cas( array $value ): void { self::$values = $value; }
     }
 }
 namespace CoreBlueprint\Core\Settings {
@@ -32,6 +44,17 @@ namespace CoreBlueprint\Core\Design\Document {
     final class Authority {
         public static string $state = 'active';
         public static function inspect(): array { return [ 'status' => self::$state ]; }
+    }
+    final class Repository {
+        public const REPORTS = 'base.maintenance-report-design';
+        public static function valid_revision( string $revision, bool $zero = true ): bool {
+            return preg_match( '/^[1-9][0-9]*$/D', $revision ) === 1
+                && strlen( $revision ) <= 19 && (int) $revision <= PHP_INT_MAX;
+        }
+    }
+    final class Schema {
+        public static function healthy(): bool { return true; }
+        public static function table_name(): string { return 'wp_cb_design_documents'; }
     }
 }
 namespace CoreBlueprint\Core\Reports\Composer {
