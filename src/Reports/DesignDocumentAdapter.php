@@ -27,7 +27,7 @@ final class DesignDocumentAdapter {
 		if ( 'active' === $authority['status'] ) {
 			$read = self::read();
 			if ( 'found' !== $read['status'] ) {
-				throw new \\RuntimeException( 'Reports canonical document is unavailable.' );
+				throw new \RuntimeException( 'Reports canonical document is unavailable.' );
 			}
 			return [
 				'authority' => 'active',
@@ -37,7 +37,7 @@ final class DesignDocumentAdapter {
 			];
 		}
 		if ( ! in_array( $authority['status'], [ 'legacy', 'prepared' ], true ) ) {
-			throw new \\RuntimeException( 'Reports document authority is blocked.' );
+			throw new \RuntimeException( 'Reports document authority is blocked.' );
 		}
 		$settings = Settings::get();
 		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
