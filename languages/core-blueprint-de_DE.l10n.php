@@ -395,6 +395,7 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Reports reset could not be verified.' => 'Das Zurücksetzen von Reports konnte nicht überprüft werden.',
     'Reports design could not be saved. Reload if it has changed.' => 'Der Reports-Entwurf konnte nicht gespeichert werden. Laden Sie die Seite neu, falls er geändert wurde.',
     'Reports save readback failed.' => 'Die gespeicherten Reports-Daten konnten nicht überprüft werden.',
+    'Canonical Reports design is unavailable. An operator must review its storage before changes can be made.' => 'Der kanonische Reports-Entwurf ist nicht verfügbar. Ein Administrator muss den Speicher prüfen, bevor Änderungen vorgenommen werden können.',
 ] );
 // These former source strings were replaced by revision-aware operator guidance.
 unset(
