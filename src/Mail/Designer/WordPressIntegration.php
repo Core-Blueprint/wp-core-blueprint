@@ -134,7 +134,7 @@ final class WordPressIntegration {
 			AuditLog::log( 'mail.designer_integrity_fallback', 'warning', [
 				'reason_code' => $safe,
 			] );
-		} catch ( \\Throwable $ignored ) {
+		} catch ( \Throwable $ignored ) {
 			// Audit failures must not prevent WordPress from sending its own mail.
 		}
 	}
@@ -146,7 +146,7 @@ final class WordPressIntegration {
 		}
 		try {
 			$reason = get_transient( self::DIAGNOSTIC_KEY );
-		} catch ( \\Throwable $ignored ) {
+		} catch ( \Throwable $ignored ) {
 			return;
 		}
 		if ( ! is_string( $reason ) || '' === $reason ) {
