@@ -376,4 +376,30 @@ if ( ! is_array( $mail_designer ) || ! isset( $mail_designer['messages'] ) || ! 
 }
 $catalog['messages'] = array_replace( $catalog['messages'], $mail_designer['messages'] );
 
+// G1d-A2.3a canonical Mail / Reports consumer messages (source-owned keys).
+$catalog['messages'] = array_replace( $catalog['messages'], [
+    'The mail template could not be reset. Reload before trying again.' => 'Impossibile ripristinare il modello e-mail. Ricarica la pagina prima di riprovare.',
+    'The mail design is invalid.' => 'Il design dell’e-mail non è valido.',
+    'The mail template could not be saved. Reload if the document changed.' => 'Impossibile salvare il modello e-mail. Ricarica la pagina se il documento è cambiato.',
+    'The mail template save could not be verified.' => 'Impossibile verificare il salvataggio del modello e-mail.',
+    'Mail Designer storage is unavailable. Contact a Core Blueprint operator; no template data was changed.' => 'L’archiviazione di Mail Designer non è disponibile. Contatta un amministratore di Core Blueprint; nessun dato del modello è stato modificato.',
+    'Mail document storage requires operator attention.' => 'L’archiviazione dei documenti e-mail richiede l’intervento di un amministratore.',
+    'Core Blueprint Mail Designer could not safely load a saved template. WordPress handled the original system notification unchanged. Review the Mail Designer storage before editing this template.' => 'Core Blueprint Mail Designer non è riuscito a caricare in sicurezza un modello salvato. WordPress ha elaborato la notifica di sistema originale senza modifiche. Controlla l’archiviazione di Mail Designer prima di modificare questo modello.',
+    'Reports Profile import is temporarily unavailable while canonical Reports storage is active or requires recovery. No Profile sections were changed. Review the Reports storage policy.' => 'L’importazione del profilo Reports è temporaneamente non disponibile mentre l’archiviazione canonica di Reports è attiva o richiede il ripristino. Nessuna sezione del profilo è stata modificata. Controlla i criteri di archiviazione di Reports.',
+    'The Reports design is invalid.' => 'Il design di Reports non è valido.',
+    'Reports storage is unavailable.' => 'L’archiviazione di Reports non è disponibile.',
+    'Reports storage is blocked.' => 'L’archiviazione di Reports è bloccata.',
+    'Reload the Reports Designer before saving.' => 'Ricarica Reports Designer prima di salvare.',
+    'Reports save could not be verified.' => 'Impossibile verificare il salvataggio di Reports.',
+    'Reload the Reports Designer before resetting.' => 'Ricarica Reports Designer prima di ripristinare.',
+    'Reports reset could not be verified.' => 'Impossibile verificare il ripristino di Reports.',
+    'Reports design could not be saved. Reload if it has changed.' => 'Impossibile salvare il design di Reports. Ricarica la pagina se è cambiato.',
+    'Reports save readback failed.' => 'Impossibile verificare la lettura dei dati Reports salvati.',
+] );
+// These former source strings were replaced by revision-aware operator guidance.
+unset(
+    $catalog['messages']['The mail template could not be reset.'],
+    $catalog['messages']['The mail template could not be saved. Review the design and try again.']
+);
+
 return $catalog;
