@@ -81,7 +81,9 @@ final class State implements ModuleStateInterface {
 		$reports            = is_array( $cb_settings['reports'] ?? null ) ? $cb_settings['reports'] : [];
 		$reports['enabled'] = $enabled;
 
-		Settings::set_key( 'reports', $reports, 'reports' );
+		if ( ! Settings::set_key( 'reports', $reports, 'reports' ) ) {
+			throw new \RuntimeException( 'Reports state transition could not be committed.' );
+		}
 
 		if ( self::is_enabled() !== $enabled ) {
 			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
