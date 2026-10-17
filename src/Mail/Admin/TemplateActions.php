@@ -90,7 +90,7 @@ final class TemplateActions {
 			? (string) wp_unslash( $_POST['expected_revision'] ) : '';
 		try {
 			$project = json_decode( $json, true, self::JSON_DEPTH, JSON_THROW_ON_ERROR );
-		} catch ( \\JsonException $exception ) {
+		} catch ( \JsonException $exception ) {
 			$project = null;
 		}
 		if ( ! is_array( $project ) || array_is_list( $project ) ) {
