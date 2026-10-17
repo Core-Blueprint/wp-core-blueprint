@@ -487,7 +487,12 @@ namespace {
     $sparse = [ 'site_mode' => 'production', 'notes' => [ 'keep' => true ] ];
     $sparse_stage = $transaction::staged( $sparse, $canonical, $desired );
     s2_assert( 'ok' === ( $sparse_stage['status'] ?? '' ), 'valid sparse Settings without reports must stage' );
-    s2_assert( [ 'retention_days', 'email_alerts' ] === array_keys( $sparse_stage['settings']['reports'] ), 'sparse stage materializes only represented Reports Settings nodes' );
+    $sparse_report_keys = array_keys( $sparse_stage['settings']['reports'] );
+    sort( $sparse_report_keys, SORT_STRING );
+    s2_assert(
+        [ 'email_alerts', 'retention_days' ] === $sparse_report_keys,
+        'sparse stage materializes only represented Reports Settings nodes'
+    );
     s2_assert( [ 'generation_failed' ] === array_keys( $sparse_stage['settings']['reports']['email_alerts'] ), 'sparse stage writes no unrelated default alerts' );
     s2_assert( $sparse === array_intersect_key( $sparse_stage['settings'], $sparse ), 'sparse stage keeps every unrelated root setting' );
 
