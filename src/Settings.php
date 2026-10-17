@@ -188,12 +188,12 @@ final class Settings {
 			self::$last_write_status = self::matches_paths( $changes ) ? 'unchanged' : 'conflict';
 			return false;
 		}
-		if ( ! self::persist( $settings ) ) {
+		if ( ! self::persist( $settings, $changes ) ) {
 			return false;
 		}
 		if ( class_exists( AuditLog::class ) ) {
 			AuditLog::log( 'settings.changed', 'notice', [
-				'changed' => implode( ', ', array_keys( $changes ) ),
+				'changed' => implode( ', ', self::diff_paths( $before, $settings ) ),
 				'actor'   => $actor,
 			] );
 		}
@@ -398,10 +398,15 @@ final class Settings {
 		}
 	}
 
-	/** Persist changed-path intent; never replay a stale whole-document snapshot. */
-	private static function persist( array $settings ): bool {
+	/**
+	 * Persist changed paths and optional complete explicit leaf intent.
+	 * Callers other than set_paths() retain the original diff-only CAS scope.
+	 *
+	 * @param array<string,mixed> $explicit_paths Trusted dot paths, including cache-equal values.
+	 */
+	private static function persist( array $settings, array $explicit_paths = [] ): bool {
 		$expected = self::get();
-		$outcome  = OptionCas::write( $expected, $settings );
+		$outcome  = OptionCas::write( $expected, $settings, null, $explicit_paths );
 		self::$last_write_status = (string) ( $outcome['status'] ?? 'failed' );
 		// A rejected save cannot certify a previously cached request snapshot.
 		self::$cached = null;
