@@ -129,7 +129,10 @@ final class OperatorGuard {
 		$settings    = Settings::get();
 		$permissions = is_array( $settings['permissions'] ?? null ) ? $settings['permissions'] : [];
 		$permissions['hide_from_admins'] = false;
-		Settings::set_key( 'permissions', $permissions, 'permissions.operator_guard' );
+		if ( ! Settings::set_paths( [ 'permissions.hide_from_admins' => false ], 'permissions.operator_guard' ) ) {
+			// Never claim the lockout was removed when the write was refused.
+			return;
+		}
 
 		AuditLog::log(
 			'permissions.operator_guard_triggered',
