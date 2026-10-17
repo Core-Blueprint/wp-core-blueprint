@@ -56,6 +56,11 @@ final class Settings {
 		return self::$cached;
 	}
 
+	/** @internal Synchronize the request cache before post-commit option observers. */
+	public static function accept_cas( array $persisted ): void {
+		self::$cached = self::deep_merge( self::defaults(), $persisted );
+	}
+
 	public static function site_mode(): string {
 		$mode = self::get()['site_mode'] ?? 'production';
 		return in_array( $mode, self::SITE_MODES, true ) ? $mode : 'production';
