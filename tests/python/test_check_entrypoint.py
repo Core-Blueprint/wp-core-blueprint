@@ -83,6 +83,7 @@ class CheckEntrypointTest(unittest.TestCase):
                 'php|tests/public-core-scanner-ui-regression.php',
                 'php|tests/public-design-document-storage-regression.php',
                 'php|tests/public-design-document-migration-regression.php',
+                'php|tests/public-design-document-consumer-adoption-regression.php',
             ],
             [c for c in commands if c.startswith('php|tests/public-')],
         )
