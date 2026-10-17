@@ -16,6 +16,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Authority {
 	public const ACTIVE_OPTION = 'cb_core_design_docs_cutover';
+	public const EVER_ACTIVE_OPTION = 'cb_core_design_docs_ever_active_v1';
 
 	/** @return array{status:string,fingerprint?:string,target_hash?:string} */
 	public static function inspect(): array {
@@ -38,7 +39,23 @@ final class Authority {
 		if ( '' !== (string) $wpdb->last_error ) {
 			return [ 'status' => 'blocked' ];
 		}
+		$wpdb->last_error = '';
+		$witness_row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT option_value, autoload FROM %i WHERE option_name = %s LIMIT 1',
+				$wpdb->options,
+				self::EVER_ACTIVE_OPTION
+			),
+			ARRAY_A
+		);
+		if ( '' !== (string) $wpdb->last_error ) {
+			return [ 'status' => 'blocked' ];
+		}
 		if ( null === $row ) {
+			// Never downgrade a previously activated site if the active marker goes missing.
+			if ( null !== $witness_row ) {
+				return [ 'status' => 'blocked' ];
+			}
 			// An A2.2 prepare marker never selects canonical live authority.
 			$prepared = MigrationInventory::read_option( Migration::PREPARED_OPTION );
 			if ( 'ok' !== ( $prepared['status'] ?? '' ) ) {
@@ -60,7 +77,19 @@ final class Authority {
 		} catch ( \Throwable $error ) {
 			return [ 'status' => 'blocked' ];
 		}
-		if ( ! self::valid_receipt( $active, 'active' ) ) {
+		if ( ! self::valid_receipt( $active, 'active' )
+			|| ! is_array( $witness_row )
+			|| ! in_array( $witness_row['autoload'] ?? null, [ 'no', 'off' ], true ) ) {
+			return [ 'status' => 'blocked' ];
+		}
+		try {
+			$witness = json_decode( (string) ( $witness_row['option_value'] ?? '' ), true, 16, JSON_THROW_ON_ERROR );
+		} catch ( \\Throwable $error ) {
+			return [ 'status' => 'blocked' ];
+		}
+		if ( ! self::valid_receipt( $witness, 'ever-active' )
+			|| ! hash_equals( $active['fingerprint'], $witness['fingerprint'] )
+			|| ! hash_equals( $active['target_hash'], $witness['target_hash'] ) ) {
 			return [ 'status' => 'blocked' ];
 		}
 		$prepared = MigrationInventory::read_option( Migration::PREPARED_OPTION );
