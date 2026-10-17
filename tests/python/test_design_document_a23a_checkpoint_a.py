@@ -20,8 +20,18 @@ class A23aCheckpointASourceContract(unittest.TestCase):
         cls.mail = MAIL.read_text(encoding="utf-8")
         cls.reports = REPORTS.read_text(encoding="utf-8")
 
+    @staticmethod
+    def _without_line_comments(source):
+        return re.sub(r"(?m)^[ \t]*//[^\n]*", "", source)
+
+    def test_comment_filter_is_non_destructive(self):
+        fixture = "// Migration::freshness() does not run here\n$actual = get_option('x');\n"
+        stripped = self._without_line_comments(fixture)
+        self.assertNotIn("Migration::freshness(", stripped)
+        self.assertIn("get_option(", stripped)
+
     def test_authority_does_not_mutate_or_auto_activate(self):
-        source = re.sub(r"//[^\\n]*", "", self.authority)
+        source = self._without_line_comments(self.authority)
         self.assertIn("cb_core_design_docs_cutover", source)
         self.assertIn("Migration::PREPARED_OPTION", source)
         self.assertIn("MigrationInventory::read_option", source)
@@ -52,7 +62,7 @@ class A23aCheckpointASourceContract(unittest.TestCase):
         ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, self.authority)
-        self.assertNotIn("get_option(", re.sub(r"//[^\n]*", "", self.authority))
+        self.assertNotIn("get_option(", self._without_line_comments(self.authority))
 
     def test_missing_mail_row_requires_matching_verified_raw_backup(self):
         for requirement in (
