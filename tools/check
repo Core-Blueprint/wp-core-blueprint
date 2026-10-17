@@ -24,7 +24,8 @@ for required in \
   tests/public-tile-foundation-regression.php \
   tests/public-core-scanner-threat-regression.php \
   tests/public-core-scanner-ui-regression.php \
-  tests/public-design-document-storage-regression.php; do
+  tests/public-design-document-storage-regression.php \
+  tests/public-design-document-migration-regression.php; do
   [[ -f "$ROOT/$required" ]] || fail "required source check missing: $required"
 done
 [[ -d "$ROOT/tests/python" ]] || fail 'Python source-regression directory is missing'
@@ -41,6 +42,7 @@ php tests/public-tile-foundation-regression.php
 php tests/public-core-scanner-threat-regression.php
 php tests/public-core-scanner-ui-regression.php
 php tests/public-design-document-storage-regression.php
+php tests/public-design-document-migration-regression.php
 
 shopt -s globstar nullglob
 js_sources=( "$ROOT"/assets/**/*.js )
