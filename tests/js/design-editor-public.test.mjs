@@ -99,6 +99,20 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof publicEditor.profiles['document-fixed'].translateFrame, 'function');
 });
 
+test('documented public Designer ESM imports resolve in the actual module, not only the global facade', async () => {
+	const documentation = await readFile(new URL('../../docs/DESIGNER-FOUNDATION-API.md', import.meta.url), 'utf8');
+	const section = documentation.split('## Canonical browser module\n')[1]?.split('\n## ')[0] || '';
+	const code = section.match(/```js\s*([\s\S]*?)```/)?.[1] || '';
+	const importList = code.match(/import\s*\{([^}]+)\}\s*from\s*['"]@cb-core\/design-editor['"]/)?.[1] || '';
+	assert.ok(importList, 'the canonical ESM example must import from the real registered Base module');
+	for (const named of importList.split(',').map((item) => item.trim()).filter(Boolean)) {
+		assert.ok(Object.hasOwn(publicEditor, named), `documented ESM named export ${named} must exist`);
+	}
+	assert.equal(typeof publicEditor.animateLayoutChange, 'function');
+	assert.equal(Object.hasOwn(publicEditor, 'motion'), false, 'motion is a global facade convenience, not a named ESM export');
+	assert.equal(typeof window.cbCore?.designEditor?.motion?.animateLayoutChange, 'function');
+});
+
 test('canonical Inspector helpers own identity and one-row boolean control markup', () => {
 	const documentRef = {
 		createElement(tagName) {
