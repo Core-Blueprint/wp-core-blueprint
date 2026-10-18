@@ -173,7 +173,13 @@ if ( FORM ) {
 		if ( ! previewFrame ) return null;
 		if ( previewHost ) return previewHost;
 		previewFrame.hidden = false;
-		previewHost = createFlowPreviewHost( previewFrame );
+		previewHost = createFlowPreviewHost( previewFrame, {
+			onActivate: ( type ) => {
+				// An opaque iframe may only select a currently visible Composer block.
+				if ( ! composer.blocks.some( ( block ) => block.type === type && block.enabled !== false ) ) return;
+				selectBlock( type, { source: 'canvas' } );
+			},
+		} );
 		return previewHost;
 	};
 
