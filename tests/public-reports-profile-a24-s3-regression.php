@@ -289,5 +289,8 @@ s3_assert(false !== $postreceiptGuard && $receiptOffset < $postreceiptGuard
     'Engine retains exact S2 receipt then verifies complete poststate before reporting success');
 s3_assert(false !== strpos($engineSource, 'document_sha256'),
     'Engine validates complete document payload hash, not represented fields only');
+s3_assert(false !== strpos($engineSource, '$uncertain_sections[ $id ] = true;')
+    && false !== strpos($engineSource, 'uncertain_transaction'),
+    'Engine cannot treat uncertain COMMIT/posthook as a verified no-op rollback');
 
 echo "Core Blueprint Base A2.4-S3 canonical Reports Profile fixture PASS\n";
