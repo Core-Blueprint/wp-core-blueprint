@@ -5,6 +5,7 @@ const SELECTION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
 const FIRST_SIZE_TIMEOUT_MS = 5000;
 const MEASURE_MESSAGE_TYPE = 'cb-core-flow-preview-measure';
 const SELECTION_MESSAGE_TYPE = 'cb-core-flow-preview-selection';
+const ACTIVATION_MESSAGE_TYPE = 'cb-core-flow-preview-activate';
 const PROTOCOL_META = '<meta name="cb-core-flow-preview-protocol" content="1">';
 const DOCUMENT_PROTOCOL_MARKER = 'data-cb-core-flow-preview-protocol="1"';
 const GENERATION_MARKER = 'data-cb-core-flow-preview-generation="0"';
@@ -62,6 +63,17 @@ const isSizingMessage = (data) => {
 		&& data.height <= MAX_HEIGHT;
 };
 
+// A click is an iframe-to-host intent, never a direct document mutation.
+const isActivationMessage = (data) => {
+	if (data === null || typeof data !== 'object' || Array.isArray(data)) return false;
+	const keys = Object.keys(data).sort();
+	return keys.length === 4 && keys.join('|') === 'generation|region|type|version'
+		&& data.type === ACTIVATION_MESSAGE_TYPE
+		&& data.version === PROTOCOL_VERSION
+		&& Number.isSafeInteger(data.generation) && data.generation > 0
+		&& typeof data.region === 'string' && SELECTION_ID_PATTERN.test(data.region);
+};
+
 const normalizeSelectionId = (value) => {
 	if (value === null) return null;
 	if (typeof value !== 'string' || !SELECTION_ID_PATTERN.test(value)) {
@@ -72,7 +84,10 @@ const normalizeSelectionId = (value) => {
 
 const nextGeneration = (current) => current >= Number.MAX_SAFE_INTEGER ? 1 : current + 1;
 
-export const createFlowPreviewHost = (iframe) => {
+export const createFlowPreviewHost = (iframe, { onActivate = null } = {}) => {
+	if (onActivate !== null && typeof onActivate !== 'function') {
+		throw new TypeError('Flow preview activation callback must be a function.');
+	}
 	if (!iframe || String(iframe.tagName || '').toUpperCase() !== 'IFRAME') {
 		throw new TypeError('Flow preview host requires an iframe element.');
 	}
@@ -166,14 +181,15 @@ export const createFlowPreviewHost = (iframe) => {
 	};
 
 	const onMessage = (event) => {
-		if (
-			destroyed
-			|| (lifecycle !== 'loading' && lifecycle !== 'ready')
-			|| event.source !== iframe.contentWindow
-			|| !isSizingMessage(event.data)
-		) {
+		if (destroyed || event.source !== iframe.contentWindow) return;
+
+		if (isActivationMessage(event.data)) {
+			if (lifecycle === 'ready' && event.data.generation === activeGeneration) {
+				onActivate?.(event.data.region);
+			}
 			return;
 		}
+		if ((lifecycle !== 'loading' && lifecycle !== 'ready') || !isSizingMessage(event.data)) return;
 
 		const { generation: messageGeneration, height } = event.data;
 		if (messageGeneration !== activeGeneration) {
