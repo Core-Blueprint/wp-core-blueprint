@@ -397,6 +397,10 @@ test('child measure request is source version and generation bound and reports d
 		getAttribute(name) {
 			return name === 'data-cb-flow-preview-root' ? '1' : null;
 		},
+		addEventListener(type, handler) {
+			assert.equal(type, 'click');
+			assert.equal(typeof handler, 'function');
+		},
 	};
 	const windowObject = {
 		parent: parentWindow,
@@ -522,6 +526,10 @@ test('selected preview regions keep empty elements visibly selectable and restor
 		getBoundingClientRect: () => ({ height: 100 }),
 		getAttribute: (name) => name === 'data-cb-flow-preview-root' ? '1' : null,
 		querySelectorAll: (selector) => selector === '[data-cb-flow-preview-region]' ? [target] : [],
+		addEventListener(type, handler) {
+			assert.equal(type, 'click');
+			assert.equal(typeof handler, 'function');
+		},
 	};
 	const windowObject = {
 		parent: parentWindow,
