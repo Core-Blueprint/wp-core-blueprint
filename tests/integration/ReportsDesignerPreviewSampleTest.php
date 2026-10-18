@@ -6,6 +6,8 @@ use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
 use CoreBlueprint\Core\Reports\DesignerPreview;
 use CoreBlueprint\Core\Reports\MaintenanceFlowCompiler;
 use CoreBlueprint\Core\Reports\ReportBranding;
+use CoreBlueprint\Core\Reports\ReportBrandingInput;
+use CoreBlueprint\Core\Reports\State as ReportsState;
 
 final class CB_Reports_Designer_Preview_Sample_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */
