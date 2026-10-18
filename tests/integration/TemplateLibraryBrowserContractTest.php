@@ -45,7 +45,9 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 				public function extension_id(): string { return 'core-blueprint'; }
 				public function designer_type(): string { return $this->type; }
 				public function categories( int $user_id ): array {
-					return $this->can_browse( $user_id ) ? [ 'example' => 'Example' ] : [];
+					do_action( 'core_blueprint_test_category_provider_invoked', $this->type );
+					return $this->can_browse( $user_id )
+						? [ 'example' => 'Example', 'invalid category' => 'Invalid', 'control' => "Bad\\nLabel" ] : [];
 				}
 				public function can_browse( int $user_id ): bool { return user_can( $user_id, 'manage_options' ); }
 				public function can_view( string $template_id, int $user_id ): bool {
@@ -125,9 +127,14 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 		$token = DesignerScope::issue( 'core-blueprint', 'workflow' );
 		self::assertIsString( $token );
 
+		$invoked = [];
+		$observe = static function ( string $designer ) use ( &$invoked ): void { $invoked[] = $designer; };
+		add_action( 'core_blueprint_test_category_provider_invoked', $observe );
 		$scope_request = new WP_REST_Request( 'GET', '/core-blueprint/v1/template-library/sources' );
 		$scope_request->set_header( 'X-CB-Designer-Scope', $token );
 		$response = BrowserController::sources( $scope_request );
+		remove_action( 'core_blueprint_test_category_provider_invoked', $observe );
+		self::assertSame( [ 'workflow' ], $invoked, 'Scoped request must not call an unrelated Designer category provider.' );
 		self::assertSame( 200, $response->get_status() );
 		$sources = $response->get_data()['sources'];
 		self::assertCount( 1, $sources );
