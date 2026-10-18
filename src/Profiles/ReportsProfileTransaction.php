@@ -24,6 +24,42 @@ defined( 'ABSPATH' ) || exit;
  */
 final class ReportsProfileTransaction {
     private const MAX_DOCUMENT_BYTES = 262144;
+    private const FULL_DOCUMENT_DOMAIN = "cb:profiles:reports:document:v1\0";
+
+    /** Full canonical document, including fields omitted by Profile export. */
+    public static function document_hash( array $document ): string {
+        return hash( 'sha256', self::FULL_DOCUMENT_DOMAIN . CanonicalJson::encode( $document ) );
+    }
+
+    /** Exact, trusted three-field consent / after-commit receipt. */
+    private static function valid_profile_witness( array $witness ): bool {
+        if ( count( $witness ) !== 3
+            || ! isset( $witness['settings_sha256'], $witness['document_revision'], $witness['document_sha256'] )
+            || ! is_string( $witness['settings_sha256'] )
+            || ! is_string( $witness['document_revision'] )
+            || ! is_string( $witness['document_sha256'] ) ) {
+            return false;
+        }
+        return 1 === preg_match( '/^[0-9a-f]{64}$/D', $witness['settings_sha256'] )
+            && Repository::valid_revision( $witness['document_revision'], false )
+            && 1 === preg_match( '/^[0-9a-f]{64}$/D', $witness['document_sha256'] );
+    }
+
+    /** Only the strict S3 route is callable by Engine Active Profiles Apply. */
+    public static function apply_profile_guarded( array $incoming, array $approved ): array {
+        if ( ! self::valid_profile_witness( $approved ) ) {
+            return [ 'status' => 'invalid', 'reason' => 'invalid_profile_witness' ];
+        }
+        return self::apply_guarded( $incoming, $approved, true );
+    }
+
+    public static function reverse_profile_guarded( array $snapshot, array $receipt ): array {
+        if ( ! self::valid_profile_witness( $receipt ) ) {
+            return [ 'status' => 'invalid', 'reason' => 'invalid_post_receipt' ];
+        }
+        return self::apply_guarded( $snapshot, $receipt, true );
+    }
+
 
     /** @return array{status:string,witness?:array<string,string>} */
     public static function witness(): array {
@@ -85,7 +121,7 @@ final class ReportsProfileTransaction {
      * @param array<string,string> $expected exact opaque preview/after witness
      * @return array{status:string,witness?:array<string,string>,reason?:string}
      */
-    public static function apply_guarded( array $incoming, array $expected ): array {
+    public static function apply_guarded( array $incoming, array $expected, bool $strict_profile = false ): array {
         global $wpdb;
 
         if ( 'active' !== ( Authority::inspect()['status'] ?? '' )
@@ -104,6 +140,10 @@ final class ReportsProfileTransaction {
         $doc = DesignDocumentAdapter::read();
         if ( 'ok' !== ( $read['status'] ?? '' ) || 'found' !== ( $doc['status'] ?? '' ) ) {
             return [ 'status' => 'recovery_required', 'reason' => 'document_unavailable' ];
+        }
+        if ( $strict_profile && ( ! self::valid_profile_witness( $expected )
+            || self::document_hash( $doc['document'] ) !== $expected['document_sha256'] ) ) {
+            return [ 'status' => 'conflict', 'reason' => 'document_preimage_mismatch' ];
         }
         if ( hash( 'sha256', $read['raw'] ) !== ( $expected['settings_sha256'] ?? '' )
             || (string) $doc['revision'] !== ( $expected['document_revision'] ?? '' ) ) {
@@ -130,7 +170,7 @@ final class ReportsProfileTransaction {
         $next_document = $stage['document'];
         $settings_changed = $read['value'] !== $next_settings;
         $document_changed = $doc['document'] !== $next_document;
-        if ( ! $settings_changed && ! $document_changed ) {
+        if ( ! $settings_changed && ! $document_changed && ! $strict_profile ) {
             return [ 'status' => 'unchanged' ];
         }
 
@@ -212,6 +252,9 @@ final class ReportsProfileTransaction {
         } catch ( \JsonException $error ) {
             return self::abort( 'recovery_required', 'document_corrupt' );
         }
+        if ( $strict_profile && self::document_hash( $locked_payload ) !== $expected['document_sha256'] ) {
+            return self::abort( 'conflict', 'document_locked_preimage' );
+        }
         if ( $locked_payload !== $doc['document'] ) {
             return self::abort( 'conflict', 'document_payload_mismatch' );
         }
@@ -289,6 +332,18 @@ final class ReportsProfileTransaction {
             } catch ( \Throwable $error ) {
                 return [ 'status' => 'recovery_required', 'reason' => 'posthook_uncertain' ];
             }
+        }
+
+        if ( $strict_profile ) {
+            // This is the S2-confirmed transaction pair, NEVER a later Engine read.
+            return [
+                'status' => ( ! $settings_changed && ! $document_changed ) ? 'unchanged' : 'saved',
+                'witness' => [
+                    'settings_sha256' => hash( 'sha256', $options_after ),
+                    'document_revision' => $revision_after,
+                    'document_sha256' => self::document_hash( $next_document ),
+                ],
+            ];
         }
 
         return [ 'status' => 'saved', 'witness' => [
