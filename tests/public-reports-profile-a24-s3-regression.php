@@ -95,6 +95,24 @@ s3_assert('9007199254740993' === $approved['document_revision'],
 s3_assert($approved['document_sha256'] === Transaction::document_hash(Design::read()['document']),
     'one canonical digest across Engine and two-row transaction');
 
+// A full Engine preview fingerprint must change even when the exported
+// Reports subsection and monotonic revision stay identical.
+$previewDoc = [
+    'format' => CoreBlueprint\Core\Profiles\Document::FORMAT,
+    'format_version' => CoreBlueprint\Core\Profiles\Document::FORMAT_VERSION,
+    'profile' => ['name' => 'S3 full-document', 'description' => ''],
+    'sections' => ['reports' => ['schema_version' => 1, 'data' => $before]],
+];
+$previewBefore = CoreBlueprint\Core\Profiles\Engine::preview($previewDoc);
+Design::$record['branding']['density'] = 'compact';
+$previewAfter = CoreBlueprint\Core\Profiles\Engine::preview($previewDoc);
+s3_assert($previewBefore['fingerprint'] !== $previewAfter['fingerprint'],
+    'unrepresented document drift must invalidate Engine preview consent');
+s3_assert($previewBefore['witnesses']['reports']['document_revision'] ===
+    $previewAfter['witnesses']['reports']['document_revision'],
+    'same revision alone never establishes full-content equality');
+Design::$record['branding']['density'] = 'comfortable';
+
 // R01, R02: same revision, unrepresented change before stage: first read must reject.
 Design::$record['branding']['density'] = 'compact';
 s3_assert($approved['document_revision'] === Design::$record['revision'],
@@ -209,5 +227,16 @@ try {
 }
 s3_assert($directFailed && 0 === $wpdb->option_writes && 0 === $wpdb->document_writes,
     'direct active mutation cannot bypass Engine supplied preview');
+
+// Source seam check: Engine must copy the actual returned transaction receipt
+// before section verification, never overwrite it with a fresh witness.
+$engineSource = file_get_contents(dirname(__DIR__) . '/src/Profiles/Engine.php');
+s3_assert(is_string($engineSource), 'read current Engine source');
+$receiptOffset = strpos($engineSource, '$post_witnesses[ $id ] = $result[\'witness\']');
+$verifyOffset = strpos($engineSource, 'if ( ! $section->verify( $payload[\'data\'] ) )');
+s3_assert(false !== $receiptOffset && false !== $verifyOffset && $receiptOffset < $verifyOffset,
+    'Engine must store original S2 transaction receipt before verify');
+s3_assert(false !== strpos($engineSource, '$unchanged_sections[ $id ] = true;'),
+    'Engine requires a no-write record separate from saved status');
 
 echo "Core Blueprint Base A2.4-S3 canonical Reports Profile fixture PASS\n";
