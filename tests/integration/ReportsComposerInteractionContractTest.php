@@ -72,7 +72,11 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "template: JSON.stringify( composer )", $runtime );
 		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding', nonce, reportsPayload() )", $runtime );
 		self::assertStringContainsString( 'syncPreviewSelection();', $runtime );
-		self::assertStringContainsString( "apiPost( 'cb_core_save_report_branding', nonce, reportsPayload() )", $runtime );
+		self::assertStringContainsString( "apiPost( 'cb_core_save_report_branding', nonce, {", $runtime );
+		self::assertStringContainsString( 'session.captureSave()', $runtime );
+		self::assertStringContainsString( 'session.rebase(', $runtime );
+		self::assertStringContainsString( 'expected_revision: submitted.revision', $runtime );
+		self::assertStringContainsString( 'template: JSON.stringify( submitted.composer )', $runtime );
 		self::assertStringContainsString( 'cb-core-design-shell__panel-section', $runtime );
 		self::assertStringContainsString( 'createDesignerInspectorIdentity', $runtime );
 		self::assertStringContainsString( 'createDesignerInspectorControls', $runtime );
@@ -95,7 +99,12 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 
 		self::assertStringContainsString( 'normalized_template_request()', $handler );
 		self::assertStringContainsString( "\$composer['maintenance']", $handler );
-		self::assertStringContainsString( "Settings::set_key( 'reports', \$reports", $handler );
+		self::assertStringContainsString( 'Settings::set_paths( [', $handler );
+		self::assertStringContainsString( "'reports.branding' => \$branding", $handler );
+		self::assertStringContainsString( "'reports.composer.maintenance' => \$template", $handler );
+		self::assertStringContainsString( 'verify_legacy_write( $updated, $branding, $template', $handler );
+		self::assertStringContainsString( 'OptionCas::read()', $handler );
+		self::assertStringNotContainsString( "Settings::set_key( 'reports',", $handler );
 		self::assertStringContainsString( "'template' => \$template", $handler );
 		self::assertStringContainsString( 'MaintenanceTemplate::defaults()', $handler );
 		self::assertStringContainsString( 'MaintenanceTemplate::current()', $handler );
