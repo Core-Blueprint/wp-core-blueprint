@@ -172,6 +172,38 @@ s3_assert(in_array($reversed['status'] ?? '', ['saved', 'unchanged'], true),
     'definite S3 receipt permits conditional rollback of unchanged postimage');
 s3_assert((new ReportsSection())->verify($before), 'conditional compensation restored represented fields');
 
+// S3-11/S3-12: document-only update cannot rewrite unrelated Settings,
+// and sparse valid Settings must only gain the two represented paths.
+$wpdb = s3_reset();
+$approved = s3_expected();
+$docOnly = (new ReportsSection())->export();
+$docOnly['branding']['provider_name'] = 'doc-only';
+$docOnlyResult = Transaction::apply_profile_guarded($docOnly, $approved);
+s3_assert('saved' === ($docOnlyResult['status'] ?? ''), 'document-only canonical update saved');
+s3_assert(0 === $wpdb->option_writes && 1 === $wpdb->document_writes,
+    'document-only S3 does not write Settings or call Settings update hooks');
+s3_assert('comfortable' === Design::$record['branding']['density'],
+    'document-only S3 keeps unrepresented branding');
+
+$wpdb = s3_reset();
+$minimalSettings = ['site_mode' => 'production', 'opaque' => ['keep' => true]];
+Settings::accept_cas($minimalSettings);
+OptionCas::$row['value'] = $minimalSettings;
+OptionCas::$row['raw'] = serialize($minimalSettings);
+$minimalWitness = s3_expected();
+$sparseDesired = (new ReportsSection())->export();
+$sparseDesired['retention_days'] = 180;
+$sparseDesired['email_alerts']['generation_failed'] = true;
+$sparseSaved = Transaction::apply_profile_guarded($sparseDesired, $minimalWitness);
+s3_assert('saved' === ($sparseSaved['status'] ?? ''), 'sparse settings S3 commit succeeds');
+s3_assert(1 === $wpdb->option_writes && 0 === $wpdb->document_writes,
+    'sparse settings-only S3 update does not increment document revision');
+s3_assert(true === Settings::$values['opaque']['keep'], 'unrelated sparse root preserved');
+s3_assert(!isset(Settings::$values['reports']['branding']),
+    'sparse settings never materialize unrelated Reports branding defaults');
+s3_assert(['generation_failed' => true] === Settings::$values['reports']['email_alerts'],
+    'sparse settings materialize only represented alert leaf');
+
 // Section-level S3 integration: the Engine-owned four-field witness reaches
 // S2, and compensation verifies the NEW monotone revision after restoration.
 $wpdb = s3_reset();
