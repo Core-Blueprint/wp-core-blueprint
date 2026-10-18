@@ -498,7 +498,12 @@ if ( FORM ) {
 				setPreviewState( 'The report preview host is unavailable. Reload the page.', 'error' );
 				return;
 			}
-			host.render( response.data.html );
+			if ( host.render( response.data.html ) !== true ) {
+				// The shared opaque preview host rejected the HTML/protocol.
+				// Its visible failure state must not be disguised as success.
+				setPreviewState( i18n.previewFailed || 'The report preview could not be rendered.', 'error' );
+				return;
+			}
 			syncPreviewSelection();
 			setPreviewState( '', 'success' );
 		} catch ( error ) {
