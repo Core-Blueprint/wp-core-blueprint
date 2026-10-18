@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Profiles;
 
 use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Profiles\Sections\ReportsSection;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -89,6 +90,15 @@ final class Engine {
 	public static function apply( array $document, string $expected_fingerprint, string $actor ): array {
 		$preview = self::preview( $document );
 		$document = $preview['document'];
+		// A Reports-only zero-change import has nothing to authorize; do not
+		// acquire a mutation lease merely to manufacture an unchanged write.
+		// A mixed Profile with a no-op Reports section still uses the strict
+		// guarded no-write receipt while applying its other changed sections.
+		if ( 0 === (int) $preview['total_changes']
+			&& isset( $document['sections']['reports'] )
+			&& 'active' === ( $preview['witnesses']['reports']['authority'] ?? null ) ) {
+			throw new \RuntimeException( __( 'The active Reports profile contains no changes to apply.', 'core-blueprint' ) );
+		}
 		// A read-only canonical Reports preview is not permission to apply.
 		// Check every guarded section before even acquiring the apply lock.
 		foreach ( $document['sections'] as $id => $payload ) {
@@ -107,6 +117,7 @@ final class Engine {
 		$applied = [];
 		$attempted = [];
 		$post_witnesses = [];
+		$unchanged_sections = [];
 		$before_witnesses = [];
 		$snapshots = [];
 		$registry = SectionRegistry::all();
@@ -139,13 +150,39 @@ final class Engine {
 					throw new \RuntimeException( 'Profile revision conflict' );
 				}
 				$attempted[] = $id;
-				$section->apply( $payload['data'], $actor );
+				$strict_reports = $section instanceof ReportsSection
+					&& 'active' === ( $before_witnesses[ $id ]['authority'] ?? null );
+				if ( $strict_reports ) {
+					// The exactly approved in-memory, post-lease preimage, never
+					// a fresh witness taken after a different writer's changes.
+					$result = $section->apply_profile_guarded(
+						$payload['data'], $actor, $before_witnesses[ $id ]
+					);
+					$status = $result['status'] ?? '';
+					if ( ! in_array( $status, [ 'saved', 'unchanged' ], true )
+						|| ! is_array( $result['witness'] ?? null )
+						|| count( $result['witness'] ) !== 3 ) {
+						throw new \RuntimeException( 'Reports Profile recovery_required: guarded_transaction_' . (
+							in_array( $status, [ 'conflict', 'refused', 'invalid', 'blocked', 'failed', 'recovery_required' ], true )
+								? $status : 'unavailable'
+						) );
+					}
+					if ( 'saved' === $status ) {
+						// Preserve original S2 postcommit receipt BEFORE verify,
+						// next section or observer; a later read cannot replace it.
+						$post_witnesses[ $id ] = $result['witness'];
+					} else {
+						$unchanged_sections[ $id ] = true;
+					}
+				} else {
+					$section->apply( $payload['data'], $actor );
+				}
 				if ( ! $section->verify( $payload['data'] ) ) {
 					/* translators: %s: profile section ID. */
 					throw new \RuntimeException( sprintf( __( 'Profile section %s did not verify after apply.', 'core-blueprint' ), $id ) );
 				}
 				$applied[] = $id;
-				if ( $section instanceof VersionGuardedSectionInterface ) {
+				if ( $section instanceof VersionGuardedSectionInterface && ! $strict_reports ) {
 					$post_witnesses[ $id ] = $section->version_witness();
 				}
 			}
@@ -162,7 +199,14 @@ final class Engine {
 			foreach ( array_reverse( $attempted ) as $id ) {
 				try {
 					$section = $registry[ $id ];
-					if ( $section instanceof VersionGuardedSectionInterface ) {
+					if ( isset( $unchanged_sections[ $id ] ) ) {
+						// A verified no-op is never reverse-written; if another
+						// actor changed state, report recovery rather than clobber.
+						if ( ! $section instanceof VersionGuardedSectionInterface
+							|| $section->version_witness() !== ( $before_witnesses[ $id ] ?? null ) ) {
+							throw new \RuntimeException( 'Reports Profile recovery_required: no_write_changed' );
+						}
+					} elseif ( $section instanceof VersionGuardedSectionInterface ) {
 						$section->restore_guarded(
 							$snapshots[ $id ], (array) ( $document['sections'][ $id ]['data'] ?? [] ),
 							'profile-rollback:' . $actor,
