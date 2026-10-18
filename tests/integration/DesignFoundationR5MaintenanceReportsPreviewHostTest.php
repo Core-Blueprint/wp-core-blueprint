@@ -9,7 +9,9 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Preview_Host_Test extend
 
 		self::assertStringContainsString( "from '@cb-core/design-editor';", $source );
 		self::assertStringContainsString( "profiles['document-flow']?.createFlowPreviewHost", $source );
-		self::assertStringContainsString( 'createFlowPreviewHost( previewFrame )', $source );
+		// Reports passes a selection callback through the public Flow Preview Host.
+		self::assertStringContainsString( 'createFlowPreviewHost( previewFrame, {', $source );
+		self::assertStringContainsString( 'onActivate: ( type ) => {', $source );
 		self::assertStringNotContainsString( "../design/document/flow/index.js", $source );
 		self::assertStringContainsString( 'host.render( response.data.html )', $source );
 		self::assertStringContainsString( 'previewHost?.destroy()', $source );
