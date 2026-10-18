@@ -174,6 +174,12 @@ final class CB_Base_First_Install_Presentation_Defaults_Test extends WP_UnitTest
 	public function test_explicit_enabled_state_survives_reactivation(): void {
 		update_option( 'cb_core_first_activated_at', '2026-01-01 00:00:00', false );
 
+		// Re-activation preserves an existing initialized Settings document.
+		// A missing row must not be silently created by individual module saves;
+		// only Core::activate() owns the create-once bootstrap boundary.
+		Core::activate();
+		self::assertSame( 'ok', \CoreBlueprint\Core\Settings\OptionCas::read()['status'] );
+
 		IntegrityState::set_enabled( true, 'test' );
 		NotesState::set_enabled( true, 'test' );
 		ReportsState::set_enabled( true, 'test' );
