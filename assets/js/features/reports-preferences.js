@@ -154,6 +154,7 @@ if ( FORM ) {
 	let previewTimer = null;
 	let previewSequence = 0;
 	let previewHost = null;
+	let previewRecoveryAttempted = false;
 	let designerShell = null;
 	let selectionController = null;
 
@@ -174,6 +175,13 @@ if ( FORM ) {
 		if ( previewHost ) return previewHost;
 		previewFrame.hidden = false;
 		previewHost = createFlowPreviewHost( previewFrame, {
+			onFirstSizeTimeout: () => {
+				// A fresh iframe can miss its first layout handshake while Designer enters.
+				// Retry at most once per opening; invalid HTML and AJAX failures never retry.
+				if ( previewRecoveryAttempted || ! designerShell?.isFullscreen() ) return;
+				previewRecoveryAttempted = true;
+				schedulePreview();
+			},
 			onActivate: ( type ) => {
 				// An opaque iframe may only select a currently visible Composer block.
 				if ( ! composer.blocks.some( ( block ) => block.type === type && block.enabled !== false ) ) return;
@@ -727,6 +735,7 @@ if ( FORM ) {
 	} );
 	shell?.addEventListener( 'cb:design-shell:fullscreenchange', ( event ) => {
 		if ( event.detail?.fullscreen === true ) schedulePreview();
+		else previewRecoveryAttempted = false;
 	} );
 	if ( designerShell?.isFullscreen() ) schedulePreview();
 
