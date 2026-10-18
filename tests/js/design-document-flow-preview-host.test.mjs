@@ -232,6 +232,45 @@ test('new render replaces pending load handshake and stale generation cannot lea
 	]);
 });
 
+
+test('first-size timeout callback fires only for an unacknowledged canonical render', () => {
+	const env = harness();
+	let timeouts = 0;
+	assert.throws(
+		() => createFlowPreviewHost(env.iframe, { onFirstSizeTimeout: true }),
+		/timeout callback/
+	);
+	const host = createFlowPreviewHost(env.iframe, {
+		onFirstSizeTimeout: () => { timeouts += 1; },
+	});
+	assert.equal(host.render('<html>invalid</html>'), false);
+	env.runTimers();
+	assert.equal(timeouts, 0, 'Rejected HTML must never trigger recovery.');
+
+	assert.equal(host.render(canonicalHtml()), true);
+	env.dispatch(env.iframe.contentWindow, sizeMessage(2, 1000));
+	env.runTimers();
+	assert.equal(timeouts, 0, 'An acknowledged first size must cancel timeout recovery.');
+
+	assert.equal(host.render(canonicalHtml()), true);
+	env.runTimers();
+	assert.equal(timeouts, 1, 'Missing size can request one fresh consumer render.');
+	assert.equal(env.iframe.getAttribute('data-cb-core-flow-preview-state'), 'failure');
+	env.dispatch(env.iframe.contentWindow, sizeMessage(3, 1100));
+	assert.equal(env.iframe.getAttribute('data-cb-core-flow-preview-state'), 'failure');
+	env.runTimers();
+	assert.equal(timeouts, 1, 'Failed generation must not fire additional callbacks.');
+	host.destroy();
+});
+
+test('Reports allows only one preview timeout recovery per Designer opening', () => {
+	const reports = readFileSync(new URL('../../assets/js/features/reports-preferences.js', import.meta.url), 'utf8');
+	assert.match(reports, /onFirstSizeTimeout: \(\) => \{/);
+	assert.match(reports, /if \( previewRecoveryAttempted \|\| ! designerShell\?\.isFullscreen\(\) \) return;/);
+	assert.match(reports, /previewRecoveryAttempted = true;\s*schedulePreview\(\);/);
+	assert.match(reports, /else previewRecoveryAttempted = false;/);
+});
+
 test('semantic selection survives rerender and can be cleared without another navigation', () => {
 	const env = harness();
 	const host = createFlowPreviewHost(env.iframe);
