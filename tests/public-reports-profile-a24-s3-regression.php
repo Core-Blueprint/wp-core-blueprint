@@ -326,3 +326,359 @@ s3_assert(false !== strpos($engineSource, '$uncertain_sections[ $id ] = true;')
     'Engine cannot treat uncertain COMMIT/posthook as a verified no-op rollback');
 
 echo "Core Blueprint Base A2.4-S3 canonical Reports Profile fixture PASS\n";
+
+
+/**
+ * P0-S3-S01/S02 real Engine::apply() contract. Run a fresh PHP process with
+ * the ORIGINAL S2 harness declarations as input, but a separately instrumented
+ * test lease/registry. The accepted S2 fixture file is never edited, skipped,
+ * or asked to abandon its intentionally blocking legacy ApplyLock.
+ */
+function s3_engine_integration_child(): void {
+    $source = file_get_contents(__DIR__ . '/public-reports-profile-a24-regression.php');
+    s3_assert(is_string($source), 'unchanged S2 harness is readable');
+    $boundary = "    require_once dirname( __DIR__ ) . '/src/Profiles/VersionGuardedSectionInterface.php';";
+    $pos = strpos($source, $boundary);
+    s3_assert(false !== $pos, 'S2 declarations boundary is stable');
+    $harness = substr($source, 0, $pos);
+
+    $oldLease = <<<'OLD'
+    final class ApplyLock {
+        public static int $acquisitions = 0;
+        public static function acquire( string $actor ): string {
+            self::$acquisitions++;
+            throw new \RuntimeException( 'Active Profile test must never acquire a lock' );
+        }
+    }
+OLD;
+    $newLease = <<<'NEW'
+    final class ApplyLock {
+        public static int $acquisitions = 0;
+        public static int $releases = 0;
+        public static function acquire( string $actor ): string {
+            ++self::$acquisitions;
+            return 'engine-test-lease';
+        }
+        public static function refresh( string $token ): bool {
+            return 'engine-test-lease' === $token;
+        }
+        public static function release( string $token ): void {
+            if ( 'engine-test-lease' !== $token ) {
+                throw new \RuntimeException( 'unexpected lease release' );
+            }
+            ++self::$releases;
+        }
+    }
+NEW;
+    s3_assert(1 === substr_count($harness, $oldLease), 'replace isolated lease once');
+    $harness = str_replace($oldLease, $newLease, $harness);
+
+    $fakeSections = <<<'SECTIONS'
+    final class S3SecuritySection extends ExactSection {
+        public function id(): string { return 'security'; }
+        public function label(): string { return 'Security'; }
+        public function description(): string { return 'Shared Settings writer'; }
+        public function schema_version(): int { return 1; }
+        public function export(): array {
+            return ['enabled' => (bool) (\CoreBlueprint\Core\Settings::$values['security']['enabled'] ?? false)];
+        }
+        public function normalize( array $incoming ): array {
+            if (array_keys($incoming) !== ['enabled'] || !is_bool($incoming['enabled'])) {
+                throw new \InvalidArgumentException('bad security fixture');
+            }
+            return $incoming;
+        }
+        public function preview(array $current, array $incoming): array {
+            return $current === $incoming ? [] : ['enabled' => true];
+        }
+        public function apply(array $incoming, string $actor): void {
+            $stored = \CoreBlueprint\Core\Settings\OptionCas::$row['value'];
+            $stored['security']['enabled'] = $incoming['enabled'];
+            \CoreBlueprint\Core\Settings\OptionCas::$row['value'] = $stored;
+            \CoreBlueprint\Core\Settings\OptionCas::$row['raw'] = serialize($stored);
+            \CoreBlueprint\Core\Settings::accept_cas($stored);
+            $GLOBALS['s3_engine_events'][] = 'security:' . (int) $incoming['enabled'];
+        }
+        public function restore(array $snapshot, array $incoming, string $actor): void {
+            $this->apply($snapshot, $actor);
+        }
+    }
+    final class S3LaterSection extends ExactSection {
+        public function id(): string { return 'later'; }
+        public function label(): string { return 'Later'; }
+        public function description(): string { return 'Independent later failing section'; }
+        public function schema_version(): int { return 1; }
+        public function export(): array { return ['intent' => 'idle']; }
+        public function normalize(array $incoming): array {
+            if (!isset($incoming['intent']) || !in_array($incoming['intent'], ['idle','fail','external-doc','external-settings'], true)) {
+                throw new \InvalidArgumentException('bad later fixture');
+            }
+            return ['intent' => $incoming['intent']];
+        }
+        public function preview(array $current, array $incoming): array {
+            return $current === $incoming ? [] : ['intent' => true];
+        }
+        public function apply(array $incoming, string $actor): void {
+            $mode = $incoming['intent'];
+            if ('external-doc' === $mode) {
+                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+            }
+            if ('external-settings' === $mode) {
+                $row = &\CoreBlueprint\Core\Settings\OptionCas::$row;
+                $row['value']['unrepresented_root']['keep'] = false;
+                $row['raw'] = serialize($row['value']);
+                \CoreBlueprint\Core\Settings::accept_cas($row['value']);
+            }
+            if ('idle' !== $mode) {
+                throw new \RuntimeException('deliberate later section failure');
+            }
+        }
+        public function restore(array $snapshot, array $incoming, string $actor): void {
+            // Deliberate failure occurs strictly BEFORE any of this section's writes.
+        }
+    }
+SECTIONS;
+    s3_assert(1 === substr_count($harness, '    final class SectionRegistry {'),
+        'isolated fixture registry declaration found once');
+    $harness = str_replace('    final class SectionRegistry {', $fakeSections . "\n    final class SectionRegistry {", $harness);
+    $oldRegistry = "return [ 'reports' => new \\CoreBlueprint\\Core\\Profiles\\Sections\\ReportsSection() ];";
+    $newRegistry = "return [ 'security' => new S3SecuritySection(), 'reports' => new \\CoreBlueprint\\Core\\Profiles\\Sections\\ReportsSection(), 'later' => new S3LaterSection() ];";
+    s3_assert(1 === substr_count($harness, $oldRegistry), 'original S2 registry replacement only in isolated child');
+    $harness = str_replace($oldRegistry, $newRegistry, $harness);
+
+    $oldPreview = 'public function preview( array $c, array $i ): array { return []; }';
+    $newPreview = 'public function preview( array $c, array $i ): array { return $c === $i ? [] : [ \'changed\' => true ]; }';
+    s3_assert(1 === substr_count($harness, $oldPreview), 'source-exact fallback Diff for isolated Reports');
+    $harness = str_replace($oldPreview, $newPreview, $harness);
+
+    $audit = <<<'AUDIT'
+namespace CoreBlueprint\Core\Log {
+    final class AuditLog {
+        public static array $events = [];
+        public static function log(string $event, string $level, array $context): void {
+            self::$events[] = [$event, $level, $context];
+        }
+    }
+}
+AUDIT;
+    $nsMarker = "namespace {\n    /**\n     * Fake transactional SQL store";
+    s3_assert(1 === substr_count($harness, $nsMarker), 'insert audit sink into isolated process');
+    $harness = str_replace($nsMarker, $audit . "\n" . $nsMarker, $harness);
+
+    // This specific hook runs after the transaction's readback, before
+    // the transaction returns its receipt. It lets Engine catch a real
+    // *post-receipt* outsider change without borrowing a fresh witness.
+    $oldAction = 'function do_action( string $hook, mixed ...$args ): void { $GLOBALS[\'s2_actions\'][] = $hook; }';
+    $newAction = <<<'ACTION'
+function do_action( string $hook, mixed ...$args ): void {
+        $GLOBALS['s2_actions'][] = $hook;
+        if ('updated_option' === $hook && is_callable($GLOBALS['s3_commit_observer'] ?? null)) {
+            $observer = $GLOBALS['s3_commit_observer'];
+            $GLOBALS['s3_commit_observer'] = null;
+            $observer();
+        }
+    }
+ACTION;
+    s3_assert(1 === substr_count($harness, $oldAction), 'inject observable postcommit hook once');
+    $harness = str_replace($oldAction, $newAction, $harness);
+
+    $root = dirname(__DIR__);
+    $preamble = implode("\n", [
+        "    require_once " . var_export($root . '/src/Profiles/VersionGuardedSectionInterface.php', true) . ";",
+        "    require_once " . var_export($root . '/src/Profiles/Sections/ReportsSection.php', true) . ";",
+        "    require_once " . var_export($root . '/src/Profiles/ReportsProfileTransaction.php', true) . ";",
+        "    require_once " . var_export($root . '/src/Profiles/Engine.php', true) . ";",
+    ]);
+    $body = <<<'ENGINE'
+    function s3e_assert(bool $ok, string $label): void {
+        if (!$ok) { throw new \RuntimeException('S3 REAL ENGINE RED: ' . $label); }
+    }
+    function s3e_reset(): S2FakeDb {
+        $db = new S2FakeDb();
+        $GLOBALS['wpdb'] = $db;
+        $GLOBALS['s2_filter_rewrite'] = false;
+        $GLOBALS['s2_actions'] = [];
+        $GLOBALS['s3_commit_observer'] = null;
+        $GLOBALS['s3_engine_events'] = [];
+        \CoreBlueprint\Core\Log\AuditLog::$events = [];
+        \CoreBlueprint\Core\Profiles\ApplyLock::$acquisitions = 0;
+        \CoreBlueprint\Core\Profiles\ApplyLock::$releases = 0;
+        \CoreBlueprint\Core\Design\Document\Authority::$state = 'active';
+        $value = [
+            'security' => ['enabled' => false],
+            'reports' => [
+                'retention_days' => 365,
+                'email_alerts' => ['generation_failed' => false, 'other' => true],
+                'branding' => ['legacy_logo_id' => 420],
+            ],
+            'unrepresented_root' => ['keep' => true],
+        ];
+        \CoreBlueprint\Core\Settings::accept_cas($value);
+        \CoreBlueprint\Core\Settings\OptionCas::$row = [
+            'status' => 'ok', 'raw' => serialize($value), 'value' => $value,
+            'autoload' => 'on', 'table' => 'wp_options',
+        ];
+        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = [
+            'revision' => '9007199254740993',
+            'branding' => [
+                'logo_attachment_id' => 0, 'show_logo' => false, 'provider_name' => 'old',
+                'provider_contact' => 'private@example.test', 'accent_color' => '#0064c8',
+                'surface_style' => 'cards', 'density' => 'comfortable',
+                'corner_style' => 'soft', 'text_scale' => 'standard',
+            ],
+            'composer' => ['schema_version' => 1, 'blocks' => []],
+        ];
+        return $db;
+    }
+    function s3e_doc(bool $reportsChange, bool $securityChange, string $later = ''): array {
+        $reports = new \CoreBlueprint\Core\Profiles\Sections\ReportsSection();
+        $data = $reports->export();
+        if ($reportsChange) {
+            $data['retention_days'] = 91;
+            $data['email_alerts']['generation_failed'] = true;
+            $data['branding']['provider_name'] = 'approved';
+        }
+        $sections = ['reports' => ['schema_version' => 1, 'data' => $data]];
+        if ($securityChange) {
+            $sections = ['security' => ['schema_version' => 1, 'data' => ['enabled' => true]]] + $sections;
+        }
+        if ('' !== $later) {
+            $sections['later'] = ['schema_version' => 1, 'data' => ['intent' => $later]];
+        }
+        return [
+            'format' => \CoreBlueprint\Core\Profiles\Document::FORMAT,
+            'format_version' => \CoreBlueprint\Core\Profiles\Document::FORMAT_VERSION,
+            'profile' => ['name' => 'S3 integrated Engine', 'description' => ''],
+            'sections' => $sections,
+        ];
+    }
+    function s3e_run(array $profile): array {
+        $pre = \CoreBlueprint\Core\Profiles\Engine::preview($profile);
+        return \CoreBlueprint\Core\Profiles\Engine::apply($profile, $pre['fingerprint'], 'authorized-test-operator');
+    }
+    function s3e_audit(string $event): bool {
+        foreach (\CoreBlueprint\Core\Log\AuditLog::$events as $item) {
+            if ($item[0] === $event) { return true; }
+        }
+        return false;
+    }
+    function s3e_lease(): void {
+        s3e_assert(1 === \CoreBlueprint\Core\Profiles\ApplyLock::$acquisitions, 'one acquired lease');
+        s3e_assert(1 === \CoreBlueprint\Core\Profiles\ApplyLock::$releases, 'one released lease');
+    }
+    // Positive, actual Reports-only Active Engine path.
+    $db = s3e_reset();
+    $res = s3e_run(s3e_doc(true, false));
+    s3e_assert('complete' === ($res['status'] ?? null), 'Engine Reports-only committed');
+    s3e_assert(1 === $db->option_writes && 1 === $db->document_writes, 'two canonical rows only');
+    s3e_assert(s3e_audit('profiles.applied'), 'single Engine success audit');
+    s3e_lease();
+
+    // Mixed Security writes the SAME entire Settings option. Reports must use
+    // the original operator preview rather than opportunistically rebasing.
+    $db = s3e_reset();
+    $res = s3e_run(s3e_doc(true, true));
+    s3e_assert('complete' === ($res['status'] ?? null), 'Security+Reports complete with approved witness');
+    s3e_assert(true === \CoreBlueprint\Core\Settings::$values['security']['enabled'], 'Security own Settings leaf committed');
+    s3e_assert(1 === $db->option_writes && 1 === $db->document_writes, 'Reports exactly one pair');
+    s3e_assert(s3e_audit('profiles.applied'), 'mixed applied only after both complete');
+    s3e_lease();
+
+    // Saved Reports followed by a failure. Exact postreceipt permits reverse
+    // only after independently reversed Settings writers restore original raw.
+    $db = s3e_reset();
+    $before = \CoreBlueprint\Core\Settings\OptionCas::$row['raw'];
+    try { s3e_run(s3e_doc(true, true, 'fail')); s3e_assert(false, 'later section must fail'); }
+    catch (\RuntimeException $e) {
+        s3e_assert(str_contains($e->getMessage(), 'deliberate later section failure'), 'bounded original failure');
+    }
+    s3e_assert(!s3e_audit('profiles.applied') && s3e_audit('profiles.apply_failed'), 'verified safe rollback audit');
+    s3e_assert($before === \CoreBlueprint\Core\Settings\OptionCas::$row['raw'], 'full Settings restored');
+    s3e_assert('old' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['provider_name'], 'canonical provider reversed');
+    s3e_assert('comfortable' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'], 'unrepresented density retained');
+    s3e_assert(2 === $db->document_writes && 2 === $db->option_writes, 'definite save and guarded reverse');
+    s3e_lease();
+
+    // Later non-exported independent writer cannot be clobbered by compensation.
+    $db = s3e_reset();
+    try { s3e_run(s3e_doc(true, true, 'external-doc')); s3e_assert(false, 'later writer must fail'); }
+    catch (\RuntimeException $e) {
+        s3e_assert(str_contains($e->getMessage(), 'could not be restored'), 'manual recovery after postcommit race');
+    }
+    s3e_assert(s3e_audit('profiles.rollback_failed') && !s3e_audit('profiles.applied'), 'postcommit outsider recovery audit');
+    s3e_assert('compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'], 'never clobber density');
+    s3e_lease();
+
+    // Same protection for unrelated Settings raw writer.
+    $db = s3e_reset();
+    try { s3e_run(s3e_doc(true, true, 'external-settings')); s3e_assert(false, 'outside settings writer must fail'); }
+    catch (\RuntimeException $e) {
+        s3e_assert(str_contains($e->getMessage(), 'could not be restored'), 'manual recovery for Settings outsider');
+    }
+    s3e_assert(false === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['unrepresented_root']['keep'], 'outside Settings preserved');
+    s3e_assert(s3e_audit('profiles.rollback_failed'), 'raw Settings conflict audit');
+    s3e_lease();
+
+    // Active Reports no-op within a mixed Profile is witnessed but not reversed.
+    $db = s3e_reset();
+    try { s3e_run(s3e_doc(false, true, 'fail')); s3e_assert(false, 'later no-op test must fail'); }
+    catch (\RuntimeException $e) {
+        s3e_assert(str_contains($e->getMessage(), 'deliberate later section failure'), 'no-op later failure reported');
+    }
+    s3e_assert(0 === $db->option_writes && 0 === $db->document_writes, 'no-op Reports never SQL updates');
+    s3e_assert(s3e_audit('profiles.apply_failed') && !s3e_audit('profiles.rollback_failed'), 'no-op rollback no phantom recovery');
+    s3e_lease();
+
+    // Reports-only no-op short-circuits before lease without false success.
+    $db = s3e_reset();
+    try { s3e_run(s3e_doc(false, false)); s3e_assert(false, 'Reports no-op must be refused'); }
+    catch (\RuntimeException $e) {
+        s3e_assert(0 === \CoreBlueprint\Core\Profiles\ApplyLock::$acquisitions, 'no-op no mutation lease');
+    }
+    s3e_assert(!s3e_audit('profiles.applied'), 'Reports no-op not success');
+
+    // COMMIT uncertainty cannot become a fresh-witness rollback or success.
+    $db = s3e_reset();
+    $db->fail_commit = true;
+    try { s3e_run(s3e_doc(true, true)); s3e_assert(false, 'uncertain COMMIT must fail'); }
+    catch (\RuntimeException $e) {
+        s3e_assert(str_contains($e->getMessage(), 'could not be restored'), 'recovery barrier survives uncertain commit');
+    }
+    s3e_assert(s3e_audit('profiles.rollback_failed') && !s3e_audit('profiles.applied'), 'uncertain COMMIT recovery audit');
+    s3e_assert(false === \CoreBlueprint\Core\Settings::$values['security']['enabled'], 'no later Security section applied');
+    s3e_lease();
+
+    // A confirmed COMMIT whose posthook injects an outsider cannot silently
+    // succeed, even when the represented Reports fields still verify.
+    $db = s3e_reset();
+    $GLOBALS['s3_commit_observer'] = static function(): void {
+        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+    };
+    try { s3e_run(s3e_doc(true, false)); s3e_assert(false, 'posthook outsider must fail'); }
+    catch (\RuntimeException $e) {
+        s3e_assert(str_contains($e->getMessage(), 'could not be restored'), 'postreceipt rollback conflict detected');
+    }
+    s3e_assert('compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'], 'posthook outsider remains');
+    s3e_assert(s3e_audit('profiles.rollback_failed') && !s3e_audit('profiles.applied'), 'posthook source recovery audit');
+    s3e_lease();
+
+    echo "Core Blueprint Base A2.4-S3 REAL Engine apply/rollback fixture PASS\n";
+ENGINE;
+    $child = tempnam(sys_get_temp_dir(), 'cb-s3-engine-');
+    s3_assert(false !== $child, 'source fixture temp file reserved');
+    try {
+        s3_assert(false !== file_put_contents($child, $harness . "\n" . $preamble . "\n" . $body . "\n}\n"),
+            'isolated PHP child source created');
+        $process = proc_open([PHP_BINARY, $child], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        s3_assert(is_resource($process), 'real PHP subprocess available, not silently skipped');
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]); fclose($pipes[2]);
+        $code = proc_close($process);
+        s3_assert(0 === $code, "Real Engine executable failed:\n" . $stdout . "\n" . $stderr);
+        echo $stdout;
+    } finally {
+        @unlink($child);
+    }
+}
+s3_engine_integration_child();
