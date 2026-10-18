@@ -46,7 +46,9 @@ final class CB_Design_Foundation_Editor_Public_Boundary_Test extends WP_UnitTest
 		$docs       = (string) file_get_contents( $root . '/docs/DESIGNER-FOUNDATION-API.md' );
 		$public_api = (string) file_get_contents( $root . '/docs/PUBLIC-API.md' );
 
-		self::assertStringContainsString( 'Status: **public v1 frozen contract**.', $docs );
+		self::assertStringContainsString( 'public v1 frozen contract + v2 SOURCE candidate', $docs );
+		self::assertStringContainsString( 'installed ZIP acceptance pending', $docs );
+		self::assertSame( 2, DesignEditorAssets::DOMAIN_SESSION_API );
 		self::assertStringContainsString( "@cb-core/design-editor", $docs );
 		self::assertStringContainsString( 'createSession(options)', $docs );
 		self::assertStringContainsString( 'createDomainSession(', $docs );
