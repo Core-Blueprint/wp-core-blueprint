@@ -30,13 +30,12 @@ final class CB_Designer_History_Chrome_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'history.subscribeDiagnostics(listener)', $editor );
 	}
 	/**
-	 * Source parity is a necessary, not sufficient, condition for the v2 ABI.
-	 * The PHP version stays at v1 until a separately approved canonical ZIP
-	 * proves PHP/ESM method parity from that same exact artifact.
+	 * Source contract parity is required for the v2 candidate; the installed
+	 * canonical ZIP still needs its own exact-artifact ABI/consumer acceptance.
 	 */
-	public function test_g1c_php_capability_is_not_advertised_before_artifact_parity(): void {
+	public function test_g1d_v2_php_capability_matches_the_public_editor_module(): void {
 		self::assertSame( '@cb-core/design-editor', \CoreBlueprint\Core\Design\Editor\Assets::MODULE_ID );
-		self::assertSame( 1, \CoreBlueprint\Core\Design\Editor\Assets::DOMAIN_SESSION_API );
+		self::assertSame( 2, \CoreBlueprint\Core\Design\Editor\Assets::DOMAIN_SESSION_API );
 
 		$facade = $this->source( 'assets/js/design/editor.js' );
 		foreach ( [ 'createSession', 'createDomainSession', 'subscribeHistory', 'subscribeDiagnostics', 'captureSave', 'baselineSnapshot', 'rebase', 'clearHistory' ] as $symbol ) {
@@ -45,8 +44,26 @@ final class CB_Designer_History_Chrome_Contract_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'new CommandHistory(', $facade );
 
 		$doc = $this->source( 'docs/DESIGNER-FOUNDATION-API.md' );
-		self::assertStringContainsString( 'G1c source candidate', $doc );
-		self::assertStringContainsString( 'not yet an advertised v2 capability', $doc );
+		self::assertStringContainsString( 'v2 SOURCE candidate', $doc );
+		self::assertStringContainsString( 'installed ZIP acceptance pending', $doc );
+	}
+
+	/**
+	 * WordPress 7.0 resolves the consumer-facing identifier from its registered
+	 * script module, not from a copied editor.js file or direct private import.
+	 */
+	public function test_g1d_v2_wordpress_registry_and_designer_mode_share_public_module(): void {
+		$assets = \CoreBlueprint\Core\Design\Editor\Assets::class;
+		$assets::enqueue_designer_mode();
+		$module = wp_script_modules()->get_registered( $assets::MODULE_ID );
+		self::assertIsArray( $module );
+		self::assertStringContainsString( 'assets/js/design/editor.js', $module['src'] );
+		self::assertNotNull( wp_script_modules()->get_registered( '@cb-core/design-motion' ) );
+		self::assertTrue( wp_style_is( $assets::SHELL_STYLE, 'enqueued' ) );
+		self::assertTrue( wp_style_is( $assets::DESIGNER_MODE_STYLE, 'enqueued' ) );
+		self::assertTrue( wp_style_is( $assets::DESIGNER_COMPOSITION_STYLE, 'enqueued' ) );
+		self::assertTrue( wp_style_is( $assets::DESIGNER_CONTEXT_STYLE, 'enqueued' ) );
+		self::assertTrue( wp_style_is( $assets::DESIGNER_TOOLBAR_STYLE, 'enqueued' ) );
 	}
 
 }
