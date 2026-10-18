@@ -188,7 +188,7 @@ Profile-specific rendering or document contracts remain governed by their corres
 
 ### Motion
 
-`motion` is the stable shared motion namespace and exposes the Base-owned layout-motion contract. Consumers must not duplicate the shared Designer motion rules locally.
+The named ESM export `animateLayoutChange` is the supported Base-owned layout-motion helper. The equivalent global facade exposes it as `window.cbCore.designEditor.motion.animateLayoutChange`; `motion` is **not** an ESM named export. Consumers must not duplicate the shared Designer motion rules locally or import a private motion module.
 
 ## Public boundary versus implementation exports
 
