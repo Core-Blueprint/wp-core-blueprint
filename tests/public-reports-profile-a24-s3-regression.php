@@ -206,6 +206,30 @@ s3_assert($writesBefore === [$wpdb->option_writes, $wpdb->document_writes],
     'stale compensation cannot clobber outsider');
 s3_assert('compact' === Design::$record['branding']['density'], 'outside content preserved');
 
+// R07-R09: the SECTION adapter must never exchange the receipt obtained
+// synchronously from the transaction for a later post-commit live read.
+$wpdb = s3_reset();
+$section = new ReportsSection();
+$original = $section->export();
+$approvedFull = $section->version_witness();
+$sectionSaved = $section->apply_profile_guarded($next, 'source-only', $approvedFull);
+s3_assert('saved' === ($sectionSaved['status'] ?? ''), 'receipt race section setup saved');
+$originalReceipt = $sectionSaved['witness'];
+Design::$record['branding']['density'] = 'compact'; // no revision change
+$writeCounts = [$wpdb->option_writes, $wpdb->document_writes];
+$restoreBlocked = false;
+try {
+    $section->restore_guarded($original, $next, 'profile-rollback:source-only',
+        $approvedFull, $originalReceipt);
+} catch (RuntimeException $exception) {
+    $restoreBlocked = true;
+}
+s3_assert($restoreBlocked, 'section refuses reverse using stale actual commit receipt');
+s3_assert($writeCounts === [$wpdb->option_writes, $wpdb->document_writes],
+    'section rollback never overwrites postcommit outside writer');
+s3_assert('compact' === Design::$record['branding']['density'],
+    'section rollback preserves non-exported postcommit change');
+
 // R10: outsider Settings raw edit after commit similarly denies compensation.
 $wpdb = s3_reset();
 $approved = s3_expected();
@@ -259,5 +283,11 @@ s3_assert(false !== $receiptOffset && false !== $verifyOffset && $receiptOffset 
     'Engine must store original S2 transaction receipt before verify');
 s3_assert(false !== strpos($engineSource, '$unchanged_sections[ $id ] = true;'),
     'Engine requires a no-write record separate from saved status');
+$postreceiptGuard = strpos($engineSource, 'postreceipt_drift');
+s3_assert(false !== $postreceiptGuard && $receiptOffset < $postreceiptGuard
+    && $postreceiptGuard < $verifyOffset,
+    'Engine retains exact S2 receipt then verifies complete poststate before reporting success');
+s3_assert(false !== strpos($engineSource, 'document_sha256'),
+    'Engine validates complete document payload hash, not represented fields only');
 
 echo "Core Blueprint Base A2.4-S3 canonical Reports Profile fixture PASS\n";
