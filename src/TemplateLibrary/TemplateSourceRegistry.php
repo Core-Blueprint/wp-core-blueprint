@@ -58,7 +58,7 @@ final class TemplateSourceRegistry {
 	 *
 	 * @return array<string,list<array{id:string,label:string}>>
 	 */
-	public static function source_categories(): array {
+	public static function source_categories( ?array $source_ids = null ): array {
 		self::collect_if_ready();
 		$user = get_current_user_id();
 		if ( $user < 1 ) {
@@ -66,6 +66,11 @@ final class TemplateSourceRegistry {
 		}
 		$catalog = [];
 		foreach ( self::$sources as $source_id => $source ) {
+			// A scoped Designer must not even invoke metadata providers from other
+			// Designer contexts, independently of the response projection.
+			if ( null !== $source_ids && ! in_array( $source_id, $source_ids, true ) ) {
+				continue;
+			}
 			if ( ! $source instanceof TemplateCategorySourceInterface || ! self::allowed( $source ) ) {
 				continue;
 			}
