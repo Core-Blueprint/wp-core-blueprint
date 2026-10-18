@@ -373,6 +373,31 @@ NEW;
     s3_assert(1 === substr_count($harness, $oldLease), 'replace isolated lease once');
     $harness = str_replace($oldLease, $newLease, $harness);
 
+    // Separate Engine child ONLY: inject a same-revision document writer
+    // after ReportsSection's successful first version_witness(), exactly
+    // as the strict reverse transaction reads its first preimage.
+    $oldCas = <<<'OLD_CAS'
+        public static function read(): array { return self::$row; }
+OLD_CAS;
+    $newCas = <<<'NEW_CAS'
+        public static bool $s3_reverse_window_armed = false;
+        public static int $s3_reverse_window_reads = 0;
+        public static function read(): array {
+            if (self::$s3_reverse_window_armed) {
+                ++self::$s3_reverse_window_reads;
+                if (2 === self::$s3_reverse_window_reads) {
+                    self::$s3_reverse_window_armed = false;
+                    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+                    $GLOBALS['s3_reverse_window_fired'] = true;
+                }
+            }
+            return self::$row;
+        }
+NEW_CAS;
+    s3_assert(1 === substr_count($harness, $oldCas),
+        'exactly one isolated S2 OptionCas read seam');
+    $harness = str_replace($oldCas, $newCas, $harness);
+
     $fakeSections = <<<'SECTIONS'
     final class S3SecuritySection extends ExactSection {
         public function id(): string { return 'security'; }
@@ -410,7 +435,7 @@ NEW;
         public function schema_version(): int { return 1; }
         public function export(): array { return ['intent' => 'idle']; }
         public function normalize(array $incoming): array {
-            if (!isset($incoming['intent']) || !in_array($incoming['intent'], ['idle','fail','external-doc','external-settings'], true)) {
+            if (!isset($incoming['intent']) || !in_array($incoming['intent'], ['idle','fail','external-doc','external-settings','reverse-window'], true)) {
                 throw new \InvalidArgumentException('bad later fixture');
             }
             return ['intent' => $incoming['intent']];
@@ -428,6 +453,10 @@ NEW;
                 $row['value']['unrepresented_root']['keep'] = false;
                 $row['raw'] = serialize($row['value']);
                 \CoreBlueprint\Core\Settings::accept_cas($row['value']);
+            }
+            if ('reverse-window' === $mode) {
+                \CoreBlueprint\Core\Settings\OptionCas::$s3_reverse_window_armed = true;
+                \CoreBlueprint\Core\Settings\OptionCas::$s3_reverse_window_reads = 0;
             }
             if ('idle' !== $mode) {
                 throw new \RuntimeException('deliberate later section failure');
@@ -505,6 +534,9 @@ ACTION;
         $GLOBALS['s2_filter_rewrite'] = false;
         $GLOBALS['s2_actions'] = [];
         $GLOBALS['s3_commit_observer'] = null;
+        $GLOBALS['s3_reverse_window_fired'] = false;
+        \CoreBlueprint\Core\Settings\OptionCas::$s3_reverse_window_armed = false;
+        \CoreBlueprint\Core\Settings\OptionCas::$s3_reverse_window_reads = 0;
         $GLOBALS['s3_engine_events'] = [];
         \CoreBlueprint\Core\Log\AuditLog::$events = [];
         \CoreBlueprint\Core\Profiles\ApplyLock::$acquisitions = 0;
@@ -623,6 +655,39 @@ ACTION;
     }
     s3e_assert(false === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['unrepresented_root']['keep'], 'outside Settings preserved');
     s3e_assert(s3e_audit('profiles.rollback_failed'), 'raw Settings conflict audit');
+    s3e_lease();
+
+    // P0-S3-R01: The first ReportsSection witness MUST succeed before the
+    // outsider's edit. Inject after that check, at reverse transaction's
+    // first OptionCas::read(), leaving document revision unchanged.
+    // A legacy/non-strict reverse incorrectly commits a SECOND two-row
+    // write; the S3 strict postreceipt reverse must refuse before SQL.
+    $db = s3e_reset();
+    $revision = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'];
+    $beforeSettings = \CoreBlueprint\Core\Settings\OptionCas::$row['raw'];
+    try {
+        s3e_run(s3e_doc(true, true, 'reverse-window'));
+        s3e_assert(false, 'reverse-window outsider requires operator recovery');
+    } catch (\RuntimeException $e) {
+        s3e_assert(str_contains($e->getMessage(), 'could not be restored'),
+            'strict reverse-window conflict triggers manual recovery');
+    }
+    s3e_assert(true === ($GLOBALS['s3_reverse_window_fired'] ?? false),
+        'witness completed before injected transaction-time outsider');
+    s3e_assert(2 === \CoreBlueprint\Core\Settings\OptionCas::$s3_reverse_window_reads,
+        'observer fired on second CAS read after section witness');
+    s3e_assert($revision !== \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'],
+        'initial Reports commit occurred before injected outsider');
+    s3e_assert(1 === $db->option_writes && 1 === $db->document_writes,
+        'strict reverse refuses BEFORE any compensation SQL writes');
+    s3e_assert($beforeSettings !== \CoreBlueprint\Core\Settings\OptionCas::$row['raw'],
+        'Reports committed option remains awaiting explicit recovery');
+    s3e_assert('approved' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['provider_name'],
+        'Reports postcommit represented fields not silently reversed');
+    s3e_assert('compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'],
+        'independent same-revision density edit preserved');
+    s3e_assert(s3e_audit('profiles.rollback_failed') && !s3e_audit('profiles.apply_failed')
+        && !s3e_audit('profiles.applied'), 'recovery audit never claims safe rollback or apply');
     s3e_lease();
 
     // Active Reports no-op within a mixed Profile is witnessed but not reversed.
