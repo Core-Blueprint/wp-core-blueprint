@@ -652,10 +652,10 @@ test('CSP preview bridge emits only clicked semantic regions inside its own root
 		preventDefault() { prevented++; },
 	});
 	send(marker);
-	assert.deepEqual(sent.at(-1), {
+	assert.equal(JSON.stringify(sent.at(-1)), JSON.stringify({
 		data: { type: 'cb-core-flow-preview-activate', version: 1, generation: 3, region: 'current_state' },
 		targetOrigin: '*',
-	});
+	}));
 	assert.equal(prevented, 1);
 	const previous = sent.length;
 	send({ inside: false, getAttribute: () => 'header' });
