@@ -60,6 +60,11 @@ final class DesignerPreview {
 	 * @return array<string,mixed>
 	 */
 	private function preview_report(): array {
+		// Designing remains available while report generation is switched off.
+		// Never imply that stale stored snapshots are live report data.
+		if ( ! State::is_enabled() ) {
+			return $this->sample_report();
+		}
 		try {
 			$recent = Storage::find_recent( 1 );
 			$row    = $recent[0] ?? null;
