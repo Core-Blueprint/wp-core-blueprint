@@ -32,11 +32,14 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Preview_Host_Test extend
 		// Hidden Designer initialization must not trigger an unconditional preview render.
 		self::assertStringNotContainsString( "\n\trenderPreview();\n}", $source );
 
-		// Entering Designer Mode schedules the first preview; leaving it does not.
+		// Entering Designer Mode schedules the preview; leaving it resets the one-shot timeout recovery.
 		self::assertStringContainsString(
-			"shell?.addEventListener( 'cb:design-shell:fullscreenchange', ( event ) => {\n\t\tif ( event.detail?.fullscreen === true ) schedulePreview();\n\t} );",
+			"shell?.addEventListener( 'cb:design-shell:fullscreenchange', ( event ) => {\n\t\tif ( event.detail?.fullscreen === true ) schedulePreview();\n\t\telse previewRecoveryAttempted = false;\n\t} );",
 			$source
 		);
+		self::assertStringContainsString( 'onFirstSizeTimeout: () => {', $source );
+		self::assertStringContainsString( 'if ( previewRecoveryAttempted || ! designerShell?.isFullscreen() ) return;', $source );
+		self::assertStringContainsString( 'previewRecoveryAttempted = true;', $source );
 
 		// If Reports initializes after Designer Mode is already active, schedule immediately.
 		self::assertStringContainsString( 'if ( designerShell?.isFullscreen() ) schedulePreview();', $source );
