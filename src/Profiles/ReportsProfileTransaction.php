@@ -252,11 +252,13 @@ final class ReportsProfileTransaction {
         } catch ( \JsonException $error ) {
             return self::abort( 'recovery_required', 'document_corrupt' );
         }
+        // A corrupted/scalar locked JSON payload must abort SQL ownership,
+        // never throw a TypeError from document_hash() while locks are held.
+        if ( ! is_array( $locked_payload ) || $locked_payload !== $doc['document'] ) {
+            return self::abort( 'conflict', 'document_payload_mismatch' );
+        }
         if ( $strict_profile && self::document_hash( $locked_payload ) !== $expected['document_sha256'] ) {
             return self::abort( 'conflict', 'document_locked_preimage' );
-        }
-        if ( $locked_payload !== $doc['document'] ) {
-            return self::abort( 'conflict', 'document_payload_mismatch' );
         }
 
         if ( $settings_changed ) {
