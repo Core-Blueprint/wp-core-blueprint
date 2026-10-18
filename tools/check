@@ -40,6 +40,8 @@ if [[ -d "$ROOT/src/Profiles" ]]; then
     || fail 'S2 Reports Profile transaction source is missing'
   [[ -f "$ROOT/tests/public-reports-profile-a24-regression.php" ]] \
     || fail 'S2 Reports Profile source regression is missing'
+  [[ -f "$ROOT/tests/public-reports-profile-a24-s3-regression.php" ]] \
+    || fail 'S3 Reports Profile source regression is missing'
 fi
 [[ -d "$ROOT/tests/python" ]] || fail 'Python source-regression directory is missing'
 
@@ -62,6 +64,7 @@ php tests/public-settings-consumer-regression.php
 php tests/public-settings-six-consumer-regression.php
 if [[ -d "$ROOT/src/Profiles" ]]; then
   php tests/public-reports-profile-a24-regression.php
+  php tests/public-reports-profile-a24-s3-regression.php
 fi
 
 shopt -s globstar nullglob
