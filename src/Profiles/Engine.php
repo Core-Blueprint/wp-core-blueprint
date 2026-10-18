@@ -177,6 +177,22 @@ final class Engine {
 				} else {
 					$section->apply( $payload['data'], $actor );
 				}
+				if ( $strict_reports ) {
+					// Verification is independent from the immutable S2 receipt.
+					// A post-COMMIT writer may alter a *non-exported* document
+					// field while represented fields still match. Such a race
+					// must never be reported as successful Profile Apply.
+					$receipt = $result['witness'];
+					$verified_post = $section->version_witness();
+					if ( $verified_post !== [
+						'authority'         => 'active',
+						'settings_sha256'   => $receipt['settings_sha256'] ?? null,
+						'document_revision' => $receipt['document_revision'] ?? null,
+						'document_sha256'   => $receipt['document_sha256'] ?? null,
+					] ) {
+						throw new \RuntimeException( 'Reports Profile recovery_required: postreceipt_drift' );
+					}
+				}
 				if ( ! $section->verify( $payload['data'] ) ) {
 					/* translators: %s: profile section ID. */
 					throw new \RuntimeException( sprintf( __( 'Profile section %s did not verify after apply.', 'core-blueprint' ), $id ) );
