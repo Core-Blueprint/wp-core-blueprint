@@ -28,7 +28,10 @@ final class CB_Mail_Designer_Save_In_Place_Test extends WP_UnitTestCase {
 		$source = (string) file_get_contents( $root . '/src/Mail/Admin/TemplateActions.php' );
 
 		self::assertStringContainsString( '$result = self::persist(', $source );
-		self::assertSame( 1, substr_count( $source, 'TemplateRepository::save(' ) );
+		self::assertSame( 1, substr_count( $source, 'TemplateRepository::mutate(' ) );
+		self::assertStringContainsString( '$result = TemplateRepository::mutate( $template_id, $expected, $subject, $project );', $source );
+		self::assertStringNotContainsString( 'TemplateRepository::save(', $source );
+		self::assertStringContainsString( '$ack = $result[\'document\'] ?? null;', $source );
 		self::assertStringContainsString( "check_ajax_referer( 'cb_core_mail_template_save' )", $source );
 		self::assertStringContainsString( "current_user_can( 'manage_options' )", $source );
 		self::assertStringContainsString( 'wp_send_json_success(', $source );
@@ -43,7 +46,13 @@ final class CB_Mail_Designer_Save_In_Place_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "form && ajaxUrl && typeof fetch === 'function' && typeof FormData === 'function'", $adapter );
 		self::assertStringContainsString( "form.addEventListener('submit'", $adapter );
 		self::assertStringContainsString( 'event.preventDefault()', $adapter );
-		self::assertStringContainsString( 'body: new FormData(form)', $adapter );
+		self::assertStringContainsString( 'const body = new FormData(form)', $adapter );
+		self::assertStringContainsString( "body.set('template_id', captured.templateId)", $adapter );
+		self::assertStringContainsString( "body.set('subject', captured.subject)", $adapter );
+		self::assertStringContainsString( "body.set('expected_revision', captured.revision)", $adapter );
+		self::assertStringContainsString( 'body.set(\'project_json\', JSON.stringify(captured.checkpoint.submittedProject))', $adapter );
+		self::assertStringContainsString( 'body,', $adapter );
+		self::assertStringContainsString( "if (!accepted) throw new Error(", $adapter );
 		self::assertStringContainsString( "credentials: 'same-origin'", $adapter );
 		self::assertStringContainsString( "announceSaveState('saving')", $adapter );
 		self::assertStringContainsString( "announceSaveState('saved'", $adapter );
