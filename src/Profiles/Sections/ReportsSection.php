@@ -212,10 +212,18 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 			$result = ReportsProfileTransaction::reverse_profile_guarded(
 				$this->normalize( $snapshot ), $after_witness
 			);
+			$restored = is_array( $result['witness'] ?? null ) ? [
+				'authority'         => 'active',
+				'settings_sha256'   => $result['witness']['settings_sha256'] ?? null,
+				'document_revision' => $result['witness']['document_revision'] ?? null,
+				'document_sha256'   => $result['witness']['document_sha256'] ?? null,
+			] : null;
+			// Compensation advances the document revision. The represented
+			// snapshot must be restored, but its OLD revision cannot reappear.
 			if ( ! in_array( $result['status'] ?? '', [ 'saved', 'unchanged' ], true )
-				|| ! is_array( $result['witness'] ?? null )
+				|| null === $restored
 				|| ! $this->verify( $snapshot )
-				|| $this->version_witness() !== $before_witness ) {
+				|| $this->version_witness() !== $restored ) {
 				throw new \RuntimeException( 'Reports Profile recovery_required: compensation_unverified' );
 			}
 			return;
