@@ -672,3 +672,17 @@ test('CSP preview bridge emits only clicked semantic regions inside its own root
 	assert.equal(sent.length, previous);
 	assert.equal(prevented, 1);
 });
+
+
+test('Reports consumer preserves failure state when canonical Flow host refuses untrusted preview HTML', () => {
+	const reportsSource = readFileSync(
+		new URL('../../assets/js/features/reports-preferences.js', import.meta.url), 'utf8'
+	);
+	const start = reportsSource.indexOf('if ( host.render( response.data.html ) !== true )');
+	const success = reportsSource.indexOf("setPreviewState( '', 'success' );", start);
+	assert.ok(start >= 0, 'Reports must check the Base host acceptance result');
+	assert.ok(success > start, 'Reports success state must follow verified host acceptance');
+	const guard = reportsSource.slice(start, success);
+	assert.match(guard, /setPreviewState\(\s*i18n\.previewFailed[^;]+,\s*'error'\s*\);/);
+	assert.match(guard, /\breturn;/);
+});
