@@ -118,6 +118,7 @@ final class Engine {
 		$attempted = [];
 		$post_witnesses = [];
 		$unchanged_sections = [];
+		$uncertain_sections = [];
 		$before_witnesses = [];
 		$snapshots = [];
 		$registry = SectionRegistry::all();
@@ -159,6 +160,11 @@ final class Engine {
 						$payload['data'], $actor, $before_witnesses[ $id ]
 					);
 					$status = $result['status'] ?? '';
+					if ( 'recovery_required' === $status ) {
+						// A failed/unknown COMMIT or posthook cannot be made
+						// certain merely by a subsequent identical read.
+						$uncertain_sections[ $id ] = true;
+					}
 					if ( ! in_array( $status, [ 'saved', 'unchanged' ], true )
 						|| ! is_array( $result['witness'] ?? null )
 						|| count( $result['witness'] ) !== 3 ) {
@@ -215,6 +221,9 @@ final class Engine {
 			foreach ( array_reverse( $attempted ) as $id ) {
 				try {
 					$section = $registry[ $id ];
+					if ( isset( $uncertain_sections[ $id ] ) ) {
+						throw new \RuntimeException( 'Reports Profile recovery_required: uncertain_transaction' );
+					}
 					if ( isset( $unchanged_sections[ $id ] ) ) {
 						// A verified no-op is never reverse-written; if another
 						// actor changed state, report recovery rather than clobber.
