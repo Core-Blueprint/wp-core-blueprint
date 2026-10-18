@@ -97,7 +97,7 @@ final class Engine {
 		if ( 0 === (int) $preview['total_changes']
 			&& isset( $document['sections']['reports'] )
 			&& 'active' === ( $preview['witnesses']['reports']['authority'] ?? null ) ) {
-			throw new \RuntimeException( __( 'The active Reports profile contains no changes to apply.', 'core-blueprint' ) );
+			throw new \RuntimeException( __( 'Could not apply the Reports profile policy.', 'core-blueprint' ) );
 		}
 		// A read-only canonical Reports preview is not permission to apply.
 		// Check every guarded section before even acquiring the apply lock.
