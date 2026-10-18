@@ -7,6 +7,7 @@ use CoreBlueprint\Core\Profiles\CanonicalJson;
 use CoreBlueprint\Core\Profiles\ExactSection;
 use CoreBlueprint\Core\Profiles\SchemaGuard;
 use CoreBlueprint\Core\Profiles\VersionGuardedSectionInterface;
+use CoreBlueprint\Core\Profiles\ReportsProfileTransaction;
 use CoreBlueprint\Core\Settings\OptionCas;
 use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
 use CoreBlueprint\Core\Settings;
@@ -101,16 +102,46 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 			}
 			$revision = (string) $document['revision'];
 		}
-		return [
+		$witness = [
 			'authority'         => $authority,
 			'settings_sha256'   => hash( 'sha256', $row['raw'] ),
 			'document_revision' => $revision,
 		];
+		if ( 'active' === $authority ) {
+			$witness['document_sha256'] = ReportsProfileTransaction::document_hash( $document['document'] );
+		}
+		return $witness;
 	}
 
-	/** Active Profiles Apply remains explicitly blocked. */
+	/** Canonical active authority needs an intact read-only transaction witness. */
 	public function assert_apply_allowed(): void {
+		$authority = (string) ( Authority::inspect()['status'] ?? 'blocked' );
+		if ( 'active' === $authority ) {
+			$full = $this->version_witness();
+			$transaction = ReportsProfileTransaction::witness();
+			if ( 'ok' !== ( $transaction['status'] ?? '' )
+				|| ( $transaction['witness']['settings_sha256'] ?? null ) !== $full['settings_sha256']
+				|| ( $transaction['witness']['document_revision'] ?? null ) !== $full['document_revision'] ) {
+				throw new \RuntimeException( 'Reports Profile recovery_required: canonical_authority' );
+			}
+			return;
+		}
 		self::require_legacy_profile_authority();
+	}
+
+	/** Engine-only synchronous transaction result; generic apply remains void. */
+	public function apply_profile_guarded( array $incoming, string $actor, array $approved ): array {
+		unset( $actor );
+		if ( 'active' !== ( $approved['authority'] ?? null )
+			|| 'active' !== ( Authority::inspect()['status'] ?? null )
+			|| ! isset( $approved['settings_sha256'], $approved['document_revision'], $approved['document_sha256'] )
+			|| count( $approved ) !== 4 ) {
+			return [ 'status' => 'blocked', 'reason' => 'missing_engine_witness' ];
+		}
+		$this->assert_apply_allowed();
+		$expected = $approved;
+		unset( $expected['authority'] );
+		return ReportsProfileTransaction::apply_profile_guarded( $this->normalize( $incoming ), $expected );
 	}
 
 	/** Repeat policy at direct apply and rollback boundaries. */
@@ -129,7 +160,8 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 	}
 
 	public function apply( array $incoming, string $actor ): void {
-		$this->assert_apply_allowed();
+		// Generic SectionInterface::apply MUST remain read-only for active.
+		self::require_legacy_profile_authority();
 		$changes = self::represented_paths( $this->normalize( $incoming ) );
 		if ( ! Settings::set_paths( $changes, $actor )
 			&& ( 'unchanged' !== Settings::last_write_status() || ! Settings::matches_paths( $changes ) ) ) {
@@ -161,6 +193,28 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 	): void {
 		unset( $incoming, $actor );
 		$now = $this->version_witness();
+		if ( 'active' === ( $before_witness['authority'] ?? null ) ) {
+			if ( null === $after_witness ) {
+				if ( $now === $before_witness ) {
+					return;
+				}
+				throw new \RuntimeException( 'Reports Profile recovery_required: missing_post_witness' );
+			}
+			$committed = $after_witness + [ 'authority' => 'active' ];
+			if ( count( $after_witness ) !== 3 || $now !== $committed ) {
+				throw new \RuntimeException( 'Reports Profile recovery_required: concurrent_revision' );
+			}
+			$result = ReportsProfileTransaction::reverse_profile_guarded(
+				$this->normalize( $snapshot ), $after_witness
+			);
+			if ( ! in_array( $result['status'] ?? '', [ 'saved', 'unchanged' ], true )
+				|| ! is_array( $result['witness'] ?? null )
+				|| ! $this->verify( $snapshot )
+				|| $this->version_witness() !== $before_witness ) {
+				throw new \RuntimeException( 'Reports Profile recovery_required: compensation_unverified' );
+			}
+			return;
+		}
 		if ( null === $after_witness ) {
 			if ( $now === $before_witness ) {
 				return;
