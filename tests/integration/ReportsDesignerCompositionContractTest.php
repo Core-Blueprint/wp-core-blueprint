@@ -250,6 +250,9 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( 'previewSequence', $runtime );
 		self::assertStringContainsString( 'createFlowPreviewHost', $runtime );
 		self::assertStringContainsString( 'host.render( response.data.html )', $runtime );
+		self::assertStringContainsString( 'onActivate: ( type ) => {', $runtime );
+		self::assertStringContainsString( "block.type === type && block.enabled !== false", $runtime );
+		self::assertStringContainsString( "selectBlock( type, { source: 'canvas' } )", $runtime );
 		self::assertStringNotContainsString( 'previewFrame.srcdoc', $runtime );
 		self::assertStringNotContainsString( 'allow-same-origin', $runtime );
 		self::assertStringContainsString( 'requestErrorMessage', $runtime );
