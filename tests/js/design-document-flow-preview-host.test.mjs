@@ -571,3 +571,96 @@ test('selected preview regions keep empty elements visibly selectable and restor
 	assert.equal(target.style.minHeight, '0px');
 	assert.equal(target.getAttribute('data-cb-flow-preview-selected'), null);
 });
+
+
+test('opaque preview activations are source, generation, shape and lifecycle bound', () => {
+	const env = harness();
+	const activated = [];
+	assert.throws(() => createFlowPreviewHost(env.iframe, { onActivate: 1 }), /callback/);
+	const host = createFlowPreviewHost(env.iframe, { onActivate: (region) => activated.push(region) });
+	const activation = (generation, region) => ({
+		type: 'cb-core-flow-preview-activate', version: 1, generation, region,
+	});
+	host.render(canonicalHtml());
+	env.dispatch(env.iframe.contentWindow, activation(1, 'header'));
+	assert.deepEqual(activated, [], 'Do not accept interaction before the preview is visible');
+	env.dispatch(env.iframe.contentWindow, sizeMessage(1, 850));
+	assert.equal(env.iframe.getAttribute('data-cb-core-flow-preview-state'), 'ready');
+
+	env.dispatch({}, activation(1, 'header'));
+	env.dispatch(env.iframe.contentWindow, activation(0, 'header'));
+	env.dispatch(env.iframe.contentWindow, activation(2, 'header'));
+	env.dispatch(env.iframe.contentWindow, activation(1, '../untrusted'));
+	env.dispatch(env.iframe.contentWindow, activation(1, null));
+	env.dispatch(env.iframe.contentWindow, { ...activation(1, 'header'), unexpected: true });
+	env.dispatch(env.iframe.contentWindow, { ...activation(1, 'header'), version: 2 });
+	assert.deepEqual(activated, []);
+
+	env.dispatch(env.iframe.contentWindow, activation(1, 'kpis'));
+	assert.deepEqual(activated, ['kpis']);
+	host.render(canonicalHtml());
+	env.dispatch(env.iframe.contentWindow, activation(1, 'header'));
+	assert.deepEqual(activated, ['kpis']);
+	env.dispatch(env.iframe.contentWindow, sizeMessage(2, 860));
+	env.dispatch(env.iframe.contentWindow, activation(2, 'footer'));
+	assert.deepEqual(activated, ['kpis', 'footer']);
+	host.destroy();
+	env.dispatch(env.iframe.contentWindow, activation(2, 'header'));
+	assert.deepEqual(activated, ['kpis', 'footer']);
+});
+
+test('CSP preview bridge emits only clicked semantic regions inside its own root', () => {
+	const bridge = sizingBridge();
+	const listeners = new Map();
+	const sent = [];
+	const parentWindow = { postMessage(data, targetOrigin) { sent.push({ data, targetOrigin }); } };
+	const root = {
+		scrollHeight: 100,
+		offsetHeight: 100,
+		getBoundingClientRect: () => ({ height: 100 }),
+		getAttribute: (name) => name === 'data-cb-flow-preview-root' ? '1' : null,
+		querySelectorAll: () => [],
+		addEventListener(type, fn) { listeners.set(type, fn); },
+		contains(element) { return element.inside === true; },
+	};
+	const documentObject = {
+		querySelectorAll(selector) {
+			if (selector === 'meta[name="cb-core-flow-preview-protocol"]') return [{ content: '1' }];
+			if (selector === '[data-cb-flow-preview-root]') return [root];
+			return [];
+		},
+		documentElement: {
+			getAttribute(name) { return name === 'data-cb-core-flow-preview-generation' ? '3' : null; },
+		},
+	};
+	const windowObject = { parent: parentWindow, addEventListener() {} };
+	class ResizeObserverStub { observe() {} }
+	runInNewContext(bridge, {
+		window: windowObject,
+		document: documentObject,
+		ResizeObserver: ResizeObserverStub,
+		requestAnimationFrame: () => 1,
+		Number,
+		Math,
+	});
+	assert.equal(typeof listeners.get('click'), 'function');
+	const click = listeners.get('click');
+	const marker = { inside: true, getAttribute: () => 'current_state' };
+	let prevented = 0;
+	const send = (item) => click({
+		target: { closest: () => item },
+		preventDefault() { prevented++; },
+	});
+	send(marker);
+	assert.deepEqual(sent.at(-1), {
+		data: { type: 'cb-core-flow-preview-activate', version: 1, generation: 3, region: 'current_state' },
+		targetOrigin: '*',
+	});
+	assert.equal(prevented, 1);
+	const previous = sent.length;
+	send({ inside: false, getAttribute: () => 'header' });
+	send({ inside: true, getAttribute: () => '../evil' });
+	send(null);
+	assert.equal(sent.length, previous);
+	assert.equal(prevented, 1);
+});
