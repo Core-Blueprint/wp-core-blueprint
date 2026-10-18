@@ -36,6 +36,7 @@ class CheckEntrypointTest(unittest.TestCase):
         write('tests/public-design-document-storage-regression.php')
         write('tests/public-design-document-migration-regression.php')
         write('tests/public-design-document-consumer-adoption-regression.php')
+        write('tests/public-designer-v2-abi-regression.php')
         write('tests/public-settings-cas-regression.php')
         write('tests/public-settings-consumer-regression.php')
         write('tests/public-settings-six-consumer-regression.php')
@@ -87,6 +88,7 @@ class CheckEntrypointTest(unittest.TestCase):
                 'php|tests/public-design-document-storage-regression.php',
                 'php|tests/public-design-document-migration-regression.php',
                 'php|tests/public-design-document-consumer-adoption-regression.php',
+                'php|tests/public-designer-v2-abi-regression.php',
                 'php|tests/public-settings-cas-regression.php',
                 'php|tests/public-settings-consumer-regression.php',
                 'php|tests/public-settings-six-consumer-regression.php',
@@ -125,6 +127,22 @@ class CheckEntrypointTest(unittest.TestCase):
         result = self.run_check('node|--test')
         self.assertEqual(23, result.returncode)
         self.assertFalse(any(x.startswith('python3|') for x in self.trace_lines()))
+
+    def test_missing_designer_v2_regression_fails_closed(self):
+        (self.root / 'tests/public-designer-v2-abi-regression.php').unlink()
+        result = self.run_check()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            'required source check missing: tests/public-designer-v2-abi-regression.php',
+            result.stderr,
+        )
+        self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_designer_v2_regression_failure_stops_before_javascript(self):
+        result = self.run_check('php|tests/public-designer-v2-abi-regression.php')
+        self.assertEqual(23, result.returncode, result.stdout + result.stderr)
+        self.assertFalse(any(x.startswith('node|') for x in self.trace_lines()))
+        self.assertNotIn('Level 1 checks: PASS', result.stdout)
 
     def test_missing_public_foundation_regression_fails_closed(self):
         (self.root / 'tests/public-tile-foundation-regression.php').unlink()
