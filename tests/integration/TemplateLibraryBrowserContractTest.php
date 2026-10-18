@@ -47,7 +47,7 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 				public function categories( int $user_id ): array {
 					do_action( 'core_blueprint_test_category_provider_invoked', $this->type );
 					return $this->can_browse( $user_id )
-						? [ 'example' => 'Example', 'invalid category' => 'Invalid', 'control' => "Bad\\nLabel" ] : [];
+						? [ 'example' => 'Example', 'invalid category' => 'Invalid', 'control' => "Bad\nLabel" ] : [];
 				}
 				public function can_browse( int $user_id ): bool { return user_can( $user_id, 'manage_options' ); }
 				public function can_view( string $template_id, int $user_id ): bool {
