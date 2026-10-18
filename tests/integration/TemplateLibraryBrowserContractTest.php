@@ -6,6 +6,7 @@ use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\TemplateLibrary\Assets;
 use CoreBlueprint\Core\TemplateLibrary\BrowserController;
 use CoreBlueprint\Core\TemplateLibrary\DesignerScope;
+use CoreBlueprint\Core\TemplateLibrary\TemplateCategorySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateMetadata;
 use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
@@ -38,11 +39,14 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 
 	public function register_sources(): void {
 		foreach ( [ 'workflow', 'mail' ] as $type ) {
-			TemplateSourceRegistry::register( new class( $type ) implements TemplateSourceInterface {
+			TemplateSourceRegistry::register( new class( $type ) implements TemplateSourceInterface, TemplateCategorySourceInterface {
 				public function __construct( private string $type ) {}
 				public function source_id(): string { return 'core-blueprint-test-' . $this->type; }
 				public function extension_id(): string { return 'core-blueprint'; }
 				public function designer_type(): string { return $this->type; }
+				public function categories( int $user_id ): array {
+					return $this->can_browse( $user_id ) ? [ 'example' => 'Example' ] : [];
+				}
 				public function can_browse( int $user_id ): bool { return user_can( $user_id, 'manage_options' ); }
 				public function can_view( string $template_id, int $user_id ): bool {
 					return 'example' === $template_id && $this->can_browse( $user_id );
@@ -117,4 +121,30 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 		self::assertCount( 1, $items );
 		self::assertSame( 'workflow', $items[0]['designer'] );
 	}
+	public function test_category_facets_are_authorized_bounded_and_designer_scoped(): void {
+		$token = DesignerScope::issue( 'core-blueprint', 'workflow' );
+		self::assertIsString( $token );
+
+		$scope_request = new WP_REST_Request( 'GET', '/core-blueprint/v1/template-library/sources' );
+		$scope_request->set_header( 'X-CB-Designer-Scope', $token );
+		$response = BrowserController::sources( $scope_request );
+		self::assertSame( 200, $response->get_status() );
+		$sources = $response->get_data()['sources'];
+		self::assertCount( 1, $sources );
+		self::assertSame( 'workflow', $sources[0]['designer'] );
+		self::assertSame( [ [ 'id' => 'example', 'label' => 'Example' ] ], $sources[0]['categories'] );
+		self::assertArrayNotHasKey( 'template_body', $sources[0] );
+		self::assertArrayNotHasKey( 'item_count', $sources[0] );
+
+		$global_request = new WP_REST_Request( 'GET', '/core-blueprint/v1/template-library/sources' );
+		$global = BrowserController::sources( $global_request )->get_data()['sources'];
+		self::assertCount( 2, $global );
+		foreach ( $global as $source ) {
+			self::assertSame( [ [ 'id' => 'example', 'label' => 'Example' ] ], $source['categories'] );
+		}
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'subscriber' ] ) );
+		self::assertSame( [], TemplateSourceRegistry::source_categories() );
+		wp_set_current_user( $this->admin_id );
+	}
+
 }
