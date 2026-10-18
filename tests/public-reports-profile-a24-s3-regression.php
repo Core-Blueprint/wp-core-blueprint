@@ -172,6 +172,27 @@ s3_assert(in_array($reversed['status'] ?? '', ['saved', 'unchanged'], true),
     'definite S3 receipt permits conditional rollback of unchanged postimage');
 s3_assert((new ReportsSection())->verify($before), 'conditional compensation restored represented fields');
 
+// Section-level S3 integration: the Engine-owned four-field witness reaches
+// S2, and compensation verifies the NEW monotone revision after restoration.
+$wpdb = s3_reset();
+$section = new ReportsSection();
+$before = $section->export();
+$engineWitness = $section->version_witness();
+$sectionReceipt = $section->apply_profile_guarded($next, 'source-only', $engineWitness);
+s3_assert('saved' === ($sectionReceipt['status'] ?? ''), 'strict section adapter saves with full witness');
+$section->restore_guarded($before, $next, 'profile-rollback:source-only',
+    $engineWitness, $sectionReceipt['witness']);
+s3_assert($section->verify($before), 'section-level guarded compensation restores fields');
+s3_assert($section->version_witness()['document_revision'] !== $engineWitness['document_revision'],
+    'compensation never invents rollback of monotone document revision');
+
+// State/authority failure never permits legacy fallback.
+Authority::$state = 'recovery_required';
+$blockedAuthority = false;
+try { $section->assert_apply_allowed(); } catch (RuntimeException $e) { $blockedAuthority = true; }
+s3_assert($blockedAuthority, 'unknown or recovery authority blocked');
+Authority::$state = 'active';
+
 // R09: writer changes only unrepresented document field AFTER commit, before rollback.
 $wpdb = s3_reset();
 $approved = s3_expected();
