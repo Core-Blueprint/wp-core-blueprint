@@ -60,7 +60,7 @@ function createBrowser( root, options = {} ) {
     const token = contextual ? options.contextToken : '';
     const state = {
         filters: { limit: 24, search: '', source: '', extension: '', designer: '', origin: '', category: '' },
-        cursor: null, entries: [], selected: null, pending: false,
+        sources: [], cursor: null, entries: [], selected: null, pending: false,
         requestGeneration: 0, controller: null, timer: null, destroyed: false,
     };
     const shell = el( 'section', 'cb-template-browser' );

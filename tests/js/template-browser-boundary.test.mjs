@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 
 const browser = readFileSync(new URL('../../assets/js/core/template-browser.js', import.meta.url), 'utf8');
 const assets = readFileSync(new URL('../../src/TemplateLibrary/Assets.php', import.meta.url), 'utf8');
@@ -86,4 +87,60 @@ test('Template categories are declared by authorized sources and resolved under 
   assert.match(browser, /if \( state\.filters\.designer && source\.designer !== state\.filters\.designer \) continue/);
   assert.match(browser, /categorySelect\.disabled = available\.size === 0/);
   assert.doesNotMatch(browser, /const categoryInput = el\( 'input'/);
+});
+
+test('filter interaction is safe while the source metadata response is pending', async () => {
+  class FakeElement {
+    constructor(tag) {
+      this.tagName = tag.toUpperCase();
+      this.children = [];
+      this.dataset = {};
+      this.events = new Map();
+      this.value = '';
+      this.hidden = false;
+      this.disabled = false;
+    }
+    append(...nodes) { this.children.push(...nodes); }
+    prepend(...nodes) { this.children.unshift(...nodes); }
+    replaceChildren(...nodes) { this.children = [...nodes]; }
+    setAttribute(name, value) { this[name] = String(value); }
+    addEventListener(name, listener) { this.events.set(name, listener); }
+  }
+  const root = new FakeElement('div');
+  const calls = [];
+  const document = {
+    createElement: (tag) => new FakeElement(tag),
+    getElementById: () => ({
+      textContent: JSON.stringify({
+        restRoot: '/wp-json/core-blueprint/v1/template-library/',
+        nonce: 'fixture-nonce',
+      }),
+    }),
+    querySelector: () => null,
+  };
+  const sourcePending = new Promise(() => {});
+  const context = {
+    document, HTMLElement: FakeElement, URL, URLSearchParams, AbortController,
+    setTimeout, clearTimeout,
+    window: { location: { href: 'https://example.test/wp-admin/', origin: 'https://example.test' } },
+    fetch: async (url) => {
+      calls.push(url);
+      if (url.includes('/sources?')) return sourcePending;
+      return { ok: true, json: async () => ({ items: [], next_cursor: null }) };
+    },
+  };
+  const executable = browser
+    .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = async () => false;')
+    .replace('export { createBrowser, open };', '')
+    .replace('export default api;', '');
+  runInNewContext(executable, context, { timeout: 1000 });
+  context.window.cbCore.templateBrowser.createBrowser(root);
+  const sidebar = root.children[0].children[0];
+  const builtIn = sidebar.children[1];
+  assert.doesNotThrow(() => builtIn.events.get('click')());
+  assert.equal(
+    calls.filter((url) => url.includes('/templates?') && new URL(url, 'https://example.test').searchParams.get('origin') === 'built-in').length,
+    1,
+    'Changing an origin before facets arrive must still refresh the template query',
+  );
 });
