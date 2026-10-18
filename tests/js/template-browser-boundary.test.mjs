@@ -75,3 +75,15 @@ test('Load more is hidden for zero results and only shown with a populated next 
   assert.match(browser, /more\.hidden = !state\.cursor \|\| !state\.entries\.length;/);
   assert.match(styles, /\.cb-template-browser__more\[hidden\]\s*\{\s*display: none !important;\s*\}/);
 });
+
+
+test('Template categories are declared by authorized sources and resolved under the current Designer scope', () => {
+  assert.match(browser, /addSelect\( 'category', 'category', 'Category' \)/);
+  assert.match(browser, /request\( 'sources', \{\}, token, undefined \)/);
+  assert.match(browser, /Array\.isArray\( source\.categories \)/);
+  assert.match(browser, /if \( state\.filters\.source && source\.id !== state\.filters\.source \) continue/);
+  assert.match(browser, /if \( state\.filters\.extension && source\.extension !== state\.filters\.extension \) continue/);
+  assert.match(browser, /if \( state\.filters\.designer && source\.designer !== state\.filters\.designer \) continue/);
+  assert.match(browser, /categorySelect\.disabled = available\.size === 0/);
+  assert.doesNotMatch(browser, /const categoryInput = el\( 'input'/);
+});
