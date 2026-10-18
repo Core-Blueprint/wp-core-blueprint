@@ -84,9 +84,12 @@ const normalizeSelectionId = (value) => {
 
 const nextGeneration = (current) => current >= Number.MAX_SAFE_INTEGER ? 1 : current + 1;
 
-export const createFlowPreviewHost = (iframe, { onActivate = null } = {}) => {
+export const createFlowPreviewHost = (iframe, { onActivate = null, onFirstSizeTimeout = null } = {}) => {
 	if (onActivate !== null && typeof onActivate !== 'function') {
 		throw new TypeError('Flow preview activation callback must be a function.');
+	}
+	if (onFirstSizeTimeout !== null && typeof onFirstSizeTimeout !== 'function') {
+		throw new TypeError('Flow preview first-size timeout callback must be a function.');
 	}
 	if (!iframe || String(iframe.tagName || '').toUpperCase() !== 'IFRAME') {
 		throw new TypeError('Flow preview host requires an iframe element.');
@@ -239,6 +242,8 @@ export const createFlowPreviewHost = (iframe, { onActivate = null } = {}) => {
 		firstSizeTimer = windowRef.setTimeout(() => {
 			if (!destroyed && awaitingFirstSize && activeGeneration === renderGeneration) {
 				failCurrentRender();
+				// Consumer may request a fresh render; this generation remains failed.
+				onFirstSizeTimeout?.();
 			}
 		}, FIRST_SIZE_TIMEOUT_MS);
 
