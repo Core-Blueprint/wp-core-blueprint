@@ -53,6 +53,48 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
+	 * Bounded, capability-gated category facets. Does not enumerate template
+	 * documents or require pagination to discover categories.
+	 *
+	 * @return array<string,list<array{id:string,label:string}>>
+	 */
+	public static function source_categories(): array {
+		self::collect_if_ready();
+		$user = get_current_user_id();
+		if ( $user < 1 ) {
+			return [];
+		}
+		$catalog = [];
+		foreach ( self::$sources as $source_id => $source ) {
+			if ( ! $source instanceof TemplateCategorySourceInterface || ! self::allowed( $source ) ) {
+				continue;
+			}
+			try {
+				$raw = $source->categories( $user );
+				$items = [];
+				foreach ( $raw as $id => $label ) {
+					if ( count( $items ) >= 48 ) {
+						break;
+					}
+					if ( ! is_string( $id ) || ! TemplateQuery::valid_id( $id ) || ! is_string( $label ) ) {
+						continue;
+					}
+					$label = trim( wp_strip_all_tags( $label ) );
+					if ( '' === $label || strlen( $label ) > 96 || preg_match( '/[\x00-\x1f\x7f]/', $label ) ) {
+						continue;
+					}
+					$items[$id] = [ 'id' => $id, 'label' => $label ];
+				}
+				ksort( $items, SORT_STRING );
+				$catalog[$source_id] = array_values( $items );
+			} catch ( \Throwable ) {
+				// A failing provider cannot expose facets or affect other sources.
+			}
+		}
+		return $catalog;
+	}
+
+	/**
 	 * T3 optional local navigation. Rechecks the CURRENT actor and item even
 	 * after a prior browse result; a client-provided metadata object is never
 	 * authorization. No domain writes, redirects or outbound requests.
