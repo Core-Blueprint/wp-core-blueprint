@@ -248,9 +248,9 @@ function createBrowser( root, options = {} ) {
                 results.append( renderCard( item, index ) );
             } );
             state.cursor = payload.next_cursor;
-            message.textContent = state.entries.length ? '' : label( 'noResults', 'No templates found.' );
+            message.textContent = ( state.entries.length || state.cursor ) ? '' : label( 'noResults', 'No templates found.' );
             summary.textContent = String( state.entries.length );
-            more.hidden = !state.cursor || !state.entries.length;
+            more.hidden = !state.cursor;
         } catch ( error ) {
             if ( !controller.signal.aborted && !state.destroyed && generation === state.requestGeneration ) {
                 message.textContent = label( 'error', 'Could not load templates.' );

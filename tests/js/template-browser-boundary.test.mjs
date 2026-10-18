@@ -71,9 +71,10 @@ test('global filters distinguish translated Source and Plugin without changing t
   assert.doesNotMatch(browser, /addSelect\( 'extension', 'source'/);
 });
 
-test('Load more is hidden for zero results and only shown with a populated next page', () => {
+test('Load more honors a valid continuation cursor even after an empty authorized page', () => {
   assert.match(browser, /more\.hidden = true;/);
-  assert.match(browser, /more\.hidden = !state\.cursor \|\| !state\.entries\.length;/);
+  assert.match(browser, /more\.hidden = !state\.cursor;/);
+  assert.match(browser, /state\.entries\.length \|\| state\.cursor/);
   assert.match(styles, /\.cb-template-browser__more\[hidden\]\s*\{\s*display: none !important;\s*\}/);
 });
 
@@ -126,7 +127,15 @@ test('filter interaction is safe while the source metadata response is pending',
     fetch: async (url) => {
       calls.push(url);
       if (url.includes('/sources?')) return sourcePending;
-      return { ok: true, json: async () => ({ items: [], next_cursor: null }) };
+      const cursor = new URL(url, 'https://example.test').searchParams.get('cursor');
+      return { ok: true, json: async () => cursor
+        ? { items: [{
+            source: 'fixture', id: 'public', title: 'Public template',
+            description: '', origin: 'built-in', category: 'example',
+            designer: 'workflow', compatible: true,
+          }], next_cursor: null }
+        : { items: [], next_cursor: 'fixture-next-page' },
+      };
     },
   };
   const executable = browser
@@ -143,4 +152,15 @@ test('filter interaction is safe while the source metadata response is pending',
     1,
     'Changing an origin before facets arrive must still refresh the template query',
   );
+  await new Promise((resolve) => setImmediate(resolve));
+  const content = root.children[0].children[1];
+  const more = content.children[3].children[1];
+  assert.equal(more.hidden, false, 'Empty filtered pages must preserve valid continuation');
+  more.events.get('click')();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(
+    calls.some((url) => new URL(url, 'https://example.test').searchParams.get('cursor') === 'fixture-next-page'),
+    'Load more must request the next cursor',
+  );
+  assert.equal(content.children[2].children.length, 1, 'The next authorized template remains reachable');
 });
