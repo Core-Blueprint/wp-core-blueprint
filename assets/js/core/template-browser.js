@@ -148,8 +148,9 @@ function createBrowser( root, options = {} ) {
             .forEach( ( [ id, title ] ) => categorySelect.append( option( id, title ) ) );
         categorySelect.disabled = available.size === 0;
         if ( state.filters.category && !available.has( state.filters.category ) ) {
+            // Callers perform one refresh after changing a filter. Avoid
+            // a redundant request when the selected category is no longer valid.
             state.filters.category = '';
-            refresh();
         }
         categorySelect.value = state.filters.category;
     }
