@@ -184,6 +184,8 @@ Consumers select a profile through `createSession({ profile })`. Profile APIs ar
 
 For the public `document-flow` profile, `createFlowPreviewHost` is part of the v1 consumer boundary. Maintenance Reports and other first-party flow consumers must obtain it through `@cb-core/design-editor`, never through a private relative Design path.
 
+The Flow Preview Host accepts an optional `onFirstSizeTimeout` callback. It fires only after a valid preview render fails to receive its first accepted sizing handshake within the bounded timeout; the failed generation stays inert. A consumer may request a fresh render, but must bound retries to avoid loops and must never treat the callback as success. Invalid HTML, stale sizing messages and unsuccessful AJAX responses must remain fail-closed. Reports attempts at most one fresh preview render per Designer opening and only while fullscreen is active.
+
 Profile-specific rendering or document contracts remain governed by their corresponding Foundation documentation.
 
 ### Motion
