@@ -19,13 +19,13 @@ import {
 	createDesignerSelectionController,
 	commands,
 	profiles,
-	motion,
+	animateLayoutChange,
 } from '@cb-core/design-editor';
 ```
 
 Consumers must not import files from `assets/js/design/` directly. The source tree below the public module is private implementation layout and may change without a consumer migration contract.
 
-The equivalent global facade is `window.cbCore.designEditor`. Consumers should prefer the script-module boundary when they already run as modules.
+The equivalent global facade is `window.cbCore.designEditor`. Consumers should prefer the script-module boundary when they already run as modules. **Export parity:** the actual ESM named export is `animateLayoutChange`, not `motion`. The `motion` convenience object is exposed only at `window.cbCore.designEditor.motion` (including its `animateLayoutChange` method). Never import `{ motion }` from `@cb-core/design-editor`: that binding does not exist and prevents the whole WordPress module from loading. The canonical example above is exercised by the public editor's actual-module regression test.
 
 ## Frozen v1 consumer surface
 
