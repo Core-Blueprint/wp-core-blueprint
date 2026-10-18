@@ -20,6 +20,18 @@ final class CB_Reports_Designer_Preview_Sample_Test extends WP_UnitTestCase {
 		return $report;
 	}
 
+	public function test_disabled_reports_still_renders_a_real_flow_designer_sample(): void {
+		self::assertFalse( ReportsState::is_enabled(), 'This case exercises the disabled Reports master switch.' );
+		$branding = ReportBrandingInput::normalize( [] );
+		$html = ( new DesignerPreview() )->render( $branding, MaintenanceTemplate::defaults() );
+
+		self::assertStringStartsWith( '<!doctype html>', $html );
+		self::assertStringContainsString( 'data-cb-flow-preview-region="header"', $html );
+		self::assertStringContainsString( 'data-cb-flow-preview-region="kpis"', $html );
+		self::assertStringContainsString( 'Example Plugin', $html );
+		self::assertStringContainsString( 'data-cb-core-flow-preview-sizing="1"', $html );
+	}
+
 	public function test_fallback_sample_exercises_every_optional_default_composer_section(): void {
 		$report = $this->sample_report();
 		$data   = $report['report_data'] ?? null;
