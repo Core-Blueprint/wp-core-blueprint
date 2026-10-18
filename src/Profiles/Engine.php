@@ -138,7 +138,18 @@ final class Engine {
 				}
 			}
 
-			foreach ( $document['sections'] as $id => $payload ) {
+			// The approved preview covers the exact canonical preimage of BOTH
+			// Reports rows. A preceding Security/Settings section would change
+			// the same raw option within this attempt and invalidate that
+			// consent witness. Run active Reports first, before ANY Settings
+			// writer, without rebasing to an unapproved live witness. The
+			// remaining registry order stays intact (module-states last).
+			$apply_sections = $document['sections'];
+			if ( 'active' === ( $before_witnesses['reports']['authority'] ?? null )
+				&& isset( $apply_sections['reports'] ) ) {
+				$apply_sections = [ 'reports' => $apply_sections['reports'] ] + $apply_sections;
+			}
+			foreach ( $apply_sections as $id => $payload ) {
 				$section = $registry[ $id ];
 				if ( ! ApplyLock::refresh( $lock ) ) {
 					throw new \RuntimeException( __( 'The profile apply lock was lost before the next section could be changed.', 'core-blueprint' ) );
