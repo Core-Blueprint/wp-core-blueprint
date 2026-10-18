@@ -51,6 +51,9 @@ final class CB_Design_Foundation_Flow_Preview_Host_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( "target.style.minHeight='1em'", $first_bridge );
 		self::assertStringContainsString( "target.style.minHeight=record.minHeight", $first_bridge );
 		self::assertStringContainsString( "target.removeAttribute('data-cb-flow-preview-selected')", $first_bridge );
+		self::assertStringContainsString( "root.addEventListener('click',onClick,true)", $first_bridge );
+		self::assertStringContainsString( "type:'cb-core-flow-preview-activate'", $first_bridge );
+		self::assertStringContainsString( "root.contains(target)", $first_bridge );
 
 		$hash = base64_encode( hash( 'sha256', $first_bridge, true ) );
 		self::assertStringContainsString( "script-src &#39;sha256-{$hash}&#39;", $first );
