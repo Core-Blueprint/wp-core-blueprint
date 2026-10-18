@@ -440,7 +440,13 @@ NEW;
 SECTIONS;
     s3_assert(1 === substr_count($harness, '    final class SectionRegistry {'),
         'isolated fixture registry declaration found once');
-    $harness = str_replace('    final class SectionRegistry {', $fakeSections . "\n    final class SectionRegistry {", $harness);
+    // PHP resolves parent classes as it evaluates each declaration.
+    // Keep the original S2 SectionRegistry where it is, and define the
+    // S3 Engine doubles only AFTER the unchanged ExactSection declaration.
+    $endProfiles = "}\nnamespace {\n    /**\n     * Fake transactional SQL store";
+    s3_assert(1 === substr_count($harness, $endProfiles),
+        'single post-ExactSection insertion boundary in S2 harness');
+    $harness = str_replace($endProfiles, $fakeSections . "\n" . $endProfiles, $harness);
     $oldRegistry = "return [ 'reports' => new \\CoreBlueprint\\Core\\Profiles\\Sections\\ReportsSection() ];";
     $newRegistry = "return [ 'security' => new S3SecuritySection(), 'reports' => new \\CoreBlueprint\\Core\\Profiles\\Sections\\ReportsSection(), 'later' => new S3LaterSection() ];";
     s3_assert(1 === substr_count($harness, $oldRegistry), 'original S2 registry replacement only in isolated child');
