@@ -200,7 +200,12 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 				}
 				throw new \RuntimeException( 'Reports Profile recovery_required: missing_post_witness' );
 			}
-			$committed = $after_witness + [ 'authority' => 'active' ];
+			$committed = [
+				'authority'         => 'active',
+				'settings_sha256'   => $after_witness['settings_sha256'] ?? null,
+				'document_revision' => $after_witness['document_revision'] ?? null,
+				'document_sha256'   => $after_witness['document_sha256'] ?? null,
+			];
 			if ( count( $after_witness ) !== 3 || $now !== $committed ) {
 				throw new \RuntimeException( 'Reports Profile recovery_required: concurrent_revision' );
 			}
