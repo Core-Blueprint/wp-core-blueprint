@@ -1,8 +1,8 @@
 # Core Blueprint Designer Foundation API
 
-Status: **public v1 frozen contract**.
+Status: **public v1 frozen contract + v2 SOURCE candidate; installed ZIP acceptance pending**.
 
-**G1c source candidate, not yet an advertised v2 capability:** the implementation branch adds transactional history, `captureSave()` and `rebase()` to both session factories. Public PHP `Assets::DOMAIN_SESSION_API` deliberately remains `1`. Consumers requiring v2 **must not** gate exclusively on the existence of individual JS methods; wait for the same-package PHP capability `>= 2`, executable ESM export proof, and consumer-specific integration acceptance. Existing v1 users remain supported. No consumer may import a low-level history engine as a substitute.
+**G1d-B v2 SOURCE candidate, installed ZIP acceptance pending:** transactional history, `captureSave()` and `rebase()` are implemented in both session factories and PHP `Assets::DOMAIN_SESSION_API` declares `2` on this candidate branch. This is a source capability, not acceptance of a built, installed artifact. Consumers must require the *same installed Base package* to provide PHP capability `>= 2`, executable WordPress-resolved ESM exports and consumer-specific integration acceptance. Existing v1 users remain supported. No consumer may import a low-level history engine as a substitute.
 
 The Designer Foundation is the Base-owned editor engine and shell boundary for Core Blueprint designers. Consumers own domain semantics, persistence, validation and domain rendering. Base owns editor/session mechanics, shared shell behavior and the public integration boundary.
 
@@ -72,15 +72,15 @@ Both methods live on the existing public session from `createSession({profile})`
 - `replace(project, { source = 'consumer' })` validates and replaces the project. Replacement resets history by default. `validateProject(project)` is a synchronous domain-owned validator: throw on invalid data. Base additionally validates the DesignProject envelope.
 - `execute({ label, apply(project) })` commits a domain-owned reversible transition. The command returns `{ project }`. `allowCommand(command, project)` may deny by returning `false`. Consumers must not mutate the frozen input.
 - `undo()`, `redo()`, `clearHistory()`, `historyStatus()`, and `dispose()` are Base-owned, session-only mechanics. `historyStatus()` returns a frozen `{ canUndo, canRedo, size }` snapshot; never persist history.
-- `subscribe(listener)` (with unsubscribe return) and `onChange(project, event)` observe **fully committed** project revisions. Project and selection observers read the final history stack synchronously. `subscribeHistory()` is a **G1c source-candidate** extension, not yet advertised by the PHP v2 capability; do not schedule a microtask to compensate for intermediate history state.
+- `subscribe(listener)` (with unsubscribe return) and `onChange(project, event)` observe **fully committed** project revisions. Project and selection observers read the final history stack synchronously. `subscribeHistory()` is implemented in the public v2 SOURCE candidate; installed artifact acceptance is pending. Do not schedule a microtask to compensate for intermediate history state.
 - The shared Designer shell now requires a public v2-compatible facade with `historyStatus()`, `subscribeHistory()`, `subscribeDiagnostics()`, `undo()` and `redo()`, or explicit `null` for presentation-only mode. A `subscribe(listener)` project observer alone is **not** a history subscription. The shell does not read `.projectState` or `.history` and does not own the session lifecycle.
 - Public PHP capability gate: `CoreBlueprint\\Core\\Design\\Editor\\Assets::DOMAIN_SESSION_API >= 1`. Public JS module and global facade expose `createDomainSession`. The low-level `ProjectState`, `EditorState`, and `CommandHistory` classes stay outside consumer contracts; the v1 profile-based `createSession()` is unchanged.
 
 A consumer adopting P02 must install a compatible Base and extension together. This does not change which Evaluation data may be stored or transmitted.
 
-### Designer v2 candidate: shared sessions, immutable history and guarded saves (G1c)
+### Designer v2 SOURCE candidate: shared sessions, immutable history and guarded saves (G1d-B)
 
-This section describes the **tested source candidate**, not a released or advertised capability. The normative proposed contract is G1a v2.1, with separate Automations and Evaluator owner sign-off. Do not promote this paragraph into a consumer compatibility guarantee until PHP and ESM have been verified in the same approved release artifact.
+This section describes the **v2 SOURCE candidate**, not a released or installed capability. The normative contract is G1a v2.1, with separate Automations and Evaluator owner sign-off. PHP declares v2 on this branch, but do not promote this paragraph into an installed consumer compatibility guarantee until PHP and WordPress-resolved ESM have been verified in the same approved release artifact.
 
 **Both** `createDomainSession()` and `createSession({ profile: 'mail' | 'document-flow' | 'document-fixed' })` expose these common methods: `project()`, `snapshot()`, `replace()`, `execute()`, `undo()`, `redo()`, `historyStatus()`, `subscribeHistory()`, `subscribeDiagnostics()`, `clearHistory()`, `captureSave()`, `baselineSnapshot()`, `rebase()`, and `dispose()`. They use one Base history engine; no consumer-owned second history engine or `createDesignerStateHistory` alias is supported.
 
