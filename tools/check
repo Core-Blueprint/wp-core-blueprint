@@ -27,6 +27,7 @@ for required in \
   tests/public-design-document-storage-regression.php \
   tests/public-design-document-migration-regression.php \
   tests/public-design-document-consumer-adoption-regression.php \
+  tests/public-designer-v2-abi-regression.php \
   tests/public-settings-cas-regression.php \
   tests/public-settings-consumer-regression.php \
   tests/public-settings-six-consumer-regression.php; do
@@ -59,6 +60,7 @@ php tests/public-core-scanner-ui-regression.php
 php tests/public-design-document-storage-regression.php
 php tests/public-design-document-migration-regression.php
 php tests/public-design-document-consumer-adoption-regression.php
+php tests/public-designer-v2-abi-regression.php
 php tests/public-settings-cas-regression.php
 php tests/public-settings-consumer-regression.php
 php tests/public-settings-six-consumer-regression.php
