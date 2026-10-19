@@ -3,6 +3,8 @@ import {
 	createDesignerInspectorControls,
 	createDesignerInspectorIdentity,
 	createDesignerLayerTree,
+	createDesignerIcon,
+	decorateDesignerElement,
 	createDesignerSelectionController,
 	createDesignerShell,
 	createSession,
@@ -710,6 +712,7 @@ if (root) {
 		return [section.index];
 	};
 	root.querySelectorAll('[data-cb-mail-add]').forEach((button) => {
+		decorateDesignerElement(button, button.dataset.cbMailAdd, { label: button.textContent });
 		button.addEventListener('click', () => {
 			const definition = components[button.dataset.cbMailAdd || ''];
 			if (!definition || !finishActiveText()) return;
@@ -720,6 +723,11 @@ if (root) {
 			session.execute(commands.insertNode(path, parent.children.length, makeNode(definition)));
 		});
 	});
+
+	// Dynamic Data is a section inside Elements, not an independent left tab.
+	const dynamicHeading = root.querySelector('[data-cb-designer-dynamic-data-heading]');
+	const dynamicIcon = dynamicHeading && createDesignerIcon('braces', document);
+	if (dynamicIcon) dynamicHeading.prepend(dynamicIcon);
 
 	const clipboard = window.cbCore?.clipboard;
 	if (!clipboard || typeof clipboard.enhance !== 'function') {
