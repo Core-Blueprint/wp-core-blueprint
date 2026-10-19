@@ -457,3 +457,22 @@ test('shared Designer UX defines canonical sidebar roles, Lucide icons and reduc
 	assert.match(css, /\.cb-core-design-shell\.is-fullscreen\.is-exiting/);
 	assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
+
+test('Base before-exit cancellation preserves fullscreen until an approved replay', () => {
+	const { root, fullscreen } = buildShell();
+	const shell = createDesignerShell(root);
+	const received = [];
+	const refuse = (event) => {
+		received.push(event.detail?.reason);
+		event.preventDefault();
+	};
+	root.addEventListener('cb:design-shell:beforeexit', refuse);
+	assert.equal(shell.enterFullscreen(), true);
+	assert.equal(shell.exitFullscreen(), false, 'no user exit until the public guard approves');
+	assert.equal(root.classList.contains('is-fullscreen'), true);
+	assert.equal(fullscreen.getAttribute('aria-pressed'), 'true');
+	assert.deepEqual(received, ['close']);
+	root.removeEventListener('cb:design-shell:beforeexit', refuse);
+	assert.equal(shell.exitFullscreen(), true, 'approved replay follows the native shell lifecycle');
+	assert.equal(fullscreen.getAttribute('aria-pressed'), 'false');
+});
