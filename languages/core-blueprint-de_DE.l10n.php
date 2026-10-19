@@ -17,6 +17,18 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        // Canonical Base Designer Exit Guard v1 labels (WordPress gettext).
+        'Close Designer?' => 'Designer schließen?',
+        'Return to the previous page?' => 'Zur vorherigen Seite zurückkehren?',
+        'Changes may not be saved. Close Designer?' => 'Änderungen wurden möglicherweise nicht gespeichert. Designer schließen?',
+        'Unsaved changes' => 'Nicht gespeicherte Änderungen',
+        'Save or discard your changes before closing the Designer.' => 'Speichern oder verwerfen Sie Ihre Änderungen, bevor Sie den Designer schließen.',
+        'What should happen to your changes?' => 'Was soll mit Ihren Änderungen geschehen?',
+        'Discard changes' => 'Änderungen verwerfen',
+        'Close Designer' => 'Designer schließen',
+        'Wait for the current save to finish.' => 'Warten Sie, bis der Speichervorgang abgeschlossen ist.',
+        'The Designer cannot be closed safely. Try again.' => 'Der Designer kann nicht sicher geschlossen werden. Versuchen Sie es erneut.',
+        'Your changes could not be verified as saved. The Designer remains open.' => 'Es konnte nicht bestätigt werden, dass Ihre Änderungen gespeichert wurden. Der Designer bleibt geöffnet.',
         'The editor view needs refreshing. Your changes are preserved.' => 'Die Editoransicht muss aktualisiert werden. Ihre Änderungen bleiben erhalten.',
         'Refresh editor view' => 'Editoransicht aktualisieren',
         'MU-plugin directory cannot be safely inspected within this WordPress root.' => 'Das MU-Plugin-Verzeichnis kann innerhalb dieses WordPress-Stammverzeichnisses nicht sicher geprüft werden.',
