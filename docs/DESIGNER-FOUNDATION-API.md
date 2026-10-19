@@ -109,6 +109,10 @@ Do not send the token over HTTP, persist it, or accept a caller-supplied `curren
 
 Historical source exports such as `ProjectState`, `EditorState`, `CommandHistory` and direct command functions **remain present pending a first-party import impact ledger and separate removal approval**. Their presence does not create public support, and their removal is not part of G1c. Base Mail and Reports preserve their present persistence and preview paths until owner-reviewed v2 save adapters are accepted; this source-capability work does not rewrite subject, email HTML, report snapshots, or server write policy.
 
+### Designer Exit Guard v1 (SOURCE candidate)
+
+`enqueue_designer_mode()` supplies the Base-owned `window.cbCore.designerExitGuard.register(shell, { isDirty, save, labels })` interface on same-build capability `DESIGNER_EXIT_GUARD_API >= 1`. Base owns all close/ESC/fullscreen confirmation, modal, single-flight and browser unload guarding; consumer Save must prove persistence and must not supply an alternate exit handler. See [Designer Exit Guard](DESIGNER-EXIT-GUARD.md). Installed acceptance is pending.
+
 ### Shell
 
 The stable shell helpers are:
