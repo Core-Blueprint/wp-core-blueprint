@@ -61,6 +61,8 @@ class DevBuildContractTest(unittest.TestCase):
         with mock.patch.object(dev, "SOURCE", self.source), mock.patch.object(
             dev, "OUTPUT", self.output
         ), mock.patch.object(dev, "check_tools"), mock.patch.object(
+            dev, "require_tracked_runtime"
+        ), mock.patch.object(
             dev, "check_git", return_value=self.SHA
         ), mock.patch.object(dev, "syntax_check", return_value=(2, 2)), mock.patch.object(
             dev, "translations_check"
@@ -113,6 +115,8 @@ class DevBuildContractTest(unittest.TestCase):
         with mock.patch.object(dev, "SOURCE", self.source), mock.patch.object(
             dev, "OUTPUT", self.output
         ), mock.patch.object(dev, "check_tools"), mock.patch.object(
+            dev, "require_tracked_runtime"
+        ), mock.patch.object(
             dev, "check_git", return_value=self.SHA
         ), mock.patch.object(dev, "syntax_check", side_effect=mutation), mock.patch.object(
             dev, "translations_check"
@@ -149,6 +153,8 @@ class DevBuildContractTest(unittest.TestCase):
         with mock.patch.object(dev, "SOURCE", self.source), mock.patch.object(
             dev, "OUTPUT", self.output
         ), mock.patch.object(dev, "check_tools"), mock.patch.object(
+            dev, "require_tracked_runtime"
+        ), mock.patch.object(
             dev, "check_git", return_value=self.SHA
         ), mock.patch.object(dev, "syntax_check", side_effect=SystemExit(1)), mock.patch.object(
             dev, "translations_check"
@@ -161,6 +167,8 @@ class DevBuildContractTest(unittest.TestCase):
         with mock.patch.object(dev, "SOURCE", self.source), mock.patch.object(
             dev, "OUTPUT", self.output
         ), mock.patch.object(dev, "check_tools"), mock.patch.object(
+            dev, "require_tracked_runtime"
+        ), mock.patch.object(
             dev, "check_git", return_value=self.SHA
         ), mock.patch.object(dev, "syntax_check", return_value=(2, 2)), mock.patch.object(
             dev, "translations_check", side_effect=SystemExit(1)
@@ -188,6 +196,15 @@ class DevBuildContractTest(unittest.TestCase):
         with mock.patch.object(dev.subprocess, "run", side_effect=lambda command, **kwargs: response(command)):
             with self.assertRaises(SystemExit):
                 dev.check_git(self.source)
+
+    def test_untracked_or_ignored_runtime_file_is_rejected(self):
+        files = canonical.collect_files(self.source)
+        with mock.patch.object(
+            dev.subprocess, "run",
+            return_value=mock.Mock(returncode=0, stdout=b"core-blueprint.php\\0"),
+        ):
+            with self.assertRaises(SystemExit):
+                dev.require_tracked_runtime(self.source, files)
 
     def test_output_has_no_custom_path_option_or_disable_flag(self):
         script = (ROOT / "tools/build-dev").read_text()
