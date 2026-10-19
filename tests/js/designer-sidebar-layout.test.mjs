@@ -80,3 +80,27 @@ test('shared Base layout normalizer recognizes Layers roles on tab IDs different
 	assert.match(php, /'layers'\s*=> __\( 'Layers', 'core-blueprint' \)/);
 	assert.doesNotMatch(layout, /'dynamic-data'/);
 });
+
+test('composed Designer palette never widens its rail or creates horizontal scrolling', async () => {
+	const shared = await readSource('assets/css/design/designer-composition.css');
+	const shell = await readSource('assets/css/design/editor-shell.css');
+	assert.match(shared, /\.cb-core-design-shell__panel-body\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);[^}]*max-width: 100%;/s);
+	assert.match(shared, /\.cb-core-design-shell__palette--composed > \.cb-core-design-shell__panel,[^{]*\{[^}]*overflow-x: hidden;/s);
+	assert.match(shared, /\.cb-core-design-shell__palette-grid\s*\{[^}]*grid-template-columns: repeat\(var\(--cb-design-palette-columns\), minmax\(0, 1fr\)\);[^}]*max-width: 100%;/s);
+	assert.match(shared, /\.cb-core-design-shell__palette-item\s*\{[^}]*width: 100%;[^}]*max-width: 100%;[^}]*min-width: 0;/s);
+	assert.match(shared, /\.cb-core-design-shell__palette-item-label\s*\{[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
+	assert.match(shared, /\.cb-core-design-shell\.is-fullscreen \.cb-core-design-shell__panel-body,[^{]*\{[^}]*overflow-x: hidden;[^}]*overflow-y: auto;/s);
+	assert.match(shell, /\.cb-core-design-shell\.is-fullscreen \.cb-core-design-shell__palette--tabbed > \.cb-core-design-shell__panel:not\(\[hidden\]\)\s*\{[^}]*overflow-x: hidden;[^}]*overflow-y: auto;/s);
+	assert.match(shell, /\[data-cb-design-launch-root\]\[data-cb-design-launch-mode="direct"\][^{]*\.cb-core-design-shell__panel:not\(\[hidden\]\)\s*\{[^}]*overflow-x: hidden;[^}]*overflow-y: auto;/s);
+});
+
+test('Mail Dynamic Data is single-column with one clipped full-width token per row and full hover text', async () => {
+	const css = await readSource('assets/css/pages/mail-designer.css');
+	const template = await readSource('templates/mail-designer.php');
+	assert.match(css, /\.cb-core-mail-designer__bindings\s*\{[^}]*display: grid;[^}]*grid-template-columns: minmax\(0, 1fr\);[^}]*width: 100%;[^}]*max-width: 100%;/s);
+	assert.match(css, /\.cb-core-mail-binding\s*\{[^}]*width: 100%;[^}]*max-width: 100%;[^}]*min-width: 0;[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
+	assert.doesNotMatch(css, /\.cb-core-mail-designer__bindings\s*\{[^}]*flex-wrap:/s);
+	assert.match(template, /class="cb-core-design-shell__palette-item-label"/);
+	assert.match(template, /\$token = '\{\{' \. \(string\) \$binding\['id'\] \. '\}\}';/);
+	assert.match(template, /data-cb-mail-binding="<\?php echo esc_attr\( \$token \); \?>" title="<\?php echo esc_attr\( \$token \. ' — ' \. \(string\) \$binding\['label'\] \); \?>" aria-label="<\?php echo esc_attr\( \$token \); \?>"/);
+});
