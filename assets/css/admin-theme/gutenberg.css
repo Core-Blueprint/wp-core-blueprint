@@ -373,6 +373,22 @@ body.cb-admin-theme :is(
 	color: var(--cb-text);
 }
 
+/* Disabled options keep a distinct semantic foreground when the platform
+ * permits native menu item coloring; OS selection remains authoritative. */
+body.cb-admin-theme :is(
+	.interface-interface-skeleton__sidebar,
+	.interface-complementary-area,
+	.editor-sidebar,
+	.editor-post-taxonomies,
+	.components-popover__content
+) :is(
+	select.components-select-control__input,
+	.components-select-control select,
+	[data-wp-component="SelectControl"] select
+) :is(option, optgroup):disabled {
+	color: var(--cb-text-muted);
+}
+
 body.cb-admin-theme :is(
 	.interface-interface-skeleton__sidebar,
 	.interface-complementary-area,
