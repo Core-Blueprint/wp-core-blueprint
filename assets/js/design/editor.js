@@ -37,6 +37,7 @@ import {
 	createDesignerSelectionController,
 	createDesignerShell,
 	decorateDesignerControl,
+	decorateDesignerElement,
 } from './shell/index.js';
 import {
 	DESIGNER_VIEWPORT_ORDER,
@@ -394,6 +395,7 @@ export {
 	createDesignerSelectionController,
 	createDesignerShell,
 	decorateDesignerControl,
+	decorateDesignerElement,
 	insertNodeCommand,
 	removeNodeCommand,
 	reorderNodeCommand,
@@ -423,6 +425,7 @@ const publicApi = Object.freeze({
 			names: DESIGNER_ICON_NAMES,
 			create: createDesignerIcon,
 			decorate: decorateDesignerControl,
+			decorateElement: decorateDesignerElement,
 		}),
 		inspector: Object.freeze({
 			createIdentity: createDesignerInspectorIdentity,
