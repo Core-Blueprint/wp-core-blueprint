@@ -418,7 +418,7 @@ export const createDesignerShell = (root, {
 		if (!fullscreenState || event.defaultPrevented) return;
 		if (event.key === 'Escape') {
 			// An open Base modal owns Escape. Do not preempt its native cancel.
-			if (document.querySelector('dialog[open]')) return;
+			if (document.querySelector?.('dialog[open]')) return;
 			event.preventDefault();
 			exitFullscreen();
 			return;
@@ -448,7 +448,7 @@ export const createDesignerShell = (root, {
 
 	function handleFrameFullscreenKeydown(event) {
 		if (!fullscreenState || event.defaultPrevented || event.key !== 'Escape') return;
-		if (document.querySelector('dialog[open]')) return;
+		if (document.querySelector?.('dialog[open]')) return;
 		event.preventDefault();
 		exitFullscreen();
 	}
