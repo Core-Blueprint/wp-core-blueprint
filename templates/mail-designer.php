@@ -126,7 +126,7 @@ foreach ( (array) $templates as $definition ) {
 										<div class="cb-core-design-shell__palette-grid">
 											<?php foreach ( $components as $component_id => $component ) : ?>
 												<button type="button" class="cb-core-design-shell__palette-item cb-core-mail-designer__element" data-cb-mail-add="<?php echo esc_attr( (string) $component_id ); ?>">
-													<?php echo esc_html( (string) ( $component['label'] ?? $component_id ) ); ?>
+													<span class="cb-core-design-shell__palette-item-label"><?php echo esc_html( (string) ( $component['label'] ?? $component_id ) ); ?></span>
 													<?php if ( 'core' !== (string) ( $component['provider'] ?? 'core' ) ) : ?><small><?php echo esc_html( (string) $component['provider'] ); ?></small><?php endif; ?>
 												</button>
 											<?php endforeach; ?>
@@ -137,7 +137,8 @@ foreach ( (array) $templates as $definition ) {
 											<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Click a token to copy it. Paste it into text, headings, buttons or URLs.', 'core-blueprint' ); ?></p>
 											<div class="cb-core-mail-designer__bindings">
 											<?php foreach ( $bindings as $binding ) : ?>
-												<button type="button" class="cb-core-mail-binding" data-cb-mail-binding="<?php echo esc_attr( '{{' . (string) $binding['id'] . '}}' ); ?>" title="<?php echo esc_attr( (string) $binding['label'] ); ?>"><?php echo esc_html( '{{' . (string) $binding['id'] . '}}' ); ?></button>
+												<?php $token = '{{' . (string) $binding['id'] . '}}'; ?>
+												<button type="button" class="cb-core-mail-binding" data-cb-mail-binding="<?php echo esc_attr( $token ); ?>" title="<?php echo esc_attr( $token . ' — ' . (string) $binding['label'] ); ?>" aria-label="<?php echo esc_attr( $token ); ?>"><?php echo esc_html( $token ); ?></button>
 											<?php endforeach; ?>
 										</div>
 										</section>
