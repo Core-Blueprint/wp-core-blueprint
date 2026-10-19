@@ -213,7 +213,7 @@ final class Assets {
 				'paletteLabels' => [
 					'navigation'   => __( 'Navigation', 'core-blueprint' ),
 					'elements'     => __( 'Elements', 'core-blueprint' ),
-					'dynamic-data' => __( 'Dynamic data', 'core-blueprint' ),
+					'layers'       => __( 'Layers', 'core-blueprint' ),
 				],
 				'layerActionLabels' => [
 					'moveUp'   => __( 'Move element up', 'core-blueprint' ),
