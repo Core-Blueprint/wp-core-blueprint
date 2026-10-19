@@ -185,6 +185,16 @@ if (root) {
 		}
 	};
 
+	// Only the editable iframe gets white workspace chrome. Do not mutate the
+	// rendered mail source or its responsive tables; sent emails retain their
+	// configured page and content backgrounds.
+	const styleEditorCanvas = (doc) => {
+		doc.documentElement?.style?.setProperty('background-color', '#fff', 'important');
+		doc.body?.style?.setProperty('background-color', '#fff', 'important');
+		const pageTable = doc.body?.querySelector(':scope > table[role="presentation"][width="100%"]');
+		pageTable?.style?.setProperty('background-color', '#fff', 'important');
+	};
+
 	const syncPreviewHeight = () => {
 		const doc = preview.contentDocument;
 		if (!doc?.documentElement) return;
@@ -207,6 +217,7 @@ if (root) {
 		const doc = preview.contentDocument;
 		if (!doc) return;
 
+		styleEditorCanvas(doc);
 		inlineEditor?.attach(doc);
 		doc.addEventListener('click', (event) => {
 			const target = event.target && typeof event.target.closest === 'function' ? event.target : null;
