@@ -31,7 +31,10 @@ def fail(message: str) -> "NoReturn":
 
 
 def canonical_builder():
-    path = SOURCE / "tools" / "build-release"
+    # This is an executable sibling of the canonical release builder. Do not
+    # resolve it relative to SOURCE: offline tests replace SOURCE with a
+    # deliberately minimal fixture checkout to exercise the packaging logic.
+    path = Path(__file__).resolve().with_name("build-release")
     loader = importlib.machinery.SourceFileLoader("cb_base_canonical_packager", str(path))
     spec = importlib.util.spec_from_loader(loader.name, loader)
     if spec is None:
