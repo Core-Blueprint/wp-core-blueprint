@@ -1,0 +1,213 @@
+#!/usr/bin/env python3
+"""Build an INTERNAL-ONLY installable Base ZIP without Level 2 or release gates.
+
+Uses the canonical public build-release package assembly and verification
+functions. Never connects to WordPress, Docker or a database. Not a customer
+release candidate; use the full release pipeline for public distribution.
+"""
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import hashlib
+import importlib.machinery
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import zipfile
+
+SOURCE = Path(__file__).resolve().parents[1]
+OUTPUT = SOURCE / "dist" / "dev"
+
+
+def fail(message: str) -> "NoReturn":
+    print(f"[dev-build] ERROR: {message}", file=sys.stderr, flush=True)
+    raise SystemExit(1)
+
+
+def canonical_builder():
+    path = SOURCE / "tools" / "build-release"
+    loader = importlib.machinery.SourceFileLoader("cb_base_canonical_packager", str(path))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    if spec is None:
+        fail("Cannot load the canonical Base package builder.")
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
+def check_git(source: Path) -> str:
+    """Reject uncommitted inputs: receipt SHA must identify all package bytes."""
+    def git(*args: str) -> str:
+        result = subprocess.run(["git", *args], cwd=source, capture_output=True, text=True)
+        if result.returncode:
+            fail(f"Git identity check failed: {' '.join(args)}.")
+        return result.stdout.strip()
+
+    if Path(git("rev-parse", "--show-toplevel")).resolve() != source:
+        fail("Dev build must run from its own Base checkout.")
+    sha = git("rev-parse", "HEAD")
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        fail("Unable to identify exact source commit.")
+    # Generated dev/release ZIPs live under the repo's ignored dist/ directory.
+    if git("status", "--porcelain", "--untracked-files=all"):
+        fail("Uncommitted or untracked source detected. Commit the patch first.")
+    return sha
+
+
+def check_tools() -> None:
+    for tool in ("git", "php", "node"):
+        if shutil.which(tool) is None:
+            fail(f"Missing required local tool: {tool}.")
+    result = subprocess.run(
+        ["php", "-r", "if (PHP_VERSION_ID < 80400) { exit(1); }"],
+        capture_output=True, text=True,
+    )
+    if result.returncode:
+        fail("PHP 8.4 or newer is required.")
+
+
+def syntax_check(files: list[Path]) -> tuple[int, int]:
+    """Lint all packaged PHP and JS, in parallel. No WP/bootstrap/database."""
+    php = [path for path in files if path.suffix.lower() == ".php"]
+    js = [path for path in files if path.suffix.lower() == ".js"]
+    if not php or not js:
+        fail("Expected both PHP and JavaScript runtime files.")
+
+    def check(path: Path) -> tuple[Path, subprocess.CompletedProcess[str]]:
+        command = ["php", "-l", str(path)] if path.suffix.lower() == ".php" else ["node", "--check", str(path)]
+        return path, subprocess.run(command, capture_output=True, text=True)
+
+    with ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 2)) as executor:
+        futures = [executor.submit(check, path) for path in php + js]
+        for future in as_completed(futures):
+            path, result = future.result()
+            if result.returncode:
+                for queued in futures:
+                    queued.cancel()
+                print(result.stderr or result.stdout or "", file=sys.stderr)
+                fail(f"Runtime syntax failed: {path.relative_to(SOURCE)}")
+
+    print(f"[dev-build] runtime syntax PASS: {len(php)} PHP, {len(js)} JS")
+    return len(php), len(js)
+
+
+def translations_check() -> None:
+    script = SOURCE / "tools" / "check-translations.php"
+    if not script.is_file() or script.is_symlink():
+        fail("Canonical read-only translations checker is missing or unsafe.")
+    result = subprocess.run(["php", str(script)], cwd=SOURCE, capture_output=True, text=True)
+    if result.returncode:
+        print(result.stdout or "", file=sys.stderr)
+        print(result.stderr or "", file=sys.stderr)
+        fail("Canonical read-only translations check failed.")
+    print("[dev-build] read-only translations PASS")
+
+
+def safe_output() -> None:
+    for directory in (SOURCE / "dist", OUTPUT):
+        if directory.is_symlink():
+            fail("Development output path may not be a symlink.")
+        if directory.exists() and not directory.is_dir():
+            fail("Development output is not a directory.")
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+    if OUTPUT.resolve() != (SOURCE / "dist/dev").resolve():
+        fail("Development package must remain inside the dedicated dist/dev directory.")
+
+
+def manifest_digest(manifest: dict[str, str]) -> str:
+    blob = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(blob).hexdigest()
+
+
+def build() -> tuple[Path, Path, Path]:
+    check_tools()
+    sha = check_git(SOURCE)
+    canonical = canonical_builder()
+    version = canonical.read_version(SOURCE / "core-blueprint.php")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.+_-]{0,63}", version):
+        fail("Plugin version is unsafe for an artifact filename.")
+    files = canonical.collect_files(SOURCE)
+    original = canonical.runtime_hashes(SOURCE)
+
+    php_count, js_count = syntax_check(files)
+    translations_check()
+
+    revision = canonical.design_module_revision(SOURCE)
+    expected = canonical.package_hashes(SOURCE, files, revision)
+    if check_git(SOURCE) != sha or canonical.runtime_hashes(SOURCE) != original:
+        fail("Source changed during development checks.")
+
+    safe_output()
+    zip_name = f"core-blueprint-{version}-dev-{sha[:12]}.zip"
+    archive_path = OUTPUT / zip_name
+    checksum_path = OUTPUT / f"{zip_name}.sha256"
+    receipt_path = OUTPUT / f"{zip_name}.dev.json"
+    for output in (archive_path, checksum_path, receipt_path):
+        if output.is_symlink():
+            fail("Development artifact destination may not be a symlink.")
+
+    with tempfile.TemporaryDirectory(prefix=".cb-dev-", dir=OUTPUT) as temporary:
+        pending = Path(temporary) / zip_name
+        with zipfile.ZipFile(pending, "w") as archive:
+            for path in files:
+                canonical.add_file(archive, SOURCE, path, revision)
+        canonical.verify_archive(pending, expected)
+        if check_git(SOURCE) != sha or canonical.runtime_hashes(SOURCE) != original:
+            fail("Source changed during ZIP assembly.")
+        digest = hashlib.sha256(pending.read_bytes()).hexdigest()
+        receipt = {
+            "schema": 1,
+            "status": "INTERNAL TEST ONLY - NOT PUBLIC RELEASE VALIDATED",
+            "product": "core-blueprint",
+            "version": version,
+            "source_sha": sha,
+            "source_runtime_manifest_sha256": manifest_digest(original),
+            "artifact": zip_name,
+            "artifact_sha256": digest,
+            "packaged_files": len(files),
+            "package_design_revision": revision,
+            "checks": {
+                "git_source_clean": "PASS",
+                "runtime_php_syntax": php_count,
+                "runtime_js_syntax": js_count,
+                "canonical_translations": "PASS",
+                "canonical_packager": "PASS",
+                "archive_entry_and_content_integrity": "PASS",
+                "source_stable_through_build": "PASS",
+            },
+            "not_executed": ["WordPress Level 2", "Level 3 release gates", "CI", "field acceptance"],
+        }
+        checksum_text = f"{digest}  {zip_name}\n"
+        receipt_text = json.dumps(receipt, sort_keys=True, indent=2) + "\n"
+        # Exact-SHA archives are immutable: a second build may only reproduce
+        # the same bytes and receipt, never overwrite a divergent prior result.
+        for destination, payload in (
+            (archive_path, pending.read_bytes()),
+            (checksum_path, checksum_text.encode("utf-8")),
+            (receipt_path, receipt_text.encode("utf-8")),
+        ):
+            if destination.exists() and destination.read_bytes() != payload:
+                fail(f"Existing exact-SHA development artifact differs: {destination.name}.")
+        if not archive_path.exists():
+            os.replace(pending, archive_path)
+        if not checksum_path.exists():
+            checksum_path.write_text(checksum_text, encoding="utf-8")
+        if not receipt_path.exists():
+            receipt_path.write_text(receipt_text, encoding="utf-8")
+
+    print("[dev-build] INTERNAL TEST ONLY - NOT PUBLIC RELEASE VALIDATED")
+    print(f"[dev-build] source: {sha}")
+    print(f"[dev-build] ZIP: {archive_path}")
+    print(f"[dev-build] SHA256: {digest}")
+    print(f"[dev-build] receipt: {receipt_path}")
+    return archive_path, checksum_path, receipt_path
+
+
+if __name__ == "__main__":
+    build()
