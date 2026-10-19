@@ -116,7 +116,7 @@ The stable shell helpers are:
 - `createDesignerShell(root, options)`
 - `createDesignerNavigation(options)` — opt-in accessible left task/stage navigation (see [Designer Navigation](DESIGNER-NAVIGATION.md))
 - `configureDesignerSidebar(root, configuration)`
-- `DESIGNER_PALETTE_ROLES` — optional canonical left-role order: `navigation`, `elements`, `dynamic-data`
+- `DESIGNER_PALETTE_ROLES` — optional canonical left-role order: `navigation`, `elements`, `layers`
 - `configureDesignerViewports(root, options)`
 - `createDesignerInspectorIdentity(options)`
 - `createDesignerInspectorControls(options)`
@@ -126,10 +126,24 @@ The stable shell helpers are:
 - `createDesignerSelectionController(options)`
 - `createDesignerIcon(name, options)`
 - `decorateDesignerControl(control, name, options)`
+- `decorateDesignerElement(control, type, { label, icon })` — Base-owned canonical element icon mapping and curated fallback
 
 The global facade exposes the same capabilities under `window.cbCore.designEditor.shell`.
 
-Navigation is available as `window.cbCore.designEditor.shell.navigation.create` and the frozen extension as `shell.paletteRoles`. Existing palettes are unchanged unless a consumer opts in; Navigation is not Layers or a new editor profile.
+Navigation is available as `window.cbCore.designEditor.shell.navigation.create` and the frozen extension as `shell.paletteRoles`. Navigation remains distinct from Layers and is not an editor profile.
+
+### Designer Sidebar Layout & Iconography Standard v1 (source candidate)
+
+- Left rail: **Elements** and, only when supplied, **Layers**. Set `data-cb-design-shell-group="palette"` on matching tab and panel. Set `data-cb-design-shell-palette-role="elements|layers"` on tabs. Base owns tab behavior/icons; consumers own panel contents and selection.
+- Right rail: **Inspector** and optional **Settings**. Map them with `data-cb-design-shell-sidebar-role="inspector|settings"`. Selecting a Layer must update Inspector context without switching or hiding the right panel.
+- **Dynamic Data is a titled section inside the Elements panel**, not a separate clickable tab. Render it only when tokens exist. Use the Base `braces` glyph beside its heading. Token values, copy behavior, validation and policy remain consumer-owned.
+- Base decorates the left tabs with `shapes`/ `layers` icons and wraps their labels in `.cb-core-design-shell__tab-label`. Shared right tabs use the existing Inspector/Settings icons. All click targets retain visible text and accessible full labels.
+- **Every sidebar tab label is one word.** CSS always keeps tabs to one line, with `text-overflow: ellipsis` as an exception fallback for accidental long labels or translations. Full labels remain available through `aria-label` and `title`; icons never shrink.
+- Use `decorateDesignerElement(control, semanticType, { label, icon })` for palette items. Base chooses `heading-1`, `align-left`, `image`, `mouse-pointer-click` or safe `shapes` fallback; a recognized curated icon may be requested by a consumer. No private icon module imports.
+- Designers without Layers (for example Automations) **do not render a Layers tab**. Optional data and actions stay absent rather than producing placeholders.
+- The legacy separate Dynamic Data tab and right-hand Layers placement are not part of the new consumer layout standard. This source candidate does not move extension markup automatically; each extension must adapt its own template via the public Base contract.
+
+
 
 A shell controller returned by `createDesignerShell()` is idempotent per root/session pair and exposes `destroy()`. Consumers that dispose or replace a Designer instance must release their shell/selection controllers rather than layering a second controller over the same DOM root.
 
