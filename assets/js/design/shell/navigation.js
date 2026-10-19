@@ -5,7 +5,7 @@
  * Base owns the accessible navigation DOM, active state, scoped target focus
  * and presentation. This is not the Layers object hierarchy.
  */
-export const DESIGNER_PALETTE_ROLES = Object.freeze(['navigation', 'elements', 'dynamic-data']);
+export const DESIGNER_PALETTE_ROLES = Object.freeze(['navigation', 'elements', 'layers']);
 
 const STATUS_TONES = new Set(['neutral', 'success', 'warning', 'danger']);
 
