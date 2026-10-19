@@ -10,6 +10,12 @@ Core Blueprint is designed to help site owners, developers, agencies, and operat
 
 ---
 
+## Developer sandbox ZIP
+
+When iterating on Base, use the internal [DEV BUILD workflow](docs/DEV-BUILD.md): `./tools/build-dev` packages an installable test ZIP under `dist/dev/` using the canonical release packager, with lightweight source and archive checks but **without** WordPress Level 2/release certification. **Public releases still require every existing Golden/release gate.**
+
+---
+
 ## Our mission
 
 WordPress is powerful because it is open, extensible, and gives site owners control over their own platform.
