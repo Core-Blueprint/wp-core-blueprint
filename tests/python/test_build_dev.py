@@ -178,9 +178,13 @@ class DevBuildContractTest(unittest.TestCase):
         self.assertFalse(self.output.exists())
 
     def test_builder_never_calls_release_or_integration_gates(self):
-        with mock.patch.object(canonical, "preflight", side_effect=AssertionError(
-            "public release gate must not execute"
-        )), mock.patch.object(canonical, "run_gate", side_effect=AssertionError(
+        # Force the exact canonical module under test so these sentinels
+        # exercise the code path actually called by the dev entrypoint.
+        with mock.patch.object(dev, "canonical_builder", return_value=canonical), mock.patch.object(
+            canonical, "preflight", side_effect=AssertionError(
+                "public release gate must not execute"
+            )
+        ), mock.patch.object(canonical, "run_gate", side_effect=AssertionError(
             "public release gate must not execute"
         )):
             self.fake_build()
