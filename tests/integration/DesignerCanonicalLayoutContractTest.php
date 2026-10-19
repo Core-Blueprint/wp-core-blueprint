@@ -35,9 +35,11 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 	public function test_base_owns_workspace_order_palette_roles_and_context_placement(): void {
 		$layout = $this->source( 'assets/js/features/designer-layout.js' );
 
-		self::assertStringContainsString( "const PALETTE_ROLE_ORDER = Object.freeze(['navigation', 'elements', 'dynamic-data']);", $layout );
+		self::assertStringContainsString( "const PALETTE_ROLE_ORDER = Object.freeze(['navigation', 'elements', 'layers']);", $layout );
 		self::assertStringContainsString( 'normalizeWorkspace', $layout );
 		self::assertStringContainsString( 'normalizePalette', $layout );
+		self::assertStringContainsString( 'matchingTab?.dataset.cbDesignShellPaletteRole', $layout );
+		self::assertStringContainsString( "role === 'layers' ? 'Layers'", $layout );
 		self::assertStringContainsString( "setData(workspace, 'cbDesignShellLayout', 'canonical');", $layout );
 		self::assertStringContainsString( "setData(palette, 'cbDesignShellRail', 'left');", $layout );
 		self::assertStringContainsString( "root.querySelector('[data-cb-design-shell-context]')", $layout );
@@ -58,11 +60,11 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		$css     = $this->source( 'assets/css/design/designer-composition.css' );
 		$assets  = $this->source( 'src/Design/Editor/Assets.php' );
 
-		self::assertStringContainsString( "['navigation', 'elements', 'dynamic-data']", $layout );
+		self::assertStringContainsString( "['navigation', 'elements', 'layers']", $layout );
 		self::assertStringContainsString( "role === 'navigation' ? panel?.dataset.cbDesignShellPaletteLabel", $layout );
 		self::assertStringContainsString( "'navigation'   => __( 'Navigation', 'core-blueprint' )", $assets );
 		self::assertStringContainsString( 'export const createDesignerNavigation', $module );
-		self::assertStringContainsString( "['navigation', 'elements', 'dynamic-data']", $module );
+		self::assertStringContainsString( "['navigation', 'elements', 'layers']", $module );
 		self::assertStringContainsString( 'createDesignerNavigation,', $editor );
 		self::assertStringContainsString( 'navigation: Object.freeze({ create: createDesignerNavigation })', $editor );
 		self::assertStringContainsString( '.cb-core-design-shell__navigation-link:focus-visible', $css );
@@ -77,7 +79,7 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 
 		self::assertStringContainsString( "'paletteLabels' => [", $assets );
 		self::assertStringContainsString( "'elements'     => __( 'Elements', 'core-blueprint' )", $assets );
-		self::assertStringContainsString( "'dynamic-data' => __( 'Dynamic data', 'core-blueprint' )", $assets );
+		self::assertStringContainsString( "'layers'       => __( 'Layers', 'core-blueprint' )", $assets );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar-context {', $toolbar );
 		self::assertStringContainsString( 'align-self: center;', $toolbar );
 		self::assertStringContainsString( 'block-size: var(--cb-design-toolbar-control-size);', $toolbar );
