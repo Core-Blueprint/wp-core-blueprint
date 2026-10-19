@@ -8,7 +8,7 @@ const tokens = read('assets/css/tokens.css');
 const marker = 'Native Gutenberg SelectControl in application chrome';
 const start = stylesheet.indexOf(marker);
 assert.notEqual(start, -1, 'SelectControl adapter must exist in canonical Gutenberg stylesheet');
-const addition = stylesheet.slice(start).replace(/\/\*[\s\S]*?\*\//g, '');
+const addition = stylesheet.slice(stylesheet.lastIndexOf('/*', start)).replace(/\/\*[\s\S]*?\*\//g, '');
 const rules = [...addition.matchAll(/([^{}]+)\{([^{}]+)\}/g)].map((match) => ({
   selector: match[1].trim(),
   declarations: match[2].trim(),
