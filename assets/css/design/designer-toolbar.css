@@ -237,3 +237,34 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 		max-inline-size: min(8rem, 25vw);
 	}
 }
+
+
+/* Base Designer Exit Guard: shared modal choices for every consumer. */
+.cb-core-designer-exit-choices {
+	border: 0;
+	padding: 0;
+	margin: var(--cb-space-4, 1rem) 0 0;
+	display: grid;
+	gap: var(--cb-space-2, 0.5rem);
+}
+
+.cb-core-designer-exit-choices legend {
+	font-weight: 600;
+	margin-bottom: var(--cb-space-2, 0.5rem);
+}
+
+.cb-core-designer-exit-choice {
+	display: flex;
+	align-items: center;
+	gap: var(--cb-space-2, 0.5rem);
+	cursor: pointer;
+}
+
+.cb-core-designer-exit-error {
+	margin-top: var(--cb-space-3, 0.75rem);
+	color: var(--cb-color-danger, #b42318);
+}
+
+.cb-core-designer-exit-error[hidden] {
+	display: none !important;
+}
