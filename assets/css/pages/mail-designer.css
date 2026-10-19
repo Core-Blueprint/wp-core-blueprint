@@ -190,14 +190,17 @@ button.cb-core-mail-binding.cb-core-clipboard-control:not(.cb-core-button) {
 	background: #fff;
 }
 
-.cb-core-mail-designer__canvas-panel .cb-core-mail-designer__preview-frame {
+.cb-core-mail-designer__preview-frame {
 	display: flex;
 	justify-content: center;
 	min-width: 0;
 	min-height: 700px;
+	transition: padding .15s ease;
+}
+
+.cb-core-mail-designer__canvas-panel .cb-core-mail-designer__preview-frame {
 	padding: 0;
 	background: #fff;
-	transition: padding .15s ease;
 }
 
 .cb-core-mail-designer__preview-frame iframe {
