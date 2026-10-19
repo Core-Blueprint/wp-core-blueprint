@@ -167,6 +167,29 @@ final class Assets {
 			true
 		);
 
+		// Localize the Exit Guard on its own earlier-loading script, not on the
+		// Designer launch handle. This ensures translated defaults are present
+		// before the shared guard initializes and consumers register adapters.
+		wp_localize_script(
+			self::DESIGNER_EXIT_GUARD_SCRIPT,
+			'cbCoreDesignerExitGuardLabels',
+			[
+				'cleanTitle' => __( 'Close Designer?', 'core-blueprint' ),
+				'cleanDescription' => __( 'Return to the previous page?', 'core-blueprint' ),
+				'unknownDescription' => __( 'Changes may not be saved. Close Designer?', 'core-blueprint' ),
+				'dirtyTitle' => __( 'Unsaved changes', 'core-blueprint' ),
+				'dirtyDescription' => __( 'Save or discard your changes before closing the Designer.', 'core-blueprint' ),
+				'choiceTitle' => __( 'What should happen to your changes?', 'core-blueprint' ),
+				'save' => __( 'Save changes', 'core-blueprint' ),
+				'discard' => __( 'Discard changes', 'core-blueprint' ),
+				'close' => __( 'Close Designer', 'core-blueprint' ),
+				'cancel' => __( 'Cancel', 'core-blueprint' ),
+				'busy' => __( 'Wait for the current save to finish.', 'core-blueprint' ),
+				'unavailable' => __( 'The Designer cannot be closed safely. Try again.', 'core-blueprint' ),
+				'saveFailure' => __( 'Your changes could not be verified as saved. The Designer remains open.', 'core-blueprint' ),
+			]
+		);
+
 		wp_enqueue_script(
 			self::DESIGNER_MODE_SCRIPT,
 			CB_CORE_URL . 'assets/js/features/designer-launch.js',
