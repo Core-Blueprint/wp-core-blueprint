@@ -15,6 +15,7 @@ import {
 	createDesignerInspectorIdentity,
 	createDesignerInspectorToggle,
 	createDesignerLayerTree,
+	decorateDesignerElement,
 	createDesignerSelectionController,
 	createDesignerShell,
 	createSession,
@@ -289,6 +290,7 @@ if ( FORM ) {
 			button.dataset.cbReportElement = type;
 			button.setAttribute( 'aria-pressed', type === selectedBlock()?.type ? 'true' : 'false' );
 			button.textContent = blockLabel( type );
+			decorateDesignerElement( button, type, { label: blockLabel( type ) } );
 			button.addEventListener( 'click', () => selectBlock( type ) );
 			elementsBody.append( button );
 		} );
