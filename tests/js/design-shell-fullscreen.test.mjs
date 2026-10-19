@@ -443,7 +443,7 @@ test('shared Designer UX defines canonical sidebar roles, Lucide icons and reduc
 	assert.match(shell, /DESIGNER_SIDEBAR_ROLES\s*=\s*Object\.freeze\(\['inspector', 'settings'\]\)/);
 	assert.match(shell, /SIDEBAR_ROLE_ICONS/);
 	assert.match(shell, /configureDesignerSidebar/);
-	assert.match(shell, /data\.cbDesignShellGroup === 'palette'/);
+	assert.match(shell, /tab\.dataset\.cbDesignShellGroup === 'palette'/);
 	assert.match(shell, /role === 'elements' \? 'shapes' : role === 'layers' \? 'layers'/);
 	assert.match(icons, /Copyright \(c\) 2026 Lucide Icons and Contributors/);
 	assert.match(icons, /'undo-2'/);
