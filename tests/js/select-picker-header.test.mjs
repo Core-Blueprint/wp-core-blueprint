@@ -19,6 +19,9 @@ test('SP-H01: header extends public Select Picker without a parallel component e
   assert.match(js, /select\.addEventListener\('change', sync\)/);
   assert.match(js, /window\.cbCore\.selectPicker = Object\.freeze\(\{ init, enhance \}\)/);
   assert.match(assets, /public static function enqueue_select_picker\(/);
+  assert.match(assets, /public const SELECT_PICKER_HEADER_API = 1;/);
+  assert.match(assets, /self::asset_revision\( 'assets\/js\/core\/select-picker.js' \)/);
+  assert.match(assets, /self::asset_revision\( 'assets\/css\/components\/pickers.css' \)/);
   assert.match(assets, /'@cb-core\/select-picker'/);
 });
 
