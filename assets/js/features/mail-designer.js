@@ -165,10 +165,13 @@ if (root) {
 		projectField.value = JSON.stringify(session.snapshot());
 	};
 
-	const setPreviewStatus = (message, isError = false) => {
-		if (!previewStatus) return;
-		previewStatus.textContent = message;
-		previewStatus.classList.toggle('is-error', Boolean(isError));
+	// Preview progress is screen-reader-only; operational failures use Base Toast.
+	const setPreviewStatus = (message, isError = false, { notify = false } = {}) => {
+		if (previewStatus) {
+			previewStatus.textContent = message;
+			previewStatus.classList.toggle('is-error', Boolean(isError));
+		}
+		if (isError && notify) window.cbCore?.toast?.error?.(message);
 	};
 
 	const markerPath = (marker) => {
@@ -277,7 +280,7 @@ if (root) {
 			setPreviewStatus('Preview updated');
 		} catch (error) {
 			if (controller.signal.aborted || revision !== previewRevision || error?.name === 'AbortError') return;
-			setPreviewStatus(error?.message || 'Preview failed.', true);
+			setPreviewStatus(error?.message || 'Preview failed.', true, { notify: true });
 		}
 	};
 
@@ -759,7 +762,7 @@ if (root) {
 		const editingNow = Boolean(inlineEditor?.isEditing());
 		if (editingNow && inlineEditor.finish(true) !== true) {
 			event.preventDefault();
-			setPreviewStatus('Finish editing your text before saving.', true);
+			setPreviewStatus('Finish editing your text before saving.', true, { notify: true });
 			return;
 		}
 		updateSerializedProject();
