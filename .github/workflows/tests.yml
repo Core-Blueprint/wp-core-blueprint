@@ -73,14 +73,16 @@ jobs:
         wordpress: ['7.0', '7.1']
         php: ['8.4', '8.5']
 
+    # A2.2 isolated CLI migration requires an exact per-job temporary slot and DB.
+    # Each matrix job gets its own ephemeral runner and MariaDB service.
     services:
       mariadb:
         image: mariadb:10.11.19
         env:
           MARIADB_ROOT_PASSWORD: root
-          MARIADB_DATABASE: wordpress_test
+          MARIADB_DATABASE: core_blueprint_base_g1d_a22_20261019_test
         ports:
-          - 3306:3306
+          - 127.0.0.1:3307:3306
         options: >-
           --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=5s
@@ -88,13 +90,14 @@ jobs:
           --health-retries=20
 
     env:
-      WP_CORE_DIR: /tmp/core-blueprint-wp
-      WP_TESTS_DIR: /tmp/core-blueprint-wp-tests
-      CB_PLUGIN_FILE: /tmp/core-blueprint-wp/wp-content/plugins/core-blueprint/core-blueprint.php
-      WP_DB_NAME: wordpress_test
+      CB_BASE_TEST_SLOT: g1d_a22_20261019
+      WP_CORE_DIR: /tmp/core-blueprint-base-g1d_a22_20261019/wordpress
+      WP_TESTS_DIR: /tmp/core-blueprint-base-g1d_a22_20261019/wordpress-tests
+      CB_PLUGIN_FILE: /tmp/core-blueprint-base-g1d_a22_20261019/wordpress/wp-content/plugins/core-blueprint/core-blueprint.php
+      WP_DB_NAME: core_blueprint_base_g1d_a22_20261019_test
       WP_DB_USER: root
       WP_DB_PASSWORD: root
-      WP_DB_HOST: 127.0.0.1:3306
+      WP_DB_HOST: 127.0.0.1:3307
       CB_LIFECYCLE_TABLE_PREFIX: cblifecycle_
       CB_CONSUMER_TABLE_PREFIX: cbconsumer_
       CB_B3_TABLE_PREFIX: cbb3_
