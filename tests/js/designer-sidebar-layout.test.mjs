@@ -107,3 +107,49 @@ test('Mail Dynamic Data is single-column with one clipped full-width token per r
 	assert.match(template, /\$token = '\{\{' \. \(string\) \$binding\['id'\] \. '\}\}';/);
 	assert.match(template, /data-cb-mail-binding="<\?php echo esc_attr\( \$token \); \?>" title="<\?php echo esc_attr\( \$token \. ' — ' \. \(string\) \$binding\['label'\] \); \?>" aria-label="<\?php echo esc_attr\( \$token \); \?>"/);
 });
+
+test('Mail canvas is headerless and white without stretching the responsive email', async () => {
+	const template = await readSource('templates/mail-designer.php');
+	const css = await readSource('assets/css/pages/mail-designer.css');
+	const renderer = await readSource('src/Design/Profile/Mail/HtmlRenderer.php');
+	const runtime = await readSource('assets/js/features/mail-designer.js');
+
+	assert.doesNotMatch(template, /class="cb-core-design-shell__canvas-header"/);
+	assert.doesNotMatch(template, /Visual canvas|Click an element to inspect it\. Double-click text to edit it\./);
+	assert.match(template, /data-cb-mail-preview-status aria-live="polite"/);
+	assert.match(template, /data-cb-mail-preview-frame/);
+	assert.match(template, /sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"/);
+
+	assert.match(css, /\.cb-core-mail-designer__canvas-panel\.cb-core-design-shell__canvas\s*\{[^}]*background: #fff;/s);
+	assert.match(css, /\.cb-core-mail-designer__canvas-panel \.cb-core-mail-designer__preview-frame\s*\{[^}]*padding: 0;[^}]*background: #fff;/s);
+	assert.match(css, /\.cb-core-mail-designer__preview-frame iframe\s*\{[^}]*width: 100%;[^}]*max-width: 900px;[^}]*border: 0;[^}]*box-shadow: none;/s);
+	assert.match(css, /\.cb-core-mail-designer__preview-frame\.is-tablet iframe\s*\{[^}]*max-width: 782px;/s);
+	assert.match(css, /\.cb-core-mail-designer__preview-frame\.is-mobile iframe\s*\{[^}]*max-width: 430px;/s);
+	assert.match(renderer, /\$background = \$this->color\( \$layout\['background'\]/);
+	assert.match(renderer, /\$content_background = \$this->color\( \$layout\['contentBackground'\]/);
+
+	const start = runtime.indexOf('const styleEditorCanvas = (doc) => {');
+	const end = runtime.indexOf('\n\t};', start);
+	assert.ok(start > 0 && end > start, 'Preview-only background helper must exist');
+	const helper = new Function(runtime.slice(start, end + 4) + '\nreturn styleEditorCanvas;')();
+	const changes = [];
+	const node = (key) => ({
+		style: {
+			setProperty: (...args) => changes.push([key, ...args]),
+		},
+	});
+	const html = node('html');
+	const body = node('body');
+	const outer = node('outer');
+	body.querySelector = (selector) => {
+		assert.equal(selector, ':scope > table[role="presentation"][width="100%"]');
+		return outer;
+	};
+	helper({ documentElement: html, body });
+	assert.deepEqual(changes, [
+		['html', 'background-color', '#fff', 'important'],
+		['body', 'background-color', '#fff', 'important'],
+		['outer', 'background-color', '#fff', 'important'],
+	]);
+	assert.match(runtime, /styleEditorCanvas\(doc\);\s*inlineEditor\?\.attach\(doc\);/);
+});
