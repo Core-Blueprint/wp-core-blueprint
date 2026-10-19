@@ -111,6 +111,38 @@ const ICONS = Object.freeze({
 		['path', { d: 'M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12' }],
 		['path', { d: 'M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17' }],
 	]),
+	shapes: Object.freeze([
+		['rect', { x: '3', y: '3', width: '7', height: '7', rx: '1' }],
+		['circle', { cx: '17', cy: '6.5', r: '3.5' }],
+		['path', { d: 'm14 14 7 7H7z' }],
+	]),
+	'heading-1': Object.freeze([
+		['path', { d: 'M4 12h8' }],
+		['path', { d: 'M4 18V6' }],
+		['path', { d: 'M12 18V6' }],
+		['path', { d: 'm17 12 3-2v8' }],
+	]),
+	'align-left': Object.freeze([
+		['path', { d: 'M15 12H3' }],
+		['path', { d: 'M17 18H3' }],
+		['path', { d: 'M21 6H3' }],
+	]),
+	image: Object.freeze([
+		['rect', { x: '3', y: '3', width: '18', height: '18', rx: '2' }],
+		['circle', { cx: '9', cy: '9', r: '2' }],
+		['path', { d: 'm21 15-5-5L5 21' }],
+	]),
+	'mouse-pointer-click': Object.freeze([
+		['path', { d: 'm9 9 5 12 1.8-5.2L21 14Z' }],
+		['path', { d: 'M12 3v2' }],
+		['path', { d: 'M5.6 5.6 7 7' }],
+		['path', { d: 'M3 12h2' }],
+		['path', { d: 'M7 17 5.6 18.4' }],
+	]),
+	braces: Object.freeze([
+		['path', { d: 'M8 3H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1' }],
+		['path', { d: 'M16 3h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-1' }],
+	]),
 	'settings-2': Object.freeze([
 		['path', { d: 'M14 17H5' }],
 		['path', { d: 'M19 7h-9' }],
@@ -177,7 +209,29 @@ export const decorateDesignerControl = (control, name, {
 		control.replaceChildren?.(icon);
 	} else {
 		control.classList?.add('cb-core-design-shell__icon-label');
+		if (control.matches?.('.cb-core-design-shell__tab, .cb-core-design-shell__sidebar-tab')) {
+			// Dedicated flex item is required for reliable single-line ellipsis next to an icon.
+			const text = documentRef.createElement('span');
+			text.className = 'cb-core-design-shell__tab-label';
+			text.textContent = accessibleLabel;
+			control.replaceChildren(text);
+		}
 		control.prepend?.(icon);
 	}
 	return true;
+};
+/**
+ * Canonical palette icon for shared element types. Consumers provide their own
+ * elements and labels; Base owns icon rendering and the safe fallback.
+ */
+export const decorateDesignerElement = (control, type, { label = null, icon = '' } = {}) => {
+	const key = String(type || '').trim().toLowerCase();
+	const explicit = String(icon || '').trim();
+	const resolved = explicit && Object.hasOwn(ICONS, explicit) ? explicit
+		: /heading|headline|title/.test(key) ? 'heading-1'
+		: /text|paragraph|richtext|content/.test(key) ? 'align-left'
+		: /image|photo|logo|media/.test(key) ? 'image'
+		: /button|cta|link/.test(key) ? 'mouse-pointer-click'
+		: 'shapes';
+	return decorateDesignerControl(control, resolved, { label });
 };
