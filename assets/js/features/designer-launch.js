@@ -411,8 +411,9 @@
 			const closeLabel = String(config.closeLabel || 'Close').trim();
 			shellApi.icons.decorate(close, 'x', { iconOnly: true, label: closeLabel });
 			close.addEventListener('click', () => {
+				// The low-level shell emits a cancellable before-exit event.
+				// Base confirms first, then replays the public fullscreen control.
 				if (fullscreen.getAttribute('aria-pressed') === 'true') fullscreen.click();
-				else window.location.assign(exitUrl);
 			});
 			end.append(close);
 		} else if (fullscreen) {
@@ -446,6 +447,26 @@
 		} catch (error) {
 			return '';
 		}
+	};
+
+	const bindExitGuard = (shell, fullscreen) => {
+		const api = () => window.cbCore?.designerExitGuard;
+		shell.addEventListener('cb:design-shell:beforeexit', (event) => {
+			if (event.target !== shell) return;
+			if (api()?.isApproved?.(shell)) return;
+			// Never allow an unguarded user-initiated exit, even if the
+			// modal foundation or consumer adapter is not yet initialized.
+			event.preventDefault();
+			if (api()?.modalIsOpen?.()) return;
+			api()?.request?.(shell, () => {
+				if (fullscreen.getAttribute('aria-pressed') !== 'true') return false;
+				fullscreen.click();
+				return fullscreen.getAttribute('aria-pressed') !== 'true';
+			});
+		});
+		shell.addEventListener('cb:design-shell:fullscreenchange', (event) => {
+			if (event.detail?.fullscreen) api()?.resetApproval?.(shell);
+		});
 	};
 
 	const initializeDirectLaunch = (root, shell, fullscreen, shellApi, exitUrl) => {
@@ -615,6 +636,7 @@
 			}
 
 			composeHeader(root, shell, shellApi, { direct, exitUrl });
+			bindExitGuard(shell, fullscreen);
 
 			if (direct) {
 				initializeDirectLaunch(root, shell, fullscreen, shellApi, exitUrl);
