@@ -410,15 +410,18 @@ export const createDesignerShell = (root, {
 	function handleFullscreenFocusin() {
 		if (!fullscreenState) return;
 		const active = document.activeElement;
+		// Base Modal Foundation dialogs live at document.body level. They own
+		// focus while open; the Designer shell must not pull focus out of one.
+		if (document.querySelector?.('dialog[open]')?.contains?.(active)) return;
 		if (active && root.contains(active)) return;
 		focusInside();
 	}
 
 	function handleFullscreenKeydown(event) {
 		if (!fullscreenState || event.defaultPrevented) return;
+		// Native dialog owns Tab focus trapping and Escape cancellation.
+		if (document.querySelector?.('dialog[open]')) return;
 		if (event.key === 'Escape') {
-			// An open Base modal owns Escape. Do not preempt its native cancel.
-			if (document.querySelector?.('dialog[open]')) return;
 			event.preventDefault();
 			exitFullscreen();
 			return;
