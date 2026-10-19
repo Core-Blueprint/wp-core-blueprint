@@ -118,8 +118,8 @@ foreach ( (array) $templates as $definition ) {
 						<div class="cb-core-design-shell__workspace">
 							<section class="cb-core-design-shell__palette cb-core-design-shell__palette--tabbed cb-core-design-shell__palette--composed cb-core-mail-designer__palette" aria-label="<?php esc_attr_e( 'Mail content', 'core-blueprint' ); ?>">
 								<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Mail content panels', 'core-blueprint' ); ?>">
-									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-group="palette" data-cb-design-shell-tab="elements"><?php esc_html_e( 'Elements', 'core-blueprint' ); ?></button>
-									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-group="palette" data-cb-design-shell-tab="dynamic-data"><?php esc_html_e( 'Dynamic data', 'core-blueprint' ); ?></button>
+									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-group="palette" data-cb-design-shell-tab="elements" data-cb-design-shell-palette-role="elements"><?php esc_html_e( 'Elements', 'core-blueprint' ); ?></button>
+									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-group="palette" data-cb-design-shell-tab="structure" data-cb-design-shell-palette-role="layers"><?php esc_html_e( 'Layers', 'core-blueprint' ); ?></button>
 								</div>
 								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="elements">
 									<div class="cb-core-design-shell__panel-body">
@@ -131,17 +131,21 @@ foreach ( (array) $templates as $definition ) {
 												</button>
 											<?php endforeach; ?>
 										</div>
-									</div>
-								</div>
-								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="dynamic-data" hidden>
-									<div class="cb-core-design-shell__panel-body">
-										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Click a token to copy it. Paste it into text, headings, buttons or URLs.', 'core-blueprint' ); ?></p>
-										<div class="cb-core-mail-designer__bindings">
+										<?php if ( ! empty( $bindings ) ) : ?>
+										<section class="cb-core-design-shell__palette-section" aria-label="<?php esc_attr_e( 'Dynamic data', 'core-blueprint' ); ?>">
+											<h3 class="cb-core-design-shell__palette-section-title" data-cb-designer-dynamic-data-heading><?php esc_html_e( 'Dynamic data', 'core-blueprint' ); ?></h3>
+											<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Click a token to copy it. Paste it into text, headings, buttons or URLs.', 'core-blueprint' ); ?></p>
+											<div class="cb-core-mail-designer__bindings">
 											<?php foreach ( $bindings as $binding ) : ?>
 												<button type="button" class="cb-core-mail-binding" data-cb-mail-binding="<?php echo esc_attr( '{{' . (string) $binding['id'] . '}}' ); ?>" title="<?php echo esc_attr( (string) $binding['label'] ); ?>"><?php echo esc_html( '{{' . (string) $binding['id'] . '}}' ); ?></button>
 											<?php endforeach; ?>
 										</div>
+										</section>
+										<?php endif; ?>
 									</div>
+								</div>
+								<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="structure" hidden>
+									<div class="cb-core-design-shell__panel-body" data-cb-mail-structure></div>
 								</div>
 							</section>
 
@@ -161,16 +165,12 @@ foreach ( (array) $templates as $definition ) {
 							<aside class="cb-core-design-shell__sidebar cb-core-design-shell__sidebar--composed cb-core-mail-designer__sidebar" aria-label="<?php esc_attr_e( 'Designer controls', 'core-blueprint' ); ?>">
 								<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Designer panels', 'core-blueprint' ); ?>">
 									<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"><?php esc_html_e( 'Inspector', 'core-blueprint' ); ?></button>
-									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="structure" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Layers', 'core-blueprint' ); ?></button>
 									<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="email" data-cb-design-shell-sidebar-role="settings"><?php esc_html_e( 'Settings', 'core-blueprint' ); ?></button>
 								</div>
-								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="email" data-cb-design-shell-sidebar-role="settings">
+								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="email" data-cb-design-shell-sidebar-role="settings" hidden>
 									<div class="cb-core-design-shell__panel-body" data-cb-mail-email-inspector></div>
 								</div>
-								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="structure" data-cb-design-shell-sidebar-role="layers" hidden>
-									<div class="cb-core-design-shell__panel-body" data-cb-mail-structure></div>
-								</div>
-								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="inspector" data-cb-design-shell-sidebar-role="inspector" hidden>
+								<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="inspector" data-cb-design-shell-sidebar-role="inspector">
 									<div class="cb-core-design-shell__panel-body" data-cb-mail-inspector>
 										<p class="cb-core-design-shell__panel-section-description"><?php esc_html_e( 'Select an element on the canvas or in Layers to edit it.', 'core-blueprint' ); ?></p>
 									</div>
