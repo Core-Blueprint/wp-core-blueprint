@@ -25,6 +25,9 @@ const enhance = (select, options = {}) => {
 	const variant = options.variant ?? select.dataset.cbCoreSelectPickerVariant ?? 'field';
 	if (variant !== 'field' && variant !== 'header') return null;
 	const headerMode = variant === 'header';
+	// Never degrade to an overflow-clipped faux popup. Older browsers retain
+	// their original native select if the top-layer API is unavailable.
+	if (headerMode && typeof document.createElement('div').showPopover !== 'function') return null;
 	// A Header Picker preserves the native select contract but uses the same
 	// enhanced interaction without bulky field chrome or automatic search.
 	const searchMode = headerMode ? 'false' : (options.search ?? select.dataset.cbCoreSelectPickerSearch ?? 'auto');
@@ -172,7 +175,7 @@ const enhance = (select, options = {}) => {
 		if (headerMode) {
 			window.removeEventListener('resize', onHeaderViewportChange);
 			window.removeEventListener('scroll', onHeaderViewportChange, true);
-			if (panel.matches(':popover-open')) panel.hidePopover();
+			if (panel.hasAttribute('popover') && panel.matches(':popover-open')) panel.hidePopover();
 		}
 		panel.hidden = true;
 		toggle.setAttribute('aria-expanded', 'false');
