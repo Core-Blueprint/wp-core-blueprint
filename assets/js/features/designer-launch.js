@@ -114,9 +114,9 @@
 				else save.removeAttribute('aria-busy');
 			}
 			if (state === 'saved') {
-				window.cbCore?.toast?.success?.(message || config.toastLabels?.saved || 'Changes saved.');
+				window.cbCore?.toast?.success?.(message || config.toastLabels?.saved || 'Saved.');
 			} else if (state === 'error') {
-				window.cbCore?.toast?.error?.(message || config.toastLabels?.error || 'Changes could not be saved.');
+				window.cbCore?.toast?.error?.(message || config.toastLabels?.error || 'Save failed.');
 			}
 		});
 	};
