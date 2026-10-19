@@ -125,8 +125,8 @@ const click = (node) => {
 	return event;
 };
 
-test('navigation roles extend the left rail without changing old Elements / Dynamic Data order', () => {
-	assert.deepEqual(navigation.DESIGNER_PALETTE_ROLES, ['navigation', 'elements', 'dynamic-data']);
+test('navigation roles extend the left rail alongside Elements and optional Layers', () => {
+	assert.deepEqual(navigation.DESIGNER_PALETTE_ROLES, ['navigation', 'elements', 'layers']);
 });
 
 test('Navigation renders semantic, human-readable and scoped links with active state', () => {
