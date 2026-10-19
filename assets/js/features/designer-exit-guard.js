@@ -122,6 +122,7 @@
 				}
 			}
 			let confirmed;
+			let action = null;
 			if (dirty === true) {
 				const { body, choices, error } = buildDirtyBody(labels, Boolean(adapter.save));
 				confirmed = await modal({
@@ -147,7 +148,8 @@
 								choices.forEach((input) => { input.disabled = false; });
 							}
 						}
-						// Discard requires explicit user selection, never a default callback.
+						// Only a verified Save or an explicit discard may authorize close.
+						action = choice;
 						return choice === 'save' || choice === 'discard';
 					},
 				});
@@ -163,6 +165,7 @@
 			// A clean confirmation cannot race newer edits into an unsafe exit.
 			// If dirty turns true after the modal opened, keep the Designer open.
 			if (dirty === false && adapter.isDirty()) return false;
+			if (dirty === true && action === 'save' && adapter.isDirty()) return false;
 			approved.add(shell);
 			if (exit() !== true) {
 				approved.delete(shell);
@@ -182,7 +185,9 @@
 	// Escape is intercepted by the Base launch capture listener before
 	// the low-level fullscreen engine; an active modal owns its own Escape.
 	const modalIsOpen = () => Boolean(document.querySelector('dialog.cb-core-modal[open]'));
+	const isApproved = (shell) => approved.has(shell);
+	const resetApproval = (shell) => approved.delete(shell);
 
 	window.cbCore = window.cbCore || {};
-	window.cbCore.designerExitGuard = Object.freeze({ register, request, modalIsOpen });
+	window.cbCore.designerExitGuard = Object.freeze({ register, request, modalIsOpen, isApproved, resetApproval });
 })();
