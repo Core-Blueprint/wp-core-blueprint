@@ -21,6 +21,9 @@
 		busy: 'Wait for the current save to finish.',
 		unavailable: 'The Designer cannot be closed safely. Try again.',
 		saveFailure: 'Your changes could not be verified as saved. The Designer remains open.',
+		// PHP Base owns the canonical translation strings and locale resolution.
+		// Consumer labels may still override these defaults for domain-specific copy.
+		...(window.cbCoreDesignerExitGuardLabels || {}),
 	});
 
 	const notify = (variant, message) => {
