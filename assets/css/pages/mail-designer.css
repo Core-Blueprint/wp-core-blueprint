@@ -183,11 +183,20 @@ button.cb-core-mail-binding.cb-core-clipboard-control:not(.cb-core-button) {
 	border-color: var(--cb-accent);
 }
 
-/* The canonical canvas workarea owns padding, background and scrolling. */
-.cb-core-mail-designer__preview-frame {
+/* Mail uses a continuous white editor surface without a panel header.
+ * The centered iframe retains its responsive device widths; the HTML renderer
+ * and real email background settings are not changed by this shell styling. */
+.cb-core-mail-designer__canvas-panel.cb-core-design-shell__canvas {
+	background: #fff;
+}
+
+.cb-core-mail-designer__canvas-panel .cb-core-mail-designer__preview-frame {
 	display: flex;
 	justify-content: center;
+	min-width: 0;
 	min-height: 700px;
+	padding: 0;
+	background: #fff;
 	transition: padding .15s ease;
 }
 
@@ -196,9 +205,9 @@ button.cb-core-mail-binding.cb-core-clipboard-control:not(.cb-core-button) {
 	width: 100%;
 	max-width: 900px;
 	min-height: 680px;
-	border: 1px solid var(--cb-border);
+	border: 0;
 	background: #fff;
-	box-shadow: var(--cb-shadow-sm);
+	box-shadow: none;
 	transition: max-width .15s ease;
 }
 
