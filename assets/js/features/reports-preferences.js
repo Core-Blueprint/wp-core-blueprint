@@ -716,7 +716,7 @@ if ( FORM ) {
 			if ( brandSignature( submitted.branding ) === currentBranding ) {
 				applyBranding( { ...doc.branding, logo_url: response.data?.logo_url || '' } );
 			}
-			setSaveState( 'saved', i18n.reportsResetSuccess || 'Report design reset.' );
+			setSaveState( 'saved' );
 			await renderPreview();
 		} catch ( error ) {
 			saveUncertain = true;
