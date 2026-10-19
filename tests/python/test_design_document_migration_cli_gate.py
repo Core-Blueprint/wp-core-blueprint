@@ -53,37 +53,60 @@ class DesignDocumentMigrationCliGateTest(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, source)
 
-    def test_isolation_guard_accepts_original_and_retry_slots(self):
+    def test_isolation_guard_matches_canonical_runner_slot_contract(self):
         source = FIXTURE.read_text(encoding="utf-8")
-        match = re.search(r"preg_match\( '(/[^']+/D)', \$slot \)", source)
+        match = re.search(r"preg_match\\( '(/[^']+/D)', \\$slot \\)", source)
         self.assertIsNotNone(
-            match, "PHP slot guard must expose one testable regular expression"
+            match, "PHP fixture slot guard must expose one testable regex"
         )
-        # Strip PHP slash delimiters and the end-of-string D modifier.
-        # Python fullmatch provides the equivalent final-position requirement.
         php_regex = match.group(1)
         self.assertTrue(php_regex.startswith("/") and php_regex.endswith("/D"))
         matcher = re.compile(php_regex[1:-2])
+        self.assertIn("strlen( $slot ) <= 24", source)
+
         for slot in (
             "g1d_a22_20261017",
-            "g1d_a22r1_20261017",
-            "g1d_a22r2_20261017",
+            "g1d_a22r6_20261019",
+            "designer_i18n_20261019",
+            "designer_contract_1019",
         ):
-            with self.subTest(approved_slot=slot):
+            with self.subTest(valid_slot=slot):
+                self.assertLessEqual(len(slot), 24)
                 self.assertIsNotNone(matcher.fullmatch(slot))
         for slot in (
-            "g1d_a22r0_20261017",
-            "g1d_a22foo_20261017",
-            "g1d_a22r2_20261017_extra",
-            "g1d_a22_20261017/other",
+            "", "UPPERCASE", "_leading", "trailing_", "two__underscores",
+            "bad-hyphen", "bad.dot", "bad/path", "bad\\nnewline",
+            "a" * 25,
         ):
-            with self.subTest(rejected_slot=slot):
-                self.assertIsNone(matcher.fullmatch(slot))
+            with self.subTest(invalid_slot=slot):
+                self.assertTrue(len(slot) > 24 or matcher.fullmatch(slot) is None)
+
+    def test_a22_requires_authoritative_owned_runner_workspace(self):
+        source = FIXTURE.read_text(encoding="utf-8")
+        for required in (
+            ".base-integration-owner.json",
+            "0700 === ( fileperms( $workspace ) & 0777 )",
+            "fileowner( $workspace ) === fileowner( $owner_file )",
+            "$root === $workspace . '/wp'",
+            "'git_sha'",
+            "'database'",
+            "'new-only-no-cleanup'",
+            "ksort( $owner );",
+            "ksort( $expected_owner );",
+            "$owner === $expected_owner",
+            "$owner['wordpress'] === get_bloginfo( 'version' )",
+            "'owned Base Level 2 workspace'",
+            "'authoritative Base owner marker'",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, source)
 
     def test_isolation_guards_identify_failing_clause(self):
         source = FIXTURE.read_text(encoding="utf-8")
         for required in (
             "'approved A2.2 test slot'",
+            "'owned Base Level 2 workspace'",
+            "'authoritative Base owner marker'",
             "'isolated database name'",
             "'isolated test workspace'",
             "'loopback MariaDB binding'",
