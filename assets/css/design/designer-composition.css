@@ -303,6 +303,23 @@
 	white-space: nowrap;
 }
 
+/* Opt-in vertical element cards. Keep existing Mail palette geometry as-is. */
+.cb-core-design-shell__palette-item.cb-core-design-shell__palette-item--stacked {
+	flex-direction: column;
+	gap: var(--cb-space-2);
+	min-height: 84px;
+}
+
+.cb-core-design-shell__palette-item--stacked .cb-core-design-shell__icon {
+	flex: 0 0 auto;
+}
+
+.cb-core-design-shell__palette-item--stacked .cb-core-design-shell__palette-item-label {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	text-overflow: clip;
+}
+
 .cb-core-design-shell__palette-item:hover,
 .cb-core-design-shell__palette-item:focus-visible {
 	border-color: var(--cb-accent);
