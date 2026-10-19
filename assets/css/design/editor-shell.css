@@ -270,7 +270,14 @@ html.cb-core-design-shell-focus-mode body {
 .cb-core-design-shell__tab,
 .cb-core-design-shell__sidebar-tab {
 	appearance: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--cb-space-1);
 	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 	padding: var(--cb-space-3) var(--cb-space-2);
 	border: 0;
 	border-bottom: 2px solid transparent;
@@ -280,6 +287,40 @@ html.cb-core-design-shell-focus-mode body {
 	font-size: var(--cb-fs-sm);
 	font-weight: var(--cb-fw-semibold);
 	cursor: pointer;
+}
+
+/* Keep every tab on one line; labels are contractually one word.
+ * Ellipsis is a protective fallback for long labels and translations. */
+.cb-core-design-shell__tab-label {
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cb-core-design-shell__tab .cb-core-design-shell__icon,
+.cb-core-design-shell__sidebar-tab .cb-core-design-shell__icon {
+	flex: 0 0 auto;
+}
+
+.cb-core-design-shell__palette-section {
+	padding-top: var(--cb-space-3);
+	margin-top: var(--cb-space-3);
+	border-top: 1px solid var(--cb-border);
+}
+
+.cb-core-design-shell__palette-section-title {
+	display: flex;
+	align-items: center;
+	gap: var(--cb-space-2);
+	margin: 0 0 var(--cb-space-3);
+	font-size: var(--cb-fs-sm);
+	font-weight: var(--cb-fw-semibold);
+}
+
+.cb-core-design-shell__palette-item .cb-core-design-shell__icon {
+	flex: 0 0 auto;
 }
 
 .cb-core-design-shell__tab:hover,
