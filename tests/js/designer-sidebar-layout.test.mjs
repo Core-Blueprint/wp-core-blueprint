@@ -100,6 +100,9 @@ test('Mail Dynamic Data is single-column with one clipped full-width token per r
 	assert.match(css, /\.cb-core-mail-designer__bindings\s*\{[^}]*display: grid;[^}]*grid-template-columns: minmax\(0, 1fr\);[^}]*width: 100%;[^}]*max-width: 100%;/s);
 	assert.match(css, /\.cb-core-mail-binding\s*\{[^}]*width: 100%;[^}]*max-width: 100%;[^}]*min-width: 0;[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
 	assert.doesNotMatch(css, /\.cb-core-mail-designer__bindings\s*\{[^}]*flex-wrap:/s);
+	assert.match(css, /button\.cb-core-mail-binding\.cb-core-clipboard-control:not\(\.cb-core-button\)\s*\{[^}]*display: block;/s);
+	const clipboardCss = await readSource('assets/css/components/clipboard.css');
+	assert.match(clipboardCss, /button\.cb-core-clipboard-control:not\(\.cb-core-button\),[^{]*\{[^}]*display: inline-flex;/s);
 	assert.match(template, /class="cb-core-design-shell__palette-item-label"/);
 	assert.match(template, /\$token = '\{\{' \. \(string\) \$binding\['id'\] \. '\}\}';/);
 	assert.match(template, /data-cb-mail-binding="<\?php echo esc_attr\( \$token \); \?>" title="<\?php echo esc_attr\( \$token \. ' — ' \. \(string\) \$binding\['label'\] \); \?>" aria-label="<\?php echo esc_attr\( \$token \); \?>"/);
