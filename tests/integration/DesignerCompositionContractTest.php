@@ -156,13 +156,19 @@ final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 			'cb-core-design-shell__palette-grid',
 			'cb-core-design-shell__palette-item',
 			'cb-core-design-shell__canvas--composed',
-			'cb-core-design-shell__canvas-header',
 			'cb-core-design-shell__canvas-workarea',
 			'cb-core-design-shell__sidebar--composed',
 			'cb-core-design-shell__sidebar-panel',
 		] as $primitive ) {
 			self::assertStringContainsString( $primitive, $template );
 		}
+
+		// Mail intentionally uses a headerless canvas while retaining Base's
+		// shared workarea and accessible preview announcement contract.
+		self::assertStringNotContainsString( 'cb-core-design-shell__canvas-header', $template );
+		self::assertStringContainsString( "esc_attr_e( 'Visual mail canvas', 'core-blueprint' )", $template );
+		self::assertStringContainsString( 'data-cb-mail-preview-status aria-live="polite"', $template );
+		self::assertStringContainsString( 'data-cb-mail-preview-frame', $template );
 
 		self::assertStringContainsString( "wrapper.className = 'cb-core-design-shell__field';", $script );
 		self::assertStringContainsString( "label.className = 'cb-core-design-shell__field-label';", $script );
