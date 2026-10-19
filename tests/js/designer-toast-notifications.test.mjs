@@ -83,6 +83,7 @@ test('Designer shell displays no transient toolbar messages and preserves local 
 	const reports = await readSource('templates/preferences-reports.php');
 	const mailRuntime = await readSource('assets/js/features/mail-designer.js');
 	const reportsRuntime = await readSource('assets/js/features/reports-preferences.js');
+	const contextRuntime = await readSource('assets/js/features/designer-context.js');
 	const toastStyles = await readSource('assets/css/components/toasts.css');
 	const assets = await readSource('src/Design/Editor/Assets.php');
 	assert.equal(launch.includes('end.append(status)'), false);
@@ -91,6 +92,8 @@ test('Designer shell displays no transient toolbar messages and preserves local 
 	assert.equal(reports.includes('data-cb-design-shell-status'), false);
 	assert.ok(mail.includes('screen-reader-text" data-cb-mail-preview-status aria-live="polite"'));
 	assert.ok(mailRuntime.includes('window.cbCore?.toast?.error?.(message)'));
+	assert.ok(contextRuntime.includes("window.cbCore?.toast?.error?.(error?.message || label('error', 'Could not load selection.'))"));
+	assert.equal(contextRuntime.includes("setTransition(shell, 'error'"), false);
 	assert.ok(reportsRuntime.includes("if ( kind === 'error' && message ) window.cbCore?.toast?.error?.( message )"));
 	assert.ok(assets.includes('Assets::enqueue_toasts('));
 	assert.ok(assets.includes('Assets::TOAST_PRESENTATION_CORE'));
