@@ -154,3 +154,18 @@ test('Mail canvas is headerless and white without stretching the responsive emai
 	]);
 	assert.match(runtime, /styleEditorCanvas\(doc\);\s*inlineEditor\?\.attach\(doc\);/);
 });
+
+test('Reports palette stacks semantic icons above centered multi-line titles without changing Mail', async () => {
+	const reports = await readSource('assets/js/features/reports-preferences.js');
+	const mail = await readSource('assets/js/features/mail-designer.js');
+	const sharedCss = await readSource('assets/css/design/designer-composition.css');
+	const reportsCss = await readSource('assets/css/pages/reports-designer.css');
+
+	assert.match(reports, /button\.className = 'cb-core-design-shell__palette-item cb-core-design-shell__palette-item--stacked'/);
+	assert.match(reports, /label\.className = 'cb-core-design-shell__palette-item-label';/);
+	assert.match(reports, /button\.append\( label \);\s*decorateDesignerElement\( button, type/);
+	assert.match(sharedCss, /\.cb-core-design-shell__palette-item\.cb-core-design-shell__palette-item--stacked\s*\{[^}]*flex-direction: column;[^}]*gap: var\(--cb-space-2\);[^}]*min-height: 84px;/s);
+	assert.match(sharedCss, /\.cb-core-design-shell__palette-item--stacked \.cb-core-design-shell__palette-item-label\s*\{[^}]*white-space: normal;[^}]*overflow-wrap: anywhere;[^}]*text-overflow: clip;/s);
+	assert.doesNotMatch(mail, /cb-core-design-shell__palette-item--stacked/);
+	assert.doesNotMatch(reportsCss, /\.cb-core-design-shell__palette-item(?:\s|\.)/);
+});
