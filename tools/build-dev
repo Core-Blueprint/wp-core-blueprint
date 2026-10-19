@@ -60,6 +60,26 @@ def check_git(source: Path) -> str:
     return sha
 
 
+def require_tracked_runtime(source: Path, files: list[Path]) -> None:
+    """Do not let ignored/untracked payload masquerade as the committed SHA."""
+    result = subprocess.run(
+        ["git", "ls-files", "--cached", "-z"], cwd=source, capture_output=True
+    )
+    if result.returncode:
+        fail("Unable to resolve committed Git package inventory.")
+    tracked = {
+        name.decode("utf-8", errors="surrogateescape")
+        for name in result.stdout.split(b"\\0") if name
+    }
+    untracked = [
+        path.relative_to(source).as_posix()
+        for path in files
+        if path.relative_to(source).as_posix() not in tracked
+    ]
+    if untracked:
+        fail("Package includes files outside committed source: " + ", ".join(untracked[:3]))
+
+
 def check_tools() -> None:
     for tool in ("git", "php", "node"):
         if shutil.which(tool) is None:
@@ -133,6 +153,7 @@ def build() -> tuple[Path, Path, Path]:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.+_-]{0,63}", version):
         fail("Plugin version is unsafe for an artifact filename.")
     files = canonical.collect_files(SOURCE)
+    require_tracked_runtime(SOURCE, files)
     original = canonical.runtime_hashes(SOURCE)
 
     php_count, js_count = syntax_check(files)
