@@ -113,18 +113,26 @@ $workspace_owned = $slot_valid
 	&& fileowner( $workspace ) === fileowner( $owner_file );
 $owner_raw = $workspace_owned ? file_get_contents( $owner_file ) : false;
 $owner = is_string( $owner_raw ) ? json_decode( $owner_raw, true ) : null;
+$expected_owner = [
+	'schema'    => 1,
+	'product'   => 'core-blueprint',
+	'git_sha'   => is_array( $owner ) ? ( $owner['git_sha'] ?? null ) : null,
+	'wordpress' => is_array( $owner ) ? ( $owner['wordpress'] ?? null ) : null,
+	'database'  => 'core_blueprint_base_' . $slot . '_test',
+	'policy'    => 'new-only-no-cleanup',
+];
+// Python's canonical owner marker uses sort_keys=True; compare maps by
+// exact keys and values, independent of JSON object insertion order.
+if ( is_array( $owner ) ) {
+	ksort( $owner );
+}
+ksort( $expected_owner );
 $owner_valid = is_array( $owner )
 	&& is_string( $owner['git_sha'] ?? null )
 	&& 1 === preg_match( '/^[a-f0-9]{40}$/D', $owner['git_sha'] )
 	&& in_array( $owner['wordpress'] ?? null, [ '7.0', '7.1' ], true )
-	&& $owner === [
-		'schema'    => 1,
-		'product'   => 'core-blueprint',
-		'git_sha'   => $owner['git_sha'],
-		'wordpress' => $owner['wordpress'],
-		'database'  => 'core_blueprint_base_' . $slot . '_test',
-		'policy'    => 'new-only-no-cleanup',
-	]
+	&& $owner['schema'] === 1
+	&& $owner === $expected_owner
 	&& $owner['wordpress'] === get_bloginfo( 'version' );
 
 // Each predicate must pass BEFORE any test data is written. Never weaken
