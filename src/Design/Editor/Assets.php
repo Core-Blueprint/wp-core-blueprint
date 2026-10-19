@@ -24,6 +24,8 @@ final class Assets {
 	public const DOMAIN_SESSION_API = 2;
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */
 	public const INSPECTOR_COMPOSITION_API = 1;
+	/** Public Designer Exit Guard contract provided by the same installed Base build. */
+	public const DESIGNER_EXIT_GUARD_API = 1;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
 	public const MAIL_RICH_TEXT_STYLE = 'cb-core-design-mail-rich-text';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
