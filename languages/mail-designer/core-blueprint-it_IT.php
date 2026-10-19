@@ -19,6 +19,5 @@ return [
         '33 / 67' => '33 / 67',
         '67 / 33' => '67 / 33',
         'Column gap' => 'Spaziatura tra colonne',
-        'Click an element to inspect it. Double-click text to edit it.' => 'Fai clic su un elemento per visualizzarne le impostazioni. Fai doppio clic sul testo per modificarlo.',
     ],
 ];

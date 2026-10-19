@@ -19,6 +19,5 @@ return [
         '33 / 67' => '33 / 67',
         '67 / 33' => '67 / 33',
         'Column gap' => 'Spaltenabstand',
-        'Click an element to inspect it. Double-click text to edit it.' => 'Klicke auf ein Element, um seine Einstellungen anzuzeigen. Doppelklicke auf Text, um ihn zu bearbeiten.',
     ],
 ];
