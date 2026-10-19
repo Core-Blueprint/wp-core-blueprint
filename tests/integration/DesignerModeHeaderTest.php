@@ -82,7 +82,8 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "'redo-2'", $icons );
 		self::assertStringContainsString( "'sliders-horizontal'", $icons );
 		self::assertStringContainsString( "'settings-2'", $icons );
-		self::assertStringContainsString( "['inspector', 'layers', 'settings']", $shell );
+		self::assertStringContainsString( "['inspector', 'settings']", $shell );
+		self::assertStringContainsString( "role === 'elements' ? 'shapes' : role === 'layers' ? 'layers'", $shell );
 		self::assertStringContainsString( 'configureDesignerSidebar', $shell );
 		self::assertStringContainsString( "mobile: 'smartphone'", $viewports );
 		self::assertStringContainsString( "tablet: 'tablet'", $viewports );
@@ -131,14 +132,18 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'color: #00b3ea;', $brand_css );
 	}
 
-	public function test_mail_declares_its_panels_against_canonical_inspector_layers_settings_roles(): void {
+	public function test_mail_declares_independent_left_layers_and_right_inspector_settings(): void {
 		$root = dirname( __DIR__, 2 );
 		$template = (string) file_get_contents( $root . '/templates/mail-designer.php' );
 		$launch = (string) file_get_contents( $root . '/assets/js/features/designer-launch.js' );
 		$assets = (string) file_get_contents( $root . '/src/Design/Editor/Assets.php' );
 
 		self::assertStringContainsString( 'data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"', $template );
-		self::assertStringContainsString( 'data-cb-design-shell-tab="structure" data-cb-design-shell-sidebar-role="layers"', $template );
+		self::assertStringContainsString( 'data-cb-design-shell-tab="structure" data-cb-design-shell-palette-role="layers"', $template );
+		self::assertStringNotContainsString( 'data-cb-design-shell-sidebar-role="layers"', $template );
+		self::assertLessThan( strpos( $template, 'cb-core-design-shell__canvas--composed' ), strpos( $template, 'data-cb-mail-structure' ) );
+		self::assertStringNotContainsString( 'data-cb-design-shell-tab="dynamic-data"', $template );
+		self::assertStringContainsString( 'data-cb-designer-dynamic-data-heading', $template );
 		self::assertStringContainsString( 'data-cb-design-shell-tab="email" data-cb-design-shell-sidebar-role="settings"', $template );
 		self::assertStringContainsString( 'discoverSidebarRoles', $launch );
 		self::assertStringNotContainsString( "layers: 'structure'", $launch );
