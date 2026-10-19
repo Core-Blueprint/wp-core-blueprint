@@ -68,3 +68,15 @@ test('Base exposes one curated semantic element icon adapter with safe default',
 	assert.match(mail, /decorateDesignerElement\(button, button\.dataset\.cbMailAdd/);
 	assert.match(reports, /decorateDesignerElement\( button, type/);
 });
+
+test('shared Base layout normalizer recognizes Layers roles on tab IDs different from panel IDs', async () => {
+	const layout = await readSource('assets/js/features/designer-layout.js');
+	const php = await readSource('src/Design/Editor/Assets.php');
+	assert.match(layout, /PALETTE_ROLE_ORDER = Object\.freeze\(\['navigation', 'elements', 'layers'\]\)/);
+	assert.match(layout, /matchingTab\?\.dataset\.cbDesignShellPaletteRole/);
+	assert.match(layout, /return explicitRole === role \|\| panelId === role \|\| tabRole === role;/);
+	assert.match(layout, /role === 'layers' \? 'Layers' : 'Elements'/);
+	assert.match(php, /'paletteLabels' => \[/);
+	assert.match(php, /'layers'\s*=> __\( 'Layers', 'core-blueprint' \)/);
+	assert.doesNotMatch(layout, /'dynamic-data'/);
+});
