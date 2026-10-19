@@ -22,7 +22,12 @@ const enhance = (select, options = {}) => {
 		return null;
 	}
 
-	const searchMode = options.search ?? select.dataset.cbCoreSelectPickerSearch ?? 'auto';
+	const variant = options.variant ?? select.dataset.cbCoreSelectPickerVariant ?? 'field';
+	if (variant !== 'field' && variant !== 'header') return null;
+	const headerMode = variant === 'header';
+	// A Header Picker preserves the native select contract but uses the same
+	// enhanced interaction without bulky field chrome or automatic search.
+	const searchMode = headerMode ? 'false' : (options.search ?? select.dataset.cbCoreSelectPickerSearch ?? 'auto');
 	const threshold = Number.parseInt(options.searchThreshold ?? select.dataset.cbCoreSelectPickerSearchThreshold ?? '8', 10) || 8;
 	const searchable = searchMode === 'auto' ? optionCount(select) >= threshold : truthy(searchMode);
 	const originalParent = select.parentNode;
@@ -30,6 +35,7 @@ const enhance = (select, options = {}) => {
 
 	const root = document.createElement('div');
 	root.className = 'cb-core-picker cb-core-select-picker';
+	if (headerMode) root.classList.add('cb-core-select-picker--header');
 	select.before(root);
 	root.appendChild(select);
 
@@ -61,7 +67,11 @@ const enhance = (select, options = {}) => {
 	toggle.append(main, chevron);
 	enhanced.appendChild(toggle);
 
-	const externalLabel = findLabelText(select);
+	const externalLabel = select.getAttribute('aria-label')?.trim()
+		|| select.getAttribute('aria-labelledby') && document.getElementById(select.getAttribute('aria-labelledby'))?.textContent?.trim()
+		|| findLabelText(select)
+		|| select.closest('label')?.textContent?.trim()
+		|| '';
 	if (externalLabel) toggle.setAttribute('aria-label', externalLabel);
 
 	const panel = document.createElement('div');
@@ -69,6 +79,7 @@ const enhance = (select, options = {}) => {
 	panel.className = 'cb-core-picker__panel cb-core-select-picker__panel';
 	panel.setAttribute('role', 'dialog');
 	panel.hidden = true;
+	if (headerMode && 'popover' in panel) panel.setAttribute('popover', 'manual');
 	if (externalLabel) panel.setAttribute('aria-label', externalLabel);
 
 	let search = null;
@@ -130,6 +141,9 @@ const enhance = (select, options = {}) => {
 		meta.textContent = group;
 		meta.hidden = !group;
 		toggle.disabled = select.disabled;
+		if (headerMode && externalLabel) {
+			toggle.setAttribute('aria-label', externalLabel + ': ' + title.textContent);
+		}
 		results.querySelectorAll('[data-value]').forEach((button) => {
 			const active = button.dataset.value === select.value;
 			button.classList.toggle('is-selected', active);
@@ -137,10 +151,31 @@ const enhance = (select, options = {}) => {
 		});
 	};
 
+	const locateHeaderPanel = () => {
+		if (!headerMode || panel.hidden) return;
+		const trigger = toggle.getBoundingClientRect();
+		const pop = panel.getBoundingClientRect();
+		const gutter = 12;
+		const viewportWidth = document.documentElement.clientWidth;
+		const viewportHeight = document.documentElement.clientHeight;
+		const x = Math.max(gutter, Math.min(trigger.left, viewportWidth - pop.width - gutter));
+		const below = viewportHeight - trigger.bottom - gutter;
+		const above = trigger.top - gutter;
+		const y = below < pop.height && above > below
+			? trigger.top - pop.height - 8
+			: trigger.bottom + 8;
+		panel.style.left = Math.round(x) + 'px';
+		panel.style.top = Math.round(Math.max(gutter, Math.min(y, viewportHeight - pop.height - gutter))) + 'px';
+	};
+	const onHeaderViewportChange = () => locateHeaderPanel();
 	const close = ({ focus = false } = {}) => {
+		if (headerMode) {
+			window.removeEventListener('resize', onHeaderViewportChange);
+			window.removeEventListener('scroll', onHeaderViewportChange, true);
+			if (panel.matches(':popover-open')) panel.hidePopover();
+		}
 		panel.hidden = true;
 		toggle.setAttribute('aria-expanded', 'false');
-	toggle.setAttribute('aria-haspopup', 'dialog');
 		root.classList.remove('is-open');
 		if (search) search.value = '';
 		if (focus) toggle.focus();
@@ -205,9 +240,20 @@ const enhance = (select, options = {}) => {
 		if (select.disabled) return;
 		render(search?.value || '');
 		panel.hidden = false;
+		if (headerMode && typeof panel.showPopover === 'function') {
+			panel.showPopover(); // Top layer escapes the composed Designer rail's overflow clipping.
+			locateHeaderPanel();
+			window.addEventListener('resize', onHeaderViewportChange, { passive: true });
+			window.addEventListener('scroll', onHeaderViewportChange, { capture: true, passive: true });
+		}
 		toggle.setAttribute('aria-expanded', 'true');
 		root.classList.add('is-open');
 		if (search) window.requestAnimationFrame(() => search.focus());
+		else if (headerMode) window.requestAnimationFrame(() => {
+			const buttons = optionButtons();
+			const index = buttons.findIndex((button) => button.dataset.value === select.value);
+			focusOption(index >= 0 ? index : 0);
+		});
 	};
 
 	toggle.addEventListener('click', () => {
@@ -252,9 +298,15 @@ const enhance = (select, options = {}) => {
 		if (event.key === 'End') { event.preventDefault(); focusOption(buttons.length - 1); }
 	});
 	document.addEventListener('click', (event) => {
-		if (!root.contains(event.target)) close();
+		if (!root.contains(event.target) && !panel.contains(event.target)) close();
 	});
 
+	if (headerMode) {
+		// If the browser closes the top layer externally, keep toggle state in sync.
+		panel.addEventListener('toggle', (event) => {
+			if (event.newState === 'closed' && !panel.hidden) close();
+		});
+	}
 	select.addEventListener('change', sync);
 	select.addEventListener('cb:select-picker-sync', sync);
 	select.form?.addEventListener('reset', () => window.setTimeout(sync, 0));
