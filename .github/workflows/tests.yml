@@ -1,14 +1,10 @@
 name: Base tests
 
-# Keep manual dispatch available for controlled Golden Standard validation.
+# Manual-only: the full WordPress/CI/release matrix runs only on explicit
+# operator dispatch for public release validation. Development merges do not
+# automatically start the full test matrix. Keep the jobs and gates intact.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read
