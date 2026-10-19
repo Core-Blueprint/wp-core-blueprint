@@ -78,5 +78,7 @@ test('SP-H04: header has dedicated tokenized chrome while existing field and nat
   assert.match(core, /var\(--cb-accent\)/);
   assert.match(core, /\.cb-core-select-picker__option\.is-selected::after/);
   assert.match(native, /\.cb-core-select-picker \{ width:100%; \}/);
+  assert.match(native, /\.cb-core-picker\.cb-core-select-picker--header/);
+  assert.match(native, /\.cb-core-select-picker--header \.cb-core-select-picker__panel/);
   assert.match(core, /\.cb-core-wrap \.cb-core-picker__toggle,/);
 });
