@@ -251,8 +251,10 @@ html.cb-core-design-shell-focus-mode body {
 
 .cb-core-design-shell.is-fullscreen .cb-core-design-shell__palette--tabbed > .cb-core-design-shell__panel:not([hidden]) {
 	flex: 1 1 auto;
+	min-width: 0;
 	min-height: 0;
-	overflow: auto;
+	overflow-x: hidden;
+	overflow-y: auto;
 }
 
 .cb-core-design-shell__canvas {
@@ -424,8 +426,10 @@ html.cb-core-design-shell-focus-mode body {
 
 [data-cb-design-launch-root][data-cb-design-launch-mode="direct"][data-cb-design-exit-url]:not([data-cb-design-exit-url=""]) .cb-core-design-shell .cb-core-design-shell__palette--tabbed > .cb-core-design-shell__panel:not([hidden]) {
 	flex: 1 1 auto;
+	min-width: 0;
 	min-height: 0;
-	overflow: auto;
+	overflow-x: hidden;
+	overflow-y: auto;
 }
 
 [data-cb-design-launch-root][data-cb-design-launch-mode="direct"][data-cb-design-exit-url]:not([data-cb-design-exit-url=""]) .cb-core-design-shell .cb-core-design-shell__panel,
