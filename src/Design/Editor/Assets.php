@@ -104,6 +104,9 @@ final class Assets {
 	public static function enqueue_designer_mode( string $title = '' ): void {
 		self::enqueue();
 		CoreBlueprintLockup::enqueue_assets();
+		// Designer owns temporary operation feedback, including fullscreen.
+		// The Core presentation is explicit for this Base-themed surface.
+		\CoreBlueprint\Core\UI\Assets::enqueue_toasts( \CoreBlueprint\Core\UI\Assets::TOAST_PRESENTATION_CORE );
 
 		$title = sanitize_text_field( trim( $title ) );
 		if ( '' === $title ) {
@@ -232,6 +235,10 @@ final class Assets {
 					'loading' => __( 'Loading design…', 'core-blueprint' ),
 					'ready'   => __( 'Design loaded', 'core-blueprint' ),
 					'error'   => __( 'The selected design could not be loaded.', 'core-blueprint' ),
+				],
+				'toastLabels'  => [
+					'saved' => __( 'Changes saved.', 'core-blueprint' ),
+					'error' => __( 'Changes could not be saved.', 'core-blueprint' ),
 				],
 				'diagnosticLabels' => [
 					'message' => __( 'The editor view needs refreshing. Your changes are preserved.', 'core-blueprint' ),
