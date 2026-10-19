@@ -476,3 +476,28 @@ test('Base before-exit cancellation preserves fullscreen until an approved repla
 	assert.equal(shell.exitFullscreen(), true, 'approved replay follows the native shell lifecycle');
 	assert.equal(fullscreen.getAttribute('aria-pressed'), 'false');
 });
+
+test('Base fullscreen yields Escape, Tab and focus to an active modal', () => {
+	const { root } = buildShell();
+	const shell = createDesignerShell(root);
+	assert.equal(shell.enterFullscreen(), true);
+	const previousSelector = document.querySelector;
+	const modalFocused = new FakeElement(document);
+	const dialog = { contains: (target) => target === modalFocused };
+	document.querySelector = (selector) => selector === 'dialog[open]' ? dialog : null;
+	try {
+		const escape = keyEvent('Escape');
+		document.dispatchEvent(escape);
+		assert.equal(escape.defaultPrevented, false, 'modal owns native Escape cancellation');
+		assert.equal(root.classList.contains('is-fullscreen'), true);
+		const tab = keyEvent('Tab');
+		document.dispatchEvent(tab);
+		assert.equal(tab.defaultPrevented, false, 'modal owns focus traversal');
+		document.activeElement = modalFocused;
+		document.dispatchEvent(new Event('focusin'));
+		assert.equal(document.activeElement, modalFocused, 'shell must not steal modal focus');
+	} finally {
+		document.querySelector = previousSelector;
+		shell.exitFullscreen();
+	}
+});
