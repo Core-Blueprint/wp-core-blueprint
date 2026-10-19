@@ -237,8 +237,8 @@ final class Assets {
 					'error'   => __( 'The selected design could not be loaded.', 'core-blueprint' ),
 				],
 				'toastLabels'  => [
-					'saved' => __( 'Changes saved.', 'core-blueprint' ),
-					'error' => __( 'Changes could not be saved.', 'core-blueprint' ),
+					'saved' => __( 'Saved.', 'core-blueprint' ),
+					'error' => __( 'Save failed.', 'core-blueprint' ),
 				],
 				'diagnosticLabels' => [
 					'message' => __( 'The editor view needs refreshing. Your changes are preserved.', 'core-blueprint' ),
