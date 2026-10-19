@@ -30,6 +30,7 @@ final class Assets {
 	public const DESIGNER_COMPOSITION_STYLE = 'cb-core-designer-composition';
 	public const DESIGNER_CONTEXT_STYLE = 'cb-core-designer-context';
 	public const DESIGNER_TOOLBAR_STYLE = 'cb-core-designer-toolbar';
+	public const DESIGNER_EXIT_GUARD_SCRIPT = 'cb-core-designer-exit-guard';
 	public const DESIGNER_MODE_SCRIPT = 'cb-core-designer-mode';
 	public const DESIGNER_LAYOUT_SCRIPT = 'cb-core-designer-layout';
 	public const DESIGNER_CONTEXT_SCRIPT = 'cb-core-designer-context';
@@ -107,6 +108,7 @@ final class Assets {
 		// Designer owns temporary operation feedback, including fullscreen.
 		// The Core presentation is explicit for this Base-themed surface.
 		\CoreBlueprint\Core\UI\Assets::enqueue_toasts( \CoreBlueprint\Core\UI\Assets::TOAST_PRESENTATION_CORE );
+		\CoreBlueprint\Core\UI\Assets::enqueue_modals( \CoreBlueprint\Core\UI\Assets::MODAL_PRESENTATION_CORE );
 
 		$title = sanitize_text_field( trim( $title ) );
 		if ( '' === $title ) {
@@ -156,9 +158,17 @@ final class Assets {
 		);
 
 		wp_enqueue_script(
+			self::DESIGNER_EXIT_GUARD_SCRIPT,
+			CB_CORE_URL . 'assets/js/features/designer-exit-guard.js',
+			[],
+			self::asset_version( 'assets/js/features/designer-exit-guard.js' ),
+			true
+		);
+
+		wp_enqueue_script(
 			self::DESIGNER_MODE_SCRIPT,
 			CB_CORE_URL . 'assets/js/features/designer-launch.js',
-			[],
+			[ self::DESIGNER_EXIT_GUARD_SCRIPT ],
 			self::asset_version( 'assets/js/features/designer-launch.js' ),
 			true
 		);
