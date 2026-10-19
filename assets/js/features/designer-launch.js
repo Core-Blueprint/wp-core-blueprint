@@ -38,11 +38,6 @@
 		if (shell) {
 			shell.dataset.cbDesignShellState = 'error';
 			shell.removeAttribute('aria-busy');
-			const status = shell.querySelector('[data-cb-design-shell-status]');
-			if (status) {
-				status.textContent = normalizedMessage;
-				status.classList.add('is-error');
-			}
 		}
 
 		let notice = root.querySelector(':scope > [data-cb-design-launch-failure]');
@@ -102,9 +97,9 @@
 		});
 	};
 
-	const bindSaveState = (shell, save, status) => {
-		if (!save && !status) return;
-		const saveLabel = String(save?.getAttribute('aria-label') || save?.textContent || 'Save').trim();
+	// Shared Designer save feedback. Consumers own authoritative receipts;
+	// Base owns the presentation of their acknowledged outcome.
+	const bindSaveState = (shell, save) => {
 
 		shell.addEventListener(SAVE_EVENT, (event) => {
 			const state = String(event.detail?.state || '').trim();
@@ -118,9 +113,10 @@
 				if (busy) save.setAttribute('aria-busy', 'true');
 				else save.removeAttribute('aria-busy');
 			}
-			if (status) {
-				status.textContent = message || (busy ? `${saveLabel}…` : '');
-				status.classList.toggle('is-error', state === 'error');
+			if (state === 'saved') {
+				window.cbCore?.toast?.success?.(message || config.toastLabels?.saved || 'Changes saved.');
+			} else if (state === 'error') {
+				window.cbCore?.toast?.error?.(message || config.toastLabels?.error || 'Changes could not be saved.');
 			}
 		});
 	};
@@ -325,7 +321,6 @@
 		const fullscreen = toolbar.querySelector('[data-cb-design-shell-fullscreen]');
 		const contextSwitcher = toolbar.querySelector('[data-cb-design-shell-context]');
 		const save = toolbar.querySelector('[data-cb-design-shell-primary-action]');
-		const status = toolbar.querySelector('[data-cb-design-shell-status]');
 
 		if (historyGroup) {
 			const heading = historyGroup.querySelector('[data-cb-design-shell-group-label]');
@@ -365,7 +360,7 @@
 			const label = String(save.textContent || 'Save').trim();
 			shellApi.icons.decorate(save, 'save', { iconOnly: true, label });
 		}
-		bindSaveState(shell, save, status);
+		bindSaveState(shell, save);
 		configureSidebar(shell, shellApi);
 		const panelControls = composePanelToggles(shell, shellApi);
 
@@ -406,10 +401,6 @@
 		const end = document.createElement('div');
 		end.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--end';
 		if (panelControls?.rightLauncher) end.append(panelControls.rightLauncher);
-		if (status) {
-			status.classList.add('cb-core-design-shell__toolbar-status');
-			end.append(status);
-		}
 		if (historyGroup) end.append(historyGroup);
 
 		if (direct && fullscreen && exitUrl) {
