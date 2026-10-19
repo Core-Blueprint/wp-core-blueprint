@@ -560,7 +560,7 @@ if (root) {
 
 	shell = createDesignerShell(shellRoot, {
 		session,
-		defaultPanel: 'email',
+		defaultPanel: 'inspector',
 	});
 	// Shared Base history remains authoritative. Flush an active inline draft
 	// before the Shell's undo/redo action, or block that action when invalid.
