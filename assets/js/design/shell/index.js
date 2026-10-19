@@ -137,6 +137,15 @@ export const createDesignerShell = (root, {
 	const fullscreenLabel = element(fullscreen, '[data-cb-design-shell-fullscreen-label]');
 	const tabs = elements(root, '[data-cb-design-shell-tab]');
 	const panels = elements(root, '[data-cb-design-shell-panel]');
+	// Preserve the full label for keyboard, assistive technology and hover
+	// even when a consumer supplies an overly long translated tab label.
+	tabs.forEach((tab) => {
+		const label = String(tab.getAttribute('aria-label') || tab.textContent || '').trim();
+		if (label) {
+			if (!tab.getAttribute('aria-label')) tab.setAttribute('aria-label', label);
+			if (!tab.getAttribute('title')) tab.setAttribute('title', label);
+		}
+	});
 	// Left palette tabs are independent of right Inspector/Settings navigation.
 	// No Layers role means no Layers tab is introduced by Base.
 	tabs.filter((tab) => tab.dataset.cbDesignShellGroup === 'palette').forEach((tab) => {
