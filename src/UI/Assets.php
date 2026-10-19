@@ -1088,14 +1088,14 @@ final class Assets {
 				'cb-core-css-pickers',
 				CB_CORE_URL . 'assets/css/components/pickers.css',
 				[ 'cb-core-css-tokens', 'cb-core-css-form-controls' ],
-				CB_CORE_VERSION
+				self::asset_revision( 'assets/css/components/pickers.css' )
 			);
 		} else {
 			wp_enqueue_style(
 				'cb-core-css-pickers-native',
 				CB_CORE_URL . 'assets/css/components/pickers-native.css',
 				[],
-				CB_CORE_VERSION
+				self::asset_revision( 'assets/css/components/pickers-native.css' )
 			);
 		}
 
@@ -1103,7 +1103,7 @@ final class Assets {
 			'@cb-core/select-picker',
 			CB_CORE_URL . 'assets/js/core/select-picker.js',
 			[],
-			CB_CORE_VERSION
+			self::asset_revision( 'assets/js/core/select-picker.js' )
 		);
 
 		if ( ! self::$select_picker_data_filter_registered ) {
