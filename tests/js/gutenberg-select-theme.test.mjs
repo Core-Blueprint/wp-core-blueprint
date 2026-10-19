@@ -34,6 +34,7 @@ test('GB-SELECT-02: native popup, options, optgroups and disabled contrast inher
   assert.match(addition, /\[data-wp-component="SelectControl"\]\s+select/);
   assert.match(addition, /:is\(option, optgroup\)/);
   assert.match(addition, /:disabled/);
+  assert.match(addition, /:is\(option, optgroup\):disabled/);
   assert.match(addition, /background-color:\s*var\(--cb-surface-1\)/);
   assert.match(addition, /color:\s*var\(--cb-text\)/);
   assert.match(addition, /color:\s*var\(--cb-text-muted\)/);
