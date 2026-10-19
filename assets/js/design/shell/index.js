@@ -25,6 +25,7 @@ const DEFAULT_GROUP = 'default';
 const FULLSCREEN_ROOT_CLASS = 'is-fullscreen';
 const FULLSCREEN_DOCUMENT_CLASS = 'cb-core-design-shell-focus-mode';
 const FULLSCREEN_EVENT = 'cb:design-shell:fullscreenchange';
+const FULLSCREEN_BEFORE_EXIT_EVENT = 'cb:design-shell:beforeexit';
 const SHELL_READY_EVENT = 'cb:design-shell:ready';
 const FULLSCREEN_ENTER_CLASS = 'is-entering';
 const FULLSCREEN_EXIT_CLASS = 'is-exiting';
@@ -334,6 +335,14 @@ export const createDesignerShell = (root, {
 			return false;
 		}
 		if (!fullscreenState) return false;
+		// Base launch owns the exit decision. Every user-initiated exit path,
+		// including Escape and a detached fullscreen control, must be guardable.
+		// Forced internal teardown (immediate) is not an ordinary close intent.
+		if (!immediate && !root.dispatchEvent(new CustomEvent(FULLSCREEN_BEFORE_EXIT_EVENT, {
+			bubbles: true,
+			cancelable: true,
+			detail: Object.freeze({ reason: 'close' }),
+		}))) return false;
 
 		fullscreenState = false;
 		exitPending = true;
