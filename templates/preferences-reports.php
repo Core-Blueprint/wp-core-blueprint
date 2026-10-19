@@ -133,7 +133,9 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 								aria-selected="true"
 								data-cb-design-shell-group="palette"
 								data-cb-design-shell-tab="elements"
+								data-cb-design-shell-palette-role="elements"
 							><?php esc_html_e( 'Elements', 'core-blueprint' ); ?></button>
+							<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-group="palette" data-cb-design-shell-tab="layers" data-cb-design-shell-palette-role="layers"><?php esc_html_e( 'Layers', 'core-blueprint' ); ?></button>
 						</div>
 						<div
 							class="cb-core-design-shell__panel"
@@ -143,6 +145,9 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 							<div class="cb-core-design-shell__panel-body">
 								<div class="cb-core-design-shell__palette-grid" data-cb-report-elements></div>
 							</div>
+						</div>
+						<div class="cb-core-design-shell__panel" data-cb-design-shell-group="palette" data-cb-design-shell-panel="layers" hidden>
+							<div class="cb-core-design-shell__panel-body" data-cb-report-layers></div>
 						</div>
 					</section>
 
@@ -167,16 +172,11 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 					>
 						<div class="cb-core-design-shell__tabs" role="tablist" aria-label="<?php esc_attr_e( 'Designer panels', 'core-blueprint' ); ?>">
 							<button type="button" class="cb-core-design-shell__tab is-active" role="tab" aria-selected="true" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector"><?php esc_html_e( 'Inspector', 'core-blueprint' ); ?></button>
-							<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="layers" data-cb-design-shell-sidebar-role="layers"><?php esc_html_e( 'Layers', 'core-blueprint' ); ?></button>
 							<button type="button" class="cb-core-design-shell__tab" role="tab" aria-selected="false" data-cb-design-shell-tab="settings" data-cb-design-shell-sidebar-role="settings"><?php esc_html_e( 'Settings', 'core-blueprint' ); ?></button>
 						</div>
 
 						<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="inspector" data-cb-design-shell-sidebar-role="inspector">
 							<div class="cb-core-design-shell__panel-body" data-cb-report-inspector></div>
-						</div>
-
-						<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="layers" data-cb-design-shell-sidebar-role="layers" hidden>
-							<div class="cb-core-design-shell__panel-body" data-cb-report-layers></div>
 						</div>
 
 						<div class="cb-core-design-shell__panel cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="settings" data-cb-design-shell-sidebar-role="settings" hidden>
