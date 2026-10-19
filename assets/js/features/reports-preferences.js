@@ -158,9 +158,9 @@ if ( FORM ) {
 	let designerShell = null;
 	let selectionController = null;
 
-	const setSaveState = ( state ) => {
+	const setSaveState = ( state, message = '' ) => {
 		if ( ! shell ) return;
-		shell.dispatchEvent( new CustomEvent( 'cb:design-shell:savechange', { detail: { state } } ) );
+		shell.dispatchEvent( new CustomEvent( 'cb:design-shell:savechange', { detail: { state, message } } ) );
 	};
 
 	const setPreviewState = ( message, kind = 'pending' ) => {
@@ -168,6 +168,7 @@ if ( FORM ) {
 		previewState.textContent = message;
 		previewState.dataset.kind = kind;
 		previewState.hidden = message === '';
+		if ( kind === 'error' && message ) window.cbCore?.toast?.error?.( message );
 	};
 
 	const ensurePreviewHost = () => {
@@ -642,22 +643,19 @@ if ( FORM ) {
 
 	saveBtn?.addEventListener( 'click', async () => {
 		if ( ! nonce ) {
-			setSaveState( 'error' );
-			setPreviewState( i18n.reportsNonceMissing || 'Nonce missing - reload the page.', 'error' );
+			setSaveState( 'error', i18n.reportsNonceMissing || 'Nonce missing - reload the page.' );
 			return;
 		}
 		const hex = colorHexEl?.value || colorEl?.value || '';
 		if ( ! /^#[0-9a-fA-F]{6}$/.test( hex ) ) {
-			setSaveState( 'error' );
-			setPreviewState( i18n.brandingInvalidHex || 'Invalid accent colour.', 'error' );
+			setSaveState( 'error', i18n.brandingInvalidHex || 'Invalid accent colour.' );
 			return;
 		}
 		let submitted;
 		try {
 			submitted = captureRequest();
 		} catch ( error ) {
-			setSaveState( 'error' );
-			setPreviewState( error.message, 'error' );
+			setSaveState( 'error', error.message );
 			return;
 		}
 		saveInFlight = true;
@@ -677,8 +675,7 @@ if ( FORM ) {
 		} catch ( error ) {
 			// A failed or lost response may still follow a committed server write.
 			saveUncertain = true;
-			setSaveState( 'error' );
-			setPreviewState( requestErrorMessage( error, 'Reports save outcome requires a reload.' ), 'error' );
+			setSaveState( 'error', requestErrorMessage( error, 'Reports save outcome requires a reload.' ) );
 		} finally {
 			saveInFlight = false;
 			syncDirtyIndicator();
@@ -702,8 +699,7 @@ if ( FORM ) {
 		try {
 			submitted = captureRequest();
 		} catch ( error ) {
-			setSaveState( 'error' );
-			setPreviewState( error.message, 'error' );
+			setSaveState( 'error', error.message );
 			return;
 		}
 		saveInFlight = true;
@@ -724,8 +720,7 @@ if ( FORM ) {
 			await renderPreview();
 		} catch ( error ) {
 			saveUncertain = true;
-			setSaveState( 'error' );
-			setPreviewState( requestErrorMessage( error, 'Reports reset requires reload to reconcile history.' ), 'error' );
+			setSaveState( 'error', requestErrorMessage( error, 'Reports reset requires reload to reconcile history.' ) );
 		} finally {
 			saveInFlight = false;
 			syncDirtyIndicator();

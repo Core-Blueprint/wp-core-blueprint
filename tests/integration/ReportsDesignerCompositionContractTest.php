@@ -261,7 +261,8 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "cb:design-shell:savechange", $runtime );
 		self::assertStringContainsString( "setSaveState( 'saving' )", $runtime );
 		self::assertStringContainsString( "setSaveState( 'saved' )", $runtime );
-		self::assertStringContainsString( "setSaveState( 'error' )", $runtime );
+		self::assertStringContainsString( "setSaveState( 'error', ", $runtime );
+		self::assertStringContainsString( "const setSaveState = ( state, message = '' ) => {", $runtime );
 		self::assertStringContainsString( "'previewLoading'", $i18n );
 		self::assertStringContainsString( "'previewFailed'", $i18n );
 		self::assertStringNotContainsString( 'window.location', $runtime );

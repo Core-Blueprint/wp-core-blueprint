@@ -112,7 +112,6 @@ foreach ( (array) $templates as $definition ) {
 							<div class="cb-core-design-shell__toolbar-group">
 								<button type="button" class="button cb-core-button" data-cb-design-shell-fullscreen aria-pressed="false" aria-label="<?php echo esc_attr( $fullscreen_label ); ?>"><?php echo esc_html( $fullscreen_label ); ?></button>
 							</div>
-							<div class="cb-core-design-shell__toolbar-status cb-core-mail-designer__toolbar-status" data-cb-design-shell-status data-cb-mail-preview-status aria-live="polite"></div>
 							<button type="submit" class="button button-primary cb-core-button cb-core-button--primary" data-cb-design-shell-primary-action><?php esc_html_e( 'Save template', 'core-blueprint' ); ?></button>
 						</div>
 
@@ -153,6 +152,7 @@ foreach ( (array) $templates as $definition ) {
 										<span class="cb-core-design-shell__canvas-description"><?php esc_html_e( 'Click an element to inspect it. Double-click text to edit it.', 'core-blueprint' ); ?></span>
 									</div>
 								</div>
+								<span class="screen-reader-text" data-cb-mail-preview-status aria-live="polite"></span>
 								<div class="cb-core-design-shell__canvas-workarea cb-core-mail-designer__preview-frame" data-cb-mail-preview-frame>
 									<iframe title="<?php esc_attr_e( 'Editable mail preview', 'core-blueprint' ); ?>" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" data-cb-mail-preview srcdoc="<?php echo esc_attr( (string) ( $preview['html'] ?? '' ) ); ?>"></iframe>
 								</div>

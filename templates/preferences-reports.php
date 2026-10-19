@@ -93,9 +93,6 @@ $can_manage_branding = current_user_can( 'cb_manage_branding' );
 						</select>
 					</div>
 					<div class="cb-core-design-shell__toolbar-group">
-						<span data-cb-design-shell-status aria-live="polite"></span>
-					</div>
-					<div class="cb-core-design-shell__toolbar-group">
 						<span data-cb-design-shell-group-label><?php esc_html_e( 'History', 'core-blueprint' ); ?></span>
 						<button type="button" class="button cb-core-button" data-cb-design-shell-undo disabled><?php esc_html_e( 'Undo', 'core-blueprint' ); ?></button>
 						<button type="button" class="button cb-core-button" data-cb-design-shell-redo disabled><?php esc_html_e( 'Redo', 'core-blueprint' ); ?></button>

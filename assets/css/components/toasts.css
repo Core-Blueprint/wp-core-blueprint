@@ -23,6 +23,12 @@
 	max-width: calc(100vw - var(--cb-space-7));
 }
 
+/* The fullscreen Designer shell occupies z-index 100100. Its operation
+ * feedback must be above that shell without raising normal admin toasts. */
+body:has(.cb-core-design-shell.is-fullscreen) .cb-core-toast-container--core {
+	z-index: 100110;
+}
+
 .cb-core-toast-container--core .cb-core-toast {
 	display: flex;
 	align-items: center;

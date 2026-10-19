@@ -217,3 +217,15 @@ Designer Mode uses bounded readiness retries. Exhausting those retries is an exp
 This document is the v1 compatibility boundary. Existing members listed above may be fixed internally without changing consumer code. Removing or changing their consumer-visible semantics requires an explicit future API-version decision.
 
 New additive APIs may be introduced during the v1 lifecycle, but they are not part of the frozen contract until documented here and covered by public-boundary regression tests.
+
+## Base Designer notification contract (shared Toast presentation)
+
+Use the Base-owned Toast Foundation for transient success, error, warning and information feedback. The shared Designer Mode presentation maps the public `cb:design-shell:savechange` event to a Toast only on `saved` or `error`. `saving` and `idle` continue to control busy states without showing a notification. Pass the authoritative outcome in the event; never show a second consumer Toast for the same Save, and never dispatch `saved` merely because an HTTP response succeeded.
+
+```js
+shell.dispatchEvent(new CustomEvent('cb:design-shell:savechange', {
+  detail: { state: 'saved' }, // only after durable receipt and safe history rebase
+}));
+```
+
+Consumers that need preview failure notifications use the existing `window.cbCore.toast.error(message)` API, not toolbar text or private Toast imports. The Designer Mode asset helper enqueues Toast presentation. Other standalone screens explicitly enqueue `CoreBlueprint\\Core\\UI\\Assets::enqueue_toasts()` with the appropriate adapter and depend on `@cb-core/toast`. In Designer fullscreen, Toasts stack above the editor. Dirty state, Save progress, field validation and unrecoverable launch errors remain their own accessible persistent UI. See `docs/TOAST-FOUNDATION.md` for the full normative standard and adoption tests.

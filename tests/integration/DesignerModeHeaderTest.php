@@ -64,7 +64,8 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( '.cb-core-mail-designer.is-designer-mode-active .cb-core-mail-designer__workspace', $mail_css );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group', $shell_css );
 		self::assertStringContainsString( "\tflex: 0 0 auto;", $shell_css );
-		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-status:empty', $shell_css );
+		self::assertStringNotContainsString( '.cb-core-design-shell__toolbar-status', $shell_css );
+		self::assertStringNotContainsString( "end.append(status)", $launch );
 	}
 
 	public function test_foundation_owns_lucide_designer_icons_sidebar_roles_motion_and_viewport_state(): void {

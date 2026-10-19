@@ -102,3 +102,32 @@ Certificates should not import `core/toast.js`, `toasts.css`, or `toasts-native.
 - Identical visible messages are deduplicated by default to avoid repeated announcements.
 - Persistent feedback that must remain part of the page context should normally use the Notice or FormStatus Foundation instead of a toast.
 - Toasts should communicate temporary operation feedback, not replace validation text attached to a specific form field.
+
+## Designer Notification Standard v1
+
+Base Designer Mode is a Base-themed presentation surface. `CoreBlueprint\\Core\\Design\\Editor\\Assets::enqueue_designer_mode()` enqueues the Core Toast presentation on that screen so it remains available to native Base Designers and external consumers using the public Designer shell. The toast container is above the fullscreen shell while that shell is active, but normal wp-admin Toast stacking remains unchanged.
+
+**Save event contract:** dispatch `cb:design-shell:savechange` on the current `[data-cb-design-shell]` with `detail: { state, message? }`. The shared Base launch runtime updates the Save button busy state and emits one `window.cbCore.toast.success` for `saved`, or `window.cbCore.toast.error` for `error`. It emits **no Toast** for `saving` or `idle`. Messages supplied by consumers are displayed as plain text, never injected as HTML. Without a message, Base uses the existing translated `Saved.` / `Save failed.` strings.
+
+```js
+shell.dispatchEvent(new CustomEvent('cb:design-shell:savechange', {
+    bubbles: true,
+    detail: { state: 'saving' },
+}));
+// Only after authoritative persisted receipt + consumer rebase acceptance:
+shell.dispatchEvent(new CustomEvent('cb:design-shell:savechange', {
+    bubbles: true,
+    detail: { state: 'saved' },
+}));
+// A rejected/uncertain commit is an error, never optimistic success:
+shell.dispatchEvent(new CustomEvent('cb:design-shell:savechange', {
+    bubbles: true,
+    detail: { state: 'error', message: 'The save outcome is uncertain. Reload before saving.' },
+}));
+```
+
+**Consumer ownership:** Base does **not** infer persistence from HTTP success. Each extension must validate its own durable server receipt and history rebase before sending `saved`. Never additionally show a consumer-owned save Toast after dispatching that event: duplicate notifications are forbidden. Standalone consumers outside Designer Mode must explicitly enqueue the correct WP Native Toast adapter and declare `@cb-core/toast` as a module dependency (see above). Do not import the private Base toast module source.
+
+**Other operations:** use `window.cbCore.toast.error/info/warning/success` for non-save operation outcomes such as failed previews, context switches or imports, after ensuring the public Toast Foundation is enqueued. Suppress noisy toasts for each keystroke, preview refresh, selection change or `saving`. Keep dirty indicators, button busy state, field-attached validation and persistent failure notices in their appropriate contexts. Do not render transient success/error/status text in the Designer toolbar. A startup failure that prevents the Designer from opening must retain a persistent, accessible inline error in addition to any transient feedback.
+
+**Installed adoption gate:** A Base SOURCE patch does not automatically migrate custom notification markup in Evaluator, Automations, Newsletter or Reports. Each extension needs native screen smoke tests for Save/Reset/Preview errors, concurrent/uncertain-save refusal, responsive/fullscreen Toast visibility, keyboard focus/announcements and absence of duplicate notifications.

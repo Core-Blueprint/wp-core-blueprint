@@ -161,22 +161,6 @@ html.cb-core-design-shell-focus-mode body {
 	box-shadow: inset 0 0 0 1px var(--cb-accent);
 }
 
-.cb-core-design-shell__toolbar-status {
-	max-width: 160px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-status {
-	flex: 0 1 160px;
-	min-width: 0;
-}
-
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-status:empty {
-	display: none;
-}
-
 .cb-core-design-launch-wrap {
 	display: flex;
 	justify-content: flex-start;
@@ -461,10 +445,6 @@ html.cb-core-design-shell-focus-mode body {
 	.cb-core-design-shell__toolbar:not(.cb-core-design-shell__toolbar--designer) {
 		align-items: flex-start;
 		flex-wrap: wrap;
-	}
-
-	.cb-core-design-shell__toolbar-status {
-		display: none;
 	}
 
 	.cb-core-design-shell__workspace {

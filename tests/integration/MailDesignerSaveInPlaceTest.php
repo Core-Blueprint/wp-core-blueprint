@@ -77,7 +77,9 @@ final class CB_Mail_Designer_Save_In_Place_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'save.disabled = busy', $launch );
 		self::assertStringContainsString( "save.setAttribute('aria-busy', 'true')", $launch );
 		self::assertStringContainsString( "save.removeAttribute('aria-busy')", $launch );
-		self::assertStringContainsString( "status.classList.toggle('is-error', state === 'error')", $launch );
+		self::assertStringContainsString( "window.cbCore?.toast?.success?.(message", $launch );
+		self::assertStringContainsString( "window.cbCore?.toast?.error?.(message", $launch );
+		self::assertStringNotContainsString( 'status.textContent = message', $launch );
 		self::assertStringContainsString( 'shell.dataset.cbDesignShellSaveState = state', $launch );
 		self::assertStringNotContainsString( 'data-cb-mail-', $launch );
 	}
