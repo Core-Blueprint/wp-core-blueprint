@@ -231,4 +231,6 @@ def build() -> tuple[Path, Path, Path]:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 1:
+        fail("Usage: ./tools/build-dev (no arguments; INTERNAL TEST ONLY).")
     build()
