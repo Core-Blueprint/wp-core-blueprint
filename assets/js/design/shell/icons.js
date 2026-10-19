@@ -111,6 +111,14 @@ const ICONS = Object.freeze({
 		['path', { d: 'M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12' }],
 		['path', { d: 'M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17' }],
 	]),
+	'list-tree': Object.freeze([
+		['path', { d: 'M8 6h13' }],
+		['path', { d: 'M8 12h13' }],
+		['path', { d: 'M8 18h13' }],
+		['path', { d: 'M3 6h.01' }],
+		['path', { d: 'M3 12h.01' }],
+		['path', { d: 'M3 18h.01' }],
+	]),
 	shapes: Object.freeze([
 		['rect', { x: '3', y: '3', width: '7', height: '7', rx: '1' }],
 		['circle', { cx: '17', cy: '6.5', r: '3.5' }],
