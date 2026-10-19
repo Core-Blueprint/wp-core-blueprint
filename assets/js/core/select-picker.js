@@ -171,10 +171,14 @@ const enhance = (select, options = {}) => {
 		panel.style.top = Math.round(Math.max(gutter, Math.min(y, viewportHeight - pop.height - gutter))) + 'px';
 	};
 	const onHeaderViewportChange = () => locateHeaderPanel();
+	const onHeaderFocusOutside = (event) => {
+		if (!root.contains(event.target) && !panel.contains(event.target)) close();
+	};
 	const close = ({ focus = false } = {}) => {
 		if (headerMode) {
 			window.removeEventListener('resize', onHeaderViewportChange);
 			window.removeEventListener('scroll', onHeaderViewportChange, true);
+			document.removeEventListener('focusin', onHeaderFocusOutside);
 			if (panel.hasAttribute('popover') && panel.matches(':popover-open')) panel.hidePopover();
 		}
 		panel.hidden = true;
@@ -248,6 +252,7 @@ const enhance = (select, options = {}) => {
 			locateHeaderPanel();
 			window.addEventListener('resize', onHeaderViewportChange, { passive: true });
 			window.addEventListener('scroll', onHeaderViewportChange, { capture: true, passive: true });
+			document.addEventListener('focusin', onHeaderFocusOutside);
 		}
 		toggle.setAttribute('aria-expanded', 'true');
 		root.classList.add('is-open');
