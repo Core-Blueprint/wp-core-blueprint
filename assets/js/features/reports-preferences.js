@@ -286,10 +286,13 @@ if ( FORM ) {
 			if ( ! block ) return;
 			const button = document.createElement( 'button' );
 			button.type = 'button';
-			button.className = 'cb-core-design-shell__palette-item';
+			button.className = 'cb-core-design-shell__palette-item cb-core-design-shell__palette-item--stacked';
 			button.dataset.cbReportElement = type;
 			button.setAttribute( 'aria-pressed', type === selectedBlock()?.type ? 'true' : 'false' );
-			button.textContent = blockLabel( type );
+			const label = document.createElement( 'span' );
+			label.className = 'cb-core-design-shell__palette-item-label';
+			label.textContent = blockLabel( type );
+			button.append( label );
 			decorateDesignerElement( button, type, { label: blockLabel( type ) } );
 			button.addEventListener( 'click', () => selectBlock( type ) );
 			elementsBody.append( button );
