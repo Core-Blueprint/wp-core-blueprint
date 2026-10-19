@@ -123,7 +123,7 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 			'data-cb-design-shell-tab="elements"',
 			'data-cb-design-shell-panel="elements"',
 			'data-cb-design-shell-sidebar-role="inspector"',
-			'data-cb-design-shell-sidebar-role="layers"',
+			'data-cb-design-shell-palette-role="layers"',
 			'data-cb-design-shell-sidebar-role="settings"',
 			'data-cb-report-elements',
 			'data-cb-report-inspector',
@@ -132,6 +132,14 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		] as $contract ) {
 			self::assertStringContainsString( $contract, $template );
 		}
+
+		self::assertStringNotContainsString( 'data-cb-design-shell-sidebar-role="layers"', $template );
+		self::assertStringContainsString( 'data-cb-design-shell-panel="layers"', $template );
+		self::assertLessThan(
+			strpos( $template, '<main' ),
+			strpos( $template, 'data-cb-report-layers' ),
+			'Layers must render to the left of the canvas.'
+		);
 
 		foreach ( [
 			'cb-core-show-logo',
