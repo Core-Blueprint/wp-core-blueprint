@@ -55,7 +55,7 @@ class DesignDocumentMigrationCliGateTest(unittest.TestCase):
 
     def test_isolation_guard_matches_canonical_runner_slot_contract(self):
         source = FIXTURE.read_text(encoding="utf-8")
-        match = re.search(r"preg_match\\( '(/[^']+/D)', \\$slot \\)", source)
+        match = re.search(r"preg_match\( '(/[^']+/D)', \$slot \)", source)
         self.assertIsNotNone(
             match, "PHP fixture slot guard must expose one testable regex"
         )
