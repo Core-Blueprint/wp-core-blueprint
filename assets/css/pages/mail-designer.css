@@ -171,6 +171,13 @@
 	cursor: pointer;
 }
 
+/* Clipboard enhancement adds cb-core-clipboard-control and normally sets
+ * inline-flex. Token pills have no icon and need block text for ellipsis.
+ * Keep this consumer-specific; do not change shared Clipboard controls. */
+button.cb-core-mail-binding.cb-core-clipboard-control:not(.cb-core-button) {
+	display: block;
+}
+
 .cb-core-mail-binding:hover,
 .cb-core-mail-binding:focus-visible {
 	border-color: var(--cb-accent);
