@@ -2,6 +2,7 @@ import {
 	DESIGNER_ICON_NAMES,
 	createDesignerIcon,
 	decorateDesignerControl,
+	decorateDesignerElement,
 } from './icons.js';
 import {
 	DESIGNER_LAYER_ACTIONS,
@@ -38,7 +39,7 @@ const FOCUSABLE_SELECTOR = [
 	'[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-export const DESIGNER_SIDEBAR_ROLES = Object.freeze(['inspector', 'layers', 'settings']);
+export const DESIGNER_SIDEBAR_ROLES = Object.freeze(['inspector', 'settings']);
 
 const SIDEBAR_ROLE_LABELS = Object.freeze({
 	inspector: 'Inspector',
@@ -136,6 +137,13 @@ export const createDesignerShell = (root, {
 	const fullscreenLabel = element(fullscreen, '[data-cb-design-shell-fullscreen-label]');
 	const tabs = elements(root, '[data-cb-design-shell-tab]');
 	const panels = elements(root, '[data-cb-design-shell-panel]');
+	// Left palette tabs are independent of right Inspector/Settings navigation.
+	// No Layers role means no Layers tab is introduced by Base.
+	tabs.filter((tab) => tab.dataset.cbDesignShellGroup === 'palette').forEach((tab) => {
+		const role = String(tab.dataset.cbDesignShellPaletteRole || tab.dataset.cbDesignShellTab || '').trim();
+		const iconName = role === 'elements' ? 'shapes' : role === 'layers' ? 'layers' : '';
+		if (iconName) decorateDesignerControl(tab, iconName, { label: tab.textContent });
+	});
 	const frames = elements(root, 'iframe');
 	const groups = new Map();
 	let fullscreenState = false;
@@ -637,4 +645,5 @@ export {
 	createDesignerLayerTree,
 	createDesignerSelectionController,
 	decorateDesignerControl,
+	decorateDesignerElement,
 };
