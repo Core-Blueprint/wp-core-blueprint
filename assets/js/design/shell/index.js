@@ -150,7 +150,7 @@ export const createDesignerShell = (root, {
 	// No Layers role means no Layers tab is introduced by Base.
 	tabs.filter((tab) => tab.dataset.cbDesignShellGroup === 'palette').forEach((tab) => {
 		const role = String(tab.dataset.cbDesignShellPaletteRole || tab.dataset.cbDesignShellTab || '').trim();
-		const iconName = role === 'elements' ? 'shapes' : role === 'layers' ? 'layers' : '';
+		const iconName = role === 'elements' ? 'shapes' : role === 'layers' ? 'layers' : role === 'navigation' ? 'list-tree' : '';
 		if (iconName) decorateDesignerControl(tab, iconName, { label: tab.textContent });
 	});
 	const frames = elements(root, 'iframe');
