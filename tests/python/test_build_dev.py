@@ -108,6 +108,16 @@ class DevBuildContractTest(unittest.TestCase):
         self.fake_build()
         self.assertEqual(b"accepted-public-release", release.read_bytes())
 
+    def test_canonical_packager_location_is_independent_of_source_fixture(self):
+        # A minimal test source is not an installed copy of engineering tools.
+        # Runtime package logic must be loaded beside the real dev entrypoint.
+        with mock.patch.object(dev, "SOURCE", self.source):
+            loaded = dev.canonical_builder()
+        self.assertEqual(
+            (ROOT / "tools/build-release").resolve(),
+            Path(loaded.__file__).resolve(),
+        )
+
     def test_source_mutation_after_checks_is_rejected(self):
         def mutation(*args):
             (self.source / "uninstall.php").write_text("changed")
