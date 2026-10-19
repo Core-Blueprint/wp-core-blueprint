@@ -151,12 +151,6 @@ foreach ( (array) $templates as $definition ) {
 							</section>
 
 							<section class="cb-core-design-shell__canvas cb-core-design-shell__canvas--composed cb-core-mail-designer__canvas-panel" aria-label="<?php esc_attr_e( 'Visual mail canvas', 'core-blueprint' ); ?>">
-								<div class="cb-core-design-shell__canvas-header">
-									<div class="cb-core-design-shell__canvas-heading">
-										<strong class="cb-core-design-shell__canvas-title"><?php esc_html_e( 'Visual canvas', 'core-blueprint' ); ?></strong>
-										<span class="cb-core-design-shell__canvas-description"><?php esc_html_e( 'Click an element to inspect it. Double-click text to edit it.', 'core-blueprint' ); ?></span>
-									</div>
-								</div>
 								<span class="screen-reader-text" data-cb-mail-preview-status aria-live="polite"></span>
 								<div class="cb-core-design-shell__canvas-workarea cb-core-mail-designer__preview-frame" data-cb-mail-preview-frame>
 									<iframe title="<?php esc_attr_e( 'Editable mail preview', 'core-blueprint' ); ?>" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" data-cb-mail-preview srcdoc="<?php echo esc_attr( (string) ( $preview['html'] ?? '' ) ); ?>"></iframe>
