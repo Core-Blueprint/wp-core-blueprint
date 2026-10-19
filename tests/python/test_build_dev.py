@@ -109,6 +109,7 @@ class DevBuildContractTest(unittest.TestCase):
     def test_source_mutation_after_checks_is_rejected(self):
         def mutation(*args):
             (self.source / "uninstall.php").write_text("changed")
+            return (2, 2)
         with mock.patch.object(dev, "SOURCE", self.source), mock.patch.object(
             dev, "OUTPUT", self.output
         ), mock.patch.object(dev, "check_tools"), mock.patch.object(
