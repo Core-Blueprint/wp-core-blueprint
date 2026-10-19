@@ -1,6 +1,6 @@
 # Base Designer Exit Guard v1
 
-Status: **SOURCE candidate. Installed Base + Automations acceptance is still required.**
+Status: **SOURCE candidate. Previous integrated DEV ZIP was reported sandbox-stable; the updated six-locale i18n build still requires local Level 1/build and installed acceptance.**
 
 ## Ownership and lifecycle
 
@@ -42,7 +42,12 @@ const unregister = window.cbCore.designerExitGuard.register(shell, {
 ```
 
 Consumers own **only** the dirty predicate, existing Save authority and
-translated user-facing labels. Base owns the modal, single-flight guard,
+optional product-specific translated label overrides. Base owns the canonical
+13 translated default labels in six locales (NL/DE/FR/ES/IT/PT) through
+`wp_localize_script` on `DESIGNER_EXIT_GUARD_SCRIPT`, before the JS guard
+initializes. The two existing source strings `Save changes` and `Cancel`
+are reused rather than duplicated. Domain-specific overrides take precedence;
+unspecified labels inherit translated Base defaults. Base owns the modal, single-flight guard,
 fullscreen replay, toast mapping and native `beforeunload` for registered
 unsaved work. The adapter must not create a second exit modal, Escape handler
 or browser unload handler. Context-switch confirmation is a separate consumer
@@ -78,6 +83,8 @@ Designer is declared ready. The same installed Base package must advertise
 2. Automations single-modal clean and dirty acceptance with a compatible same-ZIP Base.
 3. Save & Close with verified CAS receipt, refusal, network-loss uncertainty and
    post-submit edits; revision and Undo/Redo stay authoritative.
-4. i18n parity for shared Base text and all consumer-provided labels (six locales).
+4. Canonical Base gettext catalog/source parity for all 13 Exit Guard defaults
+   (six locales), runtime default injection and optional consumer override
+   precedence. Product-specific translations remain consumer-owned.
 5. Successful Level 1, installed smoke and build verification. No main merge
    without explicit owner GO.
