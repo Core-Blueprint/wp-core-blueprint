@@ -136,8 +136,9 @@
 			hideTransition(shell, transition, generation, 120);
 		}).catch((error) => {
 			control.value = previousValue;
-			setTransition(shell, 'error', error?.message || label('error', 'Could not load selection.'));
-			hideTransition(shell, transition, generation, 1100);
+			// Context-switch failures are operation feedback, not toolbar/overlay notices.
+			window.cbCore?.toast?.error?.(error?.message || label('error', 'Could not load selection.'));
+			hideTransition(shell, transition, generation, 0);
 		}).finally(() => {
 			control.disabled = false;
 			activeRoots.delete(root);
