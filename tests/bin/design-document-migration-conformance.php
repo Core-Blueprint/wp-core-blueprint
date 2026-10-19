@@ -107,6 +107,8 @@ $workspace_owned = $slot_valid
 	&& $root === $workspace . '/wp'
 	&& is_dir( $workspace )
 	&& ! is_link( $workspace )
+	&& is_dir( $root )
+	&& ! is_link( $root )
 	&& 0700 === ( fileperms( $workspace ) & 0777 )
 	&& is_file( $owner_file )
 	&& ! is_link( $owner_file )
@@ -131,7 +133,7 @@ $owner_valid = is_array( $owner )
 	&& is_string( $owner['git_sha'] ?? null )
 	&& 1 === preg_match( '/^[a-f0-9]{40}$/D', $owner['git_sha'] )
 	&& in_array( $owner['wordpress'] ?? null, [ '7.0', '7.1' ], true )
-	&& $owner['schema'] === 1
+	&& ( $owner['schema'] ?? null ) === 1
 	&& $owner === $expected_owner
 	&& $owner['wordpress'] === get_bloginfo( 'version' );
 
