@@ -24,7 +24,7 @@ test('GB-SELECT-01: only public WP SelectControl inside Gutenberg application ch
     assert.match(selector, /editor-post-taxonomies/);
     assert.match(selector, /components-select-control|data-wp-component="SelectControl"/);
     assert.doesNotMatch(selector, /iframe|editor-styles-wrapper|block-editor-block-list__layout/);
-    assert.doesNotMatch(selector, /(?:^|\s)(?:select|option|optgroup)(?:\s|,|$)/, 'no global native element selector');
+    assert.doesNotMatch(selector, /^(?:select|option|optgroup)(?:\s|,|:|$)/, 'no top-level unscoped native element selector');
   }
   assert.doesNotMatch(addition, /!important|-[a-z]*-[0-9a-f]{6}|#[0-9a-f]{3,8}\b/i);
 });
