@@ -341,3 +341,159 @@
 	border-color: var(--cb-core-picker-accent);
 	background: var(--cb-tint-accent);
 }
+
+
+/* Header Select Picker: compact title trigger with the same real select model.
+ * Its manual popover enters the top layer, escaping overflow-hidden Designer
+ * rails without changing Base sidebar geometry or global select styling.
+ */
+.cb-core-picker.cb-core-select-picker--header {
+	display: inline-flex;
+	align-items: center;
+	inline-size: auto;
+	max-inline-size: 100%;
+}
+
+.cb-core-select-picker--header .cb-core-select-picker__enhanced {
+	display: inline-flex;
+	min-inline-size: 0;
+	max-inline-size: 100%;
+}
+
+.cb-core-wrap .cb-core-select-picker--header .cb-core-select-picker__toggle,
+.cb-core-select-picker--header .cb-core-select-picker__toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--cb-space-2);
+	inline-size: auto;
+	max-inline-size: 100%;
+	block-size: auto;
+	min-block-size: 0;
+	margin: 0;
+	padding: var(--cb-space-1);
+	border: 0;
+	border-radius: var(--cb-radius-sm);
+	box-shadow: none;
+	background: transparent;
+	color: var(--cb-text-strong);
+	font: inherit;
+	font-weight: inherit;
+	line-height: inherit;
+	text-align: center;
+}
+
+.cb-core-select-picker--header .cb-core-picker__toggle-main {
+	min-inline-size: 0;
+	flex: 0 1 auto;
+}
+
+.cb-core-select-picker--header .cb-core-picker__toggle-copy,
+.cb-core-select-picker--header .cb-core-picker__toggle-text {
+	min-inline-size: 0;
+	max-inline-size: 100%;
+	font: inherit;
+	font-weight: inherit;
+	line-height: inherit;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cb-core-select-picker--header .cb-core-select-picker__chevron {
+	flex: 0 0 var(--cb-icon-size-default);
+	inline-size: var(--cb-icon-size-default);
+	block-size: var(--cb-icon-size-default);
+}
+
+.cb-core-wrap .cb-core-select-picker--header .cb-core-select-picker__toggle:hover,
+.cb-core-select-picker--header .cb-core-select-picker__toggle:hover {
+	border: 0;
+	background: transparent;
+	color: var(--cb-text-strong);
+}
+
+.cb-core-wrap .cb-core-select-picker--header .cb-core-select-picker__toggle:focus-visible,
+.cb-core-select-picker--header .cb-core-select-picker__toggle:focus-visible {
+	border: 0;
+	outline: 2px solid var(--cb-accent);
+	outline-offset: 1px;
+	box-shadow: none;
+}
+
+.cb-core-select-picker--header .cb-core-select-picker__panel {
+	position: fixed;
+	inset: auto;
+	z-index: 1000;
+	inline-size: min(16rem, calc(100vw - 24px));
+	max-inline-size: calc(100vw - 24px);
+	max-block-size: min(20rem, calc(100dvh - 24px));
+	margin: 0;
+	padding: var(--cb-space-2);
+	overflow-x: hidden;
+	overflow-y: auto;
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+	background: var(--cb-surface-2);
+	color: var(--cb-text);
+	box-shadow: var(--cb-shadow-lg);
+	box-sizing: border-box;
+}
+
+.cb-core-select-picker--header .cb-core-select-picker__panel[hidden] {
+	display: none;
+}
+
+.cb-core-select-picker--header .cb-core-select-picker__results {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	max-block-size: none;
+	margin: 0;
+	padding: 0;
+	overflow: visible;
+}
+
+.cb-core-select-picker--header .cb-core-select-picker__group {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.cb-core-select-picker--header .cb-core-select-picker__group-options {
+	gap: var(--cb-space-1);
+}
+
+.cb-core-wrap .cb-core-select-picker--header .cb-core-select-picker__option,
+.cb-core-select-picker--header .cb-core-select-picker__option {
+	min-block-size: var(--cb-button-height-compact);
+	margin: 0;
+	padding: var(--cb-space-2) var(--cb-space-3);
+	border: 0;
+	border-radius: var(--cb-radius-sm);
+	background: transparent;
+	color: var(--cb-text);
+	text-align: start;
+	line-height: var(--cb-lh-normal);
+}
+
+.cb-core-wrap .cb-core-select-picker--header .cb-core-select-picker__option:is(:hover, :focus-visible),
+.cb-core-select-picker--header .cb-core-select-picker__option:is(:hover, :focus-visible) {
+	border: 0;
+	outline: 2px solid var(--cb-accent);
+	outline-offset: -2px;
+	box-shadow: none;
+	background: var(--cb-surface-3);
+	color: var(--cb-text-strong);
+}
+
+.cb-core-select-picker--header .cb-core-select-picker__option.is-selected::after {
+	content: '✓';
+	margin-inline-start: auto;
+	color: var(--cb-accent);
+	font-weight: var(--cb-fw-semibold);
+}
+
+.cb-core-select-picker--header .cb-core-select-picker__option.is-selected {
+	background: var(--cb-tint-accent);
+	color: var(--cb-text-strong);
+}
