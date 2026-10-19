@@ -318,3 +318,117 @@ body.cb-admin-theme .edit-post-meta-boxes-area .postbox > .inside {
 	background: var(--cb-surface-1);
 	color: var(--cb-text);
 }
+
+/*
+ * Native Gutenberg SelectControl in application chrome (including Post
+ * taxonomies and Inspector settings). Match public WordPress component
+ * markup, never generated class names or editor-content/iframe selectors.
+ * The OS/browser may own the opened select popup; color-scheme is a hint
+ * and option/optgroup colors are best-effort, not a custom dropdown.
+ */
+body.cb-admin-theme :is(
+	.interface-interface-skeleton__sidebar,
+	.interface-complementary-area,
+	.editor-sidebar,
+	.editor-post-taxonomies,
+	.components-popover__content
+) :is(
+	.components-select-control .components-input-control__container,
+	[data-wp-component="SelectControl"] .components-input-control__container
+) {
+	background-color: var(--cb-surface-1);
+}
+
+body.cb-admin-theme :is(
+	.interface-interface-skeleton__sidebar,
+	.interface-complementary-area,
+	.editor-sidebar,
+	.editor-post-taxonomies,
+	.components-popover__content
+) :is(
+	select.components-select-control__input,
+	.components-select-control select,
+	[data-wp-component="SelectControl"] select
+) {
+	background-color: var(--cb-surface-1);
+	color: var(--cb-text);
+	border-color: var(--cb-border);
+	accent-color: var(--cb-accent);
+}
+
+/* Native option painting is browser/OS-dependent. No custom menu, forced
+ * focus ring, hover style, sizes or keyboard interaction is introduced. */
+body.cb-admin-theme :is(
+	.interface-interface-skeleton__sidebar,
+	.interface-complementary-area,
+	.editor-sidebar,
+	.editor-post-taxonomies,
+	.components-popover__content
+) :is(
+	select.components-select-control__input,
+	.components-select-control select,
+	[data-wp-component="SelectControl"] select
+) :is(option, optgroup) {
+	background-color: var(--cb-surface-1);
+	color: var(--cb-text);
+}
+
+/* Disabled options keep a distinct semantic foreground when the platform
+ * permits native menu item coloring; OS selection remains authoritative. */
+body.cb-admin-theme :is(
+	.interface-interface-skeleton__sidebar,
+	.interface-complementary-area,
+	.editor-sidebar,
+	.editor-post-taxonomies,
+	.components-popover__content
+) :is(
+	select.components-select-control__input,
+	.components-select-control select,
+	[data-wp-component="SelectControl"] select
+) :is(option, optgroup):disabled {
+	color: var(--cb-text-muted);
+}
+
+body.cb-admin-theme :is(
+	.interface-interface-skeleton__sidebar,
+	.interface-complementary-area,
+	.editor-sidebar,
+	.editor-post-taxonomies,
+	.components-popover__content
+) :is(
+	select.components-select-control__input,
+	.components-select-control select,
+	[data-wp-component="SelectControl"] select
+):disabled {
+	color: var(--cb-text-muted);
+}
+
+/* Attach native popup color preference to selects only, following the
+ * active HUD theme immediately rather than changing document-wide chrome. */
+html[data-cb-theme="core_blueprint_dark"] body.cb-admin-theme :is(
+	.interface-interface-skeleton__sidebar,
+	.interface-complementary-area,
+	.editor-sidebar,
+	.editor-post-taxonomies,
+	.components-popover__content
+) :is(
+	select.components-select-control__input,
+	.components-select-control select,
+	[data-wp-component="SelectControl"] select
+) {
+	color-scheme: dark;
+}
+
+html[data-cb-theme="core_blueprint_light"] body.cb-admin-theme :is(
+	.interface-interface-skeleton__sidebar,
+	.interface-complementary-area,
+	.editor-sidebar,
+	.editor-post-taxonomies,
+	.components-popover__content
+) :is(
+	select.components-select-control__input,
+	.components-select-control select,
+	[data-wp-component="SelectControl"] select
+) {
+	color-scheme: light;
+}
