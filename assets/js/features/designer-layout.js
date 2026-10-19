@@ -2,14 +2,14 @@
 	'use strict';
 
 	const config = window.cbCoreDesignerLaunch || {};
-	const PALETTE_ROLE_ORDER = Object.freeze(['navigation', 'elements', 'dynamic-data']);
+	const PALETTE_ROLE_ORDER = Object.freeze(['navigation', 'elements', 'layers']);
 	const observedRoots = new WeakSet();
 	const pendingRoots = new WeakSet();
 
 	const canonicalPaletteLabel = (role, panel) => String(
 		(role === 'navigation' ? panel?.dataset.cbDesignShellPaletteLabel : '')
 		|| config.paletteLabels?.[role]
-		|| (role === 'navigation' ? 'Navigation' : role === 'dynamic-data' ? 'Dynamic data' : 'Elements')
+		|| (role === 'navigation' ? 'Navigation' : role === 'layers' ? 'Layers' : 'Elements')
 	).trim();
 
 	const setData = (node, key, value) => {
@@ -62,7 +62,9 @@
 			const panel = panels.find((candidate) => {
 				const explicitRole = String(candidate.dataset.cbDesignShellPaletteRole || '').trim();
 				const panelId = String(candidate.dataset.cbDesignShellPanel || '').trim();
-				return explicitRole === role || panelId === role;
+				const matchingTab = tabs.find((tab) => String(tab.dataset.cbDesignShellTab || '').trim() === panelId);
+				const tabRole = String(matchingTab?.dataset.cbDesignShellPaletteRole || '').trim();
+				return explicitRole === role || panelId === role || tabRole === role;
 			}) || null;
 			if (!panel) return null;
 			const panelId = String(panel.dataset.cbDesignShellPanel || '').trim();
