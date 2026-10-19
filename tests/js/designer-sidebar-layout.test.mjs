@@ -125,6 +125,7 @@ test('Mail canvas is headerless and white without stretching the responsive emai
 	assert.match(css, /\.cb-core-mail-designer__preview-frame iframe\s*\{[^}]*width: 100%;[^}]*max-width: 900px;[^}]*border: 0;[^}]*box-shadow: none;/s);
 	assert.match(css, /\.cb-core-mail-designer__preview-frame\.is-tablet iframe\s*\{[^}]*max-width: 782px;/s);
 	assert.match(css, /\.cb-core-mail-designer__preview-frame\.is-mobile iframe\s*\{[^}]*max-width: 430px;/s);
+	assert.match(css, /@media \(max-width: 900px\)\s*\{[\s\S]*\.cb-core-mail-designer__preview-frame\s*\{[^}]*min-height: 560px;/);
 	assert.match(renderer, /\$background = \$this->color\( \$layout\['background'\]/);
 	assert.match(renderer, /\$content_background = \$this->color\( \$layout\['contentBackground'\]/);
 
