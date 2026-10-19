@@ -94,15 +94,48 @@ $slot = getenv( 'CB_BASE_TEST_SLOT' );
 $target = getenv( 'WP_DB_NAME' );
 $root = (string) getenv( 'WP_CORE_DIR' );
 $cli_url = (string) get_option( 'siteurl', '' );
-// Report the exact failed NON-SENSITIVE guard label, rather than consuming
-// another one-shot database just to diagnose a combined boolean failure.
-// Each predicate must pass BEFORE any test data is written.
+
+// The canonical Base Level 2 runner accepts short, SQL-safe named slots.
+// An A2.2-specific slot prefix must not reject otherwise valid runner slots.
+// A valid slot name alone is never enough to authorize test database writes.
+$slot_valid = is_string( $slot )
+	&& strlen( $slot ) <= 24
+	&& 1 === preg_match( '/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/D', $slot );
+$workspace = $slot_valid ? '/tmp/core-blueprint-base-' . $slot : '';
+$owner_file = $workspace . '/.base-integration-owner.json';
+$workspace_owned = $slot_valid
+	&& $root === $workspace . '/wp'
+	&& is_dir( $workspace )
+	&& ! is_link( $workspace )
+	&& 0700 === ( fileperms( $workspace ) & 0777 )
+	&& is_file( $owner_file )
+	&& ! is_link( $owner_file )
+	&& fileowner( $workspace ) === fileowner( $owner_file );
+$owner_raw = $workspace_owned ? file_get_contents( $owner_file ) : false;
+$owner = is_string( $owner_raw ) ? json_decode( $owner_raw, true ) : null;
+$owner_valid = is_array( $owner )
+	&& is_string( $owner['git_sha'] ?? null )
+	&& 1 === preg_match( '/^[a-f0-9]{40}$/D', $owner['git_sha'] )
+	&& in_array( $owner['wordpress'] ?? null, [ '7.0', '7.1' ], true )
+	&& $owner === [
+		'schema'    => 1,
+		'product'   => 'core-blueprint',
+		'git_sha'   => $owner['git_sha'],
+		'wordpress' => $owner['wordpress'],
+		'database'  => 'core_blueprint_base_' . $slot . '_test',
+		'policy'    => 'new-only-no-cleanup',
+	]
+	&& $owner['wordpress'] === get_bloginfo( 'version' );
+
+// Each predicate must pass BEFORE any test data is written. Never weaken
+// the database, workspace, owner marker, CLI or loopback binding checks.
 $isolation_guards = [
-	'approved A2.2 test slot' => is_string( $slot )
-		&& 1 === preg_match( '/^g1d_a22(?:r[1-9][0-9]*)?_[0-9]{8}$/D', $slot ),
-	'isolated database name' => $target === 'core_blueprint_base_' . $slot . '_test'
+	'approved A2.2 test slot' => $slot_valid,
+	'owned Base Level 2 workspace' => $workspace_owned,
+	'authoritative Base owner marker' => $owner_valid,
+	'isolated database name' => $slot_valid && $target === 'core_blueprint_base_' . $slot . '_test'
 		&& defined( 'DB_NAME' ) && DB_NAME === $target,
-	'isolated test workspace' => str_starts_with( $root, '/tmp/core-blueprint-base-' . $slot . '/' ),
+	'isolated test workspace' => $workspace_owned,
 	'isolated WordPress table prefix' => $wpdb->prefix === 'cbcli_'
 		&& $wpdb->prefix === (string) getenv( 'CB_CLI_TABLE_PREFIX' ),
 	'loopback MariaDB binding' => getenv( 'WP_DB_HOST' ) === '127.0.0.1:3307',
