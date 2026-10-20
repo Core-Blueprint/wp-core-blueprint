@@ -341,3 +341,44 @@
 	border-color: var(--cb-core-picker-accent);
 	background: var(--cb-tint-accent);
 }
+
+/* Public Select Picker Header API v1. The trigger belongs to the sticky
+ * Designer header; the menu is a browser top-layer popover, not a clipped
+ * descendant of the palette. Other Select Picker presentations are unchanged.
+ */
+.cb-core-select-picker--header {
+	width: auto;
+	max-width: 100%;
+}
+.cb-core-select-picker--header .cb-core-picker__toggle {
+	min-height: 32px;
+	padding: 0 4px;
+	gap: 8px;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	color: var(--cb-text-strong, var(--cb-core-picker-text));
+	font: inherit;
+	font-weight: inherit;
+}
+.cb-core-select-picker--header .cb-core-picker__toggle:hover,
+.cb-core-select-picker--header .cb-core-picker__toggle:focus-visible {
+	border: 0;
+	box-shadow: none;
+	outline: 2px solid var(--cb-core-picker-accent);
+	outline-offset: 2px;
+}
+.cb-core-select-picker--header .cb-core-picker__toggle-text {
+	font: inherit;
+	font-weight: inherit;
+}
+.cb-core-select-picker__panel[popover] {
+	position: fixed;
+	inset: auto;
+	margin: 0;
+	box-sizing: border-box;
+	max-width: calc(100vw - 16px);
+	max-height: calc(100vh - 16px);
+	overflow: auto;
+}
