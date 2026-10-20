@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 
 const root = new URL('../../', import.meta.url);
 const js = readFileSync(new URL('assets/js/core/select-picker.js', root), 'utf8');
@@ -33,4 +34,31 @@ test('Header menu uses the browser top-layer with bounded viewport geometry and 
 	assert.match(js, /window\.addEventListener\('resize'/);
 	assert.match(css, /\.cb-core-select-picker__panel\[popover\]/);
 	assert.match(css, /max-height: calc\(100vh - 16px\)/);
+});
+
+test('A missing browser Popover API executes native fallback without changing the select', () => {
+	class FakeSelect {}
+	class FakeElement {}
+	const handlers = new Map();
+	const context = {
+		document: {
+			getElementById: () => null,
+			readyState: 'loading',
+			addEventListener: (type, handler) => handlers.set(type, handler),
+		},
+		window: {},
+		HTMLSelectElement: FakeSelect,
+		HTMLElement: FakeElement,
+	};
+	runInNewContext(js, context, { timeout: 1000 });
+	const select = new FakeSelect();
+	select.multiple = false;
+	select.dataset = { cbCoreSelectPickerVariant: 'header' };
+	select.options = [];
+	select.parentNode = {};
+	const outcome = context.window.cbCore.selectPicker.enhance(select);
+	assert.equal(outcome, null);
+	assert.equal(select.hidden, undefined);
+	assert.equal(select.dataset.cbCoreSelectPickerReady, undefined);
+	assert.equal(handlers.has('DOMContentLoaded'), true);
 });
