@@ -35,6 +35,8 @@ final class Assets {
 	public const CAPABILITY_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const OBJECT_PICKER_PRESENTATION_CORE = 'core';
 	public const OBJECT_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
+	/** Header Select Picker: top-layer popup with native fallback. */
+	public const SELECT_PICKER_HEADER_API = 1;
 	public const SELECT_PICKER_PRESENTATION_CORE = 'core';
 	public const SELECT_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const REORDER_PRESENTATION_CORE = 'core';
