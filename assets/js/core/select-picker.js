@@ -25,11 +25,16 @@ const enhance = (select, options = {}) => {
 	const searchMode = options.search ?? select.dataset.cbCoreSelectPickerSearch ?? 'auto';
 	const threshold = Number.parseInt(options.searchThreshold ?? select.dataset.cbCoreSelectPickerSearchThreshold ?? '8', 10) || 8;
 	const searchable = searchMode === 'auto' ? optionCount(select) >= threshold : truthy(searchMode);
+	const header = (options.variant ?? select.dataset.cbCoreSelectPickerVariant ?? '') === 'header';
+	// Header pickers live inside sticky, clipped Designer panels. Without
+	// a top-layer Popover API, retain the fully working native select.
+	if (header && (typeof HTMLElement.prototype.showPopover !== 'function'
+		|| typeof HTMLElement.prototype.hidePopover !== 'function')) return null;
 	const originalParent = select.parentNode;
 	if (!originalParent) return null;
 
 	const root = document.createElement('div');
-	root.className = 'cb-core-picker cb-core-select-picker';
+	root.className = 'cb-core-picker cb-core-select-picker' + (header ? ' cb-core-select-picker--header' : '');
 	select.before(root);
 	root.appendChild(select);
 
@@ -68,6 +73,7 @@ const enhance = (select, options = {}) => {
 	panel.id = panelId;
 	panel.className = 'cb-core-picker__panel cb-core-select-picker__panel';
 	panel.setAttribute('role', 'dialog');
+	if (header) panel.setAttribute('popover', 'manual');
 	panel.hidden = true;
 	if (externalLabel) panel.setAttribute('aria-label', externalLabel);
 
@@ -138,9 +144,9 @@ const enhance = (select, options = {}) => {
 	};
 
 	const close = ({ focus = false } = {}) => {
+		if (header && panel.matches(':popover-open')) panel.hidePopover();
 		panel.hidden = true;
 		toggle.setAttribute('aria-expanded', 'false');
-	toggle.setAttribute('aria-haspopup', 'dialog');
 		root.classList.remove('is-open');
 		if (search) search.value = '';
 		if (focus) toggle.focus();
@@ -205,6 +211,19 @@ const enhance = (select, options = {}) => {
 		if (select.disabled) return;
 		render(search?.value || '');
 		panel.hidden = false;
+		if (header) {
+			const anchor = toggle.getBoundingClientRect();
+			const width = Math.min(Math.max(280, anchor.width), Math.max(160, window.innerWidth - 16));
+			const left = Math.max(8, Math.min(anchor.left, window.innerWidth - width - 8));
+			panel.style.width = width + 'px';
+			panel.style.left = left + 'px';
+			panel.style.top = Math.max(8, anchor.bottom + 6) + 'px';
+			panel.showPopover();
+			const height = panel.getBoundingClientRect().height;
+			const above = anchor.top - height - 6;
+			const below = anchor.bottom + 6;
+			panel.style.top = (below + height > window.innerHeight - 8 && above >= 8 ? above : Math.min(below, Math.max(8, window.innerHeight - height - 8))) + 'px';
+		}
 		toggle.setAttribute('aria-expanded', 'true');
 		root.classList.add('is-open');
 		if (search) window.requestAnimationFrame(() => search.focus());
@@ -254,6 +273,14 @@ const enhance = (select, options = {}) => {
 	document.addEventListener('click', (event) => {
 		if (!root.contains(event.target)) close();
 	});
+	if (header) {
+		// Sticky Designer headers can move independently of the popup. Close
+		// instead of leaving a disconnected interactive panel in the viewport.
+		document.addEventListener('scroll', (event) => {
+			if (!panel.contains(event.target) && !panel.hidden) close();
+		}, true);
+		window.addEventListener('resize', () => { if (!panel.hidden) close(); });
+	}
 
 	select.addEventListener('change', sync);
 	select.addEventListener('cb:select-picker-sync', sync);
