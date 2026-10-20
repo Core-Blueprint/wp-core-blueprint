@@ -100,6 +100,9 @@
 	// Shared Designer save feedback. Consumers own authoritative receipts;
 	// Base owns the presentation of their acknowledged outcome.
 	const bindSaveState = (shell, save) => {
+		// A Store/consumer-level Save prohibition is independent of transient
+		// request state. The shell must never re-enable a server-blocked Save.
+		const saveAuthorized = save?.getAttribute('data-cb-design-shell-save-authorized') !== 'false';
 
 		shell.addEventListener(SAVE_EVENT, (event) => {
 			const state = String(event.detail?.state || '').trim();
@@ -109,7 +112,7 @@
 			shell.dataset.cbDesignShellSaveState = state;
 
 			if (save) {
-				save.disabled = busy;
+				save.disabled = !saveAuthorized || busy;
 				if (busy) save.setAttribute('aria-busy', 'true');
 				else save.removeAttribute('aria-busy');
 			}
