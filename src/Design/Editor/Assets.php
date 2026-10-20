@@ -22,6 +22,8 @@ final class Assets {
 	public const MODULE_ID = '@cb-core/design-editor';
 	/** Public Designer v2 session contract; release parity requires same-ZIP proof. */
 	public const DOMAIN_SESSION_API = 2;
+	/** A consumer may authoritatively withhold Save without Base re-enabling it on idle/error. */
+	public const SAVE_AUTHORITY_UI_API = 1;
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */
 	public const INSPECTOR_COMPOSITION_API = 1;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
