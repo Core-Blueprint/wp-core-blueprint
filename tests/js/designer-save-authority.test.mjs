@@ -73,3 +73,25 @@ test('legacy consumers without the opt-in attribute preserve original behavior',
   ui.dispatch('idle');
   assert.equal(ui.save.disabled, false);
 });
+
+test('ambiguous Save outcome remains denied after delayed idle and saved events', () => {
+  const ui = setup('true');
+  const successesBefore = events.filter(([kind]) => kind === 'success').length;
+  ui.dispatch('saving');
+  ui.dispatch('unknown');
+  assert.equal(ui.save.disabled, true);
+  assert.equal(ui.shell.dataset.cbDesignShellSaveOutcomeUnknown, 'true');
+  ui.dispatch('idle');
+  ui.dispatch('saved');
+  assert.equal(ui.shell.dataset.cbDesignShellSaveState, 'unknown');
+  assert.equal(ui.save.disabled, true);
+  assert.equal(events.filter(([kind]) => kind === 'success').length, successesBefore);
+});
+
+test('explicitly unauthorized Save remains denied when its outcome becomes UNKNOWN', () => {
+  const ui = setup('false');
+  ui.dispatch('unknown');
+  ui.dispatch('idle');
+  assert.equal(ui.save.disabled, true);
+  assert.equal(ui.shell.dataset.cbDesignShellSaveOutcomeUnknown, 'true');
+});

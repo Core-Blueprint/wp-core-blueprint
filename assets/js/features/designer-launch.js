@@ -117,7 +117,7 @@
 					save.disabled = true;
 					save.removeAttribute('aria-busy');
 				}
-				const notice = shell.querySelector('[data-cb-design-shell-persistent-notice]');
+				const notice = shell.querySelector?.('[data-cb-design-shell-persistent-notice]');
 				if (notice) {
 					notice.textContent = String(config.exitGuardLabels?.saveFailure || 'Your changes could not be verified as saved. The Designer remains open.');
 					notice.setAttribute('role', 'alert');
