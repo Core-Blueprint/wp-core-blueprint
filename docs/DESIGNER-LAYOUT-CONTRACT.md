@@ -10,7 +10,7 @@ The Designer structure is not product UI. Base owns the shell composition so Mai
 
 Base owns this order and presentation:
 
-\`\`\`text
+```text
 Header
 ├── Core Blueprint mark
 ├── active file/template selector, when applicable
@@ -29,11 +29,11 @@ Workspace
 └── Right rail
     ├── Inspector
     └── Settings, only when supported
-\`\`\`
+```
 
 A consumer supplies the domain content inside these Base-owned slots. It must not invent or reposition structural rails, show inactive capability tabs, or present a fake Save action. Base Mail uses a **headerless white editing canvas**; that is Mail-specific, not a mandate to remove a document-oriented Reports canvas header. Domain document/paper rendering remains consumer-owned within Base's public surface primitives.
 
-**Source gate:** \`node tools/validate-designer-layout.mjs templates/mail-designer.php --mail\` validates the Base Mail consumer layout. The same script can validate a separate first-party PHP/HTML consumer source using an explicit path; it cannot replace installed browser/keyboard and ZIP-identity acceptance.
+**Source gate:** `node tools/validate-designer-layout.mjs templates/mail-designer.php --mail` validates the Base Mail consumer layout. The same script can validate a separate first-party PHP/HTML consumer source using an explicit path; it cannot replace installed browser/keyboard and ZIP-identity acceptance.
 ## Header context selector
 
 When a Designer has an active file, template, document type or equivalent target, the consumer declares that control with:
@@ -86,11 +86,11 @@ Normal URL state may be updated with the History API after a successful switch, 
 
 The canonical, optional palette roles, in order, are:
 
-- \`navigation\`: task/stage navigation when appropriate. It is **not** the document Layers tree.
-- \`elements\`: element catalogue. When bindings exist, **Dynamic Data is a titled section inside Elements**, not a separate tab or panel.
-- \`layers\`: object hierarchy, only when real selectable objects exist. Layers is **left of the canvas**, never a right-side Inspector tab.
+- `navigation`: task/stage navigation when appropriate. It is **not** the document Layers tree.
+- `elements`: element catalogue. When bindings exist, **Dynamic Data is a titled section inside Elements**, not a separate tab or panel.
+- `layers`: object hierarchy, only when real selectable objects exist. Layers is **left of the canvas**, never a right-side Inspector tab.
 
-Tabbed consumers declare \`data-cb-design-shell-group="palette"\` on corresponding tabs and panels, \`data-cb-design-shell-palette-role="elements|layers"\` (or \`navigation\` when supported) on the tabs, and matching \`data-cb-design-shell-tab\` / \`data-cb-design-shell-panel\` IDs. IDs may be domain-specific; semantic roles must not change. Base owns iconography, ordering, keyboard behavior, vertical-only rail scrolling, truncation and selected state.
+Tabbed consumers declare `data-cb-design-shell-group="palette"` on corresponding tabs and panels, `data-cb-design-shell-palette-role="elements|layers"` (or `navigation` when supported) on the tabs, and matching `data-cb-design-shell-tab` / `data-cb-design-shell-panel` IDs. IDs may be domain-specific; semantic roles must not change. Base owns iconography, ordering, keyboard behavior, vertical-only rail scrolling, truncation and selected state.
 
 A workflow-only Designer may use Base's public Navigation component without exposing inactive Elements/Layers tabs. Consumers provide element definitions and optional token values/copy policies, not alternative rail geometry. See [Designer Navigation](DESIGNER-NAVIGATION.md).
 
@@ -98,10 +98,10 @@ A workflow-only Designer may use Base's public Navigation component without expo
 
 The canonical sidebar roles, in order, are:
 
-- \`inspector\`: selected-item fields and validation.
-- \`settings\`: optional global settings, only where the domain supports them.
+- `inspector`: selected-item fields and validation.
+- `settings`: optional global settings, only where the domain supports them.
 
-Tabbed consumers map these through \`data-cb-design-shell-sidebar-role="inspector|settings"\`. **Layers and Dynamic Data are not sidebar roles** in this Standard. Consumer-provided panel IDs may differ from the role name; Base still owns ordering, labels, focus and shared composition. A product may omit unsupported optional roles, never show nonfunctional placeholders.
+Tabbed consumers map these through `data-cb-design-shell-sidebar-role="inspector|settings"`. **Layers and Dynamic Data are not sidebar roles** in this Standard. Consumer-provided panel IDs may differ from the role name; Base still owns ordering, labels, focus and shared composition. A product may omit unsupported optional roles, never show nonfunctional placeholders.
 
 Selecting a Layer in the left rail keeps its Layers tab active and synchronizes the Inspector on the right and the canvas. Canvas selection and insertion may open Inspector as appropriate, without moving Layers to the sidebar.
 
