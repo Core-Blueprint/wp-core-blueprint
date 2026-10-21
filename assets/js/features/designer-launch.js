@@ -106,7 +106,26 @@
 
 		shell.addEventListener(SAVE_EVENT, (event) => {
 			const state = String(event.detail?.state || '').trim();
-			if (!['saving', 'saved', 'error', 'idle'].includes(state)) return;
+			if (!['saving', 'saved', 'error', 'idle', 'unknown'].includes(state)) return;
+			// A lost/ambiguous response cannot turn into verified success via a later
+			// UI event. This P0 guard has no A2-06 recovery protocol.
+			if (shell.dataset.cbDesignShellSaveOutcomeUnknown === 'true') return;
+			if (state === 'unknown' || event.detail?.uncertain === true) {
+				shell.dataset.cbDesignShellSaveOutcomeUnknown = 'true';
+				shell.dataset.cbDesignShellSaveState = 'unknown';
+				if (save) {
+					save.disabled = true;
+					save.removeAttribute('aria-busy');
+				}
+				const notice = shell.querySelector('[data-cb-design-shell-persistent-notice]');
+				if (notice) {
+					notice.textContent = String(config.exitGuardLabels?.saveFailure || 'Your changes could not be verified as saved. The Designer remains open.');
+					notice.setAttribute('role', 'alert');
+					notice.hidden = false;
+				}
+				window.cbCore?.toast?.error?.(String(config.exitGuardLabels?.saveFailure || 'Your changes could not be verified as saved. The Designer remains open.'));
+				return;
+			}
 			const busy = state === 'saving';
 			const message = String(event.detail?.message || '').trim();
 			shell.dataset.cbDesignShellSaveState = state;
@@ -123,6 +142,26 @@
 			}
 		});
 	};
+
+	// Registered before the later-loaded designer-context.js capture listener:
+	// an UNKNOWN or unverified dirty state must never reach a context adapter.
+	const blockContextChange = (event) => {
+		const control = event.target instanceof HTMLSelectElement ? event.target : null;
+		if (!control || !control.closest('[data-cb-design-shell-context]')) return;
+		const root = control.closest('[data-cb-design-launch-root]');
+		const shell = root?.querySelector('[data-cb-design-shell]');
+		if (shell && window.cbCore?.designerExitGuard?.canTransition?.(shell) === true) return;
+		event.preventDefault();
+		event.stopImmediatePropagation();
+		control.value = String(control.dataset.cbDesignShellContextValue ?? control.value);
+		window.cbCore?.toast?.error?.(String(config.exitGuardLabels?.unavailable || 'The Designer cannot be closed safely. Try again.'));
+	};
+	document.addEventListener('change', blockContextChange, true);
+	document.addEventListener('cb:design-shell:contextrequest', (event) => {
+		const shell = event.target?.querySelector?.('[data-cb-design-shell]');
+		if (shell && window.cbCore?.designerExitGuard?.canTransition?.(shell) === true) return;
+		event.stopImmediatePropagation();
+	}, true);
 
 	const panelToggleLabel = (panel, collapsed) => {
 		const verb = String(collapsed ? config.panelLabels?.expand : config.panelLabels?.collapse || '').trim();
@@ -417,8 +456,8 @@
 			const closeLabel = String(config.closeLabel || 'Close').trim();
 			shellApi.icons.decorate(close, 'x', { iconOnly: true, label: closeLabel });
 			close.addEventListener('click', () => {
+				// The cancellable beforeexit event is the only authorized close path.
 				if (fullscreen.getAttribute('aria-pressed') === 'true') fullscreen.click();
-				else window.location.assign(exitUrl);
 			});
 			end.append(close);
 		} else if (fullscreen) {
@@ -455,6 +494,25 @@
 		}
 	};
 
+	const bindExitGuard = (shell, fullscreen) => {
+		const api = () => window.cbCore?.designerExitGuard;
+		shell.addEventListener('cb:design-shell:beforeexit', (event) => {
+			if (event.target !== shell) return;
+			if (api()?.isApproved?.(shell)) return;
+			// Never allow an unguarded user-initiated exit, even if the
+			// modal foundation or consumer adapter is not yet initialized.
+			event.preventDefault();
+			if (api()?.modalIsOpen?.()) return;
+			api()?.request?.(shell, () => {
+				if (fullscreen.getAttribute('aria-pressed') !== 'true') return false;
+				fullscreen.click();
+				return fullscreen.getAttribute('aria-pressed') !== 'true';
+			});
+		});
+		shell.addEventListener('cb:design-shell:fullscreenchange', (event) => {
+			if (event.detail?.fullscreen) api()?.resetApproval?.(shell);
+		});
+	};
 	const initializeDirectLaunch = (root, shell, fullscreen, shellApi, exitUrl) => {
 		root.classList.add('is-designer-mode-active');
 		shell.hidden = false;
@@ -622,6 +680,8 @@
 			}
 
 			composeHeader(root, shell, shellApi, { direct, exitUrl });
+			window.cbCore?.designerExitGuard?.observe?.(shell);
+			bindExitGuard(shell, fullscreen);
 
 			if (direct) {
 				initializeDirectLaunch(root, shell, fullscreen, shellApi, exitUrl);

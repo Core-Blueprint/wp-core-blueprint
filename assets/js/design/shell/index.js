@@ -25,6 +25,7 @@ const DEFAULT_GROUP = 'default';
 const FULLSCREEN_ROOT_CLASS = 'is-fullscreen';
 const FULLSCREEN_DOCUMENT_CLASS = 'cb-core-design-shell-focus-mode';
 const FULLSCREEN_EVENT = 'cb:design-shell:fullscreenchange';
+const FULLSCREEN_BEFORE_EXIT_EVENT = 'cb:design-shell:beforeexit';
 const SHELL_READY_EVENT = 'cb:design-shell:ready';
 const FULLSCREEN_ENTER_CLASS = 'is-entering';
 const FULLSCREEN_EXIT_CLASS = 'is-exiting';
@@ -334,6 +335,14 @@ export const createDesignerShell = (root, {
 			return false;
 		}
 		if (!fullscreenState) return false;
+		// Base launch owns the exit decision. Every user-initiated exit path,
+		// including Escape and a detached fullscreen control, must be guardable.
+		// Forced internal teardown (immediate) is not an ordinary close intent.
+		if (!immediate && !root.dispatchEvent(new CustomEvent(FULLSCREEN_BEFORE_EXIT_EVENT, {
+			bubbles: true,
+			cancelable: true,
+			detail: Object.freeze({ reason: 'close' }),
+		}))) return false;
 
 		fullscreenState = false;
 		exitPending = true;
@@ -401,12 +410,17 @@ export const createDesignerShell = (root, {
 	function handleFullscreenFocusin() {
 		if (!fullscreenState) return;
 		const active = document.activeElement;
+		// Base Modal Foundation dialogs live at document.body level. They own
+		// focus while open; the Designer shell must not pull focus out of one.
+		if (document.querySelector?.('dialog[open]')?.contains?.(active)) return;
 		if (active && root.contains(active)) return;
 		focusInside();
 	}
 
 	function handleFullscreenKeydown(event) {
 		if (!fullscreenState || event.defaultPrevented) return;
+		// Native dialog owns Tab focus trapping and Escape cancellation.
+		if (document.querySelector?.('dialog[open]')) return;
 		if (event.key === 'Escape') {
 			event.preventDefault();
 			exitFullscreen();
@@ -437,6 +451,7 @@ export const createDesignerShell = (root, {
 
 	function handleFrameFullscreenKeydown(event) {
 		if (!fullscreenState || event.defaultPrevented || event.key !== 'Escape') return;
+		if (document.querySelector?.('dialog[open]')) return;
 		event.preventDefault();
 		exitFullscreen();
 	}
@@ -592,6 +607,10 @@ export const createDesignerShell = (root, {
 
 	const destroy = () => {
 		if (destroyed) return;
+		// Ordinary programmatic teardown cannot bypass an unresolved Save or
+		// unverified domain authority. Forced page unload is outside browser control.
+		if (typeof window !== 'undefined'
+			&& window.cbCore?.designerExitGuard?.canTransition?.(root) !== true) return false;
 		if (fullscreenState || exitPending) {
 			exitFullscreenInternal({ restoreFocus: false, immediate: true });
 		}
