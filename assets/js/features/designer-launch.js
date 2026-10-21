@@ -424,6 +424,7 @@
 		} else if (fullscreen) {
 			end.append(fullscreen);
 		}
+		if (persistentNotice) end.append(persistentNotice);
 		if (save) end.append(save);
 
 		toolbar.classList.add('cb-core-design-shell__toolbar--designer');
