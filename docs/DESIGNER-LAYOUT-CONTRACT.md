@@ -1,6 +1,8 @@
 # Core Blueprint Designer Layout Contract
 
-Status: **Base-owned public Designer structure**.
+Status: **canonical Base Designer Sidebar Standard v1 (SOURCE contract); installed ZIP/browser acceptance pending**.
+
+This is the authoritative first-party **layout** contract together with `DESIGNER-FOUNDATION-API.md`. Base Mail is the source reference. A source contract does not certify an installed Base ZIP, a consumer ZIP or browser functionality. Where an older paragraph in another document disagrees with this sidebar placement, this contract's canonical layout governs new first-party source integrations; release acceptance still requires exact artifact/runtime proof.
 
 The Designer structure is not product UI. Base owns the shell composition so Mail, Commerce, Reports and future Designer consumers cannot drift into different editor layouts.
 
@@ -8,29 +10,30 @@ The Designer structure is not product UI. Base owns the shell composition so Mai
 
 Base owns this order and presentation:
 
-```text
+\`\`\`text
 Header
 ├── Core Blueprint mark
-├── active file/template selector
-├── viewport controls when supported
-├── Undo / Redo
+├── active file/template selector, when applicable
+├── viewport controls, when supported
+├── Undo / Redo, when a session supports history
 ├── Close
-└── primary Save action
+└── primary Save action, only with authorized persistence
 
 Workspace
 ├── Left rail
-│   ├── Navigation, when supported (task/stage outline)
+│   ├── Navigation, only when supported (task/stage outline)
 │   ├── Elements, when supported
-│   └── Dynamic data, when supported
+│   │   └── Dynamic Data section, only when tokens exist
+│   └── Layers, only when an object hierarchy exists
 ├── Canvas
 └── Right rail
     ├── Inspector
-    ├── Layers
-    └── Settings
-```
+    └── Settings, only when supported
+\`\`\`
 
-A consumer supplies the domain content that appears in those slots. It does not replace, rename or reposition the structural rails.
+A consumer supplies the domain content inside these Base-owned slots. It must not invent or reposition structural rails, show inactive capability tabs, or present a fake Save action. Base Mail uses a **headerless white editing canvas**; that is Mail-specific, not a mandate to remove a document-oriented Reports canvas header. Domain document/paper rendering remains consumer-owned within Base's public surface primitives.
 
+**Source gate:** \`node tools/validate-designer-layout.mjs templates/mail-designer.php --mail\` validates the Base Mail consumer layout. The same script can validate a separate first-party PHP/HTML consumer source using an explicit path; it cannot replace installed browser/keyboard and ZIP-identity acceptance.
 ## Header context selector
 
 When a Designer has an active file, template, document type or equivalent target, the consumer declares that control with:
@@ -81,30 +84,28 @@ Normal URL state may be updated with the History API after a successful switch, 
 
 ## Left rail
 
-The canonical, optional left roles are:
+The canonical, optional palette roles, in order, are:
 
-- `navigation` — task/stage navigation, when needed (new additive v1 capability)
-- `elements` — element catalogue, when needed
-- `dynamic-data` — data tokens, when supported
+- \`navigation\`: task/stage navigation when appropriate. It is **not** the document Layers tree.
+- \`elements\`: element catalogue. When bindings exist, **Dynamic Data is a titled section inside Elements**, not a separate tab or panel.
+- \`layers\`: object hierarchy, only when real selectable objects exist. Layers is **left of the canvas**, never a right-side Inspector tab.
 
-**Existing consumers remain unchanged:** their Elements/Dynamic Data order stays the same and Navigation is not injected unless requested. A workflow-only Designer may use the canonical Base-owned Navigation component directly inside the palette without adding inactive Elements tabs. Mixed-role Designers declare matching canonical palette panels/tabs and Base owns their order, labels and keyboard behavior.
+Tabbed consumers declare \`data-cb-design-shell-group="palette"\` on corresponding tabs and panels, \`data-cb-design-shell-palette-role="elements|layers"\` (or \`navigation\` when supported) on the tabs, and matching \`data-cb-design-shell-tab\` / \`data-cb-design-shell-panel\` IDs. IDs may be domain-specific; semantic roles must not change. Base owns iconography, ordering, keyboard behavior, vertical-only rail scrolling, truncation and selected state.
 
-Consumers provide stage items, element catalogs and data tokens. Base owns navigation markup, active-state representation, scoped scrolling/focus and palette presentation. A consumer may set its localized Navigation panel label through `data-cb-design-shell-palette-label`; this does not alter other canonical labels.
-
-See [Designer Navigation](DESIGNER-NAVIGATION.md) for the exact public API, item contract and safe single-/multi-role composition. Navigation represents tasks/sections, **not** the object hierarchy in Layers. Consumers must not replace Base's palette geometry or invent a product-specific left rail.
+A workflow-only Designer may use Base's public Navigation component without exposing inactive Elements/Layers tabs. Consumers provide element definitions and optional token values/copy policies, not alternative rail geometry. See [Designer Navigation](DESIGNER-NAVIGATION.md).
 
 ## Right rail
 
-The canonical right roles are:
+The canonical sidebar roles, in order, are:
 
-- `inspector`
-- `layers`
-- `settings`
+- \`inspector\`: selected-item fields and validation.
+- \`settings\`: optional global settings, only where the domain supports them.
 
-Base already owns their canonical order, labels and Designer-shell presentation through the shared sidebar contract. Consumers own only the content inside the roles.
+Tabbed consumers map these through \`data-cb-design-shell-sidebar-role="inspector|settings"\`. **Layers and Dynamic Data are not sidebar roles** in this Standard. Consumer-provided panel IDs may differ from the role name; Base still owns ordering, labels, focus and shared composition. A product may omit unsupported optional roles, never show nonfunctional placeholders.
 
-A product may omit a role only when that capability does not exist. Product-specific alternatives such as `Document design`, `Email` or `Structure` are domain labels/content, not replacement shell roles.
+Selecting a Layer in the left rail keeps its Layers tab active and synchronizes the Inspector on the right and the canvas. Canvas selection and insertion may open Inspector as appropriate, without moving Layers to the sidebar.
 
+This canonical source layout supersedes historical first-party markup that placed Layers on the right or exposed Dynamic Data as a separate tab. Migrating an active consumer requires its own reviewed source change and new exact-SHA acceptance; merely changing these documents never proves consumer conformance.
 ## Ownership boundary
 
 Base owns:
@@ -161,6 +162,6 @@ Standard row actions remain ordered as move up, move down, remove. Move/remove c
 
 Selection is Base-owned session state. Every real selection mutation publishes one canonical change event with a revision, source and action. Structural operations may also publish when the final path is unchanged but now identifies a different semantic node. Command-driven remaps are batched so insert, remove and reorder expose only their final coherent selection state; undo and redo restore selection through the same lifecycle.
 
-Consumers must not manually coordinate separate Layers, Inspector and canvas selection paths. They bind domain render adapters through the public Designer selection controller. Base invokes those adapters in deterministic order: Layers, Inspector, canvas. Selection determines which element is active; the interaction source determines panel activation. A Layers click keeps Layers open while synchronizing Inspector data and canvas selection. Canvas selection and insertion may activate Inspector when the interaction intent is editing.
+Profile-bound Designer consumers with the public selection API bind their domain view adapters through `createDesignerSelectionController()`. Base invokes them in order: Layers, Inspector, canvas. The interaction source determines panel activation; Layers stays active when a Layer is selected. `createDomainSession()` does not expose profile-bound selection/Inspector methods: domain-neutral consumers such as Reports must supply stable domain selection mapping without pretending that this profile-specific controller can attach to their session. They still consume Base's public Layers/Inspector presentation and keep Layers left, Inspector right.
 
 The session public boundary provides selection snapshots, validated `select()`, `clearSelection()` and `subscribeSelection()`. Structural project changes are published only after their canonical selection has been remapped, so project and selection consumers observe one coherent editor state. Project replacement reconciles selection against the new tree by default; a context switch may request `resetSelection: true` when selection must not carry across documents.
