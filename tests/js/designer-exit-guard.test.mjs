@@ -6,13 +6,15 @@ import { runInNewContext } from 'node:vm';
 const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
 const source = read('assets/js/features/designer-exit-guard.js');
 
-const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, action = 'save', accept = true, busy = false, withAdapter = true, unknown = false, throwDirty = false, indeterminateDirty = false } = {}) => {
+const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, action = 'save', accept = true, busy = false, deferredModal = false, withAdapter = true, unknown = false, throwDirty = false, indeterminateDirty = false } = {}) => {
 	const events = new Map();
 	const toasts = [];
 	const modals = [];
 	let exits = 0;
 	let writes = 0;
 	let dirtyNow = dirty;
+	let busyNow = busy;
+	let confirmModal = null;
 	class Element {
 		constructor(tag = '') {
 			this.tag = tag;
@@ -20,6 +22,7 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 			this.checked = false;
 			this.hidden = false;
 			this.dataset = {};
+			this.isConnected = true;
 		}
 		append(...nodes) { this.children.push(...nodes); }
 		setAttribute(key, value) { this[key] = value; }
@@ -41,6 +44,7 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 			modal: {
 				show: async (options) => {
 					modals.push(options);
+					if (deferredModal) await new Promise((resolve) => { confirmModal = resolve; });
 					if (!accept) return false;
 					if (!options.onConfirm) return true;
 					for (const node of walk(options.body)) {
@@ -53,7 +57,7 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 	};
 	runInNewContext(source, { window, document, Element, Error, TypeError });
 	const shell = new Element('shell');
-	if (withAdapter) window.cbCore.designerExitGuard.register(shell, {
+	const unregister = withAdapter ? window.cbCore.designerExitGuard.register(shell, {
 		isDirty: () => { if (throwDirty) throw new Error('Dirty authority unavailable'); if (indeterminateDirty) return null; return dirtyNow; },
 		save: async () => {
 			writes++;
@@ -61,13 +65,17 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 			if (!changeDuringSave) dirtyNow = false;
 			return true;
 		},
-	});
+	}) : null;
 	if (unknown) { shell.dataset.cbDesignShellSaveOutcomeUnknown = 'true'; shell.dataset.cbDesignShellSaveState = 'unknown'; }
 	const exit = () => { exits++; return true; };
 	return {
 		shell, events, modals, toasts,
 		request: () => window.cbCore.designerExitGuard.request(shell, exit),
 		setDirty: (value) => { dirtyNow = value; },
+		beginSaving: () => { busyNow = true; shell.dataset.cbDesignShellSaveState = 'saving'; },
+		releaseModal: () => { if (!confirmModal) throw new Error('Modal is not pending'); confirmModal(); },
+		unregister: () => unregister?.(),
+		detach: () => { shell.isConnected = false; },
 		get exits() { return exits; },
 		get writes() { return writes; },
 	};
@@ -191,4 +199,37 @@ test('EXIT-P0-06: indeterminate dirty authority cannot become a clean exit', asy
   const f = fixture({ indeterminateDirty: true });
   assert.equal(await f.request(), false);
   assert.equal(f.exits, 0);
+});
+
+test('EXIT-P0-07: idle -> modal pending -> saving -> clean confirmation refuses exit', async () => {
+	const f = fixture({ dirty: false, deferredModal: true });
+	const exitPending = f.request();
+	assert.equal(f.modals.length, 1);
+	f.beginSaving();
+	f.releaseModal();
+	assert.equal(await exitPending, false);
+	assert.equal(f.exits, 0);
+	assert.equal(f.writes, 0);
+});
+
+test('EXIT-P0-08: idle -> modal pending -> saving -> explicit Discard refuses exit', async () => {
+	const f = fixture({ dirty: true, action: 'discard', deferredModal: true });
+	const exitPending = f.request();
+	assert.equal(f.modals.length, 1);
+	f.beginSaving();
+	f.releaseModal();
+	assert.equal(await exitPending, false);
+	assert.equal(f.exits, 0);
+	assert.equal(f.writes, 0);
+});
+
+test('EXIT-P0-09: detached and unregistered shell does not cause stale unload warning', () => {
+	const f = fixture({ dirty: true });
+	f.detach();
+	f.unregister();
+	let prevented = false;
+	const event = { preventDefault() { prevented = true; }, returnValue: undefined };
+	f.events.get('beforeunload')(event);
+	assert.equal(prevented, false);
+	assert.equal(event.returnValue, undefined);
 });
