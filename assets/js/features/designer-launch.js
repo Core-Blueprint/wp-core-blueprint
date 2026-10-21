@@ -102,7 +102,7 @@
 	const bindSaveState = (shell, save) => {
 		// A Store/consumer-level Save prohibition is independent of transient
 		// request state. The shell must never re-enable a server-blocked Save.
-		const saveAuthorized = save?.getAttribute('data-cb-design-shell-save-authorized') !== 'false';
+		const saveAuthorized = save?.getAttribute?.('data-cb-design-shell-save-authorized') !== 'false';
 
 		shell.addEventListener(SAVE_EVENT, (event) => {
 			const state = String(event.detail?.state || '').trim();
