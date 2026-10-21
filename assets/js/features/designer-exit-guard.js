@@ -73,11 +73,25 @@
 			if (providers.get(shell) !== record) return;
 			providers.delete(shell);
 			registered.delete(shell);
+			// A detached registered shell must not keep a strong unload witness.
+			// A still-connected shell without a dirty adapter stays observed
+			// and fails closed until a new adapter is registered.
+			if (shell.isConnected === false) {
+				observed.delete(shell);
+				approved.delete(shell);
+			}
 		};
 	};
 
 	window.addEventListener('beforeunload', (event) => {
 		for (const shell of observed) {
+			if (shell.isConnected === false) {
+				observed.delete(shell);
+				registered.delete(shell);
+				providers.delete(shell);
+				approved.delete(shell);
+				continue;
+			}
 			const provider = providers.get(shell);
 			try {
 				if (approved.has(shell) && !unresolved(shell, provider)) continue;
@@ -208,6 +222,13 @@
 			if (dirty === false && latestDirty) return false;
 			if (dirty === true && action === 'save' && latestDirty) return false;
 			if (unresolved(shell, adapter)) return false;
+			// Final synchronous Save fence: the modal might have remained
+			// pending while another Save began. Clean and Discard are alike.
+			if (shell.hasAttribute('aria-busy') || shell.dataset.cbDesignShellSaveState === 'saving') {
+				notify('warning', labels.busy);
+				return false;
+			}
+			if (shell.isConnected === false || providers.get(shell) !== adapter) return false;
 			approved.add(shell);
 			if (exit() !== true) {
 				approved.delete(shell);
