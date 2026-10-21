@@ -6,7 +6,7 @@ import { runInNewContext } from 'node:vm';
 const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
 const source = read('assets/js/features/designer-exit-guard.js');
 
-const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, action = 'save', accept = true, busy = false, withAdapter = true, unknown = false, throwDirty = false } = {}) => {
+const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, action = 'save', accept = true, busy = false, withAdapter = true, unknown = false, throwDirty = false, indeterminateDirty = false } = {}) => {
 	const events = new Map();
 	const toasts = [];
 	const modals = [];
@@ -54,7 +54,7 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 	runInNewContext(source, { window, document, Element, Error, TypeError });
 	const shell = new Element('shell');
 	if (withAdapter) window.cbCore.designerExitGuard.register(shell, {
-		isDirty: () => { if (throwDirty) throw new Error('Dirty authority unavailable'); return dirtyNow; },
+		isDirty: () => { if (throwDirty) throw new Error('Dirty authority unavailable'); if (indeterminateDirty) return null; return dirtyNow; },
 		save: async () => {
 			writes++;
 			if (!receipt) throw new Error('Persisted receipt unavailable');
@@ -185,4 +185,10 @@ test('EXIT-P0-05: context and fullscreen escape use synchronous Base refusal gat
 	assert.match(launch, /canTransition/);
 	assert.match(shell, /cb:design-shell:beforeexit/);
 	assert.match(shell, /cancelable: true/);
+});
+
+test('EXIT-P0-06: indeterminate dirty authority cannot become a clean exit', async () => {
+  const f = fixture({ indeterminateDirty: true });
+  assert.equal(await f.request(), false);
+  assert.equal(f.exits, 0);
 });

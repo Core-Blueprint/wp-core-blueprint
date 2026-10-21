@@ -147,7 +147,14 @@
 		try {
 			let dirty = null;
 			if (adapter) {
-				try { dirty = Boolean(adapter.isDirty()); }
+				try {
+					const observed = adapter.isDirty();
+					if (typeof observed !== 'boolean') {
+						notify('error', labels.unavailable);
+						return false;
+					}
+					dirty = observed;
+				}
 				catch (_error) {
 					notify('error', labels.unavailable);
 					return false;
@@ -196,8 +203,10 @@
 			if (confirmed !== true || unresolved(shell, adapter)) return false;
 			// A clean confirmation cannot race newer edits into an unsafe exit.
 			// If dirty turns true after the modal opened, keep the Designer open.
-			if (dirty === false && adapter.isDirty()) return false;
-			if (dirty === true && action === 'save' && adapter.isDirty()) return false;
+			const latestDirty = adapter.isDirty();
+			if (typeof latestDirty !== 'boolean') return false;
+			if (dirty === false && latestDirty) return false;
+			if (dirty === true && action === 'save' && latestDirty) return false;
 			if (unresolved(shell, adapter)) return false;
 			approved.add(shell);
 			if (exit() !== true) {
