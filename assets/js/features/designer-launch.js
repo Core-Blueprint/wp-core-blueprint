@@ -324,6 +324,9 @@
 		const fullscreen = toolbar.querySelector('[data-cb-design-shell-fullscreen]');
 		const contextSwitcher = toolbar.querySelector('[data-cb-design-shell-context]');
 		const save = toolbar.querySelector('[data-cb-design-shell-primary-action]');
+		// Consumers may display an authoritative, persistent block reason.
+		// Preserve this generic slot before replacing the legacy toolbar DOM.
+		const persistentNotice = toolbar.querySelector('[data-cb-design-shell-persistent-notice]');
 
 		if (historyGroup) {
 			const heading = historyGroup.querySelector('[data-cb-design-shell-group-label]');
