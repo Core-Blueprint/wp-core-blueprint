@@ -457,3 +457,47 @@ test('shared Designer UX defines canonical sidebar roles, Lucide icons and reduc
 	assert.match(css, /\.cb-core-design-shell\.is-fullscreen\.is-exiting/);
 	assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
+
+test('Base before-exit cancellation preserves fullscreen until an approved replay', () => {
+	const { root, fullscreen } = buildShell();
+	const shell = createDesignerShell(root);
+	const received = [];
+	const refuse = (event) => {
+		received.push(event.detail?.reason);
+		event.preventDefault();
+	};
+	root.addEventListener('cb:design-shell:beforeexit', refuse);
+	assert.equal(shell.enterFullscreen(), true);
+	assert.equal(shell.exitFullscreen(), false, 'no user exit until the public guard approves');
+	assert.equal(root.classList.contains('is-fullscreen'), true);
+	assert.equal(fullscreen.getAttribute('aria-pressed'), 'true');
+	assert.deepEqual(received, ['close']);
+	root.removeEventListener('cb:design-shell:beforeexit', refuse);
+	assert.equal(shell.exitFullscreen(), true, 'approved replay follows the native shell lifecycle');
+	assert.equal(fullscreen.getAttribute('aria-pressed'), 'false');
+});
+
+test('Base fullscreen yields Escape, Tab and focus to an active modal', () => {
+	const { root } = buildShell();
+	const shell = createDesignerShell(root);
+	assert.equal(shell.enterFullscreen(), true);
+	const previousSelector = document.querySelector;
+	const modalFocused = new FakeElement(document);
+	const dialog = { contains: (target) => target === modalFocused };
+	document.querySelector = (selector) => selector === 'dialog[open]' ? dialog : null;
+	try {
+		const escape = keyEvent('Escape');
+		document.dispatchEvent(escape);
+		assert.equal(escape.defaultPrevented, false, 'modal owns native Escape cancellation');
+		assert.equal(root.classList.contains('is-fullscreen'), true);
+		const tab = keyEvent('Tab');
+		document.dispatchEvent(tab);
+		assert.equal(tab.defaultPrevented, false, 'modal owns focus traversal');
+		document.activeElement = modalFocused;
+		document.dispatchEvent(new Event('focusin'));
+		assert.equal(document.activeElement, modalFocused, 'shell must not steal modal focus');
+	} finally {
+		document.querySelector = previousSelector;
+		shell.exitFullscreen();
+	}
+});
