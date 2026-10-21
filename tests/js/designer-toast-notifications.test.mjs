@@ -100,3 +100,16 @@ test('Designer shell displays no transient toolbar messages and preserves local 
 	assert.ok(toastStyles.includes('body:has(.cb-core-design-shell.is-fullscreen) .cb-core-toast-container--core'));
 	assert.ok(toastStyles.includes('z-index: 100110;'));
 });
+
+test('Base preserves a generic persistent consumer status in the composed header', async () => {
+	const launch = await readSource('assets/js/features/designer-launch.js');
+	const begin = launch.indexOf('const composeHeader = ');
+	const end = launch.indexOf('const syncFullscreenIcon = ', begin);
+	assert.ok(begin > -1 && end > begin);
+	const compose = launch.slice(begin, end);
+	const discover = compose.indexOf("toolbar.querySelector('[data-cb-design-shell-persistent-notice]')");
+	const attach = compose.indexOf('if (persistentNotice) end.append(persistentNotice);');
+	const replace = compose.indexOf('toolbar.replaceChildren(start, center, end);');
+	assert.ok(discover > -1 && attach > discover && replace > attach,
+		'consumer status must move into the Base-owned header before old toolbar children are removed');
+});
