@@ -36,7 +36,7 @@ export const auditDesignerLayout = (source, { mail = false } = {}) => {
   }
   const findings = [];
   const paletteMatch = /<section\b[^>]*class="[^"]*\bcb-core-design-shell__palette\b[^"]*"[^>]*>/m.exec(source);
-  const canvasMatch = /<section\b[^>]*class="[^"]*\bcb-core-design-shell__canvas\b[^"]*"[^>]*>/m.exec(source);
+  const canvasMatch = /<(?:section|main)\b[^>]*class="[^"]*\bcb-core-design-shell__canvas\b[^"]*"[^>]*>/m.exec(source);
   const sidebarMatch = /<aside\b[^>]*class="[^"]*\bcb-core-design-shell__sidebar\b[^"]*"[^>]*>/m.exec(source);
   if (!paletteMatch || !canvasMatch || !sidebarMatch) {
     return ['Missing canonical palette, canvas or sidebar section.'];
