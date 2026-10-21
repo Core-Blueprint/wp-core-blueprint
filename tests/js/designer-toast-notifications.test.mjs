@@ -113,3 +113,46 @@ test('Base preserves a generic persistent consumer status in the composed header
 	assert.ok(discover > -1 && attach > discover && replace > attach,
 		'consumer status must move into the Base-owned header before old toolbar children are removed');
 });
+
+test('actual Base header composition retains the consumer Store warning node', async () => {
+	const source = await readSource('assets/js/features/designer-launch.js');
+	const begin = source.indexOf('const composeHeader = ');
+	const end = source.indexOf('\n\tconst syncFullscreenIcon', begin);
+	assert.ok(begin >= 0 && end > begin);
+	const expression = source.slice(begin, end).trim()
+		.replace(/^const composeHeader = /, '').replace(/;$/, '');
+	const fakeElement = (tag) => ({
+		tag, children: [], dataset: {}, textContent: '',
+		classList: { add() {} },
+		setAttribute() {},
+		append(...items) { this.children.push(...items); },
+	});
+	const status = fakeElement('span');
+	const save = fakeElement('button');
+	save.textContent = 'Save Evaluation';
+	let replaced = [];
+	const toolbar = {
+		dataset: {}, classList: { add() {} },
+		querySelector(selector) {
+			if (selector === '[data-cb-design-shell-primary-action]') return save;
+			if (selector === '[data-cb-design-shell-persistent-notice]') return status;
+			return null;
+		},
+		replaceChildren(...children) { replaced = children; },
+	};
+	const shell = { querySelector: (selector) => selector === '.cb-core-design-shell__toolbar' ? toolbar : null };
+	const compile = new Function(
+		'document', 'config', 'bindSaveState', 'configureSidebar',
+		'composePanelToggles', 'appendBrandedModeTitle',
+		`return (${expression});`,
+	);
+	const compose = compile(
+		{ createElement: fakeElement }, {}, () => {}, () => {}, () => null, () => {},
+	);
+	compose({ dataset: { cbDesignTitle: 'Evaluator' } }, shell, {
+		icons: { decorate() {} },
+	});
+	assert.equal(replaced.length, 3);
+	assert.deepEqual(replaced[2].children, [status, save],
+		'Base header must move the original status node into the final toolbar before Save');
+});
