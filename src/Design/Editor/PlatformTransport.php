@@ -50,8 +50,15 @@ final class PlatformTransport {
 	private static function identity( string $profile, string $resource ): ?array {
 		if ( Mail::PROFILE === $profile
 			&& Repository::valid_identity( Repository::MAIL, $resource )
-			&& \CoreBlueprint\Core\Mail\Designer\TemplateRegistry::get( $resource )
+			&& str_starts_with( $resource, 'wordpress.' )
 			&& current_user_can( 'manage_options' ) ) {
+			// The first Base-only package has NO independently approved
+			// extension consumer identity. Allow only built-in WordPress templates.
+			$definition = \CoreBlueprint\Core\Mail\Designer\TemplateRegistry::get( $resource );
+			if ( ! is_array( $definition ) || 'core' !== ( $definition['provider'] ?? null )
+				|| 'wordpress' !== ( $definition['group'] ?? null ) ) {
+				return null;
+			}
 			return [ 'type' => Repository::MAIL, 'key' => $resource ];
 		}
 		if ( Reports::PROFILE === $profile && 'maintenance' === $resource
