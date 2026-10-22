@@ -322,9 +322,17 @@ final class SchemaValidator {
 		$types = $schema['type'] ?? null;
 		$types = is_string( $types ) ? [ $types ] : $types;
 		$allowed_types = [ 'object', 'array', 'string', 'number', 'integer', 'boolean', 'null' ];
-		if ( ! is_array( $types ) || ! array_is_list( $types ) || [] === $types
-			|| count( $types ) !== count( array_unique( $types ) )
-			|| array_diff( $types, $allowed_types ) ) {
+		if ( ! is_array( $types ) || ! array_is_list( $types ) || [] === $types ) {
+			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+			return;
+		}
+		foreach ( $types as $type_item ) {
+			if ( ! is_string( $type_item ) || ! in_array( $type_item, $allowed_types, true ) ) {
+				$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+				return;
+			}
+		}
+		if ( count( $types ) !== count( array_unique( $types ) ) ) {
 			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
 			return;
 		}
