@@ -650,8 +650,8 @@ final class Preferences extends PageBase {
 			<div class="cb-core-platform-screen" data-cb-platform-screen>
 				<header class="cb-core-platform-screen__header">
 					<strong><?php esc_html_e( 'Reports Designer', 'core-blueprint' ); ?></strong>
-					<span class="cb-core-platform-screen__subtitle"><?php esc_html_e( 'Maintenance Report', 'core-blueprint' ); ?></span>
-					<a class="button cb-core-button cb-core-platform-screen__close" href="<?php echo esc_url( $landing_url ); ?>">
+					<span class="cb-core-platform-screen__subtitle" data-cb-platform-header-context><?php esc_html_e( 'Maintenance Report', 'core-blueprint' ); ?></span>
+					<a class="button cb-core-button cb-core-platform-screen__close" data-cb-platform-header-close href="<?php echo esc_url( $landing_url ); ?>">
 						<?php esc_html_e( 'Close Designer', 'core-blueprint' ); ?>
 					</a>
 				</header>
