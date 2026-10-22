@@ -1,6 +1,6 @@
 import {insertNodeCommand,removeNodeCommand,reorderNodeCommand,setPropertyCommand} from '../core/commands.js';
 import {nodeAt} from '../core/tree.js';
-import {sanitizeMailMarkup} from './rich-text-controls.js';
+import {sanitizeMailMarkup,createMailRichTextControls} from './rich-text-controls.js';
 const PROVIDER='core.blueprint', ROOT='core.blueprint.mail';
 const FONT=['Arial, Helvetica, sans-serif','Helvetica, Arial, sans-serif','Georgia, Times New Roman, serif','Tahoma, Verdana, sans-serif','Verdana, Geneva, sans-serif'];
 const col={type:'color',maxLength:32},align={type:'select',options:['left','center','right']};
@@ -95,7 +95,7 @@ const url=(v)=>{try{if(!v||v.includes('{{'))return null;const u=new URL(v);
  return ['http:','https:'].includes(u.protocol)?u.href:null;}catch{return null;}};
 export function createRenderAdapter({root,document:doc,profileId}){
  if(!root||!doc||profileId!=='base/mail')throw new TypeError('HOST_MODULE_MISSING');
- let editor=null,container=null,destroyed=false;
+ let editor=null,container=null,destroyed=false,editing=null;
  const el=(tag,cl='',t='')=>{const e=doc.createElement(tag);e.className=cl;e.textContent=t;return e;};
  const draw=(n,path)=>{
   const p=n.properties,e=el('div','cb-mail-platform__node');
@@ -123,6 +123,48 @@ export function createRenderAdapter({root,document:doc,profileId}){
   }else if(n.type==='mail.divider'){const hr=el('hr');hr.style.border=0;hr.style.borderTop='1px solid '+p.color;
    hr.style.margin=p.spacing+'px 0';e.append(hr);
   }else if(n.type==='mail.spacer')e.style.height=p.height+'px';
+
+  if(['mail.heading','mail.text','mail.rich-text'].includes(n.type)){
+   const openEdit=ev=>{
+    ev.preventDefault();ev.stopPropagation();
+    if(destroyed||!editor||editing)return;
+    const key=n.type==='mail.rich-text'?'markup':'text',display=e.querySelector('.cb-mail-platform__content');
+    if(!display)return;
+    editing={path:[...path],key,display,host:e};
+    display.hidden=true;
+    if(key==='markup'){
+     const controls=createMailRichTextControls({documentRef:doc,value:p.markup,
+      onCommit:value=>{
+       if(!editor||destroyed)return false;
+       try{if(value!==p.markup)editor.execute('mail.set',{path:[...path],key,value});return true;}
+       catch{return false;}
+      }});
+     editing.controls=controls;
+     const apply=el('button','button','Apply formatting');apply.type='button';
+     apply.addEventListener('click',()=>{if(controls.commit()){editing=null;display.hidden=false;controls.element.remove();apply.remove();}});
+     e.append(controls.element,apply);controls.editor.focus();
+    }else{
+     const field=el('textarea','cb-mail-platform__inline-text');
+     field.value=p.text;field.rows=n.type==='mail.heading'?2:5;
+     field.setAttribute('aria-label','Edit Mail text');
+     const commit=()=>{
+      const value=field.value.replace(/\r\n?/g,'\n'),rule=TYPES[n.type].controls.text;
+      if(!valueOK(value,rule))return;
+      try{
+       if(value!==p.text)editor.execute('mail.set',{path:[...path],key,value});
+       editing=null;display.hidden=false;field.remove();
+      }catch{field.setAttribute('aria-invalid','true');}
+     };
+     field.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){event.preventDefault();editing=null;display.hidden=false;field.remove();}
+      if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();commit();}
+     });
+     field.addEventListener('blur',commit);e.append(field);field.focus();
+    }
+   };
+   e.addEventListener('dblclick',openEdit);
+   e.addEventListener('keydown',ev=>{if(ev.key==='F2')openEdit(ev);});
+  }
   n.children.forEach((c,i)=>e.append(draw(c,[...path,i])));
   e.addEventListener('click',ev=>{ev.stopPropagation();
    if(!destroyed&&editor&&container?.isConnected)editor.select([{kind:'node',path}],{kind:'node',path});});
@@ -140,6 +182,7 @@ export function createRenderAdapter({root,document:doc,profileId}){
   mount({editor:session,signal}){if(destroyed||signal?.aborted||typeof session?.project!=='function')throw new TypeError('RENDER_STALE');
    editor=session;container=el('div','cb-mail-platform');root.append(container);},
   update({project,selection,signal}){if(destroyed||signal?.aborted||!container)throw new TypeError('RENDER_STALE');
+   editing=null;
    validateProject(project);const p=project.root.properties;
    const frame=el('article','cb-mail-platform__frame');
    frame.style.maxWidth=p.width+'px';frame.style.margin='0 auto';frame.style.background=p.contentBackground;
@@ -150,6 +193,6 @@ export function createRenderAdapter({root,document:doc,profileId}){
   captureFocus(){const a=doc.activeElement;return root.contains(a)?a?.dataset?.cbDesignNodePath||null:null;},
   restoreFocus(token){if(typeof token!=='string'||!container)return;
    for(const n of container.querySelectorAll('[data-cb-design-node-path]'))if(n.dataset.cbDesignNodePath===token){n.focus({preventScroll:true});break;}},
-  destroy(){destroyed=true;editor=null;container?.remove();container=null;},
+  destroy(){destroyed=true;editing=null;editor=null;container?.remove();container=null;},
  });
 }
