@@ -82,6 +82,9 @@ final class Core {
 		// Register the first-party Designer operation ledger on the same Base
 		// schema sweep. This does not perform DDL in request/bootstrap code.
 		add_action( 'plugins_loaded', [ \CoreBlueprint\Core\Design\Bootstrap::class, 'register_schema' ], 4 );
+		// The first-party REST transport is inert until WordPress authenticates
+		// a request and independently approved Base artifact evidence exists.
+		\CoreBlueprint\Core\Design\Bootstrap::boot();
 		add_action( 'plugins_loaded', [ DB::class,               'maybe_upgrade' ], 5 );
 		add_action( 'plugins_loaded', [ SettingsMigrator::class, 'maybe_migrate' ], 6 );
 		add_action( 'plugins_loaded', [ Retention::class,        'init' ],          7 );
