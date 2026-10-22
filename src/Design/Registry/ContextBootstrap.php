@@ -25,6 +25,9 @@ final class ContextBootstrap {
 		callable $authorize
 	): array {
 		$profile = $registry->profile( $profile_id );
+		$artifact_mode = $evidence['packageMode'] ?? null;
+		$package_names = 'base-only' === $artifact_mode ? [ 'base' ]
+			: ( 'base-consumer' === $artifact_mode ? [ 'base', 'consumer' ] : [] );
 		$context = $evidence['context'] ?? null;
 		// Registry and installed artifact module graphs retain different identities.
 		// The server-attested Registry graph MUST match this exact frozen graph.
@@ -41,8 +44,8 @@ final class ContextBootstrap {
 			|| ! hash_equals( $module_graph_hash, $evidence['moduleGraphFingerprint'] )
 			|| ! is_string( $evidence['artifactModuleGraphFingerprint'] ?? null )
 			|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $evidence['artifactModuleGraphFingerprint'] )
-			|| ! is_array( $evidence['approvedPackages'] ?? null )
-			|| ! isset( $evidence['approvedPackages']['base'], $evidence['approvedPackages']['consumer'] )
+			|| [] === $package_names || ! is_array( $evidence['approvedPackages'] ?? null )
+			|| array_keys( $evidence['approvedPackages'] ) !== $package_names
 			|| ! is_array( $evidence['moduleStamps'] ?? null )
 			|| ! is_array( $evidence['moduleFileBindings'] ?? null )
 			|| ! is_array( $evidence['requiredCss'] ?? null )
@@ -81,6 +84,7 @@ final class ContextBootstrap {
 			$binding = is_string( $id ) ? ( $evidence['moduleFileBindings'][ $id ] ?? null ) : null;
 			if ( ! is_string( $id ) || ! isset( $allowed[ $id ] )
 				|| ! is_string( $path ) || ! preg_match( '#^(base|consumer)/[A-Za-z0-9_.@/-]+\.js$#D', $path )
+				|| ( 'base-only' === $artifact_mode && ! str_starts_with( $path, 'base/' ) )
 				|| str_contains( $path, '//' ) || preg_match( '#(?:^|/)\.\.?/#', $path )
 				|| isset( $known_paths[ $path ] )
 				|| ! is_string( $evidence['moduleStamps'][ $id ] ?? null )
@@ -96,7 +100,7 @@ final class ContextBootstrap {
 		}
 		// Package-file graph digests and packaged-file hashes were verified by
 		// ArtifactEvidence/InstalledVerifier, not recomputed from Registry IDs.
-		foreach ( [ 'base', 'consumer' ] as $package ) {
+		foreach ( $package_names as $package ) {
 			$approved = $evidence['approvedPackages'][ $package ] ?? null;
 			if ( ! is_array( $approved )
 				|| ! is_string( $approved['manifestDigest'] ?? null )
@@ -120,6 +124,12 @@ final class ContextBootstrap {
 			'profile' => $profile,
 			'schemaSnapshot' => $registry->project_schema_snapshot( $profile_id ),
 			'persistedFieldFacet' => $registry->persisted_field_facet( $profile_id ),
+			// These are projections of the SAME immutable registry graph. They
+			// are not local/DOM-provided registrations or executable callbacks.
+			'components' => array_values( array_filter( $registry->graph()['components'],
+				static fn ( array $entry ): bool => $entry['profileId'] === $profile_id ) ),
+			'controls' => array_values( array_filter( $registry->graph()['controls'],
+				static fn ( array $entry ): bool => $entry['profileId'] === $profile_id ) ),
 			'modules' => $modules,
 			'evidence' => $evidence,
 		];
