@@ -20,6 +20,8 @@ export const createDesignerSelectionController = ({
 	syncCanvas = null,
 	inspectorPanel = 'inspector',
 	openInspectorOnInsert = true,
+	typed = false,
+	requestInvalidation = null,
 } = {}) => {
 	if (
 		!session
@@ -35,6 +37,7 @@ export const createDesignerSelectionController = ({
 	const layersAdapter = optionalCallback(renderLayers, 'Layers');
 	const inspectorAdapter = optionalCallback(renderInspector, 'Inspector');
 	const canvasAdapter = optionalCallback(syncCanvas, 'canvas');
+	const invalidate = optionalCallback(requestInvalidation, 'Host invalidation');
 	const panelId = String(inspectorPanel || 'inspector').trim() || 'inspector';
 	let destroyed = false;
 
@@ -46,7 +49,9 @@ export const createDesignerSelectionController = ({
 		if (destroyed) return;
 		const viewContext = Object.freeze({
 			selection: snapshot,
-			primary: snapshot.primary === null ? null : [...snapshot.primary],
+			primary: typed
+				? (snapshot.primary ?? null)
+				: (snapshot.primary === null ? null : [...snapshot.primary]),
 			inspector: context.inspector ?? session.inspector(),
 			event: context.event ?? Object.freeze({ source: 'controller', action: 'sync' }),
 			profile: context.profile ?? session.profile,
@@ -55,7 +60,9 @@ export const createDesignerSelectionController = ({
 
 		layersAdapter?.(viewContext);
 		inspectorAdapter?.(viewContext);
-		canvasAdapter?.(viewContext);
+		// Host owns the only render queue when its invalidate bridge exists.
+		if (invalidate) invalidate(viewContext);
+		else canvasAdapter?.(viewContext);
 
 		if (
 			openInspectorOnInsert
@@ -67,7 +74,14 @@ export const createDesignerSelectionController = ({
 		}
 	};
 
-	const unsubscribe = session.subscribeSelection(synchronize, { emitCurrent: true });
+	const subscribe = typed ? session.subscribe : session.subscribeSelection;
+	if (typeof subscribe !== 'function') throw new TypeError('Typed Host facade requires subscribe().');
+	const unsubscribe = typed
+		? subscribe((event) => synchronize(session.selection(), { event }))
+		: subscribe(synchronize, { emitCurrent: true });
+	if (typed) synchronize(session.selection(), {
+		event: Object.freeze({ source: 'controller', action: 'sync' }),
+	});
 
 	return Object.freeze({
 		select(path, {
@@ -76,13 +90,20 @@ export const createDesignerSelectionController = ({
 			source = 'ui',
 		} = {}) {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
-			const accepted = session.select(path, { additive, source });
+			const accepted = typed
+				? session.select(
+					additive
+						? [...(session.selection().refs || []).filter((ref) => JSON.stringify(ref) !== JSON.stringify(path)), path]
+						: [path],
+					path,
+				)
+				: session.select(path, { additive, source });
 			if (accepted && openInspector) activateInspector();
 			return accepted;
 		},
 		clear({ source = 'ui' } = {}) {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
-			return session.clearSelection({ source });
+			return typed ? session.select([], null) : session.clearSelection({ source });
 		},
 		refresh() {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
