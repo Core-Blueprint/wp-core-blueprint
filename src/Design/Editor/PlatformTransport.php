@@ -131,10 +131,10 @@ final class PlatformTransport {
 			if ( Mail::PROFILE === $profile ) {
 				// Mail owns WordPress-notification wording, token semantics and
 				// security links. Generic empty templates are forbidden.
-				if ( ! method_exists( Mail::class, 'default_document_for_template' ) ) {
+				if ( ! is_callable( [ Mail::class, 'default_for_resource' ] ) ) {
 					return self::deny( 'NATIVE_TEMPLATE_DEFAULT_UNAVAILABLE', 503 );
 				}
-				$doc = Mail::default_document_for_template( $resource );
+				$doc = Mail::default_for_resource( $resource );
 			} else {
 				$doc = [
 					'project' => Reports::default_project(),
@@ -309,8 +309,20 @@ final class PlatformTransport {
 			Reports::PROFILE => Reports::class,
 			default => null,
 		};
-		return null !== $owner && ( ! method_exists( $owner, 'validate_native_document' )
-			|| $owner::validate_native_document( $project, $fields ) === true );
+		if ( null === $owner ) return false;
+		if ( is_callable( [ $owner, 'validate_native_document' ] )
+			&& $owner::validate_native_document( $project, $fields ) !== true ) return false;
+		// The native Mail product supplies an additional invariant validator
+		// alongside its Contract (not the earlier development-v0 validator).
+		// It enforces exact Columns cardinality and Mail domain limits.
+		if ( Mail::PROFILE === $profile
+			&& class_exists( \CoreBlueprint\Core\Design\Profile\Mail\Contract::class )
+			&& class_exists( \CoreBlueprint\Core\Design\Profile\Mail\Validator::class ) ) {
+			$diagnostics = ( new \CoreBlueprint\Core\Design\Profile\Mail\Validator() )->validate( $project );
+			if ( ! is_object( $diagnostics ) || ! method_exists( $diagnostics, 'has_errors' )
+				|| $diagnostics->has_errors() ) return false;
+		}
+		return true;
 	}
 
 	/**
