@@ -635,6 +635,23 @@ export const createDesignerShell = (root, {
 		if (!session?.redo) return;
 		session.redo();
 	}, { signal });
+	// Keyboard History always reaches the same Host EditorFacade. Never
+	// intercept native input undo, focus composition or rich-text editing.
+	if (platformStaged) root.addEventListener('keydown', (event) => {
+		if (event.defaultPrevented || event.isComposing || event.keyCode === 229
+			|| !(event.ctrlKey || event.metaKey) || event.altKey) return;
+		const target = event.target;
+		if (target?.closest?.('input, textarea, select, [contenteditable="true"], [role="textbox"]')) return;
+		const key = event.key.toLowerCase();
+		if (key === 'z') {
+			event.preventDefault();
+			if (event.shiftKey) session?.redo?.();
+			else session?.undo?.();
+		} else if (key === 'y' && event.ctrlKey && !event.metaKey) {
+			event.preventDefault();
+			session?.redo?.();
+		}
+	}, {signal});
 	fullscreen?.addEventListener('click', toggleFullscreen, { signal });
 	frames.forEach(bindFrameKeyboard);
 
