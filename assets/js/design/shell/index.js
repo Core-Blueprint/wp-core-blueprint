@@ -13,6 +13,7 @@ import { DESIGNER_PALETTE_ROLES, createDesignerNavigation } from './navigation.j
 import { createDesignerSelectionController } from './selection-controller.js';
 import {
 	createDesignerInspectorControls,
+	createDesignerInspectorTextControl,
 	createDesignerInspectorIdentity,
 	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
@@ -747,6 +748,7 @@ export {
 	DESIGNER_LAYER_ACTIONS,
 	createDesignerIcon,
 	createDesignerInspectorControls,
+	createDesignerInspectorTextControl,
 	createDesignerInspectorIdentity,
 	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
