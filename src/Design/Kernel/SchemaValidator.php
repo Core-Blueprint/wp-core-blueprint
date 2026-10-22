@@ -359,7 +359,7 @@ final class SchemaValidator {
 		}
 		if ( isset( $schema['enum'] ) && ( ! is_array( $schema['enum'] )
 			|| ! array_is_list( $schema['enum'] )
-			|| ! in_array( $value, $schema['enum'], true ) ) ) {
+			|| ! array_filter( $schema['enum'], static fn ( mixed $item ): bool => self::stable_json_equal( $item, $value ) ) ) ) {
 			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
 		}
 		if ( is_string( $value ) ) {
@@ -479,6 +479,48 @@ final class SchemaValidator {
 				$at, $add, new \SplObjectStorage(), 0 );
 		}
 		return self::stable_result( $errors );
+	}
+
+
+	/** Compare immutable typed JSON, including nested stdClass vs array shape. */
+	private static function stable_json_equal( mixed $left, mixed $right, int $depth = 0 ): bool {
+		if ( $depth > self::MAX_TREE_DEPTH ) {
+			return false;
+		}
+		if ( ( is_int( $left ) || is_float( $left ) ) && ( is_int( $right ) || is_float( $right ) ) ) {
+			return is_finite( (float) $left ) && is_finite( (float) $right )
+				&& (float) $left === (float) $right;
+		}
+		if ( $left === $right ) {
+			return true;
+		}
+		if ( $left instanceof \stdClass && $right instanceof \stdClass ) {
+			$a = get_object_vars( $left );
+			$b = get_object_vars( $right );
+			$keys_a = array_keys( $a );
+			$keys_b = array_keys( $b );
+			sort( $keys_a, SORT_STRING );
+			sort( $keys_b, SORT_STRING );
+			if ( $keys_a !== $keys_b ) {
+				return false;
+			}
+			foreach ( $keys_a as $key ) {
+				if ( ! self::stable_json_equal( $a[ $key ], $b[ $key ], $depth + 1 ) ) {
+					return false;
+				}
+			}
+			return true;
+		}
+		if ( is_array( $left ) && is_array( $right ) && array_is_list( $left )
+			&& array_is_list( $right ) && count( $left ) === count( $right ) ) {
+			foreach ( $left as $index => $item ) {
+				if ( ! self::stable_json_equal( $item, $right[ $index ], $depth + 1 ) ) {
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 
 }
