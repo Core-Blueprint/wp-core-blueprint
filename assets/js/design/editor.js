@@ -868,20 +868,43 @@ export const attachTrustedDesignerHost = ({
 				};
 				tree.render([walk(project.root, [])]);
 				const primary = selection?.primary;
-				inspectorPanel.replaceChildren();
-				if (primary?.kind === 'node') {
+				const key = primary?.kind === 'node' ? JSON.stringify(primary.path) : null;
+				if (key !== inspectorSelectionKey) {
+					clearInspector();
+					inspectorSelectionKey = key;
+				}
+				if (key !== null) {
 					const node = nodeAt(project.root, primary.path);
 					if (!node) throw new Error('SELECTION_INVALID');
-					const identity = createDesignerInspectorIdentity({
-						label: node.type, eyebrow: node.provider,
-						context: 'Selected element', documentRef: stagedRoot.ownerDocument,
-					});
-					inspectorPanel.append(identity.element);
-					const description = stagedRoot.ownerDocument.createElement('pre');
-					description.className = 'cb-core-design-shell__inspector-properties';
-					description.textContent = JSON.stringify(node.properties, null, 2);
-					inspectorPanel.append(description);
+					if (!inspectorControls.size) {
+						const identity = createDesignerInspectorIdentity({
+							label: node.type, eyebrow: node.provider,
+							context: 'Selected element', documentRef: stagedRoot.ownerDocument,
+						});
+						inspectorPanel.append(identity.element);
+						for (const field of profileModule.propertiesFor(node)) {
+							const control = createDesignerInspectorTextControl({
+								key: 'node.' + field.key, label: field.label,
+								value: field.value, multiline: field.multiline,
+								documentRef: stagedRoot.ownerDocument,
+								onCommit: (value) => {
+									if (!signal.aborted && host.state === 'READY') {
+										editor.execute(prefix + '.set', {
+										path: [...primary.path], key: field.key, value,
+										});
+									}
+								},
+							});
+							inspectorControls.set(field.key, control);
+							inspectorPanel.append(control.element);
+						}
+					} else {
+						for (const field of profileModule.propertiesFor(node)) {
+							inspectorControls.get(field.key)?.update({value:field.value});
+						}
+					}
 				}
+				refreshSettings();
 			};
 			stagedShells.set(stagedRoot, controller);
 			return Object.freeze({
