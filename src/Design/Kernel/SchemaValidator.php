@@ -279,7 +279,7 @@ final class SchemaValidator {
 			$children = $data['children'] ?? null;
 			if ( ! is_array( $children ) || ! array_is_list( $children ) ) {
 				$add( 'SCHEMA_NODE_INVALID', $pointer . '/children' );
-			} else {
+			} elseif ( null !== $definition && is_string( $type ) ) {
 				foreach ( $children as $index => $child ) {
 					$child_pointer = $pointer . '/children/' . $index;
 					if ( ! $child instanceof \stdClass ) {
@@ -329,7 +329,7 @@ final class SchemaValidator {
 			'array' => is_array( $value ) && array_is_list( $value ),
 			'string' => is_string( $value ),
 			'number' => is_int( $value ) || is_float( $value ),
-			'integer' => is_int( $value ),
+			'integer' => is_int( $value ) || ( is_float( $value ) && is_finite( $value ) && floor( $value ) === $value ),
 			'boolean' => is_bool( $value ),
 			'null' => null === $value,
 		};
@@ -355,8 +355,8 @@ final class SchemaValidator {
 			}
 		}
 		if ( is_int( $value ) || is_float( $value ) ) {
-			if ( ( isset( $schema['minimum'] ) && ( ! is_numeric( $schema['minimum'] ) || $value < $schema['minimum'] ) )
-				|| ( isset( $schema['maximum'] ) && ( ! is_numeric( $schema['maximum'] ) || $value > $schema['maximum'] ) ) ) {
+			if ( ( isset( $schema['minimum'] ) && ( ( ! is_int( $schema['minimum'] ) && ! is_float( $schema['minimum'] ) ) || $value < $schema['minimum'] ) )
+				|| ( isset( $schema['maximum'] ) && ( ( ! is_int( $schema['maximum'] ) && ! is_float( $schema['maximum'] ) ) || $value > $schema['maximum'] ) ) ) {
 				$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
 			}
 		}
