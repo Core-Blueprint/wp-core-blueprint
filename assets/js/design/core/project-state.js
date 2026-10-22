@@ -29,6 +29,7 @@ export class ProjectState {
 	#validate;
 	#stableSchema;
 	#approvedStages = new WeakSet();
+	#knownSnapshots = new WeakSet();
 
 	/**
 	 * The optional stableSchema context is supplied ONLY by the verified
@@ -66,14 +67,19 @@ export class ProjectState {
 		if (!next || typeof next !== 'object' || !this.#approvedStages.has(next)) {
 			throw new TypeError('Only a validated ProjectState.stage() result may be committed.');
 		}
+		const sourceLabel = String(source || 'editor');
 		this.#approvedStages.delete(next);
 		this.#project = next;
 		this.#revision += 1;
-		return Object.freeze({ revision: this.#revision, source: String(source || 'editor') });
+		return Object.freeze({ revision: this.#revision, source: sourceLabel });
 	}
 
 	/** Internal failure-path restoration before any public transaction event. */
 	restoreCommitted(snapshot, revision) {
+		if (!snapshot || typeof snapshot !== 'object' || !this.#knownSnapshots.has(snapshot)
+			|| !Number.isSafeInteger(revision) || revision < 0) {
+			throw new TypeError('Only a previously validated project snapshot may be restored.');
+		}
 		this.#project = snapshot;
 		this.#revision = revision;
 	}
@@ -119,6 +125,7 @@ export class ProjectState {
 		}
 		if (this.#validate) this.#validate(normalized);
 		this.#approvedStages.add(normalized);
+		this.#knownSnapshots.add(normalized);
 		return normalized;
 	}
 }
