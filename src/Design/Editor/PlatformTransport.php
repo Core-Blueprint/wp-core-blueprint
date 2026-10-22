@@ -190,9 +190,15 @@ final class PlatformTransport {
 				'project' => $item->project, 'fields' => $item->fields ];
 		};
 		$create = static fn ( SaveEnvelope $item ): bool =>
-			Mail::PROFILE === $item->profile_id
-			&& '0' === $item->expected_revision
-			&& self::identity( $item->profile_id, $item->resource_key ) !== null;
+			'0' === $item->expected_revision
+			&& ( ( Mail::PROFILE === $item->profile_id && Repository::MAIL === $item->resource_type )
+				|| ( Reports::PROFILE === $item->profile_id && Repository::REPORTS === $item->resource_type
+					&& 'maintenance' === $item->resource_key ) )
+			&& self::identity( $item->profile_id, $item->resource_key ) !== null
+			&& self::valid_native_document( $item->resource_type, [
+				'project' => json_decode( SaveEnvelope::canonical_json( $item->project ), true, 128, JSON_THROW_ON_ERROR ),
+				'fields' => json_decode( SaveEnvelope::canonical_json( $item->fields ), true, 128, JSON_THROW_ON_ERROR ),
+			] );
 		$port = new BaseDocumentRepositoryPort( $authorizer, $normalize, $create );
 		$engine = new TransactionalSave( new OperationLedger() );
 		$result = $recovery ? $engine->recover( $intent, $port ) : $engine->save( $intent, $port );
