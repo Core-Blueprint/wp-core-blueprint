@@ -163,7 +163,8 @@ def build() -> tuple[Path, Path, Path]:
     translations_check()
 
     revision = canonical.design_module_revision(SOURCE)
-    expected = canonical.package_hashes(SOURCE, files, revision)
+    payloads = canonical.package_payloads(SOURCE, files, revision)
+    expected = {name: hashlib.sha256(payload).hexdigest() for name, payload in payloads.items()}
     if check_git(SOURCE) != sha or canonical.runtime_hashes(SOURCE) != original:
         fail("Source changed during development checks.")
 
@@ -179,8 +180,8 @@ def build() -> tuple[Path, Path, Path]:
     with tempfile.TemporaryDirectory(prefix=".cb-dev-", dir=OUTPUT) as temporary:
         pending = Path(temporary) / zip_name
         with zipfile.ZipFile(pending, "w") as archive:
-            for path in files:
-                canonical.add_file(archive, SOURCE, path, revision)
+            for name, payload in sorted(payloads.items()):
+                canonical.add_packaged_bytes(archive, name, payload)
         canonical.verify_archive(pending, expected)
         if check_git(SOURCE) != sha or canonical.runtime_hashes(SOURCE) != original:
             fail("Source changed during ZIP assembly.")
@@ -196,6 +197,7 @@ def build() -> tuple[Path, Path, Path]:
             "artifact_sha256": digest,
             "packaged_files": len(files),
             "package_design_revision": revision,
+            "installed_manifest_sha256": hashlib.sha256(payloads["artifact-manifest.json"]).hexdigest() if "artifact-manifest.json" in payloads else None,
             "checks": {
                 "git_source_clean": "PASS",
                 "runtime_php_syntax": php_count,
