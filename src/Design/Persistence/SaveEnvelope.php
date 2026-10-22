@@ -22,6 +22,7 @@ final class SaveEnvelope {
 	public readonly string $resource_key;
 	public readonly string $profile_id;
 	public readonly string $project_schema;
+	/** Exact FrozenRegistryV1 external identity, including the sha256: prefix. */
 	public readonly string $registry_fingerprint;
 	public readonly string $operation_id;
 	public readonly string $expected_revision;
@@ -49,7 +50,7 @@ final class SaveEnvelope {
 			|| ! self::label( $resource_key, 191 )
 			|| ! self::label( $profile_id, 128 )
 			|| ! self::label( $project_schema, 128 )
-			|| ! preg_match( '/^[a-f0-9]{64}$/D', $registry_fingerprint )
+			|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $registry_fingerprint )
 			|| ! preg_match( '/^[A-Za-z0-9_-]{22,128}$/D', $operation_id )
 			|| ! self::decimal( $expected_revision ) ) {
 			throw new \InvalidArgumentException( 'SAVE_INVALID: invalid save identity.' );

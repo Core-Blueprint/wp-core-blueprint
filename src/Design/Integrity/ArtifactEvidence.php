@@ -3,17 +3,24 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Design\Integrity;
 
+use CoreBlueprint\Core\Design\Registry\FrozenRegistry;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Server-minted ArtifactEvidenceV1 for ONE approved installed Base+consumer
- * pair. The Host still must independently prove applied CSS/ESM before READY.
+ * pair. The Host must still independently prove applied CSS/ESM before READY.
+ *
+ * The registry module graph (trusted module IDs/stamps/packagePath) and each
+ * final installed artifact module graph (transitive JS file paths) are NOT
+ * interchangeable. They have separate, domain-specific digests.
  *
  * @internal
  */
 final class ArtifactEvidence {
 	/**
-	 * Inputs are trusted server configuration, never request/project JSON.
+	 * Inputs are trusted server configuration and the SAME authoritative
+	 * FrozenRegistry selected by ContextBootstrap, never request/project JSON.
 	 * This method does not independently prove an unavailable ZIP or browser
 	 * download; external approval artifacts remain an integration dependency.
 	 *
@@ -27,7 +34,8 @@ final class ArtifactEvidence {
 		string $consumer_installed_root,
 		array $approved,
 		array $registered_capabilities,
-		array $server_scope
+		array $server_scope,
+		FrozenRegistry $registry
 	): array {
 		$fail = [ 'valid' => false, 'code' => 'ARTIFACT_RUNTIME_MISMATCH' ];
 		if ( ! function_exists( 'get_current_blog_id' ) || ! function_exists( 'get_current_user_id' )
@@ -41,7 +49,9 @@ final class ArtifactEvidence {
 			|| ! is_string( $server_scope['resourceKey'] ?? null )
 			|| ! is_string( $server_scope['profileId'] ?? null )
 			|| ! is_string( $server_scope['registryFingerprint'] ?? null )
-			|| ! preg_match( '/^[a-f0-9]{64}$/D', $server_scope['registryFingerprint'] ) ) {
+			|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $server_scope['registryFingerprint'] )
+			|| ! hash_equals( $registry->fingerprint(), $server_scope['registryFingerprint'] )
+			|| null === $registry->profile( $server_scope['profileId'] ) ) {
 			return $fail;
 		}
 		$verified = [];
@@ -65,14 +75,14 @@ final class ArtifactEvidence {
 				|| ( $identity['sourceSha'] ?? null ) !== $config['sourceSha'] ) {
 				return $fail;
 			}
-			$expected_capabilities = $identity['capabilities'] ?? [];
-			$actual_capabilities = $registered_capabilities[$name];
-			if ( ! is_array( $expected_capabilities ) || ! array_is_list( $expected_capabilities ) ) {
+			$expected = $identity['capabilities'] ?? [];
+			$actual = $registered_capabilities[$name];
+			if ( ! is_array( $expected ) || ! array_is_list( $expected ) ) {
 				return $fail;
 			}
-			sort( $expected_capabilities, SORT_STRING );
-			sort( $actual_capabilities, SORT_STRING );
-			if ( $expected_capabilities !== $actual_capabilities ) {
+			sort( $expected, SORT_STRING );
+			sort( $actual, SORT_STRING );
+			if ( $expected !== $actual ) {
 				return $fail;
 			}
 			$verified[$name] = $manifest;
@@ -81,60 +91,98 @@ final class ArtifactEvidence {
 			=== $verified['consumer']['packageIdentity']['packageId'] ) {
 			return $fail;
 		}
-		$required_css = [];
+
+		// Authoritative Registry descriptor packagePath is "base/path.js" or
+		// "consumer/path.js"; it is NOT a user-supplied file map. Each ID must
+		// resolve to exactly one approved file in the matching installed graph.
+		$registry_modules = $registry->modules();
 		$module_stamps = [];
-		$modules = [];
+		$module_files = [];
+		$used_paths = [];
+		foreach ( $registry_modules as $module ) {
+			$id = $module['id'] ?? null;
+			$path = $module['packagePath'] ?? null;
+			$stamp = $module['stamp'] ?? null;
+			if ( ! is_string( $id ) || ! preg_match( '~^@[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$~D', $id )
+				|| isset( $module_stamps[$id] )
+				|| ! is_string( $path )
+				|| ! preg_match( '#^(base|consumer)/[A-Za-z0-9_.@/-]+\.js$#D', $path )
+				|| ! is_string( $stamp ) || ! preg_match( '/^[a-z0-9._:-]{1,128}$/D', $stamp )
+				|| isset( $used_paths[$path] ) ) {
+				return $fail;
+			}
+			[ $package, $relative ] = explode( '/', $path, 2 );
+			if ( ! ArtifactManifest::valid_path( $relative ) || str_contains( $relative, '//' )
+				|| ! isset( $verified[$package]['moduleGraph'][$relative] )
+				|| ! isset( $verified[$package]['files'][$relative] )
+				|| ! is_string( $verified[$package]['packageIdentity']['moduleStamps'][$relative] ?? null )
+				|| ! hash_equals( $stamp, $verified[$package]['packageIdentity']['moduleStamps'][$relative] ) ) {
+				return $fail;
+			}
+			$used_paths[$path] = true;
+			$module_stamps[$id] = $stamp; // EXACT registry-ID namespace for Luna 3.
+			$module_files[$id] = [
+				'packagePath' => $path,
+				'packagedDigest' => 'sha256:' . $verified[$package]['files'][$relative],
+			];
+		}
+		if ( [] === $registry_modules ) {
+			return $fail; // No supported editable module to attest.
+		}
+		ksort( $module_stamps, SORT_STRING );
+		ksort( $module_files, SORT_STRING );
 		$packages = [];
-		$asset_ids = [];
+		$required_css = [];
+		$seen_css = [];
+		$artifact_graphs = [];
 		foreach ( [ 'base', 'consumer' ] as $name ) {
 			$manifest = $verified[$name];
 			$identity = $manifest['packageIdentity'];
 			$packages[$name] = [
 				'packageId' => $identity['packageId'],
 				'sourceSha' => $identity['sourceSha'],
-				'manifestDigest' => $approved[$name]['manifestSha256'],
-				'buildId' => $manifest['buildId'],
+				'manifestDigest' => 'sha256:' . $approved[$name]['manifestSha256'],
+				'buildId' => 'sha256:' . $manifest['buildId'],
 			];
-			$modules[$name] = $manifest['moduleGraph'];
-			$stamps = $identity['moduleStamps'] ?? null;
-			if ( ! is_array( $stamps ) || count( $stamps ) !== count( $modules[$name] ) ) {
-				return $fail; // Unstamped ESM is never claimed compatible.
-			}
-			foreach ( $modules[$name] as $path => $_imports ) {
-				if ( ! is_string( $stamps[$path] ?? null ) || '' === $stamps[$path] ) {
-					return $fail;
-				}
-				$module_stamps[$name . '/' . $path] = $stamps[$path];
-			}
+			$artifact_graphs[$name] = $manifest['moduleGraph'];
 			foreach ( $manifest['requiredCss'] as $css ) {
-				if ( isset( $asset_ids[$css['assetId']] ) ) {
-					return $fail; // Host CSS IDs must be globally unambiguous.
+				if ( isset( $seen_css[$css['assetId']] ) ) {
+					return $fail; // Every Host probe ID is globally unique.
 				}
-				$asset_ids[$css['assetId']] = true;
-				// Exact signed Host ABI. Package-relative path stays private.
+				$seen_css[$css['assetId']] = true;
+				// Exact signed Host descriptor; file path stays in the
+				// installed manifest. Full prefixed digest is external ABI.
 				$required_css[] = [
 					'assetId' => $css['assetId'],
 					'approvedCssWitness' => $css['approvedCssWitness'],
-					'packagedDigest' => $css['packagedDigest'],
+					'packagedDigest' => 'sha256:' . $css['packagedDigest'],
 					'selector' => $css['selector'],
 				];
 			}
 		}
 		usort( $required_css, static fn ( array $a, array $b ): int => strcmp( $a['assetId'], $b['assetId'] ) );
-		ksort( $module_stamps, SORT_STRING );
-		$graph_digest = hash( 'sha256', ArtifactManifest::json( $modules ) );
-		$pair = hash( 'sha256', self::frame( $packages['base']['buildId'] )
-			. self::frame( $packages['consumer']['buildId'] )
-			. self::frame( $packages['base']['manifestDigest'] )
-			. self::frame( $packages['consumer']['manifestDigest'] ) );
+		// This is the ONLY Host moduleGraphFingerprint authority:
+		// exactly the same canonical graph as ContextBootstrap and preflight.
+		$registry_graph_digest = FrozenRegistry::digest( $registry_modules, 'ModuleGraphV1' );
+		// Distinct, domain-separated fingerprint of installed file-import paths.
+		// This MUST NOT replace the above registry graph digest.
+		$artifact_graph_digest = 'sha256:' . hash(
+			'sha256', 'ArtifactPackageModuleGraphV1' . "\0" . ArtifactManifest::json( $artifact_graphs )
+		);
+		$pair = hash( 'sha256', self::frame( $verified['base']['buildId'] )
+			. self::frame( $verified['consumer']['buildId'] )
+			. self::frame( $approved['base']['manifestSha256'] )
+			. self::frame( $approved['consumer']['manifestSha256'] ) );
 		return [
 			'valid' => true,
 			'code' => 'ARTIFACT_INSTALLED_VERIFIED',
 			'evidence' => [
 				'contractVersion' => 1,
-				'buildId' => $pair,
-				'moduleGraphFingerprint' => $graph_digest,
+				'buildId' => 'sha256:' . $pair,
+				'moduleGraphFingerprint' => $registry_graph_digest,
+				'artifactModuleGraphFingerprint' => $artifact_graph_digest,
 				'moduleStamps' => $module_stamps,
+				'moduleFileBindings' => $module_files,
 				'requiredCss' => $required_css,
 				'verificationStatus' => 'verified',
 				'context' => [
@@ -143,7 +191,7 @@ final class ArtifactEvidence {
 					'resourceType' => $server_scope['resourceType'],
 					'resourceKey' => $server_scope['resourceKey'],
 					'profileId' => $server_scope['profileId'],
-					'registryFingerprint' => $server_scope['registryFingerprint'],
+					'registryFingerprint' => $registry->fingerprint(),
 				],
 				'approvedPackages' => $packages,
 			],

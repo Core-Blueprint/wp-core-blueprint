@@ -95,10 +95,16 @@ const validated = (values, { profileId, projectSchema, registrySnapshot, pointer
 /**
  * One context-bound persisted field store; never a second registry or history.
  *
- * registrySnapshot must be Luna 3's trusted, frozen field-facet validation
- * context from its single FrozenRegistry, not a browser-created descriptor map.
+ * registryView must be Luna 3's already-verified, immutable view of ONE
+ * server-authorized FrozenRegistry. The fieldFacet MUST be the original
+ * referentially identical projection selected by that view, never a lookalike
+ * object frozen by the caller. Luna 2's formal validatePersistedFieldsV1
+ * remains the sole schema-value validator for load, edits and receipts.
+ * fieldValidationContext is the trusted F03 validator-context projection;
+ * its precise shape must be provided by the Luna 2/3 integration handoff.
  */
 export function createPersistedFields({
+	registryView,
 	profileId,
 	projectSchema,
 	projectRegistrySnapshot,
@@ -112,10 +118,18 @@ export function createPersistedFields({
 		|| fieldFacet.projectSchema !== projectSchema
 		|| !Array.isArray(fieldFacet.fieldDescriptors)
 		|| fieldFacet.schemaGeneration !== 1
-		|| !/^[a-f0-9]{64}$/.test(fieldFacet.fingerprint || '')
-		|| !/^[a-f0-9]{64}$/.test(fieldFacet.registryFingerprint || '')
+		|| !/^sha256:[a-f0-9]{64}$/.test(fieldFacet.fingerprint || '')
+		|| !/^sha256:[a-f0-9]{64}$/.test(fieldFacet.registryFingerprint || '')
 		|| !projectRegistrySnapshot || !Object.isFrozen(projectRegistrySnapshot)
+		|| !/^sha256:[a-f0-9]{64}$/.test(projectRegistrySnapshot.fingerprint || '')
 		|| fieldFacet.projectSchemaFingerprint !== projectRegistrySnapshot.fingerprint
+		|| !registryView || !Object.isFrozen(registryView)
+		|| registryView.fingerprint !== fieldFacet.registryFingerprint
+		|| registryView.profileId !== profileId
+		|| typeof registryView.persistedFieldFacet !== 'function'
+		|| typeof registryView.projectSchemaSnapshot !== 'function'
+		|| registryView.persistedFieldFacet(profileId) !== fieldFacet
+		|| registryView.projectSchemaSnapshot(profileId) !== projectRegistrySnapshot
 		|| !fieldValidationContext || !Object.isFrozen(fieldValidationContext)) {
 		throw new TypeError('REGISTRY_INVALID: authoritative field facet required.');
 	}
@@ -123,6 +137,8 @@ export function createPersistedFields({
 	if (new Set(saveKeys).size !== saveKeys.length) {
 		throw new TypeError('REGISTRY_COLLISION: duplicate persisted saveKey.');
 	}
+	// Only Luna 2's public F03 export can admit these complete values.
+	// Integration must supply its trusted facet-aware validator context.
 	const options = { profileId, projectSchema, registrySnapshot: fieldValidationContext };
 	const normalize = (source, pointerBase) => {
 		const map = strictJsonCopy(source);

@@ -19,7 +19,7 @@ const requireSnapshot = (host, fields, revisionOverride = null) => {
 		|| !revision(context.storeRevision) || !Number.isSafeInteger(context.contextEpoch)
 		|| !Number.isSafeInteger(context.blogId) || context.blogId < 1
 		|| !Number.isSafeInteger(context.actorId) || context.actorId < 1
-		|| !/^[a-f0-9]{64}$/.test(context.registryFingerprint || '')) {
+		|| !/^sha256:[a-f0-9]{64}$/.test(context.registryFingerprint || '')) {
 		throw new Error('SAVE_NOT_READY');
 	}
 	const captured = host.captureSave();
@@ -61,6 +61,25 @@ function correlation(receipt, evidence) {
  * Sole A2-06 Save coordinator. Host retains lifecycle/command/history/renderer.
  * The adapter is trusted transport only; server retains all authority.
  *
+ * IMPORTANT: this is the INNER Save Authority constructor, not the Host's
+ * factory injection. Luna 3 invokes a trusted integrator-owned factory with
+ * createSaveCoordinator({sessionBridge, identity, persistedFieldFacet,
+ *   initialFields, evidence, signal}).
+ * That later factory MUST:
+ * - use its already-verified RegistryView and ORIGINAL persistedFieldFacet,
+ *   with the corresponding project-only schema snapshot and Luna 2 F03
+ *   validator context, when constructing createPersistedFields(...);
+ * - bind the Host sessionBridge's existing private captureSave()/rebase()
+ *   token without exposing it in SaveAdapter or serialized request data;
+ * - resolve the exact Base site/blog, actor, resource type/key, profile/schema,
+ *   context epoch, artifact READY and canonical registry fingerprint from the
+ *   trusted bootstrap (identity.siteId/resourceId alone are NOT enough);
+ * - obtain an authorized load receipt with a lossless string storeRevision,
+ *   and provide one server-authorized SaveAdapterV1 for that resource;
+ * - reject absent/revoked permissions or missing artifacts before invoking
+ *   createSaveCoordinator({host, fields, adapter}) below.
+ * No adapter/store/Host bridge is created in this SOURCE-only Luna 5 branch.
+ *
  * Required private Host bridge:
  * saveContext(), captureSave(), rebase({saveToken,baselineProject,source}),
  * validateAcceptedProject(project), isProjectDirty().
@@ -68,6 +87,8 @@ function correlation(receipt, evidence) {
  * SaveAdapterV1:
  * serialize(frozenCheckpoint), submit(payload,opts), lookupOperation(evidence,opts),
  * verifyReceipt(receipt,evidence), canSave(), destroy().
+ * The integrator must provide load(context,signal) and ensure the initialized
+ * storeRevision matches the authorized load. No WordPress endpoint is wired.
  */
 export function createSaveCoordinator({ host, fields, adapter }) {
 	if (!host || !fields || !adapter
@@ -105,6 +126,8 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 		if (!correlation(receipt, evidence)) throw new Error('SAVE_RECEIPT_INVALID');
 		if (!receipt.acceptedProject || !receipt.acceptedFields) throw new Error('SAVE_RECEIPT_INVALID');
 		const acceptedProject = strictJsonCopy(receipt.acceptedProject);
+		// Luna 2 F03 complete-map validation MUST succeed before ANY History rebase.
+		// A malformed, missing or extra accepted field is never an ack.
 		const acceptedFields = fields.validateAccepted(receipt.acceptedFields);
 		host.validateAcceptedProject(acceptedProject);
 		const [acceptedProjectDigest, acceptedFieldsDigest, acceptedDigest] = await Promise.all([

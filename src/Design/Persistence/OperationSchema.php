@@ -8,6 +8,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * InnoDB ledger schema contract; registration/migration belongs to integration.
  * This class NEVER issues DDL. An absent ledger must refuse Save.
+ * The 71-character registry identity stores the COMPLETE canonical sha256:
+ * prefix plus 64 lowercase hex digits: no lossy DB/transport translation.
  *
  * @internal
  */
@@ -38,7 +40,7 @@ final class OperationSchema {
 			resource_key VARCHAR(191) NOT NULL,
 			profile_id VARCHAR(128) NOT NULL,
 			project_schema VARCHAR(128) NOT NULL,
-			registry_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+			registry_fingerprint CHAR(71) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
 			request_digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
 			submitted_project_digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
 			submitted_fields_digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -108,7 +110,7 @@ final class OperationSchema {
 		}
 		foreach ( [
 			'operation_id_hash' => 64, 'resource_hash' => 64,
-			'registry_fingerprint' => 64, 'request_digest' => 64,
+			'registry_fingerprint' => 71, 'request_digest' => 64,
 			'submitted_project_digest' => 64, 'submitted_fields_digest' => 64,
 			'expected_revision' => 20, 'accepted_revision' => 20,
 		] as $column => $length ) {
