@@ -14,7 +14,7 @@ final class ProviderRegistry {
 
 	public function register( string $id ): bool {
 		$id = trim( $id );
-		if ( ! Identifier::provider( $id ) || isset( $this->providers[ $id ], $this->aliases[ $id ] ) ) {
+		if ( ! Identifier::provider( $id ) || isset( $this->providers[ $id ] ) || isset( $this->aliases[ $id ] ) ) {
 			return false;
 		}
 		$this->providers[ $id ] = true;
@@ -26,8 +26,10 @@ final class ProviderRegistry {
 		$canonical_provider = trim( $canonical_provider );
 		if (
 			! Identifier::provider( $alias )
+			|| ! Identifier::provider( $canonical_provider )
 			|| ! isset( $this->providers[ $canonical_provider ] )
-			|| isset( $this->providers[ $alias ], $this->aliases[ $alias ] )
+			|| isset( $this->providers[ $alias ] )
+			|| isset( $this->aliases[ $alias ] )
 		) {
 			return false;
 		}
@@ -35,6 +37,10 @@ final class ProviderRegistry {
 		return true;
 	}
 
+	/**
+	 * Alias resolution is historical/explicit-migration only. Stable schema v1
+	 * admits an ID exclusively through has_canonical(), never resolve().
+	 */
 	public function resolve( string $id ): ?string {
 		if ( isset( $this->providers[ $id ] ) ) {
 			return $id;
@@ -46,8 +52,10 @@ final class ProviderRegistry {
 		return isset( $this->providers[ $id ] );
 	}
 
-	/** @return list<string> */
+	/** @return list<string> Defensive canonical-only sorted copy. */
 	public function providers(): array {
-		return array_keys( $this->providers );
+		$ids = array_keys( $this->providers );
+		sort( $ids, SORT_STRING );
+		return $ids;
 	}
 }
