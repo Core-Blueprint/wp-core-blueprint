@@ -105,8 +105,9 @@ final class ArtifactEvidence {
 			}
 			$verified[$name] = $manifest;
 		}
-		if ( ! $base_only && $verified['base']['packageIdentity']['packageId']
-			=== $verified['consumer']['packageIdentity']['packageId'] ) {
+		if ( ( $verified['base']['packageIdentity']['packageId'] ?? null ) !== 'core-blueprint/base'
+			|| ( ! $base_only && $verified['base']['packageIdentity']['packageId']
+				=== $verified['consumer']['packageIdentity']['packageId'] ) ) {
 			return $fail;
 		}
 
