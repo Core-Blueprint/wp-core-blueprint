@@ -20,12 +20,16 @@ final class StableSchemaRegistry {
 	private array $design_types = [];
 	private string $profile_id;
 	private string $project_schema;
+	/** @var array<string,mixed>|null Exact trusted F01 facet; null means not yet provided. */
+	private ?array $field_facet = null;
+	private string $snapshot_fingerprint;
 
 	/** @param array<string,mixed> $snapshot Exact project-only RegistrySnapshotV1 from the trusted freeze. */
 	public function __construct(
 		array $snapshot,
 		private readonly ProviderRegistry $providers,
-		private readonly DesignTypeRegistry $types
+		private readonly DesignTypeRegistry $types,
+		?array $persisted_field_facet = null
 	) {
 		$keys = [ 'contractVersion', 'schemaGeneration', 'profileId', 'projectSchema', 'providers', 'designTypes', 'nodeTypes', 'domainSchemas', 'fingerprint' ];
 		$actual = array_keys( $snapshot );
@@ -43,6 +47,7 @@ final class StableSchemaRegistry {
 		}
 		$this->profile_id     = $snapshot['profileId'];
 		$this->project_schema = $snapshot['projectSchema'];
+		$this->snapshot_fingerprint = $snapshot['fingerprint'];
 
 		if ( ! is_array( $snapshot['providers'] ) || ! array_is_list( $snapshot['providers'] )
 			|| count( $snapshot['providers'] ) !== count( array_unique( $snapshot['providers'] ) ) ) {
@@ -121,6 +126,68 @@ final class StableSchemaRegistry {
 				}
 			}
 		}
+		if ( null !== $persisted_field_facet ) {
+			$this->accept_field_facet( $persisted_field_facet );
+		}
+	}
+
+	/**
+	 * This is a read-only F01 projection received from the SAME FrozenRegistry
+	 * atomic graph, never an independent field registration authority.
+	 *
+	 * @param array<string,mixed> $facet
+	 */
+	private function accept_field_facet( array $facet ): void {
+		if ( ! self::exact_keys( $facet, [
+			'contractVersion', 'schemaGeneration', 'profileId', 'projectSchema',
+			'registryFingerprint', 'projectSchemaFingerprint', 'fieldDescriptors', 'fingerprint',
+		] )
+			|| 1 !== $facet['contractVersion'] || 1 !== $facet['schemaGeneration']
+			|| $this->profile_id !== $facet['profileId']
+			|| $this->project_schema !== $facet['projectSchema']
+			|| $this->snapshot_fingerprint !== $facet['projectSchemaFingerprint']
+			|| ! is_string( $facet['registryFingerprint'] )
+			|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $facet['registryFingerprint'] )
+			|| ! is_string( $facet['fingerprint'] )
+			|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $facet['fingerprint'] )
+			|| ! is_array( $facet['fieldDescriptors'] )
+			|| ! array_is_list( $facet['fieldDescriptors'] )
+		) {
+			throw new \InvalidArgumentException( 'REGISTRY_INVALID: persisted field facet mismatch.' );
+		}
+		$ids = [];
+		$prior = '';
+		foreach ( $facet['fieldDescriptors'] as $descriptor ) {
+			if ( ! is_array( $descriptor ) || ! isset( $descriptor['id'], $descriptor['saveKey'],
+				$descriptor['labelKey'], $descriptor['valueSchema'], $descriptor['placement'], $descriptor['contractVersion'] )
+				|| 1 !== $descriptor['contractVersion']
+				|| ! is_string( $descriptor['id'] ) || '' === $descriptor['id']
+				|| ! is_string( $descriptor['saveKey'] )
+				|| ! preg_match( '/^[a-z][A-Za-z0-9_]*$/D', $descriptor['saveKey'] )
+				|| ! is_string( $descriptor['labelKey'] ) || '' === $descriptor['labelKey']
+				|| ! is_array( $descriptor['valueSchema'] )
+				|| ! in_array( $descriptor['placement'], [ 'header', 'settings' ], true )
+				|| ( '' !== $prior && strcmp( $prior, $descriptor['saveKey'] ) >= 0 )
+				|| isset( $ids[ $descriptor['id'] ] )
+				|| array_diff( array_keys( $descriptor ), [
+					'contractVersion', 'id', 'saveKey', 'labelKey', 'valueSchema',
+					'placement', 'requiredCapability',
+				] )
+				|| ( isset( $descriptor['requiredCapability'] )
+					&& ( ! is_string( $descriptor['requiredCapability'] )
+						|| ! Identifier::capability( $descriptor['requiredCapability'] ) ) )
+			) {
+				throw new \InvalidArgumentException( 'REGISTRY_INVALID: invalid field descriptor.' );
+			}
+			$prior = $descriptor['saveKey'];
+			$ids[ $descriptor['id'] ] = true;
+		}
+		$this->field_facet = $facet;
+	}
+
+	/** @return array<string,mixed>|null A defensive PHP value-copy, never a mutable registry handle. */
+	public function persisted_field_facet(): ?array {
+		return $this->field_facet;
 	}
 
 	/** @param mixed $value @param list<string> $keys */
