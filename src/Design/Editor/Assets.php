@@ -115,6 +115,16 @@ final class Assets {
 	}
 
 	/**
+	 * Explicit editor route. The normal admin page must not enqueue or mount
+	 * the native Designer until the operator clicks its launch button.
+	 * Authorization is still enforced by each page and the REST transport.
+	 */
+	public static function platform_fullscreen_requested(): bool {
+		return isset( $_GET['cb_designer'] ) && is_string( $_GET['cb_designer'] )
+			&& '1' === wp_unslash( $_GET['cb_designer'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only route selection.
+	}
+
+	/**
 	 * Single native Platform v1 entrypoint for the TWO Base-owned Designers.
 	 * Never enqueue the historical Mail/Reports editor engines on these routes.
 	 * JavaScript imports precisely these statically registered WordPress modules.
@@ -137,6 +147,12 @@ final class Assets {
 			self::DESIGNER_COMPOSITION_STYLE, CB_CORE_URL . 'assets/css/design/designer-composition.css',
 			[ self::DESIGNER_MODE_STYLE, self::FORM_CONTROL_STYLE ],
 			self::asset_version( 'assets/css/design/designer-composition.css' )
+		);
+		wp_enqueue_style(
+			'cb-core-designer-platform-fullscreen',
+			CB_CORE_URL . 'assets/css/design/platform-fullscreen.css',
+			[ self::DESIGNER_COMPOSITION_STYLE ],
+			self::asset_version( 'assets/css/design/platform-fullscreen.css' )
 		);
 		foreach ( [
 			'@cb-core/mail-platform' => 'assets/js/design/mail/platform-adapter.js',
