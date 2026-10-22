@@ -8,8 +8,8 @@ use CoreBlueprint\Core\Design\Registry\FrozenRegistry;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Server-minted ArtifactEvidenceV1 for ONE approved installed Base+consumer
- * pair. The Host must still independently prove applied CSS/ESM before READY.
+ * Server-minted ArtifactEvidenceV1 for a verified, explicit Base-only
+ * installation or ONE independently verified Base+consumer package pair. The Host must still independently prove applied CSS/ESM before READY.
  *
  * The registry module graph (trusted module IDs/stamps/packagePath) and each
  * final installed artifact module graph (transitive JS file paths) are NOT
@@ -31,7 +31,7 @@ final class ArtifactEvidence {
 	 */
 	public static function collect(
 		string $base_installed_root,
-		string $consumer_installed_root,
+		?string $consumer_installed_root,
 		array $approved,
 		array $registered_capabilities,
 		array $server_scope,
@@ -54,8 +54,26 @@ final class ArtifactEvidence {
 			|| null === $registry->profile( $server_scope['profileId'] ) ) {
 			return $fail;
 		}
+		// The package mode is determined ONLY from trusted server configuration
+		// and installed roots. A missing consumer must not become a fake manifest.
+		$base_only = null === $consumer_installed_root;
+		$mode = $base_only ? 'base-only' : 'base-consumer';
+		$names = $base_only ? [ 'base' ] : [ 'base', 'consumer' ];
+		$approved_names = array_keys( $approved );
+		$capability_names = array_keys( $registered_capabilities );
+		sort( $approved_names, SORT_STRING );
+		sort( $capability_names, SORT_STRING );
+		if ( $approved_names !== $names || $capability_names !== $names
+			|| ! is_dir( $base_installed_root )
+			|| ( ! $base_only && ! is_dir( $consumer_installed_root ) ) ) {
+			return $fail;
+		}
+		$roots = [ 'base' => $base_installed_root ];
+		if ( ! $base_only ) {
+			$roots['consumer'] = $consumer_installed_root;
+		}
 		$verified = [];
-		foreach ( [ 'base' => $base_installed_root, 'consumer' => $consumer_installed_root ] as $name => $root ) {
+		foreach ( $roots as $name => $root ) {
 			$config = $approved[$name] ?? null;
 			if ( ! is_array( $config )
 				|| ! is_string( $config['manifestSha256'] ?? null )
@@ -87,7 +105,7 @@ final class ArtifactEvidence {
 			}
 			$verified[$name] = $manifest;
 		}
-		if ( $verified['base']['packageIdentity']['packageId']
+		if ( ! $base_only && $verified['base']['packageIdentity']['packageId']
 			=== $verified['consumer']['packageIdentity']['packageId'] ) {
 			return $fail;
 		}
@@ -112,6 +130,9 @@ final class ArtifactEvidence {
 				return $fail;
 			}
 			[ $package, $relative ] = explode( '/', $path, 2 );
+			if ( ( $base_only && 'base' !== $package ) || ! isset( $verified[ $package ] ) ) {
+				return $fail;
+			}
 			if ( ! ArtifactManifest::valid_path( $relative ) || str_contains( $relative, '//' )
 				|| ! isset( $verified[$package]['moduleGraph'][$relative] )
 				|| ! isset( $verified[$package]['files'][$relative] )
@@ -135,7 +156,7 @@ final class ArtifactEvidence {
 		$required_css = [];
 		$seen_css = [];
 		$artifact_graphs = [];
-		foreach ( [ 'base', 'consumer' ] as $name ) {
+		foreach ( $names as $name ) {
 			$manifest = $verified[$name];
 			$identity = $manifest['packageIdentity'];
 			$packages[$name] = [
@@ -169,16 +190,24 @@ final class ArtifactEvidence {
 		$artifact_graph_digest = 'sha256:' . hash(
 			'sha256', 'ArtifactPackageModuleGraphV1' . "\0" . ArtifactManifest::json( $artifact_graphs )
 		);
-		$pair = hash( 'sha256', self::frame( $verified['base']['buildId'] )
-			. self::frame( $verified['consumer']['buildId'] )
-			. self::frame( $approved['base']['manifestSha256'] )
-			. self::frame( $approved['consumer']['manifestSha256'] ) );
+		if ( $base_only ) {
+			$combined = hash( 'sha256', self::frame( 'ArtifactBaseOnlyV1' )
+				. self::frame( $verified['base']['buildId'] )
+				. self::frame( $approved['base']['manifestSha256'] ) );
+		} else {
+			// Preserve the exact established pair identity and ordering.
+			$combined = hash( 'sha256', self::frame( $verified['base']['buildId'] )
+				. self::frame( $verified['consumer']['buildId'] )
+				. self::frame( $approved['base']['manifestSha256'] )
+				. self::frame( $approved['consumer']['manifestSha256'] ) );
+		}
 		return [
 			'valid' => true,
 			'code' => 'ARTIFACT_INSTALLED_VERIFIED',
 			'evidence' => [
 				'contractVersion' => 1,
-				'buildId' => 'sha256:' . $pair,
+				'packageMode' => $mode,
+				'buildId' => 'sha256:' . $combined,
 				'moduleGraphFingerprint' => $registry_graph_digest,
 				'artifactModuleGraphFingerprint' => $artifact_graph_digest,
 				'moduleStamps' => $module_stamps,
