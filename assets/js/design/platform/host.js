@@ -103,6 +103,10 @@ export function createPlatformHost({
 		undo() { assertReady(holder); return holder.bridge.undo(); },
 		redo() { assertReady(holder); return holder.bridge.redo(); },
 		historyStatus() { return holder.bridge.historyStatus(); },
+		saveStatus() {
+			assertReady(holder);
+			return immutableData(holder.save.status());
+		},
 		subscribe(listener) {
 			// The disconnected shell subscribes only while the Host commits
 			// its live canvas. Commands, Save and external Editor access still
