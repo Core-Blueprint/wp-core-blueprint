@@ -35,12 +35,12 @@ const propsOK=(type,p)=>!!TYPES[type]&&!!p&&typeof p==='object'&&!Array.isArray(
  &&Object.keys(p).length===Object.keys(TYPES[type].controls).length
  &&Object.entries(TYPES[type].controls).every(([k,c])=>has(p,k)&&valueOK(p[k],c));
 const parentOK=(p,t)=>!!TYPES[t]&&TYPES[t].parents.includes(p?.type);
-const validNode=(n,parent=null,depth=0)=>!!n&&depth<=64&&has(TYPES,n.type)&&n.provider==='core.blueprint'
+const validNode=(n,parent=null,depth=0,counter={count:0})=>!!n&&depth<=64&&++counter.count<=5000&&has(TYPES,n.type)&&n.provider==='core.blueprint'
  &&propsOK(n.type,n.properties)&&Array.isArray(n.children)
  &&(parent===null||parentOK(parent,n.type))
  &&(n.type!=='mail.columns'||(n.children.length===2&&n.children.every(c=>c?.type==='mail.column')))
  &&([ROOT,'mail.section','mail.columns','mail.column'].includes(n.type)||n.children.length===0)
- &&n.children.every(c=>validNode(c,n,depth+1));
+ &&n.children.every(c=>validNode(c,n,depth+1,counter));
 export function validateProject(p){
  if(!p||Object.keys(p).length!==3||p.schema_version!==1||p.design_type!==ROOT
   ||p.root?.type!==ROOT||!validNode(p.root))throw new TypeError('SCHEMA_DOMAIN_INVALID');

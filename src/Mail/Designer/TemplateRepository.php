@@ -46,8 +46,8 @@ final class TemplateRepository {
 			|| count( $fields ) !== 2 || ! array_key_exists( 'subject', $fields )
 			|| ! array_key_exists( 'preheader', $fields )
 			|| ! is_string( $fields['subject'] ) || '' === trim( $fields['subject'] )
-			|| ! is_string( $fields['preheader'] ) || strlen( $fields['subject'] ) > 255
-			|| strlen( $fields['preheader'] ) > 500
+			|| ! is_string( $fields['preheader'] ) || mb_strlen( $fields['subject'], 'UTF-8' ) > 255
+			|| mb_strlen( $fields['preheader'], 'UTF-8' ) > 500
 			|| ( new Validator() )->validate( $project )->has_errors() ) {
 			throw new DocumentUnavailable( 'invalid' );
 		}

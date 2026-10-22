@@ -105,7 +105,11 @@ final class WordPressIntegration {
 			// WordPress owns this security notification. Keep the *exact* array
 			// received from upstream WordPress/plugin filters, including all keys.
 			return $email;
+		} catch ( \Throwable $error ) {
+			self::record_integrity_fault( 'render_invalid' );
+			return $email;
 		}
+		// Provider/bootstrap errors must never suppress WordPress security notifications.
 		if ( null === $rendered || '' === trim( $rendered['html'] )
 			|| '' === trim( $rendered['subject'] ) ) {
 			if ( in_array( Authority::inspect()['status'], [ 'active', 'blocked' ], true ) ) {

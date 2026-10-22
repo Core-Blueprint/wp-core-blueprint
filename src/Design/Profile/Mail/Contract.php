@@ -34,11 +34,13 @@ final class Contract {
 	 * @return array<string,array{parents:array,defaults:array,properties:array}>
 	 */
 	public static function definitions(): array {
+		static $cache = null;
+		if ( null !== $cache ) return $cache;
 		$color = self::s( 32 );
 		$align = self::e( [ 'left', 'center', 'right' ] );
 		$font = self::e( self::FONT_FAMILIES );
 		$content_parents = [ 'mail.section', 'mail.column' ];
-		return [
+		return $cache = [
 			self::ROOT_TYPE => [
 				'parents' => [],
 				'defaults' => [

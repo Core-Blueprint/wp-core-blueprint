@@ -1,12 +1,11 @@
 <?php
 declare(strict_types=1);
 /**
- * Email-safe HTML renderer for Design Foundation Mail projects.
+ * Native Platform v1 email-safe HTML renderer.
  *
- * Rendering is deterministic and transport-independent. Values are escaped at
- * their output context; no arbitrary raw HTML component is provided by Base.
- * Extensions may render their own registered node types through the documented
- * `core_blueprint_design_mail_render_node` filter.
+ * Rendering is deterministic and transport-independent. All native nodes are
+ * validated before rendering, and dynamic data is escaped at its output context.
+ * Untrusted raw HTML components and external renderer filters are not used.
  *
  * @package Core_Blueprint
  */

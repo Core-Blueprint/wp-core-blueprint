@@ -13,7 +13,7 @@ final class Validator {
 
 	public function validate( array $project ): Diagnostics {
 		$errors = new Diagnostics();
-		if ( array_keys( $project ) !== [ 'schema_version', 'design_type', 'root' ]
+		if ( ! self::exact_keys( $project, [ 'schema_version', 'design_type', 'root' ] )
 			|| ( $project['schema_version'] ?? null ) !== 1
 			|| ( $project['design_type'] ?? null ) !== Contract::DESIGN_TYPE
 			|| ! is_array( $project['root'] ?? null ) ) {
@@ -36,7 +36,7 @@ final class Validator {
 			|| ( $node['provider'] ?? null ) !== Contract::CORE_PROVIDER
 			|| ( null === $parent && Contract::ROOT_TYPE !== $type )
 			|| ( null !== $parent && ! in_array( $parent, $definitions[ $type ]['parents'], true ) )
-			|| array_keys( $node ) !== [ 'type', 'provider', 'properties', 'children' ] ) {
+			|| ! self::exact_keys( $node, [ 'type', 'provider', 'properties', 'children' ] ) ) {
 			$errors->error( 'mail.native_node', 'Unrecognized native Mail node.', $path );
 			return;
 		}
@@ -75,6 +75,13 @@ final class Validator {
 		}
 	}
 
+	private static function exact_keys( array $object, array $expected ): bool {
+		$keys = array_keys( $object );
+		sort( $keys, SORT_STRING );
+		sort( $expected, SORT_STRING );
+		return $keys === $expected;
+	}
+
 	private static function valid_value( mixed $value, array $rule ): bool {
 		if ( 'integer' === $rule['type'] ) {
 			return is_int( $value ) && $value >= $rule['minimum'] && $value <= $rule['maximum'];
@@ -82,7 +89,7 @@ final class Validator {
 		if ( ! is_string( $value ) || mb_strlen( $value, 'UTF-8' ) > ( $rule['maxLength'] ?? 65535 )
 			|| mb_strlen( $value, 'UTF-8' ) < ( $rule['minLength'] ?? 0 ) ) return false;
 		if ( isset( $rule['enum'] ) ) return in_array( $value, $rule['enum'], true );
-		if ( ( $rule['maxLength'] ?? 0 ) === 32 && str_starts_with( $value, '#' ) ) {
+		if ( ( $rule['maxLength'] ?? 0 ) === 32 ) {
 			return 1 === preg_match( '/^#[a-fA-F0-9]{6}$/D', $value );
 		}
 		if ( ( $rule['maxLength'] ?? 0 ) === 2048 && '' !== $value ) {
