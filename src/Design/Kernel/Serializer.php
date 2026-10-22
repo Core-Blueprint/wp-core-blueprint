@@ -148,8 +148,14 @@ final class Serializer {
 
 	/** @param array<string,mixed> $node */
 	private function normalize_node_for_json( array $node ): object {
+		// Preserve historical opted-in v0 root:{} exactly; no inserted keys.
+		if ( [] === $node ) {
+			return (object) [];
+		}
 		$normalized = $node;
-		$normalized['properties'] = (object) ( $node['properties'] ?? [] );
+		if ( isset( $normalized['properties'] ) && is_array( $normalized['properties'] ) ) {
+			$normalized['properties'] = (object) $normalized['properties'];
+		}
 		if ( isset( $normalized['children'] ) && is_array( $normalized['children'] ) ) {
 			$normalized['children'] = array_map(
 				fn ( mixed $child ): mixed => is_array( $child ) ? $this->normalize_node_for_json( $child ) : $child,
