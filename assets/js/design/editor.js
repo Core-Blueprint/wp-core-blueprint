@@ -36,6 +36,7 @@ import {
 	createDesignerNavigation,
 	createDesignerSelectionController,
 	createDesignerShell,
+	claimDesignerHostRoot,
 	decorateDesignerControl,
 	decorateDesignerElement,
 } from './shell/index.js';
@@ -358,6 +359,93 @@ export const createDomainSession = ({
 			disposed = true;
 			unsubscribeConfigured?.();
 			history.dispose();
+		},
+	});
+};
+
+/**
+ * Trusted static-ESM A2 Host attachment boundary. The integration owner must
+ * import the actual Host factory from platform/host.js and obtain bootstrap
+ * from authorized PHP; neither is available in this SOURCE-only branch.
+ * This bridge holds one shell lease, never a second History/Save/render queue.
+ * Do not expose this constructor on window.cbCore or treat its bootstrap
+ * argument as proof of authorization: the Host validates trusted evidence.
+ */
+export const attachTrustedDesignerHost = ({ root, createHost, bootstrap } = {}) => {
+	if (!(root instanceof Element) || !root.matches('[data-cb-design-shell]')) {
+		throw new TypeError('Designer Platform requires a canonical shell root.');
+	}
+	if (typeof createHost !== 'function') {
+		throw new TypeError('Designer Platform requires a statically imported Host factory.');
+	}
+	if (!bootstrap || typeof bootstrap !== 'object' || Array.isArray(bootstrap)) {
+		throw new TypeError('Designer Platform requires server-provided bootstrap evidence.');
+	}
+
+	const lease = claimDesignerHostRoot(root);
+	let constructing = true;
+	let closed = false;
+	let inFlightUnmount = null;
+	let host;
+	try {
+		// No eager shell creation: Host mounts only after its preflight gates.
+		const createShell = (session, options = {}) => {
+			if (constructing || closed) throw new Error('HOST_CONTEXT_REFUSED');
+			return createDesignerShell(root, { ...options, session, platformLease: lease });
+		};
+		host = createHost(Object.freeze({ root, bootstrap, createShell }));
+		if (!host || host.root !== root
+			|| typeof host.mount !== 'function'
+			|| typeof host.switchContext !== 'function'
+			|| typeof host.refresh !== 'function'
+			|| typeof host.unmount !== 'function') {
+			throw new TypeError('Designer Host does not satisfy the A1 lifecycle interface.');
+		}
+	} catch (error) {
+		lease.release(); // Construction was forbidden from creating a shell.
+		throw error;
+	} finally {
+		constructing = false;
+	}
+
+	const assertActive = () => {
+		if (closed || inFlightUnmount) throw new Error('HOST_CONTEXT_REFUSED');
+	};
+	return Object.freeze({
+		get root() { return root; },
+		get state() { return host.state; },
+		get profileId() { return host.profileId; },
+		get context() { return host.context; },
+		get editor() { return host.editor; },
+		mount(initialContext) {
+			assertActive();
+			return host.mount(initialContext);
+		},
+		switchContext(nextContext, options) {
+			assertActive();
+			return host.switchContext(nextContext, options);
+		},
+		refresh(reason) {
+			assertActive();
+			return host.refresh(reason);
+		},
+		async unmount() {
+			if (closed) return true;
+			if (inFlightUnmount) return inFlightUnmount;
+			// Host MUST refuse unsafe Save states, abort work, then destroy its
+			// shell through the existing Exit Guard before relinquishing root.
+			inFlightUnmount = (async () => {
+				const outcome = await host.unmount();
+				if (outcome === false) return false;
+				if (!lease.release()) throw new Error('HOST_CLEANUP_FAILED');
+				closed = true;
+				return true;
+			})();
+			try {
+				return await inFlightUnmount;
+			} finally {
+				inFlightUnmount = null;
+			}
 		},
 	});
 };
