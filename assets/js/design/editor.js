@@ -586,11 +586,16 @@ export const attachTrustedDesignerHost = ({
 	const stagedSaveUI = new WeakMap();
 	const savesBySignal = new WeakMap();
 	const activeRegistries = new Map();
+	const registriesByIdentity = new Map();
 	const registryFor = async (candidateBootstrap) => {
 		const registry = createRegistryView(candidateBootstrap, runtimeModules);
 		await registry.verify();
 		const key = JSON.stringify([registry.profileId, registry.identity]);
+		const identityKey = JSON.stringify(registry.identity);
+		const prior = registriesByIdentity.get(identityKey);
+		if (prior && prior.profileId !== registry.profileId) throw new Error('REGISTRY_COLLISION');
 		activeRegistries.set(key, registry);
+		registriesByIdentity.set(identityKey, registry);
 		return registry;
 	};
 	// A single field store and a single Luna 5 SaveCoordinator per Host
@@ -776,7 +781,7 @@ export const attachTrustedDesignerHost = ({
 			// Only the trusted PHP FrozenRegistry provides component identities.
 			// These descriptors have no executable create policy in v1; presenting
 			// them as clickable "Add" commands would create false functionality.
-			const activeRegistry = activeRegistries.get(JSON.stringify([context.profileId, context]));
+			const activeRegistry = registriesByIdentity.get(JSON.stringify(context));
 			if (!activeRegistry) throw new Error('REGISTRY_INVALID');
 			for (const component of activeRegistry.components) {
 				const item = stagedRoot.ownerDocument.createElement('div');
