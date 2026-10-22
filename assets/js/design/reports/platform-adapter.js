@@ -26,9 +26,7 @@ const defs = Object.freeze({
 const defaults = Object.freeze({
 	'reports.activity': {enabled:'on', showIntro:'on'},
 	'reports.current-state': {enabled:'on', showNotes:'on'},
-	'reports.footer': {showPageNumber:'on'},
-	'reports.header': {showSiteUrl:'on', showMetadata:'on'},
-	'reports.heading': {text:'Heading'},
+ 	'reports.heading': {text:'Heading'},
 	'reports.kpis': {enabled:'on', showDetails:'on'},
 	'reports.metric': {label:'Metric', value:'Value'},
 	'reports.notes': {enabled:'on', showHeading:'on'},

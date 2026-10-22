@@ -19,9 +19,9 @@ defined( 'ABSPATH' ) || exit;
  * First-party native Reports StableSchemaV1 profile. No Composer document,
  * URLs or separate persistence authority are registered here.
  *
- * Values are bounded strings because the frozen Foundation Inspector and
- * Settings controls currently only support strings. Semantic enums, logo ID
- * and node invariants are verified in Reports\Composer\NativeComposition.
+ * Values use the existing schema string/enum vocabulary. The Foundation
+ * remains responsible for typed Inspector controls and the authoritative
+ * Save validation hook into Reports\Composer\NativeComposition.
  */
 final class PlatformAdapter {
 	public const PROVIDER = 'core.blueprint';
@@ -41,19 +41,19 @@ final class PlatformAdapter {
 			],
 			'reports.activity' => [
 				'parents' => [ $root ],
-				'properties' => [ 'enabled' => self::string_schema( 3 ), 'showIntro' => self::string_schema( 3 ) ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showIntro' => self::string_schema( 3, [ 'on', 'off' ] ) ],
 			],
 			'reports.current-state' => [
 				'parents' => [ $root ],
-				'properties' => [ 'enabled' => self::string_schema( 3 ), 'showNotes' => self::string_schema( 3 ) ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showNotes' => self::string_schema( 3, [ 'on', 'off' ] ) ],
 			],
 			'reports.footer' => [
 				'parents' => [ $root ],
-				'properties' => [ 'showPageNumber' => self::string_schema( 3 ) ],
+				'properties' => [ 'showPageNumber' => self::string_schema( 3, [ 'on', 'off' ] ) ],
 			],
 			'reports.header' => [
 				'parents' => [ $root ],
-				'properties' => [ 'showSiteUrl' => self::string_schema( 3 ), 'showMetadata' => self::string_schema( 3 ) ],
+				'properties' => [ 'showSiteUrl' => self::string_schema( 3, [ 'on', 'off' ] ), 'showMetadata' => self::string_schema( 3, [ 'on', 'off' ] ) ],
 			],
 			'reports.heading' => [
 				'parents' => [ $root, 'reports.section' ],
@@ -61,7 +61,7 @@ final class PlatformAdapter {
 			],
 			'reports.kpis' => [
 				'parents' => [ $root ],
-				'properties' => [ 'enabled' => self::string_schema( 3 ), 'showDetails' => self::string_schema( 3 ) ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showDetails' => self::string_schema( 3, [ 'on', 'off' ] ) ],
 			],
 			'reports.metric' => [
 				'parents' => [ $root, 'reports.section' ],
@@ -69,7 +69,7 @@ final class PlatformAdapter {
 			],
 			'reports.notes' => [
 				'parents' => [ $root ],
-				'properties' => [ 'enabled' => self::string_schema( 3 ), 'showHeading' => self::string_schema( 3 ) ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showHeading' => self::string_schema( 3, [ 'on', 'off' ] ) ],
 			],
 			'reports.paragraph' => [
 				'parents' => [ $root, 'reports.section' ],
@@ -77,38 +77,38 @@ final class PlatformAdapter {
 			],
 			'reports.section' => [
 				'parents' => [ $root ],
-				'properties' => [ 'title' => self::string_schema( 160 ), 'enabled' => self::string_schema( 3 ) ],
+				'properties' => [ 'title' => self::string_schema( 160 ), 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ) ],
 			],
 			'reports.status' => [
 				'parents' => [ $root ],
-				'properties' => [ 'enabled' => self::string_schema( 3 ), 'showDetails' => self::string_schema( 3 ) ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showDetails' => self::string_schema( 3, [ 'on', 'off' ] ) ],
 			],
 			'reports.summary' => [
 				'parents' => [ $root ],
 				'properties' => [
-					'enabled' => self::string_schema( 3 ), 'showSecurity' => self::string_schema( 3 ),
-					'showBackups' => self::string_schema( 3 ),
+					'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showSecurity' => self::string_schema( 3, [ 'on', 'off' ] ),
+					'showBackups' => self::string_schema( 3, [ 'on', 'off' ] ),
 				],
 			],
 		];
 	}
 
-	/** @return array<string,array{max:int,default:string}> */
+	/** @return array<string,array{max:int,default:string,enum?:list<string>}> */
 	public static function branding_definitions(): array {
 		return [
 			'accent_color' => [ 'max' => 7, 'default' => '#0064c8' ],
-			'corner_style' => [ 'max' => 7, 'default' => 'soft' ],
-			'density' => [ 'max' => 11, 'default' => 'comfortable' ],
+			'corner_style' => [ 'max' => 7, 'default' => 'soft', 'enum' => [ 'square', 'soft', 'rounded' ] ],
+			'density' => [ 'max' => 11, 'default' => 'comfortable', 'enum' => [ 'compact', 'comfortable' ] ],
 			'logo_attachment_id' => [ 'max' => 12, 'default' => '0' ],
-			'page_format' => [ 'max' => 6, 'default' => 'a4' ],
-			'page_orientation' => [ 'max' => 9, 'default' => 'portrait' ],
+			'page_format' => [ 'max' => 6, 'default' => 'a4', 'enum' => [ 'a4', 'letter' ] ],
+			'page_orientation' => [ 'max' => 9, 'default' => 'portrait', 'enum' => [ 'portrait', 'landscape' ] ],
 			'page_margin_mm' => [ 'max' => 2, 'default' => '12' ],
 			'provider_contact' => [ 'max' => 200, 'default' => '' ],
 			'provider_name' => [ 'max' => 120, 'default' => '' ],
 			'section_spacing_mm' => [ 'max' => 2, 'default' => '5' ],
-			'show_logo' => [ 'max' => 3, 'default' => 'on' ],
-			'surface_style' => [ 'max' => 5, 'default' => 'cards' ],
-			'text_scale' => [ 'max' => 8, 'default' => 'standard' ],
+			'show_logo' => [ 'max' => 3, 'default' => 'on', 'enum' => [ 'on', 'off' ] ],
+			'surface_style' => [ 'max' => 5, 'default' => 'cards', 'enum' => [ 'cards', 'flat' ] ],
+			'text_scale' => [ 'max' => 8, 'default' => 'standard', 'enum' => [ 'compact', 'standard', 'large' ] ],
 		];
 	}
 
@@ -150,7 +150,7 @@ final class PlatformAdapter {
 			$fields[] = [
 				'contractVersion' => 1, 'id' => 'reports.' . strtolower( $key ),
 				'saveKey' => $key, 'labelKey' => $key,
-				'valueSchema' => self::string_schema( $definition['max'] ),
+				'valueSchema' => self::string_schema( $definition['max'], $definition['enum'] ?? [] ),
 				'placement' => 'settings', 'requiredCapability' => 'reports.edit',
 			];
 		}
@@ -177,7 +177,9 @@ final class PlatformAdapter {
 			throw new \DomainException( 'REGISTRY_INVALID' );
 		}
 		foreach ( array_keys( self::node_definitions() ) as $type ) {
-			if ( self::TYPE === $type ) {
+			// Structural anchors stay in node schemas, Layers and Inspector,
+			// but must never be advertised as insertable Elements.
+			if ( in_array( $type, [ self::TYPE, 'reports.header', 'reports.footer' ], true ) ) {
 				continue;
 			}
 			$id = 'base/' . str_replace( '.', '-', $type );
@@ -229,8 +231,13 @@ final class PlatformAdapter {
 			'properties' => $properties, 'children' => $children,
 		];
 	}
-	private static function string_schema( int $max ): array {
-		return [ 'type' => 'string', 'maxLength' => $max ];
+	/** @param list<string> $enum */
+	private static function string_schema( int $max, array $enum = [] ): array {
+		$schema = [ 'type' => 'string', 'maxLength' => $max ];
+		if ( [] !== $enum ) {
+			$schema['enum'] = $enum;
+		}
+		return $schema;
 	}
 	private static function object_schema( array $properties ): array {
 		return [

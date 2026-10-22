@@ -66,18 +66,16 @@ final class NativeComposition {
 			self::invalid();
 		}
 		foreach ( $definitions as $name => $definition ) {
-			if ( ! is_string( $fields[ $name ] ) || ! self::bounded( $fields[ $name ], $definition['max'] ) ) {
+			if ( ! is_string( $fields[ $name ] )
+				|| ! self::bounded( $fields[ $name ], $definition['max'] )
+				|| ( isset( $definition['enum'] )
+					&& ! in_array( $fields[ $name ], $definition['enum'], true ) ) ) {
 				self::invalid();
 			}
 		}
+		// Enums are checked above against the SAME declarations published
+		// by PlatformAdapter to Registry/StableSchemaV1.
 		if ( ! preg_match( '/^#[0-9a-fA-F]{6}$/D', $fields['accent_color'] )
-			|| ! in_array( $fields['corner_style'], [ 'square', 'soft', 'rounded' ], true )
-			|| ! in_array( $fields['density'], [ 'compact', 'comfortable' ], true )
-			|| ! in_array( $fields['page_format'], [ 'a4', 'letter' ], true )
-			|| ! in_array( $fields['page_orientation'], [ 'portrait', 'landscape' ], true )
-			|| ! in_array( $fields['surface_style'], [ 'cards', 'flat' ], true )
-			|| ! in_array( $fields['text_scale'], [ 'compact', 'standard', 'large' ], true )
-			|| ! in_array( $fields['show_logo'], self::SWITCHES, true )
 			|| ! preg_match( '/^(0|[1-9][0-9]{0,10})$/D', $fields['logo_attachment_id'] )
 			|| (string) (int) $fields['logo_attachment_id'] !== $fields['logo_attachment_id']
 			|| ! preg_match( '/^(?:[5-9]|[1-3][0-9]|40)$/D', $fields['page_margin_mm'] )

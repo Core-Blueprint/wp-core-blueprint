@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Reports;
 
 use CoreBlueprint\Core\Design\Document\Repository;
+use CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter;
 use CoreBlueprint\Core\Reports\Composer\NativeComposition;
 
 defined( 'ABSPATH' ) || exit;
@@ -16,9 +17,26 @@ defined( 'ABSPATH' ) || exit;
 final class DesignDocumentAdapter {
 	public const KEY = 'maintenance';
 
-	/** @return array{revision:string,project:array<string,mixed>,fields:array<string,mixed>} */
+	/**
+	 * A genuinely missing document uses the one canonical native Reports
+	 * default in memory for both preview and PDF. It is NOT persisted here.
+	 * Unsupported, corrupt and unavailable reads always fail closed.
+	 * @return array{revision:?string,project:array<string,mixed>,fields:array<string,mixed>}
+	 */
 	public static function current(): array {
 		$read = self::read();
+		if ( 'missing' === ( $read['status'] ?? null ) ) {
+			$document = [
+				'project' => PlatformAdapter::default_project(),
+				'fields' => PlatformAdapter::default_fields(),
+			];
+			NativeComposition::assert_document( $document );
+			return [
+				'revision' => null,
+				'project' => $document['project'],
+				'fields' => $document['fields'],
+			];
+		}
 		if ( 'found' !== ( $read['status'] ?? null ) ) {
 			throw new \RuntimeException( 'REPORTS_DESIGN_UNAVAILABLE' );
 		}
