@@ -1,0 +1,115 @@
+/**
+ * Native Base Platform v1: fullscreen-only editor route for Mail and Reports.
+ * Loaded only after clicking "Edit with Core Blueprint".
+ * One Host owns History, canvas, Inspector and Save; this layer only frames it.
+ */
+
+.cb-core-platform-screen {
+	position: fixed;
+	inset: 0;
+	z-index: 100150;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100vh;
+	height: 100dvh;
+	overflow: hidden;
+	box-sizing: border-box;
+	background: var(--cb-surface-0, #0b0f16);
+	color: var(--cb-text, #e5e7eb);
+}
+
+.cb-core-platform-screen__header {
+	display: flex;
+	align-items: center;
+	gap: var(--cb-space-3, 12px);
+	min-height: 60px;
+	padding: 10px 22px;
+	box-sizing: border-box;
+	flex: 0 0 auto;
+	border-bottom: 1px solid var(--cb-border, #334155);
+	background: var(--cb-surface-1, #111827);
+}
+
+.cb-core-platform-screen__header strong {
+	font-size: 15px;
+	font-weight: 650;
+}
+
+.cb-core-platform-screen__subtitle {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--cb-text-muted, #94a3b8);
+	font-size: 13px;
+}
+
+.cb-core-platform-screen__close {
+	margin-left: auto !important;
+	flex: 0 0 auto;
+}
+
+.cb-core-platform-screen__body {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+	padding: 14px;
+	box-sizing: border-box;
+}
+
+.cb-core-platform-screen__body > [data-cb-mail-designer],
+.cb-core-platform-screen__body > [data-cb-designer-platform-v1],
+.cb-core-platform-screen__body .cb-core-designer-platform-v1 {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 0;
+	margin: 0;
+}
+
+.cb-core-platform-screen .cb-core-design-shell {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+	height: 100%;
+	overflow: hidden;
+}
+
+.cb-core-platform-screen .cb-core-design-shell > .cb-core-design-shell__toolbar {
+	flex: 0 0 auto;
+}
+
+.cb-core-platform-screen .cb-core-design-shell > .cb-core-design-shell__workspace {
+	flex: 1 1 auto;
+	align-items: stretch;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.cb-core-platform-screen .cb-core-design-shell__palette,
+.cb-core-platform-screen .cb-core-design-shell__canvas,
+.cb-core-platform-screen .cb-core-design-shell__sidebar {
+	position: static;
+	min-height: 0;
+	max-height: 100%;
+	overflow: auto;
+}
+
+/* Fullscreen is the only presentation mode on this route. */
+.cb-core-platform-screen [data-cb-design-shell-fullscreen] {
+	display: none !important;
+}
+
+@media (max-width: 782px) {
+	.cb-core-platform-screen__header {
+		padding-inline: 12px;
+	}
+	.cb-core-platform-screen__body {
+		padding: 8px;
+	}
+}
