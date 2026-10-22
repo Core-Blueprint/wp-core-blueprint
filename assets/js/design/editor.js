@@ -966,12 +966,68 @@ export const attachTrustedDesignerHost = ({
 				if (!schema || typeof schema !== 'object') throw new Error('REGISTRY_INVALID');
 				return schema;
 			};
+			// Base owns the consistent two-section Elements tab for every profile.
+			// Domain-specific inserts still use the existing registered commands.
+			const doc = stagedRoot.ownerDocument;
+			const section = (label) => {
+				const wrapper = doc.createElement('section');
+				wrapper.className = 'cb-core-design-shell__panel-section';
+				const heading = doc.createElement('h3');
+				heading.className = 'cb-core-design-shell__panel-section-title';
+				heading.textContent = label;
+				wrapper.append(heading);
+				return wrapper;
+			};
+			const componentSection = section('Elements');
+			const componentGrid = doc.createElement('div');
+			componentGrid.className = 'cb-core-design-shell__palette-grid';
+			componentSection.append(componentGrid);
+			const dynamicSection = section('Dynamic Data');
+			const dynamicGrid = doc.createElement('div');
+			dynamicGrid.className = 'cb-core-design-shell__palette-grid cb-core-design-shell__dynamic-grid';
+			dynamicSection.append(dynamicGrid);
+			elementsPanel.append(componentSection, dynamicSection);
+			// Native Mail's WordPress templates use only the known Base tokens.
+			// Keep them out of the stored project unless the user pastes the token.
+			const mailData = [
+				['Site name','site.name'], ['Site URL','site.url'],
+				['Admin email','site.admin_email'], ['Display name','user.display_name'],
+				['Username','user.login'], ['User email','user.email'],
+				['Action URL','action.url'],
+			];
+			if (activeRegistry.profileId === 'base/mail') {
+				for (const [label, key] of mailData) {
+					const dataButton = doc.createElement('button');
+					dataButton.type = 'button';
+					dataButton.className = 'button cb-core-design-shell__palette-item cb-core-design-shell__dynamic-item';
+					dataButton.textContent = label;
+					dataButton.title = 'Copy {{' + key + '}}';
+					dataButton.setAttribute('aria-label', 'Copy ' + label + ' dynamic data token');
+					dataButton.addEventListener('click', async () => {
+						if (signal.aborted || host.state !== 'READY') return;
+						try {
+							await doc.defaultView.navigator.clipboard.writeText('{{' + key + '}}');
+							if (!signal.aborted) dataButton.title = 'Copied {{' + key + '}}';
+						} catch {
+							dataButton.title = 'Copy unavailable: {{' + key + '}}';
+						}
+					}, {signal});
+					dynamicGrid.append(dataButton);
+				}
+			} else {
+				const description = doc.createElement('p');
+				description.className = 'cb-core-design-shell__panel-section-description';
+				description.textContent = 'Report data is populated when a report is generated.';
+				dynamicSection.append(description);
+			}
 			for (const component of components) {
 				const button = stagedRoot.ownerDocument.createElement('button');
 				button.type = 'button';
 				button.className = 'button cb-core-design-shell__palette-item';
 				button.textContent = component.label;
 				button.dataset.cbDesignComponentId = component.id;
+				button.classList.add('cb-core-design-shell__palette-item--stacked');
+				decorateDesignerElement(button, component.type, {label: component.label});
 				button.addEventListener('click', () => {
 					if (signal.aborted || host.state !== 'READY') return;
 					const project = editor.project();
@@ -991,7 +1047,7 @@ export const attachTrustedDesignerHost = ({
 						parentPath, index: parent.children.length, type: component.type,
 					});
 				}, {signal});
-				elementsPanel.append(button);
+				componentGrid.append(button);
 			}
 			const settingsPanel = stagedRoot.querySelector('[data-cb-platform-panel="settings"]');
 			if (!settingsPanel) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
