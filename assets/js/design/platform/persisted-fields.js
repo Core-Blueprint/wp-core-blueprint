@@ -73,6 +73,8 @@ export function canonicalSaveJSON(value) {
 	return stringifyCanonical(strictJsonCopy(value));
 }
 
+export const deepFreezeSaveJSON = (value) => freezeDeep(strictJsonCopy(value));
+
 const freezeDeep = (value) => {
 	if (value && typeof value === 'object') {
 		for (const key of Object.keys(value)) freezeDeep(value[key]);
