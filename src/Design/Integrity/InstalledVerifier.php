@@ -69,7 +69,7 @@ final class InstalledVerifier {
 				$build_input .= pack( 'N', strlen( $relative ) ) . $relative
 					. pack( 'N', strlen( $digest ) ) . $digest;
 			}
-			if ( ! hash_equals( $manifest['buildId'], hash( 'sha256', $build_input ) ) {
+			if ( ! hash_equals( $manifest['buildId'], hash( 'sha256', $build_input ) ) ) {
 				return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
 			}
 			$required = [];
