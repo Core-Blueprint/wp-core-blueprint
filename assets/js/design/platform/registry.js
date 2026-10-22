@@ -47,10 +47,11 @@ const withoutFingerprint = (value) => {
 export function createRegistryView(bootstrap, runtimeModules) {
 	const b = immutableData(bootstrap);
 	exactKeys(b, ['contractVersion', 'registryFingerprint', 'profileId', 'identity', 'profile', 'schemaSnapshot',
-		'persistedFieldFacet', 'modules', 'evidence']);
+		'persistedFieldFacet', 'components', 'controls', 'modules', 'evidence']);
 	if (b.contractVersion !== 1 || b.profileId !== b.profile?.id) throw new TypeError('REGISTRY_INVALID');
 	assertDigest(b.registryFingerprint);
-	if (!Array.isArray(b.modules) || !b.schemaSnapshot || !b.persistedFieldFacet) throw new TypeError('REGISTRY_INVALID');
+	if (!Array.isArray(b.modules) || !Array.isArray(b.components) || !Array.isArray(b.controls)
+		|| !b.schemaSnapshot || !b.persistedFieldFacet) throw new TypeError('REGISTRY_INVALID');
 	const schema = exactKeys(b.schemaSnapshot, ['contractVersion','schemaGeneration','profileId','projectSchema',
 		'providers','designTypes','nodeTypes','domainSchemas','fingerprint']);
 	const fields = exactKeys(b.persistedFieldFacet, ['contractVersion','schemaGeneration','profileId',
@@ -62,6 +63,22 @@ export function createRegistryView(bootstrap, runtimeModules) {
 		|| !Array.isArray(fields.fieldDescriptors)) throw new TypeError('REGISTRY_INVALID');
 	assertDigest(schema.fingerprint);
 	assertDigest(fields.fingerprint);
+	const validateFacet = (list, kind) => {
+		const seen = new Set();
+		for (const definition of list) {
+			if (!definition || typeof definition.id !== 'string' || typeof definition.owner !== 'string'
+				|| definition.profileId !== b.profileId || typeof definition.moduleId !== 'string'
+				|| (kind === 'component' && typeof definition.schemaId !== 'string')
+				|| (kind === 'control' && typeof definition.componentId !== 'string')
+				|| seen.has(definition.id)) throw new TypeError('REGISTRY_INVALID');
+			seen.add(definition.id);
+		}
+		return list;
+	};
+	const components = validateFacet(b.components, 'component');
+	const controls = validateFacet(b.controls, 'control');
+	const knownComponents = new Set(components.map((item) => item.id));
+	if (controls.some((item) => !knownComponents.has(item.componentId))) throw new TypeError('REGISTRY_INVALID');
 	const runtime = new Map();
 	const seenPackagePaths = new Set();
 	if (!(runtimeModules instanceof Map)) throw new TypeError('HOST_MODULE_MISSING');
@@ -88,6 +105,8 @@ export function createRegistryView(bootstrap, runtimeModules) {
 		evidence: b.evidence,
 		schemaSnapshot: schema,
 		persistedFieldFacet(id) { return id === b.profileId ? fields : null; },
+		components,
+		controls,
 		projectSchemaSnapshot(id) { return id === b.profileId ? schema : null; },
 		moduleNamespace(id) { return runtime.get(id) ?? null; },
 		async verify() {
