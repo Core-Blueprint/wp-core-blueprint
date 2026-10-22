@@ -74,6 +74,11 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 		setDirty: (value) => { dirtyNow = value; },
 		beginSaving: () => { busyNow = true; shell.dataset.cbDesignShellSaveState = 'saving'; },
 		releaseModal: () => { if (!confirmModal) throw new Error('Modal is not pending'); confirmModal(); },
+		canTransition: () => window.cbCore.designerExitGuard.canTransition(shell),
+		replaceAdapter: () => window.cbCore.designerExitGuard.register(shell, {
+			isDirty: () => dirtyNow,
+			save: async () => { writes++; return true; },
+		}),
 		unregister: () => unregister?.(),
 		detach: () => { shell.isConnected = false; },
 		get exits() { return exits; },
@@ -232,4 +237,91 @@ test('EXIT-P0-09: detached and unregistered shell does not cause stale unload wa
 	f.events.get('beforeunload')(event);
 	assert.equal(prevented, false);
 	assert.equal(event.returnValue, undefined);
+});
+
+
+test('G2-S T06: actual context-change capture prevents dirty and UNKNOWN selections before the adapter', () => {
+  const launch = read('assets/js/features/designer-launch.js');
+  const begin = launch.indexOf('\tconst blockContextChange = (event) => {');
+  const end = launch.indexOf('\n\tconst panelToggleLabel', begin);
+  assert.ok(begin !== -1 && end > begin, 'canonical context guard must be extractable');
+
+  const handlers = new Map();
+  class HTMLSelectElement {}
+  const shellFixture = fixture();
+  const shell = shellFixture.shell;
+  const root = { querySelector: (selector) => selector === '[data-cb-design-shell]' ? shell : null };
+  const select = new HTMLSelectElement();
+  select.value = 'another-template';
+  select.dataset = { cbDesignShellContextValue: 'original-template' };
+  select.closest = (selector) => selector === '[data-cb-design-shell-context]' ? {} :
+    selector === '[data-cb-design-launch-root]' ? root : null;
+  const doc = { addEventListener: (name, callback, capture) => {
+    assert.equal(capture, true, 'context protection must run during capture');
+    handlers.set(name, callback);
+  } };
+  const errors = [];
+  runInNewContext(launch.slice(begin, end), {
+    document: doc, HTMLSelectElement,
+    window: { cbCore: { designerExitGuard: { canTransition: () => shellFixture.canTransition() },
+      toast: { error: (message) => errors.push(message) } } },
+    config: { exitGuardLabels: { unavailable: 'Context blocked' } },
+  });
+  assert.equal(typeof handlers.get('change'), 'function');
+  assert.equal(typeof handlers.get('cb:design-shell:contextrequest'), 'function');
+
+  const attemptChange = () => {
+    let prevented = false, stopped = false;
+    select.value = 'another-template';
+    handlers.get('change')({ target: select,
+      preventDefault() { prevented = true; },
+      stopImmediatePropagation() { stopped = true; } });
+    return { prevented, stopped, value: select.value };
+  };
+  const attemptRequest = () => {
+    let stopped = false;
+    handlers.get('cb:design-shell:contextrequest')({
+      target: root, stopImmediatePropagation() { stopped = true; },
+    });
+    return stopped;
+  };
+
+  assert.deepEqual(attemptChange(), { prevented: false, stopped: false, value: 'another-template' });
+  assert.equal(attemptRequest(), false);
+  shellFixture.setDirty(true);
+  assert.deepEqual(attemptChange(), { prevented: true, stopped: true, value: 'original-template' });
+  assert.equal(attemptRequest(), true);
+  shellFixture.setDirty(false);
+  shell.dataset.cbDesignShellSaveOutcomeUnknown = 'true';
+  shell.dataset.cbDesignShellSaveState = 'unknown';
+  assert.deepEqual(attemptChange(), { prevented: true, stopped: true, value: 'original-template' });
+  assert.equal(attemptRequest(), true);
+  assert.equal(errors.length, 2);
+});
+
+test('G2-S T09: modal opened before a newer edit, active Save and adapter replacement must not close', async () => {
+  const dirty = fixture({ dirty: false, deferredModal: true });
+  const pendingDirty = dirty.request();
+  assert.equal(dirty.modals.length, 1);
+  dirty.setDirty(true);
+  dirty.releaseModal();
+  assert.equal(await pendingDirty, false);
+  assert.equal(dirty.exits, 0);
+
+  const replaced = fixture({ dirty: false, deferredModal: true });
+  const pendingReplaced = replaced.request();
+  replaced.replaceAdapter();
+  replaced.releaseModal();
+  assert.equal(await pendingReplaced, false, 'a newly registered adapter cannot validate an older modal');
+  assert.equal(replaced.exits, 0);
+
+  const combined = fixture({ dirty: false, deferredModal: true });
+  const pendingCombined = combined.request();
+  combined.setDirty(true);
+  combined.beginSaving();
+  combined.replaceAdapter();
+  combined.releaseModal();
+  assert.equal(await pendingCombined, false);
+  assert.equal(combined.exits, 0);
+  assert.equal(combined.writes, 0);
 });
