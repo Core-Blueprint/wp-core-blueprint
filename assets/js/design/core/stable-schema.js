@@ -14,7 +14,9 @@ const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const ownValue = (object, key) => own(object, key) ? Object.getOwnPropertyDescriptor(object, key).value : undefined;
 const keysMatch = (object, keys) => isPlainObject(object)
 	&& Object.keys(object).length === keys.length && keys.every((key) => own(object, key));
-const sorted = (entries) => entries.every((entry, index) => index === 0 || entries[index - 1].id < entry.id);
+const sorted = (entries) => entries.every((entry, index) => isPlainObject(entry)
+	&& typeof ownValue(entry, 'id') === 'string'
+	&& (index === 0 || ownValue(entries[index - 1], 'id') < ownValue(entry, 'id')));
 const schemaKeys = new Set([
 	'type', 'properties', 'required', 'additionalProperties', 'items', 'enum',
 	'minimum', 'maximum', 'minItems', 'maxItems', 'minLength', 'maxLength',
