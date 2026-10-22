@@ -498,10 +498,10 @@ export const createPlatformSessionBridge = ({
  * The registered RenderAdapter owns the inner render surface, not this toolbar.
  * No template HTML or document-provided event handlers are executed.
  */
-const composePlatformChrome = (root) => {
+const composePlatformChrome = (root, profileId) => {
 	if (root.childNodes.length || root.isConnected) throw new Error('HOST_CONTEXT_REFUSED');
 	const doc = root.ownerDocument;
-	root.classList.add('cb-core-design-shell');
+	root.classList.add('cb-core-design-shell', 'cb-core-design-shell--native');
 	root.setAttribute('data-cb-design-shell', '');
 	const node = (tag, className, attrs = {}, label = null) => {
 		const el = doc.createElement(tag);
@@ -513,57 +513,194 @@ const composePlatformChrome = (root) => {
 	const button = (label, attribute, value = '') => node('button', 'button cb-core-button', {
 		type: 'button', [attribute]: value,
 	}, label);
-	const toolbar = node('div', 'cb-core-design-shell__toolbar', {
+	const toolbar = node('div', 'cb-core-design-shell__toolbar cb-core-design-shell__toolbar--designer', {
 		role: 'toolbar', 'aria-label': 'Designer actions',
 	});
-	const history = node('div', 'cb-core-design-shell__toolbar-group');
+	const startZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--start');
+	const centerZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--center');
+	const endZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--end');
+	const brand = node('div', 'cb-core-design-shell__brand');
+	const mark = createDesignerIcon('shapes', doc);
+	if (mark) brand.append(mark);
+	brand.append(node('strong', 'cb-core-design-shell__brand-wordmark', {}, 'core.blueprint'));
+	const profileLabel = node('span', 'cb-core-design-shell__native-profile', {},
+		profileId === 'base/mail' ? 'mail.designer' : 'reports.designer');
+	const contextSlot = node('span', 'cb-core-design-shell__native-context', {
+		'data-cb-platform-context-slot': '',
+	});
+	startZone.append(brand, profileLabel, contextSlot);
+	const viewport = node('div', 'cb-core-design-shell__toolbar-group', {
+		'data-cb-design-shell-viewport-group': '', role: 'group', 'aria-label': 'Preview width',
+	});
+	for (const [id, label] of [['mobile','Mobile'], ['tablet','Tablet'], ['desktop','Desktop']]) {
+		viewport.append(node('button', 'button cb-core-button', {
+			type: 'button', 'data-cb-design-shell-viewport': id,
+			'aria-pressed': id === 'desktop' ? 'true' : 'false',
+		}, label));
+	}
+	centerZone.append(viewport);
+	const history = node('div', 'cb-core-design-shell__toolbar-group', {
+		role: 'group', 'aria-label': 'History',
+	});
 	const undo = button('Undo', 'data-cb-design-shell-undo');
 	const redo = button('Redo', 'data-cb-design-shell-redo');
 	undo.disabled = true;
 	redo.disabled = true;
+	decorateDesignerControl(undo, 'undo-2', {iconOnly: true, label: 'Undo'});
+	decorateDesignerControl(redo, 'redo-2', {iconOnly: true, label: 'Redo'});
 	history.append(undo, redo);
-	const fullscreen = button('Fullscreen', 'data-cb-design-shell-fullscreen');
-	fullscreen.setAttribute('aria-pressed', 'false');
 	const save = button('Save', 'data-cb-design-shell-primary-action');
 	save.classList.add('button-primary', 'cb-core-button--primary');
-	toolbar.append(history, fullscreen, save);
+	const closeSlot = node('span', 'cb-core-design-shell__native-close', {
+		'data-cb-platform-close-slot': '',
+	});
+	endZone.append(history, closeSlot, save);
+	toolbar.append(startZone, centerZone, endZone);
 	const notice = node('p', 'cb-core-design-shell__persistent-notice', {
-		'data-cb-design-shell-persistent-notice': '', 'role': 'status', 'aria-live': 'polite',
+		'data-cb-design-shell-persistent-notice': '', role: 'status', 'aria-live': 'polite',
 	});
 	notice.hidden = true;
-	const workspace = node('div', 'cb-core-design-shell__workspace');
-	const palette = node('section', 'cb-core-design-shell__palette', {'aria-label': 'Elements and layers'});
-	const canvas = node('section', 'cb-core-design-shell__canvas', {'aria-label': 'Design canvas'});
+	const workspace = node('div', 'cb-core-design-shell__workspace cb-core-design-shell__workspace--collapsible');
+	const palette = node('section', 'cb-core-design-shell__palette cb-core-design-shell__palette--composed cb-core-design-shell__palette--tabbed', {
+		'aria-label': 'Elements and layers',
+	});
+	const canvas = node('main', 'cb-core-design-shell__canvas cb-core-design-shell__canvas--composed', {'aria-label': 'Design canvas'});
 	const surface = node('div', 'cb-core-design-shell__canvas-workarea', {'data-cb-platform-render-surface': ''});
 	canvas.append(surface);
-	const sidebar = node('aside', 'cb-core-design-shell__sidebar', {'aria-label': 'Inspector and settings'});
+	const sidebar = node('aside', 'cb-core-design-shell__sidebar cb-core-design-shell__sidebar--composed', {'aria-label': 'Inspector and settings'});
+	const panelHeader = (side, label) => {
+		const heading = node('span', 'cb-core-design-shell__panel-heading', {'aria-hidden': 'true'}, label);
+		const toggle = button(side === 'left' ? 'Collapse elements' : 'Collapse inspector', 'data-cb-design-shell-panel-toggle', side);
+		toggle.className = 'cb-core-design-shell__panel-toggle cb-core-design-shell__panel-toggle--' + side;
+		const header = node('div', 'cb-core-design-shell__panel-header cb-core-design-shell__panel-header--' + side);
+		header.append(heading, toggle);
+		return header;
+	};
+	palette.append(panelHeader('left', 'Content'));
+	sidebar.append(panelHeader('right', 'Properties'));
 	const tabs = (container, group, definitions) => {
 		const tablist = node('div', 'cb-core-design-shell__tabs', {role: 'tablist'});
 		for (const [id, label] of definitions) {
 			const attrs = {'data-cb-design-shell-tab': id, role: 'tab', 'aria-selected': 'false'};
-			if (group) attrs['data-cb-design-shell-group'] = group;
-			tablist.append(node('button', 'cb-core-design-shell__tab', {
-				...attrs, type: 'button',
-			}, label));
+			if (group) {
+				attrs['data-cb-design-shell-group'] = group;
+				attrs['data-cb-design-shell-palette-role'] = id;
+			}
+			tablist.append(node('button', 'cb-core-design-shell__tab', {...attrs, type: 'button'}, label));
 		}
 		container.append(tablist);
 		for (const [id] of definitions) {
 			const attrs = {'data-cb-design-shell-panel': id};
 			if (group) attrs['data-cb-design-shell-group'] = group;
-			const panel = node('div', 'cb-core-design-shell__panel', attrs);
-			panel.append(node('div', 'cb-core-design-shell__panel-body', {
-				'data-cb-platform-panel': id,
-			}));
+			const panel = node('div', 'cb-core-design-shell__panel cb-core-design-shell__sidebar-panel', attrs);
+			panel.append(node('div', 'cb-core-design-shell__panel-body', {'data-cb-platform-panel': id}));
 			container.append(panel);
 		}
 	};
 	tabs(palette, 'palette', [['elements','Elements'],['layers','Layers']]);
 	tabs(sidebar, null, [['inspector','Inspector'],['settings','Settings']]);
-	workspace.append(palette, canvas, sidebar);
+	const backdrop = button('Close panel', 'data-cb-design-shell-drawer-backdrop');
+	backdrop.className = 'cb-core-design-shell__drawer-backdrop';
+	backdrop.setAttribute('aria-label', 'Close sidebar');
+	backdrop.hidden = true;
+	workspace.append(palette, canvas, sidebar, backdrop);
+	const leftLauncher = button('Elements', 'data-cb-design-shell-drawer-toggle', 'left');
+	const rightLauncher = button('Inspector', 'data-cb-design-shell-drawer-toggle', 'right');
+	leftLauncher.classList.add('cb-core-design-shell__drawer-launcher');
+	rightLauncher.classList.add('cb-core-design-shell__drawer-launcher');
+	decorateDesignerControl(leftLauncher, 'shapes', {iconOnly: true, label: 'Open Elements and Layers'});
+	decorateDesignerControl(rightLauncher, 'sliders-horizontal', {iconOnly: true, label: 'Open Inspector and Settings'});
+	startZone.append(leftLauncher);
+	endZone.prepend(rightLauncher);
 	root.append(toolbar, notice, workspace);
 	return {save, notice, undo, redo, surface};
 };
 
+/**
+ * Reuse the existing Base Designer Mode rail/drawer CSS and Shell tab controller.
+ * The Host's AbortSignal owns every event listener: a context switch cannot
+ * strand listeners or a second drawer over the next detached stage.
+ */
+const configurePlatformSidebars = (root, signal) => {
+	const doc = root.ownerDocument;
+	const view = doc.defaultView;
+	const media = view?.matchMedia?.('(max-width: 1280px)') || null;
+	const workspace = root.querySelector('.cb-core-design-shell__workspace--collapsible');
+	const backdrop = workspace?.querySelector('[data-cb-design-shell-drawer-backdrop]');
+	const rails = ['left','right'].map((side) => {
+		const panel = workspace?.querySelector(side === 'left' ? '.cb-core-design-shell__palette' : '.cb-core-design-shell__sidebar');
+		const toggle = panel?.querySelector('[data-cb-design-shell-panel-toggle]');
+		const launcher = root.querySelector('[data-cb-design-shell-drawer-toggle="' + side + '"]');
+		return {side, panel, toggle, launcher, className: side === 'left' ? 'is-left-panel-collapsed' : 'is-right-panel-collapsed'};
+	});
+	if (!workspace || !backdrop || rails.some((record) => !record.panel || !record.toggle || !record.launcher)) {
+		throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+	}
+	let compact = false;
+	const collapsed = (record) => root.classList.contains(record.className);
+	const sync = () => {
+		const anyOpen = compact && rails.some((record) => !collapsed(record));
+		root.classList.toggle('is-responsive-drawer-mode', compact);
+		root.classList.toggle('has-responsive-drawer-open', anyOpen);
+		backdrop.hidden = !anyOpen;
+		for (const record of rails) {
+			const isClosed = collapsed(record);
+			record.toggle.setAttribute('aria-expanded', isClosed ? 'false' : 'true');
+			record.launcher.setAttribute('aria-expanded', isClosed ? 'false' : 'true');
+			decorateDesignerControl(record.toggle,
+				record.side === 'left' ? (isClosed ? 'chevron-right' : 'chevron-left')
+					: (isClosed ? 'chevron-left' : 'chevron-right'),
+				{iconOnly: true, label: (isClosed ? 'Expand ' : 'Collapse ')
+					+ (record.side === 'left' ? 'Elements and Layers' : 'Inspector and Settings')});
+			if (compact) {
+				record.panel.setAttribute('aria-hidden', isClosed ? 'true' : 'false');
+				if (isClosed) record.panel.setAttribute('inert', '');
+				else record.panel.removeAttribute('inert');
+			} else {
+				record.panel.removeAttribute('aria-hidden');
+				record.panel.removeAttribute('inert');
+			}
+		}
+	};
+	const close = (restoreFocus = false) => {
+		const open = rails.find((record) => !collapsed(record));
+		for (const record of rails) root.classList.add(record.className);
+		sync();
+		if (restoreFocus) open?.launcher.focus();
+	};
+	const toggle = (record) => {
+		if (compact && collapsed(record)) {
+			for (const other of rails) root.classList.add(other.className);
+		}
+		root.classList.toggle(record.className);
+		sync();
+		if (compact) (collapsed(record) ? record.launcher : record.toggle).focus();
+	};
+	for (const record of rails) {
+		record.toggle.addEventListener('click', () => toggle(record), {signal});
+		record.launcher.addEventListener('click', () => toggle(record), {signal});
+	}
+	backdrop.addEventListener('click', () => close(true), {signal});
+	workspace.addEventListener('keydown', (event) => {
+		if (!compact || event.defaultPrevented) return;
+		if (event.key === 'Escape' && rails.some((record) => !collapsed(record))) {
+			event.preventDefault();
+			event.stopPropagation();
+			close(true);
+		}
+	}, {signal});
+	const responsive = () => {
+		const next = media?.matches === true;
+		if (next !== compact) {
+			compact = next;
+			for (const record of rails) root.classList.toggle(record.className, compact);
+		}
+		sync();
+	};
+	media?.addEventListener?.('change', responsive, {signal});
+	responsive();
+	return Object.freeze({close});
+};
 /**
  * Trusted static-ESM A2 Host attachment boundary. The integration owner must
  * import the actual Host factory from platform/host.js and obtain bootstrap
@@ -739,7 +876,9 @@ export const attachTrustedDesignerHost = ({
 			// accepting an empty shell would falsely claim UI readiness.
 			const saveAuthority = savesBySignal.get(signal);
 			if (!saveAuthority) throw new Error('SAVE_NOT_READY');
-			const chrome = composePlatformChrome(stagedRoot);
+			const activeRegistry = registriesByIdentity.get(JSON.stringify(context));
+			if (!activeRegistry) throw new Error('REGISTRY_INVALID');
+			const chrome = composePlatformChrome(stagedRoot, activeRegistry.profileId);
 			chrome.save.disabled = true;
 			const syncSaveUI = () => {
 				if (signal.aborted || host?.state !== 'READY' || !stagedRoot.isConnected) return;
@@ -775,6 +914,8 @@ export const attachTrustedDesignerHost = ({
 			// The outer shell root retains its exclusive lease throughout
 			// staging/switching. The detached stage is independently guarded
 			// against duplicate controllers by createDesignerShell().
+			configurePlatformSidebars(stagedRoot, signal);
+			configureDesignerViewports(stagedRoot, {active: 'desktop'});
 			const controller = createDesignerShell(stagedRoot, {
 				session: editor,
 				platformStaged: true,
@@ -792,8 +933,7 @@ export const attachTrustedDesignerHost = ({
 				},
 			});
 			layersPanel.append(tree.element);
-			const activeRegistry = registriesByIdentity.get(JSON.stringify(context));
-			const profileModule = activeRegistry?.moduleNamespace(activeRegistry.profile?.moduleId);
+			const profileModule = activeRegistry.moduleNamespace(activeRegistry.profile?.moduleId);
 			if (!activeRegistry || typeof profileModule?.componentsFor !== 'function'
 				|| typeof profileModule?.propertiesFor !== 'function'
 				|| typeof profileModule?.resolveCommand !== 'function') {
