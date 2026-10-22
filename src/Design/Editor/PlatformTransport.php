@@ -51,6 +51,7 @@ final class PlatformTransport {
 		if ( Mail::PROFILE === $profile
 			&& Repository::valid_identity( Repository::MAIL, $resource )
 			&& str_starts_with( $resource, 'wordpress.' )
+			&& \CoreBlueprint\Core\Mail\DesignerState::is_enabled()
 			&& current_user_can( 'manage_options' ) ) {
 			// The first Base-only package has NO independently approved
 			// extension consumer identity. Allow only built-in WordPress templates.
@@ -62,6 +63,7 @@ final class PlatformTransport {
 			return [ 'type' => Repository::MAIL, 'key' => $resource ];
 		}
 		if ( Reports::PROFILE === $profile && 'maintenance' === $resource
+			&& \CoreBlueprint\Core\Reports\State::is_enabled()
 			&& current_user_can( 'cb_manage_branding' ) ) {
 			return [ 'type' => Repository::REPORTS, 'key' => $resource ];
 		}
