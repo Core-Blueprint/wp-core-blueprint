@@ -68,7 +68,12 @@ export function createPlatformHost({
 		project() { return holder.bridge.project(); },
 		snapshot() { return holder.bridge.snapshot(); },
 		persistedFields() {
-			assertReady(holder);
+			// This is a read-only, verified snapshot: the trusted profile
+			// renderer needs the initial complete field map while OFFSCREEN.
+			// No write, subscription, command or Save is authorized before READY.
+			if (holder.scope.signal.aborted || !holder.save) {
+				throw refusal('HOST_CONTEXT_REFUSED');
+			}
 			return immutableData(readPersistedFields(holder.save));
 		},
 		selection() { return holder.bridge.selection(); },
