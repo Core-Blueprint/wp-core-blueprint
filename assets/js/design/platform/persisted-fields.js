@@ -99,7 +99,8 @@ const validated = (values, { profileId, projectSchema, registrySnapshot, pointer
 export function createPersistedFields({
 	profileId,
 	projectSchema,
-	registrySnapshot,
+	projectRegistrySnapshot,
+	fieldValidationContext,
 	fieldFacet,
 	initialFields,
 }) {
@@ -108,15 +109,19 @@ export function createPersistedFields({
 		|| fieldFacet.profileId !== profileId
 		|| fieldFacet.projectSchema !== projectSchema
 		|| !Array.isArray(fieldFacet.fieldDescriptors)
+		|| fieldFacet.schemaGeneration !== 1
 		|| !/^[a-f0-9]{64}$/.test(fieldFacet.fingerprint || '')
-		|| !registrySnapshot || !Object.isFrozen(registrySnapshot)) {
+		|| !/^[a-f0-9]{64}$/.test(fieldFacet.registryFingerprint || '')
+		|| !projectRegistrySnapshot || !Object.isFrozen(projectRegistrySnapshot)
+		|| fieldFacet.projectSchemaFingerprint !== projectRegistrySnapshot.fingerprint
+		|| !fieldValidationContext || !Object.isFrozen(fieldValidationContext)) {
 		throw new TypeError('REGISTRY_INVALID: authoritative field facet required.');
 	}
 	const saveKeys = fieldFacet.fieldDescriptors.map((definition) => definition.saveKey);
 	if (new Set(saveKeys).size !== saveKeys.length) {
 		throw new TypeError('REGISTRY_COLLISION: duplicate persisted saveKey.');
 	}
-	const options = { profileId, projectSchema, registrySnapshot };
+	const options = { profileId, projectSchema, registrySnapshot: fieldValidationContext };
 	const normalize = (source, pointerBase) => {
 		const map = strictJsonCopy(source);
 		if (Array.isArray(map) || map === null || typeof map !== 'object'
@@ -136,7 +141,8 @@ export function createPersistedFields({
 	};
 	return Object.freeze({
 		get fieldRevision() { return fieldRevision; },
-		get fingerprint() { return fieldFacet.fingerprint; },
+		get registryFingerprint() { return fieldFacet.registryFingerprint; },
+		get fieldFacetFingerprint() { return fieldFacet.fingerprint; },
 		snapshot() {
 			active();
 			return Object.freeze({
