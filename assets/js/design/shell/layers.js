@@ -274,6 +274,26 @@ export const createDesignerLayerTree = ({
 		return true;
 	};
 
+	const visibleItems = (items, prefix = '', output = []) => {
+		normalizeTreeItems(items).forEach((item, index) => {
+			const key = normalizeTreeKey(item, (prefix || 'root') + ':' + index);
+			output.push({ key, item });
+			if (!collapsedKeys.has(key)) visibleItems(item.children || [], key, output);
+		});
+		return output;
+	};
+
+	const patch = (items) => {
+		const next = visibleItems(items);
+		if (next.length !== rowsByKey.size || next.some(({ key }) => !rowsByKey.has(key))) return false;
+		currentItems = normalizeTreeItems(items);
+		for (const { key, item } of next) {
+			const row = rowsByKey.get(key)?.row;
+			updateDesignerLayerRow(row, { label: item.label, selected: item.selected === true });
+		}
+		return true;
+	};
+
 	const render = (items = currentItems, { focus = '' } = {}) => {
 		currentItems = normalizeTreeItems(items);
 		const hadFocus = typeof element.contains === 'function' && element.contains(documentRef.activeElement);
@@ -305,7 +325,7 @@ export const createDesignerLayerTree = ({
 					};
 				}
 
-				const itemPath = Array.isArray(item.path) ? [...item.path] : null;
+				const itemPath = item.ref?.kind ? item.ref : (Array.isArray(item.path) ? [...item.path] : null);
 				const itemSelect = selectionAdapter && itemPath
 					? () => selectionAdapter(itemPath, Object.freeze({
 						source: 'layers',
@@ -467,6 +487,7 @@ export const createDesignerLayerTree = ({
 	return Object.freeze({
 		element,
 		render,
+		patch,
 		row(key) {
 			return rowsByKey.get(String(key || ''))?.row ?? null;
 		},

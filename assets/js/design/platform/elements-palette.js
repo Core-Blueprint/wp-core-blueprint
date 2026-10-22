@@ -42,7 +42,7 @@ export const dispatchDesignerElementCreate = async ({
 		|| !component.create || typeof component.create.commandId !== 'string'
 		|| !Array.isArray(component.create.mapping) || !component.create.mapping.length
 		|| component.create.mapping.length > 16 || typeof editor?.execute !== 'function'
-		|| typeof editor?.selection !== 'function' || typeof authorize !== 'function'
+		|| typeof editor?.selection !== 'function' || typeof editor?.project !== 'function' || typeof authorize !== 'function'
 		|| !Number.isSafeInteger(contextEpoch)) throw refuse('ELEMENT_CREATE_BINDING_INVALID');
 	const mapping = component.create.mapping;
 	if (mapping.some((item) => !item || typeof item.key !== 'string'

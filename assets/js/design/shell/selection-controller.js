@@ -27,9 +27,10 @@ export const createDesignerSelectionController = ({
 		!session
 		|| typeof session.subscribeSelection !== 'function'
 		|| typeof session.select !== 'function'
-		|| typeof session.clearSelection !== 'function'
+		|| (!typed && typeof session.clearSelection !== 'function')
 		|| typeof session.selection !== 'function'
-		|| typeof session.inspector !== 'function'
+		|| (!typed && typeof session.inspector !== 'function')
+		|| (typed && typeof session.subscribe !== 'function')
 	) {
 		throw new TypeError('Designer selection controller requires a Design Foundation session.');
 	}
@@ -52,7 +53,7 @@ export const createDesignerSelectionController = ({
 			primary: typed
 				? (snapshot.primary ?? null)
 				: (snapshot.primary === null ? null : [...snapshot.primary]),
-			inspector: context.inspector ?? session.inspector(),
+			inspector: context.inspector ?? (typeof session.inspector === 'function' ? session.inspector() : null),
 			event: context.event ?? Object.freeze({ source: 'controller', action: 'sync' }),
 			profile: context.profile ?? session.profile,
 			project: session.project(),
@@ -90,10 +91,11 @@ export const createDesignerSelectionController = ({
 			source = 'ui',
 		} = {}) {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
+			const ref = typed && Array.isArray(path) ? Object.freeze({ kind: 'node', path: [...path] }) : path;
 			const accepted = typed
 				? session.select(
 					additive
-						? [...(session.selection().refs || []).filter((ref) => JSON.stringify(ref) !== JSON.stringify(path)), path]
+						? [...(session.selection().refs || []).filter((candidate) => JSON.stringify(candidate) !== JSON.stringify(ref)), ref]
 						: [path],
 					path,
 				)
@@ -110,7 +112,7 @@ export const createDesignerSelectionController = ({
 			synchronize(session.selection(), {
 				event: Object.freeze({ source: 'controller', action: 'refresh' }),
 				profile: session.profile,
-				inspector: session.inspector(),
+				inspector: typeof session.inspector === 'function' ? session.inspector() : null,
 			});
 		},
 		destroy() {

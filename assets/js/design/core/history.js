@@ -272,90 +272,78 @@ export class CommandHistory {
 		});
 	}
 
-	execute(command) {
-		return this.#run(() => {
-			const beforeProject = this.#projectState.current();
-			const beforeEditor = this.#editorState.snapshot();
+	#executeStaged(command, { batch = false } = {}) {
+		const beforeProject = this.#projectState.current();
+		const beforeEditor = this.#editorState.snapshot();
+		let stage;
+		let nextEditor;
+		let entry;
+		let undo;
+		try {
+			if (batch && (!Array.isArray(command?.steps) || !command.steps.length || command.steps.length > 64)) {
+				throw new TypeError('Batch must contain 1 to 64 commands.');
+			}
 			const editor = this.#stageEditor();
-			const stage = this.#stageCommand(command, beforeProject, editor);
-			if (sameValue(stage.project, beforeProject)) return beforeProject;
-			const nextEditor = editor.snapshot();
-			const entry = this.#entry(command, beforeProject, beforeEditor, stage.project, nextEditor, this.#nextEntryId + 1);
-			const nextUndo = [...this.#undo, entry];
-			if (nextUndo.length > this.#limit) nextUndo.splice(0, nextUndo.length - this.#limit);
-			const result = this.#commit({
-				nextProject: stage.project,
-				nextEditor,
-				undo: nextUndo,
-				redo: [],
-				action: 'execute',
-				source: 'command',
-				forceSelection: stage.forceSelection,
-				selectionAction: String(command.label || 'command'),
-			});
-			this.#nextEntryId = entry.id;
-			return result;
-		});
-	}
-
-	/**
-	 * Registered Host requests are adapted to pure commands before entering
-	 * the single History transaction. No member publishes independently.
-	 */
-	executeRegisteredBatch(requests, registryOptions) {
-		const batch = bindRegisteredBatch(requests, registryOptions);
-		return this.executeBatch(batch.steps);
-	}
-
-	executeBatch(commands) {
-		return this.#run(() => {
-			const beforeProject = this.#projectState.current();
-			const beforeEditor = this.#editorState.snapshot();
-			const beforeHistoryRevision = this.#historyRevision;
-			let steps;
-			try {
-				if (!Array.isArray(commands) || commands.length < 1 || commands.length > 64) {
-					throw new TypeError('Invalid batch length.');
+			stage = this.#stageCommand(command, beforeProject, editor);
+			nextEditor = editor.snapshot();
+			if (sameValue(stage.project, beforeProject)) {
+				if (batch && !sameValue(nextEditor.selection, beforeEditor.selection)) {
+					throw new TypeError('A selection-only command batch is invalid.');
 				}
-				steps = Object.freeze([...commands]);
-				if (steps.some((step) => !step || typeof step.apply !== 'function')) {
-					throw new TypeError('Invalid batch member.');
-				}
-				const compound = Object.freeze({ label: 'batch', steps });
-				const editor = this.#stageEditor();
-				const stage = this.#stageCommand(compound, beforeProject, editor);
-				const nextEditor = editor.snapshot();
-				if (sameValue(stage.project, beforeProject)) {
-					if (!sameValue(nextEditor.selection, beforeEditor.selection)) {
-						throw new TypeError('Selection-only batch refused.');
-					}
-					return Object.freeze({
-						changed: false,
-						projectRevision: this.#projectState.revision,
-						historyRevision: beforeHistoryRevision,
-						selection: this.#editorState.selection.typedSnapshot(),
-					});
-				}
-				const entry = this.#entry(compound, beforeProject, beforeEditor, stage.project, nextEditor, this.#nextEntryId + 1);
-				const undo = [...this.#undo, entry];
-				if (undo.length > this.#limit) undo.splice(0, undo.length - this.#limit);
-				this.#commit({
-					nextProject: stage.project, nextEditor, undo, redo: [],
-					action: 'execute', source: 'command', forceSelection: false,
-					selectionAction: 'batch',
-				});
-				this.#nextEntryId = entry.id;
 				return Object.freeze({
-					changed: true,
+					changed: false, project: beforeProject,
 					projectRevision: this.#projectState.revision,
 					historyRevision: this.#historyRevision,
 					selection: this.#editorState.selection.typedSnapshot(),
 				});
-			} catch (_) {
-				const error = new Error('Designer command batch was rejected atomically.');
+			}
+			entry = this.#entry(command, beforeProject, beforeEditor, stage.project, nextEditor, this.#nextEntryId + 1);
+			undo = [...this.#undo, entry];
+			if (undo.length > this.#limit) undo.splice(0, undo.length - this.#limit);
+		} catch (error) {
+			if (!batch) throw error;
+			const refused = new Error('Designer command batch was rejected atomically.');
+			refused.code = 'BATCH_ABORTED';
+			throw refused;
+		}
+		// Exactly one existing guarded commit for a single or compound command.
+		// A postcommit listener failure is diagnostic, never a transaction abort.
+		const project = this.#commit({
+			nextProject: stage.project, nextEditor, undo, redo: [],
+			action: 'execute', source: 'command',
+			forceSelection: batch ? false : stage.forceSelection,
+			selectionAction: String(command.label || 'command'),
+		});
+		this.#nextEntryId = entry.id;
+		return Object.freeze({
+			changed: true, project,
+			projectRevision: this.#projectState.revision,
+			historyRevision: this.#historyRevision,
+			selection: this.#editorState.selection.typedSnapshot(),
+		});
+	}
+
+	execute(command) {
+		return this.#run(() => this.#executeStaged(command).project);
+	}
+
+	executeBatch(commands) {
+		return this.#run(() => this.#executeStaged(
+			Object.freeze({ label: 'batch', steps: commands }),
+			{ batch: true },
+		));
+	}
+
+	executeRegisteredBatch(requests, registryOptions) {
+		return this.#run(() => {
+			let batch;
+			try { batch = bindRegisteredBatch(requests, registryOptions); }
+			catch (_) {
+				const error = new Error('Registered Designer batch refused.');
 				error.code = 'BATCH_ABORTED';
 				throw error;
 			}
+			return this.#executeStaged(batch, { batch: true });
 		});
 	}
 
