@@ -302,12 +302,9 @@ const enhance = (select, options = {}) => {
 		if (!root.contains(event.target) && !panel.contains(event.target)) close();
 	};
 	if (!header) {
-		// Field-mode selection retains existing outside-click behavior.
+		// Field picker retains its previous outside-click behavior without
+		// introducing a scroll-close rule not present in the original engine.
 		document.addEventListener('click', onDocumentClick);
-		// The header mode binds the same handler only while its popup is open.
-		document.addEventListener('scroll', (event) => {
-			if (!panel.contains(event.target) && !panel.hidden) close();
-		}, true);
 	} else {
 		panel.addEventListener('toggle', (event) => {
 			if (event.newState === 'closed' && !panel.hidden) close();
