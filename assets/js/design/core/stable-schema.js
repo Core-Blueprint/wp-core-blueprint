@@ -11,6 +11,7 @@ const PROVIDER = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\.[a-z][a-z0-9]*(?:-[a-z0-9]+
 const NODE_TYPE = /^[a-z][a-z0-9_]*(?:(?:-|\.)[a-z0-9_]+)*$/;
 const escapeSegment = (segment) => String(segment).replace(/~/g, '~0').replace(/\//g, '~1');
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+const ownValue = (object, key) => own(object, key) ? Object.getOwnPropertyDescriptor(object, key).value : undefined;
 const keysMatch = (object, keys) => isPlainObject(object)
 	&& Object.keys(object).length === keys.length && keys.every((key) => own(object, key));
 const sorted = (entries) => entries.every((entry, index) => index === 0 || entries[index - 1].id < entry.id);
@@ -112,21 +113,25 @@ export function validateStableProjectV1(project, context) {
 	for (const key of Object.keys(project)) {
 		if (!['schema_version', 'design_type', 'root'].includes(key)) add(CODES.node, '/' + escapeSegment(key));
 	}
-	if (project.schema_version !== 1) add(CODES.generation, '/schema_version');
-	const designType = typeof project.design_type === 'string' ? registry.designTypes.get(project.design_type) : null;
+	const projectVersion = ownValue(project, 'schema_version');
+	const projectDesignType = ownValue(project, 'design_type');
+	const projectRoot = ownValue(project, 'root');
+	if (projectVersion !== 1) add(CODES.generation, '/schema_version');
+	const designType = typeof projectDesignType === 'string' ? registry.designTypes.get(projectDesignType) : null;
 	if (!designType) add(CODES.node, '/design_type');
-	if (!isPlainObject(project.root)) {
+	if (!isPlainObject(projectRoot)) {
 		add(CODES.node, '/root');
 		return finish();
 	}
-	if (project.schema_version !== 1) return finish();
+	if (projectVersion !== 1) return finish();
 
 	const domain = (value, schema, pointer, depth) => {
 		if (depth > 64) { add(CODES.limit, pointer); return; }
 		if (!isPlainObject(schema) || Object.keys(schema).some((key) => !schemaKeys.has(key))) {
 			add(CODES.domain, pointer); return;
 		}
-		const types = typeof schema.type === 'string' ? [schema.type] : schema.type;
+		const typeDeclaration = ownValue(schema, 'type');
+		const types = typeof typeDeclaration === 'string' ? [typeDeclaration] : typeDeclaration;
 		const checks = {
 			object: () => isPlainObject(value),
 			array: () => Array.isArray(value),
@@ -161,8 +166,9 @@ export function validateStableProjectV1(project, context) {
 				|| (own(schema, 'maxItems') && (!Number.isSafeInteger(schema.maxItems) || value.length > schema.maxItems))) {
 				add(CODES.domain, pointer);
 			}
-			if (!isPlainObject(schema.items)) { add(CODES.domain, pointer); return; }
-			value.forEach((entry, i) => domain(entry, schema.items, pointer + '/' + i, depth + 1));
+			const itemsSchema = ownValue(schema, 'items');
+			if (!isPlainObject(itemsSchema)) { add(CODES.domain, pointer); return; }
+			value.forEach((entry, i) => domain(entry, itemsSchema, pointer + '/' + i, depth + 1));
 		}
 		if (isPlainObject(value)) {
 			const properties = own(schema, 'properties') ? schema.properties : {};
@@ -176,7 +182,7 @@ export function validateStableProjectV1(project, context) {
 			for (const key of Object.keys(value)) {
 				const at = pointer + '/' + escapeSegment(key);
 				if (own(properties, key) && isPlainObject(properties[key])) domain(value[key], properties[key], at, depth + 1);
-				else if (schema.additionalProperties !== true) add(CODES.domain, at);
+				else if (!(own(schema, 'additionalProperties') && schema.additionalProperties === true)) add(CODES.domain, at);
 			}
 		}
 	};
@@ -190,32 +196,35 @@ export function validateStableProjectV1(project, context) {
 		for (const key of Object.keys(value)) {
 			if (!['type', 'provider', 'properties', 'children'].includes(key)) add(CODES.node, pointer + '/' + escapeSegment(key));
 		}
-		const type = value.type;
+		const type = ownValue(value, 'type');
+		const provider = ownValue(value, 'provider');
+		const properties = ownValue(value, 'properties');
+		const children = ownValue(value, 'children');
 		const definition = typeof type === 'string' ? registry.nodes.get(type) : null;
-		if (!definition || (parentType === null && type !== project.design_type)
+		if (!definition || (parentType === null && type !== projectDesignType)
 			|| (parentType !== null && !definition.allowedParents.includes(parentType))) {
 			add(CODES.node, pointer + '/type');
 		}
-		if (typeof value.provider !== 'string' || !PROVIDER.test(value.provider)
-			|| !registry.canonical.has(value.provider)) add(CODES.provider, pointer + '/provider');
-		else if ((definition && definition.provider !== value.provider)
-			|| (parentType === null && designType && designType.ownerProvider !== value.provider)) {
+		if (typeof provider !== 'string' || !PROVIDER.test(provider)
+			|| !registry.canonical.has(provider)) add(CODES.provider, pointer + '/provider');
+		else if ((definition && definition.provider !== provider)
+			|| (parentType === null && designType && designType.ownerProvider !== provider)) {
 			add(CODES.node, pointer + '/provider');
 		}
-		if (!isPlainObject(value.properties)) add(CODES.node, pointer + '/properties');
+		if (!isPlainObject(properties)) add(CODES.node, pointer + '/properties');
 		else if (definition && definition.propertiesSchemaId !== null) {
 			const entry = registry.domains.get(definition.propertiesSchemaId);
 			if (!entry) add(CODES.domain, pointer + '/properties');
-			else domain(value.properties, entry.schema, pointer + '/properties', 0);
-		} else if (definition && Object.keys(value.properties).length > 0) add(CODES.domain, pointer + '/properties');
-		if (!Array.isArray(value.children)) { add(CODES.node, pointer + '/children'); return; }
+			else domain(properties, entry.schema, pointer + '/properties', 0);
+		} else if (definition && Object.keys(properties).length > 0) add(CODES.domain, pointer + '/properties');
+		if (!Array.isArray(children)) { add(CODES.node, pointer + '/children'); return; }
 		if (!definition || typeof type !== 'string') return;
-		value.children.forEach((child, index) => {
+		children.forEach((child, index) => {
 			const at = pointer + '/children/' + index;
 			if (!isPlainObject(child)) add(CODES.node, at);
 			else node(child, at, typeof type === 'string' ? type : null, depth + 1);
 		});
 	};
-	node(project.root, '/root', null, 0);
+	node(projectRoot, '/root', null, 0);
 	return finish();
 }
