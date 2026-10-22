@@ -38,19 +38,9 @@ final class DesignerAssets {
 			return;
 		}
 
-		DesignEditorAssets::enqueue_mail_rich_text_controls();
-		wp_enqueue_script_module(
-			self::MODULE_ID,
-			CB_CORE_URL . 'assets/js/features/mail-designer.js',
-			[ DesignEditorAssets::MODULE_ID, '@cb-core/clipboard' ],
-			CB_CORE_VERSION
-		);
-		wp_enqueue_script_module(
-			self::SAVE_MODULE_ID,
-			CB_CORE_URL . 'assets/js/features/mail-designer-save.js',
-			[ self::MODULE_ID ],
-			CB_CORE_VERSION
-		);
+		// Native Base Platform v1 is the sole Mail session/History/Save owner.
+		// Deliberately do NOT enqueue mail-designer.js or its POST Save shim.
+		DesignEditorAssets::enqueue_platform();
 	}
 
 	private function __construct() {}
