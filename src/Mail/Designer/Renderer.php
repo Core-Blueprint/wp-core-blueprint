@@ -17,8 +17,14 @@ final class Renderer {
 		$template = TemplateRepository::get( $template_id );
 		if ( null === $template ) return null;
 		try {
+			$bindings = BindingRegistry::resolve( $context );
+			if ( in_array( $template_id, [ 'wordpress.password-reset', 'wordpress.new-user' ], true ) ) {
+				$action_url = $bindings['action.url'] ?? null;
+				if ( ! is_string( $action_url ) || ! self::valid_action_url( $action_url )
+					|| ! self::has_action_link( $template['project']['root'] ) ) return null;
+			}
 			return ( new ProjectRenderer() )->render(
-				$template['project'], $template['fields'], BindingRegistry::resolve( $context )
+				$template['project'], $template['fields'], $bindings
 			);
 		} catch ( \Throwable $error ) {
 			// Never log action keys, recipient details or untrusted content.
@@ -43,6 +49,28 @@ final class Renderer {
 		} catch ( \Throwable $error ) {
 			return null;
 		}
+	}
+
+	/** A security notification must include a functional, context-owned link. */
+	private static function valid_action_url( string $url ): bool {
+		if ( '' === $url || preg_match( '/[\x00-\x20\x7f]/', $url )
+			|| false === filter_var( $url, FILTER_VALIDATE_URL ) ) return false;
+		$parts = wp_parse_url( $url );
+		return is_array( $parts ) && in_array( strtolower( (string) ( $parts['scheme'] ?? '' ) ), [ 'http', 'https' ], true )
+			&& ! empty( $parts['host'] ) && ! isset( $parts['user'] ) && ! isset( $parts['pass'] );
+	}
+
+	private static function has_action_link( array $node, int $depth = 0 ): bool {
+		if ( $depth > 64 ) return false;
+		$type = $node['type'] ?? null;
+		$p = $node['properties'] ?? [];
+		if ( 'mail.button' === $type && ( $p['url'] ?? null ) === '{{action.url}}' ) return true;
+		if ( 'mail.rich-text' === $type && is_string( $p['markup'] ?? null )
+			&& preg_match( '~<a\b[^>]*href\s*=\s*["\x27]\{\{action\.url\}\}["\x27]~i', $p['markup'] ) ) return true;
+		foreach ( $node['children'] ?? [] as $child ) {
+			if ( is_array( $child ) && self::has_action_link( $child, $depth + 1 ) ) return true;
+		}
+		return false;
 	}
 
 	/** Preserve upstream recipient/provider headers; replace Content-Type only. */

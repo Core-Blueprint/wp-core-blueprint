@@ -41,7 +41,7 @@ final class ProjectRenderer {
 			throw new \InvalidArgumentException( 'Mail preheader is invalid.' );
 		}
 		$html = $this->renderer->render( $project, $bindings,
-			array_merge( $options, [ 'preheader' => $fields['preheader'] ] ) );
+			array_merge( $options, [ 'preheader' => $preheader ] ) );
 		return [ 'subject' => $subject, 'preheader' => $preheader, 'html' => $html ];
 	}
 }

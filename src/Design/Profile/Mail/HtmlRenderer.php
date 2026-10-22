@@ -37,7 +37,7 @@ final class HtmlRenderer {
 		$text_color = $this->color( $layout['textColor'] ?? '#1f2937', '#1f2937' );
 		$accent = $this->color( $layout['accentColor'] ?? '#2563eb', '#2563eb' );
 		$font = $this->font_family( $layout['fontFamily'] ?? Contract::FONT_FAMILIES[0] );
-		$preheader = BindingInterpolator::interpolate( (string) ( $options['preheader'] ?? '' ), $bindings );
+		$preheader = (string) ( $options['preheader'] ?? '' );
 		$editor_markers = true === ( $options['editor_markers'] ?? false );
 		$padding = $this->int_range( $layout['padding'] ?? 32, 0, 64, 32 );
 		$theme = [
