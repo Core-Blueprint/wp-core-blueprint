@@ -1,4 +1,5 @@
 import { bindRegisteredCommand, bindRegisteredBatch } from './core/commands.js';
+import { sameValue } from './core/value.js';
 import { createPlatformHost } from './platform/host.js';
 import { createRegistryView } from './platform/registry.js';
 import {
@@ -456,7 +457,7 @@ export const createPlatformSessionBridge = ({
 		},
 		isProjectDirty() {
 			active();
-			return JSON.stringify(projectState.current()) !== JSON.stringify(history.baselineSnapshot());
+			return !sameValue(projectState.current(), history.baselineSnapshot());
 		},
 		dispose() {
 			if (disposed) return;
@@ -615,7 +616,19 @@ export const attachTrustedDesignerHost = ({
 			// Luna 3 currently supplies an empty staging canvas. Real Base
 			// chrome must be composed there in the later joint integration;
 			// accepting an empty shell would falsely claim UI readiness.
-			composePlatformChrome(stagedRoot);
+			const chrome = composePlatformChrome(stagedRoot);
+			chrome.save.disabled = true;
+			chrome.save.addEventListener('click', () => {
+				if (signal.aborted || host.state !== 'READY') return;
+				chrome.save.disabled = true;
+				Promise.resolve().then(() => editor.save()).finally(() => {
+					if (!signal.aborted && host.state === 'READY') chrome.save.disabled = false;
+				}).catch(() => {
+					stagedRoot.dispatchEvent(new CustomEvent('cb:design-shell:savechange', {
+						bubbles: true, detail: Object.freeze({state: 'unknown'}),
+					}));
+				});
+			}, {signal});
 			// The outer shell root retains its exclusive lease throughout
 			// staging/switching. The detached stage is independently guarded
 			// against duplicate controllers by createDesignerShell().
@@ -656,6 +669,8 @@ export const attachTrustedDesignerHost = ({
 		const canvas = canvasRoot.firstElementChild;
 		const shell = canvas ? stagedShells.get(canvas) : null;
 		if (!shell?.activatePlatformSession()) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+		const save = canvas.querySelector('[data-cb-design-shell-primary-action]');
+		if (save) save.disabled = false;
 	};
 
 	return Object.freeze({
