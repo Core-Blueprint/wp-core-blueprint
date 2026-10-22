@@ -65,6 +65,8 @@ final class RegistryCompiler {
 					self::invalid();
 				}
 			}
+			sort( $module['dependencies'], SORT_STRING );
+			sort( $module['exports'], SORT_STRING );
 			$module_map[ $module['id'] ] = $module;
 			$dependencies[ $module['id'] ] = $module['dependencies'];
 		}
@@ -134,6 +136,7 @@ final class RegistryCompiler {
 					self::invalid();
 				}
 			}
+			sort( $profile['requiredCapabilities'], SORT_STRING );
 			foreach ( $profile['requiredCapabilities'] as $capability ) {
 				if ( null === $this->capabilities->canonical_class_for( $profile['owner'], $capability )
 					|| ! $this->authorizations->is_authorized_canonical( $profile['designType'], $profile['owner'], $capability ) ) {
@@ -168,6 +171,7 @@ final class RegistryCompiler {
 			if ( ! self::strings( $profile['dependencies'] ) ) {
 				self::invalid();
 			}
+			sort( $profile['dependencies'], SORT_STRING );
 		}
 		unset( $profile );
 		$profile_map = array_column( $profile_list, null, 'id' );
@@ -192,7 +196,11 @@ final class RegistryCompiler {
 				self::invalid();
 			}
 		}
-		$component_list = array_map( static fn( array $item ): array => array_replace( [ 'requires' => [] ], $item ), $component_list );
+		$component_list = array_map( static function ( array $item ): array {
+			$item = array_replace( [ 'requires' => [] ], $item );
+			sort( $item['requires'], SORT_STRING );
+			return $item;
+		}, $component_list );
 		$component_map = array_column( $component_list, null, 'id' );
 		$component_order = $this->sorter->sort( array_column( $component_list, 'requires', 'id' ) );
 		$component_list = array_map( static fn( string $id ): array => $component_map[ $id ], $component_order );
@@ -207,7 +215,11 @@ final class RegistryCompiler {
 				self::invalid();
 			}
 		}
-		$control_list = array_map( static fn( array $item ): array => array_replace( [ 'requires' => [] ], $item ), $controls->all() );
+		$control_list = array_map( static function ( array $item ): array {
+			$item = array_replace( [ 'requires' => [] ], $item );
+			sort( $item['requires'], SORT_STRING );
+			return $item;
+		}, $controls->all() );
 		$control_map = array_column( $control_list, null, 'id' );
 		$control_order = $this->sorter->sort( array_column( $control_list, 'requires', 'id' ) );
 		$control_list = array_map( static fn( string $id ): array => $control_map[ $id ], $control_order );

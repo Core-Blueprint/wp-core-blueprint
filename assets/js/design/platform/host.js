@@ -101,7 +101,7 @@ export function createPlatformHost({
 			const registry = await resolveRegistryView(candidate.bootstrap);
 			if (scope.signal.aborted) throw refusal('HOST_CONTEXT_REFUSED');
 			const identity = inspectTrustedContext(candidate.bootstrap, registry);
-			if (active) nextEpoch(epoch, identity.contextEpoch);
+			if (epoch >= 0) nextEpoch(epoch, identity.contextEpoch);
 			holder.identity = identity;
 			holder.profileId = registry.profileId;
 			holder.registry = registry;
