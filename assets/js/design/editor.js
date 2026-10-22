@@ -403,6 +403,13 @@ export const createPlatformSessionBridge = ({
 	};
 	const projectState = new ProjectState(initialProject, {
 		validate: validatePlatformProject,
+		// Native v1 is validated by ProjectState against the SAME verified
+		// server Registry snapshot already used by the Host and domain validator.
+		stableSchema: Object.freeze({
+			profileId: profile.id,
+			projectSchema: profile.projectSchema,
+			registrySnapshot: schemaSnapshot,
+		}),
 	});
 	const editorState = new EditorState();
 	editorState.selection.configureTyped({
