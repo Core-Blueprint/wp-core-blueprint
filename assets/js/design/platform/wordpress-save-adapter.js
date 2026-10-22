@@ -166,14 +166,21 @@ async function activate() {
 			createSaveAdapter:createWordPressSaveAdapter,
 		});
 		await host.mount({bootstrap:loaded.bootstrap,project:loaded.project,persistedFields:loaded.fields});
+		const transitionSafe=()=>{
+			if(host.state!=='READY')return false;
+			const status=host.editor?.saveStatus?.();
+			return status?.dirty===false&&status?.blocked===false
+				&&status?.state==='READY_CLEAN';
+		};
+		window.addEventListener('beforeunload',(event)=>{
+			if(!transitionSafe()){
+				event.preventDefault();
+				event.returnValue='';
+			}
+		});
 		if(selected){
 			selected.addEventListener('change',()=>{
-				// Same-owner Mail context is loaded by full navigation, never
-				// a competing session. A dirty/UNKNOWN Save blocks navigation.
-				const history=host.editor?.historyStatus?.();
-				// Switching through a full navigation is allowed only for a
-				// pristine, verified session. Never interpret missing status as clean.
-				if(host.state!=='READY'||history?.canUndo===true||history?.canRedo===true){
+				if(!transitionSafe()){
 					selected.value=resourceKey;
 					return;
 				}
