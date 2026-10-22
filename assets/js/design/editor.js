@@ -518,6 +518,10 @@ const composePlatformChrome = (root) => {
 	const save = button('Save', 'data-cb-design-shell-primary-action');
 	save.classList.add('button-primary', 'cb-core-button--primary');
 	toolbar.append(history, fullscreen, save);
+	const notice = node('p', 'cb-core-design-shell__persistent-notice', {
+		'data-cb-design-shell-persistent-notice': '', 'role': 'status', 'aria-live': 'polite',
+	});
+	notice.hidden = true;
 	const workspace = node('div', 'cb-core-design-shell__workspace');
 	const palette = node('section', 'cb-core-design-shell__palette', {'aria-label': 'Elements and layers'});
 	const canvas = node('section', 'cb-core-design-shell__canvas', {'aria-label': 'Design canvas'});
@@ -547,8 +551,8 @@ const composePlatformChrome = (root) => {
 	tabs(palette, 'palette', [['elements','Elements'],['layers','Layers']]);
 	tabs(sidebar, null, [['inspector','Inspector'],['settings','Settings']]);
 	workspace.append(palette, canvas, sidebar);
-	root.append(toolbar, workspace);
-	return {save, undo, redo, surface};
+	root.append(toolbar, notice, workspace);
+	return {save, notice, undo, redo, surface};
 };
 
 /**
@@ -579,6 +583,8 @@ export const attachTrustedDesignerHost = ({
 
 	const lease = claimDesignerHostRoot(root);
 	const stagedShells = new WeakMap();
+	const stagedSaveUI = new WeakMap();
+	const savesBySignal = new WeakMap();
 	const activeRegistries = new Map();
 	const registryFor = async (candidateBootstrap) => {
 		const registry = createRegistryView(candidateBootstrap, runtimeModules);
@@ -655,6 +661,7 @@ export const attachTrustedDesignerHost = ({
 			});
 			coordinator = createCanonicalSaveCoordinator({host: hostBridge, fields, adapter});
 			fieldsOfSave.set(coordinator, fields);
+			savesBySignal.set(signal, coordinator);
 			return coordinator;
 		} catch (error) {
 			fields.destroy();
@@ -711,19 +718,41 @@ export const attachTrustedDesignerHost = ({
 			// Luna 3 currently supplies an empty staging canvas. Real Base
 			// chrome must be composed there in the later joint integration;
 			// accepting an empty shell would falsely claim UI readiness.
+			const saveAuthority = savesBySignal.get(signal);
+			if (!saveAuthority) throw new Error('SAVE_NOT_READY');
 			const chrome = composePlatformChrome(stagedRoot);
 			chrome.save.disabled = true;
+			const syncSaveUI = () => {
+				if (signal.aborted || host?.state !== 'READY' || !stagedRoot.isConnected) return;
+				const status = saveAuthority.status();
+				const state = status?.state;
+				const uncertain = state === 'UNKNOWN';
+				const unsynchronized = state === 'PERSISTED_UNSYNCHRONIZED';
+				const working = ['CHECKPOINTED', 'SUBMITTING', 'RECEIPT_VERIFIED', 'RECONCILING'].includes(state);
+				chrome.save.textContent = uncertain ? 'Verify save status'
+					: working ? 'Saving…' : status?.dirty ? 'Save' : 'Saved';
+				chrome.save.disabled = working || unsynchronized || (!uncertain && status?.dirty !== true);
+				chrome.notice.hidden = !(uncertain || unsynchronized);
+				chrome.notice.textContent = uncertain
+					? 'Save outcome unknown. Verify the original operation before continuing.'
+					: unsynchronized
+						? 'Changes were persisted, but the editor history could not be reconciled. Keep this Designer open.'
+						: '';
+			};
+			const unsubscribeSaveStatus = saveAuthority.subscribe(syncSaveUI);
+			signal.addEventListener('abort', unsubscribeSaveStatus, {once: true});
 			chrome.save.addEventListener('click', () => {
-				if (signal.aborted || host.state !== 'READY') return;
+				if (signal.aborted || host?.state !== 'READY' || chrome.save.disabled) return;
 				chrome.save.disabled = true;
-				Promise.resolve().then(() => editor.save()).finally(() => {
-					if (!signal.aborted && host.state === 'READY') chrome.save.disabled = false;
-				}).catch(() => {
-					stagedRoot.dispatchEvent(new CustomEvent('cb:design-shell:savechange', {
-						bubbles: true, detail: Object.freeze({state: 'unknown'}),
+				Promise.resolve().then(() => editor.save()).catch(() => {
+					// Only the SaveCoordinator may determine UNKNOWN. An exception
+					// before transport does not prove any particular write outcome.
+					stagedRoot.dispatchEvent(new CustomEvent('cb:design-shell:failure', {
+						bubbles: true, detail: Object.freeze({phase: 'save'}),
 					}));
-				});
+				}).finally(syncSaveUI);
 			}, {signal});
+			stagedSaveUI.set(stagedRoot, syncSaveUI);
 			// The outer shell root retains its exclusive lease throughout
 			// staging/switching. The detached stage is independently guarded
 			// against duplicate controllers by createDesignerShell().
@@ -764,8 +793,14 @@ export const attachTrustedDesignerHost = ({
 		const canvas = canvasRoot.firstElementChild;
 		const shell = canvas ? stagedShells.get(canvas) : null;
 		if (!shell?.activatePlatformSession()) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
-		const save = canvas.querySelector('[data-cb-design-shell-primary-action]');
-		if (save) save.disabled = false;
+		const syncSaveUI = stagedSaveUI.get(canvas);
+		if (!syncSaveUI) throw new Error('SAVE_NOT_READY');
+		const unsubscribe = host.editor.subscribe(syncSaveUI);
+		// Status and edit-state observers use the same Host facade. Only the
+		// registered SaveCoordinator determines the next allowed action.
+		stagedShells.get(canvas).syncHistory();
+		syncSaveUI();
+		if (typeof unsubscribe !== 'function') throw new Error('HOST_CAPABILITY_UNAVAILABLE');
 	};
 
 	return Object.freeze({
