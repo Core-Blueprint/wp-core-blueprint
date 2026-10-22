@@ -288,8 +288,7 @@ final class PlatformTransport {
 				|| ! is_string( $node['type'] ) || ! isset( $nodes[$node['type']] )
 				|| $node['provider'] !== $nodes[$node['type']]['provider'] || $depth > 64
 				|| ++$count > 100000 || ! is_array( $node['children'] ) || ! array_is_list( $node['children'] )
-				|| ! is_array( $node['properties'] )
-				|| ( [] !== $node['properties'] && array_is_list( $node['properties'] ) ) ) return false;
+				|| ! is_array( $node['properties'] ) || array_is_list( $node['properties'] ) ) return false;
 			if ( null !== $parent && ! in_array( $parent, $nodes[$node['type']]['allowedParents'], true ) ) return false;
 			$id = $nodes[$node['type']]['propertiesSchemaId'];
 			if ( ! is_string( $id ) || ! isset( $schemas[$id] )
