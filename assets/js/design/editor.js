@@ -36,6 +36,7 @@ import {
 	createDesignerNavigation,
 	createDesignerSelectionController,
 	createDesignerShell,
+	claimDesignerHostRoot,
 	decorateDesignerControl,
 	decorateDesignerElement,
 } from './shell/index.js';
@@ -358,6 +359,130 @@ export const createDomainSession = ({
 			disposed = true;
 			unsubscribeConfigured?.();
 			history.dispose();
+		},
+	});
+};
+
+/**
+ * Trusted static-ESM A2 Host attachment boundary. The integration owner must
+ * import the actual Host factory from platform/host.js and obtain bootstrap
+ * from authorized PHP; neither is available in this SOURCE-only branch.
+ * This bridge holds one shell lease, never a second History/Save/render queue.
+ * Do not expose this constructor on window.cbCore or treat its bootstrap
+ * argument as proof of authorization: the Host validates trusted evidence.
+ */
+export const attachTrustedDesignerHost = ({ root, createHost, bootstrap } = {}) => {
+	if (!(root instanceof Element) || !root.matches('[data-cb-design-shell]')) {
+		throw new TypeError('Designer Platform requires a canonical shell root.');
+	}
+	if (typeof createHost !== 'function') {
+		throw new TypeError('Designer Platform requires a statically imported Host factory.');
+	}
+	if (!bootstrap || typeof bootstrap !== 'object' || Array.isArray(bootstrap)) {
+		throw new TypeError('Designer Platform requires server-provided bootstrap evidence.');
+	}
+
+	const lease = claimDesignerHostRoot(root);
+	let constructing = true;
+	let closed = false;
+	let inFlightUnmount = null;
+	let host;
+	try {
+		// Exact Luna 3 createPlatformHost factory signature. The Host supplies
+		// its canonical readonly EditorFacade and an OFFSCREEN candidate root;
+		// never attach a staged session to the active, leased Base shell.
+		const createShell = ({ root: stagedRoot, editor, context, signal } = {}) => {
+			if (constructing || closed || inFlightUnmount) throw new Error('HOST_CONTEXT_REFUSED');
+			if (!(stagedRoot instanceof Element)
+				|| stagedRoot === root
+				|| stagedRoot.ownerDocument !== root.ownerDocument
+				|| !stagedRoot.matches('[data-cb-platform-canvas]')
+				|| stagedRoot.isConnected
+				|| root.contains(stagedRoot)) {
+				throw new Error('HOST_CONTEXT_REFUSED');
+			}
+			if (!context || typeof context !== 'object'
+				|| !signal || signal.aborted !== false) {
+				throw new Error('HOST_CONTEXT_REFUSED');
+			}
+			// No SessionBridge/History/Save proxy: shell controls consume the
+			// ONE EditorFacade from the Host (never the private session).
+			const requiredEditorMethods = [
+				'project', 'snapshot', 'persistedFields', 'selection', 'select',
+				'execute', 'executeBatch', 'undo', 'redo', 'historyStatus',
+				'subscribe', 'save',
+			];
+			if (!editor || requiredEditorMethods.some((name) => typeof editor[name] !== 'function')) {
+				throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+			}
+			// Luna 3 currently supplies an empty staging canvas. Real Base
+			// chrome must be composed there in the later joint integration;
+			// accepting an empty shell would falsely claim UI readiness.
+			if (!stagedRoot.querySelector('[data-cb-design-shell-fullscreen]')) {
+				throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+			}
+			// The outer shell root retains its exclusive lease throughout
+			// staging/switching. The detached stage is independently guarded
+			// against duplicate controllers by createDesignerShell().
+			return createDesignerShell(stagedRoot, {
+				session: editor,
+				platformStaged: true,
+				platformSignal: signal,
+			});
+		};
+		host = createHost(Object.freeze({ root, bootstrap, createShell }));
+		if (!host || host.root !== root
+			|| typeof host.mount !== 'function'
+			|| typeof host.switchContext !== 'function'
+			|| typeof host.refresh !== 'function'
+			|| typeof host.unmount !== 'function') {
+			throw new TypeError('Designer Host does not satisfy the A1 lifecycle interface.');
+		}
+	} catch (error) {
+		lease.release(); // Construction was forbidden from creating a shell.
+		throw error;
+	} finally {
+		constructing = false;
+	}
+
+	const assertActive = () => {
+		if (closed || inFlightUnmount) throw new Error('HOST_CONTEXT_REFUSED');
+	};
+	return Object.freeze({
+		get root() { return root; },
+		get state() { return host.state; },
+		get profileId() { return host.profileId; },
+		get context() { return host.context; },
+		get editor() { return host.editor; },
+		mount(initialContext) {
+			assertActive();
+			return host.mount(initialContext);
+		},
+		switchContext(nextContext, options) {
+			assertActive();
+			return host.switchContext(nextContext, options);
+		},
+		refresh(reason) {
+			assertActive();
+			return host.refresh(reason);
+		},
+		async unmount() {
+			if (closed) return true;
+			if (inFlightUnmount) return inFlightUnmount;
+			// Host MUST refuse unsafe Save states, abort work, then destroy its
+			// shell through the existing Exit Guard before relinquishing root.
+			inFlightUnmount = (async () => {
+				const outcome = await host.unmount();
+				if (outcome === false) return false;
+				if (!lease.release()) throw new Error('HOST_CLEANUP_FAILED');
+				closed = true;
+				return true;
+			})();
+			try {
+				return await inFlightUnmount;
+			} finally {
+				inFlightUnmount = null;
+			}
 		},
 	});
 };

@@ -274,6 +274,28 @@ export const createDesignerLayerTree = ({
 		return true;
 	};
 
+	const visibleItems = (items, prefix = '', output = []) => {
+		normalizeTreeItems(items).forEach((item, index) => {
+			const key = normalizeTreeKey(item, (prefix || 'root') + ':' + index);
+			output.push({ key, item });
+			if (!collapsedKeys.has(key)) visibleItems(item.children || [], key, output);
+		});
+		return output;
+	};
+
+	const patch = (items) => {
+		const next = visibleItems(items);
+		const oldOrder = [...rowsByKey.keys()];
+		if (next.length !== oldOrder.length
+			|| next.some(({ key, item }, index) => key !== oldOrder[index] || item.reorder || item.actions)) return false;
+		currentItems = normalizeTreeItems(items);
+		for (const { key, item } of next) {
+			const row = rowsByKey.get(key)?.row;
+			updateDesignerLayerRow(row, { label: item.label, selected: item.selected === true });
+		}
+		return true;
+	};
+
 	const render = (items = currentItems, { focus = '' } = {}) => {
 		currentItems = normalizeTreeItems(items);
 		const hadFocus = typeof element.contains === 'function' && element.contains(documentRef.activeElement);
@@ -305,7 +327,7 @@ export const createDesignerLayerTree = ({
 					};
 				}
 
-				const itemPath = Array.isArray(item.path) ? [...item.path] : null;
+				const itemPath = item.ref?.kind ? item.ref : (Array.isArray(item.path) ? [...item.path] : null);
 				const itemSelect = selectionAdapter && itemPath
 					? () => selectionAdapter(itemPath, Object.freeze({
 						source: 'layers',
@@ -467,6 +489,7 @@ export const createDesignerLayerTree = ({
 	return Object.freeze({
 		element,
 		render,
+		patch,
 		row(key) {
 			return rowsByKey.get(String(key || ''))?.row ?? null;
 		},
@@ -492,6 +515,83 @@ export const createDesignerLayerTree = ({
 			render(currentItems);
 		},
 	});
+};
+
+
+const safeLayerPath = (path) => {
+	if (!Array.isArray(path) || path.length < 1 || path.length > 12
+		|| path.some((key) => typeof key !== 'string' || !key || ['__proto__', 'prototype', 'constructor'].includes(key))) {
+		throw new TypeError('Layer title path must be a registered safe field path.');
+	}
+	return path;
+};
+const readLayerTitle = (entity, path) => {
+	let cursor = entity;
+	for (const key of safeLayerPath(path)) {
+		if (!cursor || typeof cursor !== 'object' || !Object.hasOwn(cursor, key)) return null;
+		cursor = cursor[key];
+	}
+	return typeof cursor === 'string' ? cursor : null;
+};
+
+/**
+ * Pure entity Layers projection. Registered collection resolvers supply
+ * identity/order; DOM strings never decide entity identity or reordering.
+ */
+export const projectDesignerEntityLayers = ({
+	project, selection, definitions, resolveCollection,
+} = {}) => {
+	if (!project || !Array.isArray(definitions) || typeof resolveCollection !== 'function') {
+		throw new TypeError('Entity Layers require registered definitions and collection resolution.');
+	}
+	const selected = new Set((selection?.refs ?? []).filter((ref) => ref?.kind === 'entity')
+		.map((ref) => JSON.stringify([ref.type, ref.id])));
+	const keys = new Set();
+	const rows = [];
+	for (const descriptor of definitions) {
+		if (!descriptor || typeof descriptor.type !== 'string' || !descriptor.type
+			|| typeof descriptor.identityField !== 'string' || !descriptor.identityField
+			|| !Array.isArray(descriptor.titlePath)) throw new TypeError('Invalid registered Layers descriptor.');
+		const collection = resolveCollection(descriptor, project);
+		if (!Array.isArray(collection)) throw new TypeError('Registered Layers collection must be ordered.');
+		const maxLength = Number.isSafeInteger(descriptor.maxLength) && descriptor.maxLength > 0
+			? Math.min(256, descriptor.maxLength) : 128;
+		for (const entity of collection) {
+			const id = entity?.[descriptor.identityField];
+			if (typeof id !== 'string' || !id || id.length > 128) throw new TypeError('Layer entity lacks its registered identity.');
+			const key = JSON.stringify([descriptor.type, id]);
+			if (keys.has(key)) throw new TypeError('Duplicate registered Layers entity identity.');
+			keys.add(key);
+			const title = readLayerTitle(entity, descriptor.titlePath);
+			rows.push(Object.freeze({
+				key: 'entity:' + key,
+				ref: Object.freeze({ kind: 'entity', type: descriptor.type, id }),
+				label: (title?.trim() || String(descriptor.fallbackTitle || 'Element')).slice(0, maxLength),
+				selected: selected.has(key),
+				// No reorder unless provided by an explicitly registered command.
+			}));
+		}
+	}
+	return Object.freeze(rows);
+};
+
+/**
+ * Text-only keyed row updates avoid destructive full-tree replacement for
+ * title changes while preserving focus, selected state and current position.
+ */
+export const updateDesignerLayerRow = (row, { label, selected } = {}) => {
+	if (!row?.querySelector) return false;
+	const title = row.querySelector('.cb-core-design-shell__layer-label');
+	const select = row.querySelector('[data-cb-design-layer-select]');
+	if (!title || !select) return false;
+	const next = String(label ?? '').replace(/\s+/g, ' ').trim();
+	if (title.textContent !== next) title.textContent = next;
+	const active = selected === true;
+	row.classList.toggle('is-selected', active);
+	row.setAttribute('aria-selected', active ? 'true' : 'false');
+	if (active) select.setAttribute('aria-current', 'true');
+	else select.removeAttribute('aria-current');
+	return true;
 };
 
 export const DESIGNER_LAYER_ACTIONS = Object.freeze(Object.keys(ACTION_DEFINITIONS));

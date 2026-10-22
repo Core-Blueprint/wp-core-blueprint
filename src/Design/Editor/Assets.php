@@ -45,6 +45,41 @@ final class Assets {
 	private const BRAND_LOCKUP_STYLE = 'cb-core-css-brand-lockup';
 	private const MOTION_MODULE_ID = '@cb-core/design-motion';
 
+	/**
+	 * Canonical future platform ESM sources. Inventory only: all these
+	 * files are owned by other Lunas and are NOT registered or loaded.
+	 * The integration stage must bind static WP module IDs/dependencies,
+	 * verify the frozen graph, installed artifact evidence and applied CSS
+	 * before the existing @cb-core/design-editor entry can enable Host READY.
+	 */
+	private const PLATFORM_REQUIRED_SOURCES = [
+		'assets/js/design/core/stable-schema.js',
+		'assets/js/design/platform/registry.js',
+		'assets/js/design/platform/manifest.js',
+		'assets/js/design/platform/host.js',
+		'assets/js/design/platform/lifecycle.js',
+		'assets/js/design/platform/context.js',
+		'assets/js/design/platform/preflight.js',
+		'assets/js/design/platform/render-adapter.js',
+		'assets/js/design/platform/inspector-binding.js',
+		'assets/js/design/platform/elements-palette.js',
+		'assets/js/design/platform/save-coordinator.js',
+		'assets/js/design/platform/persisted-fields.js',
+	];
+
+	/**
+	 * Source-only integration inventory, NOT registration or readiness.
+	 *
+	 * @return array{entry_module:string,entry_source:string,required_sources:list<string>}
+	 */
+	public static function platform_module_plan(): array {
+		return [
+			'entry_module' => self::MODULE_ID,
+			'entry_source' => 'assets/js/design/editor.js',
+			'required_sources' => self::PLATFORM_REQUIRED_SOURCES,
+		];
+	}
+
 	public static function enqueue(): void {
 		// The global Admin Theme normally enqueues semantic tokens first on
 		// wp-admin. This public editor boundary still owns the same canonical

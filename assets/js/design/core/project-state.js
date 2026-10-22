@@ -1,12 +1,17 @@
-import { cloneFrozen, cloneValue, isPlainObject } from './value.js';
+import { cloneFrozen, cloneValue, inspectJsonValue, isPlainObject } from './value.js';
+import { validateStableProjectV1 } from './stable-schema.js';
 
 const PROJECT_KEYS = new Set(['schema_version', 'design_type', 'root']);
 
 const normalizeProject = (project) => {
+	// The entire incoming graph is inspected before reading even one getter.
+	inspectJsonValue(project);
 	if (
 		!isPlainObject(project)
 		|| Object.keys(project).some((key) => !PROJECT_KEYS.has(key))
-		|| !Number.isInteger(project.schema_version)
+		|| !['schema_version', 'design_type', 'root'].every((key) =>
+			Object.prototype.hasOwnProperty.call(project, key))
+		|| !Number.isSafeInteger(project.schema_version)
 		|| project.schema_version < 0
 		|| typeof project.design_type !== 'string'
 		|| project.design_type === ''
@@ -22,12 +27,21 @@ export class ProjectState {
 	#revision = 0;
 	#listeners = new Set();
 	#validate;
+	#stableSchema;
+	#approvedStages = new WeakSet();
+	#knownSnapshots = new WeakSet();
 
-	constructor(project, { validate = null } = {}) {
+	/**
+	 * The optional stableSchema context is supplied ONLY by the verified
+	 * installed Host bootstrap; it is not embedded in project JSON.
+	 * Historical experimental generation 0 remains on the existing path.
+	 */
+	constructor(project, { validate = null, stableSchema = null } = {}) {
 		if (null !== validate && typeof validate !== 'function') {
 			throw new TypeError('ProjectState validate must be a function or null.');
 		}
 		this.#validate = validate;
+		this.#stableSchema = stableSchema;
 		this.#project = this.#normalize(project);
 	}
 
@@ -50,13 +64,22 @@ export class ProjectState {
 
 	/** Commit an already validated frozen project without invoking observers. */
 	commitStaged(next, { source = 'editor' } = {}) {
+		if (!next || typeof next !== 'object' || !this.#approvedStages.has(next)) {
+			throw new TypeError('Only a validated ProjectState.stage() result may be committed.');
+		}
+		const sourceLabel = String(source || 'editor');
+		this.#approvedStages.delete(next);
 		this.#project = next;
 		this.#revision += 1;
-		return Object.freeze({ revision: this.#revision, source: String(source || 'editor') });
+		return Object.freeze({ revision: this.#revision, source: sourceLabel });
 	}
 
 	/** Internal failure-path restoration before any public transaction event. */
 	restoreCommitted(snapshot, revision) {
+		if (!snapshot || typeof snapshot !== 'object' || !this.#knownSnapshots.has(snapshot)
+			|| !Number.isSafeInteger(revision) || revision < 0) {
+			throw new TypeError('Only a previously validated project snapshot may be restored.');
+		}
 		this.#project = snapshot;
 		this.#revision = revision;
 	}
@@ -87,7 +110,22 @@ export class ProjectState {
 
 	#normalize(project) {
 		const normalized = normalizeProject(project);
+		if (normalized.schema_version === 1) {
+			if (null === this.#stableSchema) {
+				throw new TypeError('Stable DesignProject requires verified Host registry context.');
+			}
+			const result = validateStableProjectV1(normalized, this.#stableSchema);
+			if (!result.valid) {
+				const error = new TypeError('Stable DesignProject refused by canonical schema validation.');
+				error.diagnostics = result.diagnostics;
+				throw error;
+			}
+		} else if (normalized.schema_version !== 0) {
+			throw new TypeError('Unsupported DesignProject schema generation.');
+		}
 		if (this.#validate) this.#validate(normalized);
+		this.#approvedStages.add(normalized);
+		this.#knownSnapshots.add(normalized);
 		return normalized;
 	}
 }

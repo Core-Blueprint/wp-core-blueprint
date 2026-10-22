@@ -1,5 +1,5 @@
-import { EditorState } from './editor-state.js';
-import { cloneFrozen, cloneValue, sameValue } from './value.js';
+import { bindRegisteredBatch } from './commands.js';
+import { cloneFrozen, sameValue } from './value.js';
 
 const normalizeLimit = (limit) => {
 	if (!Number.isInteger(limit) || limit < 1 || limit > 1000) {
@@ -140,12 +140,21 @@ export class CommandHistory {
 	}
 
 	#stageEditor() {
-		const next = new EditorState();
-		next.restore(this.#editorState.snapshot());
-		return next;
+		return this.#editorState.fork();
 	}
 
 	#stageCommand(command, project, editor) {
+		if (Array.isArray(command?.steps)) {
+			if (!command.steps.length || command.steps.length > 64) throw new TypeError('Invalid command batch.');
+			let current = project;
+			let forceSelection = false;
+			for (const step of command.steps) {
+				const result = this.#stageCommand(step, current, editor);
+				current = result.project;
+				forceSelection = forceSelection || result.forceSelection;
+			}
+			return { project: current, forceSelection };
+		}
 		if (!command || typeof command.apply !== 'function') {
 			throw new TypeError('Designer command requires apply(project).');
 		}
@@ -159,7 +168,16 @@ export class CommandHistory {
 			editor.selection.remap(effect.remapSelection);
 		}
 		if (Array.isArray(effect.selectPath)) editor.selection.select(effect.selectPath);
-		editor.reconcile(next.root);
+		if (Object.hasOwn(effect, 'selectionIntent')) {
+			if (!Array.isArray(effect.selectionIntent)) {
+				throw new TypeError('Command selectionIntent must be an array of typed references.');
+			}
+			editor.selection.setRefs(effect.selectionIntent, effect.primarySelection ?? null, {
+				project: next, contextEpoch: editor.selection.contextEpoch,
+				source: 'command', action: String(command.label || 'command'),
+			});
+		}
+		editor.reconcile(next.root, { project: next });
 		return { project: next, forceSelection };
 	}
 
@@ -253,29 +271,79 @@ export class CommandHistory {
 		});
 	}
 
-	execute(command) {
-		return this.#run(() => {
-			const beforeProject = this.#projectState.current();
-			const beforeEditor = this.#editorState.snapshot();
+	#executeStaged(command, { batch = false } = {}) {
+		const beforeProject = this.#projectState.current();
+		const beforeEditor = this.#editorState.snapshot();
+		let stage;
+		let nextEditor;
+		let entry;
+		let undo;
+		try {
+			if (batch && (!Array.isArray(command?.steps) || !command.steps.length || command.steps.length > 64
+				|| command.steps.some((step) => !step || !Object.isFrozen(step)))) {
+				throw new TypeError('Batch must contain 1 to 64 immutable registered commands.');
+			}
 			const editor = this.#stageEditor();
-			const stage = this.#stageCommand(command, beforeProject, editor);
-			if (sameValue(stage.project, beforeProject)) return beforeProject;
-			const nextEditor = editor.snapshot();
-			const entry = this.#entry(command, beforeProject, beforeEditor, stage.project, nextEditor, this.#nextEntryId + 1);
-			const nextUndo = [...this.#undo, entry];
-			if (nextUndo.length > this.#limit) nextUndo.splice(0, nextUndo.length - this.#limit);
-			const result = this.#commit({
-				nextProject: stage.project,
-				nextEditor,
-				undo: nextUndo,
-				redo: [],
-				action: 'execute',
-				source: 'command',
-				forceSelection: stage.forceSelection,
-				selectionAction: String(command.label || 'command'),
-			});
-			this.#nextEntryId = entry.id;
-			return result;
+			stage = this.#stageCommand(command, beforeProject, editor);
+			nextEditor = editor.snapshot();
+			if (sameValue(stage.project, beforeProject)) {
+				if (batch && !sameValue(nextEditor.selection, beforeEditor.selection)) {
+					throw new TypeError('A selection-only command batch is invalid.');
+				}
+				return Object.freeze({
+					changed: false, project: beforeProject,
+					projectRevision: this.#projectState.revision,
+					historyRevision: this.#historyRevision,
+					selection: this.#editorState.selection.typedSnapshot(),
+				});
+			}
+			entry = this.#entry(command, beforeProject, beforeEditor, stage.project, nextEditor, this.#nextEntryId + 1);
+			undo = [...this.#undo, entry];
+			if (undo.length > this.#limit) undo.splice(0, undo.length - this.#limit);
+		} catch (error) {
+			if (!batch) throw error;
+			const refused = new Error('Designer command batch was rejected atomically.');
+			refused.code = 'BATCH_ABORTED';
+			throw refused;
+		}
+		// Exactly one existing guarded commit for a single or compound command.
+		// A postcommit listener failure is diagnostic, never a transaction abort.
+		const project = this.#commit({
+			nextProject: stage.project, nextEditor, undo, redo: [],
+			action: 'execute', source: 'command',
+			forceSelection: false,
+			selectionAction: String(command.label || 'command'),
+		});
+		this.#nextEntryId = entry.id;
+		return Object.freeze({
+			changed: true, project,
+			projectRevision: this.#projectState.revision,
+			historyRevision: this.#historyRevision,
+			selection: this.#editorState.selection.typedSnapshot(),
+		});
+	}
+
+	execute(command) {
+		return this.#run(() => this.#executeStaged(command).project);
+	}
+
+	executeBatch(commands) {
+		return this.#run(() => this.#executeStaged(
+			Object.freeze({ label: 'batch', steps: Array.isArray(commands) ? Object.freeze([...commands]) : commands }),
+			{ batch: true },
+		));
+	}
+
+	executeRegisteredBatch(requests, registryOptions) {
+		return this.#run(() => {
+			let batch;
+			try { batch = bindRegisteredBatch(requests, registryOptions); }
+			catch (_) {
+				const error = new Error('Registered Designer batch refused.');
+				error.code = 'BATCH_ABORTED';
+				throw error;
+			}
+			return this.#executeStaged(batch, { batch: true });
 		});
 	}
 
@@ -329,7 +397,7 @@ export class CommandHistory {
 			const next = this.#projectState.stage(project);
 			const editor = this.#stageEditor();
 			if (resetSelection) editor.selection.clear();
-			else editor.reconcile(next.root);
+			else editor.reconcile(next.root, { project: next });
 			const editorSnapshot = editor.snapshot();
 			const differs = !sameValue(next, this.#projectState.current());
 			const hadHistory = this.#undo.length > 0 || this.#redo.length > 0;

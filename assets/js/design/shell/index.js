@@ -58,6 +58,34 @@ let activeFullscreenExit = null;
 const shellControllers = new WeakMap();
 const shellSessions = new WeakMap();
 const pendingSidebarConfigs = new WeakMap();
+// Exclusive Host ownership of the EXISTING shell. No second state or renderer.
+const platformRootLeases = new WeakMap();
+
+/**
+ * Claim the canonical shell root for one statically integrated A2 Host.
+ * The Host must finish guarded unmount and shell.destroy() before release.
+ */
+export const claimDesignerHostRoot = (root) => {
+	if (!(root instanceof Element) || !root.matches('[data-cb-design-shell]')) {
+		throw new TypeError('Designer Host requires a canonical shell root Element.');
+	}
+	if (platformRootLeases.has(root) || shellControllers.has(root)) {
+		throw new Error('HOST_ALREADY_MOUNTED');
+	}
+	let released = false;
+	const lease = Object.freeze({
+		root,
+		release() {
+			if (released) return true;
+			if (platformRootLeases.get(root) !== lease || shellControllers.has(root)) return false;
+			platformRootLeases.delete(root);
+			released = true;
+			return true;
+		},
+	});
+	platformRootLeases.set(root, lease);
+	return lease;
+};
 
 const normalizeGroupId = (value) => String(value || DEFAULT_GROUP).trim() || DEFAULT_GROUP;
 
@@ -114,12 +142,26 @@ export const configureDesignerSidebar = (root, configuration = {}) => {
  */
 export const createDesignerShell = (root, {
 	session = null,
+	platformLease = null,
+	platformStaged = false,
+	platformSignal = null,
 	defaultPanel = null,
 	defaultPanels = {},
 	onPanelChange = null,
 } = {}) => {
 	if (!(root instanceof Element)) {
 		throw new TypeError('Designer shell requires a root Element.');
+	}
+	// Prevent legacy sessions from racing a leased Host on the same root.
+	if ((platformRootLeases.get(root) ?? null) !== platformLease) {
+		throw new Error('HOST_ALREADY_MOUNTED');
+	}
+	// A Host stage is a detached, single-owner canvas. It never reuses the
+	// active Base shell root or obtains a competing canonical root lease.
+	if (platformStaged && (!root.matches('[data-cb-platform-canvas]')
+		|| root.isConnected || platformLease !== null
+		|| !platformSignal || platformSignal.aborted !== false)) {
+		throw new Error('HOST_CONTEXT_REFUSED');
 	}
 	const existing = shellControllers.get(root);
 	if (existing) {
@@ -165,6 +207,7 @@ export const createDesignerShell = (root, {
 	let initialized = false;
 	let sidebarDefaultPanel = null;
 	let destroyed = false;
+	let platformActivated = false;
 
 	const assertActive = () => {
 		if (destroyed) throw new Error('Designer shell has been destroyed.');
@@ -187,9 +230,16 @@ export const createDesignerShell = (root, {
 	tabs.forEach((tab) => group(groupIdFor(tab)).tabs.push(tab));
 	panels.forEach((panel) => group(groupIdFor(panel)).panels.push(panel));
 
-	if (session !== null && ['historyStatus', 'subscribeHistory', 'subscribeDiagnostics', 'undo', 'redo']
-		.some((method) => typeof session?.[method] !== 'function')) {
-		throw new TypeError('Designer Shell requires the complete public v2 session contract.');
+	// Existing consumer sessions retain v2 subscriptions. A staged Host
+	// passes its canonical EditorFacade directly, whose subscribe() cannot
+	// run before Host READY; its activation is therefore explicitly deferred.
+	const requiredSessionMethods = platformStaged
+		? ['historyStatus', 'subscribe', 'undo', 'redo']
+		: ['historyStatus', 'subscribeHistory', 'subscribeDiagnostics', 'undo', 'redo'];
+	if (session !== null && requiredSessionMethods.some(
+		(method) => typeof session?.[method] !== 'function'
+	)) {
+		throw new TypeError('Designer Shell requires its canonical session interface.');
 	}
 	const syncHistory = () => {
 		if (destroyed || session === null) return;
@@ -250,10 +300,12 @@ export const createDesignerShell = (root, {
 			detail: diagnostic,
 		}));
 	};
-	const unsubscribeHistory = session === null
+	// The Host owns project events. Subscribing to EditorFacade during
+	// offscreen staging is forbidden by Host's assertReady() gate.
+	let unsubscribeHistory = session === null || platformStaged
 		? null
 		: session.subscribeHistory(syncHistory);
-	const unsubscribeDiagnostics = session === null
+	const unsubscribeDiagnostics = session === null || platformStaged
 		? null
 		: session.subscribeDiagnostics(onDiagnostic);
 
@@ -605,12 +657,38 @@ export const createDesignerShell = (root, {
 	syncHistory();
 	syncFullscreenControl();
 
+	// The authorized integration must call this only AFTER Host committed the
+	// offscreen stage, completed preflight and entered READY. Never publish a
+	// detached staged shell or subscribe to an unready EditorFacade.
+	const activatePlatformSession = () => {
+		if (!platformStaged || destroyed || !root.isConnected) return false;
+		if (platformActivated) return true;
+		unsubscribeHistory = session.subscribe(syncHistory);
+		platformActivated = true;
+		syncHistory();
+		root.dataset.cbDesignShellInitialized = 'true';
+		root.dispatchEvent(new CustomEvent(SHELL_READY_EVENT, {
+			bubbles: true,
+			detail: Object.freeze({ initialized: true }),
+		}));
+		return true;
+	};
+
 	const destroy = () => {
 		if (destroyed) return;
 		// Ordinary programmatic teardown cannot bypass an unresolved Save or
 		// unverified domain authority. Forced page unload is outside browser control.
-		if (typeof window !== 'undefined'
-			&& window.cbCore?.designerExitGuard?.canTransition?.(root) !== true) return false;
+		// Detached Host canvas cleanup is allowed only after its Host scope
+		// was aborted (failed staging or a Save-gated context switch). Any
+		// still-attached active Designer retains the original Exit Guard.
+		const discardedStage = platformStaged && !root.isConnected && platformSignal?.aborted === true;
+		if (!discardedStage && typeof window !== 'undefined'
+			&& window.cbCore?.designerExitGuard?.canTransition?.(root) !== true) {
+			// Host must receive cleanup failures rather than silently discard
+			// its Save-guarded active root; legacy shell behavior stays unchanged.
+			if (platformStaged) throw new Error('HOST_CLEANUP_FAILED');
+			return false;
+		}
 		if (fullscreenState || exitPending) {
 			exitFullscreenInternal({ restoreFocus: false, immediate: true });
 		}
@@ -632,6 +710,7 @@ export const createDesignerShell = (root, {
 		root,
 		activatePanel,
 		syncHistory,
+		activatePlatformSession,
 		configureSidebar: applySidebarConfiguration,
 		isFullscreen,
 		enterFullscreen,
@@ -650,11 +729,14 @@ export const createDesignerShell = (root, {
 	});
 	shellControllers.set(root, controller);
 	shellSessions.set(root, session);
-	root.dataset.cbDesignShellInitialized = 'true';
-	root.dispatchEvent(new CustomEvent(SHELL_READY_EVENT, {
-		bubbles: true,
-		detail: Object.freeze({ initialized: true }),
-	}));
+	// Offscreen candidates remain unpublished until explicit Host READY.
+	if (!platformStaged) {
+		root.dataset.cbDesignShellInitialized = 'true';
+		root.dispatchEvent(new CustomEvent(SHELL_READY_EVENT, {
+			bubbles: true,
+			detail: Object.freeze({ initialized: true }),
+		}));
+	}
 	return controller;
 };
 

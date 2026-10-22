@@ -20,14 +20,17 @@ export const createDesignerSelectionController = ({
 	syncCanvas = null,
 	inspectorPanel = 'inspector',
 	openInspectorOnInsert = true,
+	typed = false,
+	requestInvalidation = null,
 } = {}) => {
 	if (
 		!session
-		|| typeof session.subscribeSelection !== 'function'
+		|| (!typed && typeof session.subscribeSelection !== 'function')
 		|| typeof session.select !== 'function'
-		|| typeof session.clearSelection !== 'function'
+		|| (!typed && typeof session.clearSelection !== 'function')
 		|| typeof session.selection !== 'function'
-		|| typeof session.inspector !== 'function'
+		|| (!typed && typeof session.inspector !== 'function')
+		|| (typed && typeof session.subscribe !== 'function')
 	) {
 		throw new TypeError('Designer selection controller requires a Design Foundation session.');
 	}
@@ -35,6 +38,7 @@ export const createDesignerSelectionController = ({
 	const layersAdapter = optionalCallback(renderLayers, 'Layers');
 	const inspectorAdapter = optionalCallback(renderInspector, 'Inspector');
 	const canvasAdapter = optionalCallback(syncCanvas, 'canvas');
+	const invalidate = optionalCallback(requestInvalidation, 'Host invalidation');
 	const panelId = String(inspectorPanel || 'inspector').trim() || 'inspector';
 	let destroyed = false;
 
@@ -46,16 +50,24 @@ export const createDesignerSelectionController = ({
 		if (destroyed) return;
 		const viewContext = Object.freeze({
 			selection: snapshot,
-			primary: snapshot.primary === null ? null : [...snapshot.primary],
-			inspector: context.inspector ?? session.inspector(),
+			primary: typed
+				? (snapshot.primary ?? null)
+				: (snapshot.primary === null ? null : [...snapshot.primary]),
+			inspector: context.inspector ?? (typeof session.inspector === 'function' ? session.inspector() : null),
 			event: context.event ?? Object.freeze({ source: 'controller', action: 'sync' }),
 			profile: context.profile ?? session.profile,
 			project: session.project(),
 		});
 
-		layersAdapter?.(viewContext);
-		inspectorAdapter?.(viewContext);
-		canvasAdapter?.(viewContext);
+		// Typed Host invalidation is the only render scheduling entrypoint.
+		if (typed && invalidate) {
+			invalidate(viewContext);
+		} else {
+			layersAdapter?.(viewContext);
+			inspectorAdapter?.(viewContext);
+			if (invalidate) invalidate(viewContext);
+			else canvasAdapter?.(viewContext);
+		}
 
 		if (
 			openInspectorOnInsert
@@ -67,7 +79,14 @@ export const createDesignerSelectionController = ({
 		}
 	};
 
-	const unsubscribe = session.subscribeSelection(synchronize, { emitCurrent: true });
+	const subscribe = typed ? session.subscribe : session.subscribeSelection;
+	if (typeof subscribe !== 'function') throw new TypeError('Typed Host facade requires subscribe().');
+	const unsubscribe = typed
+		? subscribe((event) => synchronize(session.selection(), { event }))
+		: subscribe(synchronize, { emitCurrent: true });
+	if (typed) synchronize(session.selection(), {
+		event: Object.freeze({ source: 'controller', action: 'sync' }),
+	});
 
 	return Object.freeze({
 		select(path, {
@@ -76,20 +95,28 @@ export const createDesignerSelectionController = ({
 			source = 'ui',
 		} = {}) {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
-			const accepted = session.select(path, { additive, source });
+			const ref = typed && Array.isArray(path) ? Object.freeze({ kind: 'node', path: [...path] }) : path;
+			const accepted = typed
+				? session.select(
+					additive
+						? [...(session.selection().refs || []).filter((candidate) => JSON.stringify(candidate) !== JSON.stringify(ref)), ref]
+						: [ref],
+					ref,
+				)
+				: session.select(path, { additive, source });
 			if (accepted && openInspector) activateInspector();
 			return accepted;
 		},
 		clear({ source = 'ui' } = {}) {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
-			return session.clearSelection({ source });
+			return typed ? session.select([], null) : session.clearSelection({ source });
 		},
 		refresh() {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
 			synchronize(session.selection(), {
 				event: Object.freeze({ source: 'controller', action: 'refresh' }),
 				profile: session.profile,
-				inspector: session.inspector(),
+				inspector: typeof session.inspector === 'function' ? session.inspector() : null,
 			});
 		},
 		destroy() {

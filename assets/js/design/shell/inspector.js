@@ -158,3 +158,66 @@ export const enableDesignerTextareaAutosize = (control) => {
 	else Promise.resolve().then(resize);
 	return resize;
 };
+
+
+/**
+ * DOM focus ownership remains with Base. The Host decides when to rerender;
+ * the keyed control survives value/status updates and never commits mid-IME.
+ */
+export const createDesignerInspectorTextControl = ({
+	key, label = '', value = '', multiline = false, disabled = false,
+	onCommit = null, documentRef = null,
+} = {}) => {
+	if (typeof key !== 'string' || !key.trim() || (onCommit !== null && typeof onCommit !== 'function')) {
+		throw new TypeError('Inspector text control requires a stable key and optional commit callback.');
+	}
+	const doc = resolveDocument(documentRef);
+	const element = doc.createElement('label');
+	element.className = 'cb-core-design-shell__inspector-text-control';
+	const caption = doc.createElement('span');
+	caption.className = 'cb-core-design-shell__inspector-toggle-label';
+	caption.textContent = text(label);
+	const control = doc.createElement(multiline ? 'textarea' : 'input');
+	if (!multiline) control.type = 'text';
+	control.dataset.cbControlKey = key.trim();
+	control.value = String(value ?? '');
+	control.disabled = disabled === true;
+	element.append(caption, control);
+	let composing = false;
+	let dirty = false;
+	let destroyed = false;
+	const start = () => { composing = true; };
+	const end = () => { composing = false; dirty = true; };
+	const input = () => { dirty = true; };
+	const commit = (event) => {
+		if (destroyed || composing || event?.isComposing || !dirty || control.disabled) return;
+		dirty = false;
+		onCommit?.(control.value, event);
+	};
+	control.addEventListener('compositionstart', start);
+	control.addEventListener('compositionend', end);
+	control.addEventListener('input', input);
+	control.addEventListener('change', commit);
+	control.addEventListener('blur', commit);
+	return Object.freeze({
+		element, caption, control,
+		update({ label: nextLabel = label, value: nextValue = '', disabled: nextDisabled = false } = {}) {
+			if (destroyed) return false;
+			caption.textContent = text(nextLabel);
+			control.disabled = nextDisabled === true;
+			// Do not overwrite active drafts, caret or an IME composition.
+			if (!composing && !dirty && doc.activeElement !== control) control.value = String(nextValue ?? '');
+			return true;
+		},
+		get isComposing() { return composing; },
+		destroy() {
+			if (destroyed) return;
+			destroyed = true;
+			control.removeEventListener('compositionstart', start);
+			control.removeEventListener('compositionend', end);
+			control.removeEventListener('input', input);
+			control.removeEventListener('change', commit);
+			control.removeEventListener('blur', commit);
+		},
+	});
+};
