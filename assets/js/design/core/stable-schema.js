@@ -126,7 +126,7 @@ export function validateStableProjectV1(project, context) {
 		if (!isPlainObject(schema) || Object.keys(schema).some((key) => !schemaKeys.has(key))) {
 			add(CODES.domain, pointer); return;
 		}
-		const type = schema.type;
+		const types = typeof schema.type === 'string' ? [schema.type] : schema.type;
 		const checks = {
 			object: () => isPlainObject(value),
 			array: () => Array.isArray(value),
@@ -136,7 +136,9 @@ export function validateStableProjectV1(project, context) {
 			boolean: () => typeof value === 'boolean',
 			null: () => value === null,
 		};
-		if (!own(checks, type) || !checks[type]()) { add(CODES.domain, pointer); return; }
+		if (!Array.isArray(types) || !types.length || new Set(types).size !== types.length
+			|| !types.every((type) => typeof type === 'string' && own(checks, type))
+			|| !types.some((type) => checks[type]())) { add(CODES.domain, pointer); return; }
 		if (own(schema, 'enum') && (!Array.isArray(schema.enum)
 			|| !schema.enum.some((entry) => JSON.stringify(entry) === JSON.stringify(value)))) {
 			add(CODES.domain, pointer);
