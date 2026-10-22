@@ -94,36 +94,35 @@ final class SaveEnvelope {
 	 * Fractional/exponent floats remain blocked pending numeric parity sign-off.
 	 */
 	public static function canonical_json( mixed $value ): string {
-		$normalized = self::normalize( $value, 0 );
-		return json_encode(
-			$normalized,
-			JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS
-		);
+		return self::encode_node( $value, 0 );
 	}
 
-	private static function normalize( mixed $value, int $depth ): mixed {
+	private static function encode_node( mixed $value, int $depth ): string {
 		if ( $depth > 64 ) {
 			throw new \InvalidArgumentException( 'SCHEMA_LIMIT_EXCEEDED: JSON nesting.' );
 		}
 		if ( $value instanceof \stdClass ) {
 			$properties = get_object_vars( $value );
-			foreach ( $properties as $key => $_unused ) {
-				if ( ! is_string( $key ) || in_array( $key, [ '__proto__', 'prototype', 'constructor' ], true ) ) {
+			$keys = array_map( 'strval', array_keys( $properties ) );
+			usort( $keys, 'strcmp' ); // Exact binary UTF-8 ordering, not locale.
+			$pairs = [];
+			foreach ( $keys as $key ) {
+				if ( in_array( $key, [ '__proto__', 'prototype', 'constructor' ], true ) ) {
 					throw new \InvalidArgumentException( 'SCHEMA_DOMAIN_INVALID: unsafe JSON key.' );
 				}
+				$pairs[] = self::encode_scalar( $key ) . ':' . self::encode_node( $properties[$key], $depth + 1 );
 			}
-			ksort( $properties, SORT_STRING );
-			$result = new \stdClass();
-			foreach ( $properties as $key => $item ) {
-				$result->{$key} = self::normalize( $item, $depth + 1 );
-			}
-			return $result;
+			return '{' . implode( ',', $pairs ) . '}';
 		}
 		if ( is_array( $value ) ) {
 			if ( ! array_is_list( $value ) ) {
 				throw new \InvalidArgumentException( 'SCHEMA_DOMAIN_INVALID: associative JSON array.' );
 			}
-			return array_map( static fn ( $item ) => self::normalize( $item, $depth + 1 ), $value );
+			$entries = [];
+			foreach ( $value as $item ) {
+				$entries[] = self::encode_node( $item, $depth + 1 );
+			}
+			return '[' . implode( ',', $entries ) . ']';
 		}
 		if ( is_float( $value ) ) {
 			throw new \InvalidArgumentException( 'SCHEMA_DOMAIN_INVALID: numeric ABI not frozen.' );
@@ -134,7 +133,14 @@ final class SaveEnvelope {
 		if ( ! is_null( $value ) && ! is_bool( $value ) && ! is_int( $value ) && ! is_string( $value ) ) {
 			throw new \InvalidArgumentException( 'SCHEMA_DOMAIN_INVALID: non-JSON value.' );
 		}
-		return $value;
+		return self::encode_scalar( $value );
+	}
+
+	private static function encode_scalar( string|int|bool|null $value ): string {
+		return json_encode(
+			$value,
+			JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS
+		);
 	}
 
 	public static function decode_object( string $json ): object {
