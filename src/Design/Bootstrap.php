@@ -69,8 +69,8 @@ final class Bootstrap {
 	}
 
 	/**
-	 * Mint context only after WordPress, domain and BOTH installed artifact
-	 * authorities have accepted the same actor/site/resource/profile.
+	 * Mint context only after WordPress, domain and every required installed
+	 * artifact authority has accepted the same actor/site/resource/profile.
 	 *
 	 * All approved roots, manifest digests, registered capability lists and
 	 * the resource-authorizer must come from installed PHP configuration.
@@ -88,7 +88,7 @@ final class Bootstrap {
 		string $resource_key,
 		int $context_epoch,
 		string $nonce,
-		string $consumer_installed_root,
+		?string $consumer_installed_root,
 		array $approved,
 		array $capabilities,
 		callable $authorize
@@ -101,7 +101,7 @@ final class Bootstrap {
 			|| ! function_exists( 'current_user_can' ) || ! current_user_can( 'edit_posts' )
 			|| ! function_exists( 'wp_verify_nonce' )
 			|| 1 !== wp_verify_nonce( $nonce, 'cb_designer_' . $profile_id . '_' . $resource_type . '_' . $resource_key )
-			|| ! is_dir( $consumer_installed_root ) ) {
+			|| ( null !== $consumer_installed_root && ! is_dir( $consumer_installed_root ) ) ) {
 			throw new \DomainException( 'HOST_CONTEXT_REFUSED' );
 		}
 		$identity = [
