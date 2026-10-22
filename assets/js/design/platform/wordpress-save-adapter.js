@@ -41,7 +41,8 @@ async function request(action,method,payload=null,signal=null) {
 export function createWordPressSaveAdapter({identity,profile,evidence,loadReceipt,signal}) {
 	if(signal?.aborted||loadReceipt?.status!=='loaded'
 		||loadReceipt?.bootstrap?.evidence?.verificationStatus!=='verified'
-		||loadReceipt.bootstrap.evidence!==evidence
+		||loadReceipt.bootstrap.evidence?.buildId!==evidence?.buildId
+		||loadReceipt.bootstrap.evidence?.moduleGraphFingerprint!==evidence?.moduleGraphFingerprint
 		||loadReceipt.profileId!==profile.id
 		||loadReceipt.resourceKey!==identity.resourceId)throw issue('SAVE_NOT_READY');
 	let destroyed=false;
@@ -157,7 +158,8 @@ async function activate() {
 			root,canvasRoot:canvas,bootstrap:loaded.bootstrap,runtimeModules:MODULES,
 			loadReceipt:async ({identity,profile,evidence,signal})=>{
 				if(signal?.aborted||identity.resourceId!==loaded.resourceKey
-					||profile.id!==loaded.profileId||evidence!==loaded.bootstrap.evidence)
+					||profile.id!==loaded.profileId
+					||evidence?.buildId!==loaded.bootstrap.evidence?.buildId)
 					throw issue('SAVE_NOT_READY');
 				return loaded;
 			},
@@ -168,8 +170,10 @@ async function activate() {
 			selected.addEventListener('change',()=>{
 				// Same-owner Mail context is loaded by full navigation, never
 				// a competing session. A dirty/UNKNOWN Save blocks navigation.
-				const dirty=host.editor?.historyStatus?.();
-				if(host.state!=='READY'||dirty?.dirty!==false){
+				const history=host.editor?.historyStatus?.();
+				// Switching through a full navigation is allowed only for a
+				// pristine, verified session. Never interpret missing status as clean.
+				if(host.state!=='READY'||history?.canUndo===true||history?.canRedo===true){
 					selected.value=resourceKey;
 					return;
 				}
