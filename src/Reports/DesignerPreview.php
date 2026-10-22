@@ -20,10 +20,10 @@ final class DesignerPreview {
 	) {}
 
 	/**
-	 * @param array{logo_attachment_id:int,provider_name:string,provider_contact:string,accent_color:string} $branding
-	 * @param array<string,mixed>|null $template Unsaved Composer state; null resolves persisted state.
+	 * @param array{project:array<string,mixed>,fields:array<string,mixed>}|null $native
+	 * Unsaved native state is permitted only for preview, never persisted here.
 	 */
-	public function render( array $branding, ?array $template = null ): string {
+	public function render( ?array $native = null ): string {
 		$report = $this->preview_report();
 		$data   = $report['report_data'] ?? null;
 		if ( ! is_array( $data ) ) {
@@ -35,13 +35,7 @@ final class DesignerPreview {
 			$locale = 'en_US';
 		}
 
-		$document = $this->compiler->compile(
-			$report,
-			$data,
-			MaintenanceFlowBranding::resolve_values( $branding ),
-			$locale,
-			$template
-		);
+		$document = $this->compiler->compile( $report, $data, $locale, $native );
 
 		return FlowRenderApi::preview_html(
 			$document['layout'],

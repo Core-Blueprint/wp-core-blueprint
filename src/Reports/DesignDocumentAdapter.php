@@ -4,125 +4,56 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Reports;
 
 use CoreBlueprint\Core\Design\Document\Repository;
-use CoreBlueprint\Core\Design\Document\Authority;
-use CoreBlueprint\Core\Settings;
-use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Reports\Composer\NativeComposition;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * @internal One canonical revision for complete Reports branding + Composer.
- * A missing active singleton is never a valid default and never self-heals.
+ * The one authoritative native Reports design read, shared by PDF and preview.
+ * The Foundation owns ALL saves and the document transaction. This adapter
+ * never falls back to Settings/Composer or silently repairs an invalid project.
  */
 final class DesignDocumentAdapter {
 	public const KEY = 'maintenance';
 
-	/**
-	 * Read the single authoritative live Reports design. Active errors are not
-	 * translated into defaults. This is shared by Designer and PDF callers.
-	 * @return array<string,mixed>
-	 */
+	/** @return array{revision:string,project:array<string,mixed>,fields:array<string,mixed>} */
 	public static function current(): array {
-		$authority = Authority::inspect();
-		if ( 'active' === $authority['status'] ) {
-			$read = self::read();
-			if ( 'found' !== $read['status'] ) {
-				throw new \RuntimeException( 'Reports canonical document is unavailable.' );
-			}
-			return [
-				'authority' => 'active',
-				'revision' => $read['revision'],
-				'branding' => $read['document']['branding'],
-				'composer' => $read['document']['composer']['maintenance'],
-			];
+		$read = self::read();
+		if ( 'found' !== ( $read['status'] ?? null ) ) {
+			throw new \RuntimeException( 'REPORTS_DESIGN_UNAVAILABLE' );
 		}
-		if ( ! in_array( $authority['status'], [ 'legacy', 'prepared' ], true ) ) {
-			throw new \RuntimeException( 'Reports document authority is blocked.' );
-		}
-		$settings = Settings::get();
-		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
-		$branding = $reports['branding'] ?? [];
-		$composer = $reports['composer']['maintenance'] ?? [];
+		$document = $read['document'];
 		return [
-			'authority' => $authority['status'],
-			'revision' => 'legacy',
-			'branding' => is_array( $branding ) ? $branding : [],
-			'composer' => is_array( $composer ) ? $composer : [],
+			'revision' => $read['revision'],
+			'project' => $document['project'],
+			'fields' => $document['fields'],
 		];
 	}
 
 	/** @return array<string,mixed> */
 	public static function read(): array {
 		$result = Repository::get( Repository::REPORTS, self::KEY );
-		if ( 'found' !== ( $result['status'] ?? '' ) ) {
-			return [ 'status' => 'missing' === ( $result['status'] ?? '' ) ? 'blocked' : ( $result['status'] ?? 'blocked' ) ];
+		if ( 'found' !== ( $result['status'] ?? null ) ) {
+			return [ 'status' => $result['status'] ?? 'blocked' ];
 		}
-		return self::valid_document( $result['document'] )
-			? $result
-			: [ 'status' => 'corrupt' ];
+		return NativeComposition::valid_document( $result['document'] ?? null )
+			? $result : [ 'status' => 'corrupt' ];
 	}
 
-	/** @return array<string,mixed> */
+	/**
+	 * Historical Composer transport has no write authority for native designs.
+	 * All modifications must traverse the Foundation's TransactionalSave.
+	 */
 	public static function save( string $expected, array $branding, array $composer ): array {
-		if ( ! Repository::valid_revision( $expected, false ) ) {
-			return [ 'status' => 'invalid' ];
-		}
-		$current = self::read();
-		if ( 'found' !== $current['status'] ) {
-			return $current;
-		}
-		if ( $expected !== $current['revision'] ) {
-			return [ 'status' => 'conflict' ];
-		}
-		$document = [ 'branding' => $branding, 'composer' => [ 'maintenance' => $composer ] ];
-		if ( ! self::valid_document( $document ) ) {
-			return [ 'status' => 'invalid' ];
-		}
-		return Repository::save( Repository::REPORTS, self::KEY, $expected, $document );
+		return [ 'status' => 'blocked' ];
 	}
 
-	/** @return array<string,mixed> */
 	public static function reset( string $expected ): array {
-		if ( ! Repository::valid_revision( $expected, false ) ) {
-			return [ 'status' => 'invalid' ];
-		}
-		$current = self::read();
-		if ( 'found' !== $current['status'] ) {
-			return $current;
-		}
-		if ( $expected !== $current['revision'] ) {
-			return [ 'status' => 'conflict' ];
-		}
-		$document = [
-			'branding' => ReportBranding::settings_defaults(),
-			'composer' => [ 'maintenance' => MaintenanceTemplate::defaults() ],
-		];
-		return Repository::reset( Repository::REPORTS, self::KEY, $expected, $document );
+		return [ 'status' => 'blocked' ];
 	}
 
-	/** Strict lossless state: never drop unknown settings/Composer content. */
 	public static function valid_document( mixed $document ): bool {
-		if ( ! is_array( $document )
-			|| ! Repository::valid_document( Repository::REPORTS, $document ) ) {
-			return false;
-		}
-		$branding = $document['branding'];
-		$composer = $document['composer'];
-		if ( ! is_array( $branding ) || ! is_array( $composer )
-			|| ! array_key_exists( 'maintenance', $composer )
-			|| 1 !== count( $composer )
-			|| ! is_array( $composer['maintenance'] ) ) {
-			return false;
-		}
-		try {
-			if ( ReportBrandingInput::normalize( $branding ) !== $branding
-				|| MaintenanceTemplate::normalize( $composer['maintenance'] ) !== $composer['maintenance'] ) {
-				return false;
-			}
-		} catch ( \Throwable $error ) {
-			return false;
-		}
-		return true;
+		return NativeComposition::valid_document( $document );
 	}
 
 	private function __construct() {}

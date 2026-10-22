@@ -47,12 +47,9 @@ final class MaintenancePdf {
 			throw new \RuntimeException( 'Maintenance report render locale is missing.' );
 		}
 
-		$document = $this->compiler->compile(
-			$report,
-			$data,
-			MaintenanceFlowBranding::resolve(),
-			$locale
-		);
+		// Only the native project and its fields determine the presentation.
+		// The historical snapshot remains unchanged and report facts are read-only.
+		$document = $this->compiler->compile( $report, $data, $locale );
 
 		return $this->renderer->render(
 			$document['layout'],
