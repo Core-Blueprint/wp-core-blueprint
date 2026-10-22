@@ -98,18 +98,75 @@ final class Repository {
 		return self::verify( $type, $key, $next, $document );
 	}
 
+	/**
+	 * Internal transaction-only read on the SAME wpdb connection used by the
+	 * canonical Repository and the operation ledger. Never publish this as
+	 * an AJAX/REST writer or call it outside TransactionalSave's transaction.
+	 *
+	 * @return array{status:string,revision?:string,document?:array<string,mixed>}
+	 */
+	public static function read_for_update( string $type, string $key ): array {
+		if ( ! self::valid_identity( $type, $key ) || ! self::in_transaction() ) {
+			return [ 'status' => 'unavailable' ];
+		}
+		return self::read( $type, $key, true );
+	}
+
+	/**
+	 * Delegate the single write to the EXISTING Repository CAS/create logic.
+	 * Caller must already have locked/checked the same resource and performed
+	 * full consumer normalization plus authorization. Never commit here.
+	 */
+	public static function write_in_transaction( string $type, string $key, string $expected, array $document ): array {
+		if ( ! self::in_transaction() || ! self::valid_identity( $type, $key )
+			|| ! self::valid_revision( $expected, true )
+			|| ! self::valid_document( $type, $document ) ) {
+			return [ 'status' => 'invalid' ];
+		}
+		$locked = self::read( $type, $key, true );
+		if ( '0' === $expected ) {
+			if ( 'missing' !== ( $locked['status'] ?? null ) ) {
+				return [ 'status' => 'conflict' ];
+			}
+			return self::create( $type, $key, $expected, $document );
+		}
+		if ( 'found' !== ( $locked['status'] ?? null ) || $expected !== $locked['revision'] ) {
+			return [ 'status' => 'conflict' ];
+		}
+		return self::save( $type, $key, $expected, $document );
+	}
+
+	/** Authoritative post-CAS readback while retaining the held row lock. */
+	public static function verify_in_transaction( string $type, string $key, string $revision, array $document ): bool {
+		if ( ! self::in_transaction() || ! self::valid_revision( $revision, false ) ) {
+			return false;
+		}
+		$stored = self::read( $type, $key, true );
+		return 'found' === ( $stored['status'] ?? null )
+			&& ( $stored['revision'] ?? null ) === $revision
+			&& self::encode( $stored['document'] ) === self::encode( $document );
+	}
+
+	private static function in_transaction(): bool {
+		global $wpdb;
+		$wpdb->last_error = '';
+		$flag = $wpdb->get_var( 'SELECT @@in_transaction' );
+		return '' === (string) $wpdb->last_error && '1' === (string) $flag;
+	}
+
 	/** Reset is a versioned overwrite, never a delete/recreate ABA cycle. */
 	public static function reset( string $type, string $key, string $expected, array $canonical_default ): array {
 		return self::save( $type, $key, $expected, $canonical_default );
 	}
 
 	/** @return array{status:string,revision?:string,document?:array<string,mixed>} */
-	private static function read( string $type, string $key ): array {
+	private static function read( string $type, string $key, bool $lock = false ): array {
 		global $wpdb;
-		$row = $wpdb->get_row( $wpdb->prepare(
+		$query = $wpdb->prepare(
 			'SELECT identity_hash, document_type, document_key, payload_schema, revision, document_json FROM %i WHERE identity_hash = %s LIMIT 1',
 			Schema::table_name(), self::identity_hash( $type, $key )
-		), ARRAY_A );
+		);
+		$row = $wpdb->get_row( $query . ( $lock ? ' FOR UPDATE' : '' ), ARRAY_A );
 		if ( ! is_array( $row ) ) {
 			return [ 'status' => '' === (string) $wpdb->last_error ? 'missing' : 'error' ];
 		}
