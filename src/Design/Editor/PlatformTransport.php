@@ -128,10 +128,22 @@ final class PlatformTransport {
 			}
 			$revision = $loaded['revision'];
 		} elseif ( 'missing' === ( $loaded['status'] ?? null ) ) {
-			$doc = [
-				'project' => Mail::PROFILE === $profile ? Mail::default_project() : Reports::default_project(),
-				'fields' => Mail::PROFILE === $profile ? Mail::default_fields() : Reports::default_fields(),
-			];
+			if ( Mail::PROFILE === $profile ) {
+				// Mail owns WordPress-notification wording, token semantics and
+				// security links. Generic empty templates are forbidden.
+				if ( ! method_exists( Mail::class, 'default_document_for_template' ) ) {
+					return self::deny( 'NATIVE_TEMPLATE_DEFAULT_UNAVAILABLE', 503 );
+				}
+				$doc = Mail::default_document_for_template( $resource );
+			} else {
+				$doc = [
+					'project' => Reports::default_project(),
+					'fields' => Reports::default_fields(),
+				];
+			}
+			if ( ! is_array( $doc ) || ! self::exact_keys( $doc, [ 'project', 'fields' ] ) ) {
+				return self::deny( 'SCHEMA_DOMAIN_INVALID', 500 );
+			}
 			$revision = '0';
 			if ( ! self::valid_content( $doc['project'], $doc['fields'], $registry, $profile ) ) {
 				return self::deny( 'SCHEMA_DOMAIN_INVALID', 500 );
@@ -286,9 +298,19 @@ final class PlatformTransport {
 			}
 			return true;
 		};
-		return is_array( $project['root'] )
-			&& ( $project['root']['type'] ?? null ) === $info['designType']
-			&& $visit( $project['root'], null, 0 );
+		if ( ! is_array( $project['root'] )
+			|| ( $project['root']['type'] ?? null ) !== $info['designType']
+			|| ! $visit( $project['root'], null, 0 ) ) return false;
+		// Consumers may add stricter domain invariants without forked schema
+		// validators or Repository writers. Failure is always refusal, never
+		// repair/normalization. Both read and Save pass through this boundary.
+		$owner = match ( $profile ) {
+			Mail::PROFILE => Mail::class,
+			Reports::PROFILE => Reports::class,
+			default => null,
+		};
+		return null !== $owner && ( ! method_exists( $owner, 'validate_native_document' )
+			|| $owner::validate_native_document( $project, $fields ) === true );
 	}
 
 	/**
