@@ -254,7 +254,7 @@ export function validateStableProjectV1(project, context) {
  * Host verification against the installed bootstrap and project snapshot.
  * This validates values; it never authorizes a Save or publishes a registry.
  */
-export function validatePersistedFieldsV1(values, { profileId, projectSchema, registrySnapshot, pointerBase } = {}) {
+export function validatePersistedFieldsV1(values, context = {}) {
 	const errors = new Map();
 	const add = (code, pointer) => errors.set(pointer + '\0' + code, Object.freeze({ code, pointer }));
 	const finish = () => {
@@ -263,6 +263,22 @@ export function validatePersistedFieldsV1(values, { profileId, projectSchema, re
 			|| (a.code < b.code ? -1 : a.code > b.code ? 1 : 0));
 		return Object.freeze({ valid: diagnostics.length === 0, diagnostics: Object.freeze(diagnostics) });
 	};
+	// The complete second argument must be inspected before destructuring:
+	// even a context getter must never be executed on a refused input.
+	try {
+		inspectJsonValue(context);
+	} catch {
+		add(CODES.domain, '');
+		return finish();
+	}
+	if (!keysMatch(context, ['profileId', 'projectSchema', 'registrySnapshot', 'pointerBase'])) {
+		add(CODES.domain, '');
+		return finish();
+	}
+	const profileId = ownValue(context, 'profileId');
+	const projectSchema = ownValue(context, 'projectSchema');
+	const pointerBase = ownValue(context, 'pointerBase');
+	const facet = ownValue(context, 'registrySnapshot');
 	if (!['/persistedFields', '/fields', '/acceptedFields'].includes(pointerBase)) {
 		add(CODES.domain, '');
 		return finish();
@@ -270,7 +286,6 @@ export function validatePersistedFieldsV1(values, { profileId, projectSchema, re
 	// Reject hostile descriptors, prototypes and cycles before reading values.
 	try {
 		inspectJsonValue(values, pointerBase);
-		inspectJsonValue(registrySnapshot);
 	} catch (error) {
 		const isLimit = error instanceof InvalidDesignValueError && error.reason === 'limit';
 		const at = error instanceof InvalidDesignValueError && error.pointer.startsWith(pointerBase)
@@ -278,7 +293,6 @@ export function validatePersistedFieldsV1(values, { profileId, projectSchema, re
 		add(isLimit ? CODES.limit : CODES.domain, at);
 		return finish();
 	}
-	const facet = registrySnapshot;
 	const fingerprint = (value) => typeof value === 'string' && /^sha256:[a-f0-9]{64}$/.test(value);
 	if (!keysMatch(facet, [
 		'contractVersion', 'schemaGeneration', 'profileId', 'projectSchema',
