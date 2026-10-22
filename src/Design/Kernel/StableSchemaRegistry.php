@@ -45,8 +45,17 @@ final class StableSchemaRegistry {
 		$this->project_schema = $snapshot['projectSchema'];
 
 		if ( ! is_array( $snapshot['providers'] ) || ! array_is_list( $snapshot['providers'] )
-			|| $snapshot['providers'] !== $providers->providers() ) {
+			|| count( $snapshot['providers'] ) !== count( array_unique( $snapshot['providers'] ) ) ) {
 			throw new \InvalidArgumentException( 'REGISTRY_INVALID: inconsistent canonical providers.' );
+		}
+		$prior = '';
+		foreach ( $snapshot['providers'] as $id ) {
+			if ( ! is_string( $id ) || ! Identifier::provider( $id )
+				|| ! $providers->has_canonical( $id )
+				|| ( '' !== $prior && strcmp( $prior, $id ) >= 0 ) ) {
+				throw new \InvalidArgumentException( 'REGISTRY_INVALID: unregistered or unordered canonical provider.' );
+			}
+			$prior = $id;
 		}
 		foreach ( [ 'designTypes', 'nodeTypes', 'domainSchemas' ] as $section ) {
 			if ( ! is_array( $snapshot[ $section ] ) || ! array_is_list( $snapshot[ $section ] ) ) {
