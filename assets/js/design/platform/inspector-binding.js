@@ -1,4 +1,4 @@
-import { cloneFrozen } from '../core/value.js';
+import { cloneFrozen, sameValue } from '../core/value.js';
 import { nodeAt, normalizePath } from '../core/tree.js';
 
 const fail = (code) => {
@@ -53,6 +53,8 @@ export const createDesignerInspectorBinding = ({
 		if (!snapshot || snapshot.contextEpoch !== contextEpoch || !Array.isArray(snapshot.refs)) {
 			throw fail('CONTROL_TARGET_MISSING');
 		}
+		const now = editor.selection();
+		if (JSON.stringify(now) !== JSON.stringify(snapshot)) throw fail('CONTROL_TARGET_MISSING');
 		const primary = snapshot.primary;
 		if (!primary || !snapshot.refs.some((ref) => refKey(ref) === refKey(primary))) throw fail('CONTROL_TARGET_MISSING');
 		if ((control.target.kind === 'node-property' && primary.kind !== 'node')
@@ -79,7 +81,7 @@ export const createDesignerInspectorBinding = ({
 		commit(value, { source = 'inspector' } = {}) {
 			if (readonly) throw fail('COMMAND_REFUSED');
 			const before = editor.selection();
-			const { primary, value: current } = targetFor(before);
+			const { primary, project: initialProject, value: current } = targetFor(before);
 			if (!current.found) throw fail('CONTROL_TARGET_MISSING');
 			const nextInput = Object.create(null);
 			for (const pair of mapping) {
@@ -94,7 +96,8 @@ export const createDesignerInspectorBinding = ({
 			}
 			// Reread current selection before dispatch; no stale-target writes.
 			const now = editor.selection();
-			if (now.contextEpoch !== contextEpoch || refKey(now.primary) !== refKey(primary)) {
+			if (now.contextEpoch !== contextEpoch || refKey(now.primary) !== refKey(primary)
+				|| !sameValue(editor.project(), initialProject)) {
 				throw fail('CONTROL_TARGET_MISSING');
 			}
 			return editor.execute(control.write.commandId, cloneFrozen(nextInput), Object.freeze({ source, contextEpoch }));

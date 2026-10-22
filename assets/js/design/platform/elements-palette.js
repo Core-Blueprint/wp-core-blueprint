@@ -78,6 +78,7 @@ export const dispatchDesignerElementCreate = async ({
 		}
 		if (!id) throw refuse('ENTITY_ID_ALLOCATION_FAILED');
 	}
+	if (id && entityIdExists(component, id, editor.project())) throw refuse('ENTITY_ID_ALLOCATION_FAILED');
 	const current = editor.selection();
 	if (signal?.aborted || current.contextEpoch !== contextEpoch
 		|| JSON.stringify(current) !== JSON.stringify(initial)

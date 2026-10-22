@@ -279,8 +279,9 @@ export class CommandHistory {
 		let entry;
 		let undo;
 		try {
-			if (batch && (!Array.isArray(command?.steps) || !command.steps.length || command.steps.length > 64)) {
-				throw new TypeError('Batch must contain 1 to 64 commands.');
+			if (batch && (!Array.isArray(command?.steps) || !command.steps.length || command.steps.length > 64
+				|| command.steps.some((step) => !step || !Object.isFrozen(step)))) {
+				throw new TypeError('Batch must contain 1 to 64 immutable registered commands.');
 			}
 			const editor = this.#stageEditor();
 			stage = this.#stageCommand(command, beforeProject, editor);
@@ -310,7 +311,7 @@ export class CommandHistory {
 		const project = this.#commit({
 			nextProject: stage.project, nextEditor, undo, redo: [],
 			action: 'execute', source: 'command',
-			forceSelection: batch ? false : stage.forceSelection,
+			forceSelection: false,
 			selectionAction: String(command.label || 'command'),
 		});
 		this.#nextEntryId = entry.id;
