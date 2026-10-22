@@ -678,9 +678,9 @@ export const createDesignerShell = (root, {
 		if (destroyed) return;
 		// Ordinary programmatic teardown cannot bypass an unresolved Save or
 		// unverified domain authority. Forced page unload is outside browser control.
-		// A never-published, disconnected Host candidate contains no visible
-		// editable Designer. It may be disposed on aborted staging. Connected
-		// or formerly active shells retain the existing fail-closed Exit Guard.
+		// Detached Host canvas cleanup is allowed only after its Host scope
+		// was aborted (failed staging or a Save-gated context switch). Any
+		// still-attached active Designer retains the original Exit Guard.
 		const discardedStage = platformStaged && !root.isConnected && platformSignal?.aborted === true;
 		if (!discardedStage && typeof window !== 'undefined'
 			&& window.cbCore?.designerExitGuard?.canTransition?.(root) !== true) {
