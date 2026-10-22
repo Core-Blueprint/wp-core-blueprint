@@ -319,20 +319,27 @@ final class SchemaValidator {
 			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
 			return;
 		}
-		$type = $schema['type'] ?? null;
-		if ( ! is_string( $type ) || ! in_array( $type, [ 'object', 'array', 'string', 'number', 'integer', 'boolean', 'null' ], true ) ) {
+		$types = $schema['type'] ?? null;
+		$types = is_string( $types ) ? [ $types ] : $types;
+		$allowed_types = [ 'object', 'array', 'string', 'number', 'integer', 'boolean', 'null' ];
+		if ( ! is_array( $types ) || ! array_is_list( $types ) || [] === $types
+			|| count( $types ) !== count( array_unique( $types ) )
+			|| array_diff( $types, $allowed_types ) ) {
 			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
 			return;
 		}
-		$matched = match ( $type ) {
-			'object' => $value instanceof \stdClass,
-			'array' => is_array( $value ) && array_is_list( $value ),
-			'string' => is_string( $value ),
-			'number' => is_int( $value ) || is_float( $value ),
-			'integer' => is_int( $value ) || ( is_float( $value ) && is_finite( $value ) && floor( $value ) === $value ),
-			'boolean' => is_bool( $value ),
-			'null' => null === $value,
-		};
+		$matched = false;
+		foreach ( $types as $type ) {
+			$matched = $matched || match ( $type ) {
+				'object' => $value instanceof \stdClass,
+				'array' => is_array( $value ) && array_is_list( $value ),
+				'string' => is_string( $value ),
+				'number' => is_int( $value ) || is_float( $value ),
+				'integer' => is_int( $value ) || ( is_float( $value ) && is_finite( $value ) && floor( $value ) === $value ),
+				'boolean' => is_bool( $value ),
+				'null' => null === $value,
+			};
+		}
 		if ( ! $matched ) {
 			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
 			return;
@@ -409,6 +416,61 @@ final class SchemaValidator {
 				$active->detach( $value );
 			}
 		}
+	}
+
+
+	/**
+	 * F03 PHP-native field admission; F01 data comes from the SAME frozen
+	 * registry. Callers choose only the three authorized receipt contexts.
+	 * Invalid acceptedFields MUST cause Luna 5 to refuse the original receipt
+	 * as SAVE_RECEIPT_INVALID; this validator never acknowledges Save/rebase.
+	 *
+	 * @return array{valid:bool,diagnostics:list<array{code:string,pointer:string}>}
+	 */
+	public function validate_persisted_fields_v1(
+		object $json_object,
+		StableSchemaRegistry $definitions,
+		string $profile_id,
+		string $project_schema,
+		string $pointer_base
+	): array {
+		if ( ! in_array( $pointer_base, [ '/persistedFields', '/fields', '/acceptedFields' ], true ) ) {
+			throw new \InvalidArgumentException( 'REGISTRY_INVALID: invalid trusted field pointer base.' );
+		}
+		$errors = [];
+		$add = static function ( string $code, string $pointer ) use ( &$errors ): void {
+			$errors[ $pointer . "\0" . $code ] = [ 'code' => $code, 'pointer' => $pointer ];
+		};
+		$facet = $definitions->persisted_field_facet();
+		if ( ! $definitions->matches( $profile_id, $project_schema ) || null === $facet ) {
+			$add( 'SCHEMA_DOMAIN_INVALID', $pointer_base );
+			return self::stable_result( $errors );
+		}
+		if ( ! $json_object instanceof \stdClass ) {
+			$add( 'SCHEMA_DOMAIN_INVALID', $pointer_base );
+			return self::stable_result( $errors );
+		}
+		$values = get_object_vars( $json_object );
+		$descriptors = [];
+		foreach ( $facet['fieldDescriptors'] as $definition ) {
+			$descriptors[ $definition['saveKey'] ] = $definition;
+		}
+		foreach ( array_keys( $descriptors ) as $save_key ) {
+			if ( ! array_key_exists( $save_key, $values ) ) {
+				$add( 'SCHEMA_DOMAIN_INVALID', $pointer_base . '/' . self::pointer_segment( $save_key ) );
+			}
+		}
+		foreach ( $values as $key => $value ) {
+			$at = $pointer_base . '/' . self::pointer_segment( $key );
+			if ( ! isset( $descriptors[ $key ] )
+				|| in_array( $key, [ '__proto__', 'constructor', 'prototype' ], true ) ) {
+				$add( 'SCHEMA_DOMAIN_INVALID', $at );
+				continue;
+			}
+			$this->validate_domain_value( $value, $descriptors[ $key ]['valueSchema'],
+				$at, $add, new \SplObjectStorage(), 0 );
+		}
+		return self::stable_result( $errors );
 	}
 
 }
