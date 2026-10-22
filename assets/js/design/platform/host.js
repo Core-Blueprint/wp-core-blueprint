@@ -88,7 +88,12 @@ export function createPlatformHost({
 		redo() { assertReady(holder); return holder.bridge.redo(); },
 		historyStatus() { return holder.bridge.historyStatus(); },
 		subscribe(listener) {
-			assertReady(holder);
+			// The disconnected shell subscribes only while the Host commits
+			// its live canvas. Commands, Save and external Editor access still
+			// require READY; this is not a second session authority.
+			if (state !== 'COMMITTING' || holder !== active || holder.scope.signal.aborted) {
+				assertReady(holder);
+			}
 			return holder.bridge.subscribe(listener);
 		},
 		save() {
@@ -142,7 +147,7 @@ export function createPlatformHost({
 			if (canvas.isConnected) throw refusal('HOST_CONTEXT_REFUSED');
 			const shell = required(await createShell(Object.freeze({
 				root: canvas, editor: holder.editor, context: identity, signal: scope.signal,
-			})), ['destroy'], 'HOST_CAPABILITY_UNAVAILABLE');
+			})), ['destroy','activatePlatformSession'], 'HOST_CAPABILITY_UNAVAILABLE');
 			holder.shell = shell;
 			scope.own(() => shell.destroy());
 			if (canvas.isConnected) throw refusal('HOST_CONTEXT_REFUSED');
@@ -198,13 +203,30 @@ export function createPlatformHost({
 	const commitStage = (holder) => {
 		if (holder.scope.signal.aborted) throw refusal('HOST_CONTEXT_REFUSED');
 		const previous = active;
-		canvasRoot.replaceChildren(holder.canvas);
-		active = holder;
-		publishedEditor = holder.editor;
-		epoch = holder.identity.contextEpoch;
-		++ticket;
-		state = 'READY';
-		return previous;
+		const oldState = state;
+		const oldEditor = publishedEditor;
+		const oldNodes = [...canvasRoot.childNodes];
+		try {
+			// This synchronous commit is the ONE place where the active DOM
+			// changes. Restore the prior canvas if readiness publication fails.
+			state = 'COMMITTING';
+			active = holder;
+			canvasRoot.replaceChildren(holder.canvas);
+			if (holder.shell.activatePlatformSession() !== true) {
+				throw refusal('HOST_CAPABILITY_UNAVAILABLE');
+			}
+			publishedEditor = holder.editor;
+			epoch = holder.identity.contextEpoch;
+			++ticket;
+			state = 'READY';
+			return previous;
+		} catch (error) {
+			canvasRoot.replaceChildren(...oldNodes);
+			active = previous;
+			publishedEditor = oldEditor;
+			state = oldState;
+			throw error;
+		}
 	};
 
 	const refresh = (reason = 'command') => {
