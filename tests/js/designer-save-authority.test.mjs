@@ -6,11 +6,11 @@ const root = new URL('../../', import.meta.url);
 const launch = readFileSync(new URL('assets/js/features/designer-launch.js', root), 'utf8');
 const php = readFileSync(new URL('src/Design/Editor/Assets.php', root), 'utf8');
 const begin = launch.indexOf('const bindSaveState = (shell, save) => {');
-const end = launch.indexOf('\n\tconst panelToggleLabel =', begin);
+const end = launch.indexOf('\n\t};', begin);
 assert.ok(begin !== -1 && end > begin, 'canonical Base save-state binder must exist');
 // Evaluate the actual extracted binder with DOM event doubles, not a copied
 // reimplementation. No browser or WordPress globals are required.
-const expr = launch.slice(begin, end).trim().replace(/^const bindSaveState = /, '').replace(/;$/, '');
+const expr = launch.slice(begin, end + '\n\t};'.length).trim().replace(/^const bindSaveState = /, '').replace(/;$/, '');
 const events = [];
 const bind = new Function('SAVE_EVENT', 'window', 'config',
   `return (${expr});`)(

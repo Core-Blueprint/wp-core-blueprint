@@ -183,7 +183,7 @@ test('EXIT-P0-04: sticky P1 Save authorization and explicit UNKNOWN event handli
 	const launch = read('assets/js/features/designer-launch.js');
 	assert.match(launch, /saveAuthorized/);
 	assert.match(launch, /cbDesignShellSaveOutcomeUnknown/);
-	assert.match(launch, /if \(state === 'unknown'\)/);
+	assert.match(launch, /if \(state === 'unknown' \|\| event\.detail\?\.uncertain === true\)/);
 	assert.match(launch, /save\.disabled = !saveAuthorized \|\| busy/);
 });
 test('EXIT-P0-05: context and fullscreen escape use synchronous Base refusal gates', () => {
