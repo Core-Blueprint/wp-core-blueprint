@@ -25,7 +25,11 @@ export function createDesignerInspectorValueControl({
 			onCommit: (next) => {
 				if ((schema.minLength === undefined || [...next].length >= schema.minLength)
 					&& (schema.maxLength === undefined || [...next].length <= schema.maxLength)) {
+					text.control.removeAttribute('aria-invalid');
 					onCommit(next);
+				} else {
+					// Invalid typed input never mutates History or Save authority.
+					text.control.setAttribute('aria-invalid', 'true');
 				}
 			},
 		});
