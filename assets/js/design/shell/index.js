@@ -10,10 +10,12 @@ import {
 	createDesignerLayerTree,
 } from './layers.js';
 import { DESIGNER_PALETTE_ROLES, createDesignerNavigation } from './navigation.js';
+import { createDesignerInspectorValueControl } from './inspector-value-control.js';
 import { createDesignerSelectionController } from './selection-controller.js';
 import {
 	createDesignerInspectorControls,
 	createDesignerInspectorTextControl,
+	createDesignerInspectorValueControl,
 	createDesignerInspectorIdentity,
 	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
