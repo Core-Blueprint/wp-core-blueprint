@@ -34,7 +34,9 @@ final class DesignerAssets {
 			CB_CORE_VERSION
 		);
 
-		if ( 'templates' !== $tab ) {
+		if ( 'templates' !== $tab || ! DesignEditorAssets::platform_fullscreen_requested()
+			|| ! current_user_can( 'manage_options' )
+			|| ! \CoreBlueprint\Core\Mail\DesignerState::is_enabled() ) {
 			return;
 		}
 
