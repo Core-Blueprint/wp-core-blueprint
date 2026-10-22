@@ -134,4 +134,281 @@ final class SchemaValidator {
 		}
 		return true;
 	}
+
+
+	/**
+	 * Stable v1 is shape-preserving and independent of the legacy opt-in v0
+	 * Diagnostics API. The input MUST be the original parsed JSON object.
+	 *
+	 * @return array{valid:bool,diagnostics:list<array{code:string,pointer:string}>}
+	 */
+	public function validate_stable_v1(
+		object $json_object,
+		StableSchemaRegistry $definitions,
+		string $profile_id,
+		string $project_schema
+	): array {
+		$errors = [];
+		$add = static function ( string $code, string $pointer ) use ( &$errors ): void {
+			$errors[ $pointer . "\0" . $code ] = [ 'code' => $code, 'pointer' => $pointer ];
+		};
+		if ( ! $json_object instanceof \stdClass ) {
+			$add( 'SCHEMA_NODE_INVALID', '' );
+			return self::stable_result( $errors );
+		}
+		if ( ! $definitions->matches( $profile_id, $project_schema ) ) {
+			$add( 'SCHEMA_DOMAIN_INVALID', '' );
+			return self::stable_result( $errors );
+		}
+
+		$values = get_object_vars( $json_object );
+		foreach ( [ 'schema_version', 'design_type', 'root' ] as $required ) {
+			if ( ! array_key_exists( $required, $values ) ) {
+				$add( 'SCHEMA_NODE_INVALID', '/' . $required );
+			}
+		}
+		foreach ( array_keys( $values ) as $key ) {
+			if ( ! in_array( $key, [ 'schema_version', 'design_type', 'root' ], true ) ) {
+				$add( 'SCHEMA_NODE_INVALID', '/' . self::pointer_segment( $key ) );
+			}
+		}
+		if ( ! isset( $values['schema_version'] ) || 1 !== $values['schema_version'] ) {
+			$add( 'SCHEMA_UNSUPPORTED_GENERATION', '/schema_version' );
+		}
+		$design_type = $values['design_type'] ?? null;
+		$type_definition = null;
+		if ( ! is_string( $design_type ) || ! Identifier::design_type( $design_type )
+			|| null === ( $type_definition = $definitions->design_type( $design_type ) ) ) {
+			$add( 'SCHEMA_NODE_INVALID', '/design_type' );
+		}
+		$root = $values['root'] ?? null;
+		if ( ! $root instanceof \stdClass ) {
+			$add( 'SCHEMA_NODE_INVALID', '/root' );
+		} elseif ( 1 === ( $values['schema_version'] ?? null ) ) {
+			$seen = new \SplObjectStorage();
+			$count = 0;
+			$this->validate_stable_node( $root, '/root', null, $design_type, $type_definition, $definitions, $add, $seen, 0, $count );
+		}
+		return self::stable_result( $errors );
+	}
+
+	/**
+	 * @param array<string,array{code:string,pointer:string}> $errors
+	 * @return array{valid:bool,diagnostics:list<array{code:string,pointer:string}>}
+	 */
+	private static function stable_result( array $errors ): array {
+		$ordered = array_values( $errors );
+		usort(
+			$ordered,
+			static fn ( array $a, array $b ): int => strcmp( $a['pointer'], $b['pointer'] )
+				?: strcmp( $a['code'], $b['code'] )
+		);
+		return [ 'valid' => [] === $ordered, 'diagnostics' => $ordered ];
+	}
+
+	private static function pointer_segment( string|int $segment ): string {
+		return str_replace( [ '~', '/' ], [ '~0', '~1' ], (string) $segment );
+	}
+
+	/**
+	 * @param callable(string,string):void $add
+	 * @param array<string,mixed>|null $type_definition
+	 */
+	private function validate_stable_node(
+		\stdClass $node,
+		string $pointer,
+		?string $parent_type,
+		mixed $root_type,
+		?array $type_definition,
+		StableSchemaRegistry $definitions,
+		callable $add,
+		\SplObjectStorage $active,
+		int $depth,
+		int &$count
+	): void {
+		if ( $depth > self::MAX_TREE_DEPTH || ++$count > 100000 ) {
+			$add( 'SCHEMA_LIMIT_EXCEEDED', $pointer );
+			return;
+		}
+		if ( $active->contains( $node ) ) {
+			$add( 'SCHEMA_NODE_INVALID', $pointer );
+			return;
+		}
+		$active->attach( $node );
+		try {
+			$data = get_object_vars( $node );
+			foreach ( self::NODE_KEYS as $key ) {
+				if ( ! array_key_exists( $key, $data ) ) {
+					$add( 'SCHEMA_NODE_INVALID', $pointer . '/' . $key );
+				}
+			}
+			foreach ( array_keys( $data ) as $key ) {
+				if ( ! in_array( $key, self::NODE_KEYS, true ) ) {
+					$add( 'SCHEMA_NODE_INVALID', $pointer . '/' . self::pointer_segment( $key ) );
+				}
+			}
+			$type = $data['type'] ?? null;
+			$provider = $data['provider'] ?? null;
+			$definition = is_string( $type ) ? $definitions->node_type( $type ) : null;
+			if ( ! is_string( $type ) || ! Identifier::node_type( $type ) || null === $definition
+				|| ( null === $parent_type && $type !== $root_type )
+				|| ( null !== $parent_type && ! in_array( $parent_type, $definition['allowedParents'], true ) ) ) {
+				$add( 'SCHEMA_NODE_INVALID', $pointer . '/type' );
+			}
+			if ( ! is_string( $provider ) || ! Identifier::provider( $provider )
+				|| ! $definitions->has_canonical_provider( $provider ) ) {
+				$add( 'SCHEMA_PROVIDER_UNKNOWN', $pointer . '/provider' );
+			} elseif ( ( null !== $definition && $definition['provider'] !== $provider )
+				|| ( null === $parent_type && null !== $type_definition
+					&& $type_definition['ownerProvider'] !== $provider ) ) {
+				$add( 'SCHEMA_NODE_INVALID', $pointer . '/provider' );
+			}
+			$properties = $data['properties'] ?? null;
+			if ( ! $properties instanceof \stdClass ) {
+				$add( 'SCHEMA_NODE_INVALID', $pointer . '/properties' );
+			} elseif ( null !== $definition && is_string( $definition['propertiesSchemaId'] ) ) {
+				$domain = $definitions->domain_schema( $definition['propertiesSchemaId'] );
+				if ( null === $domain ) {
+					$add( 'SCHEMA_DOMAIN_INVALID', $pointer . '/properties' );
+				} else {
+					$this->validate_domain_value( $properties, $domain['schema'], $pointer . '/properties', $add, new \SplObjectStorage(), 0 );
+				}
+			} elseif ( null !== $definition && [] !== get_object_vars( $properties ) ) {
+				$add( 'SCHEMA_DOMAIN_INVALID', $pointer . '/properties' );
+			}
+			$children = $data['children'] ?? null;
+			if ( ! is_array( $children ) || ! array_is_list( $children ) ) {
+				$add( 'SCHEMA_NODE_INVALID', $pointer . '/children' );
+			} else {
+				foreach ( $children as $index => $child ) {
+					$child_pointer = $pointer . '/children/' . $index;
+					if ( ! $child instanceof \stdClass ) {
+						$add( 'SCHEMA_NODE_INVALID', $child_pointer );
+						continue;
+					}
+					$this->validate_stable_node( $child, $child_pointer, is_string( $type ) ? $type : null,
+						$root_type, $type_definition, $definitions, $add, $active, $depth + 1, $count );
+				}
+			}
+		} finally {
+			$active->detach( $node );
+		}
+	}
+
+	/**
+	 * A deliberately closed declarative JSON Schema subset. Unrecognized
+	 * keywords fail closed until that schema vocabulary is jointly signed.
+	 *
+	 * @param array<string,mixed> $schema
+	 * @param callable(string,string):void $add
+	 */
+	private function validate_domain_value(
+		mixed $value,
+		array $schema,
+		string $pointer,
+		callable $add,
+		\SplObjectStorage $active,
+		int $depth
+	): void {
+		if ( $depth > self::MAX_TREE_DEPTH ) {
+			$add( 'SCHEMA_LIMIT_EXCEEDED', $pointer );
+			return;
+		}
+		$allowed = [ 'type', 'properties', 'required', 'additionalProperties', 'items', 'enum', 'minimum', 'maximum', 'minItems', 'maxItems', 'minLength', 'maxLength' ];
+		if ( array_is_list( $schema ) || array_diff( array_keys( $schema ), $allowed ) ) {
+			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+			return;
+		}
+		$type = $schema['type'] ?? null;
+		if ( ! is_string( $type ) || ! in_array( $type, [ 'object', 'array', 'string', 'number', 'integer', 'boolean', 'null' ], true ) ) {
+			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+			return;
+		}
+		$matched = match ( $type ) {
+			'object' => $value instanceof \stdClass,
+			'array' => is_array( $value ) && array_is_list( $value ),
+			'string' => is_string( $value ),
+			'number' => is_int( $value ) || is_float( $value ),
+			'integer' => is_int( $value ),
+			'boolean' => is_bool( $value ),
+			'null' => null === $value,
+		};
+		if ( ! $matched ) {
+			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+			return;
+		}
+		if ( ( is_int( $value ) || is_float( $value ) )
+			&& ( ! is_finite( (float) $value ) || abs( (float) $value ) > 9007199254740991 ) ) {
+			$add( 'SCHEMA_LIMIT_EXCEEDED', $pointer );
+			return;
+		}
+		if ( isset( $schema['enum'] ) && ( ! is_array( $schema['enum'] )
+			|| ! array_is_list( $schema['enum'] )
+			|| ! in_array( $value, $schema['enum'], true ) ) ) {
+			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+		}
+		if ( is_string( $value ) ) {
+			$length = function_exists( 'mb_strlen' ) ? mb_strlen( $value, 'UTF-8' ) : strlen( $value );
+			if ( ( isset( $schema['minLength'] ) && ( ! is_int( $schema['minLength'] ) || $length < $schema['minLength'] ) )
+				|| ( isset( $schema['maxLength'] ) && ( ! is_int( $schema['maxLength'] ) || $length > $schema['maxLength'] ) ) ) {
+				$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+			}
+		}
+		if ( is_int( $value ) || is_float( $value ) ) {
+			if ( ( isset( $schema['minimum'] ) && ( ! is_numeric( $schema['minimum'] ) || $value < $schema['minimum'] ) )
+				|| ( isset( $schema['maximum'] ) && ( ! is_numeric( $schema['maximum'] ) || $value > $schema['maximum'] ) ) ) {
+				$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+			}
+		}
+		if ( is_array( $value ) ) {
+			if ( ( isset( $schema['minItems'] ) && ( ! is_int( $schema['minItems'] ) || count( $value ) < $schema['minItems'] ) )
+				|| ( isset( $schema['maxItems'] ) && ( ! is_int( $schema['maxItems'] ) || count( $value ) > $schema['maxItems'] ) ) ) {
+				$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+			}
+			if ( ! isset( $schema['items'] ) || ! is_array( $schema['items'] ) ) {
+				$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+				return;
+			}
+			foreach ( $value as $index => $item ) {
+				$this->validate_domain_value( $item, $schema['items'], $pointer . '/' . $index, $add, $active, $depth + 1 );
+			}
+		}
+		if ( $value instanceof \stdClass ) {
+			if ( $active->contains( $value ) ) {
+				$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+				return;
+			}
+			$active->attach( $value );
+			try {
+				$properties = $schema['properties'] ?? [];
+				$required = $schema['required'] ?? [];
+				if ( ! is_array( $properties ) || ! is_array( $required ) || ! array_is_list( $required )
+					|| ! is_bool( $schema['additionalProperties'] ?? false ) ) {
+					$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+					return;
+				}
+				$data = get_object_vars( $value );
+				foreach ( $required as $name ) {
+					if ( ! is_string( $name ) ) {
+						$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
+					} elseif ( ! array_key_exists( $name, $data ) ) {
+						$add( 'SCHEMA_DOMAIN_INVALID', $pointer . '/' . self::pointer_segment( $name ) );
+					}
+				}
+				foreach ( $data as $key => $child ) {
+					$child_pointer = $pointer . '/' . self::pointer_segment( $key );
+					if ( in_array( $key, [ '__proto__', 'prototype', 'constructor' ], true ) ) {
+						$add( 'SCHEMA_DOMAIN_INVALID', $child_pointer );
+					} elseif ( array_key_exists( $key, $properties ) && is_array( $properties[ $key ] ) ) {
+						$this->validate_domain_value( $child, $properties[ $key ], $child_pointer, $add, $active, $depth + 1 );
+					} elseif ( ! ( $schema['additionalProperties'] ?? false ) ) {
+						$add( 'SCHEMA_DOMAIN_INVALID', $child_pointer );
+					}
+				}
+			} finally {
+				$active->detach( $value );
+			}
+		}
+	}
+
 }
