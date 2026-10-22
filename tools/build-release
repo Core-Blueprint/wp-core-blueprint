@@ -228,7 +228,19 @@ def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str
     for path in sorted(payloads):
         if path.startswith("assets/js/design/") and path.endswith(".js"):
             payload = payloads[path]
-            if b"__cbPlatformModuleStamp" in payload:
+            if path == "assets/js/design/platform/preflight.js":
+                approved_reads = (
+                    b"Object.hasOwn(namespace, '__cbPlatformModuleStamp')",
+                    b"namespace.__cbPlatformModuleStamp !== module.stamp",
+                )
+                if any(payload.count(read) != 1 for read in approved_reads):
+                    fail("Expected exact Platform module stamp read references: " + path)
+                unapproved_source = payload
+                for read in approved_reads:
+                    unapproved_source = unapproved_source.replace(read, b"", 1)
+                if b"__cbPlatformModuleStamp" in unapproved_source:
+                    fail("Source must not mint its own package module stamp: " + path)
+            elif b"__cbPlatformModuleStamp" in payload:
                 fail("Source must not mint its own package module stamp: " + path)
             if re.search(rb"\bimport\s*\(", payload):
                 fail("Designer profile imports must remain static: " + path)
