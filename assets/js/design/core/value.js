@@ -60,7 +60,7 @@ export const inspectJsonValue = (value, pointer = '') => {
 				}
 				for (let i = 0; i < length.value; i += 1) {
 					const descriptor = descriptors[String(i)];
-					if (!descriptor || !own(descriptor, 'value')) {
+					if (!descriptor || !descriptor.enumerable || !own(descriptor, 'value')) {
 						throw new InvalidDesignValueError(`${path}/${i}`);
 					}
 					visit(descriptor.value, `${path}/${i}`, depth + 1);
@@ -68,7 +68,7 @@ export const inspectJsonValue = (value, pointer = '') => {
 			} else {
 				for (const key of Object.keys(descriptors)) {
 					const child = `${path}/${segment(key)}`;
-					if (FORBIDDEN_KEYS.has(key) || !own(descriptors[key], 'value')) {
+					if (FORBIDDEN_KEYS.has(key) || !descriptors[key].enumerable || !own(descriptors[key], 'value')) {
 						throw new InvalidDesignValueError(child);
 					}
 					visit(descriptors[key].value, child, depth + 1);
