@@ -131,10 +131,11 @@ async function activate() {
 	const mail=document.querySelector('[data-cb-mail-designer]');
 	const reports=!mail?document.querySelector('[data-cb-reports-designer]'):null;
 	const origin=mail||reports;
-	if(!origin)return;
+	// A regular admin page is never an implicit editor launch target.
+	if(!origin||!origin.closest('[data-cb-platform-screen]'))return;
 	const profileId=mail?'base/mail':'base/reports';
 	const selected=mail?mail.querySelector('[data-cb-mail-template-select]'):null;
-	const resourceKey=mail?(selected?.value||''):'maintenance';
+	const resourceKey=mail?(selected?.value||mail.dataset.cbMailTemplate||''):'maintenance';
 	const previous=origin.querySelector('[data-cb-design-shell]');
 	if(previous)previous.hidden=true;
 	const panel=document.createElement('div');
