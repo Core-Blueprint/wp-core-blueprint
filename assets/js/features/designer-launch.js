@@ -8,6 +8,8 @@
 	const DIRECT_ENTER_RETRY_LIMIT = 80;
 	const SAVE_EVENT = 'cb:design-shell:savechange';
 	const SHELL_READY_EVENT = 'cb:design-shell:ready';
+	// Informational UI signal, never a trusted bootstrap or permission.
+	const LAUNCH_READY_EVENT = 'cb:designer-launch:ready';
 	const FAILURE_EVENT = 'cb:design-shell:failure';
 	const DIRECT_MODE = 'direct';
 	const RESPONSIVE_DRAWER_QUERY = '(max-width: 1280px)';
@@ -691,6 +693,12 @@
 
 			root.dataset.cbDesignLaunchInitialized = 'true';
 			root.dataset.cbDesignLaunchState = 'ready';
+			// The later static ESM composition may observe or query this one
+			// existing launch surface; legacy consumers remain untouched.
+			root.dispatchEvent(new CustomEvent(LAUNCH_READY_EVENT, {
+				bubbles: true,
+				detail: Object.freeze({ root, shell, mode: direct ? DIRECT_MODE : 'manual' }),
+			}));
 		});
 		return !pending;
 	};
