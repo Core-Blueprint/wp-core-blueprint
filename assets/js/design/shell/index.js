@@ -144,6 +144,7 @@ export const createDesignerShell = (root, {
 	session = null,
 	platformLease = null,
 	platformStaged = false,
+	platformSignal = null,
 	defaultPanel = null,
 	defaultPanels = {},
 	onPanelChange = null,
@@ -158,7 +159,8 @@ export const createDesignerShell = (root, {
 	// A Host stage is a detached, single-owner canvas. It never reuses the
 	// active Base shell root or obtains a competing canonical root lease.
 	if (platformStaged && (!root.matches('[data-cb-platform-canvas]')
-		|| root.isConnected || platformLease !== null)) {
+		|| root.isConnected || platformLease !== null
+		|| !platformSignal || platformSignal.aborted !== false)) {
 		throw new Error('HOST_CONTEXT_REFUSED');
 	}
 	const existing = shellControllers.get(root);
@@ -679,9 +681,14 @@ export const createDesignerShell = (root, {
 		// A never-published, disconnected Host candidate contains no visible
 		// editable Designer. It may be disposed on aborted staging. Connected
 		// or formerly active shells retain the existing fail-closed Exit Guard.
-		const discardedStage = platformStaged && !platformActivated && !root.isConnected;
+		const discardedStage = platformStaged && !root.isConnected && platformSignal?.aborted === true;
 		if (!discardedStage && typeof window !== 'undefined'
-			&& window.cbCore?.designerExitGuard?.canTransition?.(root) !== true) return false;
+			&& window.cbCore?.designerExitGuard?.canTransition?.(root) !== true) {
+			// Host must receive cleanup failures rather than silently discard
+			// its Save-guarded active root; legacy shell behavior stays unchanged.
+			if (platformStaged) throw new Error('HOST_CLEANUP_FAILED');
+			return false;
+		}
 		if (fullscreenState || exitPending) {
 			exitFullscreenInternal({ restoreFocus: false, immediate: true });
 		}
