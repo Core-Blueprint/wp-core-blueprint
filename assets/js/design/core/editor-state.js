@@ -1,6 +1,7 @@
 import { InspectorState } from './inspector.js';
 import { SelectionState } from './selection.js';
 import { ValidationFeedback } from './validation-feedback.js';
+import { cloneFrozen } from './value.js';
 
 export class EditorState {
 	selection;
@@ -13,12 +14,20 @@ export class EditorState {
 		this.validation = new ValidationFeedback();
 	}
 
+	fork() {
+		const staged = new EditorState();
+		staged.selection = this.selection.fork();
+		staged.inspector.restore(this.inspector.snapshot());
+		staged.validation.replace(this.validation.all());
+		return staged;
+	}
+
 	snapshot() {
-		return {
+		return cloneFrozen({
 			selection: this.selection.snapshot(),
 			inspector: this.inspector.snapshot(),
 			validation: this.validation.all(),
-		};
+		});
 	}
 
 	restore(snapshot, selectionEvent = {}) {
@@ -30,7 +39,6 @@ export class EditorState {
 		this.validation.replace(Array.isArray(snapshot.validation) ? snapshot.validation : []);
 	}
 
-	/** Apply an already validated staged editor state without any notifications. */
 	commitSnapshot(snapshot, metadata = {}) {
 		if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
 			throw new TypeError('Invalid staged editor snapshot.');
@@ -38,23 +46,20 @@ export class EditorState {
 		this.inspector.restore(snapshot.inspector ?? { activeSection: null, expanded: [] });
 		this.validation.replace(Array.isArray(snapshot.validation) ? snapshot.validation : []);
 		return this.selection.commitSnapshot(
-			snapshot.selection ?? { paths: [], primary: null },
-			metadata,
+			snapshot.selection ?? { paths: [], primary: null }, metadata,
 		);
 	}
 
-	/** Roll back an internal commit failure without an observable revision. */
 	restoreCommitted(snapshot, selectionRevision) {
 		this.inspector.restore(snapshot.inspector ?? { activeSection: null, expanded: [] });
 		this.validation.replace(Array.isArray(snapshot.validation) ? snapshot.validation : []);
 		this.selection.restoreCommitted(
-			snapshot.selection ?? { paths: [], primary: null },
-			selectionRevision,
+			snapshot.selection ?? { paths: [], primary: null }, selectionRevision,
 		);
 	}
 
-	reconcile(root, selectionEvent = {}) {
-		return this.selection.reconcile(root, selectionEvent);
+	reconcile(root, options = {}) {
+		return this.selection.reconcile(root, options);
 	}
 
 	toJSON() {

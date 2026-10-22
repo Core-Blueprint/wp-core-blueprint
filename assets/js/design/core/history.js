@@ -1,4 +1,5 @@
 import { EditorState } from './editor-state.js';
+import { bindRegisteredBatch } from './commands.js';
 import { cloneFrozen, cloneValue, sameValue } from './value.js';
 
 const normalizeLimit = (limit) => {
@@ -140,12 +141,21 @@ export class CommandHistory {
 	}
 
 	#stageEditor() {
-		const next = new EditorState();
-		next.restore(this.#editorState.snapshot());
-		return next;
+		return this.#editorState.fork();
 	}
 
 	#stageCommand(command, project, editor) {
+		if (Array.isArray(command?.steps)) {
+			if (!command.steps.length || command.steps.length > 64) throw new TypeError('Invalid command batch.');
+			let current = project;
+			let forceSelection = false;
+			for (const step of command.steps) {
+				const result = this.#stageCommand(step, current, editor);
+				current = result.project;
+				forceSelection = forceSelection || result.forceSelection;
+			}
+			return { project: current, forceSelection };
+		}
 		if (!command || typeof command.apply !== 'function') {
 			throw new TypeError('Designer command requires apply(project).');
 		}
@@ -159,7 +169,16 @@ export class CommandHistory {
 			editor.selection.remap(effect.remapSelection);
 		}
 		if (Array.isArray(effect.selectPath)) editor.selection.select(effect.selectPath);
-		editor.reconcile(next.root);
+		if (Object.hasOwn(effect, 'selectionIntent')) {
+			if (!Array.isArray(effect.selectionIntent)) {
+				throw new TypeError('Command selectionIntent must be an array of typed references.');
+			}
+			editor.selection.setRefs(effect.selectionIntent, effect.primarySelection ?? null, {
+				project: next, contextEpoch: editor.selection.contextEpoch,
+				source: 'command', action: String(command.label || 'command'),
+			});
+		}
+		editor.reconcile(next.root, { project: next });
 		return { project: next, forceSelection };
 	}
 
@@ -279,6 +298,67 @@ export class CommandHistory {
 		});
 	}
 
+	/**
+	 * Registered Host requests are adapted to pure commands before entering
+	 * the single History transaction. No member publishes independently.
+	 */
+	executeRegisteredBatch(requests, registryOptions) {
+		const batch = bindRegisteredBatch(requests, registryOptions);
+		return this.executeBatch(batch.steps);
+	}
+
+	executeBatch(commands) {
+		return this.#run(() => {
+			const beforeProject = this.#projectState.current();
+			const beforeEditor = this.#editorState.snapshot();
+			const beforeHistoryRevision = this.#historyRevision;
+			let steps;
+			try {
+				if (!Array.isArray(commands) || commands.length < 1 || commands.length > 64) {
+					throw new TypeError('Invalid batch length.');
+				}
+				steps = Object.freeze([...commands]);
+				if (steps.some((step) => !step || typeof step.apply !== 'function')) {
+					throw new TypeError('Invalid batch member.');
+				}
+				const compound = Object.freeze({ label: 'batch', steps });
+				const editor = this.#stageEditor();
+				const stage = this.#stageCommand(compound, beforeProject, editor);
+				const nextEditor = editor.snapshot();
+				if (sameValue(stage.project, beforeProject)) {
+					if (!sameValue(nextEditor.selection, beforeEditor.selection)) {
+						throw new TypeError('Selection-only batch refused.');
+					}
+					return Object.freeze({
+						changed: false,
+						projectRevision: this.#projectState.revision,
+						historyRevision: beforeHistoryRevision,
+						selection: this.#editorState.selection.typedSnapshot(),
+					});
+				}
+				const entry = this.#entry(compound, beforeProject, beforeEditor, stage.project, nextEditor, this.#nextEntryId + 1);
+				const undo = [...this.#undo, entry];
+				if (undo.length > this.#limit) undo.splice(0, undo.length - this.#limit);
+				this.#commit({
+					nextProject: stage.project, nextEditor, undo, redo: [],
+					action: 'execute', source: 'command', forceSelection: false,
+					selectionAction: 'batch',
+				});
+				this.#nextEntryId = entry.id;
+				return Object.freeze({
+					changed: true,
+					projectRevision: this.#projectState.revision,
+					historyRevision: this.#historyRevision,
+					selection: this.#editorState.selection.typedSnapshot(),
+				});
+			} catch (_) {
+				const error = new Error('Designer command batch was rejected atomically.');
+				error.code = 'BATCH_ABORTED';
+				throw error;
+			}
+		});
+	}
+
 	undo() {
 		return this.#run(() => {
 			if (!this.#undo.length) return false;
@@ -329,7 +409,7 @@ export class CommandHistory {
 			const next = this.#projectState.stage(project);
 			const editor = this.#stageEditor();
 			if (resetSelection) editor.selection.clear();
-			else editor.reconcile(next.root);
+			else editor.reconcile(next.root, { project: next });
 			const editorSnapshot = editor.snapshot();
 			const differs = !sameValue(next, this.#projectState.current());
 			const hadHistory = this.#undo.length > 0 || this.#redo.length > 0;
