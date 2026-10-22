@@ -66,7 +66,13 @@ const enhance = (select, options = {}) => {
 	toggle.append(main, chevron);
 	enhanced.appendChild(toggle);
 
-	const externalLabel = findLabelText(select);
+	// Preserve explicit accessible names before falling back to a paired label.
+	const labelledBy = select.getAttribute('aria-labelledby');
+	const externalLabel = select.getAttribute('aria-label')?.trim()
+		|| (labelledBy ? document.getElementById(labelledBy)?.textContent?.trim() : '')
+		|| findLabelText(select)
+		|| select.closest('label')?.textContent?.trim()
+		|| '';
 	if (externalLabel) toggle.setAttribute('aria-label', externalLabel);
 
 	const panel = document.createElement('div');
@@ -136,6 +142,9 @@ const enhance = (select, options = {}) => {
 		meta.textContent = group;
 		meta.hidden = !group;
 		toggle.disabled = select.disabled;
+		if (header && externalLabel) {
+			toggle.setAttribute('aria-label', externalLabel + ': ' + title.textContent);
+		}
 		results.querySelectorAll('[data-value]').forEach((button) => {
 			const active = button.dataset.value === select.value;
 			button.classList.toggle('is-selected', active);
@@ -143,8 +152,32 @@ const enhance = (select, options = {}) => {
 		});
 	};
 
+	const locateHeaderPanel = () => {
+		if (!header || panel.hidden) return;
+		const anchor = toggle.getBoundingClientRect();
+		const width = Math.min(Math.max(280, anchor.width), Math.max(160, window.innerWidth - 16));
+		panel.style.width = width + 'px';
+		const height = panel.getBoundingClientRect().height;
+		const left = Math.max(8, Math.min(anchor.left, window.innerWidth - width - 8));
+		const below = anchor.bottom + 6;
+		const above = anchor.top - height - 6;
+		const top = below + height > window.innerHeight - 8 && above >= 8
+			? above : Math.max(8, Math.min(below, window.innerHeight - height - 8));
+		panel.style.left = left + 'px';
+		panel.style.top = top + 'px';
+	};
+	const onHeaderViewportChange = () => locateHeaderPanel();
+	const onHeaderFocusOutside = (event) => {
+		if (!root.contains(event.target) && !panel.contains(event.target)) close();
+	};
 	const close = ({ focus = false } = {}) => {
-		if (header && panel.matches(':popover-open')) panel.hidePopover();
+		if (header) {
+			window.removeEventListener('resize', onHeaderViewportChange);
+			window.removeEventListener('scroll', onHeaderViewportChange, true);
+			document.removeEventListener('focusin', onHeaderFocusOutside);
+			document.removeEventListener('click', onDocumentClick);
+			if (panel.matches(':popover-open')) panel.hidePopover();
+		}
 		panel.hidden = true;
 		toggle.setAttribute('aria-expanded', 'false');
 		root.classList.remove('is-open');
@@ -212,17 +245,12 @@ const enhance = (select, options = {}) => {
 		render(search?.value || '');
 		panel.hidden = false;
 		if (header) {
-			const anchor = toggle.getBoundingClientRect();
-			const width = Math.min(Math.max(280, anchor.width), Math.max(160, window.innerWidth - 16));
-			const left = Math.max(8, Math.min(anchor.left, window.innerWidth - width - 8));
-			panel.style.width = width + 'px';
-			panel.style.left = left + 'px';
-			panel.style.top = Math.max(8, anchor.bottom + 6) + 'px';
 			panel.showPopover();
-			const height = panel.getBoundingClientRect().height;
-			const above = anchor.top - height - 6;
-			const below = anchor.bottom + 6;
-			panel.style.top = (below + height > window.innerHeight - 8 && above >= 8 ? above : Math.min(below, Math.max(8, window.innerHeight - height - 8))) + 'px';
+			locateHeaderPanel();
+			window.addEventListener('resize', onHeaderViewportChange, { passive: true });
+			window.addEventListener('scroll', onHeaderViewportChange, { capture: true, passive: true });
+			document.addEventListener('focusin', onHeaderFocusOutside);
+			document.addEventListener('click', onDocumentClick);
 		}
 		toggle.setAttribute('aria-expanded', 'true');
 		root.classList.add('is-open');
@@ -270,16 +298,20 @@ const enhance = (select, options = {}) => {
 		if (event.key === 'Home') { event.preventDefault(); focusOption(0); }
 		if (event.key === 'End') { event.preventDefault(); focusOption(buttons.length - 1); }
 	});
-	document.addEventListener('click', (event) => {
-		if (!root.contains(event.target)) close();
-	});
-	if (header) {
-		// Sticky Designer headers can move independently of the popup. Close
-		// instead of leaving a disconnected interactive panel in the viewport.
+	const onDocumentClick = (event) => {
+		if (!root.contains(event.target) && !panel.contains(event.target)) close();
+	};
+	if (!header) {
+		// Field-mode selection retains existing outside-click behavior.
+		document.addEventListener('click', onDocumentClick);
+		// The header mode binds the same handler only while its popup is open.
 		document.addEventListener('scroll', (event) => {
 			if (!panel.contains(event.target) && !panel.hidden) close();
 		}, true);
-		window.addEventListener('resize', () => { if (!panel.hidden) close(); });
+	} else {
+		panel.addEventListener('toggle', (event) => {
+			if (event.newState === 'closed' && !panel.hidden) close();
+		});
 	}
 
 	select.addEventListener('change', sync);
