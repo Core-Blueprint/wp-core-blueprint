@@ -100,7 +100,8 @@ final class ArtifactManifest {
 				|| isset( $ids[$asset_id] )
 				|| ! is_string( $witness ) || ! preg_match( '/^[a-f0-9]{64}$/D', $witness )
 				|| ! is_string( $selector ) || ! preg_match( '/^\[data-cb-artifact-[a-z0-9-]+\]$/D', $selector )
-				|| substr_count( $files[$path], $witness ) !== 1 ) {
+				|| substr_count( $files[$path], $witness ) !== 1
+				|| substr_count( $files[$path], self::css_witness_rule( $selector, $witness ) ) !== 1 ) {
 				throw new \InvalidArgumentException( 'CSS_RUNTIME_STALE: missing/ambiguous final CSS witness.' );
 			}
 			$ids[$asset_id] = true;
@@ -150,6 +151,20 @@ final class ArtifactManifest {
 			. self::length_prefix( $path )
 			. self::length_prefix( hash( 'sha256', $css_without_witness ) )
 		);
+	}
+
+	/**
+	 * Append exactly this probe rule AFTER CSS transformations but BEFORE
+	 * final file hashing. The Host creates a uniquely attributed live element
+	 * and reads this property only via computed style; source text alone does
+	 * not assert browser freshness.
+	 */
+	public static function css_witness_rule( string $selector, string $witness ): string {
+		if ( ! preg_match( '/^\[data-cb-artifact-[a-z0-9-]+\]$/D', $selector )
+			|| ! preg_match( '/^[a-f0-9]{64}$/D', $witness ) ) {
+			throw new \InvalidArgumentException( 'CSS_RUNTIME_STALE: invalid witness rule.' );
+		}
+		return $selector . '{--cb-artifact-witness:' . $witness . ';}';
 	}
 
 	/** Deterministic manifest JSON; its SHA is maintained OUTSIDE its content. */
