@@ -61,6 +61,13 @@ final class PlatformTransport {
 		return null;
 	}
 
+	private static function exact_keys( array $value, array $keys ): bool {
+		$actual = array_keys( $value );
+		sort( $actual, SORT_STRING );
+		sort( $keys, SORT_STRING );
+		return $actual === $keys;
+	}
+
 	private static function deny( string $code, int $status = 403 ): \WP_Error {
 		return new \WP_Error( strtolower( $code ), $code, [ 'status' => $status ] );
 	}
@@ -98,7 +105,7 @@ final class PlatformTransport {
 		$loaded = Repository::get( $identity['type'], $identity['key'] );
 		if ( 'found' === ( $loaded['status'] ?? null ) ) {
 			$doc = $loaded['document'];
-			if ( ! is_array( $doc ) || array_keys( $doc ) !== [ 'project', 'fields' ]
+			if ( ! is_array( $doc ) || ! self::exact_keys( $doc, [ 'project', 'fields' ] )
 				|| ! self::valid_content( $doc['project'], $doc['fields'], $registry, $profile ) ) {
 				return self::deny( 'SCHEMA_UNSUPPORTED_GENERATION', 409 );
 			}
@@ -167,7 +174,7 @@ final class PlatformTransport {
 			&& $item->resource_type === $identity['type']
 			&& $item->registry_fingerprint === $registry->fingerprint();
 		$normalize = static function ( SaveEnvelope $item, ?array $existing ) use ( $registry ): array {
-			if ( null !== $existing && ( array_keys( $existing ) !== [ 'project', 'fields' ]
+			if ( null !== $existing && ( ! self::exact_keys( $existing, [ 'project', 'fields' ] )
 				|| ! self::valid_content( $existing['project'], $existing['fields'], $registry, $item->profile_id ) ) ) {
 				throw new \DomainException( 'SCHEMA_UNSUPPORTED_GENERATION' );
 			}
@@ -203,7 +210,7 @@ final class PlatformTransport {
 		$info = $registry->profile( $profile );
 		if ( ! is_array( $project ) || ! is_array( $fields ) || ! is_array( $snapshot )
 			|| ! is_array( $facet ) || ! is_array( $info )
-			|| array_keys( $project ) !== [ 'schema_version', 'design_type', 'root' ]
+			|| ! self::exact_keys( $project, [ 'schema_version', 'design_type', 'root' ] )
 			|| ( $project['schema_version'] ?? null ) !== 1
 			|| $project['design_type'] !== $info['designType']
 			|| count( $fields ) !== count( $facet['fieldDescriptors'] ) ) return false;
@@ -217,7 +224,7 @@ final class PlatformTransport {
 		$schemas = array_column( $snapshot['domainSchemas'], null, 'id' );
 		$count = 0;
 		$visit = function ( mixed $node, ?string $parent, int $depth ) use ( &$visit, $nodes, $schemas, &$count ): bool {
-			if ( ! is_array( $node ) || array_keys( $node ) !== [ 'type', 'provider', 'properties', 'children' ]
+			if ( ! is_array( $node ) || ! self::exact_keys( $node, [ 'type', 'provider', 'properties', 'children' ] )
 				|| ! is_string( $node['type'] ) || ! isset( $nodes[$node['type']] )
 				|| $node['provider'] !== $nodes[$node['type']]['provider'] || $depth > 64
 				|| ++$count > 100000 || ! is_array( $node['children'] ) || ! array_is_list( $node['children'] )
