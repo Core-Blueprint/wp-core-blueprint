@@ -257,29 +257,53 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 		return Object.freeze({ status: 'unknown' });
 	};
 
+	// Exact countersigned SaveCoordinatorV1 Host-private callable surface.
 	return Object.freeze({
-		get state() { return state; },
-		get acceptedStoreRevision() { return acceptedStoreRevision; },
-		get pendingOperationId() { return pending?.evidence.operationId ?? null; },
-		get blocksContextTransition() { return blocksContextTransition(); },
 		async save() {
 			if (flight) return Object.freeze({ status: 'refused', code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
-			flight = performSave();
-			try { return await flight; }
-			finally { flight = null; }
+			// An UNKNOWN Save may only lookup its ORIGINAL operation, never
+			// generate another ID or re-submit automatically.
+			flight = state === 'UNKNOWN' && pending ? recover() : performSave();
+			try {
+				return await flight;
+			} catch (error) {
+				if (pending) {
+					notify('UNKNOWN');
+					return Object.freeze({ status: 'unknown', code: 'SAVE_UNKNOWN' });
+				}
+				notify('READY_DIRTY');
+				return Object.freeze({ status: 'refused', code: error?.code || 'SAVE_REFUSED' });
+			} finally {
+				flight = null;
+			}
 		},
-		async recover() {
-			if (flight) return Object.freeze({ status: 'refused', code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
-			flight = recover();
-			try { return await flight; }
-			finally { flight = null; }
+		status() { return lifecycle(); },
+		transitionGate(action) {
+			if (action !== 'switch' && action !== 'unmount') {
+				return Object.freeze({ allowed: false, state, code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
+			}
+			if (blocksContextTransition() || flight || pending) {
+				return Object.freeze({ allowed: false, state, code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
+			}
+			// Dirty-but-known user confirmation remains the Host's responsibility.
+			return Object.freeze({ allowed: true, state });
+		},
+		subscribe(listener) {
+			if (destroyed || typeof listener !== 'function') throw new TypeError('SAVE_INVALID');
+			listeners.add(listener);
+			try { listener(lifecycle()); } catch (_) { /* notification never changes state */ }
+			return () => { listeners.delete(listener); };
 		},
 		destroy() {
-			if (blocksContextTransition() || flight || pending) return false;
+			if (blocksContextTransition() || flight || pending) {
+				const error = new Error('SAVE_PENDING_CONTEXT_BLOCKED');
+				error.code = 'SAVE_PENDING_CONTEXT_BLOCKED';
+				throw error;
+			}
 			destroyed = true;
+			listeners.clear();
 			adapter.destroy();
 			fields.destroy();
-			return true;
 		},
 	});
 }
