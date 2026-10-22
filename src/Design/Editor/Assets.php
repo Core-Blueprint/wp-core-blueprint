@@ -115,6 +115,57 @@ final class Assets {
 	}
 
 	/**
+	 * Single native Platform v1 entrypoint for the TWO Base-owned Designers.
+	 * Never enqueue the historical Mail/Reports editor engines on these routes.
+	 * JavaScript imports precisely these statically registered WordPress modules.
+	 */
+	public static function enqueue_platform(): void {
+		self::enqueue();
+		wp_enqueue_style(
+			self::BUTTON_STYLE, CB_CORE_URL . 'assets/css/components/buttons.css',
+			[ self::TOKEN_STYLE ], self::asset_version( 'assets/css/components/buttons.css' )
+		);
+		wp_enqueue_style(
+			self::FORM_CONTROL_STYLE, CB_CORE_URL . 'assets/css/components/form-controls.css',
+			[ self::TOKEN_STYLE ], self::asset_version( 'assets/css/components/form-controls.css' )
+		);
+		wp_enqueue_style(
+			self::DESIGNER_MODE_STYLE, CB_CORE_URL . 'assets/css/design/designer-mode.css',
+			[ self::SHELL_STYLE, self::BUTTON_STYLE ], self::asset_version( 'assets/css/design/designer-mode.css' )
+		);
+		wp_enqueue_style(
+			self::DESIGNER_COMPOSITION_STYLE, CB_CORE_URL . 'assets/css/design/designer-composition.css',
+			[ self::DESIGNER_MODE_STYLE, self::FORM_CONTROL_STYLE ],
+			self::asset_version( 'assets/css/design/designer-composition.css' )
+		);
+		foreach ( [
+			'@cb-core/mail-platform' => 'assets/js/design/mail/platform-adapter.js',
+			'@cb-core/reports-platform' => 'assets/js/design/reports/platform-adapter.js',
+		] as $handle => $path ) {
+			wp_register_script_module( $handle, CB_CORE_URL . $path, [],
+				self::asset_version( $path ) );
+		}
+		// A separately registered classic inline handle prints the REST nonce
+		// before the module executes. This is a request CSRF token, not an
+		// ArtifactEvidence identity or permission grant.
+		wp_register_script( 'cb-core-platform-v1-config', false, [], CB_CORE_VERSION, true );
+		wp_enqueue_script( 'cb-core-platform-v1-config' );
+		wp_add_inline_script( 'cb-core-platform-v1-config',
+			'window.cbCorePlatformV1=' . wp_json_encode( [
+				'restRoot' => esc_url_raw( rest_url() ),
+				'nonce' => wp_create_nonce( 'wp_rest' ),
+			] ) . ';',
+			'before'
+		);
+		wp_enqueue_script_module(
+			'@cb-core/base-platform-v1',
+			CB_CORE_URL . 'assets/js/design/platform/wordpress-save-adapter.js',
+			[ self::MODULE_ID, '@cb-core/mail-platform', '@cb-core/reports-platform' ],
+			self::asset_version( 'assets/js/design/platform/wordpress-save-adapter.js' )
+		);
+	}
+
+	/**
 	 * Public Mail profile styling; shared by the Base Mail and Newsletter
 	 * Designers. The styling is opt-in and does not load Base Mail admin chrome.
 	 */
