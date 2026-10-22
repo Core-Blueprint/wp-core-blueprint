@@ -133,8 +133,9 @@ async function activate() {
 	const origin=mail||reports;
 	// A regular admin page is never an implicit editor launch target.
 	if(!origin||!origin.closest('[data-cb-platform-screen]'))return;
+	const screen=origin.closest('[data-cb-platform-screen]');
 	const profileId=mail?'base/mail':'base/reports';
-	const selected=mail?mail.querySelector('[data-cb-mail-template-select]'):null;
+	const selected=mail?screen.querySelector('[data-cb-mail-template-select]'):null;
 	const resourceKey=mail?(selected?.value||mail.dataset.cbMailTemplate||''):'maintenance';
 	const loadingStatus=origin.querySelector('p[role="status"]');
 	const previous=origin.querySelector('[data-cb-design-shell]');
@@ -175,7 +176,19 @@ async function activate() {
 			createSaveAdapter:createWordPressSaveAdapter,
 		});
 		await host.mount({bootstrap:loaded.bootstrap,project:loaded.project,persistedFields:loaded.fields});
+		// Host-READY is the only point where the native toolbar may replace the
+		// server-rendered loading header. Move trusted admin controls, not a
+		// second toolbar or document-derived markup, into the committed shell.
+		const toolbar=canvas.querySelector('.cb-core-design-shell__toolbar--designer');
+		const contextSlot=toolbar?.querySelector('[data-cb-platform-context-slot]');
+		const closeSlot=toolbar?.querySelector('[data-cb-platform-close-slot]');
+		const close=screen.querySelector('[data-cb-platform-header-close]');
+		const contextControl=selected||screen.querySelector('[data-cb-platform-header-context]');
+		if(!contextSlot||!closeSlot||!close||!contextControl)throw issue('HOST_CAPABILITY_UNAVAILABLE');
+		contextSlot.append(contextControl);
+		closeSlot.append(close);
 		if(loadingStatus)loadingStatus.hidden=true;
+		screen.dataset.cbPlatformMounted='true';
 		const transitionSafe=()=>{
 			if(host.state!=='READY')return false;
 			const status=host.editor?.saveStatus?.();
