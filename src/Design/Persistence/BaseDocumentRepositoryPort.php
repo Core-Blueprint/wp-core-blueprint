@@ -86,7 +86,7 @@ final class BaseDocumentRepositoryPort extends BaseDocumentTransactionPort {
 		if ( ( $locked['status'] ?? null ) === 'missing' ) {
 			if ( ( $read['status'] ?? null ) !== 'missing'
 				|| '0' !== $intent->expected_revision
-				|| Repository::MAIL !== $intent->resource_type ) {
+				|| ! in_array( $intent->resource_type, [ Repository::MAIL, Repository::REPORTS ], true ) ) {
 				return [ 'status' => 'conflict' ];
 			}
 			try {
