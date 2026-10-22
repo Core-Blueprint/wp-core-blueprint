@@ -110,8 +110,9 @@ export function createDesignerInspectorValueControl({
 	const onInput = () => { dirty = true; };
 	const begin = () => { composing = true; };
 	const end = () => { composing = false; dirty = true; };
+	const changed = (event) => { dirty = true; commit(event); };
 	input.addEventListener('input', onInput);
-	input.addEventListener('change', commit);
+	input.addEventListener('change', changed);
 	input.addEventListener('blur', commit);
 	input.addEventListener('compositionstart', begin);
 	input.addEventListener('compositionend', end);
@@ -130,7 +131,7 @@ export function createDesignerInspectorValueControl({
 			if (destroyed) return;
 			destroyed = true;
 			input.removeEventListener('input', onInput);
-			input.removeEventListener('change', commit);
+			input.removeEventListener('change', changed);
 			input.removeEventListener('blur', commit);
 			input.removeEventListener('compositionstart', begin);
 			input.removeEventListener('compositionend', end);
