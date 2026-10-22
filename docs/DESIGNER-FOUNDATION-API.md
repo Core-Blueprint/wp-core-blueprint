@@ -136,7 +136,9 @@ The global facade exposes the same capabilities under `window.cbCore.designEdito
 
 Navigation is available as `window.cbCore.designEditor.shell.navigation.create` and the frozen extension as `shell.paletteRoles`. Navigation remains distinct from Layers and is not an editor profile.
 
-### Designer Sidebar Layout & Iconography Standard v1 (source candidate)
+### Designer Sidebar Layout & Iconography Standard v1 (canonical SOURCE contract; installed acceptance pending)
+
+**Authority decision, 21 October 2026:** the Base Mail source layout, `DESIGNER-LAYOUT-CONTRACT.md` and the public palette/sidebar factories define the canonical first-party integration target. This resolves the former right-hand Layers / separate Dynamic Data ambiguity. It does **not** promote an untested consumer build or Base v2 history candidate to an installed/released capability. Consumers pin and verify the exact Base PHP/ESM/CSS package before browser acceptance.
 
 - Left rail: **Elements** and, only when supplied, **Layers**. Set `data-cb-design-shell-group="palette"` on matching tab and panel. Set `data-cb-design-shell-palette-role="elements|layers"` on tabs. Base owns tab behavior/icons; consumers own panel contents and selection.
 - Right rail: **Inspector** and optional **Settings**. Map them with `data-cb-design-shell-sidebar-role="inspector|settings"`. Selecting a Layer must update Inspector context without switching or hiding the right panel.
@@ -148,7 +150,8 @@ Navigation is available as `window.cbCore.designEditor.shell.navigation.create` 
 - **Every sidebar tab label is one word.** CSS always keeps tabs to one line, with `text-overflow: ellipsis` as an exception fallback for accidental long labels or translations. Full labels remain available through `aria-label` and `title`; icons never shrink.
 - Use `decorateDesignerElement(control, semanticType, { label, icon })` for palette items. Base chooses `heading-1`, `align-left`, `image`, `mouse-pointer-click` or safe `shapes` fallback; a recognized curated icon may be requested by a consumer. No private icon module imports.
 - Designers without Layers (for example Automations) **do not render a Layers tab**. Optional data and actions stay absent rather than producing placeholders.
-- The legacy separate Dynamic Data tab and right-hand Layers placement are not part of the new consumer layout standard. This source candidate does not move extension markup automatically; each extension must adapt its own template via the public Base contract.
+- A separate Dynamic Data tab, right-hand Layers, and consumer-owned replacements for Base rails **fail the canonical source layout**. This contract decision does not change extension markup automatically. Newsletter, Reports, Evaluator and other consumers require their own version-pinned integration checks and explicit acceptance; no Base-only source test can certify their installed behavior.
+- A Layers click in the left palette keeps Layers active while updating the right Inspector. For profile-bound sessions, `createDesignerSelectionController()` supplies source-aware selection and synchronization. Domain-neutral `createDomainSession()` does not expose the profile-bound selection API; its consumers must implement domain selection mapping while reusing Base Layers and Inspector presentation.
 
 
 
