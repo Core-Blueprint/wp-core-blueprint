@@ -98,7 +98,11 @@ final class InstalledVerifier {
 				}
 				$required[$css['path']] = true;
 			}
-			foreach ( $manifest['packageIdentity']['moduleStamps'] ?? [] as $relative => $stamp ) {
+			$module_stamps = $manifest['packageIdentity']['moduleStamps'] ?? null;
+			if ( ! is_array( $module_stamps ) ) {
+				return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+			}
+			foreach ( $module_stamps as $relative => $stamp ) {
 				if ( ! is_string( $relative ) || ! isset( $manifest['moduleGraph'][$relative] )
 					|| ! is_string( $stamp ) ) {
 					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
