@@ -188,7 +188,7 @@ PLATFORM_REQUIRED = (
     PLATFORM_WITNESS_FILE,
 )
 PLATFORM_IMPORT_RE = re.compile(
-    r'\\b(?:from|import)\\s+[\\'\\"](?P<path>\\.{1,2}/[^\\'\\"]+\\.js)(?:\\?cb-design=[a-f0-9]+)?[\\'\\"]'
+    r"\b(?:from|import)\s+['\"](?P<path>\.{1,2}/[^'\"]+\.js)(?:\?cb-design=[a-f0-9]+)?['\"]"
 )
 
 
@@ -231,10 +231,10 @@ def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str
             payload = payloads[path]
             if b"__cbPlatformModuleStamp" in payload:
                 fail("Source must not mint its own package module stamp: " + path)
-            if re.search(rb"\\bimport\\s*\\(", payload):
+            if re.search(rb"\bimport\s*\(", payload):
                 fail("Designer profile imports must remain static: " + path)
             payloads[path] = payload + (
-                "\\nexport const __cbPlatformModuleStamp = " + json.dumps(stamp) + ";\\n"
+                "\nexport const __cbPlatformModuleStamp = " + json.dumps(stamp) + ";\n"
             ).encode("utf-8")
             stamps[path] = stamp
 
@@ -250,7 +250,7 @@ def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str
     rule = PLATFORM_WITNESS_SELECTOR + "{--cb-artifact-witness:" + witness + ";}"
     if rule.encode("ascii") in css or b"--cb-artifact-witness" in css:
         fail("Designer shell witness already exists in source CSS.")
-    payloads[path] = css + b"\\n" + rule.encode("ascii") + b"\\n"
+    payloads[path] = css + b"\n" + rule.encode("ascii") + b"\n"
 
     files_sha = {
         path: hashlib.sha256(payload).hexdigest()
