@@ -1,4 +1,4 @@
-import { canonicalSaveJSON, strictJsonCopy } from './persisted-fields.js';
+import { canonicalSaveJSON, deepFreezeSaveJSON, strictJsonCopy } from './persisted-fields.js';
 
 const hex = (bytes) => [...new Uint8Array(bytes)]
 	.map((byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -13,7 +13,7 @@ const revision = (value) => typeof value === 'string'
 	&& (value.length < 19 || (value.length === 19 && value <= '9223372036854775807'));
 
 const equal = (a, b) => canonicalSaveJSON(a) === canonicalSaveJSON(b);
-const requireSnapshot = (host, fields) => {
+const requireSnapshot = (host, fields, revisionOverride = null) => {
 	const context = host.saveContext();
 	if (!context || context.ready !== true || context.canSave !== true
 		|| !revision(context.storeRevision) || !Number.isSafeInteger(context.contextEpoch)
@@ -27,16 +27,16 @@ const requireSnapshot = (host, fields) => {
 		throw new Error('SAVE_INVALID');
 	}
 	const fieldCheckpoint = fields.snapshot();
-	if (context.registryFingerprint !== fields.fingerprint) {
+	if (context.registryFingerprint !== fields.registryFingerprint) {
 		throw new Error('SAVE_CONTEXT_CHANGED');
 	}
 	return Object.freeze({
 		saveToken: captured.token, // PRIVATE: never passed to serialize/submit.
-		project: Object.freeze(strictJsonCopy(captured.submittedProject)),
+		project: deepFreezeSaveJSON(captured.submittedProject),
 		projectRevision: captured.revision,
 		fields: fieldCheckpoint.fields,
 		fieldRevision: fieldCheckpoint.fieldRevision,
-		context: Object.freeze({ ...context }),
+		context: Object.freeze({ ...context, storeRevision: revisionOverride ?? context.storeRevision }),
 	});
 };
 
@@ -69,7 +69,7 @@ function correlation(receipt, evidence) {
  * serialize(frozenCheckpoint), submit(payload,opts), lookupOperation(evidence,opts),
  * verifyReceipt(receipt,evidence), canSave(), destroy().
  */
-export function createSaveCoordinator({ host, fields, adapter, onStateChange = () => {} }) {
+export function createSaveCoordinator({ host, fields, adapter }) {
 	if (!host || !fields || !adapter
 		|| ['saveContext', 'captureSave', 'rebase', 'validateAcceptedProject', 'isProjectDirty']
 			.some((key) => typeof host[key] !== 'function')
@@ -82,10 +82,19 @@ export function createSaveCoordinator({ host, fields, adapter, onStateChange = (
 	let flight = null;
 	let destroyed = false;
 	let acceptedStoreRevision = null;
+	const listeners = new Set();
+	const lifecycle = () => Object.freeze({
+		state,
+		dirty: host.isProjectDirty() || fields.snapshot().dirty,
+		operationId: pending?.evidence.operationId ?? null,
+		blocked: blocksContextTransition(),
+	});
 	const notify = (next) => {
 		state = next;
-		try { onStateChange(Object.freeze({ state: next, blocked: blocksContextTransition() })); }
-		catch (_) { /* Host notification must not change Save truth. */ }
+		for (const listener of [...listeners]) {
+			if (!listeners.has(listener)) continue;
+			try { listener(lifecycle()); } catch (_) { /* Observers cannot mutate Save truth. */ }
+		}
 	};
 	const blocksContextTransition = () => [
 		'CHECKPOINTED', 'SUBMITTING', 'RECEIPT_VERIFIED',
@@ -137,7 +146,7 @@ export function createSaveCoordinator({ host, fields, adapter, onStateChange = (
 		} catch (error) {
 			pending = Object.freeze({ ...operation, durableReceipt: receipt });
 			notify('PERSISTED_UNSYNCHRONIZED');
-			return Object.freeze({ status: 'persisted_unsynchronized', reason: error?.code || 'SAVE_REPLAY_CONFLICT' });
+			return Object.freeze({ status: 'persisted-unsynchronized', reason: error?.code || 'SAVE_REPLAY_CONFLICT' });
 		}
 		fields.commitBaseline(acceptedFields);
 		acceptedStoreRevision = receipt.acceptedStoreRevision;
@@ -148,9 +157,9 @@ export function createSaveCoordinator({ host, fields, adapter, onStateChange = (
 	};
 
 	const performSave = async () => {
-		if (destroyed || blocksContextTransition() || pending) return Object.freeze({ status: 'blocked' });
+		if (destroyed || blocksContextTransition() || pending) return Object.freeze({ status: 'refused', code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
 		if (adapter.canSave() !== true) return Object.freeze({ status: 'refused' });
-		const checkpoint = requireSnapshot(host, fields); // One synchronous joint capture.
+		const checkpoint = requireSnapshot(host, fields, acceptedStoreRevision); // One synchronous joint capture.
 		const { context } = checkpoint;
 		const operationId = crypto.randomUUID().replaceAll('-', '');
 		const fieldsJSON = checkpoint.fields;
@@ -176,7 +185,7 @@ export function createSaveCoordinator({ host, fields, adapter, onStateChange = (
 		]);
 		if (host.saveContext()?.contextEpoch !== context.contextEpoch) {
 			notify('READY_DIRTY');
-			return Object.freeze({ status: 'context_changed' });
+			return Object.freeze({ status: 'refused', code: 'SAVE_CONTEXT_CHANGED' });
 		}
 		const evidence = Object.freeze({
 			operationId, blogId: context.blogId, actorId: context.actorId,
@@ -225,7 +234,7 @@ export function createSaveCoordinator({ host, fields, adapter, onStateChange = (
 	};
 
 	const recover = async () => {
-		if (destroyed || state !== 'UNKNOWN' || !pending) return Object.freeze({ status: 'blocked' });
+		if (destroyed || state !== 'UNKNOWN' || !pending) return Object.freeze({ status: 'refused', code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
 		notify('RECONCILING');
 		let response;
 		try {
@@ -254,13 +263,13 @@ export function createSaveCoordinator({ host, fields, adapter, onStateChange = (
 		get pendingOperationId() { return pending?.evidence.operationId ?? null; },
 		get blocksContextTransition() { return blocksContextTransition(); },
 		async save() {
-			if (flight) return Object.freeze({ status: 'blocked' });
+			if (flight) return Object.freeze({ status: 'refused', code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
 			flight = performSave();
 			try { return await flight; }
 			finally { flight = null; }
 		},
 		async recover() {
-			if (flight) return Object.freeze({ status: 'blocked' });
+			if (flight) return Object.freeze({ status: 'refused', code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
 			flight = recover();
 			try { return await flight; }
 			finally { flight = null; }
