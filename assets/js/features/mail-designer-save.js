@@ -9,6 +9,7 @@ if (root) {
 	const shell = root.querySelector('[data-cb-design-shell]');
 	const ajaxUrl = String(root.dataset.ajaxUrl || '').trim();
 	let saveController = null;
+	let outcomeUnknown = false;
 
 	const announceSaveState = (state, message = '') => {
 		shell?.dispatchEvent(new CustomEvent('cb:design-shell:savechange', {
@@ -32,8 +33,10 @@ if (root) {
 	};
 
 	const saveInPlace = async () => {
-		if (!form || !ajaxUrl || saveController) return;
+		if (!form || !ajaxUrl || saveController || outcomeUnknown) return;
 		let captured = null;
+		let requestStarted = false;
+		let responseParsed = false;
 		const controller = new AbortController();
 		try {
 			captured = requestCapture();
@@ -46,6 +49,7 @@ if (root) {
 			body.set('subject', captured.subject);
 			body.set('project_json', JSON.stringify(captured.checkpoint.submittedProject));
 			body.set('expected_revision', captured.revision);
+			requestStarted = true;
 			const response = await fetch(ajaxUrl, {
 				method: 'POST',
 				credentials: 'same-origin',
@@ -53,6 +57,7 @@ if (root) {
 				signal: controller.signal,
 			});
 			const payload = await response.json();
+			responseParsed = true;
 			if (!response.ok || payload?.success !== true) {
 				throw new Error(payload?.data?.message || 'The mail template could not be saved.');
 			}
@@ -71,7 +76,8 @@ if (root) {
 			root.dispatchEvent(new CustomEvent('cb:mail:savefailed', {
 				detail: Object.freeze({ captured }),
 			}));
-			announceSaveState('error', error?.name === 'AbortError'
+			if (requestStarted && !responseParsed) outcomeUnknown = true;
+			announceSaveState(outcomeUnknown ? 'unknown' : 'error', outcomeUnknown
 				? 'Mail save outcome is uncertain. Reload before saving.'
 				: error?.message || 'The mail template could not be saved.');
 		} finally {
