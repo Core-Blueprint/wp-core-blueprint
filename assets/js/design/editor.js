@@ -427,6 +427,7 @@ export const attachTrustedDesignerHost = ({ root, createHost, bootstrap } = {}) 
 			return createDesignerShell(stagedRoot, {
 				session: editor,
 				platformStaged: true,
+				platformSignal: signal,
 			});
 		};
 		host = createHost(Object.freeze({ root, bootstrap, createShell }));
