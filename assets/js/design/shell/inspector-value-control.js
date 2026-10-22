@@ -13,7 +13,12 @@ export function createDesignerInspectorValueControl({
 		throw new TypeError('INSPECTOR_SCHEMA_INVALID');
 	}
 	const type = schema.type;
-	if (type === 'string' && !Array.isArray(schema.enum)) {
+	// HTML color picker only for a declared string field whose current value
+	// is a valid hex color and whose control identity describes a color.
+	const colorControl = type === 'string' && !Array.isArray(schema.enum)
+		&& /(?:color|background|accent|foreground)/i.test(key)
+		&& typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+	if (type === 'string' && !Array.isArray(schema.enum) && !colorControl) {
 		const text = createDesignerInspectorTextControl({
 			key, label, value, multiline,
 			documentRef,
@@ -54,6 +59,8 @@ export function createDesignerInspectorValueControl({
 		}
 	} else if (type === 'boolean') {
 		input.type = 'checkbox';
+	} else if (colorControl) {
+		input.type = 'color';
 	} else {
 		input.type = 'number';
 		if (type === 'integer') input.step = '1';
@@ -78,6 +85,7 @@ export function createDesignerInspectorValueControl({
 				? schema.enum[idx] : undefined;
 		}
 		if (type === 'boolean') return input.checked;
+		if (colorControl) return /^#[0-9a-f]{6}$/i.test(input.value) ? input.value : undefined;
 		if (input.value.trim() === '') return undefined;
 		const number = Number(input.value);
 		if (!Number.isFinite(number) || (type === 'integer' && !Number.isSafeInteger(number))
