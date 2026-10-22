@@ -15,7 +15,12 @@ final class ModulePreflight {
 	public function verify( FrozenRegistry $registry, callable $is_registered ): array {
 		$missing = [];
 		foreach ( $registry->modules() as $module ) {
-			if ( ! $is_registered( $module['id'] ) ) {
+			try {
+				$registered = true === $is_registered( $module['id'] );
+			} catch ( \Throwable $error ) {
+				$registered = false;
+			}
+			if ( ! $registered ) {
 				$missing[] = $module['id'];
 			}
 		}

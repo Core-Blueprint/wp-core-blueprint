@@ -42,6 +42,15 @@ final class RegistryCompiler {
 		$types = $this->design_types->definitions();
 		$capabilities = $this->capabilities->definitions();
 		$grants = $this->authorizations->definitions();
+		// Reject any refused Base-owned registration claim before publication.
+		$kernel_failures = array_merge(
+			$this->design_types->failures(),
+			$this->capabilities->failures(),
+			$this->authorizations->failures()
+		);
+		if ( $kernel_failures ) {
+			throw new \DomainException( in_array( 'REGISTRY_COLLISION', $kernel_failures, true ) ? 'REGISTRY_COLLISION' : 'REGISTRY_INVALID' );
+		}
 		$module_declarations = $catalog->all();
 		$module_map = [];
 		$dependencies = [];
@@ -142,20 +151,34 @@ final class RegistryCompiler {
 			self::keys( $component, [ 'id', 'owner', 'profileId', 'moduleId', 'schemaId', 'requires' ], [ 'requires' ] );
 			if ( ! $this->providers->has_canonical( $component['owner'] ) || ! isset( $profile_ids[ $component['profileId'] ] )
 				|| $profile_ids[ $component['profileId'] ]['owner'] !== $component['owner'] || ! isset( $module_map[ $component['moduleId'] ] )
-				|| ! is_string( $component['schemaId'] ) ) {
+				|| $module_map[ $component['moduleId'] ]['owner'] !== $component['owner']
+				|| ! is_string( $component['schemaId'] ) || ! self::strings( $component['requires'] ?? [] ) ) {
 				self::invalid();
 			}
 		}
 		$component_list = $components->all();
 		$component_ids = array_column( $component_list, null, 'id' );
+		foreach ( $component_list as $component ) {
+			$schema = $profile_ids[ $component['profileId'] ]['schemaSnapshot'];
+			$registered_schema_ids = array_column( $schema['domainSchemas'], 'id' );
+			$registered_schema_ids = array_merge( $registered_schema_ids, array_filter( array_column( $schema['nodeTypes'], 'propertiesSchemaId' ), 'is_string' ) );
+			if ( ! in_array( $component['schemaId'], $registered_schema_ids, true ) ) {
+				self::invalid();
+			}
+		}
+		$this->sorter->sort( array_column( $component_list, 'requires', 'id' ) );
 		foreach ( $controls->all() as $control ) {
 			self::keys( $control, [ 'id', 'owner', 'profileId', 'componentId', 'moduleId', 'requires' ], [ 'requires' ] );
 			if ( ! $this->providers->has_canonical( $control['owner'] ) || ! isset( $profile_ids[ $control['profileId'] ] )
 				|| $profile_ids[ $control['profileId'] ]['owner'] !== $control['owner'] || ! isset( $component_ids[ $control['componentId'] ] )
-				|| ! isset( $module_map[ $control['moduleId'] ] ) ) {
+				|| ! isset( $module_map[ $control['moduleId'] ] )
+				|| $module_map[ $control['moduleId'] ]['owner'] !== $control['owner']
+				|| $component_ids[ $control['componentId'] ]['profileId'] !== $control['profileId']
+				|| ! self::strings( $control['requires'] ?? [] ) ) {
 				self::invalid();
 			}
 		}
+		$this->sorter->sort( array_column( $controls->all(), 'requires', 'id' ) );
 		$graph = [
 			'contractVersion' => 1,
 			'schemaGeneration' => 1,

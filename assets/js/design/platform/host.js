@@ -228,7 +228,15 @@ export function createPlatformHost({
 			pendingMount = (async () => {
 				try {
 					const holder = await stage(initialContext);
-					commitStage(holder);
+					try {
+						commitStage(holder);
+					} catch (error) {
+						holder.scope.abort();
+						await queue.drain();
+						const result = await holder.scope.dispose();
+						if (!result.ok) diagnostics(result.code);
+						throw error;
+					}
 					return host;
 				} catch (error) {
 					state = 'IDLE';
@@ -287,7 +295,11 @@ export function createPlatformHost({
 			if (unmountPromise) return unmountPromise;
 			if (state === 'IDLE') return Promise.resolve(true);
 			if (pendingMount || transition || state !== 'READY') return Promise.reject(refusal('HOST_SWITCH_BUSY'));
-			try { ensureGate('unmount'); } catch (error) { return Promise.reject(error); }
+			try {
+				ensureGate('unmount');
+				// The parameterless A1 unmount() never silently discards dirty data.
+				if (active.save.status()?.dirty !== false) throw refusal('HOST_CONTEXT_REFUSED');
+			} catch (error) { return Promise.reject(error); }
 			unmountPromise = (async () => {
 				const closing = active;
 				state = 'DISPOSING';

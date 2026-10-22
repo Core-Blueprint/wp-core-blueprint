@@ -28,6 +28,7 @@ final class ContextBootstrap {
 		if ( null === $profile || ! FrozenRegistry::pure( $identity ) || ! FrozenRegistry::pure( $evidence )
 			|| 1 !== ( $evidence['contractVersion'] ?? null ) || 'verified' !== ( $evidence['verificationStatus'] ?? null )
 			|| ! hash_equals( $registry->fingerprint(), (string) ( $evidence['registryFingerprint'] ?? '' ) )
+			|| ! hash_equals( FrozenRegistry::digest( $registry->modules(), 'ModuleGraphV1' ), (string) ( $evidence['moduleGraphFingerprint'] ?? '' ) )
 			|| ! $authorize( $identity, $profile ) ) {
 			throw new \DomainException( 'HOST_CONTEXT_REFUSED' );
 		}
