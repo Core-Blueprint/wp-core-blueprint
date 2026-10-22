@@ -165,7 +165,7 @@ final class StableSchemaRegistry {
 				|| 1 !== $descriptor['contractVersion']
 				|| ! is_string( $descriptor['id'] ) || '' === $descriptor['id']
 				|| ! is_string( $descriptor['saveKey'] )
-				|| ! preg_match( '/^[a-z][A-Za-z0-9_]*$/D', $descriptor['saveKey'] )
+				|| ! preg_match( '/^[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)*$/D', $descriptor['saveKey'] )
 				|| ! is_string( $descriptor['labelKey'] ) || '' === $descriptor['labelKey']
 				|| ! is_array( $descriptor['valueSchema'] )
 				|| ! in_array( $descriptor['placement'], [ 'header', 'settings' ], true )
