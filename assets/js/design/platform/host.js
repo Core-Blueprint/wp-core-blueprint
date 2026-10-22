@@ -30,11 +30,12 @@ export function createPlatformHost({
 	createSaveCoordinator,
 	createShell,
 	readPersistedFields,
+	updatePersistedField,
 	onDiagnostic = null,
 } = {}) {
 	if (!root?.ownerDocument || !canvasRoot || !root.contains(canvasRoot)
-		|| ['resolveRegistryView','createSessionBridge','createSaveCoordinator','createShell','readPersistedFields']
-			.some((name) => typeof ({resolveRegistryView,createSessionBridge,createSaveCoordinator,createShell,readPersistedFields})[name] !== 'function')) {
+		|| ['resolveRegistryView','createSessionBridge','createSaveCoordinator','createShell','readPersistedFields','updatePersistedField']
+			.some((name) => typeof ({resolveRegistryView,createSessionBridge,createSaveCoordinator,createShell,readPersistedFields,updatePersistedField})[name] !== 'function')) {
 		throw new TypeError('HOST_CONTEXT_REFUSED');
 	}
 	if (leasedRoots.has(root)) throw refusal('HOST_ALREADY_MOUNTED');
@@ -77,6 +78,16 @@ export function createPlatformHost({
 			return immutableData(readPersistedFields(holder.save));
 		},
 		selection() { return holder.bridge.selection(); },
+		setPersistedField(key, value) {
+			assertReady(holder);
+			const status = holder.save.status();
+			if (status?.blocked === true || !['READY_CLEAN','READY_DIRTY'].includes(status?.state)) {
+				throw refusal('SAVE_PENDING_CONTEXT_BLOCKED');
+			}
+			const changed = updatePersistedField(holder.save, key, value);
+			if (changed) void refresh('command').catch((e) => diagnostics(e?.code || 'HOST_CONTEXT_REFUSED'));
+			return changed;
+		},
 		select(refs, primary = null) {
 			assertReady(holder);
 			return holder.bridge.select(refs, primary);
