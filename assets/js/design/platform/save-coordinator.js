@@ -146,14 +146,14 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 		} catch (error) {
 			pending = Object.freeze({ ...operation, durableReceipt: receipt });
 			notify('PERSISTED_UNSYNCHRONIZED');
-			return Object.freeze({ status: 'persisted-unsynchronized', reason: error?.code || 'SAVE_REPLAY_CONFLICT' });
+			return Object.freeze({ status: 'persisted-unsynchronized', operationId: evidence.operationId, code: error?.code || 'SAVE_REPLAY_CONFLICT' });
 		}
 		fields.commitBaseline(acceptedFields);
 		acceptedStoreRevision = receipt.acceptedStoreRevision;
 		pending = null;
 		const dirty = host.isProjectDirty() || fields.snapshot().dirty;
 		notify(dirty ? 'READY_DIRTY' : 'READY_CLEAN');
-		return Object.freeze({ status: 'committed', dirty, storeRevision: acceptedStoreRevision });
+		return Object.freeze({ status: 'committed', operationId: evidence.operationId, dirty, storeRevision: acceptedStoreRevision });
 	};
 
 	const performSave = async () => {
@@ -227,7 +227,7 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 			|| response?.status === 'idempotency_reused') {
 			pending = null; // Authenticated server reported a rolled-back no-write.
 			notify('READY_DIRTY');
-			return Object.freeze({ status: response.status });
+			return Object.freeze({ status: response.status, operationId });
 		}
 		notify('UNKNOWN');
 		return Object.freeze({ status: 'unknown', operationId });
