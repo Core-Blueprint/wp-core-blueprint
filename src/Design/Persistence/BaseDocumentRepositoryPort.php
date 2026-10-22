@@ -49,8 +49,10 @@ final class BaseDocumentRepositoryPort extends BaseDocumentTransactionPort {
 			|| (int) get_current_blog_id() !== $intent->blog_id
 			|| (int) get_current_user_id() !== $intent->actor_id
 			|| ! function_exists( 'current_user_can' )
-			|| ! current_user_can( 'edit_posts' )
-			|| ! Repository::valid_identity( $intent->resource_type, $intent->resource_key ) ) {
+			|| ! Repository::valid_identity( $intent->resource_type, $intent->resource_key )
+			|| ! \CoreBlueprint\Core\Design\Editor\PlatformTransport::authorized_resource(
+				$intent->profile_id, $intent->resource_type, $intent->resource_key
+			) ) {
 			return false;
 		}
 		try {
