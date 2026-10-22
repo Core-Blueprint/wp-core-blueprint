@@ -1,3 +1,6 @@
+import { bindRegisteredCommand, bindRegisteredBatch } from './core/commands.js';
+import { createPlatformHost } from './platform/host.js';
+import { createRegistryView } from './platform/registry.js';
 import {
 	CommandHistory,
 	EditorState,
@@ -364,6 +367,174 @@ export const createDomainSession = ({
 };
 
 /**
+ * Single Host-owned command, selection and History authority for a staged
+ * context. The only executable command definitions originate in its trusted
+ * installed profile module, never the document, DOM or PHP transport.
+ */
+export const createPlatformSessionBridge = ({
+	initialProject, context, profile, profileModule, schemaSnapshot,
+} = {}) => {
+	if (!profileModule || typeof profileModule.validateProject !== 'function'
+		|| !context || !Number.isSafeInteger(context.contextEpoch)
+		|| !profile || schemaSnapshot?.profileId !== profile.id
+		|| typeof profileModule.resolveCommand !== 'function'
+		|| typeof profileModule.validateCommandInput !== 'function'
+		|| typeof profileModule.authorizeCommand !== 'function') {
+		throw new TypeError('HOST_CAPABILITY_UNAVAILABLE');
+	}
+	const projectState = new ProjectState(initialProject, {
+		validate: (candidate) => profileModule.validateProject(candidate, schemaSnapshot),
+	});
+	const editorState = new EditorState();
+	editorState.selection.configureTyped({
+		contextEpoch: context.contextEpoch,
+		resolveEntity: typeof profileModule.resolveEntity === 'function'
+			? (ref, project) => profileModule.resolveEntity(ref, project, context) === true
+			: () => false,
+	});
+	const history = new CommandHistory(projectState, editorState);
+	const subscriptions = new Set();
+	let disposed = false;
+	const active = () => {
+		if (disposed) throw new Error('HOST_CONTEXT_REFUSED');
+	};
+	const policies = Object.freeze({
+		validateInput: (definition, input) => profileModule.validateCommandInput(definition, input, schemaSnapshot),
+		authorize: (definition, project, input) =>
+			profileModule.authorizeCommand(definition, project, input, context) === true,
+	});
+	const resolve = (id) => profileModule.resolveCommand(id);
+	return Object.freeze({
+		project() { active(); return projectState.current(); },
+		snapshot() { active(); return projectState.snapshot(); },
+		selection() { active(); return editorState.selection.typedSnapshot(); },
+		select(refs, primary = null) {
+			active();
+			history.assertWritable();
+			return editorState.selection.setRefs(refs, primary, {
+				project: projectState.current(), contextEpoch: context.contextEpoch,
+				source: 'host', action: 'select',
+			});
+		},
+		execute(id, input) {
+			active();
+			const definition = resolve(id);
+			if (!definition || definition.id !== id) throw new Error('COMMAND_REFUSED');
+			return history.execute(bindRegisteredCommand(definition, input, policies));
+		},
+		executeBatch(requests) {
+			active();
+			const compound = bindRegisteredBatch(requests, {resolveCommand: resolve, ...policies});
+			return history.executeBatch(compound.steps);
+		},
+		undo() { active(); return history.undo(); },
+		redo() { active(); return history.redo(); },
+		historyStatus() { active(); return history.status(); },
+		subscribe(listener) {
+			active();
+			if (typeof listener !== 'function') throw new TypeError('HOST_CAPABILITY_UNAVAILABLE');
+			const notify = () => listener();
+			const offProject = projectState.subscribe(notify);
+			const offSelection = editorState.selection.subscribe(notify);
+			const offHistory = history.subscribeHistory(notify);
+			const unsubscribe = () => {
+				offProject();
+				offSelection();
+				offHistory();
+				subscriptions.delete(unsubscribe);
+			};
+			subscriptions.add(unsubscribe);
+			return unsubscribe;
+		},
+		// Private SaveCoordinator integration. Tokens never cross the adapter.
+		captureSave() { active(); return history.captureSave(); },
+		rebase(options) { active(); return history.rebase(options); },
+		baselineSnapshot() { active(); return history.baselineSnapshot(); },
+		validateAcceptedProject(project) {
+			active();
+			profileModule.validateProject(project, schemaSnapshot);
+		},
+		isProjectDirty() {
+			active();
+			return JSON.stringify(projectState.current()) !== JSON.stringify(history.baselineSnapshot());
+		},
+		dispose() {
+			if (disposed) return;
+			disposed = true;
+			for (const off of [...subscriptions]) off();
+			history.dispose();
+		},
+	});
+};
+
+/**
+ * Real Base chrome, created only in Host's disconnected staging canvas.
+ * The registered RenderAdapter owns the inner render surface, not this toolbar.
+ * No template HTML or document-provided event handlers are executed.
+ */
+const composePlatformChrome = (root) => {
+	if (root.childNodes.length || root.isConnected) throw new Error('HOST_CONTEXT_REFUSED');
+	const doc = root.ownerDocument;
+	root.classList.add('cb-core-design-shell');
+	root.setAttribute('data-cb-design-shell', '');
+	const node = (tag, className, attrs = {}, label = null) => {
+		const el = doc.createElement(tag);
+		if (className) el.className = className;
+		for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value);
+		if (label !== null) el.textContent = label;
+		return el;
+	};
+	const button = (label, attribute, value = '') => node('button', 'button cb-core-button', {
+		type: 'button', [attribute]: value,
+	}, label);
+	const toolbar = node('div', 'cb-core-design-shell__toolbar', {
+		role: 'toolbar', 'aria-label': 'Designer actions',
+	});
+	const history = node('div', 'cb-core-design-shell__toolbar-group');
+	const undo = button('Undo', 'data-cb-design-shell-undo');
+	const redo = button('Redo', 'data-cb-design-shell-redo');
+	undo.disabled = true;
+	redo.disabled = true;
+	history.append(undo, redo);
+	const fullscreen = button('Fullscreen', 'data-cb-design-shell-fullscreen');
+	fullscreen.setAttribute('aria-pressed', 'false');
+	const save = button('Save', 'data-cb-design-shell-primary-action');
+	save.classList.add('button-primary', 'cb-core-button--primary');
+	toolbar.append(history, fullscreen, save);
+	const workspace = node('div', 'cb-core-design-shell__workspace');
+	const palette = node('section', 'cb-core-design-shell__palette', {'aria-label': 'Elements and layers'});
+	const canvas = node('section', 'cb-core-design-shell__canvas', {'aria-label': 'Design canvas'});
+	const surface = node('div', 'cb-core-design-shell__canvas-workarea', {'data-cb-platform-render-surface': ''});
+	canvas.append(surface);
+	const sidebar = node('aside', 'cb-core-design-shell__sidebar', {'aria-label': 'Inspector and settings'});
+	const tabs = (container, group, definitions) => {
+		const tablist = node('div', 'cb-core-design-shell__tabs', {role: 'tablist'});
+		for (const [id, label] of definitions) {
+			const attrs = {'data-cb-design-shell-tab': id, role: 'tab', 'aria-selected': 'false'};
+			if (group) attrs['data-cb-design-shell-group'] = group;
+			tablist.append(node('button', 'cb-core-design-shell__tab', {
+				...attrs, type: 'button',
+			}, label));
+		}
+		container.append(tablist);
+		for (const [id] of definitions) {
+			const attrs = {'data-cb-design-shell-panel': id};
+			if (group) attrs['data-cb-design-shell-group'] = group;
+			const panel = node('div', 'cb-core-design-shell__panel', attrs);
+			panel.append(node('div', 'cb-core-design-shell__panel-body', {
+				'data-cb-platform-panel': id,
+			}));
+			container.append(panel);
+		}
+	};
+	tabs(palette, 'palette', [['elements','Elements'],['layers','Layers']]);
+	tabs(sidebar, null, [['inspector','Inspector'],['settings','Settings']]);
+	workspace.append(palette, canvas, sidebar);
+	root.append(toolbar, workspace);
+	return {save, undo, redo, surface};
+};
+
+/**
  * Trusted static-ESM A2 Host attachment boundary. The integration owner must
  * import the actual Host factory from platform/host.js and obtain bootstrap
  * from authorized PHP; neither is available in this SOURCE-only branch.
@@ -371,11 +542,18 @@ export const createDomainSession = ({
  * Do not expose this constructor on window.cbCore or treat its bootstrap
  * argument as proof of authorization: the Host validates trusted evidence.
  */
-export const attachTrustedDesignerHost = ({ root, createHost, bootstrap } = {}) => {
+export const attachTrustedDesignerHost = ({
+	root, canvasRoot, bootstrap, runtimeModules,
+	createHost = createPlatformHost,
+	createSaveCoordinator: connectSaveCoordinator,
+	readPersistedFields,
+} = {}) => {
 	if (!(root instanceof Element) || !root.matches('[data-cb-design-shell]')) {
 		throw new TypeError('Designer Platform requires a canonical shell root.');
 	}
-	if (typeof createHost !== 'function') {
+	if (typeof createHost !== 'function' || typeof connectSaveCoordinator !== 'function'
+		|| typeof readPersistedFields !== 'function'
+		|| !(runtimeModules instanceof Map) || !canvasRoot || !root.contains(canvasRoot)) {
 		throw new TypeError('Designer Platform requires a statically imported Host factory.');
 	}
 	if (!bootstrap || typeof bootstrap !== 'object' || Array.isArray(bootstrap)) {
@@ -383,6 +561,25 @@ export const attachTrustedDesignerHost = ({ root, createHost, bootstrap } = {}) 
 	}
 
 	const lease = claimDesignerHostRoot(root);
+	const stagedShells = new WeakMap();
+	const activeRegistries = new Map();
+	const registryFor = async (candidateBootstrap) => {
+		const registry = createRegistryView(candidateBootstrap, runtimeModules);
+		await registry.verify();
+		const key = JSON.stringify([registry.profileId, registry.identity]);
+		activeRegistries.set(key, registry);
+		return registry;
+	};
+	const connectSessionBridge = ({initialProject, context, profile, schemaSnapshot, signal}) => {
+		if (signal?.aborted) throw new Error('HOST_CONTEXT_REFUSED');
+		const key = JSON.stringify([profile.id, context]);
+		const registry = activeRegistries.get(key);
+		const module = registry?.moduleNamespace(profile.moduleId);
+		if (!module) throw new Error('HOST_MODULE_MISSING');
+		return createPlatformSessionBridge({
+			initialProject, context, profile, profileModule: module, schemaSnapshot,
+		});
+	};
 	let constructing = true;
 	let closed = false;
 	let inFlightUnmount = null;
@@ -418,19 +615,25 @@ export const attachTrustedDesignerHost = ({ root, createHost, bootstrap } = {}) 
 			// Luna 3 currently supplies an empty staging canvas. Real Base
 			// chrome must be composed there in the later joint integration;
 			// accepting an empty shell would falsely claim UI readiness.
-			if (!stagedRoot.querySelector('[data-cb-design-shell-fullscreen]')) {
-				throw new Error('HOST_CAPABILITY_UNAVAILABLE');
-			}
+			composePlatformChrome(stagedRoot);
 			// The outer shell root retains its exclusive lease throughout
 			// staging/switching. The detached stage is independently guarded
 			// against duplicate controllers by createDesignerShell().
-			return createDesignerShell(stagedRoot, {
+			const controller = createDesignerShell(stagedRoot, {
 				session: editor,
 				platformStaged: true,
 				platformSignal: signal,
 			});
+			stagedShells.set(stagedRoot, controller);
+			return controller;
 		};
-		host = createHost(Object.freeze({ root, bootstrap, createShell }));
+		host = createHost(Object.freeze({
+			root, canvasRoot, resolveRegistryView: registryFor,
+			createSessionBridge: connectSessionBridge,
+			createSaveCoordinator: connectSaveCoordinator,
+			readPersistedFields,
+			createShell,
+		}));
 		if (!host || host.root !== root
 			|| typeof host.mount !== 'function'
 			|| typeof host.switchContext !== 'function'
@@ -448,19 +651,30 @@ export const attachTrustedDesignerHost = ({ root, createHost, bootstrap } = {}) 
 	const assertActive = () => {
 		if (closed || inFlightUnmount) throw new Error('HOST_CONTEXT_REFUSED');
 	};
+	const publishCommitted = () => {
+		if (host.state !== 'READY') throw new Error('HOST_CONTEXT_REFUSED');
+		const canvas = canvasRoot.firstElementChild;
+		const shell = canvas ? stagedShells.get(canvas) : null;
+		if (!shell?.activatePlatformSession()) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+	};
+
 	return Object.freeze({
 		get root() { return root; },
 		get state() { return host.state; },
 		get profileId() { return host.profileId; },
 		get context() { return host.context; },
 		get editor() { return host.editor; },
-		mount(initialContext) {
+		async mount(initialContext) {
 			assertActive();
-			return host.mount(initialContext);
+			const result = await host.mount(initialContext);
+			publishCommitted();
+			return result;
 		},
-		switchContext(nextContext, options) {
+		async switchContext(nextContext, options) {
 			assertActive();
-			return host.switchContext(nextContext, options);
+			const result = await host.switchContext(nextContext, options);
+			publishCommitted();
+			return result;
 		},
 		refresh(reason) {
 			assertActive();
