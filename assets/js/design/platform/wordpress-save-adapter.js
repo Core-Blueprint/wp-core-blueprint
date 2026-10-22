@@ -146,6 +146,8 @@ async function activate() {
 	if(mail){
 		const form=origin.querySelector('[data-cb-mail-designer-form]');
 		if(form){form.hidden=true;form.setAttribute('inert','');}
+		const placeholder=origin.querySelector('[data-cb-platform-base-context]');
+		if(placeholder)placeholder.hidden=true;
 		origin.append(panel);
 	}else{
 		origin.hidden=true;
