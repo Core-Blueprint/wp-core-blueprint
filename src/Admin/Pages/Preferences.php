@@ -620,7 +620,7 @@ final class Preferences extends PageBase {
 		// Reports DesignDocumentAdapter::current() or render the previous form:
 		// those paths assume a different document and an independent editor.
 		if ( ! class_exists( '\\CoreBlueprint\\Core\\Reports\\State' )
-			|| ! \\CoreBlueprint\\Core\\Reports\\State::is_enabled() ) {
+			|| ! \CoreBlueprint\Core\Reports\State::is_enabled() ) {
 			$this->render_subsystem_missing( __( 'Reports is not enabled.', 'core-blueprint' ) );
 			return;
 		}
