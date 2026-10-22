@@ -905,6 +905,10 @@ export const attachTrustedDesignerHost = ({
 					}
 				}
 				refreshSettings();
+				// A field edit may dirty the joint Save without changing History.
+				// Refresh the ONE SaveCoordinator-derived button status after Host
+				// projection, never infer saved state from a toolbar event.
+				stagedSaveUI.get(stagedRoot)?.syncSaveUI();
 			};
 			stagedShells.set(stagedRoot, controller);
 			return Object.freeze({
