@@ -322,6 +322,14 @@ final class PlatformTransport {
 			if ( ! is_object( $diagnostics ) || ! method_exists( $diagnostics, 'has_errors' )
 				|| $diagnostics->has_errors() ) return false;
 		}
+		// Reports owns its Composer cardinality, singleton blocks and branding
+		// invariants. Reuse the exact native Reports product validator at both
+		// Repository read and transaction boundaries after product integration.
+		if ( Reports::PROFILE === $profile
+			&& class_exists( \CoreBlueprint\Core\Reports\Composer\NativeComposition::class )
+			&& ! \CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document( [
+				'project' => $project, 'fields' => $fields,
+			] ) ) return false;
 		return true;
 	}
 
