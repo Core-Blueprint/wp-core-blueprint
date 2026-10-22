@@ -86,8 +86,11 @@ final class Validator {
 		if ( 'integer' === $rule['type'] ) {
 			return is_int( $value ) && $value >= $rule['minimum'] && $value <= $rule['maximum'];
 		}
-		if ( ! is_string( $value ) || mb_strlen( $value, 'UTF-8' ) > ( $rule['maxLength'] ?? 65535 )
-			|| mb_strlen( $value, 'UTF-8' ) < ( $rule['minLength'] ?? 0 ) ) return false;
+		if ( ! is_string( $value ) ) return false;
+		$length = function_exists( 'mb_strlen' ) ? mb_strlen( $value, 'UTF-8' )
+			: preg_match_all( '/./us', $value );
+		if ( false === $length || $length > ( $rule['maxLength'] ?? 65535 )
+			|| $length < ( $rule['minLength'] ?? 0 ) ) return false;
 		if ( isset( $rule['enum'] ) ) return in_array( $value, $rule['enum'], true );
 		if ( ( $rule['maxLength'] ?? 0 ) === 32 ) {
 			return 1 === preg_match( '/^#[a-fA-F0-9]{6}$/D', $value );

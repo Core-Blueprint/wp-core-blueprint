@@ -15,6 +15,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class ApprovedManifestSource {
 	public static function base(): array {
+		// One authoritative result per PHP request, reused by Registry and REST.
+		static $cached = null;
+		if ( null !== $cached ) return $cached;
 		$manifest_path = rtrim( CB_CORE_DIR, '/\\' ) . '/' . ArtifactManifest::MANIFEST_PATH;
 		if ( ! is_file( $manifest_path ) || is_link( $manifest_path ) ) {
 			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
@@ -37,7 +40,7 @@ final class ApprovedManifestSource {
 			|| ! array_is_list( $identity['capabilities'] ) ) {
 			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
 		}
-		return [
+		return $cached = [
 			'approved' => [
 				'base' => [
 					'manifestSha256' => $manifest_digest,

@@ -25,9 +25,10 @@ final class Repository {
 		if ( ! self::valid_identity( $type, $key ) ) {
 			return [ 'status' => 'invalid' ];
 		}
-		if ( ! Schema::healthy() ) {
-			return [ 'status' => 'unavailable' ];
-		}
+		// Base owns schema reconciliation. A real SELECT distinguishes a missing
+		// document from an absent/unreadable table without repeating expensive
+		// information_schema inspections on every Designer context request.
+		// Writer paths still require Schema::healthy() before any mutation.
 		return self::read( $type, $key );
 	}
 

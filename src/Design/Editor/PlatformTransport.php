@@ -99,10 +99,21 @@ final class PlatformTransport {
 			if ( 'context' === $action ) return self::context( $request );
 			return self::operation( $request, 'recover' === $action );
 		} catch ( \Throwable $error ) {
-			// Do not downgrade an unknown commit outcome to a definite refusal.
-			return 'context' === $action
-				? self::deny( 'HOST_CONTEXT_REFUSED', 403 )
-				: new \WP_REST_Response( [ 'status' => 'unknown', 'code' => 'SAVE_UNKNOWN' ], 200 );
+			// Only genuine authorization denials are 403. Public responses use
+			// stable category codes, never internal exception details or paths.
+			// A Save failure remains UNKNOWN unless the transaction proves otherwise.
+			if ( 'context' !== $action ) {
+				return new \WP_REST_Response( [ 'status' => 'unknown', 'code' => 'SAVE_UNKNOWN' ], 200 );
+			}
+			$code = $error instanceof \DomainException ? $error->getMessage() : '';
+			if ( 'HOST_CONTEXT_REFUSED' === $code ) return self::deny( 'HOST_CONTEXT_REFUSED' );
+			if ( in_array( $code, [ 'ARTIFACT_RUNTIME_MISMATCH', 'HOST_MODULE_MISSING', 'CSS_RUNTIME_STALE' ], true ) ) {
+				return self::deny( 'DESIGNER_ASSETS_UNAVAILABLE', 503 );
+			}
+			if ( in_array( $code, [ 'SAVE_SCHEMA_UNAVAILABLE', 'SAVE_AUTHORITY_UNAVAILABLE' ], true ) ) {
+				return self::deny( 'SAVE_AUTHORITY_UNAVAILABLE', 503 );
+			}
+			return self::deny( 'DESIGNER_RUNTIME_UNAVAILABLE', 500 );
 		}
 	}
 
@@ -183,7 +194,7 @@ final class PlatformTransport {
 		$profile = (string) ( $data['profileId'] ?? '' );
 		$resource = (string) ( $data['resourceKey'] ?? '' );
 		$identity = self::identity( $profile, $resource );
-		if ( null === $identity || $data['resourceType'] !== $identity['type'] ) {
+		if ( null === $identity || ( $data['resourceType'] ?? null ) !== $identity['type'] ) {
 			return new \WP_REST_Response( [ 'status' => 'refused' ], 403 );
 		}
 		$registry = DesignerBootstrap::frozen_registry();
@@ -353,7 +364,9 @@ final class PlatformTransport {
 		if ( array_key_exists( 'enum', $schema ) && ( ! is_array( $schema['enum'] )
 			|| ! in_array( $value, $schema['enum'], true ) ) ) return false;
 		if ( is_string( $value ) ) {
-			$length = mb_strlen( $value, 'UTF-8' );
+			$length = function_exists( 'mb_strlen' ) ? mb_strlen( $value, 'UTF-8' )
+				: preg_match_all( '/./us', $value );
+			if ( false === $length ) return false;
 			if ( $length < ( $schema['minLength'] ?? 0 ) || $length > ( $schema['maxLength'] ?? 65535 ) ) return false;
 		}
 		if ( is_int( $value ) || is_float( $value ) ) {

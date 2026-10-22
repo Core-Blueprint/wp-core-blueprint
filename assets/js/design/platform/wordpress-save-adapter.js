@@ -114,9 +114,16 @@ const showRefusal=(container,code)=>{
 	const note=document.createElement('p');
 	note.className='notice notice-error';
 	note.setAttribute('role','alert');
-	note.textContent=String(code).toUpperCase()==='SCHEMA_UNSUPPORTED_GENERATION'
+	const category=String(code).toUpperCase();
+	note.textContent=category==='SCHEMA_UNSUPPORTED_GENERATION'
 		?'This document uses an unsupported development schema. No changes were made.'
-		:'The Designer could not verify your permissions, document or installed artifacts. Nothing was changed.';
+		:category==='SAVE_AUTHORITY_UNAVAILABLE'
+		?'The Designer document storage is unavailable. No changes were made.'
+		:category==='DESIGNER_ASSETS_UNAVAILABLE'
+		?'The Designer assets could not be loaded. No changes were made.'
+		:category==='DESIGNER_RUNTIME_UNAVAILABLE'
+		?'The Designer is temporarily unavailable. No changes were made.'
+		:'The Designer could not verify your permissions or document. Nothing was changed.';
 	container.replaceChildren(note);
 };
 

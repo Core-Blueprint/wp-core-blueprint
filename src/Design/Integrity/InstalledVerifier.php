@@ -6,9 +6,9 @@ namespace CoreBlueprint\Core\Design\Integrity;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Checks installed Base files against its canonical packaged manifest.
- * Detects mismatched or incomplete installations; this local consistency
- * check does not independently authenticate the software publisher.
+ * Checks only Designer-owned JS/CSS against its packaged manifest.
+ * Never scans the complete Base installation on a normal editor open.
+ * This detects stale Designer assets, not independent publisher authenticity.
  *
  * @internal
  */
@@ -52,50 +52,76 @@ final class InstalledVerifier {
 				return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
 			}
 
-			$files = [];
-			$iterator = new \RecursiveIteratorIterator(
-				new \RecursiveDirectoryIterator( $root, \FilesystemIterator::SKIP_DOTS )
-			);
-			foreach ( $iterator as $item ) {
-				if ( $item->isLink() || ! $item->isFile() ) {
-					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
-				}
-				$relative = substr( $item->getPathname(), strlen( $root ) + 1 );
-				if ( ! ArtifactManifest::valid_path( $relative ) ) {
-					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
-				}
-				if ( ArtifactManifest::MANIFEST_PATH === $relative ) {
-					continue;
-				}
-				if ( ! array_key_exists( $relative, $manifest['files'] ) ) {
-					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
-				}
-				$bytes = file_get_contents( $item->getPathname() );
-				if ( ! is_string( $bytes ) || ! is_string( $manifest['files'][$relative] )
-					|| ! preg_match( '/^[a-f0-9]{64}$/D', $manifest['files'][$relative] )
-					|| ! hash_equals( $manifest['files'][$relative], hash( 'sha256', $bytes ) ) ) {
-					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
-				}
-				$files[$relative] = $bytes;
-			}
-			if ( count( $files ) !== count( $manifest['files'] ) ) {
+			// Verify the assets this internal Designer actually uses, not every
+			// unrelated PHP/plugin file on each REST context request. Base and
+			// WordPress already own execution authorization and deployment.
+			$files = $manifest['files'];
+			if ( [] === $files ) {
 				return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
 			}
-			$css = array_map(
-				static fn ( array $entry ): array => [
-					'assetId' => $entry['assetId'],
-					'path' => $entry['path'],
-					'approvedCssWitness' => $entry['approvedCssWitness'],
-					'selector' => $entry['selector'],
-				],
-				$manifest['requiredCss']
-			);
-			$recalculated = ArtifactManifest::generate(
-				$files, $manifest['moduleGraph'], $css, $manifest['packageIdentity']
-			);
-			if ( ! hash_equals( $manifest['buildId'], $recalculated['buildId'] )
-				|| ! hash_equals( $raw, ArtifactManifest::json( $recalculated ) ) ) {
+			$build_input = '';
+			ksort( $files, SORT_STRING );
+			foreach ( $files as $relative => $digest ) {
+				if ( ! is_string( $relative ) || ! ArtifactManifest::valid_path( $relative )
+					|| ! is_string( $digest ) || ! preg_match( '/^[a-f0-9]{64}$/D', $digest ) ) {
+					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+				}
+				$build_input .= pack( 'N', strlen( $relative ) ) . $relative
+					. pack( 'N', strlen( $digest ) ) . $digest;
+			}
+			if ( ! hash_equals( $manifest['buildId'], hash( 'sha256', $build_input ) ) {
 				return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+			}
+			$required = [];
+			foreach ( $manifest['moduleGraph'] as $relative => $imports ) {
+				if ( ! is_string( $relative ) || ! str_ends_with( $relative, '.js' )
+					|| ! isset( $files[$relative] ) || ! is_array( $imports ) || ! array_is_list( $imports ) ) {
+					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+				}
+				$required[$relative] = true;
+				foreach ( $imports as $import ) {
+					if ( ! is_string( $import ) || ! str_ends_with( $import, '.js' )
+						|| ! isset( $files[$import] ) || ! isset( $manifest['moduleGraph'][$import] ) ) {
+						return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+					}
+					$required[$import] = true;
+				}
+			}
+			foreach ( $manifest['requiredCss'] as $css ) {
+				if ( ! is_array( $css ) || ! is_string( $css['path'] ?? null )
+					|| ! str_ends_with( $css['path'], '.css' ) || ! isset( $files[$css['path']] )
+					|| ! is_string( $css['packagedDigest'] ?? null )
+					|| ! hash_equals( $files[$css['path']], $css['packagedDigest'] )
+					|| ! is_string( $css['approvedCssWitness'] ?? null )
+					|| ! is_string( $css['selector'] ?? null ) ) {
+					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+				}
+				$required[$css['path']] = true;
+			}
+			foreach ( $manifest['packageIdentity']['moduleStamps'] ?? [] as $relative => $stamp ) {
+				if ( ! is_string( $relative ) || ! isset( $manifest['moduleGraph'][$relative] )
+					|| ! is_string( $stamp ) ) {
+					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+				}
+				$required[$relative] = true;
+			}
+			foreach ( array_keys( $required ) as $relative ) {
+				$path = $root . '/' . $relative;
+				if ( ! is_file( $path ) || is_link( $path ) ) {
+					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+				}
+				$bytes = file_get_contents( $path );
+				if ( ! is_string( $bytes ) || ! hash_equals( $files[$relative], hash( 'sha256', $bytes ) ) ) {
+					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+				}
+				foreach ( $manifest['requiredCss'] as $css ) {
+					if ( $css['path'] !== $relative ) continue;
+					if ( substr_count( $bytes, ArtifactManifest::css_witness_rule(
+						$css['selector'], $css['approvedCssWitness']
+					) ) !== 1 ) {
+						return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+					}
+				}
 			}
 			return [
 				'valid' => true,

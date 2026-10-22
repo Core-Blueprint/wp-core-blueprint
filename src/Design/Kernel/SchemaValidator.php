@@ -363,8 +363,9 @@ final class SchemaValidator {
 			$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
 		}
 		if ( is_string( $value ) ) {
-			$length = function_exists( 'mb_strlen' ) ? mb_strlen( $value, 'UTF-8' ) : strlen( $value );
-			if ( ( isset( $schema['minLength'] ) && ( ! is_int( $schema['minLength'] ) || $length < $schema['minLength'] ) )
+			$length = function_exists( 'mb_strlen' ) ? mb_strlen( $value, 'UTF-8' )
+				: preg_match_all( '/./us', $value );
+			if ( false === $length || ( isset( $schema['minLength'] ) && ( ! is_int( $schema['minLength'] ) || $length < $schema['minLength'] ) )
 				|| ( isset( $schema['maxLength'] ) && ( ! is_int( $schema['maxLength'] ) || $length > $schema['maxLength'] ) ) ) {
 				$add( 'SCHEMA_DOMAIN_INVALID', $pointer );
 			}

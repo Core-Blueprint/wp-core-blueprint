@@ -156,7 +156,9 @@ final class NativeComposition {
 	}
 
 	private static function bounded( string $value, int $limit ): bool {
-		return mb_strlen( $value, 'UTF-8' ) <= $limit;
+		$length = function_exists( 'mb_strlen' ) ? mb_strlen( $value, 'UTF-8' )
+			: preg_match_all( '/./us', $value );
+		return false !== $length && $length <= $limit;
 	}
 
 	private static function exact( mixed $value, array $keys ): bool {
