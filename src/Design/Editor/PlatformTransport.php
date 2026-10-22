@@ -119,6 +119,9 @@ final class PlatformTransport {
 			if ( ! self::valid_content( $doc['project'], $doc['fields'], $registry, $profile ) ) {
 				return self::deny( 'SCHEMA_DOMAIN_INVALID', 500 );
 			}
+		} elseif ( 'unsupported' === ( $loaded['status'] ?? null )
+			|| 'corrupt' === ( $loaded['status'] ?? null ) ) {
+			return self::deny( 'SCHEMA_UNSUPPORTED_GENERATION', 409 );
 		} else {
 			return self::deny( 'SAVE_AUTHORITY_UNAVAILABLE', 503 );
 		}
@@ -201,6 +204,28 @@ final class PlatformTransport {
 		return new \WP_REST_Response( [
 			'status' => $result['status'] ?? 'unknown',
 		], 200 );
+	}
+
+	/**
+	 * Repository's mandatory full native-v1 validator for both persisted reads
+	 * and same-transaction writes. The verifier and the REST layer always
+	 * compile the SAME server-owned FrozenRegistry, never an arbitrary request
+	 * schema or a PHP fallback. Reject previous schema formats explicitly.
+	 */
+	public static function valid_native_document( string $type, array $document ): bool {
+		if ( ! in_array( $type, [ Repository::MAIL, Repository::REPORTS ], true )
+			|| ! self::exact_keys( $document, [ 'project', 'fields' ] )
+			|| ! is_array( $document['project'] ) || ! is_array( $document['fields'] ) ) {
+			return false;
+		}
+		$profile = Repository::MAIL === $type ? Mail::PROFILE : Reports::PROFILE;
+		try {
+			return self::valid_content(
+				$document['project'], $document['fields'], DesignerBootstrap::frozen_registry(), $profile
+			);
+		} catch ( \Throwable $error ) {
+			return false;
+		}
 	}
 
 	/** Strict PHP mirror of native StableSchemaV1 for trusted domain values. */
