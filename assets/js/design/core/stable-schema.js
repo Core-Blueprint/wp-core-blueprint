@@ -207,6 +207,7 @@ export function validateStableProjectV1(project, context) {
 			else domain(value.properties, entry.schema, pointer + '/properties', 0);
 		} else if (definition && Object.keys(value.properties).length > 0) add(CODES.domain, pointer + '/properties');
 		if (!Array.isArray(value.children)) { add(CODES.node, pointer + '/children'); return; }
+		if (!definition || typeof type !== 'string') return;
 		value.children.forEach((child, index) => {
 			const at = pointer + '/children/' + index;
 			if (!isPlainObject(child)) add(CODES.node, at);
