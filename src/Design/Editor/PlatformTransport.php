@@ -70,6 +70,14 @@ final class PlatformTransport {
 		return null;
 	}
 
+	/** The single live WordPress domain policy; no global edit_posts fallback. */
+	public static function authorized_resource( string $profile, string $resource_type, string $resource_key ): bool {
+		$identity = self::identity( $profile, $resource_key );
+		return is_array( $identity )
+			&& hash_equals( $identity['type'], $resource_type )
+			&& hash_equals( $identity['key'], $resource_key );
+	}
+
 	private static function exact_keys( array $value, array $keys ): bool {
 		$actual = array_keys( $value );
 		sort( $actual, SORT_STRING );
@@ -182,7 +190,7 @@ final class PlatformTransport {
 			(string) ( $data['expectedStoreRevision'] ?? '' ), $project, $fields
 		);
 		$authorizer = static fn ( SaveEnvelope $item ): bool =>
-			self::identity( $item->profile_id, $item->resource_key ) !== null
+			self::authorized_resource( $item->profile_id, $item->resource_type, $item->resource_key )
 			&& $item->resource_type === $identity['type']
 			&& $item->registry_fingerprint === $registry->fingerprint();
 		$normalize = static function ( SaveEnvelope $item, ?array $existing ) use ( $registry ): array {
