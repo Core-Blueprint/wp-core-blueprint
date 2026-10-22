@@ -6,16 +6,25 @@ namespace CoreBlueprint\Core\Design\Integrity;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Automatic approval comes solely from an independently pinned publisher key
- * and a valid detached signature over the EXACT installed manifest bytes.
- * No wp-config constant, user-entered checksum, TOFU or self-approval.
+ * Read the canonical manifest of this installed Base package for local file
+ * and module consistency. Publisher authenticity belongs to the WordPress
+ * installation/update channel, not to first-party Designer startup.
+ * No wp-config setting, external signature, or manual approval is required.
  *
  * @internal
  */
 final class ApprovedManifestSource {
 	public static function base(): array {
-		$pinned = PublisherSignature::trusted_manifest_digest( CB_CORE_DIR );
-		$verified = InstalledVerifier::verify( CB_CORE_DIR, $pinned );
+		$manifest_path = rtrim( CB_CORE_DIR, '/\\' ) . '/' . ArtifactManifest::MANIFEST_PATH;
+		if ( ! is_file( $manifest_path ) || is_link( $manifest_path ) ) {
+			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+		}
+		$manifest_bytes = file_get_contents( $manifest_path );
+		if ( ! is_string( $manifest_bytes ) ) {
+			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+		}
+		$manifest_digest = hash( 'sha256', $manifest_bytes );
+		$verified = InstalledVerifier::verify( CB_CORE_DIR, $manifest_digest );
 		if ( true !== ( $verified['valid'] ?? false ) ) {
 			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
 		}
@@ -31,7 +40,7 @@ final class ApprovedManifestSource {
 		return [
 			'approved' => [
 				'base' => [
-					'manifestSha256' => $pinned,
+					'manifestSha256' => $manifest_digest,
 					'packageId' => 'core-blueprint/base',
 					'sourceSha' => $identity['sourceSha'],
 				],

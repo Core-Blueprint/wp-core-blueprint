@@ -163,7 +163,7 @@ def build() -> tuple[Path, Path, Path]:
     translations_check()
 
     revision = canonical.design_module_revision(SOURCE)
-    payloads = canonical.sign_payloads(SOURCE, canonical.package_payloads(SOURCE, files, revision))
+    payloads = canonical.package_payloads(SOURCE, files, revision)
     expected = {name: hashlib.sha256(payload).hexdigest() for name, payload in payloads.items()}
     if check_git(SOURCE) != sha or canonical.runtime_hashes(SOURCE) != original:
         fail("Source changed during development checks.")
