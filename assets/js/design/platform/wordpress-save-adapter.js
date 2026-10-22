@@ -114,7 +114,7 @@ const showRefusal=(container,code)=>{
 	const note=document.createElement('p');
 	note.className='notice notice-error';
 	note.setAttribute('role','alert');
-	note.textContent=code==='SCHEMA_UNSUPPORTED_GENERATION'
+	note.textContent=String(code).toUpperCase()==='SCHEMA_UNSUPPORTED_GENERATION'
 		?'This document uses an unsupported development schema. No changes were made.'
 		:'The Designer could not verify your permissions, document or installed artifacts. Nothing was changed.';
 	container.replaceChildren(note);
