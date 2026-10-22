@@ -34,6 +34,7 @@ import {
 	configureDesignerSidebar,
 	createDesignerIcon,
 	createDesignerInspectorControls,
+	createDesignerInspectorTextControl,
 	createDesignerInspectorIdentity,
 	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
@@ -678,6 +679,11 @@ export const attachTrustedDesignerHost = ({
 		if (!fields) throw new Error('SAVE_NOT_READY');
 		return fields.snapshot().fields;
 	};
+	const updatePersistedField = (coordinator, key, value) => {
+		const fields = fieldsOfSave.get(coordinator);
+		if (!fields || coordinator.status().blocked) throw new Error('SAVE_PENDING_CONTEXT_BLOCKED');
+		return fields.set(key, value);
+	};
 	const connectSessionBridge = ({initialProject, context, profile, schemaSnapshot, signal}) => {
 		if (signal?.aborted) throw new Error('HOST_CONTEXT_REFUSED');
 		const key = JSON.stringify([profile.id, context]);
@@ -713,7 +719,7 @@ export const attachTrustedDesignerHost = ({
 			// No SessionBridge/History/Save proxy: shell controls consume the
 			// ONE EditorFacade from the Host (never the private session).
 			const requiredEditorMethods = [
-				'project', 'snapshot', 'persistedFields', 'selection', 'select',
+				'project', 'snapshot', 'persistedFields', 'setPersistedField', 'selection', 'select',
 				'execute', 'executeBatch', 'undo', 'redo', 'historyStatus',
 				'subscribe', 'save',
 			];
@@ -835,6 +841,7 @@ export const attachTrustedDesignerHost = ({
 			createSessionBridge: connectSessionBridge,
 			createSaveCoordinator: connectSaveCoordinator,
 			readPersistedFields,
+			updatePersistedField,
 			createShell,
 		}));
 		if (!host || host.root !== root
@@ -938,6 +945,7 @@ export {
 	configureDesignerViewports,
 	createDesignerIcon,
 	createDesignerInspectorControls,
+	createDesignerInspectorTextControl,
 	createDesignerInspectorIdentity,
 	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
