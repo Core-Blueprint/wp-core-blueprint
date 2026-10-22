@@ -2,6 +2,8 @@ import { bindRegisteredCommand, bindRegisteredBatch } from './core/commands.js';
 import { sameValue } from './core/value.js';
 import { createPlatformHost } from './platform/host.js';
 import { createRegistryView } from './platform/registry.js';
+import { createPersistedFields, canonicalSaveJSON } from './platform/persisted-fields.js';
+import { createSaveCoordinator as createCanonicalSaveCoordinator } from './platform/save-coordinator.js';
 import {
 	CommandHistory,
 	EditorState,
@@ -546,14 +548,14 @@ const composePlatformChrome = (root) => {
 export const attachTrustedDesignerHost = ({
 	root, canvasRoot, bootstrap, runtimeModules,
 	createHost = createPlatformHost,
-	createSaveCoordinator: connectSaveCoordinator,
-	readPersistedFields,
+	createSaveAdapter,
+	loadReceipt,
 } = {}) => {
 	if (!(root instanceof Element) || !root.matches('[data-cb-design-shell]')) {
 		throw new TypeError('Designer Platform requires a canonical shell root.');
 	}
-	if (typeof createHost !== 'function' || typeof connectSaveCoordinator !== 'function'
-		|| typeof readPersistedFields !== 'function'
+	if (typeof createHost !== 'function' || typeof createSaveAdapter !== 'function'
+		|| typeof loadReceipt !== 'function'
 		|| !(runtimeModules instanceof Map) || !canvasRoot || !root.contains(canvasRoot)) {
 		throw new TypeError('Designer Platform requires a statically imported Host factory.');
 	}
@@ -570,6 +572,85 @@ export const attachTrustedDesignerHost = ({
 		const key = JSON.stringify([registry.profileId, registry.identity]);
 		activeRegistries.set(key, registry);
 		return registry;
+	};
+	// A single field store and a single Luna 5 SaveCoordinator per Host
+	// context. Neither is exposed to consumer code or the EditorFacade.
+	const fieldsOfSave = new WeakMap();
+	const connectSaveCoordinator = async ({
+		sessionBridge, identity, persistedFieldFacet, initialFields, evidence, signal,
+	}) => {
+		if (signal?.aborted || evidence?.verificationStatus !== 'verified') {
+			throw new Error('SAVE_NOT_READY');
+		}
+		const registry = activeRegistries.get(JSON.stringify([persistedFieldFacet.profileId, identity]));
+		const profile = registry?.profile;
+		const schema = registry?.projectSchemaSnapshot(profile?.id);
+		if (!registry || !schema
+			|| registry.persistedFieldFacet(profile.id) !== persistedFieldFacet
+			|| registry.evidence !== evidence) throw new Error('REGISTRY_INVALID');
+		const loaded = await loadReceipt(Object.freeze({
+			identity, profile, schema, evidence, registryFingerprint: registry.fingerprint,
+			signal,
+		}));
+		if (signal.aborted || loaded?.status !== 'loaded'
+			|| loaded.profileId !== profile.id
+			|| loaded.projectSchema !== profile.projectSchema
+			|| loaded.registryFingerprint !== registry.fingerprint
+			|| loaded.contextEpoch !== identity.contextEpoch
+			|| loaded.blogId !== identity.siteId
+			|| loaded.actorId !== identity.actorId
+			|| loaded.resourceType !== identity.resourceType
+			|| loaded.resourceKey !== identity.resourceId
+			|| !/^(0|[1-9][0-9]*)$/.test(loaded.storeRevision || '')
+			|| canonicalSaveJSON(loaded.project) !== canonicalSaveJSON(sessionBridge.project())
+			|| canonicalSaveJSON(loaded.fields) !== canonicalSaveJSON(initialFields)) {
+			throw new Error('SAVE_NOT_READY');
+		}
+		const fields = createPersistedFields({
+			registryView: registry,
+			profileId: profile.id,
+			projectSchema: profile.projectSchema,
+			projectRegistrySnapshot: schema,
+			fieldValidationContext: persistedFieldFacet,
+			fieldFacet: persistedFieldFacet,
+			initialFields: loaded.fields,
+		});
+		let coordinator;
+		try {
+			const adapter = await createSaveAdapter(Object.freeze({
+				identity, profile, schema, evidence, loadReceipt: loaded, signal,
+			}));
+			if (signal.aborted) throw new Error('SAVE_CONTEXT_CHANGED');
+			const context = Object.freeze({
+				ready: true, canSave: true,
+				blogId: identity.siteId, actorId: identity.actorId,
+				resourceType: identity.resourceType, resourceKey: identity.resourceId,
+				profileId: profile.id, projectSchema: profile.projectSchema,
+				contextEpoch: identity.contextEpoch,
+				registryFingerprint: registry.fingerprint, storeRevision: loaded.storeRevision,
+			});
+			const hostBridge = Object.freeze({
+				saveContext: () => {
+					if (signal.aborted || adapter.canSave() !== true) throw new Error('SAVE_NOT_READY');
+					return context;
+				},
+				captureSave: () => sessionBridge.captureSave(),
+				rebase: (options) => sessionBridge.rebase(options),
+				validateAcceptedProject: (project) => sessionBridge.validateAcceptedProject(project),
+				isProjectDirty: () => sessionBridge.isProjectDirty(),
+			});
+			coordinator = createCanonicalSaveCoordinator({host: hostBridge, fields, adapter});
+			fieldsOfSave.set(coordinator, fields);
+			return coordinator;
+		} catch (error) {
+			fields.destroy();
+			throw error;
+		}
+	};
+	const readPersistedFields = (coordinator) => {
+		const fields = fieldsOfSave.get(coordinator);
+		if (!fields) throw new Error('SAVE_NOT_READY');
+		return fields.snapshot().fields;
 	};
 	const connectSessionBridge = ({initialProject, context, profile, schemaSnapshot, signal}) => {
 		if (signal?.aborted) throw new Error('HOST_CONTEXT_REFUSED');
