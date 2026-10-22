@@ -180,6 +180,7 @@ def package_hashes(source: Path, files: list[Path], design_revision: str) -> dic
 PLATFORM_STAMP_FILE = "assets/js/design/editor.js"
 PLATFORM_WITNESS_FILE = "assets/css/design/editor-shell.css"
 PLATFORM_MANIFEST = "artifact-manifest.json"
+PLATFORM_SIGNATURE = "artifact-manifest.sig"
 PLATFORM_WITNESS_SELECTOR = "[data-cb-artifact-base-designer-shell]"
 PLATFORM_REQUIRED = (
     "src/Design/Integrity/ArtifactManifest.php",
@@ -219,8 +220,8 @@ def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str
         return payloads  # Pre-platform failure-path fixtures retain old packaging.
     if not all(path in payloads for path in PLATFORM_REQUIRED):
         fail("Incomplete Designer Platform source inventory; refusing partial artifact.")
-    if PLATFORM_MANIFEST in payloads:
-        fail("Artifact manifest must be generated, never loaded from source.")
+    if PLATFORM_MANIFEST in payloads or PLATFORM_SIGNATURE in payloads:
+        fail("Artifact manifest and signature must be generated, never loaded from source.")
 
     source_sha = _platform_source_sha(source)
     stamp = "base-a2-" + revision
@@ -305,12 +306,59 @@ def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str
         }],
         "exclusions": {
             "manifest": PLATFORM_MANIFEST,
+            "signature": PLATFORM_SIGNATURE,
             "zipDigest": "external-only",
             "manifestDigest": "external-only",
         },
     }
     payloads[PLATFORM_MANIFEST] = _canonical_json(manifest)
     return payloads
+
+
+
+def sign_payloads(source: Path, payloads: dict[str, bytes]) -> dict[str, bytes]:
+    """Sign final manifest bytes with an external offline key; fail closed if absent."""
+    if PLATFORM_MANIFEST not in payloads:
+        return payloads  # Legacy minimal package fixtures with no Designer.
+    if PLATFORM_SIGNATURE in payloads:
+        fail("Publisher signature cannot originate from source or payload.")
+    env_key = os.environ.get("CB_CORE_ARTIFACT_SIGNING_KEY_FILE")
+    if not env_key:
+        fail("Official artifact signing key not provisioned; unsigned Base refused.")
+    key = Path(env_key).expanduser()
+    if key.is_symlink() or not key.is_file():
+        fail("Publisher signing key must be an external regular file, not a symlink.")
+    key = key.resolve()
+    if key.is_relative_to(source.resolve()) or (key.stat().st_mode & 0o077):
+        fail("Publisher signing key must be outside source with private file permissions.")
+    if key.stat().st_size != 64:
+        fail("Publisher signing key must be an Ed25519 64-byte secret key.")
+    trust_root = source / "src/Design/Integrity/PublisherSignature.php"
+    if not trust_root.is_file():
+        fail("Publisher trust root source missing.")
+    php = r"""
+define("ABSPATH", "/");
+require $argv[2];
+$key = base64_decode(\CoreBlueprint\Core\Design\Integrity\PublisherSignature::TRUSTED_PUBLIC_KEY_BASE64, true);
+$secret = file_get_contents($argv[1]);
+$raw = stream_get_contents(STDIN);
+if (!function_exists("sodium_crypto_sign_detached") || !is_string($key)
+    || strlen($key) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES
+    || !is_string($secret) || strlen($secret) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES
+    || !hash_equals($key, sodium_crypto_sign_publickey_from_secretkey($secret))
+    || !is_string($raw) || strlen($raw) !== 32) { exit(2); }
+echo base64_encode(sodium_crypto_sign_detached(
+    \CoreBlueprint\Core\Design\Integrity\PublisherSignature::MESSAGE_PREFIX . $raw, $secret
+)), "\n";
+"""
+    result = subprocess.run(
+        ["php", "-r", php, str(key), str(trust_root)],
+        input=hashlib.sha256(payloads[PLATFORM_MANIFEST]).digest(),
+        capture_output=True,
+    )
+    if result.returncode or not re.fullmatch(rb"[A-Za-z0-9+/]{86}==\n", result.stdout):
+        fail("Publisher signing failed: trusted key mismatch or signer unavailable.")
+    return {**payloads, PLATFORM_SIGNATURE: result.stdout}
 
 
 def add_packaged_bytes(archive: zipfile.ZipFile, relative: str, payload: bytes) -> None:
@@ -428,7 +476,7 @@ def build(source: Path, output_dir: Path) -> tuple[Path, Path]:
     source_expected = runtime_hashes(source)
     preflight(source, source_expected)
     design_revision = design_module_revision(source)
-    payloads = package_payloads(source, files, design_revision)
+    payloads = sign_payloads(source, package_payloads(source, files, design_revision))
     package_expected = {path: hashlib.sha256(data).hexdigest() for path, data in payloads.items()}
 
     # Only verified archives receive the final release name/checksum. On gate

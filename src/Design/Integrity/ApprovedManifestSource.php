@@ -6,23 +6,15 @@ namespace CoreBlueprint\Core\Design\Integrity;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Deployment approval is a pinned, external wp-config constant. NEVER learn
- * approval from the installed manifest, request, browser, transient or build.
- * The manifest is only read AFTER its raw digest matches the approved value.
- *
- * Define CB_CORE_DESIGNER_APPROVED_MANIFEST_SHA256 to the 64-character digest
- * of the independently reviewed installed Base artifact-manifest.json.
- * No administrator-facing self-approval action exists.
+ * Automatic approval comes solely from an independently pinned publisher key
+ * and a valid detached signature over the EXACT installed manifest bytes.
+ * No wp-config constant, user-entered checksum, TOFU or self-approval.
  *
  * @internal
  */
 final class ApprovedManifestSource {
 	public static function base(): array {
-		$pinned = defined( 'CB_CORE_DESIGNER_APPROVED_MANIFEST_SHA256' )
-			? constant( 'CB_CORE_DESIGNER_APPROVED_MANIFEST_SHA256' ) : null;
-		if ( ! is_string( $pinned ) || ! preg_match( '/^[a-f0-9]{64}$/D', $pinned ) ) {
-			throw new \DomainException( 'ARTIFACT_APPROVAL_MISSING' );
-		}
+		$pinned = PublisherSignature::trusted_manifest_digest( CB_CORE_DIR );
 		$verified = InstalledVerifier::verify( CB_CORE_DIR, $pinned );
 		if ( true !== ( $verified['valid'] ?? false ) ) {
 			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );

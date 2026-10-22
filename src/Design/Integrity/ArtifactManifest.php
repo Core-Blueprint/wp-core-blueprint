@@ -123,6 +123,7 @@ final class ArtifactManifest {
 			'requiredCss' => $css,
 			'exclusions' => [
 				'manifest' => self::MANIFEST_PATH,
+				'signature' => PublisherSignature::SIGNATURE_PATH,
 				'zipDigest' => 'external-only',
 				'manifestDigest' => 'external-only',
 			],

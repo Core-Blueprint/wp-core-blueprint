@@ -21,6 +21,14 @@ final class InstalledVerifier {
 			|| ! is_dir( $installed_root ) || is_link( $installed_root ) ) {
 			return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
 		}
+		try {
+			$publisher_digest = PublisherSignature::trusted_manifest_digest( $installed_root );
+			if ( ! hash_equals( $approved_manifest_sha256, $publisher_digest ) ) {
+				return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+			}
+		} catch ( \Throwable $error ) {
+			return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
+		}
 		$root = realpath( $installed_root );
 		if ( false === $root ) {
 			return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
@@ -37,6 +45,7 @@ final class InstalledVerifier {
 			$manifest = json_decode( $raw, true, 128, JSON_THROW_ON_ERROR );
 			if ( ! is_array( $manifest ) || ( $manifest['contractVersion'] ?? null ) !== ArtifactManifest::VERSION
 				|| ( $manifest['exclusions']['manifest'] ?? null ) !== ArtifactManifest::MANIFEST_PATH
+				|| ( $manifest['exclusions']['signature'] ?? null ) !== PublisherSignature::SIGNATURE_PATH
 				|| ( $manifest['exclusions']['zipDigest'] ?? null ) !== 'external-only'
 				|| ( $manifest['exclusions']['manifestDigest'] ?? null ) !== 'external-only'
 				|| ! is_array( $manifest['files'] ?? null )
@@ -63,7 +72,8 @@ final class InstalledVerifier {
 				if ( ! ArtifactManifest::valid_path( $relative ) ) {
 					return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
 				}
-				if ( ArtifactManifest::MANIFEST_PATH === $relative ) {
+				if ( ArtifactManifest::MANIFEST_PATH === $relative
+					|| PublisherSignature::SIGNATURE_PATH === $relative ) {
 					continue;
 				}
 				if ( ! array_key_exists( $relative, $manifest['files'] ) ) {
