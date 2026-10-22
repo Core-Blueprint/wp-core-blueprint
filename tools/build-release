@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
+import posixpath
+import struct
 import os
 import re
 import shutil
@@ -171,6 +174,143 @@ def package_hashes(source: Path, files: list[Path], design_revision: str) -> dic
     }
 
 
+# The single Base packaging algorithm shared by development and release.
+# Only source-approved bytes are inputs. The manifest is generated from FINAL
+# transformed assets and is deliberately not included in its own file map.
+PLATFORM_STAMP_FILE = "assets/js/design/editor.js"
+PLATFORM_WITNESS_FILE = "assets/css/design/editor-shell.css"
+PLATFORM_MANIFEST = "artifact-manifest.json"
+PLATFORM_WITNESS_SELECTOR = "[data-cb-artifact-base-designer-shell]"
+PLATFORM_REQUIRED = (
+    "src/Design/Integrity/ArtifactManifest.php",
+    "assets/js/design/platform/host.js",
+    PLATFORM_STAMP_FILE,
+    PLATFORM_WITNESS_FILE,
+)
+PLATFORM_IMPORT_RE = re.compile(
+    r'\\b(?:from|import)\\s+[\\'\\"](?P<path>\\.{1,2}/[^\\'\\"]+\\.js)(?:\\?cb-design=[a-f0-9]+)?[\\'\\"]'
+)
+
+
+def _length_prefix(value: str) -> bytes:
+    encoded = value.encode("utf-8")
+    return struct.pack(">I", len(encoded)) + encoded
+
+
+def _canonical_json(value: object) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _platform_source_sha(source: Path) -> str:
+    result = subprocess.run(["git", "rev-parse", "HEAD"], cwd=source, capture_output=True, text=True)
+    sha = result.stdout.strip()
+    if result.returncode or not re.fullmatch(r"[a-f0-9]{40}", sha):
+        fail("Designer manifest requires an exact committed source SHA.")
+    return sha
+
+
+def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str, bytes]:
+    """Immutable final bytes for ZIP verification; no DDL, install or runtime fetch."""
+    payloads = {
+        path.relative_to(source).as_posix(): package_bytes(source, path, revision)
+        for path in files
+    }
+    present = [path in payloads for path in PLATFORM_REQUIRED]
+    if not any(present):
+        return payloads  # Small independent builder fixtures remain unchanged.
+    if not all(present):
+        fail("Incomplete Designer Platform source inventory; refusing partial artifact.")
+    if PLATFORM_MANIFEST in payloads:
+        fail("Artifact manifest must be generated, never loaded from source.")
+
+    source_sha = _platform_source_sha(source)
+    stamp = "base-a2-" + revision
+    stamps: dict[str, str] = {}
+    for path in sorted(payloads):
+        if path.startswith("assets/js/design/") and path.endswith(".js"):
+            payload = payloads[path]
+            if b"__cbPlatformModuleStamp" in payload:
+                fail("Source must not mint its own package module stamp: " + path)
+            if re.search(rb"\\bimport\\s*\\(", payload):
+                fail("Designer profile imports must remain static: " + path)
+            payloads[path] = payload + (
+                "\\nexport const __cbPlatformModuleStamp = " + json.dumps(stamp) + ";\\n"
+            ).encode("utf-8")
+            stamps[path] = stamp
+
+    path = PLATFORM_WITNESS_FILE
+    css = payloads[path]
+    witness = hashlib.sha256(
+        _length_prefix("cb-css-witness-v1")
+        + _length_prefix("core-blueprint/base")
+        + _length_prefix(revision)
+        + _length_prefix(path)
+        + _length_prefix(hashlib.sha256(css).hexdigest())
+    ).hexdigest()
+    rule = PLATFORM_WITNESS_SELECTOR + "{--cb-artifact-witness:" + witness + ";}"
+    if rule.encode("ascii") in css or b"--cb-artifact-witness" in css:
+        fail("Designer shell witness already exists in source CSS.")
+    payloads[path] = css + b"\\n" + rule.encode("ascii") + b"\\n"
+
+    files_sha = {
+        path: hashlib.sha256(payload).hexdigest()
+        for path, payload in sorted(payloads.items())
+    }
+    graph: dict[str, list[str]] = {}
+    for path, data in sorted(payloads.items()):
+        if not path.startswith("assets/js/design/") or not path.endswith(".js"):
+            continue
+        text = data.decode("utf-8")
+        imports = set()
+        for match in PLATFORM_IMPORT_RE.finditer(text):
+            dependency = posixpath.normpath(posixpath.join(posixpath.dirname(path), match.group("path")))
+            if dependency not in files_sha or not dependency.endswith(".js"):
+                fail("Packaged static ESM dependency missing: " + dependency)
+            imports.add(dependency)
+        graph[path] = sorted(imports)
+
+    build_input = b"".join(
+        _length_prefix(path) + _length_prefix(digest)
+        for path, digest in sorted(files_sha.items())
+    )
+    manifest = {
+        "contractVersion": 1,
+        "buildId": hashlib.sha256(build_input).hexdigest(),
+        "packageIdentity": {
+            "packageId": "core-blueprint/base",
+            "sourceSha": source_sha,
+            "buildGeneration": revision,
+            "capabilities": [],
+            "moduleStamps": stamps,
+        },
+        "files": files_sha,
+        "moduleGraph": graph,
+        "requiredCss": [{
+            "assetId": "base-designer-shell",
+            "path": path,
+            "approvedCssWitness": witness,
+            "selector": PLATFORM_WITNESS_SELECTOR,
+            "packagedDigest": files_sha[path],
+        }],
+        "exclusions": {
+            "manifest": PLATFORM_MANIFEST,
+            "zipDigest": "external-only",
+            "manifestDigest": "external-only",
+        },
+    }
+    payloads[PLATFORM_MANIFEST] = _canonical_json(manifest)
+    return payloads
+
+
+def add_packaged_bytes(archive: zipfile.ZipFile, relative: str, payload: bytes) -> None:
+    """The existing deterministic ZIP metadata, now for generated files too."""
+    info = zipfile.ZipInfo(f"{PLUGIN_ROOT}/{relative}", FIXED_ZIP_TIME)
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.create_system = 3
+    info.external_attr = 0o100644 << 16
+    archive.writestr(info, payload, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+
+
 def preflight(source: Path, expected: dict[str, str]) -> None:
     for tool in ("php", "node", "bash", "unzip", "composer"):
         if shutil.which(tool) is None:
@@ -248,16 +388,7 @@ def add_file(
     design_revision: str | None = None,
 ) -> None:
     relative = path.relative_to(source).as_posix()
-    info = zipfile.ZipInfo(f"{PLUGIN_ROOT}/{relative}", FIXED_ZIP_TIME)
-    info.compress_type = zipfile.ZIP_DEFLATED
-    info.create_system = 3
-    info.external_attr = 0o100644 << 16
-    archive.writestr(
-        info,
-        package_bytes(source, path, design_revision),
-        compress_type=zipfile.ZIP_DEFLATED,
-        compresslevel=9,
-    )
+    add_packaged_bytes(archive, relative, package_bytes(source, path, design_revision))
 
 
 def build(source: Path, output_dir: Path) -> tuple[Path, Path]:
@@ -286,7 +417,8 @@ def build(source: Path, output_dir: Path) -> tuple[Path, Path]:
     source_expected = runtime_hashes(source)
     preflight(source, source_expected)
     design_revision = design_module_revision(source)
-    package_expected = package_hashes(source, files, design_revision)
+    payloads = package_payloads(source, files, design_revision)
+    package_expected = {path: hashlib.sha256(data).hexdigest() for path, data in payloads.items()}
 
     # Only verified archives receive the final release name/checksum. On gate
     # failure an earlier accepted artifact is preserved, never overwritten.
@@ -297,8 +429,8 @@ def build(source: Path, output_dir: Path) -> tuple[Path, Path]:
         pending_zip = Path(temporary) / zip_path.name
         pending_checksum = Path(temporary) / checksum_path.name
         with zipfile.ZipFile(pending_zip, "w") as archive:
-            for path in files:
-                add_file(archive, source, path, design_revision)
+            for relative, payload in sorted(payloads.items()):
+                add_packaged_bytes(archive, relative, payload)
         verify_archive(pending_zip, package_expected)
         run_gate(["bash", "tests/bin/run-release-package-scenario.sh",
                   str(pending_zip), version], source, "Packaged runtime boundary and PHP syntax")
