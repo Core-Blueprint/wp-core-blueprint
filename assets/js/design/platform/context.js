@@ -25,7 +25,7 @@ export function inspectTrustedContext(bootstrap, registryView) {
 	if (!context || typeof context !== 'object' || context.siteBlogId !== identity.siteId
 		|| context.actorId !== identity.actorId || context.resourceType !== identity.resourceType
 		|| context.resourceKey !== identity.resourceId || context.profileId !== value.profileId
-		|| context.registryFingerprint !== value.registryFingerprint.slice('sha256:'.length)) {
+		|| context.registryFingerprint !== value.registryFingerprint) {
 		throw new TypeError('HOST_CONTEXT_REFUSED');
 	}
 	assertDigest(value.registryFingerprint);

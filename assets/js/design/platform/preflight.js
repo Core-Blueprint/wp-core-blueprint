@@ -1,4 +1,5 @@
 import { assertDigest, exactKeys } from './manifest.js';
+import { canonicalDigest } from './registry.js';
 
 const failed = (code) => Object.freeze({ready: false, code});
 const ready = Object.freeze({ready: true});
@@ -17,26 +18,49 @@ export async function preflight({evidence, frozenRegistry, root, contextEpoch, s
 		|| frozenRegistry.identity.contextEpoch !== contextEpoch) return failed('ARTIFACT_RUNTIME_MISMATCH');
 	try {
 		assertDigest(frozenRegistry.fingerprint);
-		// ArtifactEvidenceV1's package-path graph hash is raw 64-hex; the
-		// Registry graph has a different, domain-separated fingerprint.
-		if (typeof evidence.moduleGraphFingerprint !== 'string'
-			|| !/^[a-f0-9]{64}$/.test(evidence.moduleGraphFingerprint)
-			|| typeof evidence.buildId !== 'string'
-			|| !/^[a-f0-9]{64}$/.test(evidence.buildId)
+		assertDigest(evidence.buildId);
+		assertDigest(evidence.moduleGraphFingerprint);
+		// These describe installed transitive file paths, NOT Registry IDs.
+		// Server-installed ArtifactEvidence verifies the underlying package graph.
+		assertDigest(evidence.artifactModuleGraphFingerprint);
+		if (evidence.context?.registryFingerprint !== frozenRegistry.fingerprint
 			|| !evidence.approvedPackages?.base || !evidence.approvedPackages?.consumer) {
 			return failed('ARTIFACT_RUNTIME_MISMATCH');
 		}
+		for (const packageId of ['base', 'consumer']) {
+			assertDigest(evidence.approvedPackages[packageId].manifestDigest);
+			assertDigest(evidence.approvedPackages[packageId].buildId);
+		}
 		await frozenRegistry.verify();
 		if (signal.aborted) return failed('ARTIFACT_RUNTIME_MISMATCH');
+		const expectedRegistryGraph = await canonicalDigest(frozenRegistry.modules, 'ModuleGraphV1');
+		if (expectedRegistryGraph !== evidence.moduleGraphFingerprint) return failed('ARTIFACT_RUNTIME_MISMATCH');
 		if (!evidence.moduleStamps || typeof evidence.moduleStamps !== 'object'
-			|| !Array.isArray(evidence.requiredCss)) return failed('ARTIFACT_RUNTIME_MISMATCH');
+			|| Array.isArray(evidence.moduleStamps)
+			|| !evidence.moduleFileBindings || typeof evidence.moduleFileBindings !== 'object'
+			|| Array.isArray(evidence.moduleFileBindings)
+			|| !Array.isArray(evidence.requiredCss)
+			|| Object.keys(evidence.moduleStamps).length !== frozenRegistry.modules.length
+			|| Object.keys(evidence.moduleFileBindings).length !== frozenRegistry.modules.length) {
+			return failed('ARTIFACT_RUNTIME_MISMATCH');
+		}
 		const seenPaths = new Set();
 		for (const module of frozenRegistry.modules) {
+			const id = module.id;
 			const path = module.packagePath;
-			if (typeof path !== 'string' || !/^(?:base|consumer)\/[A-Za-z0-9_.@/-]+\.js$/.test(path)
+			const binding = Object.hasOwn(evidence.moduleFileBindings, id)
+				? evidence.moduleFileBindings[id] : null;
+			if (typeof id !== 'string' || typeof path !== 'string'
+				|| !/^(?:base|consumer)\/[A-Za-z0-9_.@/-]+\.js$/.test(path)
 				|| path.includes('//') || path.split('/').some((part) => part === '..' || part === '.')
-				|| seenPaths.has(path) || !Object.hasOwn(evidence.moduleStamps, path)
-				|| evidence.moduleStamps[path] !== module.stamp) return failed('ARTIFACT_RUNTIME_MISMATCH');
+				|| seenPaths.has(path) || !Object.hasOwn(evidence.moduleStamps, id)
+				|| evidence.moduleStamps[id] !== module.stamp
+				|| !binding || typeof binding !== 'object' || Array.isArray(binding)) {
+				return failed('ARTIFACT_RUNTIME_MISMATCH');
+			}
+			exactKeys(binding, ['packagePath', 'packagedDigest']);
+			assertDigest(binding.packagedDigest);
+			if (binding.packagePath !== path) return failed('ARTIFACT_RUNTIME_MISMATCH');
 			seenPaths.add(path);
 			const namespace = frozenRegistry.moduleNamespace(module.id);
 			if (!namespace || typeof namespace !== 'object') return failed('HOST_MODULE_MISSING');
@@ -59,9 +83,10 @@ export async function preflight({evidence, frozenRegistry, root, contextEpoch, s
 				|| !/^\[data-cb-artifact-[a-z0-9-]+\]$/.test(css.selector)
 				|| seenSelectors.has(css.selector)
 				|| typeof css.approvedCssWitness !== 'string' || !/^[a-f0-9]{64}$/.test(css.approvedCssWitness)
-				|| typeof css.packagedDigest !== 'string' || !/^[a-f0-9]{64}$/.test(css.packagedDigest)) {
+				|| typeof css.packagedDigest !== 'string') {
 				return failed('ARTIFACT_RUNTIME_MISMATCH');
 			}
+			assertDigest(css.packagedDigest);
 			seenAssets.add(css.assetId);
 			seenSelectors.add(css.selector);
 			// Probe is temporarily attached UNDER the controlled, connected editor

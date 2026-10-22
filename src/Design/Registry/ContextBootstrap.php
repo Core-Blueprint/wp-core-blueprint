@@ -26,21 +26,26 @@ final class ContextBootstrap {
 	): array {
 		$profile = $registry->profile( $profile_id );
 		$context = $evidence['context'] ?? null;
-		// ArtifactEvidenceV1 carries its own verified installed package graph.
-		// Its raw 64-hex fingerprint is NOT the Registry module-graph digest.
+		// Registry and installed artifact module graphs retain different identities.
+		// The server-attested Registry graph MUST match this exact frozen graph.
 		$registry_hash = $registry->fingerprint();
+		$module_graph_hash = FrozenRegistry::digest( $registry->modules(), 'ModuleGraphV1' );
 		if ( null === $profile || ! FrozenRegistry::pure( $identity ) || ! FrozenRegistry::pure( $evidence )
 			|| 1 !== ( $evidence['contractVersion'] ?? null ) || 'verified' !== ( $evidence['verificationStatus'] ?? null )
 			|| ! is_array( $context ) || ! is_string( $context['registryFingerprint'] ?? null )
-			|| ! preg_match( '/^[a-f0-9]{64}$/D', $context['registryFingerprint'] )
-			|| ! hash_equals( substr( $registry_hash, 7 ), $context['registryFingerprint'] )
+			|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $context['registryFingerprint'] )
+			|| ! hash_equals( $registry_hash, $context['registryFingerprint'] )
 			|| ! is_string( $evidence['buildId'] ?? null )
-			|| ! preg_match( '/^[a-f0-9]{64}$/D', $evidence['buildId'] )
+			|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $evidence['buildId'] )
 			|| ! is_string( $evidence['moduleGraphFingerprint'] ?? null )
-			|| ! preg_match( '/^[a-f0-9]{64}$/D', $evidence['moduleGraphFingerprint'] )
+			|| ! hash_equals( $module_graph_hash, $evidence['moduleGraphFingerprint'] )
+			|| ! is_string( $evidence['artifactModuleGraphFingerprint'] ?? null )
+			|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $evidence['artifactModuleGraphFingerprint'] )
 			|| ! is_array( $evidence['approvedPackages'] ?? null )
 			|| ! isset( $evidence['approvedPackages']['base'], $evidence['approvedPackages']['consumer'] )
-			|| ! is_array( $evidence['moduleStamps'] ?? null ) || ! is_array( $evidence['requiredCss'] ?? null )
+			|| ! is_array( $evidence['moduleStamps'] ?? null )
+			|| ! is_array( $evidence['moduleFileBindings'] ?? null )
+			|| ! is_array( $evidence['requiredCss'] ?? null )
 			|| ! $authorize( $identity, $profile ) ) {
 			throw new \DomainException( 'HOST_CONTEXT_REFUSED' );
 		}
@@ -58,24 +63,54 @@ final class ContextBootstrap {
 			|| ( $context['profileId'] ?? null ) !== $profile_id ) {
 			throw new \DomainException( 'HOST_CONTEXT_REFUSED' );
 		}
-		// The trusted Registry graph determines module IDs and their exact
-		// packagePath keys. Installed evidence alone authorizes package stamps.
+		// The same frozen Registry binds each module ID to exactly one verified
+		// installed package file. Never index stamps by packagePath.
 		$modules = $registry->modules();
 		$allowed = array_fill_keys( array_column( $modules, 'id' ), true );
 		if ( ! isset( $allowed[ $profile['moduleId'] ] ) ) {
 			throw new \DomainException( 'HOST_MODULE_MISSING' );
 		}
+		if ( count( $modules ) !== count( $evidence['moduleStamps'] )
+			|| count( $modules ) !== count( $evidence['moduleFileBindings'] ) ) {
+			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+		}
 		$known_paths = [];
 		foreach ( $modules as $module ) {
+			$id = $module['id'] ?? null;
 			$path = $module['packagePath'] ?? null;
-			if ( ! is_string( $path ) || ! preg_match( '#^(base|consumer)/[A-Za-z0-9_.@/-]+\.js$#D', $path )
+			$binding = is_string( $id ) ? ( $evidence['moduleFileBindings'][ $id ] ?? null ) : null;
+			if ( ! is_string( $id ) || ! isset( $allowed[ $id ] )
+				|| ! is_string( $path ) || ! preg_match( '#^(base|consumer)/[A-Za-z0-9_.@/-]+\.js$#D', $path )
 				|| str_contains( $path, '//' ) || preg_match( '#(?:^|/)\.\.?/#', $path )
 				|| isset( $known_paths[ $path ] )
-				|| ! is_string( $evidence['moduleStamps'][ $path ] ?? null )
-				|| ! hash_equals( $module['stamp'], $evidence['moduleStamps'][ $path ] ) ) {
+				|| ! is_string( $evidence['moduleStamps'][ $id ] ?? null )
+				|| ! hash_equals( $module['stamp'], $evidence['moduleStamps'][ $id ] )
+				|| ! is_array( $binding ) || count( $binding ) !== 2
+				|| ! is_string( $binding['packagePath'] ?? null )
+				|| ! hash_equals( $path, $binding['packagePath'] )
+				|| ! is_string( $binding['packagedDigest'] ?? null )
+				|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $binding['packagedDigest'] ) ) {
 				throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
 			}
 			$known_paths[ $path ] = true;
+		}
+		// Package-file graph digests and packaged-file hashes were verified by
+		// ArtifactEvidence/InstalledVerifier, not recomputed from Registry IDs.
+		foreach ( [ 'base', 'consumer' ] as $package ) {
+			$approved = $evidence['approvedPackages'][ $package ] ?? null;
+			if ( ! is_array( $approved )
+				|| ! is_string( $approved['manifestDigest'] ?? null )
+				|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $approved['manifestDigest'] )
+				|| ! is_string( $approved['buildId'] ?? null )
+				|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $approved['buildId'] ) ) {
+				throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+			}
+		}
+		foreach ( $evidence['requiredCss'] as $css ) {
+			if ( ! is_array( $css ) || ! is_string( $css['packagedDigest'] ?? null )
+				|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $css['packagedDigest'] ) ) {
+				throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+			}
 		}
 		return [
 			'contractVersion' => 1,
