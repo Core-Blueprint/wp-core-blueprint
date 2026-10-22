@@ -1,14 +1,5 @@
 <?php
 declare(strict_types=1);
-/**
- * Structural validator for Design Foundation Mail projects.
- *
- * Domain extensions may register additional node type/provider pairs through
- * `core_blueprint_design_mail_node_types`. The Mail profile remains authoritative for
- * tree/envelope safety while extension code owns its domain-specific semantics.
- *
- * @package Core_Blueprint
- */
 
 namespace CoreBlueprint\Core\Design\Profile\Mail;
 
@@ -16,142 +7,89 @@ use CoreBlueprint\Core\Design\Kernel\Diagnostics;
 
 defined( 'ABSPATH' ) || exit;
 
+/** Mail-specific server invariants on the native stable-v1 project. */
 final class Validator {
-	private const MAX_TREE_DEPTH = 64;
+	private int $count = 0;
 
-	/** @param array<string,mixed> $project */
 	public function validate( array $project ): Diagnostics {
-		$diagnostics = new Diagnostics();
-
-		if ( Contract::DESIGN_TYPE !== ( $project['design_type'] ?? null ) ) {
-			$diagnostics->error( 'mail.invalid_design_type', 'Mail project has an invalid design_type.', 'design_type' );
+		$errors = new Diagnostics();
+		if ( array_keys( $project ) !== [ 'schema_version', 'design_type', 'root' ]
+			|| ( $project['schema_version'] ?? null ) !== 1
+			|| ( $project['design_type'] ?? null ) !== Contract::DESIGN_TYPE
+			|| ! is_array( $project['root'] ?? null ) ) {
+			$errors->error( 'mail.native_envelope', 'Invalid native Mail document.', 'project' );
+			return $errors;
 		}
-		if ( ! isset( $project['schema_version'] ) || ! is_int( $project['schema_version'] ) || $project['schema_version'] < 0 ) {
-			$diagnostics->error( 'mail.invalid_schema_version', 'Mail project requires a non-negative schema_version.', 'schema_version' );
-		}
-
-		$root = $project['root'] ?? null;
-		if ( ! is_array( $root ) || [] === $root ) {
-			$diagnostics->error( 'mail.invalid_root', 'Mail project requires a root node.', 'root' );
-			return $diagnostics;
-		}
-		if ( Contract::ROOT_TYPE !== ( $root['type'] ?? null ) || Contract::CORE_PROVIDER !== ( $root['provider'] ?? null ) ) {
-			$diagnostics->error( 'mail.invalid_root_type', 'Mail project root must be the Base mail root.', 'root' );
-		}
-
-		$this->validate_node( $root, $diagnostics, 'root', 0, null );
-		return $diagnostics;
+		$this->count = 0;
+		$this->check_node( $project['root'], null, $errors, 'root', 0 );
+		return $errors;
 	}
 
-	/** @param array<string,mixed> $node */
-	private function validate_node( array $node, Diagnostics $diagnostics, string $location, int $depth, ?string $parent_type ): void {
-		if ( $depth > self::MAX_TREE_DEPTH ) {
-			$diagnostics->error( 'mail.tree_depth', 'Mail project exceeds the supported tree depth.', $location );
+	private function check_node( array $node, ?string $parent, Diagnostics $errors, string $path, int $depth ): void {
+		if ( $depth > 64 || ++$this->count > 5000 ) {
+			$errors->error( 'mail.depth', 'Mail document is too complex.', $path );
 			return;
 		}
-
-		$type = isset( $node['type'] ) && is_string( $node['type'] ) ? trim( $node['type'] ) : '';
-		$provider = isset( $node['provider'] ) && is_string( $node['provider'] ) ? trim( $node['provider'] ) : '';
-		if ( 1 !== preg_match( '/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/', $type ) ) {
-			$diagnostics->error( 'mail.node_type', 'Mail node type is invalid.', $location . '.type' );
+		$definitions = Contract::definitions();
+		$type = $node['type'] ?? null;
+		if ( ! is_string( $type ) || ! isset( $definitions[ $type ] )
+			|| ( $node['provider'] ?? null ) !== Contract::CORE_PROVIDER
+			|| ( null === $parent && Contract::ROOT_TYPE !== $type )
+			|| ( null !== $parent && ! in_array( $parent, $definitions[ $type ]['parents'], true ) )
+			|| array_keys( $node ) !== [ 'type', 'provider', 'properties', 'children' ] ) {
+			$errors->error( 'mail.native_node', 'Unrecognized native Mail node.', $path );
+			return;
 		}
-		if ( 1 !== preg_match( '/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/', $provider ) ) {
-			$diagnostics->error( 'mail.node_provider', 'Mail node provider is invalid.', $location . '.provider' );
-		}
-
-		$allowed = array_fill_keys( Contract::CORE_NODE_TYPES, Contract::CORE_PROVIDER );
-		/**
-		 * Filter allowed Mail node type/provider pairs.
-		 *
-		 * Extensions append `node.type => provider-id`; Base-owned pairs cannot be
-		 * replaced because the canonical map is restored after filtering.
-		 *
-		 * @param array<string,string> $allowed
-		 */
-		$filtered = apply_filters( 'core_blueprint_design_mail_node_types', $allowed );
-		$filtered = is_array( $filtered ) ? $filtered : $allowed;
-		$allowed = array_merge( $filtered, $allowed );
-		if ( ! isset( $allowed[ $type ] ) || (string) $allowed[ $type ] !== $provider ) {
-			$diagnostics->error( 'mail.node_not_allowed', 'Mail node type/provider pair is not registered.', $location );
-		}
-
 		$properties = $node['properties'] ?? null;
-		if ( ! is_array( $properties ) || ( [] !== $properties && array_is_list( $properties ) ) || ! $this->is_json_value( $properties, 0 ) ) {
-			$diagnostics->error( 'mail.node_properties', 'Mail node properties must be JSON-compatible object values.', $location . '.properties' );
+		$schema = $definitions[ $type ]['properties'];
+		if ( ! is_array( $properties ) || array_is_list( $properties )
+			|| count( $properties ) !== count( $schema ) ) {
+			$errors->error( 'mail.properties', 'Invalid Mail properties.', $path . '.properties' );
+			return;
 		}
-
+		foreach ( $schema as $key => $rule ) {
+			if ( ! array_key_exists( $key, $properties ) || ! self::valid_value( $properties[ $key ], $rule ) ) {
+				$errors->error( 'mail.property_value', 'Invalid Mail property value.', $path . '.properties.' . $key );
+			}
+		}
 		$children = $node['children'] ?? null;
 		if ( ! is_array( $children ) || ! array_is_list( $children ) ) {
-			$diagnostics->error( 'mail.node_children', 'Mail node children must be a list.', $location . '.children' );
+			$errors->error( 'mail.children', 'Mail children must be a list.', $path . '.children' );
 			return;
 		}
-
-		if ( 'mail.columns' === $type ) {
-			if ( 'mail.section' !== $parent_type ) {
-				$diagnostics->error( 'mail.columns_parent', 'Mail columns must belong directly to a section.', $location );
-			}
-			if ( 2 !== count( $children ) ) {
-				$diagnostics->error( 'mail.columns_count', 'A two-column layout requires exactly two columns.', $location . '.children' );
-			}
-			foreach ( $children as $column_index => $column ) {
-				if ( ! is_array( $column ) || 'mail.column' !== ( $column['type'] ?? null ) || 'core' !== ( $column['provider'] ?? null ) ) {
-					$diagnostics->error( 'mail.columns_child', 'Mail columns may contain only Base column containers.', $location . '.children.' . $column_index );
-				}
-			}
+		if ( 'mail.columns' === $type && ( count( $children ) !== 2
+			|| ( $children[0]['type'] ?? null ) !== 'mail.column'
+			|| ( $children[1]['type'] ?? null ) !== 'mail.column' ) ) {
+			$errors->error( 'mail.columns', 'Two columns are required.', $path . '.children' );
 		}
-		if ( 'mail.column' === $type && 'mail.columns' !== $parent_type ) {
-			$diagnostics->error( 'mail.column_parent', 'Mail columns cannot exist outside a columns layout.', $location );
+		if ( ! in_array( $type, [ Contract::ROOT_TYPE, 'mail.section', 'mail.columns', 'mail.column' ], true )
+			&& [] !== $children ) {
+			$errors->error( 'mail.leaf_children', 'A Mail content block cannot contain children.', $path . '.children' );
 		}
-		if ( 'mail.column' === $type ) {
-			// Column contents render inside a table of rows; nested structural
-			// containers would produce invalid mail table markup.
-			foreach ( $children as $child_index => $child ) {
-				if (
-					is_array( $child )
-					&& in_array( $child['type'] ?? null, [ 'mail.root', 'mail.section', 'mail.columns', 'mail.column' ], true )
-				) {
-					$diagnostics->error( 'mail.column_structural_child', 'A column can contain content blocks, not another mail layout.', $location . '.children.' . $child_index );
-				}
-			}
-		}
-		if ( 'mail.section' === $type && 'mail.root' !== $parent_type ) {
-			$diagnostics->error( 'mail.section_parent', 'Mail sections must belong directly to the mail root.', $location );
-		}
-		if ( 'mail.rich-text' === $type && is_array( $properties ) ) {
-			if ( ! is_string( $properties['markup'] ?? null ) || strlen( $properties['markup'] ) > 100000 ) {
-				$diagnostics->error( 'mail.rich_text_markup', 'Rich text requires bounded markup.', $location . '.properties.markup' );
-			}
-		}
-
 		foreach ( $children as $index => $child ) {
-			if ( ! is_array( $child ) || [] === $child ) {
-				$diagnostics->error( 'mail.invalid_child', 'Every mail child must be a node object.', $location . '.children.' . $index );
+			if ( ! is_array( $child ) ) {
+				$errors->error( 'mail.child', 'Invalid child node.', $path . '.children.' . $index );
 				continue;
 			}
-			$this->validate_node( $child, $diagnostics, $location . '.children.' . $index, $depth + 1, $type );
+			$this->check_node( $child, $type, $errors, $path . '.children.' . $index, $depth + 1 );
 		}
 	}
 
-	private function is_json_value( mixed $value, int $depth ): bool {
-		if ( $depth > self::MAX_TREE_DEPTH ) {
-			return false;
+	private static function valid_value( mixed $value, array $rule ): bool {
+		if ( 'integer' === $rule['type'] ) {
+			return is_int( $value ) && $value >= $rule['minimum'] && $value <= $rule['maximum'];
 		}
-		if ( null === $value || is_bool( $value ) || is_int( $value ) || is_string( $value ) ) {
-			return true;
+		if ( ! is_string( $value ) || mb_strlen( $value, 'UTF-8' ) > ( $rule['maxLength'] ?? 65535 )
+			|| mb_strlen( $value, 'UTF-8' ) < ( $rule['minLength'] ?? 0 ) ) return false;
+		if ( isset( $rule['enum'] ) ) return in_array( $value, $rule['enum'], true );
+		if ( ( $rule['maxLength'] ?? 0 ) === 32 && str_starts_with( $value, '#' ) ) {
+			return 1 === preg_match( '/^#[a-fA-F0-9]{6}$/D', $value );
 		}
-		if ( is_float( $value ) ) {
-			return is_finite( $value );
-		}
-		if ( ! is_array( $value ) ) {
-			return false;
-		}
-		foreach ( $value as $key => $item ) {
-			if ( ! is_int( $key ) && ! is_string( $key ) ) {
-				return false;
-			}
-			if ( ! $this->is_json_value( $item, $depth + 1 ) ) {
-				return false;
-			}
+		if ( ( $rule['maxLength'] ?? 0 ) === 2048 && '' !== $value ) {
+			// Exact dynamic tokens are permitted; unsafe/missing resolved URLs
+			// are separately rejected by the rendering boundary.
+			if ( 1 === preg_match( '/^\{\{[a-z][a-z0-9._-]*\}\}$/D', $value ) ) return true;
+			return 1 === preg_match( '/^https?:\/\/[^\s\x00-\x1F\x7F]+$/iD', $value );
 		}
 		return true;
 	}
