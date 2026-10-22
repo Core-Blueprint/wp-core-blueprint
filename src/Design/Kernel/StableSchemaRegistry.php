@@ -18,6 +18,8 @@ final class StableSchemaRegistry {
 	private array $domain_schemas = [];
 	/** @var array<string,array{id:string,ownerProvider:string,allowSitePresentational:bool}> */
 	private array $design_types = [];
+	/** @var array<string,true> Frozen canonical-only provider membership. */
+	private array $canonical_providers = [];
 	private string $profile_id;
 	private string $project_schema;
 	/** @var array<string,mixed>|null Exact trusted F01 facet; null means not yet provided. */
@@ -27,8 +29,8 @@ final class StableSchemaRegistry {
 	/** @param array<string,mixed> $snapshot Exact project-only RegistrySnapshotV1 from the trusted freeze. */
 	public function __construct(
 		array $snapshot,
-		private readonly ProviderRegistry $providers,
-		private readonly DesignTypeRegistry $types,
+		ProviderRegistry $providers,
+		DesignTypeRegistry $types,
 		?array $persisted_field_facet = null
 	) {
 		$keys = [ 'contractVersion', 'schemaGeneration', 'profileId', 'projectSchema', 'providers', 'designTypes', 'nodeTypes', 'domainSchemas', 'fingerprint' ];
@@ -49,8 +51,7 @@ final class StableSchemaRegistry {
 		$this->project_schema = $snapshot['projectSchema'];
 		$this->snapshot_fingerprint = $snapshot['fingerprint'];
 
-		if ( ! is_array( $snapshot['providers'] ) || ! array_is_list( $snapshot['providers'] )
-			) {
+		if ( ! is_array( $snapshot['providers'] ) || ! array_is_list( $snapshot['providers'] ) ) {
 			throw new \InvalidArgumentException( 'REGISTRY_INVALID: inconsistent canonical providers.' );
 		}
 		$prior = '';
@@ -61,6 +62,7 @@ final class StableSchemaRegistry {
 				throw new \InvalidArgumentException( 'REGISTRY_INVALID: unregistered or unordered canonical provider.' );
 			}
 			$prior = $id;
+			$this->canonical_providers[ $id ] = true;
 		}
 		foreach ( [ 'designTypes', 'nodeTypes', 'domainSchemas' ] as $section ) {
 			if ( ! is_array( $snapshot[ $section ] ) || ! array_is_list( $snapshot[ $section ] ) ) {
@@ -206,7 +208,7 @@ final class StableSchemaRegistry {
 	}
 
 	public function has_canonical_provider( string $id ): bool {
-		return $this->providers->has_canonical( $id );
+		return isset( $this->canonical_providers[ $id ] );
 	}
 
 	/** @return array<string,mixed>|null */
