@@ -140,23 +140,52 @@ final class Page extends PageBase {
 			if ( ! $designer_enabled || '' === $template_id ) {
 				echo '<div class="wrap cb-core-wrap"><section class="cb-core-panel"><h2>' . esc_html__( 'Mail Designer unavailable', 'core-blueprint' ) . '</h2><p>' . esc_html__( 'Enable Mail Designer and register at least one template before editing.', 'core-blueprint' ) . '</p></section></div>';
 			} else {
+				$editor_mode = DesignEditorAssets::platform_fullscreen_requested();
+				$landing_url = add_query_arg(
+					[ 'page' => self::SLUG, 'tab' => 'templates', 'template' => $template_id ],
+					admin_url( 'admin.php' )
+				);
 				?>
-				<div class="wrap cb-core-wrap cb-core-mail-designer-wrap">
-					<div class="cb-core-mail-designer" data-cb-mail-designer data-cb-design-launch-root>
-						<section class="cb-core-panel cb-core-mail-designer__context" aria-label="<?php esc_attr_e( 'Mail template context', 'core-blueprint' ); ?>">
-							<label class="cb-core-field__label" for="cb-mail-platform-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
-							<select id="cb-mail-platform-template" data-cb-mail-template-select>
-								<?php foreach ( $templates as $id => $definition ) : ?>
-									<option value="<?php echo esc_attr( (string) $id ); ?>" <?php selected( $id, $template_id ); ?>><?php echo esc_html( (string) $definition['label'] ); ?></option>
-								<?php endforeach; ?>
-							</select>
-						</section>
-						<div class="cb-core-mail-designer__platform" data-cb-platform-base-context>
-							<p role="status"><?php esc_html_e( 'Verifying the Designer and loading the selected template…', 'core-blueprint' ); ?></p>
+				<?php if ( ! $editor_mode ) : ?>
+					<div class="wrap cb-core-wrap cb-core-mail-designer-wrap">
+						<div class="cb-core-mail-designer">
+							<section class="cb-core-panel cb-core-mail-designer__context" aria-label="<?php esc_attr_e( 'Mail template context', 'core-blueprint' ); ?>">
+								<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="cb-core-mail-designer__launch-form">
+									<input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>">
+									<input type="hidden" name="tab" value="templates">
+									<label class="cb-core-field__label" for="cb-mail-platform-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
+									<select id="cb-mail-platform-template" name="template" required>
+										<?php foreach ( $templates as $id => $definition ) : ?>
+											<option value="<?php echo esc_attr( (string) $id ); ?>" <?php selected( $id, $template_id ); ?>><?php echo esc_html( (string) $definition['label'] ); ?></option>
+										<?php endforeach; ?>
+									</select>
+									<button type="submit" name="cb_designer" value="1" class="button button-primary cb-core-button cb-core-button--primary">
+										<?php esc_html_e( 'Edit with Core Blueprint', 'core-blueprint' ); ?>
+									</button>
+								</form>
+							</section>
 						</div>
 					</div>
-				</div>
+				<?php else : ?>
+					<div class="cb-core-platform-screen" data-cb-platform-screen>
+						<header class="cb-core-platform-screen__header">
+							<strong><?php esc_html_e( 'Mail Designer', 'core-blueprint' ); ?></strong>
+							<span class="cb-core-platform-screen__subtitle"><?php echo esc_html( (string) $templates[ $template_id ]['label'] ); ?></span>
+							<a class="button cb-core-button cb-core-platform-screen__close" href="<?php echo esc_url( $landing_url ); ?>">
+								<?php esc_html_e( 'Close Designer', 'core-blueprint' ); ?>
+							</a>
+						</header>
+						<div class="cb-core-platform-screen__body">
+							<div data-cb-mail-designer data-cb-mail-template="<?php echo esc_attr( $template_id ); ?>">
+								<div data-cb-platform-base-context>
+									<p role="status"><?php esc_html_e( 'Verifying the Designer and loading the selected template…', 'core-blueprint' ); ?></p>
+								</div>
+							</div>
+						</div>
+					</div>
+				<?php endif; ?>
 				<?php
+
 			}
 		} elseif ( 'settings' === $tab ) {
 			include CB_CORE_DIR . 'templates/mail-settings.php';
