@@ -7,10 +7,10 @@ const readSource = async (relative) => readFile(new URL('../../' + relative, imp
 const instantiateSaveBinding = async (window, config = {}) => {
 	const source = await readSource('assets/js/features/designer-launch.js');
 	const start = source.indexOf('const bindSaveState = (shell, save) => {');
-	const end = source.indexOf('\n\tconst panelToggleLabel', start);
+	const end = source.indexOf('\n\t};', start);
 	assert.ok(start >= 0 && end > start, 'real shared Designer Save binding exists');
 	return new Function('window', 'config', 'SAVE_EVENT',
-		`${source.slice(start, end)}\nreturn bindSaveState;`
+		`${source.slice(start, end + '\n\t};'.length)}\nreturn bindSaveState;`
 	)(window, config, 'cb:design-shell:savechange');
 };
 
