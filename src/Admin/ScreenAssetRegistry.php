@@ -223,7 +223,9 @@ final class ScreenAssetRegistry {
 			return array_merge( $items, [ 'component.meta', 'component.table-cols', 'foundation.modal', 'module.mail-log' ] );
 		}
 		if ( 'templates' === $tab ) {
-			return array_merge( $items, [ 'component.panels', 'foundation.clipboard', 'module.mail-settings' ] );
+			// The landing only selects a template and launches the native Host.
+			// No Mail editor, clipboard or settings module is needed until launch.
+			return array_merge( $items, [ 'component.panels' ] );
 		}
 		return array_merge( $items, [ 'component.panels', 'module.mail-settings' ] );
 	}
