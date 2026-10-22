@@ -11,10 +11,17 @@ const ALLOWED_TAGS = new Set([
 ]);
 const BLOCKED_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH', 'FORM']);
 const MAX_MARKUP_LENGTH = 100000;
+// Explicitly permitted persisted bindings, not arbitrary dynamic URL strings.
+// They must never become navigable href attributes in the editor DOM.
+const DYNAMIC_LINK_TOKENS = new Set(['{{action.url}}']);
+const EDITOR_LINK_TOKEN_ATTR = 'data-cb-mail-link-token';
 
 export const safeMailLink = (raw) => {
 	const url = String(raw || '').trim();
 	if (!url || /[\u0000-\u001f\u007f]/.test(url)) return '';
+	if (DYNAMIC_LINK_TOKENS.has(url)) return url;
+	// Only an exact allowlisted token is permitted, never embedded tokens.
+	if (url.includes('{{') || url.includes('}}')) return '';
 	try {
 		const parsed = new URL(url);
 		if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
@@ -52,8 +59,13 @@ export const sanitizeMailMarkup = (source, documentRef) => {
 		}
 		const node = documentRef.createElement(tag.toLowerCase());
 		if (tag === 'A') {
-			const href = safeMailLink(original.getAttribute('href'));
-			if (href) node.setAttribute('href', href);
+			// The editing DOM holds allowed unresolved tokens as inert data.
+			// A real href takes precedence over any editor-only token marker.
+			const rawHref = original.hasAttribute('href')
+				? original.getAttribute('href') : original.getAttribute(EDITOR_LINK_TOKEN_ATTR);
+			const href = safeMailLink(rawHref);
+			if (DYNAMIC_LINK_TOKENS.has(href)) node.setAttribute(EDITOR_LINK_TOKEN_ATTR, href);
+			else if (href) node.setAttribute('href', href);
 			const title = original.getAttribute('title');
 			if (title) node.setAttribute('title', title.slice(0, 255));
 		}
@@ -69,6 +81,13 @@ export const serializeMailMarkup = (element, documentRef) => {
 	// Sanitize a clone, not the live editable surface or its user selection.
 	const fragment = sanitizeMailMarkup(element.innerHTML, documentRef);
 	container.append(fragment);
+	// Persist the canonical href token, never the editor-only data marker.
+	// Actual URL resolution, validity and context escaping belong to PHP.
+	for (const anchor of container.querySelectorAll('a[' + EDITOR_LINK_TOKEN_ATTR + ']')) {
+		const token = anchor.getAttribute(EDITOR_LINK_TOKEN_ATTR);
+		if (DYNAMIC_LINK_TOKENS.has(token)) anchor.setAttribute('href', token);
+		anchor.removeAttribute(EDITOR_LINK_TOKEN_ATTR);
+	}
 	return container.innerHTML;
 };
 
@@ -194,12 +213,14 @@ export const createMailRichTextControls = ({
 	addButton(documentRef, linkRow, 'Apply link', 'Apply the entered link', () => {
 		const href = safeMailLink(linkField.value);
 		if (!href) {
-			linkError.textContent = 'Enter a valid https, http or mailto address.';
+			linkError.textContent = 'Enter a valid https, http, mailto or supported dynamic action URL.';
 			return;
 		}
 		if (!savedLinkRange || !editor.contains(savedLinkRange.commonAncestorContainer)) return;
 		const anchor = documentRef.createElement('a');
-		anchor.href = href;
+		// An unresolved binding is display-only in the editor, not a link.
+		if (DYNAMIC_LINK_TOKENS.has(href)) anchor.setAttribute(EDITOR_LINK_TOKEN_ATTR, href);
+		else anchor.setAttribute('href', href);
 		anchor.append(savedLinkRange.extractContents());
 		savedLinkRange.insertNode(anchor);
 		savedLinkRange = null;
