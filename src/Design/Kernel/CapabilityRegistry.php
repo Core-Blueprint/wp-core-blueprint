@@ -9,13 +9,20 @@ final class CapabilityRegistry {
 	/** @var array<string,array<string,CapabilityClass>> */
 	private array $definitions = [];
 	private bool $sealed = false;
+	/** @var list<string> */
+	private array $failures = [];
 
 	public function __construct( private readonly ProviderRegistry $providers ) {}
 
 	public function register( string $provider, string $capability, CapabilityClass $class ): bool {
 		$provider = trim( $provider );
 		$capability = trim( $capability );
-		if ( $this->sealed || ! $this->providers->has_canonical( $provider ) || ! Identifier::capability( $capability ) || isset( $this->definitions[ $provider ][ $capability ] ) ) {
+		if ( $this->sealed || ! $this->providers->has_canonical( $provider ) || ! Identifier::capability( $capability ) ) {
+			$this->failures[] = 'REGISTRY_INVALID';
+			return false;
+		}
+		if ( isset( $this->definitions[ $provider ][ $capability ] ) ) {
+			$this->failures[] = 'REGISTRY_COLLISION';
 			return false;
 		}
 		$this->definitions[ $provider ][ $capability ] = $class;
@@ -42,6 +49,11 @@ final class CapabilityRegistry {
 		}
 		usort( $result, static fn( array $a, array $b ): int => strcmp( $a['provider'] . "\0" . $a['id'], $b['provider'] . "\0" . $b['id'] ) );
 		return $result;
+	}
+
+	/** @return list<string> */
+	public function failures(): array {
+		return $this->failures;
 	}
 
 	public function seal(): void {

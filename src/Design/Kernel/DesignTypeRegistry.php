@@ -10,16 +10,20 @@ final class DesignTypeRegistry {
 	/** @var array<string,array{id:string,owner_provider:string,allow_site_presentational:bool}> */
 	private array $definitions = [];
 	private bool $sealed = false;
+	/** @var list<string> */
+	private array $failures = [];
 
 	public function __construct( private readonly ProviderRegistry $providers ) {}
 
 	public function register( string $id, string $owner_provider, bool $allow_site_presentational = false ): bool {
-		if ( $this->sealed ) {
-			return false;
-		}
 		$id = trim( $id );
 		$owner_provider = trim( $owner_provider );
-		if ( ! Identifier::design_type( $id ) || ! $this->providers->has_canonical( $owner_provider ) || isset( $this->definitions[ $id ] ) ) {
+		if ( $this->sealed || ! Identifier::design_type( $id ) || ! $this->providers->has_canonical( $owner_provider ) ) {
+			$this->failures[] = 'REGISTRY_INVALID';
+			return false;
+		}
+		if ( isset( $this->definitions[ $id ] ) ) {
+			$this->failures[] = 'REGISTRY_COLLISION';
 			return false;
 		}
 		$this->definitions[ $id ] = [
@@ -43,6 +47,11 @@ final class DesignTypeRegistry {
 	}
 
 	/** Registration closes before graph publication; copied data are immutable by value. */
+	/** @return list<string> */
+	public function failures(): array {
+		return $this->failures;
+	}
+
 	public function seal(): void {
 		$this->sealed = true;
 	}

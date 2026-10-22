@@ -15,6 +15,8 @@ final class AuthorizationRegistry {
 	/** @var array<string,array<string,array<string,true>>> */
 	private array $site_grants = [];
 	private bool $sealed = false;
+	/** @var list<string> */
+	private array $failures = [];
 
 	public function __construct(
 		private readonly ProviderRegistry $providers,
@@ -25,6 +27,11 @@ final class AuthorizationRegistry {
 	public function grant_consumer( string $design_type, string $provider, string $capability ): bool {
 		$canonical = $this->grant_target( $design_type, $provider, $capability );
 		if ( $this->sealed || null === $canonical ) {
+			$this->failures[] = 'REGISTRY_INVALID';
+			return false;
+		}
+		if ( isset( $this->consumer_grants[ $design_type ][ $canonical ][ $capability ] ) ) {
+			$this->failures[] = 'REGISTRY_COLLISION';
 			return false;
 		}
 		$this->consumer_grants[ $design_type ][ $canonical ][ $capability ] = true;
@@ -35,9 +42,15 @@ final class AuthorizationRegistry {
 		$definition = $this->design_types->definition( $design_type );
 		$canonical = $this->grant_target( $design_type, $provider, $capability );
 		if ( $this->sealed || null === $definition || null === $canonical || ! $definition['allow_site_presentational'] ) {
+			$this->failures[] = 'REGISTRY_INVALID';
 			return false;
 		}
 		if ( CapabilityClass::Presentation !== $this->capabilities->class_for( $canonical, $capability ) ) {
+			$this->failures[] = 'REGISTRY_INVALID';
+			return false;
+		}
+		if ( isset( $this->site_grants[ $design_type ][ $canonical ][ $capability ] ) ) {
+			$this->failures[] = 'REGISTRY_COLLISION';
 			return false;
 		}
 		$this->site_grants[ $design_type ][ $canonical ][ $capability ] = true;
@@ -72,6 +85,11 @@ final class AuthorizationRegistry {
 		}
 		usort( $result, static fn( array $a, array $b ): int => strcmp( implode( "\0", array_values( $a ) ), implode( "\0", array_values( $b ) ) ) );
 		return $result;
+	}
+
+	/** @return list<string> */
+	public function failures(): array {
+		return $this->failures;
 	}
 
 	public function seal(): void {
