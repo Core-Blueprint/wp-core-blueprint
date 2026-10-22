@@ -870,10 +870,12 @@ export const attachTrustedDesignerHost = ({
 				}
 			};
 			let inspectorSelectionKey = null;
+			let inspectorInitialized = false;
 			const inspectorControls = new Map();
 			const clearInspector = () => {
 				for (const control of inspectorControls.values()) control.destroy();
 				inspectorControls.clear();
+				inspectorInitialized = false;
 				inspectorPanel.replaceChildren();
 			};
 			const renderInteraction = ({project, selection, signal: renderSignal}) => {
@@ -894,7 +896,8 @@ export const attachTrustedDesignerHost = ({
 				};
 				tree.render([walk(project.root, [])]);
 				const primary = selection?.primary;
-				const key = primary?.kind === 'node' ? JSON.stringify(primary.path) : null;
+				const inspected = primary?.kind === 'node' ? nodeAt(project.root, primary.path) : null;
+				const key = inspected ? JSON.stringify([primary.path, inspected.type]) : null;
 				if (key !== inspectorSelectionKey) {
 					clearInspector();
 					inspectorSelectionKey = key;
@@ -902,12 +905,24 @@ export const attachTrustedDesignerHost = ({
 				if (key !== null) {
 					const node = nodeAt(project.root, primary.path);
 					if (!node) throw new Error('SELECTION_INVALID');
-					if (!inspectorControls.size) {
+					if (!inspectorInitialized) {
+						inspectorInitialized = true;
 						const identity = createDesignerInspectorIdentity({
 							label: node.type, eyebrow: node.provider,
 							context: 'Selected element', documentRef: stagedRoot.ownerDocument,
 						});
 						inspectorPanel.append(identity.element);
+						if (primary.path.length > 0) {
+							const remove = stagedRoot.ownerDocument.createElement('button');
+							remove.type = 'button';
+							remove.className = 'button cb-core-design-shell__inspector-remove';
+							remove.textContent = 'Remove element';
+							remove.addEventListener('click', () => {
+								if (signal.aborted || host.state !== 'READY') return;
+								editor.execute(prefix + '.remove', {path: [...primary.path]});
+							}, {signal});
+							inspectorPanel.append(remove);
+						}
 						for (const field of profileModule.propertiesFor(node)) {
 							const control = createDesignerInspectorValueControl({
 								key: 'node.' + field.key, label: field.label,
