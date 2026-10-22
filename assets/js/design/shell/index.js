@@ -681,7 +681,7 @@ export const createDesignerShell = (root, {
 		// Detached Host canvas cleanup is allowed only after its Host scope
 		// was aborted (failed staging or a Save-gated context switch). Any
 		// still-attached active Designer retains the original Exit Guard.
-		const discardedStage = platformStaged && !root.isConnected && platformSignal?.aborted === true;
+		const discardedStage = platformStaged && platformSignal?.aborted === true;
 		if (!discardedStage && typeof window !== 'undefined'
 			&& window.cbCore?.designerExitGuard?.canTransition?.(root) !== true) {
 			// Host must receive cleanup failures rather than silently discard
