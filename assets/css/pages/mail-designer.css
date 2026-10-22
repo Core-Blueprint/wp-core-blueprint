@@ -296,3 +296,20 @@ button.cb-core-mail-binding.cb-core-clipboard-control:not(.cb-core-button) {
  .cb-mail-platform { padding: 12px 6px; }
  .cb-mail-platform__columns { grid-template-columns: minmax(0,1fr) !important; }
 }
+
+
+/* Native rich-text toolbar is inside the Mail canvas, which always enqueues
+   this Mail stylesheet. No dependency on legacy editor asset enqueueing. */
+.cb-mail-platform .cb-mail-rich-text-controls { display: grid; gap: 8px; min-width: 0; margin: 8px 0; }
+.cb-mail-platform .cb-mail-rich-text-controls__toolbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.cb-mail-platform .cb-mail-rich-text-controls__toolbar .cb-core-button { min-width: 2rem; min-height: 2rem; }
+.cb-mail-platform .cb-mail-rich-text-controls__editor { min-height: 140px; max-height: 360px; overflow: auto;
+  padding: 12px; border: 1px solid #cbd5e1; background: #fff; color: #1f2937;
+  font-size: 14px; line-height: 1.6; white-space: normal; overflow-wrap: anywhere; cursor: text; }
+.cb-mail-platform .cb-mail-rich-text-controls__editor:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.cb-mail-platform .cb-mail-rich-text-controls__link { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.cb-mail-platform .cb-mail-rich-text-controls__link[hidden] { display: none !important; }
+.cb-mail-platform .cb-mail-rich-text-controls__link label { display: grid; gap: 4px; }
+.cb-mail-platform .cb-mail-rich-text-controls__advanced { padding-top: 8px; border-top: 1px solid #cbd5e1; }
+.cb-mail-platform .cb-mail-rich-text-controls__advanced summary { cursor: pointer; font-size: 12px; color: #475569; }
+.cb-mail-platform .cb-mail-rich-text-controls__advanced textarea { width: 100%; box-sizing: border-box; margin-top: 8px; font-family: monospace; }
