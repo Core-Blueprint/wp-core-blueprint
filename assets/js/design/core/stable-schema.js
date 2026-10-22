@@ -45,6 +45,69 @@ const frozenTree = (value) => {
 	));
 };
 
+const validateDomain = (value, schema, pointer, add, depth = 0) => {
+	if (depth > 64) { add(CODES.limit, pointer); return; }
+	if (!isPlainObject(schema) || Object.keys(schema).some((key) => !schemaKeys.has(key))) {
+		add(CODES.domain, pointer); return;
+	}
+	const typeDeclaration = ownValue(schema, 'type');
+	const types = typeof typeDeclaration === 'string' ? [typeDeclaration] : typeDeclaration;
+	const checks = {
+		object: () => isPlainObject(value),
+		array: () => Array.isArray(value),
+		string: () => typeof value === 'string',
+		number: () => typeof value === 'number',
+		integer: () => typeof value === 'number' && Number.isSafeInteger(value),
+		boolean: () => typeof value === 'boolean',
+		null: () => value === null,
+	};
+	if (!Array.isArray(types) || !types.length || new Set(types).size !== types.length
+		|| !types.every((type) => typeof type === 'string' && own(checks, type))
+		|| !types.some((type) => checks[type]())) { add(CODES.domain, pointer); return; }
+	if (own(schema, 'enum') && (!Array.isArray(schema.enum)
+		|| !schema.enum.some((entry) => jsonEqual(entry, value)))) {
+		add(CODES.domain, pointer);
+	}
+	if (typeof value === 'string') {
+		const len = [...value].length;
+		if ((own(schema, 'minLength') && (!Number.isSafeInteger(schema.minLength) || len < schema.minLength))
+			|| (own(schema, 'maxLength') && (!Number.isSafeInteger(schema.maxLength) || len > schema.maxLength))) {
+			add(CODES.domain, pointer);
+		}
+	}
+	if (typeof value === 'number') {
+		if ((own(schema, 'minimum') && (typeof schema.minimum !== 'number' || value < schema.minimum))
+			|| (own(schema, 'maximum') && (typeof schema.maximum !== 'number' || value > schema.maximum))) {
+			add(CODES.domain, pointer);
+		}
+	}
+	if (Array.isArray(value)) {
+		if ((own(schema, 'minItems') && (!Number.isSafeInteger(schema.minItems) || value.length < schema.minItems))
+			|| (own(schema, 'maxItems') && (!Number.isSafeInteger(schema.maxItems) || value.length > schema.maxItems))) {
+			add(CODES.domain, pointer);
+		}
+		const itemsSchema = ownValue(schema, 'items');
+		if (!isPlainObject(itemsSchema)) { add(CODES.domain, pointer); return; }
+		value.forEach((entry, i) => validateDomain(entry, itemsSchema, pointer + '/' + i, add, depth + 1));
+	}
+	if (isPlainObject(value)) {
+		const properties = own(schema, 'properties') ? schema.properties : {};
+		const required = own(schema, 'required') ? schema.required : [];
+		if (!isPlainObject(properties) || !Array.isArray(required)
+			|| !required.every((key) => typeof key === 'string')
+			|| (own(schema, 'additionalProperties') && typeof schema.additionalProperties !== 'boolean')) {
+			add(CODES.domain, pointer); return;
+		}
+		for (const key of required) if (!own(value, key)) add(CODES.domain, pointer + '/' + escapeSegment(key));
+		for (const key of Object.keys(value)) {
+			const at = pointer + '/' + escapeSegment(key);
+			if (own(properties, key) && isPlainObject(properties[key])) validateDomain(value[key], properties[key], at, add, depth + 1);
+			else if (!(own(schema, 'additionalProperties') && schema.additionalProperties === true)) add(CODES.domain, at);
+		}
+	}
+};
+
+
 /**
  * A project-only view of the ONE server-owned frozen registry. A snapshot
  * fingerprint format is not a proof of provenance: the Host MUST verify it
@@ -143,68 +206,6 @@ export function validateStableProjectV1(project, context) {
 	}
 	if (projectVersion !== 1) return finish();
 
-	const domain = (value, schema, pointer, depth) => {
-		if (depth > 64) { add(CODES.limit, pointer); return; }
-		if (!isPlainObject(schema) || Object.keys(schema).some((key) => !schemaKeys.has(key))) {
-			add(CODES.domain, pointer); return;
-		}
-		const typeDeclaration = ownValue(schema, 'type');
-		const types = typeof typeDeclaration === 'string' ? [typeDeclaration] : typeDeclaration;
-		const checks = {
-			object: () => isPlainObject(value),
-			array: () => Array.isArray(value),
-			string: () => typeof value === 'string',
-			number: () => typeof value === 'number',
-			integer: () => typeof value === 'number' && Number.isSafeInteger(value),
-			boolean: () => typeof value === 'boolean',
-			null: () => value === null,
-		};
-		if (!Array.isArray(types) || !types.length || new Set(types).size !== types.length
-			|| !types.every((type) => typeof type === 'string' && own(checks, type))
-			|| !types.some((type) => checks[type]())) { add(CODES.domain, pointer); return; }
-		if (own(schema, 'enum') && (!Array.isArray(schema.enum)
-			|| !schema.enum.some((entry) => jsonEqual(entry, value)))) {
-			add(CODES.domain, pointer);
-		}
-		if (typeof value === 'string') {
-			const len = [...value].length;
-			if ((own(schema, 'minLength') && (!Number.isSafeInteger(schema.minLength) || len < schema.minLength))
-				|| (own(schema, 'maxLength') && (!Number.isSafeInteger(schema.maxLength) || len > schema.maxLength))) {
-				add(CODES.domain, pointer);
-			}
-		}
-		if (typeof value === 'number') {
-			if ((own(schema, 'minimum') && (typeof schema.minimum !== 'number' || value < schema.minimum))
-				|| (own(schema, 'maximum') && (typeof schema.maximum !== 'number' || value > schema.maximum))) {
-				add(CODES.domain, pointer);
-			}
-		}
-		if (Array.isArray(value)) {
-			if ((own(schema, 'minItems') && (!Number.isSafeInteger(schema.minItems) || value.length < schema.minItems))
-				|| (own(schema, 'maxItems') && (!Number.isSafeInteger(schema.maxItems) || value.length > schema.maxItems))) {
-				add(CODES.domain, pointer);
-			}
-			const itemsSchema = ownValue(schema, 'items');
-			if (!isPlainObject(itemsSchema)) { add(CODES.domain, pointer); return; }
-			value.forEach((entry, i) => domain(entry, itemsSchema, pointer + '/' + i, depth + 1));
-		}
-		if (isPlainObject(value)) {
-			const properties = own(schema, 'properties') ? schema.properties : {};
-			const required = own(schema, 'required') ? schema.required : [];
-			if (!isPlainObject(properties) || !Array.isArray(required)
-				|| !required.every((key) => typeof key === 'string')
-				|| (own(schema, 'additionalProperties') && typeof schema.additionalProperties !== 'boolean')) {
-				add(CODES.domain, pointer); return;
-			}
-			for (const key of required) if (!own(value, key)) add(CODES.domain, pointer + '/' + escapeSegment(key));
-			for (const key of Object.keys(value)) {
-				const at = pointer + '/' + escapeSegment(key);
-				if (own(properties, key) && isPlainObject(properties[key])) domain(value[key], properties[key], at, depth + 1);
-				else if (!(own(schema, 'additionalProperties') && schema.additionalProperties === true)) add(CODES.domain, at);
-			}
-		}
-	};
-
 	let count = 0;
 	const node = (value, pointer, parentType, depth) => {
 		if (depth > 64 || ++count > 100000) { add(CODES.limit, pointer); return; }
@@ -233,7 +234,7 @@ export function validateStableProjectV1(project, context) {
 		else if (definition && definition.propertiesSchemaId !== null) {
 			const entry = registry.domains.get(definition.propertiesSchemaId);
 			if (!entry) add(CODES.domain, pointer + '/properties');
-			else domain(properties, entry.schema, pointer + '/properties', 0);
+			else validateDomain(properties, entry.schema, pointer + '/properties', add, 0);
 		} else if (definition && Object.keys(properties).length > 0) add(CODES.domain, pointer + '/properties');
 		if (!Array.isArray(children)) { add(CODES.node, pointer + '/children'); return; }
 		if (!definition || typeof type !== 'string') return;
@@ -244,5 +245,98 @@ export function validateStableProjectV1(project, context) {
 		});
 	};
 	node(projectRoot, '/root', null, 0);
+	return finish();
+}
+
+/**
+ * F03: field-map validator. The registrySnapshot argument is the immutable
+ * PersistedFieldFacetV1 from Luna 3's ONE FrozenRegistry, supplied only after
+ * Host verification against the installed bootstrap and project snapshot.
+ * This validates values; it never authorizes a Save or publishes a registry.
+ */
+export function validatePersistedFieldsV1(values, { profileId, projectSchema, registrySnapshot, pointerBase } = {}) {
+	const errors = new Map();
+	const add = (code, pointer) => errors.set(pointer + '\0' + code, Object.freeze({ code, pointer }));
+	const finish = () => {
+		const diagnostics = [...errors.values()].sort((a, b) =>
+			(a.pointer < b.pointer ? -1 : a.pointer > b.pointer ? 1 : 0)
+			|| (a.code < b.code ? -1 : a.code > b.code ? 1 : 0));
+		return Object.freeze({ valid: diagnostics.length === 0, diagnostics: Object.freeze(diagnostics) });
+	};
+	if (!['/persistedFields', '/fields', '/acceptedFields'].includes(pointerBase)) {
+		add(CODES.domain, '');
+		return finish();
+	}
+	// Reject hostile descriptors, prototypes and cycles before reading values.
+	try {
+		inspectJsonValue(values, pointerBase);
+		inspectJsonValue(registrySnapshot);
+	} catch (error) {
+		const isLimit = error instanceof InvalidDesignValueError && error.reason === 'limit';
+		const at = error instanceof InvalidDesignValueError && error.pointer.startsWith(pointerBase)
+			? error.pointer : pointerBase;
+		add(isLimit ? CODES.limit : CODES.domain, at);
+		return finish();
+	}
+	const facet = registrySnapshot;
+	const fingerprint = (value) => typeof value === 'string' && /^sha256:[a-f0-9]{64}$/.test(value);
+	if (!keysMatch(facet, [
+		'contractVersion', 'schemaGeneration', 'profileId', 'projectSchema',
+		'registryFingerprint', 'projectSchemaFingerprint', 'fieldDescriptors', 'fingerprint',
+	]) || !frozenTree(facet)
+		|| facet.contractVersion !== 1 || facet.schemaGeneration !== 1
+		|| typeof profileId !== 'string' || !profileId || facet.profileId !== profileId
+		|| typeof projectSchema !== 'string' || !projectSchema || facet.projectSchema !== projectSchema
+		|| !fingerprint(facet.registryFingerprint) || !fingerprint(facet.projectSchemaFingerprint)
+		|| !fingerprint(facet.fingerprint) || !Array.isArray(facet.fieldDescriptors)) {
+		add(CODES.domain, pointerBase);
+		return finish();
+	}
+	// Identical to RegistryCompiler::field_id(): no uppercase, spaces or
+	// implicit normalization. The facet is a frozen projection, not a claim.
+	const fieldId = /^[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)*$/;
+	const descriptorKeys = new Set([
+		'contractVersion', 'id', 'saveKey', 'labelKey', 'valueSchema',
+		'placement', 'requiredCapability',
+	]);
+	const definitions = new Map();
+	const ids = new Set();
+	let previous = null;
+	for (const entry of facet.fieldDescriptors) {
+		if (!isPlainObject(entry)
+			|| Object.keys(entry).some((key) => !descriptorKeys.has(key))
+			|| !['contractVersion', 'id', 'saveKey', 'labelKey', 'valueSchema', 'placement']
+				.every((key) => own(entry, key))
+			|| entry.contractVersion !== 1
+			|| typeof entry.id !== 'string' || !fieldId.test(entry.id)
+			|| typeof entry.saveKey !== 'string' || !fieldId.test(entry.saveKey)
+			|| typeof entry.labelKey !== 'string' || !entry.labelKey
+			|| !isPlainObject(entry.valueSchema)
+			|| !['header', 'settings'].includes(entry.placement)
+			|| (own(entry, 'requiredCapability')
+				&& (typeof entry.requiredCapability !== 'string' || !entry.requiredCapability))
+			|| (previous !== null && previous >= entry.saveKey) || ids.has(entry.id)) {
+			add(CODES.domain, pointerBase);
+			return finish();
+		}
+		ids.add(entry.id);
+		definitions.set(entry.saveKey, entry.valueSchema);
+		previous = entry.saveKey;
+	}
+	if (!isPlainObject(values)) {
+		add(CODES.domain, pointerBase);
+		return finish();
+	}
+	for (const key of definitions.keys()) {
+		if (!own(values, key)) add(CODES.domain, pointerBase + '/' + escapeSegment(key));
+	}
+	for (const key of Object.keys(values)) {
+		const pointer = pointerBase + '/' + escapeSegment(key);
+		if (!definitions.has(key)) {
+			add(CODES.domain, pointer);
+		} else {
+			validateDomain(ownValue(values, key), definitions.get(key), pointer, add);
+		}
+	}
 	return finish();
 }
