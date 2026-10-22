@@ -32,6 +32,7 @@ defined( 'ABSPATH' ) || exit;
 final class Bootstrap {
 	public static function boot(): void {
 		DocumentBootstrap::boot();
+		\CoreBlueprint\Core\Design\Editor\PlatformTransport::boot();
 	}
 
 	/** Register Base's operation ledger before the existing DB schema sweep. */
