@@ -50,7 +50,7 @@ final class StableSchemaRegistry {
 		$this->snapshot_fingerprint = $snapshot['fingerprint'];
 
 		if ( ! is_array( $snapshot['providers'] ) || ! array_is_list( $snapshot['providers'] )
-			|| count( $snapshot['providers'] ) !== count( array_unique( $snapshot['providers'] ) ) ) {
+			) {
 			throw new \InvalidArgumentException( 'REGISTRY_INVALID: inconsistent canonical providers.' );
 		}
 		$prior = '';
