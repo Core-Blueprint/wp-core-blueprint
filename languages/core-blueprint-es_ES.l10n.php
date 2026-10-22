@@ -394,7 +394,6 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'The mail design is invalid.' => 'El diseño del correo no es válido.',
     'The mail template could not be saved. Reload if the document changed.' => 'No se pudo guardar la plantilla de correo. Recarga la página si el documento ha cambiado.',
     'The mail template save could not be verified.' => 'No se pudo verificar el guardado de la plantilla de correo.',
-    'Mail Designer storage is unavailable. Contact a Core Blueprint operator; no template data was changed.' => 'El almacenamiento de Mail Designer no está disponible. Ponte en contacto con un administrador de Core Blueprint; no se han modificado los datos de la plantilla.',
     'Mail document storage requires operator attention.' => 'El almacenamiento de documentos de correo requiere la atención de un administrador.',
     'Core Blueprint Mail Designer could not safely load a saved template. WordPress handled the original system notification unchanged. Review the Mail Designer storage before editing this template.' => 'Core Blueprint Mail Designer no pudo cargar de forma segura una plantilla guardada. WordPress procesó sin cambios la notificación original del sistema. Revisa el almacenamiento de Mail Designer antes de editar esta plantilla.',
     'Reports Profile import is temporarily unavailable while canonical Reports storage is active or requires recovery. No Profile sections were changed. Review the Reports storage policy.' => 'La importación del perfil Reports no está disponible temporalmente mientras el almacenamiento canónico de Reports esté activo o requiera recuperación. No se ha modificado ninguna sección del perfil. Revisa la política de almacenamiento de Reports.',
@@ -407,9 +406,15 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Reports reset could not be verified.' => 'No se pudo verificar el restablecimiento de Reports.',
     'Reports design could not be saved. Reload if it has changed.' => 'No se pudo guardar el diseño de Reports. Recarga la página si ha cambiado.',
     'Reports save readback failed.' => 'No se pudo verificar la lectura de los datos guardados de Reports.',
-    'Canonical Reports design is unavailable. An operator must review its storage before changes can be made.' => 'El diseño canónico de Reports no está disponible. Un administrador debe revisar su almacenamiento antes de realizar cambios.',
     'Mail Designer now saves exclusively through the authorized Platform.' => 'Mail Designer ahora guarda exclusivamente a través de la plataforma autorizada.',
     'Operation unavailable' => 'Operación no disponible',
+    'Edit the maintenance report composition and branding.' => 'Edita la composición y la identidad visual del informe de mantenimiento.',
+    'Enable Mail Designer and register at least one template before editing.' => 'Activa Mail Designer y registra al menos una plantilla antes de editar.',
+    'Mail Designer unavailable' => 'Mail Designer no disponible',
+    'Reports is not enabled.' => 'Reports no está activado.',
+    'Verifying the Designer and loading the maintenance report…' => 'Verificando Designer y cargando el informe de mantenimiento…',
+    'Verifying the Designer and loading the selected template…' => 'Verificando Designer y cargando la plantilla seleccionada…',
+    'You do not have permission to edit Reports branding.' => 'No tienes permiso para editar la identidad visual de Reports.',
 ] );
 // These former source strings were replaced by revision-aware operator guidance.
 unset(
@@ -421,7 +426,8 @@ unset(
     $catalog['messages']['Mail Designer is disabled or the template is unavailable.'],
     $catalog['messages']['The mail template could not be saved. Reload if the document changed.'],
     $catalog['messages']['The mail template save could not be verified.'],
-    $catalog['messages']['Mail template saved.']
+    $catalog['messages']['Mail template saved.'],
+    $catalog['messages']['Reports subsystem not loaded.']
 );
 
 return $catalog;

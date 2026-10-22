@@ -394,7 +394,6 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'The mail design is invalid.' => 'Der Mailentwurf ist ungültig.',
     'The mail template could not be saved. Reload if the document changed.' => 'Die Mailvorlage konnte nicht gespeichert werden. Laden Sie die Seite neu, falls das Dokument geändert wurde.',
     'The mail template save could not be verified.' => 'Das Speichern der Mailvorlage konnte nicht überprüft werden.',
-    'Mail Designer storage is unavailable. Contact a Core Blueprint operator; no template data was changed.' => 'Der Speicher des Mail Designers ist nicht verfügbar. Wenden Sie sich an einen Core Blueprint-Administrator; es wurden keine Vorlagendaten geändert.',
     'Mail document storage requires operator attention.' => 'Der Speicher für Maildokumente erfordert die Prüfung durch einen Administrator.',
     'Core Blueprint Mail Designer could not safely load a saved template. WordPress handled the original system notification unchanged. Review the Mail Designer storage before editing this template.' => 'Core Blueprint Mail Designer konnte eine gespeicherte Vorlage nicht sicher laden. WordPress hat die ursprüngliche Systembenachrichtigung unverändert verarbeitet. Prüfen Sie den Mail-Designer-Speicher, bevor Sie diese Vorlage bearbeiten.',
     'Reports Profile import is temporarily unavailable while canonical Reports storage is active or requires recovery. No Profile sections were changed. Review the Reports storage policy.' => 'Der Import des Reports-Profils ist vorübergehend nicht verfügbar, solange der kanonische Reports-Speicher aktiv ist oder wiederhergestellt werden muss. Es wurden keine Profilabschnitte geändert. Prüfen Sie die Reports-Speicherrichtlinie.',
@@ -407,9 +406,15 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Reports reset could not be verified.' => 'Das Zurücksetzen von Reports konnte nicht überprüft werden.',
     'Reports design could not be saved. Reload if it has changed.' => 'Der Reports-Entwurf konnte nicht gespeichert werden. Laden Sie die Seite neu, falls er geändert wurde.',
     'Reports save readback failed.' => 'Die gespeicherten Reports-Daten konnten nicht überprüft werden.',
-    'Canonical Reports design is unavailable. An operator must review its storage before changes can be made.' => 'Der kanonische Reports-Entwurf ist nicht verfügbar. Ein Administrator muss den Speicher prüfen, bevor Änderungen vorgenommen werden können.',
     'Mail Designer now saves exclusively through the authorized Platform.' => 'Mail Designer speichert jetzt ausschließlich über die autorisierte Plattform.',
     'Operation unavailable' => 'Vorgang nicht verfügbar',
+    'Edit the maintenance report composition and branding.' => 'Bearbeiten Sie den Aufbau und das Branding des Wartungsberichts.',
+    'Enable Mail Designer and register at least one template before editing.' => 'Aktivieren Sie Mail Designer und registrieren Sie mindestens eine Vorlage, bevor Sie sie bearbeiten.',
+    'Mail Designer unavailable' => 'Mail Designer nicht verfügbar',
+    'Reports is not enabled.' => 'Reports ist nicht aktiviert.',
+    'Verifying the Designer and loading the maintenance report…' => 'Designer wird überprüft und der Wartungsbericht geladen…',
+    'Verifying the Designer and loading the selected template…' => 'Designer wird überprüft und die ausgewählte Vorlage geladen…',
+    'You do not have permission to edit Reports branding.' => 'Sie sind nicht berechtigt, das Reports-Branding zu bearbeiten.',
 ] );
 // These former source strings were replaced by revision-aware operator guidance.
 unset(
@@ -421,7 +426,8 @@ unset(
     $catalog['messages']['Mail Designer is disabled or the template is unavailable.'],
     $catalog['messages']['The mail template could not be saved. Reload if the document changed.'],
     $catalog['messages']['The mail template save could not be verified.'],
-    $catalog['messages']['Mail template saved.']
+    $catalog['messages']['Mail template saved.'],
+    $catalog['messages']['Reports subsystem not loaded.']
 );
 
 return $catalog;
