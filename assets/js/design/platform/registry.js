@@ -63,10 +63,19 @@ export function createRegistryView(bootstrap, runtimeModules) {
 	assertDigest(schema.fingerprint);
 	assertDigest(fields.fingerprint);
 	const runtime = new Map();
+	const seenPackagePaths = new Set();
 	if (!(runtimeModules instanceof Map)) throw new TypeError('HOST_MODULE_MISSING');
 	for (const module of b.modules) {
-		exactKeys(module, ['id','owner','dependencies','exports','stamp']);
-		if (runtime.has(module.id)) throw new TypeError('REGISTRY_COLLISION');
+		exactKeys(module, ['id','owner','dependencies','exports','stamp','packagePath']);
+		if (typeof module.packagePath !== 'string'
+			|| !/^(?:base|consumer)\/(?:[A-Za-z0-9_.@/-]+)\.js$/.test(module.packagePath)
+			|| module.packagePath.includes('//')
+			|| module.packagePath.split('/').some((part) => part === '.' || part === '..')) {
+			throw new TypeError('REGISTRY_INVALID');
+		}
+		if (runtime.has(module.id) || seenPackagePaths.has(module.packagePath)) throw new TypeError('REGISTRY_COLLISION');
+		seenPackagePaths.add(module.packagePath);
+		runtime.set(module.id, null);
 		if (runtimeModules.has(module.id)) runtime.set(module.id, runtimeModules.get(module.id));
 	}
 	const view = Object.freeze({

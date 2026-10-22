@@ -55,9 +55,13 @@ final class RegistryCompiler {
 		$module_map = [];
 		$dependencies = [];
 		foreach ( $module_declarations as $module ) {
-			self::keys( $module, [ 'id', 'owner', 'dependencies', 'exports', 'stamp' ] );
+			self::keys( $module, [ 'id', 'owner', 'dependencies', 'exports', 'stamp', 'packagePath' ] );
 			if ( ! $this->providers->has_canonical( $module['owner'] ) || ! self::strings( $module['dependencies'] ) || ! self::strings( $module['exports'] )
-				|| ! is_string( $module['stamp'] ) || ! preg_match( '/^[a-z0-9._:-]{1,128}$/D', $module['stamp'] ) ) {
+				|| ! is_string( $module['stamp'] ) || ! preg_match( '/^[a-z0-9._:-]{1,128}$/D', $module['stamp'] )
+				|| ! is_string( $module['packagePath'] )
+				|| ! preg_match( '#^(base|consumer)/[A-Za-z0-9_.@/-]+\\.js$#D', $module['packagePath'] )
+				|| str_contains( $module['packagePath'], '//' )
+				|| preg_match( '#(?:^|/)\\.\\.?/#', $module['packagePath'] ) ) {
 				self::invalid();
 			}
 			foreach ( $module['exports'] as $export ) {
@@ -69,6 +73,9 @@ final class RegistryCompiler {
 			sort( $module['exports'], SORT_STRING );
 			$module_map[ $module['id'] ] = $module;
 			$dependencies[ $module['id'] ] = $module['dependencies'];
+		}
+		if ( count( array_unique( array_column( $module_declarations, 'packagePath' ) ) ) !== count( $module_declarations ) ) {
+			throw new \DomainException( 'REGISTRY_COLLISION' );
 		}
 		$order = $this->sorter->sort( $dependencies );
 		$modules = array_map( static fn( string $id ): array => $module_map[ $id ], $order );

@@ -15,6 +15,12 @@ const required = (object, methods, code) => {
  * One root, one live canonical Interaction session, one serialized render
  * queue. All factories are trusted imports supplied by Luna 1's Base wiring;
  * nothing here executes document-provided callbacks, URLs or permissions.
+ *
+ * The integration factory supplies canvasRoot, resolveRegistryView,
+ * createSessionBridge, createSaveCoordinator, readPersistedFields and a
+ * createShell({root, editor, context, signal}) function. The shell factory
+ * MUST accept a detached offscreen root and MUST NOT claim or mutate the
+ * current active shell root until the Host atomically commits staging.
  */
 export function createPlatformHost({
 	root,
@@ -136,10 +142,12 @@ export function createPlatformHost({
 			});
 			holder.adapter = adapter;
 			scope.own(() => adapter.destroy());
+			if (canvas.isConnected) throw refusal('HOST_CONTEXT_REFUSED');
 			const shell = required(await createShell(Object.freeze({
 				root: canvas, editor: holder.editor, context: identity, signal: scope.signal,
 			})), ['destroy'], 'HOST_CAPABILITY_UNAVAILABLE');
 			scope.own(() => shell.destroy());
+			if (canvas.isConnected) throw refusal('HOST_CONTEXT_REFUSED');
 			await queue.push(async () => {
 				if (scope.signal.aborted) throw refusal('RENDER_STALE');
 				await adapter.mount({root: canvas, editor: holder.editor, context: identity,

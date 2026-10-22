@@ -11,13 +11,23 @@ export function inspectTrustedContext(bootstrap, registryView) {
 	}
 	const identity = value.identity;
 	if (!identity || typeof identity !== 'object' || Array.isArray(identity)) throw new TypeError('HOST_CONTEXT_REFUSED');
-	for (const key of ['siteId', 'actorId', 'resourceId', 'contextEpoch']) {
+	for (const key of ['siteId', 'actorId', 'resourceType', 'resourceId', 'contextEpoch']) {
 		if (!Object.hasOwn(identity, key) || !['string','number'].includes(typeof identity[key])) {
 			throw new TypeError('HOST_CONTEXT_REFUSED');
 		}
 	}
-	if (!Number.isSafeInteger(identity.contextEpoch) || identity.contextEpoch < 0) throw new TypeError('HOST_CONTEXT_REFUSED');
-	if (typeof identity.resourceId !== 'string' || !identity.resourceId.length) throw new TypeError('HOST_CONTEXT_REFUSED');
+	if (!Number.isSafeInteger(identity.contextEpoch) || identity.contextEpoch < 0
+		|| !Number.isSafeInteger(identity.siteId) || identity.siteId < 1
+		|| !Number.isSafeInteger(identity.actorId) || identity.actorId < 1
+		|| typeof identity.resourceType !== 'string' || !identity.resourceType
+		|| typeof identity.resourceId !== 'string' || !identity.resourceId) throw new TypeError('HOST_CONTEXT_REFUSED');
+	const context = value.evidence?.context;
+	if (!context || typeof context !== 'object' || context.siteBlogId !== identity.siteId
+		|| context.actorId !== identity.actorId || context.resourceType !== identity.resourceType
+		|| context.resourceKey !== identity.resourceId || context.profileId !== value.profileId
+		|| context.registryFingerprint !== value.registryFingerprint.slice('sha256:'.length)) {
+		throw new TypeError('HOST_CONTEXT_REFUSED');
+	}
 	assertDigest(value.registryFingerprint);
 	return identity;
 }
