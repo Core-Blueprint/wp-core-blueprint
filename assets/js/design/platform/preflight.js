@@ -23,11 +23,16 @@ export async function preflight({evidence, frozenRegistry, root, contextEpoch, s
 		// These describe installed transitive file paths, NOT Registry IDs.
 		// Server-installed ArtifactEvidence verifies the underlying package graph.
 		assertDigest(evidence.artifactModuleGraphFingerprint);
-		if (evidence.context?.registryFingerprint !== frozenRegistry.fingerprint
-			|| !evidence.approvedPackages?.base || !evidence.approvedPackages?.consumer) {
+		const mode = evidence.packageMode;
+		const packageIds = mode === 'base-only' ? ['base']
+			: mode === 'base-consumer' ? ['base', 'consumer'] : null;
+		if (!packageIds || evidence.context?.registryFingerprint !== frozenRegistry.fingerprint
+			|| !evidence.approvedPackages || typeof evidence.approvedPackages !== 'object'
+			|| Array.isArray(evidence.approvedPackages)
+			|| Object.keys(evidence.approvedPackages).sort().join(',') !== packageIds.join(',')) {
 			return failed('ARTIFACT_RUNTIME_MISMATCH');
 		}
-		for (const packageId of ['base', 'consumer']) {
+		for (const packageId of packageIds) {
 			assertDigest(evidence.approvedPackages[packageId].manifestDigest);
 			assertDigest(evidence.approvedPackages[packageId].buildId);
 		}
@@ -53,7 +58,8 @@ export async function preflight({evidence, frozenRegistry, root, contextEpoch, s
 			if (typeof id !== 'string' || typeof path !== 'string'
 				|| !/^(?:base|consumer)\/[A-Za-z0-9_.@/-]+\.js$/.test(path)
 				|| path.includes('//') || path.split('/').some((part) => part === '..' || part === '.')
-				|| seenPaths.has(path) || !Object.hasOwn(evidence.moduleStamps, id)
+				|| seenPaths.has(path) || (mode === 'base-only' && !path.startsWith('base/'))
+				|| !Object.hasOwn(evidence.moduleStamps, id)
 				|| evidence.moduleStamps[id] !== module.stamp
 				|| !binding || typeof binding !== 'object' || Array.isArray(binding)) {
 				return failed('ARTIFACT_RUNTIME_MISMATCH');
