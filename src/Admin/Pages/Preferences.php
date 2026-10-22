@@ -616,42 +616,31 @@ final class Preferences extends PageBase {
 	 * and remains separate from immutable report-content snapshots.
 	 */
 	private function render_reports_tab( string $tab, array $tab_labels ): void {
-		if ( ! class_exists( '\CoreBlueprint\Core\\Reports\\ReportBranding' ) ) {
-			$this->render_subsystem_missing( __( 'Reports subsystem not loaded.', 'core-blueprint' ) );
+		// Base Platform v1 is a NEW canonical source. Do not call the former
+		// Reports DesignDocumentAdapter::current() or render the previous form:
+		// those paths assume a different document and an independent editor.
+		if ( ! class_exists( '\\CoreBlueprint\\Core\\Reports\\State' )
+			|| ! \\CoreBlueprint\\Core\\Reports\\State::is_enabled() ) {
+			$this->render_subsystem_missing( __( 'Reports is not enabled.', 'core-blueprint' ) );
 			return;
 		}
-
-		// Use the exact raw saved design, not resolved/rendered logo URLs.
-		// On an active site a missing/corrupt document fails closed, never
-		// quietly fills the form from legacy settings.
-		try {
-			$design = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::current();
-		} catch ( \RuntimeException $error ) {
-			$this->render_subsystem_missing( __( 'Canonical Reports design is unavailable. An operator must review its storage before changes can be made.', 'core-blueprint' ) );
+		if ( ! current_user_can( 'cb_manage_branding' ) ) {
+			$this->render_subsystem_missing( __( 'You do not have permission to edit Reports branding.', 'core-blueprint' ) );
 			return;
 		}
-		$branding = $design['branding'];
-		$fallback    = \CoreBlueprint\Core\Reports\ReportBranding::settings_defaults();
-		$nonce       = wp_create_nonce( 'cb_core_admin' );
-		$is_enabled  = class_exists( '\CoreBlueprint\Core\\Reports\\State' )
-			? \CoreBlueprint\Core\Reports\State::is_enabled()
-			: true;
-
-		// Resolve the logo attachment for the upload widget. Holds an
-		// attachment ID rather than a URL so the Media Library handles
-		// resizing, alt text, and replacement reuse. Uses the size-fallback
-		// helper so attachments without a 'medium' variant still render.
-		$logo_attachment_id = (int) ( $branding['logo_attachment_id'] ?? 0 );
-		$logo_url           = '';
-		$logo_alt           = '';
-		if ( $logo_attachment_id > 0 ) {
-			$logo_url = \CoreBlueprint\Core\Reports\ReportBranding::attachment_url( $logo_attachment_id, 'medium' );
-			$logo_alt = (string) get_post_meta( $logo_attachment_id, '_wp_attachment_image_alt', true );
-		}
-
 		ob_start();
-		include CB_CORE_DIR . 'templates/preferences-reports.php';
-		$html = ob_get_clean();
+		?>
+		<div class="wrap cb-core-wrap cb-core-reports-designer-wrap">
+			<header class="cb-core-page-header">
+				<h1 class="cb-core-title"><?php esc_html_e( 'Reports Designer', 'core-blueprint' ); ?></h1>
+				<p class="cb-core-intro"><?php esc_html_e( 'Edit the maintenance report composition and branding.', 'core-blueprint' ); ?></p>
+			</header>
+			<div data-cb-reports-designer data-cb-platform-base-context>
+				<p role="status"><?php esc_html_e( 'Verifying the Designer and loading the maintenance report…', 'core-blueprint' ); ?></p>
+			</div>
+		</div>
+		<?php
+		$html = (string) ob_get_clean();
 		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 
