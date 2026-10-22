@@ -286,10 +286,10 @@ def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str
         "moduleGraph": graph,
         "requiredCss": [{
             "assetId": "base-designer-shell",
-            "path": path,
+            "path": PLATFORM_WITNESS_FILE,
             "approvedCssWitness": witness,
             "selector": PLATFORM_WITNESS_SELECTOR,
-            "packagedDigest": files_sha[path],
+            "packagedDigest": files_sha[PLATFORM_WITNESS_FILE],
         }],
         "exclusions": {
             "manifest": PLATFORM_MANIFEST,
