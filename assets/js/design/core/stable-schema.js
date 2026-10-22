@@ -21,6 +21,22 @@ const schemaKeys = new Set([
 	'type', 'properties', 'required', 'additionalProperties', 'items', 'enum',
 	'minimum', 'maximum', 'minItems', 'maxItems', 'minLength', 'maxLength',
 ]);
+
+const jsonEqual = (left, right, depth = 0) => {
+	if (depth > 64) return false;
+	if (left === right) return true;
+	if (Array.isArray(left) || Array.isArray(right)) {
+		return Array.isArray(left) && Array.isArray(right)
+			&& left.length === right.length
+			&& left.every((item, index) => jsonEqual(item, right[index], depth + 1));
+	}
+	if (!isPlainObject(left) || !isPlainObject(right)) return false;
+	const a = Object.keys(left).sort();
+	const b = Object.keys(right).sort();
+	return a.length === b.length && a.every((key, index) =>
+		key === b[index] && jsonEqual(ownValue(left, key), ownValue(right, key), depth + 1));
+};
+
 const frozenTree = (value) => {
 	if (value === null || typeof value !== 'object') return true;
 	if (!Object.isFrozen(value)) return false;
@@ -147,7 +163,7 @@ export function validateStableProjectV1(project, context) {
 			|| !types.every((type) => typeof type === 'string' && own(checks, type))
 			|| !types.some((type) => checks[type]())) { add(CODES.domain, pointer); return; }
 		if (own(schema, 'enum') && (!Array.isArray(schema.enum)
-			|| !schema.enum.some((entry) => JSON.stringify(entry) === JSON.stringify(value)))) {
+			|| !schema.enum.some((entry) => jsonEqual(entry, value)))) {
 			add(CODES.domain, pointer);
 		}
 		if (typeof value === 'string') {
