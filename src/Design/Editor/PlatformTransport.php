@@ -301,36 +301,29 @@ final class PlatformTransport {
 		if ( ! is_array( $project['root'] )
 			|| ( $project['root']['type'] ?? null ) !== $info['designType']
 			|| ! $visit( $project['root'], null, 0 ) ) return false;
-		// Consumers may add stricter domain invariants without forked schema
-		// validators or Repository writers. Failure is always refusal, never
-		// repair/normalization. Both read and Save pass through this boundary.
-		$owner = match ( $profile ) {
-			Mail::PROFILE => Mail::class,
-			Reports::PROFILE => Reports::class,
-			default => null,
-		};
-		if ( null === $owner ) return false;
-		if ( is_callable( [ $owner, 'validate_native_document' ] )
-			&& $owner::validate_native_document( $project, $fields ) !== true ) return false;
-		// The native Mail product supplies an additional invariant validator
-		// alongside its Contract (not the earlier development-v0 validator).
-		// It enforces exact Columns cardinality and Mail domain limits.
-		if ( Mail::PROFILE === $profile
-			&& class_exists( \CoreBlueprint\Core\Design\Profile\Mail\Contract::class )
-			&& class_exists( \CoreBlueprint\Core\Design\Profile\Mail\Validator::class ) ) {
-			$diagnostics = ( new \CoreBlueprint\Core\Design\Profile\Mail\Validator() )->validate( $project );
-			if ( ! is_object( $diagnostics ) || ! method_exists( $diagnostics, 'has_errors' )
-				|| $diagnostics->has_errors() ) return false;
+		// The registered schema is necessary but not sufficient: product
+		// invariants are MANDATORY on both Repository reads and canonical Save.
+		// Never accept when an owner's native validator is not installed or
+		// cannot execute. No alternative v0 validator or data conversion.
+		if ( Mail::PROFILE === $profile ) {
+			if ( ! class_exists( \CoreBlueprint\Core\Design\Profile\Mail\Contract::class )
+				|| ! class_exists( \CoreBlueprint\Core\Design\Profile\Mail\Validator::class ) ) return false;
+			$validator = new \CoreBlueprint\Core\Design\Profile\Mail\Validator();
+			if ( ! is_callable( [ $validator, 'validate' ] ) ) return false;
+			$diagnostics = $validator->validate( $project );
+			return $diagnostics instanceof \CoreBlueprint\Core\Design\Kernel\Diagnostics
+				&& ! $diagnostics->has_errors();
 		}
-		// Reports owns its Composer cardinality, singleton blocks and branding
-		// invariants. Reuse the exact native Reports product validator at both
-		// Repository read and transaction boundaries after product integration.
-		if ( Reports::PROFILE === $profile
-			&& class_exists( \CoreBlueprint\Core\Reports\Composer\NativeComposition::class )
-			&& ! \CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document( [
+		if ( Reports::PROFILE === $profile ) {
+			$validator = \CoreBlueprint\Core\Reports\Composer\NativeComposition::class;
+			if ( ! class_exists( $validator ) || ! is_callable( [ $validator, 'valid_document' ] ) ) {
+				return false;
+			}
+			return true === $validator::valid_document( [
 				'project' => $project, 'fields' => $fields,
-			] ) ) return false;
-		return true;
+			] );
+		}
+		return false;
 	}
 
 	/**
