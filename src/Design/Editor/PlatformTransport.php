@@ -291,28 +291,63 @@ final class PlatformTransport {
 			&& $visit( $project['root'], null, 0 );
 	}
 
+	/**
+	 * Mirrors StableSchemaV1 domain constraints at the authoritative PHP
+	 * read/transactional-write boundary. No coercion, repairs or legacy cases.
+	 */
 	private static function valid_value( mixed $value, array $schema, int $depth = 0 ): bool {
-		if ( $depth > 64 || ! is_string( $schema['type'] ?? null ) ) return false;
-		switch ( $schema['type'] ) {
-			case 'string':
-				return is_string( $value ) && mb_strlen( $value, 'UTF-8' ) >= ( $schema['minLength'] ?? 0 )
-					&& mb_strlen( $value, 'UTF-8' ) <= ( $schema['maxLength'] ?? 65535 );
-			case 'integer':
-				return is_int( $value );
-			case 'boolean':
-				return is_bool( $value );
-			case 'object':
-				if ( ! is_array( $value ) || array_is_list( $value ) ) return false;
-				$properties = $schema['properties'] ?? [];
-				if ( ! is_array( $properties ) || count( $value ) !== count( $properties ) ) return false;
-				foreach ( $properties as $key => $definition ) {
-					if ( ! array_key_exists( $key, $value )
-						|| ! self::valid_value( $value[$key], $definition, $depth + 1 ) ) return false;
-				}
-				return true;
-			default:
-				return false;
+		if ( $depth > 64 || ! isset( $schema['type'] ) ) return false;
+		$types = is_string( $schema['type'] ) ? [ $schema['type'] ] : $schema['type'];
+		if ( ! is_array( $types ) || ! array_is_list( $types ) || [] === $types ) return false;
+		$matches = false;
+		foreach ( $types as $type ) {
+			if ( ! in_array( $type, [ 'string', 'integer', 'number', 'boolean', 'object', 'array', 'null' ], true ) ) return false;
+			$matches = $matches || match ( $type ) {
+				'string' => is_string( $value ),
+				'integer' => is_int( $value ) && abs( $value ) <= 9007199254740991,
+				'number' => ( is_int( $value ) || is_float( $value ) ) && is_finite( (float)$value ),
+				'boolean' => is_bool( $value ),
+				'object' => is_array( $value ) && ( [] === $value || ! array_is_list( $value ) ),
+				'array' => is_array( $value ) && array_is_list( $value ),
+				'null' => null === $value,
+			};
 		}
+		if ( ! $matches ) return false;
+		if ( array_key_exists( 'enum', $schema ) && ( ! is_array( $schema['enum'] )
+			|| ! in_array( $value, $schema['enum'], true ) ) ) return false;
+		if ( is_string( $value ) ) {
+			$length = mb_strlen( $value, 'UTF-8' );
+			if ( $length < ( $schema['minLength'] ?? 0 ) || $length > ( $schema['maxLength'] ?? 65535 ) ) return false;
+		}
+		if ( is_int( $value ) || is_float( $value ) ) {
+			if ( ( isset( $schema['minimum'] ) && $value < $schema['minimum'] )
+				|| ( isset( $schema['maximum'] ) && $value > $schema['maximum'] ) ) return false;
+		}
+		if ( is_array( $value ) && array_is_list( $value ) && [] !== $value ) {
+			if ( count( $value ) < ( $schema['minItems'] ?? 0 )
+				|| count( $value ) > ( $schema['maxItems'] ?? 100000 )
+				|| ! is_array( $schema['items'] ?? null ) ) return false;
+			foreach ( $value as $entry ) {
+				if ( ! self::valid_value( $entry, $schema['items'], $depth + 1 ) ) return false;
+			}
+		}
+		if ( is_array( $value ) && ! array_is_list( $value ) || [] === $value && ( $types === [ 'object' ] ) ) {
+			$properties = $schema['properties'] ?? [];
+			$required = $schema['required'] ?? [];
+			if ( ! is_array( $properties ) || ! is_array( $required ) ) return false;
+			foreach ( $required as $key ) {
+				if ( ! is_string( $key ) || ! array_key_exists( $key, $value ) ) return false;
+			}
+			foreach ( $value as $key => $entry ) {
+				if ( ! array_key_exists( $key, $properties ) ) {
+					if ( ( $schema['additionalProperties'] ?? false ) !== true ) return false;
+					continue;
+				}
+				if ( ! is_array( $properties[$key] )
+					|| ! self::valid_value( $entry, $properties[$key], $depth + 1 ) ) return false;
+			}
+		}
+		return true;
 	}
 
 	private function __construct() {}
