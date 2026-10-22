@@ -784,18 +784,72 @@ export const attachTrustedDesignerHost = ({
 				},
 			});
 			layersPanel.append(tree.element);
-			// Only the trusted PHP FrozenRegistry provides component identities.
-			// These descriptors have no executable create policy in v1; presenting
-			// them as clickable "Add" commands would create false functionality.
 			const activeRegistry = registriesByIdentity.get(JSON.stringify(context));
-			if (!activeRegistry) throw new Error('REGISTRY_INVALID');
-			for (const component of activeRegistry.components) {
-				const item = stagedRoot.ownerDocument.createElement('div');
-				item.className = 'cb-core-design-shell__palette-item';
-				item.textContent = component.id;
-				item.setAttribute('data-cb-design-component-id', component.id);
-				elementsPanel.append(item);
+			const profileModule = activeRegistry?.moduleNamespace(activeRegistry.profile?.moduleId);
+			if (!activeRegistry || typeof profileModule?.componentsFor !== 'function'
+				|| typeof profileModule?.propertiesFor !== 'function'
+				|| typeof profileModule?.resolveCommand !== 'function') {
+				throw new Error('HOST_MODULE_MISSING');
 			}
+			const declared = new Set(activeRegistry.components.map((entry) => entry.id));
+			const components = profileModule.componentsFor();
+			if (!Array.isArray(components) || components.length !== declared.size
+				|| components.some((entry) => !declared.has(entry.id)
+					|| typeof entry.type !== 'string' || typeof entry.label !== 'string')) {
+				throw new Error('REGISTRY_INVALID');
+			}
+			const prefix = activeRegistry.profileId === 'base/mail' ? 'mail' : 'reports';
+			for (const component of components) {
+				const button = stagedRoot.ownerDocument.createElement('button');
+				button.type = 'button';
+				button.className = 'button cb-core-design-shell__palette-item';
+				button.textContent = component.label;
+				button.dataset.cbDesignComponentId = component.id;
+				button.addEventListener('click', () => {
+					if (signal.aborted || host.state !== 'READY') return;
+					const project = editor.project();
+					const primary = editor.selection()?.primary;
+					let parentPath = primary?.kind === 'node' ? [...primary.path] : [];
+					let parent = nodeAt(project.root, parentPath);
+					if (!parent || !['mail.section','reports.section',project.design_type].includes(parent.type)) {
+						parentPath = parentPath.slice(0, -1);
+						parent = nodeAt(project.root, parentPath);
+					}
+					if (!parent) throw new Error('SELECTION_INVALID');
+					editor.execute(prefix + '.insert', {
+						parentPath, index: parent.children.length, type: component.type,
+					});
+				}, {signal});
+				elementsPanel.append(button);
+			}
+			const settingsPanel = stagedRoot.querySelector('[data-cb-platform-panel="settings"]');
+			if (!settingsPanel) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+			const settingsControls = new Map();
+			const refreshSettings = () => {
+				const fields = editor.persistedFields();
+				for (const [key,value] of Object.entries(fields)) {
+					if (typeof value !== 'string') throw new Error('SCHEMA_DOMAIN_INVALID');
+					let control = settingsControls.get(key);
+					if (!control) {
+						control = createDesignerInspectorTextControl({
+							key: 'persisted.' + key, label: key, value,
+							documentRef: stagedRoot.ownerDocument,
+							onCommit: (next) => {
+								if (!signal.aborted && host.state === 'READY') editor.setPersistedField(key, next);
+							},
+						});
+						settingsControls.set(key, control);
+						settingsPanel.append(control.element);
+					} else control.update({value});
+				}
+			};
+			let inspectorSelectionKey = null;
+			const inspectorControls = new Map();
+			const clearInspector = () => {
+				for (const control of inspectorControls.values()) control.destroy();
+				inspectorControls.clear();
+				inspectorPanel.replaceChildren();
+			};
 			const renderInteraction = ({project, selection, signal: renderSignal}) => {
 				if (renderSignal?.aborted || signal.aborted || !project?.root) return;
 				const selected = new Set((selection?.refs || [])
