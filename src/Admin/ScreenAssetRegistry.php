@@ -303,10 +303,10 @@ final class ScreenAssetRegistry {
 					'component.interactive-surfaces', 'foundation.object-picker', 'module.admin-notices',
 				] );
 			case 'reports':
-				return array_merge( $items, [
-					'page.reports', 'component.panels', 'foundation.modal',
-					'module.reports-preferences', 'provider.preferences-media',
-				] );
+				// Reports native editor and media are exclusively editor-route assets.
+				// The legacy Reports Preferences module depends on design-editor and
+				// must not load in the ordinary admin tab or beside the native Host.
+				return array_merge( $items, [ 'page.reports', 'component.panels' ] );
 			case 'permissions':
 				return array_merge( $items, [
 					'page.preferences-permissions', 'component.panels', 'component.badges', 'component.table-cols',
