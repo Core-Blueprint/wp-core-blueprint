@@ -720,7 +720,7 @@ export const attachTrustedDesignerHost = ({
 			// ONE EditorFacade from the Host (never the private session).
 			const requiredEditorMethods = [
 				'project', 'snapshot', 'persistedFields', 'setPersistedField', 'selection', 'select',
-				'execute', 'executeBatch', 'undo', 'redo', 'historyStatus',
+				'execute', 'executeBatch', 'undo', 'redo', 'historyStatus', 'saveStatus',
 				'subscribe', 'save',
 			];
 			if (!editor || requiredEditorMethods.some((name) => typeof editor[name] !== 'function')) {
