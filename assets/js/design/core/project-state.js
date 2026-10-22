@@ -28,6 +28,7 @@ export class ProjectState {
 	#listeners = new Set();
 	#validate;
 	#stableSchema;
+	#approvedStages = new WeakSet();
 
 	/**
 	 * The optional stableSchema context is supplied ONLY by the verified
@@ -62,6 +63,10 @@ export class ProjectState {
 
 	/** Commit an already validated frozen project without invoking observers. */
 	commitStaged(next, { source = 'editor' } = {}) {
+		if (!next || typeof next !== 'object' || !this.#approvedStages.has(next)) {
+			throw new TypeError('Only a validated ProjectState.stage() result may be committed.');
+		}
+		this.#approvedStages.delete(next);
 		this.#project = next;
 		this.#revision += 1;
 		return Object.freeze({ revision: this.#revision, source: String(source || 'editor') });
@@ -113,6 +118,7 @@ export class ProjectState {
 			throw new TypeError('Unsupported DesignProject schema generation.');
 		}
 		if (this.#validate) this.#validate(normalized);
+		this.#approvedStages.add(normalized);
 		return normalized;
 	}
 }
