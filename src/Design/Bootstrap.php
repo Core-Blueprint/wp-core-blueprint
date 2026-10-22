@@ -114,9 +114,10 @@ final class Bootstrap {
 		$actor = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
 		if ( null === $profile || $site < 1 || $actor < 1 || $context_epoch < 0
 			|| ! Repository::valid_identity( $resource_type, $resource_key )
-			|| ! function_exists( 'current_user_can' ) || ! current_user_can( 'edit_posts' )
+			|| ! function_exists( 'current_user_can' )
+			|| ! \CoreBlueprint\Core\Design\Editor\PlatformTransport::authorized_resource( $profile_id, $resource_type, $resource_key )
 			|| ! function_exists( 'wp_verify_nonce' )
-			|| 1 !== wp_verify_nonce( $nonce, 'cb_designer_' . $profile_id . '_' . $resource_type . '_' . $resource_key )
+			|| false === wp_verify_nonce( $nonce, 'cb_designer_' . $profile_id . '_' . $resource_type . '_' . $resource_key )
 			|| ( null !== $consumer_installed_root && ! is_dir( $consumer_installed_root ) ) ) {
 			throw new \DomainException( 'HOST_CONTEXT_REFUSED' );
 		}
