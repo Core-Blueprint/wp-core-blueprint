@@ -162,3 +162,46 @@ test('Mail transport permits only one in-flight request and reopens after settle
   assert.equal(requests, 2);
   assert.deepEqual(f.states(), ['saving', 'saved', 'saving', 'saved']);
 });
+
+
+test('G2-S T02: simulated committed write with lost HTTP response stays UNKNOWN and cannot retry', async () => {
+  // Local mock truth is deliberately not treated as database-commit evidence.
+  let simulatedCommit = false;
+  let requests = 0;
+  const f = fixture({ fetchImpl: async () => {
+    requests += 1;
+    simulatedCommit = true;
+    throw new TypeError('Network response was lost after simulated commit');
+  } });
+  f.submit();
+  await tick();
+  assert.equal(simulatedCommit, true, 'the fixture simulates a commit; it is not a DB witness');
+  assert.equal(requests, 1);
+  assert.deepEqual(f.states(), ['saving', 'unknown']);
+  assert.equal(f.acknowledged(), 0);
+  assert.equal(f.failed(), 1);
+  f.submit();
+  await tick();
+  assert.equal(requests, 1, 'UNKNOWN must not submit another uncorrelated Save');
+  assert.deepEqual(f.states(), ['saving', 'unknown']);
+});
+
+test('G2-S T03: simulated no-commit with lost HTTP response has the same fail-closed UNKNOWN behavior', async () => {
+  let simulatedCommit = false;
+  let requests = 0;
+  const f = fixture({ fetchImpl: async () => {
+    requests += 1;
+    throw new TypeError('Network response was lost before simulated commit');
+  } });
+  f.submit();
+  await tick();
+  assert.equal(simulatedCommit, false, 'the fixture simulates no commit; it is not a DB witness');
+  assert.equal(requests, 1);
+  assert.deepEqual(f.states(), ['saving', 'unknown']);
+  assert.equal(f.acknowledged(), 0);
+  assert.equal(f.failed(), 1);
+  f.submit();
+  await tick();
+  assert.equal(requests, 1, 'UNKNOWN must remain sticky even if the mock did not write');
+  assert.deepEqual(f.states(), ['saving', 'unknown']);
+});
