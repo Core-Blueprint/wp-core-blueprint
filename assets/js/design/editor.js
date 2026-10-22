@@ -826,6 +826,7 @@ export const attachTrustedDesignerHost = ({
 			stagedShells.set(stagedRoot, controller);
 			return Object.freeze({
 				destroy: () => controller.destroy(),
+				activatePlatformSession: () => controller.activatePlatformSession(),
 				renderInteraction,
 			});
 		};
@@ -857,7 +858,10 @@ export const attachTrustedDesignerHost = ({
 		if (host.state !== 'READY') throw new Error('HOST_CONTEXT_REFUSED');
 		const canvas = canvasRoot.firstElementChild;
 		const shell = canvas ? stagedShells.get(canvas) : null;
-		if (!shell?.activatePlatformSession()) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+		// Host commit already activated the shell before exposing READY.
+		if (!shell || canvas?.dataset?.cbDesignShellInitialized !== 'true') {
+			throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+		}
 		const saveUI = stagedSaveUI.get(canvas);
 		if (!saveUI || saveUI.signal.aborted) throw new Error('SAVE_NOT_READY');
 		// Edit-state notifications refresh the button without altering Save
