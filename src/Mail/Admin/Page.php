@@ -121,28 +121,35 @@ final class Page extends PageBase {
 		if ( 'overview' === $tab ) {
 			include CB_CORE_DIR . 'templates/mail-features.php';
 		} elseif ( 'templates' === $tab ) {
+			// Platform v1 owns the ONE Mail editor and Save authority. The
+			// provider catalog is used only for trusted resource identities:
+			// never read an old stored project or PHP-render an older canvas.
 			$templates = TemplateRegistry::all();
 			$template_ids = array_keys( $templates );
-			$template_id = isset( $_GET['template'] ) ? sanitize_text_field( wp_unslash( $_GET['template'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only template selector.
+			$template_id = isset( $_GET['template'] ) ? sanitize_text_field( wp_unslash( $_GET['template'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only selector.
 			if ( ! isset( $templates[ $template_id ] ) ) {
 				$template_id = (string) ( $template_ids[0] ?? '' );
 			}
-			try {
-				$current_template = '' !== $template_id ? TemplateRepository::get( $template_id ) : null;
-			$bindings = BindingRegistry::all();
-			$components = ComponentRegistry::all();
-			$preview = is_array( $current_template ) ? DesignerRenderer::preview( $template_id ) : null;
-			if ( $designer_enabled && is_array( $current_template ) ) {
-				DesignEditorAssets::enqueue_designer_mode( __( 'Mail Designer', 'core-blueprint' ) );
-			}
-				include CB_CORE_DIR . 'templates/mail-designer.php';
-			} catch ( DocumentUnavailable $error ) {
-				// Fail closed: never show the provider default as a stored design.
-				ob_clean();
-				echo Notice::render( [
-					'variant' => Notice::ERROR,
-					'message' => __( 'Mail Designer storage is unavailable. Contact a Core Blueprint operator; no template data was changed.', 'core-blueprint' ),
-				] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted shared notice renderer.
+			if ( ! $designer_enabled || '' === $template_id ) {
+				echo '<div class="wrap cb-core-wrap"><section class="cb-core-panel"><h2>' . esc_html__( 'Mail Designer unavailable', 'core-blueprint' ) . '</h2><p>' . esc_html__( 'Enable Mail Designer and register at least one template before editing.', 'core-blueprint' ) . '</p></section></div>';
+			} else {
+				?>
+				<div class="wrap cb-core-wrap cb-core-mail-designer-wrap">
+					<div class="cb-core-mail-designer" data-cb-mail-designer data-cb-design-launch-root>
+						<section class="cb-core-panel cb-core-mail-designer__context" aria-label="<?php esc_attr_e( 'Mail template context', 'core-blueprint' ); ?>">
+							<label class="cb-core-field__label" for="cb-mail-platform-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
+							<select id="cb-mail-platform-template" data-cb-mail-template-select>
+								<?php foreach ( $templates as $id => $definition ) : ?>
+									<option value="<?php echo esc_attr( (string) $id ); ?>" <?php selected( $id, $template_id ); ?>><?php echo esc_html( (string) $definition['label'] ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</section>
+						<div class="cb-core-mail-designer__platform" data-cb-platform-base-context>
+							<p role="status"><?php esc_html_e( 'Verifying the Designer and loading the selected template…', 'core-blueprint' ); ?></p>
+						</div>
+					</div>
+				</div>
+				<?php
 			}
 		} elseif ( 'settings' === $tab ) {
 			include CB_CORE_DIR . 'templates/mail-settings.php';
