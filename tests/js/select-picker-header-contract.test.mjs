@@ -30,7 +30,8 @@ test('Header menu uses the browser top-layer with bounded viewport geometry and 
 	assert.match(js, /panel\.showPopover\(\)/);
 	assert.match(js, /panel\.hidePopover\(\)/);
 	assert.match(js, /Math\.min\(Math\.max\(280, anchor\.width\)/);
-	assert.match(js, /document\.addEventListener\('scroll'/);
+	assert.match(js, /window\.addEventListener\('scroll', onHeaderViewportChange/);
+	assert.match(js, /window\.removeEventListener\('scroll', onHeaderViewportChange, true\)/);
 	assert.match(js, /window\.addEventListener\('resize'/);
 	assert.match(css, /\.cb-core-select-picker__panel\[popover\]/);
 	assert.match(css, /max-height: calc\(100vh - 16px\)/);
