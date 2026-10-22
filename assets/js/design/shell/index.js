@@ -15,7 +15,6 @@ import { createDesignerSelectionController } from './selection-controller.js';
 import {
 	createDesignerInspectorControls,
 	createDesignerInspectorTextControl,
-	createDesignerInspectorValueControl,
 	createDesignerInspectorIdentity,
 	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
@@ -768,6 +767,7 @@ export {
 	createDesignerIcon,
 	createDesignerInspectorControls,
 	createDesignerInspectorTextControl,
+	createDesignerInspectorValueControl,
 	createDesignerInspectorIdentity,
 	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
