@@ -6,6 +6,9 @@ namespace CoreBlueprint\Core\Design;
 use CoreBlueprint\Core\Database\SchemaRegistry;
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Integrity\ArtifactEvidence;
+use CoreBlueprint\Core\Design\Integrity\ApprovedManifestSource;
+use CoreBlueprint\Core\Design\Profile\Mail\PlatformAdapter as MailPlatform;
+use CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter as ReportsPlatform;
 use CoreBlueprint\Core\Design\Kernel\AuthorizationRegistry;
 use CoreBlueprint\Core\Design\Kernel\CapabilityRegistry;
 use CoreBlueprint\Core\Design\Kernel\DesignTypeRegistry;
@@ -63,7 +66,19 @@ final class Bootstrap {
 		$components = new ComponentRegistry();
 		$controls = new ControlRegistry();
 		$modules = new ModuleCatalog();
-		do_action( 'core_blueprint_designer_registry_register', $providers, $types, $capabilities, $authorizations, $profiles, $components, $controls, $modules );
+		// Only independently approved installed artifacts can declare trusted
+		// executable profile modules. No empty or dummy registry is published.
+		$artifact = ApprovedManifestSource::base();
+		if ( ! $providers->register( MailPlatform::PROVIDER ) ) {
+			throw new \DomainException( 'REGISTRY_COLLISION' );
+		}
+		MailPlatform::declare_type( $types, $capabilities, $authorizations );
+		ReportsPlatform::declare_type( $types, $capabilities, $authorizations );
+		MailPlatform::register( $types, $profiles, $components, $controls, $modules, $artifact );
+		ReportsPlatform::register( $types, $profiles, $components, $controls, $modules, $artifact );
+		// Third-party installed packages require a separate Base+consumer
+		// attestation; the first Base-only release does not grant that scope.
+		// A later explicit integration may provide additional trusted sources.
 		return ( new RegistryCompiler( $providers, $types, $capabilities, $authorizations ) )
 			->compile( $profiles, $components, $controls, $modules );
 	}
