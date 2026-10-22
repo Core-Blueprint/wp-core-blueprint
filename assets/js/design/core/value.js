@@ -49,6 +49,9 @@ export const inspectJsonValue = (value, pointer = '') => {
 			if (Array.isArray(candidate)) {
 				const length = Object.getOwnPropertyDescriptor(candidate, 'length');
 				if (!length || !Number.isSafeInteger(length.value)) throw new InvalidDesignValueError(path, 'limit');
+				if (Object.keys(descriptors).length !== length.value + 1) {
+					throw new InvalidDesignValueError(path);
+				}
 				for (const key of Object.keys(descriptors)) {
 					if (key === 'length') continue;
 					if (!/^(0|[1-9][0-9]*)$/.test(key) || Number(key) >= length.value) {
