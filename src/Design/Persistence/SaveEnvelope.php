@@ -97,7 +97,7 @@ final class SaveEnvelope {
 		$normalized = self::normalize( $value, 0 );
 		return json_encode(
 			$normalized,
-			JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+			JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS
 		);
 	}
 
