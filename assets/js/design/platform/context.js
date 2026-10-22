@@ -4,8 +4,9 @@ import { immutableData, exactKeys, assertDigest } from './manifest.js';
 export function inspectTrustedContext(bootstrap, registryView) {
 	const value = immutableData(bootstrap);
 	exactKeys(value, ['contractVersion','registryFingerprint','profileId','identity','profile',
-		'schemaSnapshot','persistedFieldFacet','modules','evidence']);
-	if (value.contractVersion !== 1 || value.registryFingerprint !== registryView.fingerprint
+		'schemaSnapshot','persistedFieldFacet','components','controls','modules','evidence']);
+	if (value.contractVersion !== 1 || !Array.isArray(value.components) || !Array.isArray(value.controls)
+		|| value.registryFingerprint !== registryView.fingerprint
 		|| value.profileId !== registryView.profileId || value.profile.id !== value.profileId) {
 		throw new TypeError('HOST_CONTEXT_REFUSED');
 	}
