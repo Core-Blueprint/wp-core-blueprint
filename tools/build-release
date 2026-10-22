@@ -215,10 +215,9 @@ def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str
         path.relative_to(source).as_posix(): package_bytes(source, path, revision)
         for path in files
     }
-    present = [path in payloads for path in PLATFORM_REQUIRED]
-    if not any(present):
-        return payloads  # Small independent builder fixtures remain unchanged.
-    if not all(present):
+    if "src/Design/Integrity/ArtifactManifest.php" not in payloads:
+        return payloads  # Pre-platform failure-path fixtures retain old packaging.
+    if not all(path in payloads for path in PLATFORM_REQUIRED):
         fail("Incomplete Designer Platform source inventory; refusing partial artifact.")
     if PLATFORM_MANIFEST in payloads:
         fail("Artifact manifest must be generated, never loaded from source.")
