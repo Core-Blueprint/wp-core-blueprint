@@ -170,8 +170,13 @@ final class Page extends PageBase {
 					<div class="cb-core-platform-screen" data-cb-platform-screen>
 						<header class="cb-core-platform-screen__header">
 							<strong><?php esc_html_e( 'Mail Designer', 'core-blueprint' ); ?></strong>
-							<span class="cb-core-platform-screen__subtitle"><?php echo esc_html( (string) $templates[ $template_id ]['label'] ); ?></span>
-							<a class="button cb-core-button cb-core-platform-screen__close" href="<?php echo esc_url( $landing_url ); ?>">
+							<label class="screen-reader-text" for="cb-mail-platform-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
+							<select id="cb-mail-platform-template" class="cb-core-platform-screen__subtitle" data-cb-mail-template-select aria-label="<?php esc_attr_e( 'Template', 'core-blueprint' ); ?>">
+								<?php foreach ( $templates as $id => $definition ) : ?>
+									<option value="<?php echo esc_attr( (string) $id ); ?>" <?php selected( $id, $template_id ); ?>><?php echo esc_html( (string) $definition['label'] ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<a class="button cb-core-button cb-core-platform-screen__close" data-cb-platform-header-close href="<?php echo esc_url( $landing_url ); ?>">
 								<?php esc_html_e( 'Close Designer', 'core-blueprint' ); ?>
 							</a>
 						</header>
