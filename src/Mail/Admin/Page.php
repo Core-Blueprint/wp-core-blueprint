@@ -124,7 +124,14 @@ final class Page extends PageBase {
 			// Platform v1 owns the ONE Mail editor and Save authority. The
 			// provider catalog is used only for trusted resource identities:
 			// never read an old stored project or PHP-render an older canvas.
-			$templates = TemplateRegistry::all();
+			$templates = array_filter(
+				TemplateRegistry::all(),
+				static fn ( array $definition, string $id ): bool =>
+					str_starts_with( $id, 'wordpress.' )
+					&& 'core' === ( $definition['provider'] ?? null )
+					&& 'wordpress' === ( $definition['group'] ?? null ),
+				ARRAY_FILTER_USE_BOTH
+			);
 			$template_ids = array_keys( $templates );
 			$template_id = isset( $_GET['template'] ) ? sanitize_text_field( wp_unslash( $_GET['template'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only selector.
 			if ( ! isset( $templates[ $template_id ] ) ) {
