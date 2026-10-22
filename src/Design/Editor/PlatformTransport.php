@@ -288,7 +288,8 @@ final class PlatformTransport {
 				|| ! is_string( $node['type'] ) || ! isset( $nodes[$node['type']] )
 				|| $node['provider'] !== $nodes[$node['type']]['provider'] || $depth > 64
 				|| ++$count > 100000 || ! is_array( $node['children'] ) || ! array_is_list( $node['children'] )
-				|| ! is_array( $node['properties'] ) || array_is_list( $node['properties'] ) ) return false;
+				|| ! is_array( $node['properties'] )
+				|| ( [] !== $node['properties'] && array_is_list( $node['properties'] ) ) ) return false;
 			if ( null !== $parent && ! in_array( $parent, $nodes[$node['type']]['allowedParents'], true ) ) return false;
 			$id = $nodes[$node['type']]['propertiesSchemaId'];
 			if ( ! is_string( $id ) || ! isset( $schemas[$id] )
@@ -327,7 +328,9 @@ final class PlatformTransport {
 			$matches = $matches || match ( $type ) {
 				'string' => is_string( $value ),
 				'integer' => is_int( $value ) && abs( $value ) <= 9007199254740991,
-				'number' => ( is_int( $value ) || is_float( $value ) ) && is_finite( (float)$value ),
+				// SaveEnvelopeV1 deliberately admits only cross-language
+				// exact integers until fractional JSON digests are standardized.
+				'number' => is_int( $value ) && abs( $value ) <= 9007199254740991,
 				'boolean' => is_bool( $value ),
 				'object' => is_array( $value ) && ( [] === $value || ! array_is_list( $value ) ),
 				'array' => is_array( $value ) && array_is_list( $value ),
@@ -345,7 +348,8 @@ final class PlatformTransport {
 			if ( ( isset( $schema['minimum'] ) && $value < $schema['minimum'] )
 				|| ( isset( $schema['maximum'] ) && $value > $schema['maximum'] ) ) return false;
 		}
-		if ( is_array( $value ) && array_is_list( $value ) && [] !== $value ) {
+		if ( is_array( $value ) && in_array( 'array', $types, true )
+			&& array_is_list( $value ) ) {
 			if ( count( $value ) < ( $schema['minItems'] ?? 0 )
 				|| count( $value ) > ( $schema['maxItems'] ?? 100000 )
 				|| ! is_array( $schema['items'] ?? null ) ) return false;
@@ -353,7 +357,8 @@ final class PlatformTransport {
 				if ( ! self::valid_value( $entry, $schema['items'], $depth + 1 ) ) return false;
 			}
 		}
-		if ( is_array( $value ) && ! array_is_list( $value ) || [] === $value && ( $types === [ 'object' ] ) ) {
+		if ( is_array( $value ) && ( ! array_is_list( $value )
+			|| ( [] === $value && in_array( 'object', $types, true ) && ! in_array( 'array', $types, true ) ) ) ) {
 			$properties = $schema['properties'] ?? [];
 			$required = $schema['required'] ?? [];
 			if ( ! is_array( $properties ) || ! is_array( $required ) ) return false;
