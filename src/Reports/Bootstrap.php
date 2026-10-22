@@ -76,7 +76,9 @@ final class Bootstrap {
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- route-only asset selection.
 		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- route-only asset selection.
 
-		if ( 'core-blueprint-preferences' !== $page || 'reports' !== $tab ) {
+		if ( 'core-blueprint-preferences' !== $page || 'reports' !== $tab
+			|| ! DesignEditorAssets::platform_fullscreen_requested()
+			|| ! State::is_enabled() ) {
 			return;
 		}
 
