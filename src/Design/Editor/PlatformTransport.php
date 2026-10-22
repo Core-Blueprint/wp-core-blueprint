@@ -13,6 +13,7 @@ use CoreBlueprint\Core\Design\Persistence\TransactionalSave;
 use CoreBlueprint\Core\Design\Profile\Mail\PlatformAdapter as Mail;
 use CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter as Reports;
 use CoreBlueprint\Core\Design\Registry\FrozenRegistry;
+use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -99,6 +100,22 @@ final class PlatformTransport {
 			if ( 'context' === $action ) return self::context( $request );
 			return self::operation( $request, 'recover' === $action );
 		} catch ( \Throwable $error ) {
+			// Best-effort diagnostics through Base's existing audit queue only.
+			// Never record exception messages, payloads, tokens, document text or
+			// paths. Queueing avoids a DB write inside an uncertain Save transaction.
+			try {
+				$known = [ 'HOST_CONTEXT_REFUSED', 'ARTIFACT_RUNTIME_MISMATCH',
+					'HOST_MODULE_MISSING', 'CSS_RUNTIME_STALE', 'SAVE_SCHEMA_UNAVAILABLE',
+					'SAVE_AUTHORITY_UNAVAILABLE', 'SCHEMA_DOMAIN_INVALID', 'REGISTRY_INVALID' ];
+				AuditLog::queue( 'designer.transport_exception', 'warning', [
+					'action' => in_array( $action, [ 'context', 'save', 'recover' ], true ) ? $action : 'unknown',
+					'exception' => get_class( $error ),
+					'reason' => $error instanceof \DomainException && in_array( $error->getMessage(), $known, true )
+						? $error->getMessage() : 'UNEXPECTED',
+				] );
+			} catch ( \Throwable $ignored ) {
+				// Diagnostic failure must not change the REST or Save outcome.
+			}
 			// Only genuine authorization denials are 403. Public responses use
 			// stable category codes, never internal exception details or paths.
 			// A Save failure remains UNKNOWN unless the transaction proves otherwise.
