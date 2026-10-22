@@ -48,6 +48,26 @@
 	margin-bottom: var(--cb-space-4) !important;
 }
 
+/* Normal Mail Templates tab: select resource before native fullscreen launch. */
+.cb-core-mail-designer__launch-form {
+	display: flex;
+	align-items: end;
+	gap: var(--cb-space-3, 12px);
+	flex-wrap: wrap;
+	width: 100%;
+}
+.cb-core-mail-designer__launch-form .cb-core-field__label {
+	flex: 0 0 100%;
+}
+.cb-core-mail-designer__launch-form select {
+	flex: 1 1 320px;
+	max-width: 760px;
+	min-width: 180px;
+}
+.cb-core-mail-designer__launch-form button {
+	flex: 0 0 auto;
+}
+
 .cb-core-mail-designer__template-control {
 	flex: 1 1 620px;
 	max-width: 760px;
