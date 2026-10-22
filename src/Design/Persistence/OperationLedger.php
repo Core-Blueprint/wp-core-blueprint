@@ -124,7 +124,30 @@ final class OperationLedger {
 			|| ( $receipt->operationId ?? null ) !== $intent->operation_id
 			|| ( $receipt->acceptedStoreRevision ?? null ) !== $row['accepted_revision']
 			|| ( $receipt->requestDigest ?? null ) !== $intent->request_digest
-			|| ( $receipt->submittedFieldsDigest ?? null ) !== $intent->fields_digest ) {
+			|| ( $receipt->submittedFieldsDigest ?? null ) !== $intent->fields_digest
+			|| ( $receipt->submittedProjectDigest ?? null ) !== $intent->project_digest
+			|| ( $receipt->previousStoreRevision ?? null ) !== $intent->expected_revision
+			|| ( $receipt->blogId ?? null ) !== (string) $intent->blog_id
+			|| ( $receipt->actorId ?? null ) !== (string) $intent->actor_id
+			|| ( $receipt->resourceType ?? null ) !== $intent->resource_type
+			|| ( $receipt->resourceKey ?? null ) !== $intent->resource_key
+			|| ( $receipt->profileId ?? null ) !== $intent->profile_id
+			|| ( $receipt->projectSchema ?? null ) !== $intent->project_schema
+			|| ( $receipt->registryFingerprint ?? null ) !== $intent->registry_fingerprint
+			|| ! ( $receipt->acceptedProject ?? null ) instanceof \stdClass
+			|| ! ( $receipt->acceptedFields ?? null ) instanceof \stdClass ) {
+			return [ 'status' => 'unknown' ];
+		}
+		try {
+			$project_digest = hash( 'sha256', SaveEnvelope::canonical_json( $receipt->acceptedProject ) );
+			$fields_digest = hash( 'sha256', SaveEnvelope::canonical_json( $receipt->acceptedFields ) );
+			$joint_digest = $intent->digest( $receipt->acceptedProject, $receipt->acceptedFields );
+		} catch ( \Throwable $error ) {
+			return [ 'status' => 'unknown' ];
+		}
+		if ( ( $receipt->acceptedProjectDigest ?? null ) !== $project_digest
+			|| ( $receipt->acceptedFieldsDigest ?? null ) !== $fields_digest
+			|| ( $receipt->acceptedDigest ?? null ) !== $joint_digest ) {
 			return [ 'status' => 'unknown' ];
 		}
 		return [ 'status' => 'committed', 'receipt_json' => $row['receipt_json'] ];
