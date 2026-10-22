@@ -408,11 +408,20 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Reports design could not be saved. Reload if it has changed.' => 'No se pudo guardar el diseño de Reports. Recarga la página si ha cambiado.',
     'Reports save readback failed.' => 'No se pudo verificar la lectura de los datos guardados de Reports.',
     'Canonical Reports design is unavailable. An operator must review its storage before changes can be made.' => 'El diseño canónico de Reports no está disponible. Un administrador debe revisar su almacenamiento antes de realizar cambios.',
+    'Mail Designer now saves exclusively through the authorized Platform.' => 'Mail Designer ahora guarda exclusivamente a través de la plataforma autorizada.',
+    'Operation unavailable' => 'Operación no disponible',
 ] );
 // These former source strings were replaced by revision-aware operator guidance.
 unset(
     $catalog['messages']['The mail template could not be reset.'],
-    $catalog['messages']['The mail template could not be saved. Review the design and try again.']
+    $catalog['messages']['The mail template could not be saved. Review the design and try again.'],
+    $catalog['messages']['You do not have permission to manage mail templates.'],
+    $catalog['messages']['The mail template could not be reset. Reload before trying again.'],
+    $catalog['messages']['Mail template reset to its current provider default.'],
+    $catalog['messages']['Mail Designer is disabled or the template is unavailable.'],
+    $catalog['messages']['The mail template could not be saved. Reload if the document changed.'],
+    $catalog['messages']['The mail template save could not be verified.'],
+    $catalog['messages']['Mail template saved.']
 );
 
 return $catalog;
