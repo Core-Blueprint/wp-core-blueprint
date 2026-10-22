@@ -253,10 +253,13 @@ final class PlatformTransport {
 	}
 
 	/**
-	 * Repository's mandatory full native-v1 validator for both persisted reads
-	 * and same-transaction writes. The verifier and the REST layer always
-	 * compile the SAME server-owned FrozenRegistry, never an arbitrary request
-	 * schema or a PHP fallback. Reject previous schema formats explicitly.
+	 * Stored-document admission uses the existing first-party native domain
+	 * validators, not the JS editor artifact or Registry compiler. Mail delivery
+	 * must not depend on an installed browser editor or its CSS witness.
+	 *
+	 * The REST context and Save transport STILL require the verified FrozenRegistry
+	 * and run valid_content() against its snapshot before publishing/committing.
+	 * This method never authorizes a resource or a write.
 	 */
 	public static function valid_native_document( string $type, array $document ): bool {
 		if ( ! in_array( $type, [ Repository::MAIL, Repository::REPORTS ], true )
@@ -264,11 +267,20 @@ final class PlatformTransport {
 			|| ! is_array( $document['project'] ) || ! is_array( $document['fields'] ) ) {
 			return false;
 		}
-		$profile = Repository::MAIL === $type ? Mail::PROFILE : Reports::PROFILE;
 		try {
-			return self::valid_content(
-				$document['project'], $document['fields'], DesignerBootstrap::frozen_registry(), $profile
-			);
+			if ( Repository::REPORTS === $type ) {
+				return \CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document( $document );
+			}
+			$fields = $document['fields'];
+			if ( ! self::exact_keys( $fields, [ 'subject', 'preheader' ] )
+				|| ! self::valid_value( $fields['subject'], [ 'type' => 'string', 'minLength' => 1, 'maxLength' => 255 ] )
+				|| ! self::valid_value( $fields['preheader'], [ 'type' => 'string', 'maxLength' => 500 ] ) ) {
+				return false;
+			}
+			$validator = new \CoreBlueprint\Core\Design\Profile\Mail\Validator();
+			$diagnostics = $validator->validate( $document['project'] );
+			return $diagnostics instanceof \CoreBlueprint\Core\Design\Kernel\Diagnostics
+				&& ! $diagnostics->has_errors();
 		} catch ( \Throwable $error ) {
 			return false;
 		}
