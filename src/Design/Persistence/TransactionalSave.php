@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Design\Persistence;
 
-use CoreBlueprint\Core\Design\Document\Authority;
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Document\Schema;
 
@@ -58,9 +57,11 @@ final class TransactionalSave {
 				return $this->finish_refusal();
 			}
 			if ( 'missing' === $locked['status'] ) {
-				// Create-on-zero is a consumer-authorized special case; the port
-				// must independently prove uncustomized provider-default state.
-				if ( '0' !== $intent->expected_revision || Repository::MAIL !== $intent->resource_type ) {
+				// Only the authorized first creation at revision zero may insert.
+				// The domain port independently checks owner, capability, resource
+				// and native v1 value. A pre-existing invalid row is NOT missing.
+				if ( '0' !== $intent->expected_revision
+					|| ! in_array( $intent->resource_type, [ Repository::MAIL, Repository::REPORTS ], true ) ) {
 					return $this->finish_refusal( 'conflict' );
 				}
 			} elseif ( ! is_string( $locked['revision'] ?? null )
@@ -152,7 +153,9 @@ final class TransactionalSave {
 			&& (int) get_current_user_id() === $intent->actor_id
 			&& Repository::valid_identity( $intent->resource_type, $intent->resource_key )
 			&& Repository::valid_revision( $intent->expected_revision, true )
-			&& ( Authority::inspect()['status'] ?? '' ) === 'active'
+			// This is a NEW native-v1 product, not the earlier development
+			// cutover authority. Physical primary DB schema health, checked
+			// on each request, is mandatory alongside domain authorization.
 			&& Schema::healthy()
 			&& OperationSchema::healthy()
 			&& $port->authorize( $intent );
