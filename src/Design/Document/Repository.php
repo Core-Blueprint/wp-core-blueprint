@@ -183,7 +183,9 @@ final class Repository {
 			return [ 'status' => 'corrupt' ];
 		}
 		if ( ! is_array( $decoded ) || ! self::valid_document( $type, $decoded ) ) {
-			return [ 'status' => 'corrupt' ];
+			// Existing invalid/experimental data must not be mistaken for a
+			// missing row: context loading and create-on-zero both refuse it.
+			return [ 'status' => 'unsupported' ];
 		}
 		return [ 'status' => 'found', 'revision' => (string) $row['revision'], 'document' => $decoded ];
 	}
@@ -220,25 +222,30 @@ final class Repository {
 			|| ( strlen( $revision ) === strlen( $max ) && strcmp( $revision, $max ) <= 0 );
 	}
 
-	/** Foundation checks shape/size; consumers will additionally run domain validators. */
+	/**
+	 * Native Platform v1 is the sole Base Designer document contract.
+	 *
+	 * This repository NEVER upgrades an earlier saved development document,
+	 * normalizes unknown keys or maps branding/subject into an older wrapper.
+	 * Full project/field validation comes from the ONE trusted FrozenRegistry.
+	 * Any absent/unapproved artifacts or invalid v1 schema fail closed.
+	 */
 	public static function valid_document( string $type, array $document ): bool {
-		if ( self::MAIL === $type ) {
-			if ( ! isset( $document['subject'], $document['project'] )
-				|| ! is_string( $document['subject'] ) || '' === trim( $document['subject'] )
-				|| ! is_array( $document['project'] ) || array_is_list( $document['project'] ) ) {
-				return false;
-			}
-		} elseif ( self::REPORTS === $type ) {
-			if ( ! isset( $document['branding'], $document['composer'] )
-				|| ! is_array( $document['branding'] ) || ! is_array( $document['composer'] )
-				|| array_is_list( $document['branding'] ) || array_is_list( $document['composer'] ) ) {
-				return false;
-			}
-		} else {
+		if ( ! in_array( $type, [ self::MAIL, self::REPORTS ], true )
+			|| count( $document ) !== 2
+			|| ! array_key_exists( 'project', $document ) || ! array_key_exists( 'fields', $document )
+			|| ! is_array( $document['project'] ) || ! is_array( $document['fields'] ) ) {
 			return false;
 		}
 		$encoded = self::encode( $document );
-		return null !== $encoded && strlen( $encoded ) <= ( self::MAIL === $type ? self::MAX_MAIL_BYTES : self::MAX_REPORT_BYTES );
+		if ( null === $encoded || strlen( $encoded ) > ( self::MAIL === $type ? self::MAX_MAIL_BYTES : self::MAX_REPORT_BYTES ) ) {
+			return false;
+		}
+		try {
+			return \CoreBlueprint\Core\Design\Editor\PlatformTransport::valid_native_document( $type, $document );
+		} catch ( \Throwable $error ) {
+			return false;
+		}
 	}
 
 	private static function encode( array $document ): ?string {
