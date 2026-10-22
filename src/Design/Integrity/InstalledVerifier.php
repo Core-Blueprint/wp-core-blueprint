@@ -34,6 +34,14 @@ final class InstalledVerifier {
 		if ( ! is_string( $raw ) || ! hash_equals( $approved_manifest_sha256, hash( 'sha256', $raw ) ) ) {
 			return $fail( 'ARTIFACT_RUNTIME_MISMATCH' );
 		}
+		// One installed-asset verification per PHP request, not once per caller.
+		// Cache only successful evidence after the manifest digest is checked;
+		// never persist it across requests or cache an installation failure.
+		static $verified_in_request = [];
+		$cache_key = $root . "\\0" . $approved_manifest_sha256;
+		if ( isset( $verified_in_request[ $cache_key ] ) ) {
+			return $verified_in_request[ $cache_key ];
+		}
 		try {
 			$manifest = json_decode( $raw, true, 128, JSON_THROW_ON_ERROR );
 			if ( ! is_array( $manifest ) || ( $manifest['contractVersion'] ?? null ) !== ArtifactManifest::VERSION
@@ -127,7 +135,7 @@ final class InstalledVerifier {
 					}
 				}
 			}
-			return [
+			return $verified_in_request[ $cache_key ] = [
 				'valid' => true,
 				'code' => 'ARTIFACT_INSTALLED_VERIFIED',
 				'manifestDigest' => $approved_manifest_sha256,
