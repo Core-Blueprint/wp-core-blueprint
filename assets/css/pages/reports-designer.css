@@ -106,3 +106,29 @@
 	max-width: 100%;
 	overflow: auto;
 }
+
+.cb-reports-platform__node-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 12px;
+}
+.cb-reports-platform__action {
+	border: 1px solid #cbd5e1;
+	border-radius: 4px;
+	padding: 4px 8px;
+	background: #f8fafc;
+	color: #334155;
+	font: inherit;
+	font-size: 12px;
+	cursor: pointer;
+}
+.cb-reports-platform__action:hover:not(:disabled),
+.cb-reports-platform__action:focus-visible {
+	border-color: var(--cb-report-accent);
+	color: var(--cb-report-accent);
+}
+.cb-reports-platform__action:disabled {
+	opacity: .35;
+	cursor: not-allowed;
+}

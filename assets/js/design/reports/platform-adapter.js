@@ -119,12 +119,20 @@ const command=(id,apply)=>Object.freeze({
 });
 const table=Object.freeze({
 	'reports.insert':command('reports.insert',(p,i)=>{
-		const parent=nodeAt(p.root,i.parentPath);
+		let parentPath=i.parentPath;
+		let parent=nodeAt(p.root,parentPath);
+		if(parent?.type==='reports.section'&&!defs[i.type].parents.includes(parent.type)
+			&&defs[i.type].parents.includes(TYPE)) {
+			// Palette selection inside a section must not prevent adding a
+			// top-level maintenance block or another sibling Section.
+			parentPath=[];
+			parent=p.root;
+		}
 		if(!parent||!defs[i.type].parents.includes(parent.type)
-			||i.index>parent.children.length)throw new TypeError('COMMAND_REFUSED');
+			||i.index>nodeAt(p.root,i.parentPath).children.length)throw new TypeError('COMMAND_REFUSED');
 		// The shared Elements palette appends; reserve the anchored last Footer.
-		const index=parent.type===TYPE?Math.min(i.index,parent.children.length-1):i.index;
-		return insertNodeCommand(i.parentPath,index,{
+		const index=parent.type===TYPE?parent.children.length-1:i.index;
+		return insertNodeCommand(parentPath,index,{
 			type:i.type,provider:PROVIDER,properties:{...defaults[i.type]},children:[],
 		}).apply(p);
 	}),
@@ -182,6 +190,36 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 				'Dynamic report data: '+labels[node.type]));
 		}
 		node.children.forEach((child,i)=>section.append(renderNode(child,[...path,i])));
+		if(path.length>0&&node.type!=='reports.header'&&node.type!=='reports.footer') {
+			const actions=el('div','cb-reports-platform__node-actions');
+			const addAction=(label,disabled,callback)=>{
+				const button=el('button','cb-reports-platform__action',label);
+				button.type='button';button.disabled=disabled;
+				button.addEventListener('click',event=>{
+					event.stopPropagation();
+					if(!destroyed&&editor&&!disabled)callback();
+				});
+				actions.append(button);
+			};
+			const parentPath=path.slice(0,-1);
+			const position=path.at(-1);
+			const parent=nodeAt(editor.project().root,parentPath);
+			const firstAllowed=parent.type===TYPE?1:0;
+			const lastAllowed=parent.type===TYPE?parent.children.length-2:parent.children.length-1;
+			addAction('Up',position<=firstAllowed,()=>editor.execute('reports.reorder',{
+				parentPath,fromIndex:position,toIndex:position-1,
+			}));
+			addAction('Down',position>=lastAllowed,()=>editor.execute('reports.reorder',{
+				parentPath,fromIndex:position,toIndex:position+1,
+			}));
+			if(Object.hasOwn(node.properties,'enabled')){
+				addAction(node.properties.enabled==='on'?'Hide':'Show',false,()=>
+					editor.execute('reports.set',{path,key:'enabled',
+						value:node.properties.enabled==='on'?'off':'on'}));
+			}
+			addAction('Remove',false,()=>editor.execute('reports.remove',{path}));
+			section.append(actions);
+		}
 		section.addEventListener('click',event=>{
 			event.stopPropagation();
 			if(!destroyed&&editor&&container?.isConnected)
