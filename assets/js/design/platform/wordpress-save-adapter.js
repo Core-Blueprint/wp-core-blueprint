@@ -136,6 +136,7 @@ async function activate() {
 	const profileId=mail?'base/mail':'base/reports';
 	const selected=mail?mail.querySelector('[data-cb-mail-template-select]'):null;
 	const resourceKey=mail?(selected?.value||mail.dataset.cbMailTemplate||''):'maintenance';
+	const loadingStatus=origin.querySelector('p[role="status"]');
 	const previous=origin.querySelector('[data-cb-design-shell]');
 	if(previous)previous.hidden=true;
 	const panel=document.createElement('div');
@@ -146,8 +147,6 @@ async function activate() {
 	if(mail){
 		const form=origin.querySelector('[data-cb-mail-designer-form]');
 		if(form){form.hidden=true;form.setAttribute('inert','');}
-		const placeholder=origin.querySelector('[data-cb-platform-base-context]');
-		if(placeholder)placeholder.hidden=true;
 		origin.append(panel);
 	}else{
 		origin.hidden=true;
@@ -161,7 +160,7 @@ async function activate() {
 	canvas.setAttribute('data-cb-platform-mount','');
 	root.append(canvas);
 	panel.append(root);
-	if(!resourceKey){showRefusal(panel,'HOST_CONTEXT_REFUSED');return;}
+	if(!resourceKey){if(loadingStatus)loadingStatus.hidden=true;showRefusal(panel,'HOST_CONTEXT_REFUSED');return;}
 	try {
 		const loaded=await loadWordPressContext(profileId,resourceKey,0);
 		const host=attachTrustedDesignerHost({
@@ -176,6 +175,7 @@ async function activate() {
 			createSaveAdapter:createWordPressSaveAdapter,
 		});
 		await host.mount({bootstrap:loaded.bootstrap,project:loaded.project,persistedFields:loaded.fields});
+		if(loadingStatus)loadingStatus.hidden=true;
 		const transitionSafe=()=>{
 			if(host.state!=='READY')return false;
 			const status=host.editor?.saveStatus?.();
@@ -200,6 +200,7 @@ async function activate() {
 			});
 		}
 	} catch(error) {
+		if(loadingStatus)loadingStatus.hidden=true;
 		showRefusal(panel,String(error?.code||error?.message||'HOST_CONTEXT_REFUSED'));
 	}
 }
