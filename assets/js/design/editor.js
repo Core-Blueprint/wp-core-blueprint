@@ -1,4 +1,5 @@
 import { bindRegisteredCommand, bindRegisteredBatch } from './core/commands.js';
+import { validateStableProjectV1 } from './core/stable-schema.js';
 import { sameValue } from './core/value.js';
 import { createPlatformHost } from './platform/host.js';
 import { createRegistryView } from './platform/registry.js';
@@ -385,8 +386,21 @@ export const createPlatformSessionBridge = ({
 		|| typeof profileModule.authorizeCommand !== 'function') {
 		throw new TypeError('HOST_CAPABILITY_UNAVAILABLE');
 	}
+	const validatePlatformProject = (candidate) => {
+		const result = validateStableProjectV1(candidate, {
+			profileId: profile.id, projectSchema: profile.projectSchema,
+			registrySnapshot: schemaSnapshot,
+		});
+		if (result?.valid !== true || result.diagnostics?.length !== 0) {
+			throw new TypeError('SCHEMA_DOMAIN_INVALID');
+		}
+		const accepted = profileModule.validateProject(candidate, schemaSnapshot);
+		if (accepted === false || accepted?.valid === false) {
+			throw new TypeError('SCHEMA_DOMAIN_INVALID');
+		}
+	};
 	const projectState = new ProjectState(initialProject, {
-		validate: (candidate) => profileModule.validateProject(candidate, schemaSnapshot),
+		validate: validatePlatformProject,
 	});
 	const editorState = new EditorState();
 	editorState.selection.configureTyped({
@@ -455,7 +469,7 @@ export const createPlatformSessionBridge = ({
 		baselineSnapshot() { active(); return history.baselineSnapshot(); },
 		validateAcceptedProject(project) {
 			active();
-			profileModule.validateProject(project, schemaSnapshot);
+			validatePlatformProject(project);
 		},
 		isProjectDirty() {
 			active();
