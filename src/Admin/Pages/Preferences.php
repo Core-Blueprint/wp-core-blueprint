@@ -628,17 +628,40 @@ final class Preferences extends PageBase {
 			$this->render_subsystem_missing( __( 'You do not have permission to edit Reports branding.', 'core-blueprint' ) );
 			return;
 		}
+		$editor_mode = \CoreBlueprint\Core\Design\Editor\Assets::platform_fullscreen_requested();
+		$landing_url = add_query_arg(
+			[ 'page' => self::SLUG, 'tab' => 'reports' ],
+			admin_url( 'admin.php' )
+		);
+		$editor_url = add_query_arg( 'cb_designer', '1', $landing_url );
 		ob_start();
 		?>
-		<div class="wrap cb-core-wrap cb-core-reports-designer-wrap">
-			<header class="cb-core-page-header">
-				<h1 class="cb-core-title"><?php esc_html_e( 'Reports Designer', 'core-blueprint' ); ?></h1>
-				<p class="cb-core-intro"><?php esc_html_e( 'Edit the maintenance report composition and branding.', 'core-blueprint' ); ?></p>
-			</header>
-			<div data-cb-reports-designer data-cb-platform-base-context>
-				<p role="status"><?php esc_html_e( 'Verifying the Designer and loading the maintenance report…', 'core-blueprint' ); ?></p>
+		<?php if ( ! $editor_mode ) : ?>
+			<div class="wrap cb-core-wrap cb-core-reports-designer-wrap">
+				<header class="cb-core-page-header">
+					<h1 class="cb-core-title"><?php esc_html_e( 'Reports Designer', 'core-blueprint' ); ?></h1>
+					<p class="cb-core-intro"><?php esc_html_e( 'Edit the maintenance report composition and branding.', 'core-blueprint' ); ?></p>
+				</header>
+				<a class="button button-primary cb-core-button cb-core-button--primary" href="<?php echo esc_url( $editor_url ); ?>">
+					<?php esc_html_e( 'Edit with Core Blueprint', 'core-blueprint' ); ?>
+				</a>
 			</div>
-		</div>
+		<?php else : ?>
+			<div class="cb-core-platform-screen" data-cb-platform-screen>
+				<header class="cb-core-platform-screen__header">
+					<strong><?php esc_html_e( 'Reports Designer', 'core-blueprint' ); ?></strong>
+					<span class="cb-core-platform-screen__subtitle"><?php esc_html_e( 'Maintenance Report', 'core-blueprint' ); ?></span>
+					<a class="button cb-core-button cb-core-platform-screen__close" href="<?php echo esc_url( $landing_url ); ?>">
+						<?php esc_html_e( 'Close Designer', 'core-blueprint' ); ?>
+					</a>
+				</header>
+				<div class="cb-core-platform-screen__body">
+					<div data-cb-reports-designer data-cb-platform-base-context>
+						<p role="status"><?php esc_html_e( 'Verifying the Designer and loading the maintenance report…', 'core-blueprint' ); ?></p>
+					</div>
+				</div>
+			</div>
+		<?php endif; ?>
 		<?php
 		$html = (string) ob_get_clean();
 		echo $this->inject_tab_nav( $html, self::SLUG, $tab, $tab_labels ); // phpcs:ignore WordPress.Security.EscapeOutput
