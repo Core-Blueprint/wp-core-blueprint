@@ -38,7 +38,7 @@ final class InstalledVerifier {
 		// Cache only successful evidence after the manifest digest is checked;
 		// never persist it across requests or cache an installation failure.
 		static $verified_in_request = [];
-		$cache_key = $root . "\\0" . $approved_manifest_sha256;
+		$cache_key = $root . "\0" . $approved_manifest_sha256;
 		if ( isset( $verified_in_request[ $cache_key ] ) ) {
 			return $verified_in_request[ $cache_key ];
 		}
