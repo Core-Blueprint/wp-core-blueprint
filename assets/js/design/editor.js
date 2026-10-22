@@ -388,10 +388,46 @@ export const attachTrustedDesignerHost = ({ root, createHost, bootstrap } = {}) 
 	let inFlightUnmount = null;
 	let host;
 	try {
-		// No eager shell creation: Host mounts only after its preflight gates.
-		const createShell = (session, options = {}) => {
-			if (constructing || closed) throw new Error('HOST_CONTEXT_REFUSED');
-			return createDesignerShell(root, { ...options, session, platformLease: lease });
+		// Exact Luna 3 createPlatformHost factory signature. The Host supplies
+		// its canonical readonly EditorFacade and an OFFSCREEN candidate root;
+		// never attach a staged session to the active, leased Base shell.
+		const createShell = ({ root: stagedRoot, editor, context, signal } = {}) => {
+			if (constructing || closed || inFlightUnmount) throw new Error('HOST_CONTEXT_REFUSED');
+			if (!(stagedRoot instanceof Element)
+				|| stagedRoot === root
+				|| stagedRoot.ownerDocument !== root.ownerDocument
+				|| !stagedRoot.matches('[data-cb-platform-canvas]')
+				|| stagedRoot.isConnected
+				|| root.contains(stagedRoot)) {
+				throw new Error('HOST_CONTEXT_REFUSED');
+			}
+			if (!context || typeof context !== 'object'
+				|| !signal || signal.aborted !== false) {
+				throw new Error('HOST_CONTEXT_REFUSED');
+			}
+			// No SessionBridge/History/Save proxy: shell controls consume the
+			// ONE EditorFacade from the Host (never the private session).
+			const requiredEditorMethods = [
+				'project', 'snapshot', 'persistedFields', 'selection', 'select',
+				'execute', 'executeBatch', 'undo', 'redo', 'historyStatus',
+				'subscribe', 'save',
+			];
+			if (!editor || requiredEditorMethods.some((name) => typeof editor[name] !== 'function')) {
+				throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+			}
+			// Luna 3 currently supplies an empty staging canvas. Real Base
+			// chrome must be composed there in the later joint integration;
+			// accepting an empty shell would falsely claim UI readiness.
+			if (!stagedRoot.querySelector('[data-cb-design-shell-fullscreen]')) {
+				throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+			}
+			// The outer shell root retains its exclusive lease throughout
+			// staging/switching. The detached stage is independently guarded
+			// against duplicate controllers by createDesignerShell().
+			return createDesignerShell(stagedRoot, {
+				session: editor,
+				platformStaged: true,
+			});
 		};
 		host = createHost(Object.freeze({ root, bootstrap, createShell }));
 		if (!host || host.root !== root
