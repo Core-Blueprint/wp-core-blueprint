@@ -59,7 +59,7 @@ final class Bootstrap {
 		// Designer Mode is deliberately route-scoped. Reports may consume the
 		// public Golden shell on its own Preferences tab without turning the
 		// entire Preferences page into a Designer consumer.
-		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_preferences_designer' ] );
+		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_preferences_designer' ], 999 );
 	}
 
 	/**
@@ -80,7 +80,12 @@ final class Bootstrap {
 			return;
 		}
 
-		DesignEditorAssets::enqueue_designer_mode( __( 'Reports Designer', 'core-blueprint' ) );
+		// Never run the older Reports editor/History beside the canonical Host.
+		// Late enqueue ordering ensures the old script module is not printed.
+		if ( function_exists( 'wp_dequeue_script_module' ) ) {
+			wp_dequeue_script_module( '@cb-core/reports-preferences' );
+		}
+		DesignEditorAssets::enqueue_platform();
 		wp_enqueue_style(
 			'cb-core-reports-designer',
 			CB_CORE_URL . 'assets/css/pages/reports-designer.css',
