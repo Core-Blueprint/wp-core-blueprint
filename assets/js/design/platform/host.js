@@ -137,20 +137,29 @@ export function createPlatformHost({
 			holder.save = save;
 			scope.own(() => save.destroy());
 			holder.editor = editorFacade(holder);
-			const adapter = instantiateRenderAdapter(module.createRenderAdapter, {
-				root: canvas, document: root.ownerDocument, profileId: holder.profileId,
-			});
-			holder.adapter = adapter;
-			scope.own(() => adapter.destroy());
+			// Build actual Base chrome in an offscreen canvas first. Profile
+			// RenderAdapter owns ONLY the canvas workarea, never Host chrome.
 			if (canvas.isConnected) throw refusal('HOST_CONTEXT_REFUSED');
 			const shell = required(await createShell(Object.freeze({
 				root: canvas, editor: holder.editor, context: identity, signal: scope.signal,
 			})), ['destroy'], 'HOST_CAPABILITY_UNAVAILABLE');
+			holder.shell = shell;
 			scope.own(() => shell.destroy());
 			if (canvas.isConnected) throw refusal('HOST_CONTEXT_REFUSED');
+			const renderSurface = canvas.querySelector('[data-cb-platform-render-surface]');
+			if (!renderSurface || !canvas.contains(renderSurface)
+				|| renderSurface.isConnected || renderSurface.childNodes.length) {
+				throw refusal('HOST_CAPABILITY_UNAVAILABLE');
+			}
+			holder.renderSurface = renderSurface;
+			const adapter = instantiateRenderAdapter(module.createRenderAdapter, {
+				root: renderSurface, document: root.ownerDocument, profileId: holder.profileId,
+			});
+			holder.adapter = adapter;
+			scope.own(() => adapter.destroy());
 			await queue.push(async () => {
 				if (scope.signal.aborted) throw refusal('RENDER_STALE');
-				await adapter.mount({root: canvas, editor: holder.editor, context: identity,
+				await adapter.mount({root: renderSurface, editor: holder.editor, context: identity,
 					viewport: holder.viewport, signal: scope.signal});
 				if (scope.signal.aborted) throw refusal('RENDER_STALE');
 				await adapter.update({
@@ -160,6 +169,12 @@ export function createPlatformHost({
 				});
 				if (scope.signal.aborted) throw refusal('RENDER_STALE');
 				adapter.syncSelection({selection: bridge.selection(), reason: 'context'});
+				if (typeof shell.renderInteraction === 'function') {
+					await shell.renderInteraction(Object.freeze({
+						project: bridge.project(), selection: bridge.selection(),
+						context: identity, signal: scope.signal,
+					}));
+				}
 			});
 			if (scope.signal.aborted) throw refusal('RENDER_STALE');
 			holder.lastProject = bridge.project();
@@ -210,6 +225,11 @@ export function createPlatformHost({
 			});
 			if (holder !== active || holder.scope.signal.aborted || currentTicket !== ticket) return;
 			holder.adapter.syncSelection({selection, reason});
+			if (typeof holder.shell?.renderInteraction === 'function') {
+				await holder.shell.renderInteraction(Object.freeze({
+						project, selection, context: holder.identity, signal: holder.scope.signal,
+				}));
+			}
 			holder.adapter.restoreFocus(focus, {reason: ['command','selection','preview','context'].includes(reason) ? reason : 'command'});
 			holder.lastProject = project;
 		});
