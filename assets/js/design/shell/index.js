@@ -58,6 +58,34 @@ let activeFullscreenExit = null;
 const shellControllers = new WeakMap();
 const shellSessions = new WeakMap();
 const pendingSidebarConfigs = new WeakMap();
+// Exclusive Host ownership of the EXISTING shell. No second state or renderer.
+const platformRootLeases = new WeakMap();
+
+/**
+ * Claim the canonical shell root for one statically integrated A2 Host.
+ * The Host must finish guarded unmount and shell.destroy() before release.
+ */
+export const claimDesignerHostRoot = (root) => {
+	if (!(root instanceof Element) || !root.matches('[data-cb-design-shell]')) {
+		throw new TypeError('Designer Host requires a canonical shell root Element.');
+	}
+	if (platformRootLeases.has(root) || shellControllers.has(root)) {
+		throw new Error('HOST_ALREADY_MOUNTED');
+	}
+	let released = false;
+	const lease = Object.freeze({
+		root,
+		release() {
+			if (released) return true;
+			if (platformRootLeases.get(root) !== lease || shellControllers.has(root)) return false;
+			platformRootLeases.delete(root);
+			released = true;
+			return true;
+		},
+	});
+	platformRootLeases.set(root, lease);
+	return lease;
+};
 
 const normalizeGroupId = (value) => String(value || DEFAULT_GROUP).trim() || DEFAULT_GROUP;
 
@@ -114,12 +142,17 @@ export const configureDesignerSidebar = (root, configuration = {}) => {
  */
 export const createDesignerShell = (root, {
 	session = null,
+	platformLease = null,
 	defaultPanel = null,
 	defaultPanels = {},
 	onPanelChange = null,
 } = {}) => {
 	if (!(root instanceof Element)) {
 		throw new TypeError('Designer shell requires a root Element.');
+	}
+	// Prevent legacy sessions from racing a leased Host on the same root.
+	if ((platformRootLeases.get(root) ?? null) !== platformLease) {
+		throw new Error('HOST_ALREADY_MOUNTED');
 	}
 	const existing = shellControllers.get(root);
 	if (existing) {
