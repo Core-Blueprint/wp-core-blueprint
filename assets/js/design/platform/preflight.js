@@ -7,7 +7,7 @@ const ready = Object.freeze({ready: true});
 /**
  * Browser-only readiness. The evidence must already be minted and verified by
  * installed PHP; computed style detects stale CSS, not browser-byte integrity.
- * No fetch(), arbitrary import(), DOM-provided URLs or generated hashes.
+ * No fetch(), dynamic imports, DOM-provided URLs or generated hashes.
  */
 export async function preflight({evidence, frozenRegistry, root, contextEpoch, signal}) {
 	if (signal?.aborted) return failed('ARTIFACT_RUNTIME_MISMATCH');
