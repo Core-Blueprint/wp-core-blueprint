@@ -121,17 +121,22 @@ const table=Object.freeze({
 	'reports.insert':command('reports.insert',(p,i)=>{
 		let parentPath=i.parentPath;
 		let parent=nodeAt(p.root,parentPath);
+		let redirected=false;
 		if(parent?.type==='reports.section'&&!defs[i.type].parents.includes(parent.type)
 			&&defs[i.type].parents.includes(TYPE)) {
 			// Palette selection inside a section must not prevent adding a
 			// top-level maintenance block or another sibling Section.
 			parentPath=[];
 			parent=p.root;
+			redirected=true;
 		}
 		if(!parent||!defs[i.type].parents.includes(parent.type)
 			||i.index>nodeAt(p.root,i.parentPath).children.length)throw new TypeError('COMMAND_REFUSED');
 		// The shared Elements palette appends; reserve the anchored last Footer.
-		const index=parent.type===TYPE?parent.children.length-1:i.index;
+		// Explicit root insertion indexes remain respected.
+		const index=parent.type===TYPE
+			?(redirected?parent.children.length-1:Math.min(i.index,parent.children.length-1))
+			:i.index;
 		return insertNodeCommand(parentPath,index,{
 			type:i.type,provider:PROVIDER,properties:{...defaults[i.type]},children:[],
 		}).apply(p);
