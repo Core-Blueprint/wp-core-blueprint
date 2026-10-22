@@ -761,8 +761,68 @@ export const attachTrustedDesignerHost = ({
 				platformStaged: true,
 				platformSignal: signal,
 			});
+			const layersPanel = stagedRoot.querySelector('[data-cb-platform-panel="layers"]');
+			const inspectorPanel = stagedRoot.querySelector('[data-cb-platform-panel="inspector"]');
+			const elementsPanel = stagedRoot.querySelector('[data-cb-platform-panel="elements"]');
+			if (!layersPanel || !inspectorPanel || !elementsPanel) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+			const tree = createDesignerLayerTree({
+				documentRef: stagedRoot.ownerDocument,
+				ariaLabel: 'Design layers',
+				onSelectItem: (ref) => {
+					if (!signal.aborted && host.state === 'READY') editor.select([ref], ref);
+				},
+			});
+			layersPanel.append(tree.element);
+			// Only the trusted PHP FrozenRegistry provides component identities.
+			// These descriptors have no executable create policy in v1; presenting
+			// them as clickable "Add" commands would create false functionality.
+			const activeRegistry = activeRegistries.get(JSON.stringify([context.profileId, context]));
+			if (!activeRegistry) throw new Error('REGISTRY_INVALID');
+			for (const component of activeRegistry.components) {
+				const item = stagedRoot.ownerDocument.createElement('div');
+				item.className = 'cb-core-design-shell__palette-item';
+				item.textContent = component.id;
+				item.setAttribute('data-cb-design-component-id', component.id);
+				elementsPanel.append(item);
+			}
+			const renderInteraction = ({project, selection, signal: renderSignal}) => {
+				if (renderSignal?.aborted || signal.aborted || !project?.root) return;
+				const selected = new Set((selection?.refs || [])
+					.filter((ref) => ref?.kind === 'node').map((ref) => JSON.stringify(ref.path)));
+				const walk = (node, path) => {
+					if (!node || !Array.isArray(node.children)) throw new Error('SCHEMA_DOMAIN_INVALID');
+					return {
+						key: JSON.stringify(path),
+						path,
+						ref: Object.freeze({kind: 'node', path: Object.freeze([...path])}),
+						label: node.type,
+						meta: node.provider,
+						selected: selected.has(JSON.stringify(path)),
+						children: node.children.map((child, i) => walk(child, [...path, i])),
+					};
+				};
+				tree.render([walk(project.root, [])]);
+				const primary = selection?.primary;
+				inspectorPanel.replaceChildren();
+				if (primary?.kind === 'node') {
+					const node = nodeAt(project.root, primary.path);
+					if (!node) throw new Error('SELECTION_INVALID');
+					const identity = createDesignerInspectorIdentity({
+						label: node.type, eyebrow: node.provider,
+						context: 'Selected element', documentRef: stagedRoot.ownerDocument,
+					});
+					inspectorPanel.append(identity.element);
+					const description = stagedRoot.ownerDocument.createElement('pre');
+					description.className = 'cb-core-design-shell__inspector-properties';
+					description.textContent = JSON.stringify(node.properties, null, 2);
+					inspectorPanel.append(description);
+				}
+			};
 			stagedShells.set(stagedRoot, controller);
-			return controller;
+			return Object.freeze({
+				destroy: () => controller.destroy(),
+				renderInteraction,
+			});
 		};
 		host = createHost(Object.freeze({
 			root, canvasRoot, resolveRegistryView: registryFor,
