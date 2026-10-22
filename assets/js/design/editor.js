@@ -752,7 +752,7 @@ export const attachTrustedDesignerHost = ({
 					}));
 				}).finally(syncSaveUI);
 			}, {signal});
-			stagedSaveUI.set(stagedRoot, syncSaveUI);
+			stagedSaveUI.set(stagedRoot, Object.freeze({syncSaveUI, signal}));
 			// The outer shell root retains its exclusive lease throughout
 			// staging/switching. The detached stage is independently guarded
 			// against duplicate controllers by createDesignerShell().
@@ -793,14 +793,14 @@ export const attachTrustedDesignerHost = ({
 		const canvas = canvasRoot.firstElementChild;
 		const shell = canvas ? stagedShells.get(canvas) : null;
 		if (!shell?.activatePlatformSession()) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
-		const syncSaveUI = stagedSaveUI.get(canvas);
-		if (!syncSaveUI) throw new Error('SAVE_NOT_READY');
-		const unsubscribe = host.editor.subscribe(syncSaveUI);
-		// Status and edit-state observers use the same Host facade. Only the
-		// registered SaveCoordinator determines the next allowed action.
-		stagedShells.get(canvas).syncHistory();
-		syncSaveUI();
+		const saveUI = stagedSaveUI.get(canvas);
+		if (!saveUI || saveUI.signal.aborted) throw new Error('SAVE_NOT_READY');
+		// Edit-state notifications refresh the button without altering Save
+		// authority, while aborted Host contexts drop their subscriptions.
+		const unsubscribe = host.editor.subscribe(saveUI.syncSaveUI);
 		if (typeof unsubscribe !== 'function') throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+		saveUI.signal.addEventListener('abort', unsubscribe, {once: true});
+		saveUI.syncSaveUI();
 	};
 
 	return Object.freeze({
