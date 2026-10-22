@@ -45,6 +45,10 @@ final class NativeComposition {
 			|| PlatformAdapter::TYPE !== $project['design_type'] ) {
 			self::invalid();
 		}
+		if ( ! is_array( $project['root'] )
+			|| ( $project['root']['type'] ?? null ) !== PlatformAdapter::TYPE ) {
+			self::invalid();
+		}
 		$seen = [];
 		$count = 0;
 		self::visit( $project['root'], null, 0, $seen, $count );
@@ -66,21 +70,21 @@ final class NativeComposition {
 				self::invalid();
 			}
 		}
-		if ( ! preg_match( '/^#[0-9a-fA-F]{6}$/D', $fields['accentColor'] )
-			|| ! in_array( $fields['cornerStyle'], [ 'square', 'soft', 'rounded' ], true )
+		if ( ! preg_match( '/^#[0-9a-fA-F]{6}$/D', $fields['accent_color'] )
+			|| ! in_array( $fields['corner_style'], [ 'square', 'soft', 'rounded' ], true )
 			|| ! in_array( $fields['density'], [ 'compact', 'comfortable' ], true )
-			|| ! in_array( $fields['pageFormat'], [ 'a4', 'letter' ], true )
-			|| ! in_array( $fields['pageOrientation'], [ 'portrait', 'landscape' ], true )
-			|| ! in_array( $fields['surfaceStyle'], [ 'cards', 'flat' ], true )
-			|| ! in_array( $fields['textScale'], [ 'compact', 'standard', 'large' ], true )
-			|| ! in_array( $fields['showLogo'], self::SWITCHES, true )
-			|| ! preg_match( '/^(0|[1-9][0-9]{0,10})$/D', $fields['logoAttachmentId'] )
-			|| (string) (int) $fields['logoAttachmentId'] !== $fields['logoAttachmentId']
-			|| ! preg_match( '/^(?:[5-9]|[1-3][0-9]|40)$/D', $fields['pageMarginMm'] )
-			|| ! preg_match( '/^(?:[0-9]|1[0-9]|20)$/D', $fields['sectionSpacingMm'] ) ) {
+			|| ! in_array( $fields['page_format'], [ 'a4', 'letter' ], true )
+			|| ! in_array( $fields['page_orientation'], [ 'portrait', 'landscape' ], true )
+			|| ! in_array( $fields['surface_style'], [ 'cards', 'flat' ], true )
+			|| ! in_array( $fields['text_scale'], [ 'compact', 'standard', 'large' ], true )
+			|| ! in_array( $fields['show_logo'], self::SWITCHES, true )
+			|| ! preg_match( '/^(0|[1-9][0-9]{0,10})$/D', $fields['logo_attachment_id'] )
+			|| (string) (int) $fields['logo_attachment_id'] !== $fields['logo_attachment_id']
+			|| ! preg_match( '/^(?:[5-9]|[1-3][0-9]|40)$/D', $fields['page_margin_mm'] )
+			|| ! preg_match( '/^(?:[0-9]|1[0-9]|20)$/D', $fields['section_spacing_mm'] ) ) {
 			self::invalid();
 		}
-		$attachment = (int) $fields['logoAttachmentId'];
+		$attachment = (int) $fields['logo_attachment_id'];
 		if ( $attachment > 0 && ! ReportBranding::is_supported_logo_attachment( $attachment ) ) {
 			self::invalid();
 		}
@@ -90,15 +94,15 @@ final class NativeComposition {
 	public static function flow_branding( array $fields ): array {
 		self::assert_fields( $fields );
 		return [
-			'logo_attachment_id' => (int) $fields['logoAttachmentId'],
-			'show_logo' => 'on' === $fields['showLogo'],
-			'provider_name' => $fields['providerName'],
-			'provider_contact' => $fields['providerContact'],
-			'accent_color' => $fields['accentColor'],
-			'surface_style' => $fields['surfaceStyle'],
+			'logo_attachment_id' => (int) $fields['logo_attachment_id'],
+			'show_logo' => 'on' === $fields['show_logo'],
+			'provider_name' => $fields['provider_name'],
+			'provider_contact' => $fields['provider_contact'],
+			'accent_color' => $fields['accent_color'],
+			'surface_style' => $fields['surface_style'],
 			'density' => $fields['density'],
-			'corner_style' => $fields['cornerStyle'],
-			'text_scale' => $fields['textScale'],
+			'corner_style' => $fields['corner_style'],
+			'text_scale' => $fields['text_scale'],
 		];
 	}
 

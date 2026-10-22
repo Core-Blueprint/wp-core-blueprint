@@ -51,7 +51,7 @@ final class MaintenanceFlowCompiler {
 		$blocks = [];
 		$regions = [];
 		$first_content = true;
-		$spacing = (float) (int) $fields['sectionSpacingMm'];
+		$spacing = (float) (int) $fields['section_spacing_mm'];
 		foreach ( $project['root']['children'] as $index => $node ) {
 			if ( isset( $node['properties']['enabled'] ) && 'off' === $node['properties']['enabled'] ) {
 				continue;
@@ -580,11 +580,11 @@ final class MaintenanceFlowCompiler {
 
 	/** Only bounded page and margin presets can reach the shared Flow renderer. */
 	public static function layout( array $fields ): array {
-		$page = 'letter' === $fields['pageFormat'] ? [ 215.9, 279.4 ] : [ 210.0, 297.0 ];
-		if ( 'landscape' === $fields['pageOrientation'] ) {
+		$page = 'letter' === $fields['page_format'] ? [ 215.9, 279.4 ] : [ 210.0, 297.0 ];
+		if ( 'landscape' === $fields['page_orientation'] ) {
 			$page = array_reverse( $page );
 		}
-		$margin = (float) (int) $fields['pageMarginMm'];
+		$margin = (float) (int) $fields['page_margin_mm'];
 		return [
 			'mode' => 'flow',
 			'units' => 'mm',

@@ -193,11 +193,11 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		validateProject(project);
 		const fields=editor.persistedFields();
 		const documentView=el('article','cb-reports-platform__document');
-		if(/^#[0-9a-fA-F]{6}$/.test(fields.accentColor||''))
-			documentView.style.setProperty('--cb-report-accent',fields.accentColor);
+		if(/^#[0-9a-fA-F]{6}$/.test(fields.accent_color||''))
+			documentView.style.setProperty('--cb-report-accent',fields.accent_color);
 		documentView.dataset.cbReportsDensity=fields.density||'comfortable';
 		const brand=el('div','cb-reports-platform__branding',
-			fields.providerName||'Core Blueprint');
+			fields.provider_name||'Core Blueprint');
 		documentView.append(brand);
 		documentView.append(el('h1','cb-reports-platform__title',project.root.properties.title));
 		project.root.children.forEach((node,i)=>documentView.append(renderNode(node,[i])));

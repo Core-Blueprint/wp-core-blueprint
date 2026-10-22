@@ -96,19 +96,19 @@ final class PlatformAdapter {
 	/** @return array<string,array{max:int,default:string}> */
 	public static function branding_definitions(): array {
 		return [
-			'accentColor' => [ 'max' => 7, 'default' => '#0064c8' ],
-			'cornerStyle' => [ 'max' => 7, 'default' => 'soft' ],
+			'accent_color' => [ 'max' => 7, 'default' => '#0064c8' ],
+			'corner_style' => [ 'max' => 7, 'default' => 'soft' ],
 			'density' => [ 'max' => 11, 'default' => 'comfortable' ],
-			'logoAttachmentId' => [ 'max' => 12, 'default' => '0' ],
-			'pageFormat' => [ 'max' => 6, 'default' => 'a4' ],
-			'pageOrientation' => [ 'max' => 9, 'default' => 'portrait' ],
-			'pageMarginMm' => [ 'max' => 2, 'default' => '12' ],
-			'providerContact' => [ 'max' => 200, 'default' => '' ],
-			'providerName' => [ 'max' => 120, 'default' => '' ],
-			'sectionSpacingMm' => [ 'max' => 2, 'default' => '5' ],
-			'showLogo' => [ 'max' => 3, 'default' => 'on' ],
-			'surfaceStyle' => [ 'max' => 5, 'default' => 'cards' ],
-			'textScale' => [ 'max' => 8, 'default' => 'standard' ],
+			'logo_attachment_id' => [ 'max' => 12, 'default' => '0' ],
+			'page_format' => [ 'max' => 6, 'default' => 'a4' ],
+			'page_orientation' => [ 'max' => 9, 'default' => 'portrait' ],
+			'page_margin_mm' => [ 'max' => 2, 'default' => '12' ],
+			'provider_contact' => [ 'max' => 200, 'default' => '' ],
+			'provider_name' => [ 'max' => 120, 'default' => '' ],
+			'section_spacing_mm' => [ 'max' => 2, 'default' => '5' ],
+			'show_logo' => [ 'max' => 3, 'default' => 'on' ],
+			'surface_style' => [ 'max' => 5, 'default' => 'cards' ],
+			'text_scale' => [ 'max' => 8, 'default' => 'standard' ],
 		];
 	}
 
