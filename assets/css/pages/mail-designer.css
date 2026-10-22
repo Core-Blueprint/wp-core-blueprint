@@ -275,3 +275,41 @@ button.cb-core-mail-binding.cb-core-clipboard-control:not(.cb-core-button) {
 .cb-core-mail-designer__dirty[hidden] {
 	display: none !important;
 }
+
+
+/* Native Platform v1 Mail canvas: presentation-only, no shared Host chrome. */
+.cb-mail-platform { min-height: 580px; overflow: auto; padding: 30px 18px; }
+.cb-mail-platform__frame { width: 100%; box-shadow: 0 8px 32px rgba(15,23,42,.09); }
+.cb-mail-platform__subject { padding: 12px 18px; font-size: 13px; font-weight: 600; color: #475569;
+  border-bottom: 1px solid #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cb-mail-platform__node { position: relative; min-width: 0; border-radius: 2px; }
+.cb-mail-platform__node[data-cb-design-node-type] { cursor: pointer; }
+.cb-mail-platform__node.is-selected { outline: 2px solid #2563eb; outline-offset: -2px; }
+.cb-mail-platform__node:focus-visible { outline: 2px solid #2563eb; }
+.cb-mail-platform__columns { min-width: 0; }
+.cb-mail-platform__column { min-width: 0; }
+.cb-mail-platform__content { overflow-wrap: anywhere; }
+.cb-mail-platform__inline-text { display: block; width: 100%; min-height: 90px; box-sizing: border-box; }
+.cb-mail-platform__image-placeholder { display: inline-flex; min-height: 60px; padding: 12px;
+  border: 1px dashed #94a3b8; align-items: center; justify-content: center; }
+@media(max-width: 640px) {
+ .cb-mail-platform { padding: 12px 6px; }
+ .cb-mail-platform__columns { grid-template-columns: minmax(0,1fr) !important; }
+}
+
+
+/* Native rich-text toolbar is inside the Mail canvas, which always enqueues
+   this Mail stylesheet. No dependency on legacy editor asset enqueueing. */
+.cb-mail-platform .cb-mail-rich-text-controls { display: grid; gap: 8px; min-width: 0; margin: 8px 0; }
+.cb-mail-platform .cb-mail-rich-text-controls__toolbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.cb-mail-platform .cb-mail-rich-text-controls__toolbar .cb-core-button { min-width: 2rem; min-height: 2rem; }
+.cb-mail-platform .cb-mail-rich-text-controls__editor { min-height: 140px; max-height: 360px; overflow: auto;
+  padding: 12px; border: 1px solid #cbd5e1; background: #fff; color: #1f2937;
+  font-size: 14px; line-height: 1.6; white-space: normal; overflow-wrap: anywhere; cursor: text; }
+.cb-mail-platform .cb-mail-rich-text-controls__editor:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.cb-mail-platform .cb-mail-rich-text-controls__link { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.cb-mail-platform .cb-mail-rich-text-controls__link[hidden] { display: none !important; }
+.cb-mail-platform .cb-mail-rich-text-controls__link label { display: grid; gap: 4px; }
+.cb-mail-platform .cb-mail-rich-text-controls__advanced { padding-top: 8px; border-top: 1px solid #cbd5e1; }
+.cb-mail-platform .cb-mail-rich-text-controls__advanced summary { cursor: pointer; font-size: 12px; color: #475569; }
+.cb-mail-platform .cb-mail-rich-text-controls__advanced textarea { width: 100%; box-sizing: border-box; margin-top: 8px; font-family: monospace; }

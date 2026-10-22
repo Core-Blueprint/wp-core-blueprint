@@ -16,8 +16,12 @@ use CoreBlueprint\Core\Design\Integrity\ApprovedManifestSource;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * First-party Reports Designer v1. Branding is persisted via schema-bound
- * fields; Composer blocks are native StableSchemaV1 nodes, never older JSON.
+ * First-party native Reports StableSchemaV1 profile. No Composer document,
+ * URLs or separate persistence authority are registered here.
+ *
+ * Values use the existing schema string/enum vocabulary. The Foundation
+ * remains responsible for typed Inspector controls and the authoritative
+ * Save validation hook into Reports\Composer\NativeComposition.
  */
 final class PlatformAdapter {
 	public const PROVIDER = 'core.blueprint';
@@ -26,6 +30,87 @@ final class PlatformAdapter {
 	public const SCHEMA = 'base/reports/1';
 	public const MODULE = '@cb-core/reports-platform';
 	public const PATH = 'assets/js/design/reports/platform-adapter.js';
+
+	/** @return array<string,array{parents:list<string>,properties:array<string,array<string,mixed>>}> */
+	public static function node_definitions(): array {
+		$root = self::TYPE;
+		return [
+			$root => [
+				'parents' => [],
+				'properties' => [ 'title' => self::string_schema( 200 ) ],
+			],
+			'reports.activity' => [
+				'parents' => [ $root ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showIntro' => self::string_schema( 3, [ 'on', 'off' ] ) ],
+			],
+			'reports.current-state' => [
+				'parents' => [ $root ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showNotes' => self::string_schema( 3, [ 'on', 'off' ] ) ],
+			],
+			'reports.footer' => [
+				'parents' => [ $root ],
+				'properties' => [ 'showPageNumber' => self::string_schema( 3, [ 'on', 'off' ] ) ],
+			],
+			'reports.header' => [
+				'parents' => [ $root ],
+				'properties' => [ 'showSiteUrl' => self::string_schema( 3, [ 'on', 'off' ] ), 'showMetadata' => self::string_schema( 3, [ 'on', 'off' ] ) ],
+			],
+			'reports.heading' => [
+				'parents' => [ $root, 'reports.section' ],
+				'properties' => [ 'text' => self::string_schema( 500 ) ],
+			],
+			'reports.kpis' => [
+				'parents' => [ $root ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showDetails' => self::string_schema( 3, [ 'on', 'off' ] ) ],
+			],
+			'reports.metric' => [
+				'parents' => [ $root, 'reports.section' ],
+				'properties' => [ 'label' => self::string_schema( 160 ), 'value' => self::string_schema( 200 ) ],
+			],
+			'reports.notes' => [
+				'parents' => [ $root ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showHeading' => self::string_schema( 3, [ 'on', 'off' ] ) ],
+			],
+			'reports.paragraph' => [
+				'parents' => [ $root, 'reports.section' ],
+				'properties' => [ 'text' => self::string_schema( 20000 ) ],
+			],
+			'reports.section' => [
+				'parents' => [ $root ],
+				'properties' => [ 'title' => self::string_schema( 160 ), 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ) ],
+			],
+			'reports.status' => [
+				'parents' => [ $root ],
+				'properties' => [ 'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showDetails' => self::string_schema( 3, [ 'on', 'off' ] ) ],
+			],
+			'reports.summary' => [
+				'parents' => [ $root ],
+				'properties' => [
+					'enabled' => self::string_schema( 3, [ 'on', 'off' ] ), 'showSecurity' => self::string_schema( 3, [ 'on', 'off' ] ),
+					'showBackups' => self::string_schema( 3, [ 'on', 'off' ] ),
+				],
+			],
+		];
+	}
+
+	/** @return array<string,array{max:int,default:string,enum?:list<string>}> */
+	public static function branding_definitions(): array {
+		return [
+			'accent_color' => [ 'max' => 7, 'default' => '#0064c8' ],
+			'corner_style' => [ 'max' => 7, 'default' => 'soft', 'enum' => [ 'square', 'soft', 'rounded' ] ],
+			'density' => [ 'max' => 11, 'default' => 'comfortable', 'enum' => [ 'compact', 'comfortable' ] ],
+			'logo_attachment_id' => [ 'max' => 12, 'default' => '0' ],
+			'page_format' => [ 'max' => 6, 'default' => 'a4', 'enum' => [ 'a4', 'letter' ] ],
+			'page_orientation' => [ 'max' => 9, 'default' => 'portrait', 'enum' => [ 'portrait', 'landscape' ] ],
+			'page_margin_mm' => [ 'max' => 2, 'default' => '12' ],
+			'provider_contact' => [ 'max' => 200, 'default' => '' ],
+			'provider_name' => [ 'max' => 120, 'default' => '' ],
+			'section_spacing_mm' => [ 'max' => 2, 'default' => '5' ],
+			'show_logo' => [ 'max' => 3, 'default' => 'on', 'enum' => [ 'on', 'off' ] ],
+			'surface_style' => [ 'max' => 5, 'default' => 'cards', 'enum' => [ 'cards', 'flat' ] ],
+			'text_scale' => [ 'max' => 8, 'default' => 'standard', 'enum' => [ 'compact', 'standard', 'large' ] ],
+		];
+	}
 
 	public static function declare_type(
 		DesignTypeRegistry $types, CapabilityRegistry $caps, AuthorizationRegistry $grants
@@ -42,57 +127,33 @@ final class PlatformAdapter {
 		ComponentRegistry $components, ControlRegistry $controls,
 		ModuleCatalog $modules, array $artifact
 	): void {
-		$types_snapshot = array_map( static fn( array $t ): array => [
+		$types_snapshot = array_map( static fn ( array $t ): array => [
 			'id' => $t['id'], 'ownerProvider' => $t['owner_provider'],
 			'allowSitePresentational' => $t['allow_site_presentational'],
 		], $types->definitions() );
-		$schemas = [
-			self::TYPE => self::object_schema( [ 'title' => self::string_schema( 200 ) ] ),
-			'reports.heading' => self::object_schema( [
-				'text' => self::string_schema( 500 ),
-			] ),
-			'reports.metric' => self::object_schema( [
-				'label' => self::string_schema( 160 ), 'value' => self::string_schema( 200 ),
-			] ),
-			'reports.paragraph' => self::object_schema( [
-				'text' => self::string_schema( 20000 ),
-			] ),
-			'reports.section' => self::object_schema( [
-				'title' => self::string_schema( 160 ),
-			] ),
-		];
 		$nodes = [];
 		$domains = [];
-		foreach ( $schemas as $type => $schema ) {
+		foreach ( self::node_definitions() as $type => $definition ) {
 			$id = $type . '.props';
 			$nodes[] = [
 				'id' => $type, 'provider' => self::PROVIDER,
-				'allowedParents' => match ( $type ) {
-					self::TYPE => [],
-					'reports.section' => [ self::TYPE, 'reports.section' ],
-					default => [ 'reports.section' ],
-				},
+				'allowedParents' => $definition['parents'],
 				'propertiesSchemaId' => $id,
 			];
-			$domains[] = [ 'id' => $id, 'ownerProvider' => self::PROVIDER, 'schema' => $schema ];
+			$domains[] = [
+				'id' => $id, 'ownerProvider' => self::PROVIDER,
+				'schema' => self::object_schema( $definition['properties'] ),
+			];
 		}
-		$fields = [
-			[
-				'contractVersion' => 1, 'id' => 'reports.accent', 'saveKey' => 'accentColor',
-				'labelKey' => 'Accent color', 'valueSchema' => self::string_schema( 32 ),
+		$fields = [];
+		foreach ( self::branding_definitions() as $key => $definition ) {
+			$fields[] = [
+				'contractVersion' => 1, 'id' => 'reports.' . strtolower( $key ),
+				'saveKey' => $key, 'labelKey' => $key,
+				'valueSchema' => self::string_schema( $definition['max'], $definition['enum'] ?? [] ),
 				'placement' => 'settings', 'requiredCapability' => 'reports.edit',
-			],
-			[
-				'contractVersion' => 1, 'id' => 'reports.brand', 'saveKey' => 'brandName',
-				'labelKey' => 'Brand name', 'valueSchema' => self::string_schema( 200 ),
-				'placement' => 'settings', 'requiredCapability' => 'reports.edit',
-			],
-			[
-				'contractVersion' => 1, 'id' => 'reports.logo', 'saveKey' => 'logoUrl',
-				'labelKey' => 'Logo URL', 'valueSchema' => self::string_schema( 2048 ),
-				'placement' => 'settings', 'requiredCapability' => 'reports.edit',
-			],
-		];
+			];
+		}
 		if ( ! $modules->register( [
 			'id' => self::MODULE, 'owner' => self::PROVIDER,
 			'dependencies' => [], 'exports' => [
@@ -115,7 +176,12 @@ final class PlatformAdapter {
 		] ) ) {
 			throw new \DomainException( 'REGISTRY_INVALID' );
 		}
-		foreach ( [ 'reports.heading', 'reports.metric', 'reports.paragraph', 'reports.section' ] as $type ) {
+		foreach ( array_keys( self::node_definitions() ) as $type ) {
+			// Structural anchors stay in node schemas, Layers and Inspector,
+			// but must never be advertised as insertable Elements.
+			if ( in_array( $type, [ self::TYPE, 'reports.header', 'reports.footer' ], true ) ) {
+				continue;
+			}
 			$id = 'base/' . str_replace( '.', '-', $type );
 			if ( ! $components->register( [
 				'id' => $id, 'owner' => self::PROVIDER, 'profileId' => self::PROFILE,
@@ -129,37 +195,55 @@ final class PlatformAdapter {
 		}
 	}
 
+	/** Native, fully populated baseline: a layout, not historical report data. */
 	public static function default_project(): array {
+		$types = [
+			'reports.header' => [ 'showSiteUrl' => 'on', 'showMetadata' => 'on' ],
+			'reports.status' => [ 'enabled' => 'on', 'showDetails' => 'on' ],
+			'reports.kpis' => [ 'enabled' => 'on', 'showDetails' => 'on' ],
+			'reports.current-state' => [ 'enabled' => 'on', 'showNotes' => 'on' ],
+			'reports.activity' => [ 'enabled' => 'on', 'showIntro' => 'on' ],
+			'reports.summary' => [ 'enabled' => 'on', 'showSecurity' => 'on', 'showBackups' => 'on' ],
+			'reports.notes' => [ 'enabled' => 'on', 'showHeading' => 'on' ],
+			'reports.footer' => [ 'showPageNumber' => 'on' ],
+		];
+		$children = [];
+		foreach ( $types as $type => $properties ) {
+			$children[] = self::node( $type, $properties );
+		}
 		return [
 			'schema_version' => 1, 'design_type' => self::TYPE,
-			'root' => [
-				'type' => self::TYPE, 'provider' => self::PROVIDER,
-				'properties' => [ 'title' => 'Maintenance report' ],
-				'children' => [ [
-					'type' => 'reports.section', 'provider' => self::PROVIDER,
-					'properties' => [ 'title' => 'Overview' ],
-					'children' => [ [
-						'type' => 'reports.heading', 'provider' => self::PROVIDER,
-						'properties' => [ 'text' => 'Summary' ], 'children' => [],
-					], [
-						'type' => 'reports.paragraph', 'provider' => self::PROVIDER,
-						'properties' => [ 'text' => '' ], 'children' => [],
-					] ],
-				] ],
-			],
+			'root' => self::node( self::TYPE, [ 'title' => 'Maintenance Report' ], $children ),
 		];
 	}
 
 	public static function default_fields(): array {
-		return [ 'accentColor' => '#3159a5', 'brandName' => '', 'logoUrl' => '' ];
-	}
-	private static function string_schema( int $max ): array {
-		return [ 'type' => 'string', 'maxLength' => $max ];
-	}
-	private static function object_schema( array $properties ): array {
-		return [ 'type' => 'object', 'properties' => $properties,
-			'required' => array_keys( $properties ), 'additionalProperties' => false ];
+		$fields = [];
+		foreach ( self::branding_definitions() as $key => $definition ) {
+			$fields[$key] = $definition['default'];
+		}
+		return $fields;
 	}
 
+	private static function node( string $type, array $properties, array $children = [] ): array {
+		return [
+			'type' => $type, 'provider' => self::PROVIDER,
+			'properties' => $properties, 'children' => $children,
+		];
+	}
+	/** @param list<string> $enum */
+	private static function string_schema( int $max, array $enum = [] ): array {
+		$schema = [ 'type' => 'string', 'maxLength' => $max ];
+		if ( [] !== $enum ) {
+			$schema['enum'] = $enum;
+		}
+		return $schema;
+	}
+	private static function object_schema( array $properties ): array {
+		return [
+			'type' => 'object', 'properties' => $properties,
+			'required' => array_keys( $properties ), 'additionalProperties' => false,
+		];
+	}
 	private function __construct() {}
 }

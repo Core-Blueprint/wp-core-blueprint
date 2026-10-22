@@ -1,157 +1,40 @@
 <?php
 declare(strict_types=1);
-/**
- * Admin handlers for Mail Designer template persistence.
- *
- * @package Core_Blueprint
- */
 
 namespace CoreBlueprint\Core\Mail\Admin;
 
-use CoreBlueprint\Core\Log\AuditLog;
-use CoreBlueprint\Core\Mail\Designer\TemplateRepository;
-use CoreBlueprint\Core\Mail\Designer\TemplateRegistry;
-use CoreBlueprint\Core\Mail\DesignerState;
-
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * The native Base Mail Platform owns all document mutations through
+ * PlatformTransport -> TransactionalSave -> Repository.
+ *
+ * These pre-v1 admin-post/AJAX mutation hooks MUST NOT be registered.
+ * This class is intentionally inert rather than a compatibility writer.
+ */
 final class TemplateActions {
-	private const RESULT_PREFIX = 'cb_core_mail_result_';
-	private const JSON_DEPTH = 128;
-
 	public static function boot(): void {
-		add_action( 'admin_post_cb_core_mail_template_save', [ __CLASS__, 'save' ] );
-		add_action( 'wp_ajax_cb_core_mail_template_save', [ __CLASS__, 'save_ajax' ] );
-		add_action( 'admin_post_cb_core_mail_template_reset', [ __CLASS__, 'reset' ] );
+		// No independent admin-post or AJAX Save/Reset authorities.
 	}
 
 	public static function save(): void {
-		self::guard( 'cb_core_mail_template_save' );
-		$template_id = self::template_id();
-		$result = self::persist( $template_id );
-		if ( ! $result['success'] ) {
-			self::fail( $result['message'], $template_id );
-		}
-
-		self::set_result( 'success', $result['message'] );
-		self::redirect( $template_id );
+		self::refuse();
 	}
 
 	public static function save_ajax(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'You do not have permission to manage mail templates.', 'core-blueprint' ) ], 403 );
-		}
-		check_ajax_referer( 'cb_core_mail_template_save' );
-
-		$result = self::persist( self::template_id() );
-		if ( ! $result['success'] ) {
-			wp_send_json_error( [ 'message' => $result['message'] ], $result['status'] );
-		}
-
-		wp_send_json_success(
-			[
-				'message' => $result['message'],
-				'template_id' => $result['template_id'],
-				'revision' => $result['revision'],
-				'document' => $result['document'],
-			],
-			200,
-			JSON_INVALID_UTF8_SUBSTITUTE
-		);
+		self::refuse();
 	}
 
 	public static function reset(): void {
-		self::guard( 'cb_core_mail_template_reset' );
-		$template_id = self::template_id();
-		$expected = isset( $_POST['expected_revision'] ) && is_string( $_POST['expected_revision'] )
-			? (string) wp_unslash( $_POST['expected_revision'] ) : '';
-		$result = DesignerState::is_enabled()
-			? TemplateRepository::reset_revisioned( $template_id, $expected )
-			: [ 'status' => 'blocked' ];
-		if ( 'saved' !== $result['status'] ) {
-			self::fail( __( 'The mail template could not be reset. Reload before trying again.', 'core-blueprint' ), $template_id );
-		}
-
-		AuditLog::log( 'mail_template_reset', 'warning', [ 'template_id' => $template_id ] );
-		self::set_result( 'success', __( 'Mail template reset to its current provider default.', 'core-blueprint' ) );
-		self::redirect( $template_id );
+		self::refuse();
 	}
 
-	/** @return array<string,mixed> */
-	private static function persist( string $template_id ): array {
-		if ( ! DesignerState::is_enabled() || null === TemplateRegistry::get( $template_id ) ) {
-			return self::error( 'invalid', __( 'Mail Designer is disabled or the template is unavailable.', 'core-blueprint' ) );
-		}
-		$subject = isset( $_POST['subject'] ) && is_string( $_POST['subject'] )
-			? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
-		$json = isset( $_POST['project_json'] ) && is_string( $_POST['project_json'] )
-			? (string) wp_unslash( $_POST['project_json'] ) : '';
-		$expected = isset( $_POST['expected_revision'] ) && is_string( $_POST['expected_revision'] )
-			? (string) wp_unslash( $_POST['expected_revision'] ) : '';
-		try {
-			$project = json_decode( $json, true, self::JSON_DEPTH, JSON_THROW_ON_ERROR );
-		} catch ( \JsonException $exception ) {
-			$project = null;
-		}
-		if ( ! is_array( $project ) || array_is_list( $project ) ) {
-			return self::error( 'invalid', __( 'The mail design is invalid.', 'core-blueprint' ) );
-		}
-		$result = TemplateRepository::mutate( $template_id, $expected, $subject, $project );
-		if ( 'saved' !== $result['status'] ) {
-			return self::error( (string) $result['status'], __( 'The mail template could not be saved. Reload if the document changed.', 'core-blueprint' ) );
-		}
-		$ack = $result['document'] ?? null;
-		if ( ! is_array( $ack ) || ! is_string( $result['revision'] ?? null )
-			|| ( $ack['subject'] ?? null ) !== $subject || ( $ack['project'] ?? null ) !== $project ) {
-			return self::error( 'uncertain', __( 'The mail template save could not be verified.', 'core-blueprint' ) );
-		}
-		AuditLog::log( 'mail_template_saved', 'notice', [ 'template_id' => $template_id ] );
-		return [
-			'success' => true,
-			'status' => 200,
-			'message' => __( 'Mail template saved.', 'core-blueprint' ),
-			'template_id' => $template_id,
-			'revision' => $result['revision'],
-			'document' => [ 'subject' => $ack['subject'], 'project' => $ack['project'] ],
-		];
-	}
-
-	private static function error( string $reason, string $message ): array {
-		return [
-			'success' => false,
-			'status' => 'conflict' === $reason ? 409 : ( 'invalid' === $reason ? 422 : 503 ),
-			'message' => $message,
-		];
-	}
-
-	private static function guard( string $action ): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to manage mail templates.', 'core-blueprint' ), esc_html__( 'Forbidden', 'core-blueprint' ), [ 'response' => 403 ] );
-		}
-		check_admin_referer( $action );
-	}
-
-	private static function template_id(): string {
-		$raw = isset( $_POST['template_id'] ) ? (string) wp_unslash( $_POST['template_id'] ) : '';
-		return 1 === preg_match( '/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$/', $raw ) ? $raw : '';
-	}
-
-	private static function fail( string $message, string $template_id ): never {
-		self::set_result( 'error', $message );
-		self::redirect( $template_id );
-	}
-
-	private static function set_result( string $type, string $message ): void {
-		set_transient( self::RESULT_PREFIX . get_current_user_id(), [ 'type' => $type, 'message' => $message ], MINUTE_IN_SECONDS );
-	}
-
-	private static function redirect( string $template_id ): never {
-		$url = admin_url( 'admin.php?page=' . Page::SLUG . '&tab=templates' );
-		if ( '' !== $template_id ) {
-			$url = add_query_arg( 'template', $template_id, $url );
-		}
-		wp_safe_redirect( $url );
-		exit;
+	private static function refuse(): never {
+		wp_die(
+			esc_html__( 'Mail Designer now saves exclusively through the authorized Platform.', 'core-blueprint' ),
+			esc_html__( 'Operation unavailable', 'core-blueprint' ),
+			[ 'response' => 410 ]
+		);
 	}
 
 	private function __construct() {}

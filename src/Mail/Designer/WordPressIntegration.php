@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Mail\Designer;
 
 use CoreBlueprint\Core\Mail\DesignerState;
-use CoreBlueprint\Core\Design\Document\Authority;
 use CoreBlueprint\Core\Log\AuditLog;
 
 defined( 'ABSPATH' ) || exit;
@@ -105,12 +104,19 @@ final class WordPressIntegration {
 			// WordPress owns this security notification. Keep the *exact* array
 			// received from upstream WordPress/plugin filters, including all keys.
 			return $email;
+		} catch ( \Throwable $error ) {
+			self::record_integrity_fault( 'render_invalid' );
+			return $email;
 		}
-		if ( null === $rendered || '' === trim( $rendered['html'] )
+		// Never consult document cutover/migration authority in the runtime
+		// fallback path. Invalid native output leaves every upstream mail field
+		// untouched, including recipients, subject, headers and message.
+		if ( ! is_array( $rendered )
+			|| ! is_string( $rendered['html'] ?? null )
+			|| '' === trim( $rendered['html'] )
+			|| ! is_string( $rendered['subject'] ?? null )
 			|| '' === trim( $rendered['subject'] ) ) {
-			if ( in_array( Authority::inspect()['status'], [ 'active', 'blocked' ], true ) ) {
-				self::record_integrity_fault( 'render_invalid' );
-			}
+			self::record_integrity_fault( 'render_invalid' );
 			return $email;
 		}
 

@@ -21,6 +21,13 @@ final class RichText {
 	 * @param array<string,scalar|null> $bindings
 	 */
 	public static function render( string $markup, array $bindings = [] ): string {
+		if ( preg_match( '~<a\b[^>]*href\s*=\s*["\x27]\{\{action\.url\}\}["\x27]~i', $markup ) ) {
+			$url = $bindings['action.url'] ?? null;
+			if ( ! is_string( $url ) || ! in_array( strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) ), [ 'http', 'https' ], true )
+				|| false === filter_var( $url, FILTER_VALIDATE_URL ) ) {
+				throw new \InvalidArgumentException( 'Mail action binding is missing or unsafe.' );
+			}
+		}
 		if ( strlen( $markup ) > self::MAX_SOURCE_BYTES ) {
 			throw new \InvalidArgumentException( 'Mail rich text exceeds the maximum allowed size.' );
 		}

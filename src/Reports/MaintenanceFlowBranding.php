@@ -24,21 +24,10 @@ final class MaintenanceFlowBranding {
 	 * @return array{logo_url:string,fallback_text:string,show_logo:bool,provider_name:string,provider_contact:string,accent_color:string,surface_style:string,density:string,corner_style:string,text_scale:string,is_default:bool}
 	 */
 	public static function resolve(): array {
-		$resolved   = ReportBranding::current();
-		$configured = DesignDocumentAdapter::current()['branding'];
-		$configured = is_array( $configured ) ? $configured : [];
-
-		return self::resolve_values( [
-			'logo_attachment_id' => (int) ( $configured['logo_attachment_id'] ?? 0 ),
-			'show_logo'          => (bool) ( $resolved['show_logo'] ?? true ),
-			'provider_name'      => (string) ( $resolved['provider_name'] ?? '' ),
-			'provider_contact'   => (string) ( $resolved['provider_contact'] ?? '' ),
-			'accent_color'       => (string) ( $resolved['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ),
-			'surface_style'      => (string) ( $resolved['surface_style'] ?? 'cards' ),
-			'density'            => (string) ( $resolved['density'] ?? 'comfortable' ),
-			'corner_style'       => (string) ( $resolved['corner_style'] ?? 'soft' ),
-			'text_scale'         => (string) ( $resolved['text_scale'] ?? 'standard' ),
-		] );
+		$native = DesignDocumentAdapter::current();
+		return self::resolve_values(
+			\CoreBlueprint\Core\Reports\Composer\NativeComposition::flow_branding( $native['fields'] )
+		);
 	}
 
 	/**

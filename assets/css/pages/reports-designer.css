@@ -1,25 +1,134 @@
 /**
- * Core Blueprint Reports Designer.
- * Reports owns Composer semantics only. Shared Designer chrome, rails, Layers
- * presentation, panel spacing and controls remain owned by Design Foundation.
+ * Native Reports Designer v1: document canvas presentation only.
+ * Shared Designer Host, rails, toolbar and Inspector remain Foundation-owned.
+ * This visual projection is not a second PDF or snapshot renderer.
  */
-
-.cb-core-reports__designer-preview-surface {
-	width: min(100%, 210mm);
-	margin-inline: auto;
+.cb-core-reports__designer-preview-surface,
+.cb-reports-platform {
+	--cb-report-accent: #0064c8;
+	min-width: 0;
 }
-
+.cb-reports-platform__document {
+	max-width: 860px;
+	margin: 0 auto;
+	padding: clamp(20px, 4vw, 48px);
+	background: #fff;
+	color: #1f2937;
+	box-shadow: 0 2px 18px rgb(0 0 0 / 9%);
+	border: 1px solid #dde3eb;
+	border-radius: 8px;
+	line-height: 1.55;
+}
+.cb-reports-platform__branding {
+	border-left: 4px solid var(--cb-report-accent);
+	padding: 8px 12px;
+	margin-bottom: 14px;
+	font-weight: 650;
+	overflow-wrap: anywhere;
+}
+.cb-reports-platform__title {
+	margin: 0 0 24px;
+	font-size: clamp(23px, 2.8vw, 32px);
+	line-height: 1.2;
+}
+.cb-reports-platform__node {
+	position: relative;
+	margin: 12px 0;
+	padding: 16px;
+	border: 1px solid #e3e8ef;
+	border-radius: 6px;
+	background: #fff;
+	outline-offset: 2px;
+}
+.cb-reports-platform__node:hover {
+	border-color: #8aa9ca;
+}
+.cb-reports-platform__node.is-selected {
+	outline: 2px solid var(--cb-report-accent);
+	border-color: var(--cb-report-accent);
+}
+.cb-reports-platform__node.is-hidden-report {
+	opacity: .58;
+	border-style: dashed;
+}
+.cb-reports-platform__node.is-hidden-report::after {
+	content: 'Hidden in PDF';
+	display: inline-block;
+	margin-top: 8px;
+	color: #475569;
+	font-size: 12px;
+}
+.cb-reports-platform__eyebrow {
+	display: block;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--cb-report-accent);
+}
+.cb-reports-platform__dynamic {
+	display: block;
+	color: #64748b;
+	margin-top: 6px;
+	font-size: 13px;
+}
+.cb-reports-platform__section-title {
+	font-size: 20px;
+	margin: 0 0 8px;
+}
+.cb-reports-platform__heading {
+	font-size: 18px;
+	margin: 0;
+}
+.cb-reports-platform__paragraph {
+	white-space: pre-line;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+.cb-reports-platform__metric {
+	margin: 0;
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 12px;
+}
+.cb-reports-platform__metric-label {
+	color: #475569;
+}
+.cb-reports-platform__metric-value {
+	font-weight: 700;
+	color: var(--cb-report-accent);
+}
+.cb-reports-platform__document[data-cb-reports-density="compact"] .cb-reports-platform__node {
+	padding: 10px;
+	margin: 8px 0;
+}
 [data-cb-report-preview] {
-	display: block;
-	width: 100%;
-	border: 0;
-	background: transparent;
+	max-width: 100%;
+	overflow: auto;
 }
 
-#cb-core-logo-preview img {
-	display: block;
-	max-width: 100%;
-	max-height: 96px;
-	width: auto;
-	height: auto;
+.cb-reports-platform__node-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 12px;
+}
+.cb-reports-platform__action {
+	border: 1px solid #cbd5e1;
+	border-radius: 4px;
+	padding: 4px 8px;
+	background: #f8fafc;
+	color: #334155;
+	font: inherit;
+	font-size: 12px;
+	cursor: pointer;
+}
+.cb-reports-platform__action:hover:not(:disabled),
+.cb-reports-platform__action:focus-visible {
+	border-color: var(--cb-report-accent);
+	color: var(--cb-report-accent);
+}
+.cb-reports-platform__action:disabled {
+	opacity: .35;
+	cursor: not-allowed;
 }

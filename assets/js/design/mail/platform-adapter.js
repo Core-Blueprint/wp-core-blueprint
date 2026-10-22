@@ -1,192 +1,198 @@
-import {
-	insertNodeCommand, removeNodeCommand, reorderNodeCommand, setPropertyCommand,
-} from '../core/commands.js';
-import { nodeAt, normalizePath } from '../core/tree.js';
+import {insertNodeCommand,removeNodeCommand,reorderNodeCommand,setPropertyCommand} from '../core/commands.js';
+import {nodeAt} from '../core/tree.js';
+import {sanitizeMailMarkup,createMailRichTextControls} from './rich-text-controls.js';
+const PROVIDER='core.blueprint', ROOT='core.blueprint.mail';
+const FONT=['Arial, Helvetica, sans-serif','Helvetica, Arial, sans-serif','Georgia, Times New Roman, serif','Tahoma, Verdana, sans-serif','Verdana, Geneva, sans-serif'];
+const col={type:'color',maxLength:32},align={type:'select',options:['left','center','right']};
+const str=(maxLength)=>({type:'text',maxLength}),int=(min,max)=>({type:'number',min,max}),sel=(options)=>({type:'select',options});
+const both=['mail.section','mail.column'];
+const def=(parents,defaults,controls,label)=>Object.freeze({parents,defaults:Object.freeze(defaults),controls:Object.freeze(controls),label});
+const TYPES=Object.freeze({
+ [ROOT]:def([],{background:'#f3f4f6',contentBackground:'#ffffff',textColor:'#1f2937',accentColor:'#2563eb',fontFamily:FONT[0],width:600,padding:32},{background:col,contentBackground:col,textColor:col,accentColor:col,fontFamily:sel(FONT),width:int(320,800),padding:int(0,64)},'Mail settings'),
+ 'mail.section':def([ROOT],{background:'#ffffff',padding:32,spacing:0},{background:col,padding:int(0,64),spacing:int(0,64)},'Section'),
+ 'mail.heading':def(both,{text:'Your heading',fontSize:28,align:'left',color:'#1f2937',spacing:16},{text:str(10000),fontSize:int(16,48),align,color:col,spacing:int(0,48)},'Heading'),
+ 'mail.text':def(both,{text:'Write your message here.',fontSize:16,align:'left',color:'#1f2937',spacing:16},{text:str(100000),fontSize:int(12,28),align,color:col,spacing:int(0,48)},'Text'),
+ 'mail.rich-text':def(both,{markup:'<p>Write your message here.</p>',fontSize:16,align:'left',color:'#1f2937',spacing:16},{markup:{type:'rich-text',maxLength:100000},fontSize:int(12,28),align,color:col,spacing:int(0,48)},'Rich text'),
+ 'mail.button':def(both,{label:'Continue',url:'',align:'left',background:'#2563eb',color:'#ffffff',radius:6,spacing:20},{label:str(160),url:{type:'url',maxLength:2048},align,background:col,color:col,radius:int(0,32),spacing:int(0,48)},'Button'),
+ 'mail.image':def(both,{url:'',alt:'',width:560,align:'center',spacing:20},{url:{type:'url',maxLength:2048},alt:str(255),width:int(1,800),align,spacing:int(0,48)},'Image'),
+ 'mail.divider':def(both,{color:'#e5e7eb',spacing:20},{color:col,spacing:int(0,48)},'Divider'),
+ 'mail.spacer':def(both,{height:24},{height:int(0,120)},'Spacer'),
+ 'mail.columns':def(['mail.section'],{ratio:'equal',gap:16,spacing:20},{ratio:sel(['equal','left-wide','right-wide','left-third','right-third']),gap:int(0,40),spacing:int(0,48)},'Two columns'),
+ 'mail.column':def(['mail.columns'],{background:'#ffffff',padding:0},{background:col,padding:int(0,40)},'Column'),
+});
+const has=(o,k)=>!!o&&Object.prototype.hasOwnProperty.call(o,k);
+const PALETTE=Object.keys(TYPES).filter(t=>t!==ROOT&&t!=='mail.column');
+const COMPONENTS=Object.freeze(PALETTE.map(type=>Object.freeze({id:'base/'+type.replace('.','-'),type,label:TYPES[type].label})));
+const valueOK=(v,c)=>{
+ if(c.type==='number')return Number.isSafeInteger(v)&&v>=c.min&&v<=c.max;
+ if(typeof v!=='string'||[...v].length>(c.maxLength??128))return false;
+ if(c.type==='select')return c.options.includes(v);
+ if(c.type==='color')return /^#[a-fA-F0-9]{6}$/.test(v);
+ if(c.type==='url')return v===''||/^https?:\/\/\S+$/i.test(v)||/^\{\{[a-z][a-z0-9._-]*\}\}$/.test(v);
+ return true;
+};
+const propsOK=(type,p)=>!!TYPES[type]&&!!p&&typeof p==='object'&&!Array.isArray(p)
+ &&Object.keys(p).length===Object.keys(TYPES[type].controls).length
+ &&Object.entries(TYPES[type].controls).every(([k,c])=>has(p,k)&&valueOK(p[k],c));
+const parentOK=(p,t)=>!!TYPES[t]&&TYPES[t].parents.includes(p?.type);
+const validNode=(n,parent=null,depth=0,counter={count:0})=>!!n&&depth<=64&&++counter.count<=5000&&has(TYPES,n.type)&&n.provider==='core.blueprint'
+ &&propsOK(n.type,n.properties)&&Array.isArray(n.children)
+ &&(parent===null||parentOK(parent,n.type))
+ &&(n.type!=='mail.columns'||(n.children.length===2&&n.children.every(c=>c?.type==='mail.column')))
+ &&([ROOT,'mail.section','mail.columns','mail.column'].includes(n.type)||n.children.length===0)
+ &&n.children.every(c=>validNode(c,n,depth+1,counter));
+export function validateProject(p){
+ if(!p||Object.keys(p).length!==3||p.schema_version!==1||p.design_type!==ROOT
+  ||p.root?.type!==ROOT||!validNode(p.root))throw new TypeError('SCHEMA_DOMAIN_INVALID');
+ return true;
+}
+const pathOK=p=>Array.isArray(p)&&p.length<=64&&p.every(x=>Number.isSafeInteger(x)&&x>=0);
+const node=t=>{
+ const d=TYPES[t];if(!d||t===ROOT)return null;
+ return {type:t,provider:PROVIDER,properties:{...d.defaults},
+  children:t==='mail.columns'?[node('mail.column'),node('mail.column')]:[]};
+};
+const inputOK=(d,i)=>{
+ if(!i||typeof i!=='object'||Array.isArray(i))return false;
+ switch(d?.id){
+ case 'mail.insert':return pathOK(i.parentPath)&&Number.isSafeInteger(i.index)&&i.index>=0&&PALETTE.includes(i.type)&&Object.keys(i).length===3;
+ case 'mail.remove':return pathOK(i.path)&&i.path.length>0&&Object.keys(i).length===1;
+ case 'mail.reorder':return pathOK(i.parentPath)&&Number.isSafeInteger(i.fromIndex)&&Number.isSafeInteger(i.toIndex)&&i.fromIndex>=0&&i.toIndex>=0&&Object.keys(i).length===3;
+ case 'mail.set':return pathOK(i.path)&&typeof i.key==='string'&&Object.keys(i).length===3;
+ default:return false;
+ }};
+export const validateCommandInput=inputOK;
+export const authorizeCommand=(d,p,i,c)=>c?.resourceType==='base.mail-template'
+ &&Number.isSafeInteger(c.actorId)&&c.actorId>0&&Number.isSafeInteger(c.siteId)&&c.siteId>0
+ &&Number.isSafeInteger(c.contextEpoch)&&c.contextEpoch>=0
+ &&d===resolveCommand(d?.id)&&p?.design_type===ROOT&&inputOK(d,i);
+const cmd=(id,canApply,apply)=>Object.freeze({contractVersion:1,id,canApply,apply});
+const CMDS=Object.freeze({
+ 'mail.insert':cmd('mail.insert',(p,i)=>{
+  const at=nodeAt(p.root,i.parentPath);return parentOK(at,i.type)&&i.index<=at.children.length;
+ },(p,i)=>insertNodeCommand(i.parentPath,i.index,node(i.type)).apply(p)),
+ 'mail.remove':cmd('mail.remove',(p,i)=>{
+  const at=nodeAt(p.root,i.path);return !!at&&at.type!=='mail.column';
+ },(p,i)=>removeNodeCommand(i.path).apply(p)),
+ 'mail.reorder':cmd('mail.reorder',(p,i)=>{
+  const at=nodeAt(p.root,i.parentPath);return !!at&&at.type!=='mail.columns'
+   &&i.fromIndex<at.children.length&&i.toIndex<at.children.length;
+ },(p,i)=>reorderNodeCommand(i.parentPath,i.fromIndex,i.toIndex).apply(p)),
+ 'mail.set':cmd('mail.set',(p,i)=>{
+  const at=nodeAt(p.root,i.path);return !!at&&has(TYPES[at.type]?.controls,i.key)
+   &&valueOK(i.value,TYPES[at.type].controls[i.key]);
+ },(p,i)=>setPropertyCommand(i.path,[i.key],i.value).apply(p)),
+});
+export const resolveCommand=id=>has(CMDS,id)?CMDS[id]:null;
+export const componentsFor=()=>COMPONENTS;
+export const propertiesFor=n=>!propsOK(n?.type,n?.properties)?[]:
+ Object.entries(TYPES[n.type].controls).map(([key,c])=>Object.freeze({
+  key,label:key.replace(/([A-Z])/g,' $1').replace(/^./,x=>x.toUpperCase()),
+  type:c.type,value:n.properties[key],options:c.options||null,min:c.min,max:c.max,
+  maxLength:c.maxLength,multiline:['text','markup'].includes(key),
+ }));
+const url=(v)=>{try{if(!v||v.includes('{{'))return null;const u=new URL(v);
+ return ['http:','https:'].includes(u.protocol)?u.href:null;}catch{return null;}};
+export function createRenderAdapter({root,document:doc,profileId}){
+ if(!root||!doc||profileId!=='base/mail')throw new TypeError('HOST_MODULE_MISSING');
+ let editor=null,container=null,destroyed=false,editing=null;
+ const el=(tag,cl='',t='')=>{const e=doc.createElement(tag);e.className=cl;e.textContent=t;return e;};
+ const draw=(n,path)=>{
+  const p=n.properties,e=el('div','cb-mail-platform__node');
+  e.dataset.cbDesignNodePath=JSON.stringify(path);e.dataset.cbDesignNodeType=n.type;e.tabIndex=0;
+  e.style.boxSizing='border-box';
+  if(n.type==='mail.section'){e.classList.add('cb-mail-platform__section');e.style.background=p.background;e.style.padding=p.padding+'px';e.style.marginBottom=p.spacing+'px';}
+  else if(n.type==='mail.columns'){e.classList.add('cb-mail-platform__columns');e.style.display='grid';
+   e.style.gridTemplateColumns=({'equal':'1fr 1fr','left-wide':'3fr 2fr','right-wide':'2fr 3fr','left-third':'1fr 2fr','right-third':'2fr 1fr'})[p.ratio];
+   e.style.gap=p.gap+'px';e.style.marginBottom=p.spacing+'px';}
+  else if(n.type==='mail.column'){e.classList.add('cb-mail-platform__column');e.style.background=p.background;e.style.padding=p.padding+'px';}
+  else if(['mail.heading','mail.text','mail.rich-text'].includes(n.type)){
+   const child=el(n.type==='mail.heading'?'h2':'div','cb-mail-platform__content');
+   child.style.fontSize=p.fontSize+'px';child.style.color=p.color;child.style.textAlign=p.align;
+   child.style.marginBottom=p.spacing+'px';child.style.whiteSpace='pre-wrap';
+   if(n.type==='mail.rich-text')child.replaceChildren(sanitizeMailMarkup(p.markup,doc));
+   else child.textContent=p.text;e.append(child);
+  }else if(n.type==='mail.button'){const a=el('span','cb-mail-platform__button',p.label);
+   a.style.display='inline-block';a.style.padding='12px 20px';a.style.background=p.background;
+   a.style.color=p.color;a.style.borderRadius=p.radius+'px';
+   if(url(p.url))a.title=p.url;e.style.textAlign=p.align;e.style.marginBottom=p.spacing+'px';e.append(a);
+  }else if(n.type==='mail.image'){const u=url(p.url);
+   if(u){const img=el('img');img.src=u;img.alt=p.alt;img.loading='lazy';img.style.maxWidth='100%';img.style.width=p.width+'px';e.append(img);}
+   else e.append(el('span','cb-mail-platform__image-placeholder',p.alt||'Image'));
+   e.style.textAlign=p.align;e.style.marginBottom=p.spacing+'px';
+  }else if(n.type==='mail.divider'){const hr=el('hr');hr.style.border=0;hr.style.borderTop='1px solid '+p.color;
+   hr.style.margin=p.spacing+'px 0';e.append(hr);
+  }else if(n.type==='mail.spacer')e.style.height=p.height+'px';
 
-const PROVIDER = 'core.blueprint';
-const TYPE = 'core.blueprint.mail';
-const SCHEMA = 'base/mail/1';
-const ROOT = TYPE;
-const ALLOWED = Object.freeze({
-	[TYPE]: Object.freeze({background: 32}),
-	'mail.section': Object.freeze({title: 160}),
-	'mail.text': Object.freeze({text: 100000}),
-	'mail.button': Object.freeze({label: 160, href: 2048}),
-	'mail.image': Object.freeze({src: 2048, alt: 255}),
-});
-const COMPONENTS = Object.freeze([
-	Object.freeze({id: 'base/mail-section', type:'mail.section', label:'Section'}),
-	Object.freeze({id: 'base/mail-text', type:'mail.text', label:'Text'}),
-	Object.freeze({id: 'base/mail-button', type:'mail.button', label:'Button'}),
-	Object.freeze({id: 'base/mail-image', type:'mail.image', label:'Image'}),
-]);
-const defaults = Object.freeze({
-	'mail.section': Object.freeze({title:'New section'}),
-	'mail.text': Object.freeze({text:'New text'}),
-	'mail.button': Object.freeze({label:'Open link',href:''}),
-	'mail.image': Object.freeze({src:'',alt:''}),
-});
-const pathOK = (path) => Array.isArray(path) && path.length <= 64
-	&& path.every((i) => Number.isSafeInteger(i) && i >= 0);
-const checkProps = (node) => node && typeof node === 'object'
-	&& Object.hasOwn(ALLOWED, node.type) && node.provider === PROVIDER
-	&& node.properties && typeof node.properties === 'object' && !Array.isArray(node.properties)
-	&& Object.keys(node.properties).length === Object.keys(ALLOWED[node.type]).length
-	&& Object.entries(ALLOWED[node.type]).every(([key,max]) =>
-		typeof node.properties[key] === 'string' && [...node.properties[key]].length <= max);
-const canParent = (parent, type) => type === 'mail.section'
-	? [ROOT,'mail.section'].includes(parent?.type)
-	: parent?.type === 'mail.section';
-const validNode = (node, parent = null, depth = 0) => {
-	if (!checkProps(node) || depth > 64 || !Array.isArray(node.children)
-		|| (parent !== null && !canParent(parent, node.type))
-		|| (node.type !== ROOT && node.type !== 'mail.section' && node.children.length)) return false;
-	return node.children.every((child) => validNode(child, node, depth + 1));
-};
-export function validateProject(project) {
-	if (!project || project.schema_version !== 1 || project.design_type !== TYPE
-		|| !project.root || project.root.type !== ROOT || !validNode(project.root)
-		|| Object.keys(project).length !== 3) throw new TypeError('SCHEMA_DOMAIN_INVALID');
-	return true;
-}
-const acceptedInput = (definition, input) => {
-	if (!input || typeof input !== 'object' || Array.isArray(input)) return false;
-	if (definition.id === 'mail.insert') {
-		return pathOK(input.parentPath) && Number.isSafeInteger(input.index)
-			&& input.index >= 0 && typeof input.type === 'string'
-			&& Object.hasOwn(defaults,input.type)
-			&& Object.keys(input).length === 3;
-	}
-	if (definition.id === 'mail.remove') return pathOK(input.path)
-		&& input.path.length > 0 && Object.keys(input).length === 1;
-	if (definition.id === 'mail.reorder') return pathOK(input.parentPath)
-		&& Number.isSafeInteger(input.fromIndex) && Number.isSafeInteger(input.toIndex)
-		&& input.fromIndex >= 0 && input.toIndex >= 0 && Object.keys(input).length === 3;
-	if (definition.id === 'mail.set') {
-		return pathOK(input.path) && typeof input.key === 'string'
-			&& typeof input.value === 'string'
-			&& Object.keys(input).length === 3;
-	}
-	return false;
-};
-export const validateCommandInput = acceptedInput;
-export const authorizeCommand = (definition, project, input, context) =>
-	context?.resourceType === 'base.mail-template' && context.actorId > 0
-	&& context.siteId > 0 && context.contextEpoch >= 0
-	&& definition === resolveCommand(definition?.id)
-	&& project?.design_type === TYPE && acceptedInput(definition,input);
-const command = (id, canApply, apply) => Object.freeze({
-	contractVersion: 1, id, canApply, apply,
-});
-const commandTable = Object.freeze({
-	'mail.insert': command('mail.insert', (project,input) => {
-		const parent = nodeAt(project.root,input.parentPath);
-		return canParent(parent,input.type) && input.index <= parent.children.length;
-	}, (project,input) => insertNodeCommand(input.parentPath,input.index,{
-		type: input.type,provider:PROVIDER,properties:{...defaults[input.type]},children:[],
-	}).apply(project)),
-	'mail.remove': command('mail.remove', (project,input) =>
-		!!nodeAt(project.root,input.path), (project,input) =>
-		removeNodeCommand(input.path).apply(project)),
-	'mail.reorder': command('mail.reorder', (project,input) => {
-		const parent=nodeAt(project.root,input.parentPath);
-		return !!parent && input.fromIndex < parent.children.length
-			&& input.toIndex < parent.children.length;
-	},(project,input)=>reorderNodeCommand(input.parentPath,input.fromIndex,input.toIndex).apply(project)),
-	'mail.set': command('mail.set', (project,input) => {
-		const node=nodeAt(project.root,input.path);
-		return !!node && Object.hasOwn(ALLOWED[node.type],input.key)
-			&& [...input.value].length<=ALLOWED[node.type][input.key];
-	}, (project,input) => setPropertyCommand(input.path,[input.key],input.value).apply(project)),
-});
-export const resolveCommand = (id) => Object.hasOwn(commandTable,id) ? commandTable[id] : null;
-export function componentsFor() { return COMPONENTS; }
-export function propertiesFor(node) {
-	if (!checkProps(node)) return [];
-	return Object.keys(ALLOWED[node.type]).map((key)=>Object.freeze({
-		key, label:key === 'href' ? 'Link URL' : key.charAt(0).toUpperCase()+key.slice(1),
-		value:node.properties[key],multiline:key === 'text',maxLength:ALLOWED[node.type][key],
-	}));
-}
-const safeHttpUrl = (value) => {
-	try { const url=new URL(value,location.href);return /^https?:$/.test(url.protocol)?url.href:null; }
-	catch { return null; }
-};
-/**
- * Domain-only DOM projection. The Host owns all render scheduling,
- * Selection, IME reconciliation and Save. No inner iframe/editor/history.
- */
-export function createRenderAdapter({root,document:doc,profileId}) {
-	if (!root || !doc || profileId !== 'base/mail') throw new TypeError('HOST_MODULE_MISSING');
-	let editor=null, destroyed=false, selection=null;
-	let container=null, pendingFocus=null;
-	const make=(tag,cls,text='')=>{const el=doc.createElement(tag);if(cls)el.className=cls;el.textContent=text;return el;};
-	const renderNode=(node,path)=>{
-		const el=make('div','cb-mail-platform__node');
-		el.dataset.cbDesignNodePath=JSON.stringify(path);
-		el.dataset.cbDesignNodeType=node.type;
-		el.tabIndex=0;
-		if(node.type==='mail.section')el.classList.add('cb-mail-platform__section');
-		const p=node.properties;
-		if(node.type==='mail.section')el.append(make('h2','cb-mail-platform__section-label',p.title));
-		if(node.type==='mail.text')el.append(make('p','cb-mail-platform__text',p.text));
-		if(node.type==='mail.button'){
-			const a=make('span','cb-mail-platform__button',p.label);
-			if(safeHttpUrl(p.href))a.title=p.href;
-			el.append(a);
-		}
-		if(node.type==='mail.image'){
-			const url=safeHttpUrl(p.src);
-			if(url){const img=doc.createElement('img');img.src=url;img.alt=p.alt;img.loading='lazy';el.append(img);}
-			else el.append(make('span','cb-mail-platform__image-placeholder',p.alt||'Image'));
-		}
-		for(let i=0;i<node.children.length;i++)el.append(renderNode(node.children[i],[...path,i]));
-		el.addEventListener('click',event=>{
-			event.stopPropagation();
-			if(!destroyed && editor && container?.isConnected) editor.select([{kind:'node',path}],{kind:'node',path});
-		});
-		return el;
-	};
-	const show=(project)=>{
-		validateProject(project);
-		const frag=doc.createDocumentFragment();
-		const frame=make('article','cb-mail-platform__frame');
-		frame.style.maxWidth='600px';
-		frame.style.margin='0 auto';
-		frame.style.backgroundColor=project.root.properties.background;
-		const subject=editor?.persistedFields()?.subject;
-		frame.append(make('header','cb-mail-platform__subject',typeof subject==='string'?subject:''));
-		frame.append(renderNode(project.root,[]));
-		frag.append(frame);
-		container.replaceChildren(frag);
-	};
-	return Object.freeze({
-		contractVersion:1,
-		mount({editor:session,signal}){
-			if(destroyed||signal?.aborted||typeof session?.project!=='function')throw new TypeError('RENDER_STALE');
-			editor=session;container=make('div','cb-mail-platform');
-			root.append(container);
-		},
-		update({project,selection:next,signal}){
-			if(destroyed||signal?.aborted||!container)throw new TypeError('RENDER_STALE');
-			show(project);selection=next;this.syncSelection({selection:next,reason:'command'});
-		},
-		syncSelection({selection:next}){
-			selection=next;
-			const key=next?.primary?.kind==='node'?JSON.stringify(next.primary.path):null;
-			for(const node of container?.querySelectorAll('[data-cb-design-node-path]')||[]){
-				const active=node.dataset.cbDesignNodePath===key;
-				node.classList.toggle('is-selected',active);
-				node.setAttribute('aria-selected',active?'true':'false');
-			}
-		},
-		captureFocus(){const el=doc.activeElement;return root.contains(el)?el?.dataset?.cbDesignNodePath||null:null;},
-		restoreFocus(token){
-			if(typeof token!=='string'||!container)return;
-			for(const node of container.querySelectorAll('[data-cb-design-node-path]')){
-				if(node.dataset.cbDesignNodePath===token){node.focus({preventScroll:true});break;}
-			}
-		},
-		destroy(){destroyed=true;editor=null;container?.remove();container=null;},
-	});
+  if(['mail.heading','mail.text','mail.rich-text'].includes(n.type)){
+   const openEdit=ev=>{
+    ev.preventDefault();ev.stopPropagation();
+    if(destroyed||!editor||editing)return;
+    const key=n.type==='mail.rich-text'?'markup':'text',display=e.querySelector('.cb-mail-platform__content');
+    if(!display)return;
+    editing={path:[...path],key,display,host:e};
+    display.hidden=true;
+    if(key==='markup'){
+     const controls=createMailRichTextControls({documentRef:doc,value:p.markup,
+      onCommit:value=>{
+       if(!editor||destroyed)return false;
+       try{if(value!==p.markup)editor.execute('mail.set',{path:[...path],key,value});return true;}
+       catch{return false;}
+      }});
+     editing.controls=controls;
+     const apply=el('button','button','Apply formatting');apply.type='button';
+     apply.addEventListener('click',()=>{if(controls.commit()){editing=null;display.hidden=false;controls.element.remove();apply.remove();}});
+     e.append(controls.element,apply);controls.editor.focus();
+    }else{
+     const field=el('textarea','cb-mail-platform__inline-text');
+     field.value=p.text;field.rows=n.type==='mail.heading'?2:5;
+     field.setAttribute('aria-label','Edit Mail text');
+     const commit=()=>{
+      const value=field.value.replace(/\r\n?/g,'\n'),rule=TYPES[n.type].controls.text;
+      if(!valueOK(value,rule))return;
+      try{
+       if(value!==p.text)editor.execute('mail.set',{path:[...path],key,value});
+       editing=null;display.hidden=false;field.remove();
+      }catch{field.setAttribute('aria-invalid','true');}
+     };
+     field.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){event.preventDefault();editing=null;display.hidden=false;field.remove();}
+      if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();commit();}
+     });
+     field.addEventListener('blur',commit);e.append(field);field.focus();
+    }
+   };
+   e.addEventListener('dblclick',openEdit);
+   e.addEventListener('keydown',ev=>{if(ev.key==='F2')openEdit(ev);});
+  }
+  n.children.forEach((c,i)=>e.append(draw(c,[...path,i])));
+  e.addEventListener('click',ev=>{ev.stopPropagation();
+   if(!destroyed&&editor&&container?.isConnected)editor.select([{kind:'node',path}],{kind:'node',path});});
+  return e;
+ };
+ const sync=({selection})=>{
+  const key=selection?.primary?.kind==='node'?JSON.stringify(selection.primary.path):null;
+  for(const n of container?.querySelectorAll('[data-cb-design-node-path]')||[]){
+   const active=n.dataset.cbDesignNodePath===key;n.classList.toggle('is-selected',active);
+   n.setAttribute('aria-selected',active?'true':'false');
+  }
+ };
+ return Object.freeze({
+  contractVersion:1,
+  mount({editor:session,signal}){if(destroyed||signal?.aborted||typeof session?.project!=='function')throw new TypeError('RENDER_STALE');
+   editor=session;container=el('div','cb-mail-platform');root.append(container);},
+  update({project,selection,signal}){if(destroyed||signal?.aborted||!container)throw new TypeError('RENDER_STALE');
+   editing=null;
+   validateProject(project);const p=project.root.properties;
+   const frame=el('article','cb-mail-platform__frame');
+   frame.style.maxWidth=p.width+'px';frame.style.margin='0 auto';frame.style.background=p.contentBackground;
+   frame.style.color=p.textColor;frame.style.fontFamily=p.fontFamily;
+   const sub=editor?.persistedFields()?.subject;frame.append(el('header','cb-mail-platform__subject',typeof sub==='string'?sub:''));
+   frame.append(draw(project.root,[]));container.style.background=p.background;container.replaceChildren(frame);sync({selection});},
+  syncSelection:sync,
+  captureFocus(){const a=doc.activeElement;return root.contains(a)?a?.dataset?.cbDesignNodePath||null:null;},
+  restoreFocus(token){if(typeof token!=='string'||!container)return;
+   for(const n of container.querySelectorAll('[data-cb-design-node-path]'))if(n.dataset.cbDesignNodePath===token){n.focus({preventScroll:true});break;}},
+  destroy(){destroyed=true;editing=null;editor=null;container?.remove();container=null;},
+ });
 }

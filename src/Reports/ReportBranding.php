@@ -56,52 +56,26 @@ final class ReportBranding {
 	 * @return array<string,mixed>
 	 */
 	public static function current(): array {
-		$configured = DesignDocumentAdapter::current()['branding'];
-		$configured = is_array( $configured ) ? $configured : [];
-		$fallback   = self::fallback();
-
-		$logo_id   = (int) ( $configured['logo_attachment_id'] ?? 0 );
-		$show_logo = self::sanitize_bool( $configured['show_logo'] ?? true, true );
-		$logo_url  = $show_logo && self::is_supported_logo_attachment( $logo_id )
-			? self::attachment_url( $logo_id )
-			: '';
-
-		if ( $show_logo && '' === $logo_url ) {
-			$logo_url = $fallback['logo_url'];
+		$native = DesignDocumentAdapter::current();
+		$fields = $native['fields'];
+		\CoreBlueprint\Core\Reports\Composer\NativeComposition::assert_fields( $fields );
+		$flow = \CoreBlueprint\Core\Reports\Composer\NativeComposition::flow_branding( $fields );
+		$logo_id = (int) $flow['logo_attachment_id'];
+		$show_logo = $flow['show_logo'];
+		$url = $show_logo && $logo_id > 0 ? self::attachment_url( $logo_id ) : '';
+		if ( $show_logo && '' === $url ) {
+			$url = self::fallback()['logo_url'];
 		}
-
-		$provider_name    = trim( (string) ( $configured['provider_name'] ?? '' ) );
-		$provider_contact = trim( (string) ( $configured['provider_contact'] ?? '' ) );
-		$accent_raw       = trim( (string) ( $configured['accent_color'] ?? '' ) );
-		$accent_color     = self::sanitize_hex( $accent_raw, self::DEFAULT_ACCENT );
-		$surface_style    = self::sanitize_choice( $configured['surface_style'] ?? 'cards', [ 'cards', 'flat' ], 'cards' );
-		$density          = self::sanitize_choice( $configured['density'] ?? 'comfortable', [ 'compact', 'comfortable' ], 'comfortable' );
-		$corner_style     = self::sanitize_choice( $configured['corner_style'] ?? 'soft', [ 'square', 'soft', 'rounded' ], 'soft' );
-		$text_scale       = self::sanitize_choice( $configured['text_scale'] ?? 'standard', [ 'compact', 'standard', 'large' ], 'standard' );
-
-		$is_default = (
-			0 === $logo_id
-			&& $show_logo
-			&& '' === $provider_name
-			&& '' === $provider_contact
-			&& ( '' === $accent_raw || self::DEFAULT_ACCENT === strtolower( $accent_raw ) )
-			&& 'cards' === $surface_style
-			&& 'comfortable' === $density
-			&& 'soft' === $corner_style
-			&& 'standard' === $text_scale
-		);
-
 		return [
-			'logo_url'          => $logo_url,
-			'show_logo'         => $show_logo,
-			'provider_name'     => $provider_name,
-			'provider_contact'  => $provider_contact,
-			'accent_color'      => $accent_color,
-			'surface_style'     => $surface_style,
-			'density'           => $density,
-			'corner_style'      => $corner_style,
-			'text_scale'        => $text_scale,
-			'is_default'        => $is_default,
+			'logo_url' => $url, 'show_logo' => $show_logo,
+			'provider_name' => $flow['provider_name'],
+			'provider_contact' => $flow['provider_contact'],
+			'accent_color' => $flow['accent_color'],
+			'surface_style' => $flow['surface_style'],
+			'density' => $flow['density'],
+			'corner_style' => $flow['corner_style'],
+			'text_scale' => $flow['text_scale'],
+			'is_default' => $fields === \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_fields(),
 		];
 	}
 
@@ -112,27 +86,7 @@ final class ReportBranding {
 	 * @return array{logo_url:string,show_logo:bool,provider_name:string,provider_contact:string,accent_color:string,surface_style:string,density:string,corner_style:string,text_scale:string,is_default:bool}
 	 */
 	public static function for_pdf(): array {
-		$resolved   = self::current();
-		$configured = DesignDocumentAdapter::current()['branding'];
-		$configured = is_array( $configured ) ? $configured : [];
-		$logo_id    = (int) ( $configured['logo_attachment_id'] ?? 0 );
-
-		// Keep report branding self-contained so Dompdf never needs network access.
-		// User JPEG/PNG logos are embedded directly; user SVG logos are rasterized
-		// locally to PNG because Dompdf/php-svg-lib cannot render every SVG paint
-		// server reliably. The bundled fallback SVG is trusted plugin data.
-		$resolved['logo_url'] = '';
-
-		if ( ! empty( $resolved['show_logo'] ) && self::is_supported_logo_attachment( $logo_id ) ) {
-			$resolved['logo_url'] = self::attachment_data_uri( $logo_id );
-		}
-
-		if ( ! empty( $resolved['show_logo'] ) && '' === $resolved['logo_url'] ) {
-			$fallback_path = CB_CORE_DIR . self::FALLBACK_LOGO_REL;
-			$resolved['logo_url'] = self::file_data_uri( $fallback_path, 'image/svg+xml', self::MAX_LOGO_BYTES );
-		}
-
-		return $resolved;
+		return MaintenanceFlowBranding::resolve();
 	}
 
 	/**

@@ -70,6 +70,14 @@ final class PlatformTransport {
 		return null;
 	}
 
+	/** The single live WordPress domain policy; no global edit_posts fallback. */
+	public static function authorized_resource( string $profile, string $resource_type, string $resource_key ): bool {
+		$identity = self::identity( $profile, $resource_key );
+		return is_array( $identity )
+			&& hash_equals( $identity['type'], $resource_type )
+			&& hash_equals( $identity['key'], $resource_key );
+	}
+
 	private static function exact_keys( array $value, array $keys ): bool {
 		$actual = array_keys( $value );
 		sort( $actual, SORT_STRING );
@@ -120,10 +128,22 @@ final class PlatformTransport {
 			}
 			$revision = $loaded['revision'];
 		} elseif ( 'missing' === ( $loaded['status'] ?? null ) ) {
-			$doc = [
-				'project' => Mail::PROFILE === $profile ? Mail::default_project() : Reports::default_project(),
-				'fields' => Mail::PROFILE === $profile ? Mail::default_fields() : Reports::default_fields(),
-			];
+			if ( Mail::PROFILE === $profile ) {
+				// Mail owns WordPress-notification wording, token semantics and
+				// security links. Generic empty templates are forbidden.
+				if ( ! is_callable( [ Mail::class, 'default_for_resource' ] ) ) {
+					return self::deny( 'NATIVE_TEMPLATE_DEFAULT_UNAVAILABLE', 503 );
+				}
+				$doc = Mail::default_for_resource( $resource );
+			} else {
+				$doc = [
+					'project' => Reports::default_project(),
+					'fields' => Reports::default_fields(),
+				];
+			}
+			if ( ! is_array( $doc ) || ! self::exact_keys( $doc, [ 'project', 'fields' ] ) ) {
+				return self::deny( 'SCHEMA_DOMAIN_INVALID', 500 );
+			}
 			$revision = '0';
 			if ( ! self::valid_content( $doc['project'], $doc['fields'], $registry, $profile ) ) {
 				return self::deny( 'SCHEMA_DOMAIN_INVALID', 500 );
@@ -182,7 +202,7 @@ final class PlatformTransport {
 			(string) ( $data['expectedStoreRevision'] ?? '' ), $project, $fields
 		);
 		$authorizer = static fn ( SaveEnvelope $item ): bool =>
-			self::identity( $item->profile_id, $item->resource_key ) !== null
+			self::authorized_resource( $item->profile_id, $item->resource_type, $item->resource_key )
 			&& $item->resource_type === $identity['type']
 			&& $item->registry_fingerprint === $registry->fingerprint();
 		$normalize = static function ( SaveEnvelope $item, ?array $existing ) use ( $registry ): array {
@@ -278,33 +298,95 @@ final class PlatformTransport {
 			}
 			return true;
 		};
-		return is_array( $project['root'] )
-			&& ( $project['root']['type'] ?? null ) === $info['designType']
-			&& $visit( $project['root'], null, 0 );
+		if ( ! is_array( $project['root'] )
+			|| ( $project['root']['type'] ?? null ) !== $info['designType']
+			|| ! $visit( $project['root'], null, 0 ) ) return false;
+		// The registered schema is necessary but not sufficient: product
+		// invariants are MANDATORY on both Repository reads and canonical Save.
+		// Never accept when an owner's native validator is not installed or
+		// cannot execute. No alternative v0 validator or data conversion.
+		if ( Mail::PROFILE === $profile ) {
+			if ( ! class_exists( \CoreBlueprint\Core\Design\Profile\Mail\Contract::class )
+				|| ! class_exists( \CoreBlueprint\Core\Design\Profile\Mail\Validator::class ) ) return false;
+			$validator = new \CoreBlueprint\Core\Design\Profile\Mail\Validator();
+			if ( ! is_callable( [ $validator, 'validate' ] ) ) return false;
+			$diagnostics = $validator->validate( $project );
+			return $diagnostics instanceof \CoreBlueprint\Core\Design\Kernel\Diagnostics
+				&& ! $diagnostics->has_errors();
+		}
+		if ( Reports::PROFILE === $profile ) {
+			$validator = \CoreBlueprint\Core\Reports\Composer\NativeComposition::class;
+			if ( ! class_exists( $validator ) || ! is_callable( [ $validator, 'valid_document' ] ) ) {
+				return false;
+			}
+			return true === $validator::valid_document( [
+				'project' => $project, 'fields' => $fields,
+			] );
+		}
+		return false;
 	}
 
+	/**
+	 * Mirrors StableSchemaV1 domain constraints at the authoritative PHP
+	 * read/transactional-write boundary. No coercion, repairs or legacy cases.
+	 */
 	private static function valid_value( mixed $value, array $schema, int $depth = 0 ): bool {
-		if ( $depth > 64 || ! is_string( $schema['type'] ?? null ) ) return false;
-		switch ( $schema['type'] ) {
-			case 'string':
-				return is_string( $value ) && mb_strlen( $value, 'UTF-8' ) >= ( $schema['minLength'] ?? 0 )
-					&& mb_strlen( $value, 'UTF-8' ) <= ( $schema['maxLength'] ?? 65535 );
-			case 'integer':
-				return is_int( $value );
-			case 'boolean':
-				return is_bool( $value );
-			case 'object':
-				if ( ! is_array( $value ) || array_is_list( $value ) ) return false;
-				$properties = $schema['properties'] ?? [];
-				if ( ! is_array( $properties ) || count( $value ) !== count( $properties ) ) return false;
-				foreach ( $properties as $key => $definition ) {
-					if ( ! array_key_exists( $key, $value )
-						|| ! self::valid_value( $value[$key], $definition, $depth + 1 ) ) return false;
-				}
-				return true;
-			default:
-				return false;
+		if ( $depth > 64 || ! isset( $schema['type'] ) ) return false;
+		$types = is_string( $schema['type'] ) ? [ $schema['type'] ] : $schema['type'];
+		if ( ! is_array( $types ) || ! array_is_list( $types ) || [] === $types ) return false;
+		$matches = false;
+		foreach ( $types as $type ) {
+			if ( ! in_array( $type, [ 'string', 'integer', 'number', 'boolean', 'object', 'array', 'null' ], true ) ) return false;
+			$matches = $matches || match ( $type ) {
+				'string' => is_string( $value ),
+				'integer' => is_int( $value ) && abs( $value ) <= 9007199254740991,
+				// SaveEnvelopeV1 deliberately admits only cross-language
+				// exact integers until fractional JSON digests are standardized.
+				'number' => is_int( $value ) && abs( $value ) <= 9007199254740991,
+				'boolean' => is_bool( $value ),
+				'object' => is_array( $value ) && ( [] === $value || ! array_is_list( $value ) ),
+				'array' => is_array( $value ) && array_is_list( $value ),
+				'null' => null === $value,
+			};
 		}
+		if ( ! $matches ) return false;
+		if ( array_key_exists( 'enum', $schema ) && ( ! is_array( $schema['enum'] )
+			|| ! in_array( $value, $schema['enum'], true ) ) ) return false;
+		if ( is_string( $value ) ) {
+			$length = mb_strlen( $value, 'UTF-8' );
+			if ( $length < ( $schema['minLength'] ?? 0 ) || $length > ( $schema['maxLength'] ?? 65535 ) ) return false;
+		}
+		if ( is_int( $value ) || is_float( $value ) ) {
+			if ( ( isset( $schema['minimum'] ) && $value < $schema['minimum'] )
+				|| ( isset( $schema['maximum'] ) && $value > $schema['maximum'] ) ) return false;
+		}
+		if ( is_array( $value ) && in_array( 'array', $types, true )
+			&& array_is_list( $value ) ) {
+			if ( count( $value ) < ( $schema['minItems'] ?? 0 )
+				|| count( $value ) > ( $schema['maxItems'] ?? 100000 )
+				|| ! is_array( $schema['items'] ?? null ) ) return false;
+			foreach ( $value as $entry ) {
+				if ( ! self::valid_value( $entry, $schema['items'], $depth + 1 ) ) return false;
+			}
+		}
+		if ( is_array( $value ) && ( ! array_is_list( $value )
+			|| ( [] === $value && in_array( 'object', $types, true ) && ! in_array( 'array', $types, true ) ) ) ) {
+			$properties = $schema['properties'] ?? [];
+			$required = $schema['required'] ?? [];
+			if ( ! is_array( $properties ) || ! is_array( $required ) ) return false;
+			foreach ( $required as $key ) {
+				if ( ! is_string( $key ) || ! array_key_exists( $key, $value ) ) return false;
+			}
+			foreach ( $value as $key => $entry ) {
+				if ( ! array_key_exists( $key, $properties ) ) {
+					if ( ( $schema['additionalProperties'] ?? false ) !== true ) return false;
+					continue;
+				}
+				if ( ! is_array( $properties[$key] )
+					|| ! self::valid_value( $entry, $properties[$key], $depth + 1 ) ) return false;
+			}
+		}
+		return true;
 	}
 
 	private function __construct() {}

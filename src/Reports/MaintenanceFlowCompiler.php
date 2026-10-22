@@ -5,8 +5,7 @@ namespace CoreBlueprint\Core\Reports;
 
 use CoreBlueprint\Core\Design\Profile\Document\Flow\Presentation;
 use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
-use CoreBlueprint\Core\Reports\Composer\BlockCatalog;
-use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Reports\Composer\NativeComposition;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -17,16 +16,6 @@ defined( 'ABSPATH' ) || exit;
  * Flow blocks. It owns no collection, persistence, lifecycle or PDF backend.
  */
 final class MaintenanceFlowCompiler {
-	private const COMPOSER_CONTENT_GAP_MM = 5.0;
-	private const COMPOSER_CONTENT_TYPES  = [
-		BlockCatalog::STATUS,
-		BlockCatalog::KPIS,
-		BlockCatalog::CURRENT_STATE,
-		BlockCatalog::ACTIVITY,
-		BlockCatalog::SUMMARY,
-		BlockCatalog::NOTES,
-	];
-
 	private const SECTION_ORDER = [
 		'theme_updates'        => 'theme',
 		'plugin_updates'       => 'plugin',
@@ -36,60 +25,102 @@ final class MaintenanceFlowCompiler {
 	];
 
 	/**
+	 * Compile one verified native design and one immutable report-data snapshot.
+	 * Unsaved preview may provide the same exact {project,fields} structure.
+	 * No Composer normalization, fallback documents or report data mutations.
+	 *
 	 * @param array<string,mixed> $report
 	 * @param array<string,mixed> $snapshot
-	 * @param array<string,mixed> $branding
-	 * @param array<string,mixed>|null $template Unsaved Designer template; null resolves persisted state.
+	 * @param array{project:array<string,mixed>,fields:array<string,mixed>}|null $native
 	 * @return array{layout:array<string,mixed>,blocks:list<RenderBlock>,locale:string,presentation:Presentation,preview_regions:array<string,list<int>>}
 	 */
-	public function compile( array $report, array $snapshot, array $branding, string $locale, ?array $template = null ): array {
+	public function compile( array $report, array $snapshot, string $locale, ?array $native = null ): array {
 		$this->assert_input( $report, $snapshot, $locale );
+		if ( null === $native ) {
+			$read = DesignDocumentAdapter::current();
+			$native = [ 'project' => $read['project'], 'fields' => $read['fields'] ];
+		}
+		NativeComposition::assert_document( $native );
+		$fields = $native['fields'];
+		$project = $native['project'];
+		$branding = MaintenanceFlowBranding::resolve_values(
+			NativeComposition::flow_branding( $fields )
+		);
+		$branding['report_title'] = $project['root']['properties']['title'];
 
-		$template = null === $template
-			? MaintenanceTemplate::current()
-			: MaintenanceTemplate::normalize( $template );
-		$blocks          = [];
-		$preview_regions = [];
-		$first_content   = true;
-
-		foreach ( $template['blocks'] as $definition ) {
-			if ( empty( $definition['enabled'] ) ) {
+		$blocks = [];
+		$regions = [];
+		$first_content = true;
+		$spacing = (float) (int) $fields['section_spacing_mm'];
+		foreach ( $project['root']['children'] as $index => $node ) {
+			if ( isset( $node['properties']['enabled'] ) && 'off' === $node['properties']['enabled'] ) {
 				continue;
 			}
-			$type     = (string) ( $definition['type'] ?? '' );
-			$settings = is_array( $definition['settings'] ?? null ) ? $definition['settings'] : [];
-			$compiled = $this->compile_block( $type, $report, $snapshot, $branding, $settings );
-			if ( [] !== $compiled && self::is_composer_content_type( $type ) ) {
-				$compiled      = [ $this->composer_content_block( $compiled, $first_content ) ];
+			$compiled = $this->compile_native_node( $node, $report, $snapshot, $branding );
+			if ( [] !== $compiled && ! in_array( $node['type'], [ 'reports.header', 'reports.footer' ], true ) ) {
+				$compiled = [ $this->composer_content_block( $compiled, $first_content, $spacing ) ];
 				$first_content = false;
 			}
 			$indexes = [];
 			foreach ( $compiled as $block ) {
 				$indexes[] = count( $blocks );
-				$blocks[]  = $block;
+				$blocks[] = $block;
 			}
 			if ( [] !== $indexes ) {
-				$preview_regions[ $type ] = $indexes;
+				$regions[ wp_json_encode( [ $index ] ) ] = $indexes;
 			}
 		}
-
 		return [
-			'layout'          => self::layout(),
-			'blocks'          => $blocks,
-			'locale'          => $locale,
-			'presentation'    => Presentation::from_values(
-				(string) ( $branding['accent_color'] ?? ReportBranding::DEFAULT_ACCENT ),
-				(string) ( $branding['surface_style'] ?? 'cards' ),
-				(string) ( $branding['density'] ?? 'comfortable' ),
-				(string) ( $branding['corner_style'] ?? 'soft' ),
-				(string) ( $branding['text_scale'] ?? 'standard' )
+			'layout' => self::layout( $fields ),
+			'blocks' => $blocks,
+			'locale' => $locale,
+			'presentation' => Presentation::from_values(
+				$branding['accent_color'], $branding['surface_style'],
+				$branding['density'], $branding['corner_style'], $branding['text_scale']
 			),
-			'preview_regions' => $preview_regions,
+			'preview_regions' => $regions,
 		];
 	}
 
-	private static function is_composer_content_type( string $type ): bool {
-		return in_array( $type, self::COMPOSER_CONTENT_TYPES, true );
+	/**
+	 * Map native typed nodes to the existing Reports-owned snapshot projection.
+	 * Generic nodes compile into exactly the same safe RenderBlock vocabulary.
+	 * @return list<RenderBlock>
+	 */
+	private function compile_native_node( array $node, array $report, array $snapshot, array $branding ): array {
+		$settings = [];
+		foreach ( $node['properties'] as $key => $value ) {
+			$settings[ strtolower( preg_replace( '/[A-Z]/', '_$0', $key ) ) ] =
+				'on' === $value ? true : ( 'off' === $value ? false : $value );
+		}
+		// Existing Reports helpers already format typed immutable snapshot data.
+		return match ( $node['type'] ) {
+			'reports.header' => $this->header_blocks( $report, $snapshot, $branding, $settings ),
+			'reports.status' => $this->status_blocks( $snapshot, $settings ),
+			'reports.kpis' => $this->kpi_blocks( $snapshot, $settings ),
+			'reports.current-state' => $this->current_state_blocks( $snapshot, $settings ),
+			'reports.activity' => $this->maintenance_activity_blocks( $snapshot, $settings ),
+			'reports.summary' => $this->summary_blocks( $snapshot, $settings ),
+			'reports.notes' => $this->notes_blocks( $snapshot, $settings ),
+			'reports.footer' => $this->footer_blocks( $snapshot, $settings ),
+			'reports.heading' => [ RenderBlock::heading( $node['properties']['text'], 'section' ) ],
+			'reports.paragraph' => [ RenderBlock::text( $node['properties']['text'] ) ],
+			'reports.metric' => [ RenderBlock::metrics( [ [
+				'label' => $node['properties']['label'],
+				'value' => $node['properties']['value'], 'detail' => '',
+			] ] ) ],
+			'reports.section' => $this->compile_native_section( $node, $report, $snapshot, $branding ),
+			default => throw new \DomainException( 'SCHEMA_DOMAIN_INVALID' ),
+		};
+	}
+
+	/** @return list<RenderBlock> */
+	private function compile_native_section( array $node, array $report, array $snapshot, array $branding ): array {
+		$children = [ RenderBlock::heading( $node['properties']['title'], 'section' ) ];
+		foreach ( $node['children'] as $child ) {
+			$children = array_merge( $children, $this->compile_native_node( $child, $report, $snapshot, $branding ) );
+		}
+		return [ RenderBlock::container( $children ) ];
 	}
 
 	/**
@@ -101,7 +132,7 @@ final class MaintenanceFlowCompiler {
 	 *
 	 * @param list<RenderBlock> $children
 	 */
-	private function composer_content_block( array $children, bool $first_content ): RenderBlock {
+	private function composer_content_block( array $children, bool $first_content, float $spacing ): RenderBlock {
 		$last_index   = count( $children ) - 1;
 		$first_hints  = $children[0]->hints();
 		$break_before = $first_hints['break_before'];
@@ -118,33 +149,11 @@ final class MaintenanceFlowCompiler {
 		return RenderBlock::container(
 			$children,
 			[
-				'space_before' => $first_content ? 0.0 : self::COMPOSER_CONTENT_GAP_MM,
+				'space_before' => $first_content ? 0.0 : $spacing,
 				'break_before' => $break_before,
 				'break_after'  => $break_after,
 			]
 		);
-	}
-
-	/**
-	 * Dispatch one bounded Reports Composer block into typed Document Flow blocks.
-	 *
-	 * @param array<string,mixed> $report
-	 * @param array<string,mixed> $snapshot
-	 * @param array<string,mixed> $branding
-	 * @return list<RenderBlock>
-	 */
-	private function compile_block( string $type, array $report, array $snapshot, array $branding, array $settings ): array {
-		return match ( $type ) {
-			BlockCatalog::HEADER        => $this->header_blocks( $report, $snapshot, $branding, $settings ),
-			BlockCatalog::STATUS        => $this->status_blocks( $snapshot, $settings ),
-			BlockCatalog::KPIS          => $this->kpi_blocks( $snapshot, $settings ),
-			BlockCatalog::CURRENT_STATE => $this->current_state_blocks( $snapshot, $settings ),
-			BlockCatalog::ACTIVITY      => $this->maintenance_activity_blocks( $snapshot, $settings ),
-			BlockCatalog::SUMMARY       => $this->summary_blocks( $snapshot, $settings ),
-			BlockCatalog::NOTES         => $this->notes_blocks( $snapshot, $settings ),
-			BlockCatalog::FOOTER        => $this->footer_blocks( $snapshot, $settings ),
-			default                     => [],
-		};
 	}
 
 	/** @param array<string,mixed> $report @param array<string,mixed> $snapshot @param array<string,mixed> $branding @return list<RenderBlock> */
@@ -161,7 +170,7 @@ final class MaintenanceFlowCompiler {
 			$identity[] = RenderBlock::text( (string) $branding['fallback_text'], [ 'space_after' => 2.0 ] );
 		}
 
-		$identity[] = RenderBlock::heading( __( 'Maintenance Report', 'core-blueprint' ), 'title', [ 'space_after' => 1.5 ] );
+		$identity[] = RenderBlock::heading( (string) ( $branding['report_title'] ?? 'Maintenance Report' ), 'title', [ 'space_after' => 1.5 ] );
 		$site_lines = [ (string) ( $site['title'] ?? '' ) ];
 		if ( $show_site_url ) {
 			$site_lines[] = (string) ( $site['url'] ?? '' );
@@ -569,13 +578,18 @@ final class MaintenanceFlowCompiler {
 		};
 	}
 
-	/** @return array<string,mixed> */
-	public static function layout(): array {
+	/** Only bounded page and margin presets can reach the shared Flow renderer. */
+	public static function layout( array $fields ): array {
+		$page = 'letter' === $fields['page_format'] ? [ 215.9, 279.4 ] : [ 210.0, 297.0 ];
+		if ( 'landscape' === $fields['page_orientation'] ) {
+			$page = array_reverse( $page );
+		}
+		$margin = (float) (int) $fields['page_margin_mm'];
 		return [
-			'mode'    => 'flow',
-			'units'   => 'mm',
-			'page'    => [ 'width' => 210.0, 'height' => 297.0 ],
-			'margins' => [ 'top' => 12.0, 'right' => 12.0, 'bottom' => 15.0, 'left' => 12.0 ],
+			'mode' => 'flow',
+			'units' => 'mm',
+			'page' => [ 'width' => $page[0], 'height' => $page[1] ],
+			'margins' => [ 'top' => $margin, 'right' => $margin, 'bottom' => $margin, 'left' => $margin ],
 		];
 	}
 }

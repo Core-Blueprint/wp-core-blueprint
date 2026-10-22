@@ -35,6 +35,7 @@ import {
 	createDesignerIcon,
 	createDesignerInspectorControls,
 	createDesignerInspectorTextControl,
+	createDesignerInspectorValueControl,
 	createDesignerInspectorIdentity,
 	createDesignerInspectorSection,
 	createDesignerInspectorToggle,
@@ -799,6 +800,25 @@ export const attachTrustedDesignerHost = ({
 				throw new Error('REGISTRY_INVALID');
 			}
 			const prefix = activeRegistry.profileId === 'base/mail' ? 'mail' : 'reports';
+			// Registered parent relations, not Base-specific component names,
+			// determine the only safe insertion path for all product profiles.
+			const allowedParentsByType = new Map(
+				activeRegistry.schemaSnapshot.nodeTypes.map((item) => [item.id, new Set(item.allowedParents)])
+			);
+			const propertySchemas = new Map(
+				activeRegistry.schemaSnapshot.domainSchemas.map((item) => [item.id, item.schema])
+			);
+			const nodeTypes = new Map(
+				activeRegistry.schemaSnapshot.nodeTypes.map((item) => [item.id, item])
+			);
+			const fieldDefinitions = activeRegistry.persistedFieldFacet(activeRegistry.profileId).fieldDescriptors;
+			const fieldsByKey = new Map(fieldDefinitions.map((item) => [item.saveKey, item]));
+			const propertySchemaFor = (node, key) => {
+				const schemaId = nodeTypes.get(node.type)?.propertiesSchemaId;
+				const schema = propertySchemas.get(schemaId)?.properties?.[key];
+				if (!schema || typeof schema !== 'object') throw new Error('REGISTRY_INVALID');
+				return schema;
+			};
 			for (const component of components) {
 				const button = stagedRoot.ownerDocument.createElement('button');
 				button.type = 'button';
@@ -810,12 +830,16 @@ export const attachTrustedDesignerHost = ({
 					const project = editor.project();
 					const primary = editor.selection()?.primary;
 					let parentPath = primary?.kind === 'node' ? [...primary.path] : [];
+					const admissible = allowedParentsByType.get(component.type);
+					if (!admissible || !admissible.size) throw new Error('REGISTRY_INVALID');
 					let parent = nodeAt(project.root, parentPath);
-					if (!parent || !['mail.section','reports.section',project.design_type].includes(parent.type)) {
+					while (parent && !admissible.has(parent.type) && parentPath.length > 0) {
 						parentPath = parentPath.slice(0, -1);
 						parent = nodeAt(project.root, parentPath);
 					}
-					if (!parent) throw new Error('SELECTION_INVALID');
+					if (!parent || !admissible.has(parent.type)) {
+						throw new Error('COMMAND_REFUSED');
+					}
 					editor.execute(prefix + '.insert', {
 						parentPath, index: parent.children.length, type: component.type,
 					});
@@ -828,11 +852,13 @@ export const attachTrustedDesignerHost = ({
 			const refreshSettings = () => {
 				const fields = editor.persistedFields();
 				for (const [key,value] of Object.entries(fields)) {
-					if (typeof value !== 'string') throw new Error('SCHEMA_DOMAIN_INVALID');
+					const definition = fieldsByKey.get(key);
+					if (!definition) throw new Error('REGISTRY_INVALID');
 					let control = settingsControls.get(key);
 					if (!control) {
-						control = createDesignerInspectorTextControl({
-							key: 'persisted.' + key, label: key, value,
+						control = createDesignerInspectorValueControl({
+							key: 'persisted.' + key, label: definition.labelKey, value,
+							schema: definition.valueSchema,
 							documentRef: stagedRoot.ownerDocument,
 							onCommit: (next) => {
 								if (!signal.aborted && host.state === 'READY') editor.setPersistedField(key, next);
@@ -844,10 +870,12 @@ export const attachTrustedDesignerHost = ({
 				}
 			};
 			let inspectorSelectionKey = null;
+			let inspectorInitialized = false;
 			const inspectorControls = new Map();
 			const clearInspector = () => {
 				for (const control of inspectorControls.values()) control.destroy();
 				inspectorControls.clear();
+				inspectorInitialized = false;
 				inspectorPanel.replaceChildren();
 			};
 			const renderInteraction = ({project, selection, signal: renderSignal}) => {
@@ -868,7 +896,8 @@ export const attachTrustedDesignerHost = ({
 				};
 				tree.render([walk(project.root, [])]);
 				const primary = selection?.primary;
-				const key = primary?.kind === 'node' ? JSON.stringify(primary.path) : null;
+				const inspected = primary?.kind === 'node' ? nodeAt(project.root, primary.path) : null;
+				const key = inspected ? JSON.stringify([primary.path, inspected.type]) : null;
 				if (key !== inspectorSelectionKey) {
 					clearInspector();
 					inspectorSelectionKey = key;
@@ -876,16 +905,29 @@ export const attachTrustedDesignerHost = ({
 				if (key !== null) {
 					const node = nodeAt(project.root, primary.path);
 					if (!node) throw new Error('SELECTION_INVALID');
-					if (!inspectorControls.size) {
+					if (!inspectorInitialized) {
+						inspectorInitialized = true;
 						const identity = createDesignerInspectorIdentity({
 							label: node.type, eyebrow: node.provider,
 							context: 'Selected element', documentRef: stagedRoot.ownerDocument,
 						});
 						inspectorPanel.append(identity.element);
+						if (primary.path.length > 0) {
+							const remove = stagedRoot.ownerDocument.createElement('button');
+							remove.type = 'button';
+							remove.className = 'button cb-core-design-shell__inspector-remove';
+							remove.textContent = 'Remove element';
+							remove.addEventListener('click', () => {
+								if (signal.aborted || host.state !== 'READY') return;
+								editor.execute(prefix + '.remove', {path: [...primary.path]});
+							}, {signal});
+							inspectorPanel.append(remove);
+						}
 						for (const field of profileModule.propertiesFor(node)) {
-							const control = createDesignerInspectorTextControl({
+							const control = createDesignerInspectorValueControl({
 								key: 'node.' + field.key, label: field.label,
 								value: field.value, multiline: field.multiline,
+								schema: propertySchemaFor(node, field.key),
 								documentRef: stagedRoot.ownerDocument,
 								onCommit: (value) => {
 									if (!signal.aborted && host.state === 'READY') {

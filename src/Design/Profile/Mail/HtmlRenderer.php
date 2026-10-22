@@ -1,12 +1,11 @@
 <?php
 declare(strict_types=1);
 /**
- * Email-safe HTML renderer for Design Foundation Mail projects.
+ * Native Platform v1 email-safe HTML renderer.
  *
- * Rendering is deterministic and transport-independent. Values are escaped at
- * their output context; no arbitrary raw HTML component is provided by Base.
- * Extensions may render their own registered node types through the documented
- * `core_blueprint_design_mail_render_node` filter.
+ * Rendering is deterministic and transport-independent. All native nodes are
+ * validated before rendering, and dynamic data is escaped at its output context.
+ * Untrusted raw HTML components and external renderer filters are not used.
  *
  * @package Core_Blueprint
  */
@@ -31,15 +30,16 @@ final class HtmlRenderer {
 
 		$root = (array) $project['root'];
 		$properties = is_array( $root['properties'] ?? null ) ? $root['properties'] : [];
-		$layout = is_array( $properties['layout'] ?? null ) ? $properties['layout'] : [];
+		$layout = $properties;
 		$width = $this->int_range( $layout['width'] ?? Contract::WIDTH_DEFAULT, Contract::WIDTH_MIN, Contract::WIDTH_MAX, Contract::WIDTH_DEFAULT );
 		$background = $this->color( $layout['background'] ?? '#f3f4f6', '#f3f4f6' );
 		$content_background = $this->color( $layout['contentBackground'] ?? '#ffffff', '#ffffff' );
 		$text_color = $this->color( $layout['textColor'] ?? '#1f2937', '#1f2937' );
 		$accent = $this->color( $layout['accentColor'] ?? '#2563eb', '#2563eb' );
 		$font = $this->font_family( $layout['fontFamily'] ?? Contract::FONT_FAMILIES[0] );
-		$preheader = BindingInterpolator::interpolate( (string) ( $properties['preheader'] ?? '' ), $bindings );
+		$preheader = (string) ( $options['preheader'] ?? '' );
 		$editor_markers = true === ( $options['editor_markers'] ?? false );
+		$padding = $this->int_range( $layout['padding'] ?? 32, 0, 64, 32 );
 		$theme = [
 			'text' => $text_color,
 			'accent' => $accent,
@@ -66,7 +66,7 @@ final class HtmlRenderer {
 			. '<!--[if mso]><noscript><xml><o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office"><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]--></head>'
 			. '<body style="margin:0;padding:0;background:' . esc_attr( $background ) . ';font-family:' . esc_attr( $font ) . ';color:' . esc_attr( $text_color ) . ';">'
 			. $preheader_html
-			. '<table role="presentation" width="100%" bgcolor="' . esc_attr( $background ) . '" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:' . esc_attr( $background ) . ';border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td align="center" style="padding:32px 12px;">'
+			. '<table role="presentation" width="100%" bgcolor="' . esc_attr( $background ) . '" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:' . esc_attr( $background ) . ';border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td align="center" style="padding:' . esc_attr( (string) $padding ) . 'px 12px;">'
 			. '<!--[if mso]><table role="presentation" width="' . esc_attr( (string) $width ) . '" align="center" cellspacing="0" cellpadding="0" border="0"><tr><td><![endif]-->'
 			. '<table role="presentation" class="cb-mail-container" width="' . esc_attr( (string) $width ) . '" bgcolor="' . esc_attr( $content_background ) . '" cellspacing="0" cellpadding="0" border="0" style="width:' . esc_attr( (string) $width ) . 'px;max-width:100%;background:' . esc_attr( $content_background ) . ';border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">'
 			. $body
@@ -86,31 +86,7 @@ final class HtmlRenderer {
 		$provider = (string) ( $node['provider'] ?? '' );
 		$properties = is_array( $node['properties'] ?? null ) ? $node['properties'] : [];
 
-		if ( Contract::CORE_PROVIDER !== $provider ) {
-			/**
-			 * Render a registered extension-owned Mail node.
-			 *
-			 * Extensions must return complete email-safe table-row HTML. Base passes
-			 * only already-validated declarative node data and resolved binding values.
-			 * Preview callers additionally receive non-persistent editor context.
-			 *
-			 * @param string $html
-			 * @param array<string,mixed> $node
-			 * @param array<string,scalar|null> $bindings
-			 * @param array<string,string> $theme
-			 * @param array{editor_preview:bool,path:list<int>} $render_context
-			 */
-			$html = apply_filters(
-				'core_blueprint_design_mail_render_node',
-				'',
-				$node,
-				$bindings,
-				$theme,
-				[ 'editor_preview' => $editor_markers, 'path' => $path ]
-			);
-			$html = is_string( $html ) ? $html : '';
-			return $editor_markers ? $this->wrap_editor_node( $html, $path, $type, $provider ) : $html;
-		}
+		// Native validation refuses unknown providers before HTML generation.
 
 		$html = match ( $type ) {
 			'mail.section' => $this->render_section( $node, $bindings, $theme, $path, $editor_markers ),
@@ -136,14 +112,15 @@ final class HtmlRenderer {
 	private function render_section( array $node, array $bindings, array $theme, array $path, bool $editor_markers ): string {
 		$properties = is_array( $node['properties'] ?? null ) ? $node['properties'] : [];
 		$background = $this->color( $properties['background'] ?? '#ffffff', '#ffffff' );
-		$padding = $this->int_range( $properties['padding'] ?? 28, 0, 80, 28 );
+		$padding = $this->int_range( $properties['padding'] ?? 32, 0, 64, 32 );
+		$spacing = $this->int_range( $properties['spacing'] ?? 0, 0, 64, 0 );
 		$content = '';
 		foreach ( (array) ( $node['children'] ?? [] ) as $index => $child ) {
 			if ( is_array( $child ) ) {
 				$content .= $this->render_node( $child, $bindings, $theme, [ ...$path, (int) $index ], $editor_markers );
 			}
 		}
-		return '<tr><td bgcolor="' . esc_attr( $background ) . '" style="padding:0;background:' . esc_attr( $background ) . ';"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">'
+		return '<tr><td bgcolor="' . esc_attr( $background ) . '" style="padding:0 0 ' . esc_attr( (string) $spacing ) . 'px;background:' . esc_attr( $background ) . ';"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">'
 			. '<tr><td class="cb-mail-pad" style="padding:' . esc_attr( (string) $padding ) . 'px;">'
 			. '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">' . $content . '</table>'
 			. '</td></tr></table></td></tr>';
@@ -248,7 +225,7 @@ final class HtmlRenderer {
 			$markers = '';
 			if ( $editor_markers ) {
 				$path_json = wp_json_encode( $column_path );
-				$markers = ' data-cb-mail-editor-node="1" data-cb-mail-path="' . esc_attr( is_string( $path_json ) ? $path_json : '[]' ) . '" data-cb-mail-type="mail.column" data-cb-mail-provider="core"';
+				$markers = ' data-cb-mail-editor-node="1" data-cb-mail-path="' . esc_attr( is_string( $path_json ) ? $path_json : '[]' ) . '" data-cb-mail-type="mail.column" data-cb-mail-provider="core.blueprint"';
 			}
 			$background_attribute = '' !== $column_bg ? ' bgcolor="' . esc_attr( $column_bg ) . '"' : '';
 			$cells .= '<td class="cb-mail-column" width="' . esc_attr( (string) $width ) . '%" valign="top"' . $background_attribute . $markers . ' style="width:' . esc_attr( (string) $width ) . '%;vertical-align:top;' . $cell_padding . $cell_background . '">'
@@ -263,7 +240,7 @@ final class HtmlRenderer {
 	/** @param array<string,mixed> $properties @param array<string,scalar|null> $bindings @param array{text:string,accent:string,font:string} $theme */
 	private function render_button( array $properties, array $bindings, array $theme ): string {
 		$label = BindingInterpolator::interpolate( (string) ( $properties['label'] ?? __( 'Continue', 'core-blueprint' ) ), $bindings );
-		$url = esc_url( BindingInterpolator::interpolate( (string) ( $properties['url'] ?? '' ), $bindings ), [ 'http', 'https' ] );
+		$url = self::resolved_http_url( (string) ( $properties['url'] ?? '' ), $bindings );
 		$align = $this->align( $properties['align'] ?? 'left' );
 		$background = $this->color( $properties['background'] ?? $theme['accent'], $theme['accent'] );
 		$text_color = $this->color( $properties['color'] ?? '#ffffff', '#ffffff' );
@@ -305,6 +282,26 @@ final class HtmlRenderer {
 	private function render_spacer( array $properties ): string {
 		$height = $this->int_range( $properties['height'] ?? 24, 0, 120, 24 );
 		return '<tr><td height="' . esc_attr( (string) $height ) . '" style="height:' . esc_attr( (string) $height ) . 'px;line-height:' . esc_attr( (string) $height ) . 'px;font-size:1px;mso-line-height-rule:exactly;">&nbsp;</td></tr>';
+	}
+
+
+	/** Refuse missing/unsafe URLs before emitting HTML attributes. */
+	private static function resolved_http_url( string $source, array $bindings ): string {
+		if ( '' === $source ) return '';
+		$value = trim( BindingInterpolator::interpolate( $source, $bindings ) );
+		if ( '' === $value || preg_match( '/[\x00-\x20\x7f]/', $value )
+			|| str_contains( $value, '{{' ) || str_contains( $value, '}}' )
+			|| false === filter_var( $value, FILTER_VALIDATE_URL ) ) {
+			throw new \InvalidArgumentException( 'Mail URL binding is missing or unsafe.' );
+		}
+		$parts = wp_parse_url( $value );
+		if ( ! is_array( $parts ) || ! in_array( strtolower( (string) ( $parts['scheme'] ?? '' ) ), [ 'https', 'http' ], true )
+			|| empty( $parts['host'] ) || isset( $parts['user'] ) || isset( $parts['pass'] ) ) {
+			throw new \InvalidArgumentException( 'Mail URL binding is invalid.' );
+		}
+		$escaped = esc_url( $value, [ 'http', 'https' ] );
+		if ( '' === $escaped ) throw new \InvalidArgumentException( 'Mail URL binding is unsafe.' );
+		return $escaped;
 	}
 
 	private function color( mixed $value, string $fallback ): string {
