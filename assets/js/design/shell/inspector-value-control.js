@@ -63,8 +63,9 @@ export function createDesignerInspectorValueControl({
 		input.type = 'color';
 	} else {
 		input.type = 'number';
-		if (type === 'integer') input.step = '1';
-		else input.step = 'any';
+		// Both numeric JSON types currently use the exact-integer Save ABI.
+		// Fractional source values are never rounded or silently coerced.
+		input.step = '1';
 		if (typeof schema.minimum === 'number') input.min = String(schema.minimum);
 		if (typeof schema.maximum === 'number') input.max = String(schema.maximum);
 	}
@@ -88,7 +89,7 @@ export function createDesignerInspectorValueControl({
 		if (colorControl) return /^#[0-9a-f]{6}$/i.test(input.value) ? input.value : undefined;
 		if (input.value.trim() === '') return undefined;
 		const number = Number(input.value);
-		if (!Number.isFinite(number) || (type === 'integer' && !Number.isSafeInteger(number))
+		if (!Number.isSafeInteger(number)
 			|| (typeof schema.minimum === 'number' && number < schema.minimum)
 			|| (typeof schema.maximum === 'number' && number > schema.maximum)) return undefined;
 		return number;
