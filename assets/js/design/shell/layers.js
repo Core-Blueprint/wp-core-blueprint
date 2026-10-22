@@ -285,7 +285,9 @@ export const createDesignerLayerTree = ({
 
 	const patch = (items) => {
 		const next = visibleItems(items);
-		if (next.length !== rowsByKey.size || next.some(({ key }) => !rowsByKey.has(key))) return false;
+		const oldOrder = [...rowsByKey.keys()];
+		if (next.length !== oldOrder.length
+			|| next.some(({ key, item }, index) => key !== oldOrder[index] || item.reorder || item.actions)) return false;
 		currentItems = normalizeTreeItems(items);
 		for (const { key, item } of next) {
 			const row = rowsByKey.get(key)?.row;

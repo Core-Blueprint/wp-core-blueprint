@@ -1,6 +1,5 @@
-import { EditorState } from './editor-state.js';
 import { bindRegisteredBatch } from './commands.js';
-import { cloneFrozen, cloneValue, sameValue } from './value.js';
+import { cloneFrozen, sameValue } from './value.js';
 
 const normalizeLimit = (limit) => {
 	if (!Number.isInteger(limit) || limit < 1 || limit > 1000) {
@@ -329,7 +328,7 @@ export class CommandHistory {
 
 	executeBatch(commands) {
 		return this.#run(() => this.#executeStaged(
-			Object.freeze({ label: 'batch', steps: commands }),
+			Object.freeze({ label: 'batch', steps: Array.isArray(commands) ? Object.freeze([...commands]) : commands }),
 			{ batch: true },
 		));
 	}

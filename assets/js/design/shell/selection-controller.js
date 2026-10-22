@@ -25,7 +25,7 @@ export const createDesignerSelectionController = ({
 } = {}) => {
 	if (
 		!session
-		|| typeof session.subscribeSelection !== 'function'
+		|| (!typed && typeof session.subscribeSelection !== 'function')
 		|| typeof session.select !== 'function'
 		|| (!typed && typeof session.clearSelection !== 'function')
 		|| typeof session.selection !== 'function'
@@ -59,11 +59,15 @@ export const createDesignerSelectionController = ({
 			project: session.project(),
 		});
 
-		layersAdapter?.(viewContext);
-		inspectorAdapter?.(viewContext);
-		// Host owns the only render queue when its invalidate bridge exists.
-		if (invalidate) invalidate(viewContext);
-		else canvasAdapter?.(viewContext);
+		// Typed Host invalidation is the only render scheduling entrypoint.
+		if (typed && invalidate) {
+			invalidate(viewContext);
+		} else {
+			layersAdapter?.(viewContext);
+			inspectorAdapter?.(viewContext);
+			if (invalidate) invalidate(viewContext);
+			else canvasAdapter?.(viewContext);
+		}
 
 		if (
 			openInspectorOnInsert
@@ -96,8 +100,8 @@ export const createDesignerSelectionController = ({
 				? session.select(
 					additive
 						? [...(session.selection().refs || []).filter((candidate) => JSON.stringify(candidate) !== JSON.stringify(ref)), ref]
-						: [path],
-					path,
+						: [ref],
+					ref,
 				)
 				: session.select(path, { additive, source });
 			if (accepted && openInspector) activateInspector();
