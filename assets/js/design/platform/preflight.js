@@ -30,6 +30,10 @@ export async function preflight({evidence, frozenRegistry, root, contextEpoch, s
 				|| evidence.moduleStamps[module.id] !== module.stamp) return failed('ARTIFACT_RUNTIME_MISMATCH');
 			const namespace = frozenRegistry.moduleNamespace(module.id);
 			if (!namespace || typeof namespace !== 'object') return failed('HOST_MODULE_MISSING');
+			// This stamp is exported by the installed ESM itself, not copied
+			// from PHP evidence. Old JS + new PHP therefore refuses READY.
+			if (!Object.hasOwn(namespace, '__cbPlatformModuleStamp')
+				|| namespace.__cbPlatformModuleStamp !== module.stamp) return failed('ARTIFACT_RUNTIME_MISMATCH');
 			for (const expectedExport of module.exports) {
 				if (!Object.hasOwn(namespace, expectedExport) || typeof namespace[expectedExport] !== 'function') {
 					return failed('HOST_MODULE_MISSING');

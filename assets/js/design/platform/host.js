@@ -2,6 +2,7 @@ import { createLifecycleScope, createRenderQueue } from './lifecycle.js';
 import { inspectTrustedContext, contextIdentityKey, nextEpoch } from './context.js';
 import { instantiateRenderAdapter } from './render-adapter.js';
 import { preflight as verifyRuntime } from './preflight.js';
+import { immutableData } from './manifest.js';
 
 const leasedRoots = new WeakMap();
 const refusal = (code) => Object.assign(new Error(code), {code});
@@ -62,7 +63,7 @@ export function createPlatformHost({
 		snapshot() { return holder.bridge.snapshot(); },
 		persistedFields() {
 			assertReady(holder);
-			return readPersistedFields(holder.save);
+			return immutableData(readPersistedFields(holder.save));
 		},
 		selection() { return holder.bridge.selection(); },
 		select(refs, primary = null) {
@@ -221,6 +222,8 @@ export function createPlatformHost({
 				return key === mountingKey ? pendingMount : Promise.reject(refusal('HOST_ALREADY_MOUNTED'));
 			}
 			if (state !== 'IDLE') return Promise.reject(refusal('HOST_SWITCH_BUSY'));
+			if (leasedRoots.has(root) && leasedRoots.get(root) !== host) return Promise.reject(refusal('HOST_ALREADY_MOUNTED'));
+			leasedRoots.set(root, host);
 			try {
 				mountingKey = contextIdentityKey(initialContext.bootstrap.identity, initialContext.bootstrap.profileId);
 			} catch (_) { return Promise.reject(refusal('HOST_CONTEXT_REFUSED')); }
@@ -293,7 +296,10 @@ export function createPlatformHost({
 		refresh,
 		unmount() {
 			if (unmountPromise) return unmountPromise;
-			if (state === 'IDLE') return Promise.resolve(true);
+			if (state === 'IDLE') {
+				if (leasedRoots.get(root) === host) leasedRoots.delete(root);
+				return Promise.resolve(true);
+			}
 			if (pendingMount || transition || state !== 'READY') return Promise.reject(refusal('HOST_SWITCH_BUSY'));
 			try {
 				ensureGate('unmount');
@@ -311,6 +317,7 @@ export function createPlatformHost({
 				active = null;
 				publishedEditor = null;
 				state = 'IDLE';
+				if (leasedRoots.get(root) === host) leasedRoots.delete(root);
 				if (!result.ok) diagnostics(result.code);
 				return result.ok;
 			})();

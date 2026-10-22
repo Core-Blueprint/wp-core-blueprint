@@ -104,10 +104,34 @@ final class RegistryCompiler {
 						self::invalid();
 					}
 					$previous = $definition['id'];
+					if ( 'nodeTypes' === $key ) {
+						self::keys( $definition, [ 'id', 'provider', 'allowedParents', 'propertiesSchemaId' ] );
+						if ( ! Identifier::node_type( $definition['id'] ) || ! self::strings( $definition['allowedParents'] )
+							|| ( null !== $definition['propertiesSchemaId'] && ! is_string( $definition['propertiesSchemaId'] ) ) ) {
+							self::invalid();
+						}
+					} else {
+						self::keys( $definition, [ 'id', 'ownerProvider', 'schema' ] );
+						if ( ! is_array( $definition['schema'] ) || [] === $definition['schema'] || array_is_list( $definition['schema'] ) ) {
+							self::invalid();
+						}
+					}
 					$owner = $definition['provider'] ?? $definition['ownerProvider'] ?? null;
 					if ( ! is_string( $owner ) || ! in_array( $owner, $provider_ids, true ) ) {
 						self::invalid();
 					}
+				}
+			}
+			$node_ids = array_column( $snapshot['nodeTypes'], 'id' );
+			$schema_ids = array_column( $snapshot['domainSchemas'], 'id' );
+			foreach ( $snapshot['nodeTypes'] as $node ) {
+				foreach ( $node['allowedParents'] as $parent ) {
+					if ( ! in_array( $parent, $node_ids, true ) ) {
+						self::invalid();
+					}
+				}
+				if ( null !== $node['propertiesSchemaId'] && ! in_array( $node['propertiesSchemaId'], $schema_ids, true ) ) {
+					self::invalid();
 				}
 			}
 			foreach ( $profile['requiredCapabilities'] as $capability ) {
@@ -146,7 +170,9 @@ final class RegistryCompiler {
 			}
 		}
 		unset( $profile );
-		$this->sorter->sort( array_column( $profile_list, 'dependencies', 'id' ) );
+		$profile_map = array_column( $profile_list, null, 'id' );
+		$profile_order = $this->sorter->sort( array_column( $profile_list, 'dependencies', 'id' ) );
+		$profile_list = array_map( static fn( string $id ): array => $profile_map[ $id ], $profile_order );
 		foreach ( $components->all() as $component ) {
 			self::keys( $component, [ 'id', 'owner', 'profileId', 'moduleId', 'schemaId', 'requires' ], [ 'requires' ] );
 			if ( ! $this->providers->has_canonical( $component['owner'] ) || ! isset( $profile_ids[ $component['profileId'] ] )
@@ -166,7 +192,10 @@ final class RegistryCompiler {
 				self::invalid();
 			}
 		}
-		$this->sorter->sort( array_column( $component_list, 'requires', 'id' ) );
+		$component_list = array_map( static fn( array $item ): array => array_replace( [ 'requires' => [] ], $item ), $component_list );
+		$component_map = array_column( $component_list, null, 'id' );
+		$component_order = $this->sorter->sort( array_column( $component_list, 'requires', 'id' ) );
+		$component_list = array_map( static fn( string $id ): array => $component_map[ $id ], $component_order );
 		foreach ( $controls->all() as $control ) {
 			self::keys( $control, [ 'id', 'owner', 'profileId', 'componentId', 'moduleId', 'requires' ], [ 'requires' ] );
 			if ( ! $this->providers->has_canonical( $control['owner'] ) || ! isset( $profile_ids[ $control['profileId'] ] )
@@ -178,7 +207,10 @@ final class RegistryCompiler {
 				self::invalid();
 			}
 		}
-		$this->sorter->sort( array_column( $controls->all(), 'requires', 'id' ) );
+		$control_list = array_map( static fn( array $item ): array => array_replace( [ 'requires' => [] ], $item ), $controls->all() );
+		$control_map = array_column( $control_list, null, 'id' );
+		$control_order = $this->sorter->sort( array_column( $control_list, 'requires', 'id' ) );
+		$control_list = array_map( static fn( string $id ): array => $control_map[ $id ], $control_order );
 		$graph = [
 			'contractVersion' => 1,
 			'schemaGeneration' => 1,
@@ -188,7 +220,7 @@ final class RegistryCompiler {
 			'grants' => $grants,
 			'profiles' => $profile_list,
 			'components' => $component_list,
-			'controls' => $controls->all(),
+			'controls' => $control_list,
 			'modules' => $modules,
 		];
 		if ( ! FrozenRegistry::pure( $graph ) ) {
