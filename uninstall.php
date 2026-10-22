@@ -115,6 +115,8 @@ defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 		'cb_core_integrity_scan_slice_lock',
 		'cb_core_notes_db_version',
 		'cb_core_reports_db_version',
+		'cb_core_design_docs_db_version',
+		'cb_core_design_operations_db_version',
 		'cb_core_privacy',
 		'cb_core_privacy_active_preset',
 		'cb_core_verbosity',
@@ -256,6 +258,8 @@ defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 		$wpdb->prefix . 'cb_core_mail_log',
 		$wpdb->prefix . 'cb_core_notes',
 		$wpdb->prefix . 'cb_maintenance_reports',
+		$wpdb->prefix . 'cb_design_documents',
+		$wpdb->prefix . 'cb_design_save_operations',
 	];
 
 	foreach ( $cb_base_tables as $table ) {
