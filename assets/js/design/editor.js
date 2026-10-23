@@ -763,6 +763,7 @@ export const attachTrustedDesignerHost = ({
 	createHost = createPlatformHost,
 	createSaveAdapter,
 	loadReceipt,
+	notifySave = null,
 } = {}) => {
 	if (!(root instanceof Element) || !root.matches('[data-cb-design-shell]')) {
 		throw new TypeError('Designer Platform requires a canonical shell root.');
@@ -771,6 +772,9 @@ export const attachTrustedDesignerHost = ({
 		|| typeof loadReceipt !== 'function'
 		|| !(runtimeModules instanceof Map) || !canvasRoot || !root.contains(canvasRoot)) {
 		throw new TypeError('Designer Platform requires a statically imported Host factory.');
+	}
+	if (notifySave !== null && typeof notifySave !== 'function') {
+		throw new TypeError('HOST_CAPABILITY_UNAVAILABLE');
 	}
 	if (!bootstrap || typeof bootstrap !== 'object' || Array.isArray(bootstrap)) {
 		throw new TypeError('Designer Platform requires server-provided bootstrap evidence.');
@@ -942,7 +946,10 @@ export const attachTrustedDesignerHost = ({
 				// its accessible name and native tooltip on every state transition.
 				decorateDesignerControl(chrome.save, 'save', {iconOnly: true, label: saveLabel});
 				chrome.save.disabled = working || unsynchronized || (!uncertain && status?.dirty !== true);
-				chrome.notice.hidden = !(uncertain || unsynchronized);
+				// Base Toast is the primary feedback channel for this native
+				// Host. The inline notice is a safety fallback if the toast
+				// runtime is missing, never a second routine notification.
+				chrome.notice.hidden = !!notifySave || !(uncertain || unsynchronized);
 				chrome.notice.textContent = uncertain
 					? 'Save outcome unknown. Verify the original operation before continuing.'
 					: unsynchronized
@@ -954,12 +961,28 @@ export const attachTrustedDesignerHost = ({
 			chrome.save.addEventListener('click', () => {
 				if (signal.aborted || host?.state !== 'READY' || chrome.save.disabled) return;
 				chrome.save.disabled = true;
-				Promise.resolve().then(() => editor.save()).catch(() => {
-					// Only the SaveCoordinator may determine UNKNOWN. An exception
-					// before transport does not prove any particular write outcome.
-					stagedRoot.dispatchEvent(new CustomEvent('cb:design-shell:failure', {
-						bubbles: true, detail: Object.freeze({phase: 'save'}),
+				Promise.resolve().then(() => editor.save()).then((result) => {
+					if (signal.aborted || host?.state !== 'READY') return;
+					const outcome = ['committed', 'refused', 'conflict', 'idempotency_reused',
+						'unknown', 'persisted-unsynchronized'].includes(result?.status)
+						? result.status : 'unknown';
+					const saveState = outcome === 'committed' ? 'saved'
+						: outcome === 'unknown' || outcome === 'persisted-unsynchronized'
+							? 'unknown' : 'error';
+					// Compatibility signal for consumers of the public Designer
+					// notification contract. The native adapter presents exactly
+					// one Base toast; this event is not a persistence receipt.
+					root.dispatchEvent(new CustomEvent('cb:design-shell:savechange', {
+						bubbles: true,
+						detail: Object.freeze({state: saveState, nativeHandled: notifySave !== null}),
 					}));
+					try { notifySave?.(Object.freeze({outcome, phase: 'save'})); }
+					catch (_) { /* UI observers cannot change Save Authority. */ }
+				}).catch(() => {
+					// A failed browser callback or rejection is NOT proof of no-write.
+					if (signal.aborted) return;
+					try { notifySave?.(Object.freeze({outcome: 'unknown', phase: 'save'})); }
+					catch (_) { /* Notification cannot change Save Authority. */ }
 				}).finally(syncSaveUI);
 			}, {signal});
 			stagedSaveUI.set(stagedRoot, Object.freeze({syncSaveUI, signal}));
