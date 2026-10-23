@@ -17,6 +17,12 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        // Native Designer Save verification and recovery outcomes (P0).
+        'Changes saved and verified.' => 'Wijzigingen opgeslagen en bevestigd.',
+        'This document changed elsewhere. Your changes were not confirmed as saved.' => 'Dit document is elders gewijzigd. Het opslaan van je wijzigingen is niet bevestigd.',
+        'Save was refused. Your changes have not been confirmed as saved.' => 'Het opslaan is geweigerd. Er is niet bevestigd dat je wijzigingen zijn opgeslagen.',
+        'Changes may be stored, but the editor could not reconcile them. Keep this Designer open.' => 'De wijzigingen zijn mogelijk opgeslagen, maar de editor kon ze niet verwerken. Houd deze Designer open.',
+        'Save outcome is uncertain. Choose Verify save status to check the original operation. Keep this Designer open.' => 'De uitkomst van het opslaan is onzeker. Kies Opslagstatus verifiëren om de oorspronkelijke bewerking te controleren. Houd deze Designer open.',
         // Canonical Base Designer Exit Guard v1 labels (WordPress gettext).
         'Close Designer?' => 'Designer sluiten?',
         'Return to the previous page?' => 'Teruggaan naar de vorige pagina?',
