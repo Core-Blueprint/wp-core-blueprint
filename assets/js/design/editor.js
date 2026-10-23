@@ -6,6 +6,7 @@ import { createRegistryView } from './platform/registry.js';
 import { createPersistedFields, canonicalSaveJSON } from './platform/persisted-fields.js';
 import { createSaveCoordinator as createCanonicalSaveCoordinator } from './platform/save-coordinator.js';
 import { createDesignerDragDropController } from './shell/drag-drop.js';
+import { designerDropZoneId, resolveDesignerDropPlacement } from './shell/drop-placement.js';
 import {
 	CommandHistory,
 	EditorState,
@@ -1087,6 +1088,82 @@ export const attachTrustedDesignerHost = ({
 				}
 				return parent && admissible.has(parent.type) ? {parentPath, parent} : null;
 			};
+
+			// One Base DND controller for both native profiles. The renderer
+			// supplies semantic node surfaces; no canvas mutation occurs here.
+			const dropSurface = chrome.surface;
+			const registeredZones = new Map();
+			const dnd = createDesignerDragDropController({
+				root: stagedRoot,
+				isReady: () => !signal.aborted && host?.state === 'READY',
+				getContextKey: () => [
+					'host', context.siteId, context.actorId, context.resourceType,
+					context.resourceId, context.contextEpoch, activeRegistry.profileId,
+				].join(':'),
+				resolveIntent: ({source, zoneId, edge}) => resolveDesignerDropPlacement({
+					project: editor.project(), source, zoneId, edge,
+					allowedParentsByType, commandId: prefix + '.insert',
+					canInsert: typeof profileModule.canInsert === 'function'
+						? profileModule.canInsert : null,
+				}),
+				canDrop: ({intent}) => {
+					if (signal.aborted || host?.state !== 'READY'
+						|| intent?.commandId !== prefix + '.insert') return false;
+					const registered = profileModule.resolveCommand(intent.commandId);
+					try {
+						return registered?.canApply(editor.project(), intent.input) === true;
+					} catch (_) { return false; }
+				},
+				commit: ({intent}) => {
+					if (signal.aborted || host?.state !== 'READY'
+						|| intent?.commandId !== prefix + '.insert') {
+						throw new Error('HOST_CONTEXT_REFUSED');
+					}
+					const {parentPath, index, type} = intent.input;
+					const before = editor.project();
+					const oldParent = nodeAt(before.root, parentPath);
+					if (!oldParent) throw new Error('COMMAND_REFUSED');
+					editor.execute(intent.commandId, intent.input);
+					const insertedIndex = activeRegistry.profileId === 'base/reports'
+						&& parentPath.length === 0
+						? Math.min(index, oldParent.children.length - 1) : index;
+					const path = [...parentPath, insertedIndex];
+					if (nodeAt(editor.project().root, path)?.type === type) {
+						const ref = {kind: 'node', path};
+						editor.select([ref], ref);
+					}
+				},
+				onStatus: ({status}) => {
+					const active = status === 'started';
+					stagedRoot.dataset.cbDesignDndActive = active ? 'true' : 'false';
+					// The isolated Flow iframe cannot accept parent HTML drags.
+					// Its existing sandbox/CSP stays intact. During a drag only,
+					// pointer events pass through to the canonical parent canvas.
+					for (const iframe of dropSurface.querySelectorAll('iframe[data-cb-core-flow-preview-host]')) {
+						iframe.style.pointerEvents = active ? 'none' : '';
+					}
+				},
+			});
+			const syncDropZones = () => {
+				const next = new Map([[dropSurface, 'root']]);
+				for (const element of dropSurface.querySelectorAll('[data-cb-design-node-path]')) {
+					let path = null;
+					try { path = JSON.parse(element.dataset.cbDesignNodePath || ''); }
+					catch (_) { continue; }
+					try { next.set(element, designerDropZoneId(path)); }
+					catch (_) { /* renderer path is never authority */ }
+				}
+				for (const [element, record] of registeredZones) {
+					if (next.get(element) === record.id) continue;
+					record.release();
+					registeredZones.delete(element);
+				}
+				for (const [element, id] of next) {
+					if (!registeredZones.has(element)) {
+						registeredZones.set(element, {id, release: dnd.registerZone(element, {id})});
+					}
+				}
+			};
 			const componentButtons = new Map();
 			const canInsertComponent = (project, component) => {
 				const target = insertionTarget(project, component.type);
@@ -1139,6 +1216,7 @@ export const attachTrustedDesignerHost = ({
 				}, {signal});
 				componentButtons.set(component.id, button);
 				componentGrid.append(button);
+				dnd.registerSource(button, {id: component.id, type: component.type});
 			}
 
 			const settingsPanel = stagedRoot.querySelector('[data-cb-platform-panel="settings"]');
@@ -1251,6 +1329,7 @@ export const attachTrustedDesignerHost = ({
 				}
 				refreshSettings();
 				refreshElements(project);
+				syncDropZones();
 				// A field edit may dirty the joint Save without changing History.
 				// Refresh the ONE SaveCoordinator-derived button status after Host
 				// projection, never infer saved state from a toolbar event.
@@ -1258,7 +1337,10 @@ export const attachTrustedDesignerHost = ({
 			};
 			stagedShells.set(stagedRoot, controller);
 			return Object.freeze({
-				destroy: () => controller.destroy(),
+				destroy: () => {
+					dnd.destroy();
+					controller.destroy();
+				},
 				activatePlatformSession: () => controller.activatePlatformSession(),
 				renderInteraction,
 			});
