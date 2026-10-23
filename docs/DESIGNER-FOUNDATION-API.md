@@ -127,6 +127,7 @@ The stable shell helpers are:
 - `createDesignerInspectorToggle(options)`
 - `createDesignerLayerTree(options)`
 - `createDesignerLayerRow(options)`
+- `projectDesignerLayerInteractions(options)` — shared, policy-driven command affordance projection
 - `createDesignerSelectionController(options)`
 - `createDesignerIcon(name, options)`
 - `decorateDesignerControl(control, name, options)`
@@ -135,6 +136,35 @@ The stable shell helpers are:
 The global facade exposes the same capabilities under `window.cbCore.designEditor.shell`.
 
 Navigation is available as `window.cbCore.designEditor.shell.navigation.create` and the frozen extension as `shell.paletteRoles`. Navigation remains distinct from Layers and is not an editor profile.
+
+### Shared Layers interactions (Mail, Reports and future profiles)
+
+**Foundation ownership:** Base owns the Layers tree, icon-only hover actions,
+right-click/three-dot/keyboard context menu, accessible focus, drag-and-drop,
+nested-delete confirmation and Undo/Redo command integration. Consumers MUST
+reuse this primitive rather than implement product-local Layers toolbars.
+
+The public API exposes `projectDesignerLayerInteractions(options)` and
+`window.cbCore.designEditor.shell.layers.projectInteractions`. The trusted
+profile module implements `layerPolicyFor(node, parent, index)`, returning
+`{ remove: boolean, reorder: null | { minIndex, maxIndex }, visibility: null |
+{ key, shownValue, hiddenValue } }`. Base validates these bounds and
+dispatches only the already-registered `*.remove`, `*.reorder` and `*.set`
+commands through the active Host EditorFacade. Schema validation, command
+authorization, History and Save Authority remain canonical and unchanged.
+
+- Mail: ordinary sections/content can be moved and deleted; fixed two-column
+  children cannot be individually moved or deleted. No Hide/Show is shown
+  until Mail gains a genuine persisted visibility field and rendering policy.
+- Reports: Header/Footer stay anchored; regular and nested sections obey
+  bounded sibling reordering. Only elements with a valid persisted `enabled`
+  field expose Hide/Show.
+- Deletion of a parent with descendants always requires explicit confirmation.
+  No one-click delete action belongs in the canvas or Inspector.
+- The shared overlay never permanently reserves horizontal label space;
+  left and right Designer rails/drawers are capped at 260px.
+
+No domain-specific layer action assembly belongs in the Host.
 
 ### Designer Sidebar Layout & Iconography Standard v1 (canonical SOURCE contract; installed acceptance pending)
 
