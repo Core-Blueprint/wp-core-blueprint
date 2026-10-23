@@ -994,7 +994,7 @@ export const attachTrustedDesignerHost = ({
 							'SAVE_DOCUMENT_NORMALIZATION_REFUSED', 'SAVE_DOCUMENT_WRITE_REFUSED',
 							'SAVE_DOCUMENT_VERIFY_REFUSED', 'SAVE_OPERATION_RECEIPT_REFUSED',
 							'SAVE_REFUSED_UNCLASSIFIED',
-						].includes(result?.reason) || /^SAVE_STORAGE_(CREATE|UPDATE)_(INVALID|SCHEMA_UNAVAILABLE|QUERY_FAILED|READBACK_UNVERIFIED|READ_UNAVAILABLE|UNCLASSIFIED)$/.test(result?.reason ?? '') ? result.reason : null,
+						].includes(result?.reason) || /^SAVE_STORAGE_(CREATE|UPDATE)_(INVALID|SCHEMA_UNAVAILABLE|QUERY_FAILED|READBACK_UNVERIFIED|READ_UNAVAILABLE|UNCLASSIFIED|DB_[1-9][0-9]{0,4})$/.test(result?.reason ?? '') ? result.reason : null,
 					})); }
 					catch (_) { /* UI observers cannot change Save Authority. */ }
 				}).catch(() => {
