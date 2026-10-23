@@ -1,4 +1,4 @@
-import { decorateDesignerControl } from './icons.js';
+import { createDesignerIcon, decorateDesignerControl } from './icons.js';
 
 const config = typeof window !== 'undefined' ? (window.cbCoreDesignerLaunch || {}) : {};
 
@@ -21,7 +21,11 @@ const ACTION_DEFINITIONS = Object.freeze({
 	}),
 	remove: Object.freeze({
 		icon: 'trash-2',
-		label: 'Remove element',
+		label: 'Delete element',
+	}),
+	menu: Object.freeze({
+		icon: 'ellipsis',
+		label: 'More layer actions',
 	}),
 });
 
@@ -105,6 +109,7 @@ export const createDesignerLayerRow = ({
 	selected = false,
 	onSelect = null,
 	actions = {},
+	onOpenMenu = null,
 	expandable = false,
 	expanded = true,
 	onToggle = null,
@@ -183,10 +188,24 @@ export const createDesignerLayerRow = ({
 	actionContainer.className = 'cb-core-design-shell__layer-actions';
 	actionContainer.dataset.cbDesignLayerActions = '1';
 
-	for (const actionName of ['moveUp', 'moveDown', 'hide', 'show', 'remove']) {
+	// Only visibility remains a quick action. Destructive/reorder commands
+	// belong to an intentional context menu, never adjacent to the eye icon.
+	for (const actionName of ['hide', 'show']) {
 		const actionConfig = normalizeAction(actions[actionName]);
 		if (!actionConfig) continue;
 		actionContainer.append(createActionButton(documentRef, actionName, actionConfig));
+	}
+	const hasMenu = ['moveUp', 'moveDown', 'remove'].some((name) => normalizeAction(actions[name]));
+	if (hasMenu && typeof onOpenMenu === 'function') {
+		const menuTrigger = createActionButton(documentRef, 'menu', {
+			disabled: false,
+			label: 'More actions for ' + normalizedLabel,
+			onActivate: () => onOpenMenu(menuTrigger),
+		});
+		menuTrigger.dataset.cbDesignLayerMenuTrigger = '1';
+		menuTrigger.setAttribute('aria-haspopup', 'menu');
+		menuTrigger.setAttribute('aria-expanded', 'false');
+		actionContainer.append(menuTrigger);
 	}
 
 	const actionCount = actionContainer.children.length;
@@ -242,6 +261,15 @@ const normalizeTreeKey = (item, fallback) => {
 };
 
 /**
+ * Number of descendants that will be removed with a parent node.
+ * The menu does not infer domain permissions: it only invokes an already
+ * registered remove callback after an explicit confirmation.
+ */
+const countDescendants = (children) => normalizeTreeItems(children).reduce(
+	(count, child) => count + 1 + countDescendants(child.children || []), 0
+);
+
+/**
  * Create one canonical Base-owned hierarchical Layers tree.
  *
  * Consumers describe semantic nodes. Base owns recursive composition, transient
@@ -273,6 +301,159 @@ export const createDesignerLayerTree = ({
 	let currentItems = [];
 	let focusedKey = '';
 	let dragRecord = null;
+	let activeMenu = null;
+
+	// A single body-level menu avoids clipping by either scrolling Designer rail.
+	// No document edits originate from the menu itself.
+	const closeMenu = ({ restoreFocus = false } = {}) => {
+		if (!activeMenu) return;
+		const { popup, trigger, returnFocus, outside, dismissOnViewport } = activeMenu;
+		activeMenu = null;
+		documentRef.removeEventListener('pointerdown', outside, true);
+		documentRef.defaultView?.removeEventListener('resize', dismissOnViewport);
+		documentRef.defaultView?.removeEventListener('scroll', dismissOnViewport, true);
+		trigger?.setAttribute('aria-expanded', 'false');
+		popup.remove();
+		if (restoreFocus && returnFocus?.isConnected) returnFocus.focus();
+	};
+
+	const openMenu = ({ actions, children, label, anchor, returnFocus, x = null, y = null }) => {
+		const entries = ['moveUp', 'moveDown', 'hide', 'show', 'remove']
+			.map((name) => ({ name, config: normalizeAction(actions[name]) }))
+			.filter(({ config }) => config !== null);
+		if (!entries.length || !documentRef.body) return;
+		closeMenu();
+
+		const popup = documentRef.createElement('div');
+		popup.className = 'cb-core-design-shell__layer-context-menu';
+		popup.dataset.cbDesignLayerContextMenu = '1';
+		popup.setAttribute('role', 'menu');
+		popup.setAttribute('aria-label', 'Actions for ' + label);
+
+		const outside = (event) => {
+			if (!popup.contains(event.target) && !anchor.contains(event.target)) closeMenu();
+		};
+		const dismissOnViewport = () => closeMenu();
+		activeMenu = { popup, trigger: anchor.matches?.('[data-cb-design-layer-menu-trigger]') ? anchor : null,
+			returnFocus, outside, dismissOnViewport };
+		if (activeMenu.trigger) activeMenu.trigger.setAttribute('aria-expanded', 'true');
+
+		const confirmChildrenDelete = (action) => {
+			const descendants = countDescendants(children);
+			popup.replaceChildren();
+			popup.setAttribute('role', 'alertdialog');
+			popup.setAttribute('aria-label', 'Confirm deletion of ' + label);
+
+			const heading = documentRef.createElement('strong');
+			heading.className = 'cb-core-design-shell__layer-confirm-heading';
+			heading.textContent = 'Delete ' + label + '?';
+			const message = documentRef.createElement('p');
+			message.className = 'cb-core-design-shell__layer-confirm-message';
+			message.textContent = 'This also removes ' + descendants + ' nested element'
+				+ (descendants === 1 ? '' : 's') + '. You can undo this change.';
+			const buttons = documentRef.createElement('div');
+			buttons.className = 'cb-core-design-shell__layer-confirm-actions';
+			const cancel = documentRef.createElement('button');
+			cancel.type = 'button';
+			cancel.className = 'button';
+			cancel.textContent = 'Cancel';
+			cancel.addEventListener('click', () => closeMenu({ restoreFocus: true }));
+			const remove = documentRef.createElement('button');
+			remove.type = 'button';
+			remove.className = 'button cb-core-design-shell__layer-confirm-delete';
+			remove.textContent = 'Delete section';
+			remove.addEventListener('click', () => {
+				closeMenu({ restoreFocus: true });
+				action.onActivate();
+			});
+			buttons.append(cancel, remove);
+			popup.append(heading, message, buttons);
+			positionPopup();
+			cancel.focus();
+		};
+
+		for (const { name, config } of entries) {
+			if (name === 'remove') {
+				const separator = documentRef.createElement('div');
+				separator.className = 'cb-core-design-shell__layer-menu-separator';
+				separator.setAttribute('role', 'separator');
+				popup.append(separator);
+			}
+			const button = documentRef.createElement('button');
+			button.type = 'button';
+			button.className = 'cb-core-design-shell__layer-menu-item';
+			button.dataset.cbDesignLayerContextAction = name;
+			button.setAttribute('role', 'menuitem');
+			const definition = ACTION_DEFINITIONS[name];
+			if (name === 'remove') button.classList.add('is-destructive');
+			const icon = createDesignerIcon(definition.icon, documentRef);
+			const caption = documentRef.createElement('span');
+			caption.textContent = config.label || String(configLabels(name));
+			if (icon) button.append(icon);
+			button.append(caption);
+			button.disabled = config.disabled;
+			button.addEventListener('click', () => {
+				if (config.disabled || typeof config.onActivate !== 'function') return;
+				if (name === 'remove' && countDescendants(children) > 0) {
+					confirmChildrenDelete(config);
+					return;
+				}
+				closeMenu({ restoreFocus: true });
+				config.onActivate();
+			});
+			popup.append(button);
+		}
+
+		function positionPopup() {
+			const bounds = anchor.getBoundingClientRect();
+			const viewport = documentRef.defaultView;
+			const width = viewport?.innerWidth || documentRef.documentElement.clientWidth;
+			const height = viewport?.innerHeight || documentRef.documentElement.clientHeight;
+			const left = x === null ? bounds.right : x;
+			const top = y === null ? bounds.bottom : y;
+			popup.style.left = Math.round(Math.max(8, Math.min(left, width - popup.offsetWidth - 8))) + 'px';
+			popup.style.top = Math.round(Math.max(8, Math.min(top, height - popup.offsetHeight - 8))) + 'px';
+		}
+		popup.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				event.stopPropagation();
+				closeMenu({ restoreFocus: true });
+				return;
+			}
+			if (popup.getAttribute('role') === 'alertdialog') {
+				if (event.key !== 'Tab') return;
+				const buttons = [...popup.querySelectorAll('button:not(:disabled)')];
+				if (!buttons.length) return;
+				event.preventDefault();
+				const index = buttons.indexOf(documentRef.activeElement);
+				buttons[(index + (event.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus();
+				return;
+			}
+			const items = [...popup.querySelectorAll('[role="menuitem"]:not(:disabled)')];
+			const index = items.indexOf(documentRef.activeElement);
+			let next = -1;
+			if (event.key === 'ArrowDown') next = (index + 1) % items.length;
+			else if (event.key === 'ArrowUp') next = (index - 1 + items.length) % items.length;
+			else if (event.key === 'Home') next = 0;
+			else if (event.key === 'End') next = items.length - 1;
+			else if (event.key === 'Tab') {
+				closeMenu({ restoreFocus: true });
+				return;
+			}
+			if (next >= 0 && items.length) {
+				event.preventDefault();
+				items[next].focus();
+			}
+		});
+		documentRef.body.append(popup);
+		positionPopup();
+		documentRef.addEventListener('pointerdown', outside, true);
+		documentRef.defaultView?.addEventListener('resize', dismissOnViewport);
+		documentRef.defaultView?.addEventListener('scroll', dismissOnViewport, true);
+		popup.querySelector('[role="menuitem"]:not(:disabled)')?.focus();
+	};
+	const configLabels = (name) => config.layerActionLabels?.[name] || ACTION_DEFINITIONS[name].label;
 
 	const focusKey = (key) => {
 		const record = rowsByKey.get(String(key || ''));
@@ -306,6 +487,7 @@ export const createDesignerLayerTree = ({
 
 	const render = (items = currentItems, { focus = '' } = {}) => {
 		currentItems = normalizeTreeItems(items);
+		closeMenu();
 		const hadFocus = typeof element.contains === 'function' && element.contains(documentRef.activeElement);
 		const requestedFocus = String(focus || (hadFocus ? focusedKey : '') || '');
 		rowsByKey.clear();
@@ -351,6 +533,9 @@ export const createDesignerLayerTree = ({
 					selected: item.selected === true,
 					onSelect: itemSelect,
 					actions,
+					onOpenMenu: (anchor) => openMenu({
+						actions, children, label: item.label, anchor, returnFocus: layer.select,
+					}),
 					expandable,
 					expanded,
 					level: depth + 1,
@@ -386,6 +571,14 @@ export const createDesignerLayerTree = ({
 
 				layer.select.addEventListener('focus', () => { focusedKey = key; });
 				layer.select.addEventListener('keydown', (event) => {
+					if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+						if (['moveUp', 'moveDown', 'remove'].some((name) => normalizeAction(actions[name]))) {
+							event.preventDefault();
+							openMenu({ actions, children, label: item.label,
+								anchor: row, returnFocus: layer.select });
+						}
+						return;
+					}
 					const position = visibleKeys.indexOf(key);
 					if (event.key === 'ArrowDown' && position >= 0 && position < visibleKeys.length - 1) {
 						event.preventDefault();
@@ -430,6 +623,14 @@ export const createDesignerLayerTree = ({
 							focusKey(parentKey);
 						}
 					}
+				});
+
+				row.addEventListener('contextmenu', (event) => {
+					if (!['moveUp', 'moveDown', 'remove'].some((name) => normalizeAction(actions[name]))) return;
+					event.preventDefault();
+					event.stopPropagation();
+					openMenu({ actions, children, label: item.label, anchor: row,
+						returnFocus: layer.select, x: event.clientX, y: event.clientY });
 				});
 
 				if (reorder) {
