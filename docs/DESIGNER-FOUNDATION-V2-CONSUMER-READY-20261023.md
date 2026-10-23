@@ -63,6 +63,15 @@ The failing tests were grouped and reconciled by root cause rather than disablin
 
 **Merge rule unchanged:** a fresh exact-HEAD `./tools/check` must exit 0. If any failure persists, inspect the exact test output and fix only a demonstrated test drift or product defect; do not mark the 53 failures ignored, mask them with blanket skips, or merge with a red gate.
 
+## DF-04 Python check reconciliation
+
+The subsequent owner Level 1 run reached Python and reported **165 tests, 15 failures and 1 setup error**. These results had two shared fixture causes:
+
+- `tests/python/test_design_document_a23a_checkpoint_a.py` still attempted to read the retired `src/Mail/Designer/DocumentAdapter.php`. The checkpoint now validates current native `PlatformTransport` and `BaseDocumentRepositoryPort` first-create Save and the existing Reports read-only adapter, while retaining historical cutover authority guards. It explicitly forbids reviving direct legacy document/option writers.
+- `tests/python/test_check_entrypoint.py` mounted an isolated mock of `tools/check` but omitted the three recently required standalone Designer regression filenames. This prevented 15 separate test paths from reaching their intended fail-closed assertions. The fixture now creates the three inert required files and updates the exact traced PHP invocation order.
+
+The SOURCE comparison confirms the revised assertions match the actual current PHP files. **A fresh local Python suite and full Level 1 `tools/check` must still PASS before build/merge.** These two changes do not alter shipped product code, security gates or the release authorization boundary.
+
 ## Minimal operator check
 
 From `~/Downloads/wp-core-blueprint`:
