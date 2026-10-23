@@ -202,19 +202,22 @@
 	justify-content: center;
 }
 .cb-core-design-shell--native .cb-core-design-shell__brand {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
+	--cb-brand-lockup-size: 1.3rem;
 	flex: 0 0 auto;
 }
 
 /* Reuse Base's existing packaged SVG mark, no new logo asset or runtime JS. */
 .cb-core-design-shell--native .cb-core-design-shell__brand-mark {
-	display: block;
-	flex: 0 0 auto;
-	width: 28px;
-	height: 28px;
-	background: transparent url('../../core-blueprint-icon.svg') center / contain no-repeat;
+	width: 1.3em;
+	height: 1.3em;
+	flex: 0 0 1.3em;
+	background-position: center;
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+/* Capacity-based collapse, not a fixed 1280px disappearance. */
+.cb-core-design-shell--native .cb-core-design-shell__toolbar.is-identity-condensed .cb-core-design-shell__brand-wordmark {
+	display: none;
 }
 .cb-core-design-shell--native .cb-core-design-shell__toolbar [data-cb-design-shell-primary-action],
 .cb-core-design-shell--native .cb-core-design-shell__native-close .cb-core-design-shell__icon-button {
@@ -237,15 +240,7 @@
 }
 
 .cb-core-design-shell--native .cb-core-design-shell__brand-wordmark {
-	font-family: var(--cb-ff-heading, 'Space Grotesk', sans-serif);
-	font-size: 14px;
-	font-weight: 700;
-	white-space: nowrap;
-}
-.cb-core-design-shell--native .cb-core-design-shell__native-profile {
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--cb-text-muted);
+	/* Core Blueprint's canonical Miriam Libre rules own the visible text. */
 	white-space: nowrap;
 }
 .cb-core-design-shell--native .cb-core-design-shell__native-context {
@@ -367,15 +362,15 @@
 	.cb-core-design-shell--native .cb-core-design-shell__toolbar-zone {
 		gap: 6px;
 	}
-	.cb-core-design-shell--native .cb-core-design-shell__brand-wordmark,
-	.cb-core-design-shell--native .cb-core-design-shell__native-profile {
-		display: none;
-	}
 	.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__toolbar {
 		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 	}
 }
 @media (max-width: 600px) {
+	/* Minimal-width fallback when the toolbar must prioritize Save and Close. */
+	.cb-core-design-shell--native .cb-core-design-shell__brand-wordmark {
+		display: none;
+	}
 	.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__toolbar {
 		padding: 8px;
 		gap: 6px;

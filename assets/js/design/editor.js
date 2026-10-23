@@ -541,17 +541,31 @@ const composePlatformChrome = (root, profileId) => {
 	const startZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--start');
 	const centerZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--center');
 	const endZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--end');
-	const brand = node('div', 'cb-core-design-shell__brand');
-	// Existing Base-owned SVG mark. Never substitute the generic Shapes glyph.
-	brand.append(node('span', 'cb-core-design-shell__brand-mark', {
-		role: 'img', 'aria-label': 'Core Blueprint',
+	// Native Mail/Reports reuse the same Base brand grammar as Designer Mode:
+	// canonical gradient mark, locally bundled Miriam Libre, and blue word dot.
+	const designerTitle = ({
+		'base/mail': 'Mail Designer',
+		'base/reports': 'Reports Designer',
+	})[profileId];
+	if (!designerTitle) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
+	const brand = node('div', 'cb-core-design-shell__brand cb-core-brand-lockup', {
+		'aria-label': designerTitle + ', Core Blueprint',
+	});
+	brand.append(node('span', 'cb-core-brand-lockup__mark cb-core-design-shell__brand-mark', {
+		'aria-hidden': 'true',
 	}));
-	const profileLabel = node('span', 'cb-core-design-shell__native-profile', {},
-		profileId === 'base/mail' ? 'mail.designer' : 'reports.designer');
+	const wordmark = node('span', 'cb-core-brand-lockup__wordmark cb-core-design-shell__brand-wordmark', {
+		'aria-hidden': 'true',
+	});
+	for (const [index, word] of designerTitle.trim().split(/\s+/).entries()) {
+		if (index > 0) wordmark.append(node('span', 'cb-core-brand-lockup__dot', {}, '.'));
+		wordmark.append(node('span', 'cb-core-design-shell__brand-word', {}, word.toLocaleLowerCase()));
+	}
+	brand.append(wordmark);
 	const contextSlot = node('span', 'cb-core-design-shell__native-context', {
 		'data-cb-platform-context-slot': '',
 	});
-	startZone.append(brand, profileLabel, contextSlot);
+	startZone.append(brand, contextSlot);
 	const viewport = node('div', 'cb-core-design-shell__toolbar-group', {
 		'data-cb-design-shell-viewport-group': '', role: 'group', 'aria-label': 'Preview width',
 	});
@@ -638,6 +652,39 @@ const composePlatformChrome = (root, profileId) => {
 	endZone.prepend(rightLauncher);
 	root.append(toolbar, notice, workspace);
 	return {save, notice, undo, redo, surface};
+};
+
+/**
+ * Condense the native identity when its actual start-zone capacity is used up.
+ * Keep the full accessible Designer label on the brand, including in icon mode.
+ * This runs only for the active staged Host shell and uses its AbortSignal.
+ */
+const configurePlatformBrand = (root, signal) => {
+	const toolbar = root.querySelector('.cb-core-design-shell__toolbar--designer');
+	const start = toolbar?.querySelector('.cb-core-design-shell__toolbar-zone--start');
+	const view = root.ownerDocument.defaultView;
+	if (!toolbar || !start || !view || !signal) return;
+	const sync = () => {
+		if (signal.aborted || !root.isConnected) return;
+		toolbar.classList.remove('is-identity-condensed');
+		const available = start.clientWidth;
+		toolbar.classList.toggle('is-identity-condensed',
+			available > 0 && start.scrollWidth > available + 1);
+	};
+	const resize = typeof view.ResizeObserver === 'function'
+		? new view.ResizeObserver(sync) : null;
+	resize?.observe(toolbar);
+	resize?.observe(start);
+	const mutation = typeof view.MutationObserver === 'function'
+		? new view.MutationObserver(sync) : null;
+	mutation?.observe(start, {childList: true, subtree: true, characterData: true});
+	view.addEventListener('resize', sync, {signal, passive: true});
+	view.document.fonts?.ready?.then(() => { if (!signal.aborted) sync(); });
+	signal.addEventListener('abort', () => {
+		resize?.disconnect();
+		mutation?.disconnect();
+	}, {once: true});
+	sync();
 };
 
 /**
@@ -1009,6 +1056,7 @@ export const attachTrustedDesignerHost = ({
 			// staging/switching. The detached stage is independently guarded
 			// against duplicate controllers by createDesignerShell().
 			configurePlatformSidebars(stagedRoot, signal);
+			configurePlatformBrand(stagedRoot, signal);
 			configureDesignerViewports(stagedRoot, {active: 'desktop'});
 			const controller = createDesignerShell(stagedRoot, {
 				session: editor,

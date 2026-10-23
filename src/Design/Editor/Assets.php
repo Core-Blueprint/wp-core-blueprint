@@ -210,6 +210,9 @@ final class Assets {
 	 */
 	public static function enqueue_platform(): void {
 		self::enqueue();
+		// Native hosts share the exact same branded lockup stylesheet as
+		// consumer Designers; no additional font request or logo copy.
+		CoreBlueprintLockup::enqueue_assets();
 		// Native Mail/Reports Host uses the same Core Toast Foundation as
 		// every other Designer surface, including in fullscreen mode.
 		\CoreBlueprint\Core\UI\Assets::enqueue_toasts( \CoreBlueprint\Core\UI\Assets::TOAST_PRESENTATION_CORE );
@@ -223,7 +226,7 @@ final class Assets {
 		);
 		wp_enqueue_style(
 			self::DESIGNER_MODE_STYLE, CB_CORE_URL . 'assets/css/design/designer-mode.css',
-			[ self::SHELL_STYLE, self::BUTTON_STYLE ], self::asset_version( 'assets/css/design/designer-mode.css' )
+			[ self::SHELL_STYLE, self::BUTTON_STYLE, self::BRAND_LOCKUP_STYLE ], self::asset_version( 'assets/css/design/designer-mode.css' )
 		);
 		wp_enqueue_style(
 			self::DESIGNER_COMPOSITION_STYLE, CB_CORE_URL . 'assets/css/design/designer-composition.css',
