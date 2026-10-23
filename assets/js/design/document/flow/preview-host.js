@@ -44,6 +44,26 @@ const isCanonicalFlowPreviewHtml = (html) => {
 	return html.endsWith('</body></html>');
 };
 
+const isRegionMessage = (data) => {
+	if (!data || typeof data !== 'object' || Array.isArray(data)
+		|| Object.keys(data).sort().join('|') !== 'generation|regions|type|version'
+		|| data.type !== 'cb-core-flow-preview-regions' || data.version !== PROTOCOL_VERSION
+		|| !Number.isSafeInteger(data.generation) || data.generation < 1
+		|| !Array.isArray(data.regions) || data.regions.length > 100) return false;
+	const seen = new Set();
+	for (const region of data.regions) {
+		if (!region || typeof region !== 'object' || Array.isArray(region)
+			|| Object.keys(region).sort().join('|') !== 'height|id|top'
+			|| typeof region.id !== 'string' || !/^r(?:0|[1-9][0-9]*)$/.test(region.id)
+			|| seen.has(region.id) || !Number.isFinite(region.top)
+			|| !Number.isFinite(region.height) || region.height < 0
+			|| Math.abs(region.top) > 100000 || region.height > 100000
+			|| region.top + region.height > 100000) return false;
+		seen.add(region.id);
+	}
+	return true;
+};
+
 const isSizingMessage = (data) => {
 	if (data === null || typeof data !== 'object' || Array.isArray(data)) {
 		return false;
@@ -84,7 +104,12 @@ const normalizeSelectionId = (value) => {
 
 const nextGeneration = (current) => current >= Number.MAX_SAFE_INTEGER ? 1 : current + 1;
 
-export const createFlowPreviewHost = (iframe, { onActivate = null, onFirstSizeTimeout = null } = {}) => {
+export const createFlowPreviewHost = (iframe, {
+	onActivate = null, onFirstSizeTimeout = null, onRegions = null,
+} = {}) => {
+	if (onRegions !== null && typeof onRegions !== 'function') {
+		throw new TypeError('Flow preview regions callback must be a function.');
+	}
 	if (onActivate !== null && typeof onActivate !== 'function') {
 		throw new TypeError('Flow preview activation callback must be a function.');
 	}
@@ -186,6 +211,13 @@ export const createFlowPreviewHost = (iframe, { onActivate = null, onFirstSizeTi
 	const onMessage = (event) => {
 		if (destroyed || event.source !== iframe.contentWindow) return;
 
+		if (isRegionMessage(event.data)) {
+			if (event.data.generation === activeGeneration
+				&& (lifecycle === 'loading' || lifecycle === 'ready')) {
+				onRegions?.(Object.freeze(event.data.regions.map(region => Object.freeze({...region}))));
+			}
+			return;
+		}
 		if (isActivationMessage(event.data)) {
 			if (lifecycle === 'ready' && event.data.generation === activeGeneration) {
 				onActivate?.(event.data.region);
@@ -226,6 +258,7 @@ export const createFlowPreviewHost = (iframe, { onActivate = null, onFirstSizeTi
 		awaitingFirstSize = false;
 		clearFirstSizeTimer();
 		setState('loading');
+		onRegions?.(Object.freeze([]));
 
 		if (!isCanonicalFlowPreviewHtml(html)) {
 			failCurrentRender();
@@ -296,6 +329,7 @@ export const createFlowPreviewHost = (iframe, { onActivate = null, onFirstSizeTi
 		generation = nextGeneration(generation);
 		activeGeneration = generation;
 		selectedRegionId = null;
+		onRegions?.(Object.freeze([]));
 		awaitingFirstSize = false;
 		clearFirstSizeTimer();
 		clearPendingLoadHandler();
