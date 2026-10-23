@@ -55,7 +55,16 @@ test('Base refuses unknown paths and invalid parent-child positions without muta
 		{parentPath: [1], index: 1, type: 'reports.heading'},
 		'Leaf middle resolves to an adjacent sibling');
 	assert.equal(place('node/1', 'inside', {source:{...source, kind:'node'}}), null);
-	assert.equal(place('node/1', 'inside', {source:{...source, type:'reports.section'}}), null);
+	assert.equal(place('node/1', 'inside', {source:{...source, type:'reports.section'}}), null,
+		'An invalid nested Section must not silently become a root sibling');
+	assert.deepEqual(place('node/1', 'after', {source:{...source, type:'reports.section'}})?.input,
+		{parentPath: [], index: 2, type: 'reports.section'},
+		'Explicit sibling placement of a Section remains valid');
+	const emptySection = structuredClone(project);
+	emptySection.root.children[1].children = [];
+	assert.equal(place('node/1', 'inside', {
+		source:{...source, type:'reports.section'}, project: emptySection,
+	}), null, 'An empty Section is still a container, not a leaf');
 	assert.equal(place('node/1', 'after', {canInsert:()=>false}), null);
 	assert.equal(place('node/1', 'after', {canInsert:()=>{throw Error('fail closed')}}), null);
 	assert.throws(()=>designerDropZoneId([-1]), /DESIGNER_DROP_PATH_INVALID/);
