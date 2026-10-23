@@ -978,9 +978,17 @@ export const attachTrustedDesignerHost = ({
 					}));
 					try { notifySave?.(Object.freeze({
 						outcome, phase: 'save',
-						reason: ['SAVE_TRANSPORT_UNVERIFIED', 'SAVE_SERVER_UNVERIFIED',
-							'SAVE_RECEIPT_INVALID', 'SAVE_RECOVERY_UNVERIFIED']
-							.includes(result?.reason) ? result.reason : null,
+						reason: [
+							'SAVE_TRANSPORT_UNVERIFIED', 'SAVE_SERVER_UNVERIFIED',
+							'SAVE_RECEIPT_INVALID', 'SAVE_RECOVERY_UNVERIFIED',
+							'SAVE_TX_STATE_UNVERIFIED', 'SAVE_TX_BEGIN_UNVERIFIED',
+							'SAVE_TX_ROLLBACK_UNVERIFIED', 'SAVE_OPERATION_CLAIM_UNVERIFIED',
+							'SAVE_TX_COMMIT_UNVERIFIED', 'SAVE_POSTCOMMIT_RECEIPT_UNVERIFIED',
+							'SAVE_TX_EXCEPTION_UNVERIFIED', 'SAVE_RECOVERY_PREFLIGHT_UNVERIFIED',
+							'SAVE_LEDGER_SCHEMA_UNVERIFIED', 'SAVE_LEDGER_READ_UNVERIFIED',
+							'SAVE_LEDGER_STATE_UNVERIFIED', 'SAVE_LEDGER_RECEIPT_INVALID',
+							'SAVE_DISPATCH_UNVERIFIED',
+						].includes(result?.reason) ? result.reason : null,
 					})); }
 					catch (_) { /* UI observers cannot change Save Authority. */ }
 				}).catch(() => {
