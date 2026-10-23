@@ -54,9 +54,18 @@ final class Repository {
 			'INSERT INTO %i (identity_hash, document_type, document_key, payload_schema, revision, document_json, created_at, updated_at) VALUES (%s, %s, %s, 1, 1, %s, %s, %s)',
 			Schema::table_name(), self::identity_hash( $type, $key ), $type, $key, $encoded, $now, $now
 		) );
+		// Capture the numeric driver code BEFORE the follow-up SELECT can
+		// overwrite mysqli's error state. Never return raw SQL, last_error,
+		// document content or DB connection details to the REST consumer.
+		$db_errno = self::safe_mysql_errno();
 		if ( 1 !== $affected ) {
 			$after = self::read( $type, $key );
-			return [ 'status' => 'found' === $after['status'] ? 'conflict' : 'error' ];
+			if ( 'found' === $after['status'] ) {
+				return [ 'status' => 'conflict' ];
+			}
+			return null !== $db_errno
+				? [ 'status' => 'error', 'db_errno' => $db_errno ]
+				: [ 'status' => 'error' ];
 		}
 		return self::verify( $type, $key, '1', $document );
 	}
@@ -146,6 +155,20 @@ final class Repository {
 		return 'found' === ( $stored['status'] ?? null )
 			&& ( $stored['revision'] ?? null ) === $revision
 			&& self::encode( $stored['document'] ) === self::encode( $document );
+	}
+
+	/**
+	 * Numeric MySQL errno only, bounded for administrator-only diagnostics.
+	 * Must be called immediately after the failed writer query. A missing
+	 * mysqli driver returns no code; never parse raw $wpdb->last_error.
+	 */
+	private static function safe_mysql_errno(): ?int {
+		global $wpdb;
+		if ( ! isset( $wpdb->dbh ) || ! $wpdb->dbh instanceof \mysqli ) {
+			return null;
+		}
+		$errno = mysqli_errno( $wpdb->dbh );
+		return $errno >= 1 && $errno <= 65535 ? $errno : null;
 	}
 
 	private static function in_transaction(): bool {
