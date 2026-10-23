@@ -247,6 +247,19 @@ unverified payloads never establish no-write. Unknown outcome console
 diagnostics contain ONLY a bounded phase label; never log user content,
 nonce, resource identity, request or receipt.
 
+**P0 field reconciliation, 23 October 2026:** The fullscreen native
+Mail/Reports screen is a fixed z-index 100150 layer, not the legacy
+`.cb-core-design-shell.is-fullscreen` element. Core Toast must appear above
+that native screen (z-index 100160). Browser Save reports previously collapsed
+transaction/recovery problems into `SAVE_SERVER_UNVERIFIED` and
+`SAVE_RECOVERY_UNVERIFIED`. The operation and ledger now provide a small
+allowlist of phase-only `reason` values for unknown outcomes, passed through
+the authenticated REST response, SaveCoordinator and Base Toast observer into
+a sanitized console category. They do not change Save truth, retry behavior,
+no-write proofs or allowed permissions. **No Save runtime PASS is claimed**
+until a Mail and Reports Save receives a complete verified receipt and both
+documents survive reopen.
+
 **Status:** Source implementation and local deterministic checks only. The
 real WordPress sandbox must demonstrate Mail and Reports Save/Reopen with
 verifiable persisted receipts. A passing build does not prove that the server
