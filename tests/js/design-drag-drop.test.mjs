@@ -178,3 +178,28 @@ test('cancel, unregister and destroy clean up listeners and DOM attributes', () 
 	assert.equal(f.root.children.some(child => child.name === 'div'), false);
 	assert.equal(f.zone.fire('drop', {dataTransfer: transfer()}), false);
 });
+
+test('detached sources and zones cannot dispatch stale canvas commands', () => {
+	const detachedZone = fixture();
+	detachedZone.source.fire('dragstart', {dataTransfer: transfer()});
+	detachedZone.zone.remove();
+	assert.equal(detachedZone.zone.fire('drop', {dataTransfer: transfer()}), false);
+	assert.equal(detachedZone.commits.length, 0);
+	detachedZone.controller.destroy();
+
+	const detachedSource = fixture();
+	detachedSource.source.fire('dragstart', {dataTransfer: transfer()});
+	detachedSource.source.remove();
+	assert.equal(detachedSource.zone.fire('drop', {dataTransfer: transfer()}), false);
+	assert.equal(detachedSource.controller.active, false);
+	assert.equal(detachedSource.commits.length, 0);
+	detachedSource.controller.destroy();
+});
+
+test('async domain policy is never accepted as authorization', () => {
+	const f = fixture(() => Promise.resolve(true));
+	f.source.fire('dragstart', {dataTransfer: transfer()});
+	assert.equal(f.zone.fire('drop', {dataTransfer: transfer()}), false);
+	assert.equal(f.commits.length, 0);
+	f.controller.destroy();
+});
