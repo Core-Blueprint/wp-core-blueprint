@@ -520,9 +520,10 @@ const composePlatformChrome = (root, profileId) => {
 	const centerZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--center');
 	const endZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--end');
 	const brand = node('div', 'cb-core-design-shell__brand');
-	const mark = createDesignerIcon('shapes', doc);
-	if (mark) brand.append(mark);
-	brand.append(node('strong', 'cb-core-design-shell__brand-wordmark', {}, 'core.blueprint'));
+	// Existing Base-owned SVG mark. Never substitute the generic Shapes glyph.
+	brand.append(node('span', 'cb-core-design-shell__brand-mark', {
+		role: 'img', 'aria-label': 'Core Blueprint',
+	}));
 	const profileLabel = node('span', 'cb-core-design-shell__native-profile', {},
 		profileId === 'base/mail' ? 'mail.designer' : 'reports.designer');
 	const contextSlot = node('span', 'cb-core-design-shell__native-context', {
@@ -551,6 +552,7 @@ const composePlatformChrome = (root, profileId) => {
 	history.append(undo, redo);
 	const save = button('Save', 'data-cb-design-shell-primary-action');
 	save.classList.add('button-primary', 'cb-core-button--primary');
+	decorateDesignerControl(save, 'save', {iconOnly: true, label: 'Save'});
 	const closeSlot = node('span', 'cb-core-design-shell__native-close', {
 		'data-cb-platform-close-slot': '',
 	});
@@ -912,8 +914,11 @@ export const attachTrustedDesignerHost = ({
 				const uncertain = state === 'UNKNOWN';
 				const unsynchronized = state === 'PERSISTED_UNSYNCHRONIZED';
 				const working = ['CHECKPOINTED', 'SUBMITTING', 'RECEIPT_VERIFIED', 'RECONCILING'].includes(state);
-				chrome.save.textContent = uncertain ? 'Verify save status'
+				const saveLabel = uncertain ? 'Verify save status'
 					: working ? 'Saving…' : status?.dirty ? 'Save' : 'Saved';
+				// Icon-only visual control; retain the real Save Authority status in
+				// its accessible name and native tooltip on every state transition.
+				decorateDesignerControl(chrome.save, 'save', {iconOnly: true, label: saveLabel});
 				chrome.save.disabled = working || unsynchronized || (!uncertain && status?.dirty !== true);
 				chrome.notice.hidden = !(uncertain || unsynchronized);
 				chrome.notice.textContent = uncertain
@@ -1053,6 +1058,13 @@ export const attachTrustedDesignerHost = ({
 				button.dataset.cbDesignComponentId = component.id;
 				button.classList.add('cb-core-design-shell__palette-item--stacked');
 				decorateDesignerElement(button, component.type, {label: component.label});
+				// Use explicit flex children rather than a bare text node: icon
+				// always sits above its own centered, wrapping label.
+				const elementIcon = button.querySelector('[data-cb-design-shell-lucide-icon]');
+				const elementLabel = doc.createElement('span');
+				elementLabel.className = 'cb-core-design-shell__palette-item-label';
+				elementLabel.textContent = component.label;
+				button.replaceChildren(...(elementIcon ? [elementIcon] : []), elementLabel);
 				button.addEventListener('click', () => {
 					if (signal.aborted || host.state !== 'READY') return;
 					const project = editor.project();
