@@ -76,7 +76,7 @@ final class OperationLedger {
 	public function lookup( SaveEnvelope $intent ): array {
 		global $wpdb;
 		if ( ! OperationSchema::healthy() ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_LEDGER_SCHEMA_UNVERIFIED' ];
 		}
 		$wpdb->last_error = '';
 		$row = $wpdb->get_row( $wpdb->prepare(
@@ -85,7 +85,7 @@ final class OperationLedger {
 			self::operation_hash( $intent->operation_id )
 		), ARRAY_A );
 		if ( '' !== (string) $wpdb->last_error || ! is_array( $row ) ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_LEDGER_READ_UNVERIFIED' ];
 		}
 		$compare = [
 			'blog_id' => (string) $intent->blog_id,
@@ -111,12 +111,12 @@ final class OperationLedger {
 		}
 		if ( 'committed' !== $row['state'] || ! is_string( $row['receipt_json'] )
 			|| ! SaveEnvelope::decimal( (string) $row['accepted_revision'] ) ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_LEDGER_STATE_UNVERIFIED' ];
 		}
 		try {
 			$receipt = json_decode( $row['receipt_json'], false, 128, JSON_THROW_ON_ERROR );
 		} catch ( \JsonException $error ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_LEDGER_RECEIPT_INVALID' ];
 		}
 		if ( ! $receipt instanceof \stdClass
 			|| ( $receipt->contractVersion ?? null ) !== 1
@@ -136,19 +136,19 @@ final class OperationLedger {
 			|| ( $receipt->registryFingerprint ?? null ) !== $intent->registry_fingerprint
 			|| ! ( $receipt->acceptedProject ?? null ) instanceof \stdClass
 			|| ! ( $receipt->acceptedFields ?? null ) instanceof \stdClass ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_LEDGER_RECEIPT_INVALID' ];
 		}
 		try {
 			$project_digest = hash( 'sha256', SaveEnvelope::canonical_json( $receipt->acceptedProject ) );
 			$fields_digest = hash( 'sha256', SaveEnvelope::canonical_json( $receipt->acceptedFields ) );
 			$joint_digest = $intent->digest( $receipt->acceptedProject, $receipt->acceptedFields );
 		} catch ( \Throwable $error ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_LEDGER_RECEIPT_INVALID' ];
 		}
 		if ( ( $receipt->acceptedProjectDigest ?? null ) !== $project_digest
 			|| ( $receipt->acceptedFieldsDigest ?? null ) !== $fields_digest
 			|| ( $receipt->acceptedDigest ?? null ) !== $joint_digest ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_LEDGER_RECEIPT_INVALID' ];
 		}
 		return [ 'status' => 'committed', 'receipt_json' => $row['receipt_json'] ];
 	}
