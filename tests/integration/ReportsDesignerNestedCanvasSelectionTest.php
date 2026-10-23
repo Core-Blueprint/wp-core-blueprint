@@ -71,6 +71,11 @@ final class CB_Reports_Designer_Nested_Canvas_Selection_Test extends WP_UnitTest
 			$document['layout'], $document['blocks'], $document['locale'], $document['presentation']
 		);
 		self::assertStringNotContainsString( 'data-cb-flow-preview-region', $pdf_source_html );
+		// R-P4B editing cues remain in the isolated screen preview only.
+		self::assertStringContainsString( 'cursor:pointer;outline-offset:3px;', $html );
+		self::assertStringContainsString( '.cb-flow-text[data-cb-flow-preview-region]:empty', $html );
+		self::assertStringContainsString( '.cb-flow-heading[data-cb-flow-preview-region]', $html );
+		self::assertStringNotContainsString( 'cursor:pointer;outline-offset:3px;', $pdf_source_html );
 		self::assertLessThanOrEqual( 100, count( $document['preview_regions'] ) );
 	}
 

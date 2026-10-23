@@ -192,6 +192,26 @@ export const canInsert = (project, type, parentPath = []) => {
 	}
 };
 
+/**
+ * Concise view-only context for repeatable Reports elements in shared Layers.
+ * Never serialize this derivative label into the project or persist it.
+ * Rendering in the shared Shell uses textContent, not parsed HTML.
+ */
+export const layerSummaryFor = (node) => {
+	const fields = {
+		'reports.section': 'title',
+		'reports.heading': 'text',
+		'reports.paragraph': 'text',
+		'reports.metric': 'label',
+	};
+	const key = Object.hasOwn(fields, node?.type) ? fields[node.type] : null;
+	const raw = key && node?.properties?.[key];
+	if (typeof raw !== 'string') return '';
+	const normalized = raw.replace(/\s+/gu, ' ').trim();
+	const chars = [...normalized];
+	return chars.length > 44 ? chars.slice(0, 44).join('') + '…' : normalized;
+};
+
 export const resolveCommand=id=>Object.hasOwn(table,id)?table[id]:null;
 export const componentsFor=()=>components;
 export const propertiesFor=node=>Object.hasOwn(defs,node?.type)

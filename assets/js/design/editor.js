@@ -1424,6 +1424,13 @@ export const attachTrustedDesignerHost = ({
 					.filter((ref) => ref?.kind === 'node').map((ref) => JSON.stringify(ref.path)));
 				const walk = (node, path) => {
 					if (!node || !Array.isArray(node.children)) throw new Error('SCHEMA_DOMAIN_INVALID');
+					const summary = activeRegistry.profileId === 'base/reports'
+						? profileModule.layerSummaryFor?.(node) : null;
+					const typeLabel = platformFieldLabel(node.type);
+					// This is presentation text only; every mutation remains routed
+					// through the typed session commands and saved schema.
+					const displayLabel = typeof summary === 'string' && [...summary].length <= 45 && summary
+						? typeLabel + ' · ' + summary : typeLabel;
 					const ref = Object.freeze({kind: 'node', path: Object.freeze([...path])});
 					const parentPath = path.slice(0, -1);
 					const parent = path.length ? nodeAt(project.root, parentPath) : null;
@@ -1442,7 +1449,7 @@ export const attachTrustedDesignerHost = ({
 						key: JSON.stringify(path),
 						path,
 						ref,
-						label: platformFieldLabel(node.type),
+						label: displayLabel,
 						meta: path.length === 0 ? 'Document' : '',
 						selected: selected.has(JSON.stringify(path)),
 						children: node.children.map((child, i) => walk(child, [...path, i])),
