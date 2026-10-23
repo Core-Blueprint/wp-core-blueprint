@@ -26,9 +26,9 @@
 
 .cb-core-design-shell__workspace--collapsible {
 	--cb-design-sidebar-header-height: 44px;
-	--cb-design-left-track: minmax(240px, 280px);
-	--cb-design-right-track: minmax(240px, 280px);
-	--cb-design-drawer-width: min(280px, calc(100% - var(--cb-space-5)));
+	--cb-design-left-track: minmax(240px, 260px);
+	--cb-design-right-track: minmax(240px, 260px);
+	--cb-design-drawer-width: min(260px, calc(100% - var(--cb-space-5)));
 	display: grid;
 	grid-template-columns:
 		var(--cb-design-left-track)
