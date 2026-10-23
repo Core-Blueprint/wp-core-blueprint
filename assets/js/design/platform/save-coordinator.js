@@ -192,6 +192,17 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 		return allowed.has(response?.reason) ? response.reason : 'SAVE_SERVER_UNVERIFIED';
 	};
 
+	const safeRefusedReason = response => {
+		const allowed = new Set([
+			'SAVE_PREFLIGHT_REFUSED', 'SAVE_DOCUMENT_LOAD_REFUSED',
+			'SAVE_DOCUMENT_AUTHORIZATION_REFUSED', 'SAVE_DOCUMENT_CREATION_REFUSED',
+			'SAVE_DOCUMENT_VALIDATION_REFUSED', 'SAVE_DOCUMENT_STORAGE_REFUSED',
+			'SAVE_DOCUMENT_NORMALIZATION_REFUSED', 'SAVE_DOCUMENT_WRITE_REFUSED',
+			'SAVE_DOCUMENT_VERIFY_REFUSED', 'SAVE_OPERATION_RECEIPT_REFUSED',
+		]);
+		return allowed.has(response?.reason) ? response.reason : 'SAVE_REFUSED_UNCLASSIFIED';
+	};
+
 	const performSave = async () => {
 		if (destroyed || blocksContextTransition() || pending) return Object.freeze({ status: 'refused', code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
 		if (adapter.canSave() !== true) return Object.freeze({ status: 'refused' });
@@ -263,7 +274,11 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 			|| response?.status === 'idempotency_reused') {
 			pending = null; // Authenticated server reported a rolled-back no-write.
 			notify('READY_DIRTY');
-			return Object.freeze({ status: response.status, operationId });
+			return Object.freeze({
+				status: response.status, operationId,
+				...(response.status === 'refused'
+					? {reason: safeRefusedReason(response)} : {}),
+			});
 		}
 		notify('UNKNOWN');
 		return Object.freeze({ status: 'unknown', reason: safeUnknownReason(response), operationId });
