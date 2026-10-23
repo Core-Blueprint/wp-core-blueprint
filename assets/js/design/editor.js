@@ -1142,10 +1142,19 @@ export const attachTrustedDesignerHost = ({
 					for (const iframe of dropSurface.querySelectorAll('iframe[data-cb-core-flow-preview-host]')) {
 						iframe.style.pointerEvents = active ? 'none' : '';
 					}
+					for (const proxy of dropSurface.querySelectorAll('[data-cb-design-drop-zone-id]')) {
+						proxy.style.pointerEvents = active ? 'auto' : 'none';
+						proxy.style.visibility = active ? 'visible' : 'hidden';
+					}
 				},
 			});
 			const syncDropZones = () => {
 				const next = new Map([[dropSurface, 'root']]);
+				for (const element of dropSurface.querySelectorAll('[data-cb-design-drop-zone-id]')) {
+					if (typeof element.dataset.cbDesignDropZoneId === 'string') {
+						next.set(element, element.dataset.cbDesignDropZoneId);
+					}
+				}
 				for (const element of dropSurface.querySelectorAll('[data-cb-design-node-path]')) {
 					let path = null;
 					try { path = JSON.parse(element.dataset.cbDesignNodePath || ''); }
@@ -1164,6 +1173,7 @@ export const attachTrustedDesignerHost = ({
 					}
 				}
 			};
+			dropSurface.addEventListener('cb:designer-dropzones-changed', syncDropZones, {signal});
 			const componentButtons = new Map();
 			const canInsertComponent = (project, component) => {
 				const target = insertionTarget(project, component.type);
