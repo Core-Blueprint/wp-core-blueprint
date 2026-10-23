@@ -53,6 +53,51 @@ final class ApprovedManifestSource {
 		];
 	}
 
+	/**
+	 * Verify an installed consumer package's own manifest. No wp-config digest
+	 * or guessed version: the installed deployment is the integrity authority.
+	 * Publisher authenticity remains the WordPress plugin installation channel.
+	 *
+	 * @return array{approved:array<string,array<string,string>>,capabilities:array<string,list<string>>,manifest:array<string,mixed>}
+	 */
+	public static function consumer( string $installed_root, string $package_id ): array {
+		if ( ! preg_match( '~^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$~D', $package_id )
+			|| 'core-blueprint/base' === $package_id ) {
+			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+		}
+		$manifest_path = rtrim( $installed_root, '/\\' ) . '/' . ArtifactManifest::MANIFEST_PATH;
+		if ( ! is_file( $manifest_path ) || is_link( $manifest_path ) ) {
+			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+		}
+		$bytes = file_get_contents( $manifest_path );
+		if ( ! is_string( $bytes ) ) {
+			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+		}
+		$digest = hash( 'sha256', $bytes );
+		$verified = InstalledVerifier::verify( $installed_root, $digest );
+		if ( true !== ( $verified['valid'] ?? false ) ) {
+			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+		}
+		$identity = $verified['manifest']['packageIdentity'] ?? null;
+		if ( ! is_array( $identity ) || ( $identity['packageId'] ?? null ) !== $package_id
+			|| ! is_string( $identity['sourceSha'] ?? null )
+			|| ! preg_match( '/^[a-f0-9]{40}$/D', $identity['sourceSha'] )
+			|| ! is_array( $identity['moduleStamps'] ?? null )
+			|| ! is_array( $identity['capabilities'] ?? null )
+			|| ! array_is_list( $identity['capabilities'] ) ) {
+			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+		}
+		return [
+			'approved' => [ 'consumer' => [
+				'manifestSha256' => $digest,
+				'packageId' => $package_id,
+				'sourceSha' => $identity['sourceSha'],
+			] ],
+			'capabilities' => [ 'consumer' => $identity['capabilities'] ],
+			'manifest' => $verified['manifest'],
+		];
+	}
+
 	/** Return only a stamp attested to the EXACT installed transformed file. */
 	public static function module_stamp( array $verified, string $relative ): string {
 		if ( ! ArtifactManifest::valid_path( $relative )
