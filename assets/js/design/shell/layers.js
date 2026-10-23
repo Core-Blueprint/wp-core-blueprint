@@ -188,9 +188,11 @@ export const createDesignerLayerRow = ({
 	actionContainer.className = 'cb-core-design-shell__layer-actions';
 	actionContainer.dataset.cbDesignLayerActions = '1';
 
-	// Only visibility remains a quick action. Destructive/reorder commands
-	// belong to an intentional context menu, never adjacent to the eye icon.
-	for (const actionName of ['hide', 'show']) {
+	// The tree opts in to the context menu. Keep the public standalone
+	// row's existing callbacks usable for consumers without that controller.
+	const quickActions = typeof onOpenMenu === 'function'
+		? ['hide', 'show'] : ['moveUp', 'moveDown', 'hide', 'show', 'remove'];
+	for (const actionName of quickActions) {
 		const actionConfig = normalizeAction(actions[actionName]);
 		if (!actionConfig) continue;
 		actionContainer.append(createActionButton(documentRef, actionName, actionConfig));
@@ -361,7 +363,7 @@ export const createDesignerLayerTree = ({
 			const remove = documentRef.createElement('button');
 			remove.type = 'button';
 			remove.className = 'button cb-core-design-shell__layer-confirm-delete';
-			remove.textContent = 'Delete section';
+			remove.textContent = 'Delete with children';
 			remove.addEventListener('click', () => {
 				closeMenu({ restoreFocus: true });
 				action.onActivate();
@@ -534,7 +536,7 @@ export const createDesignerLayerTree = ({
 					onSelect: itemSelect,
 					actions,
 					onOpenMenu: (anchor) => openMenu({
-						actions, children, label: item.label, anchor, returnFocus: layer.select,
+						actions, children, label: item.label, anchor, returnFocus: anchor,
 					}),
 					expandable,
 					expanded,
