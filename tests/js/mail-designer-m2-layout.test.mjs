@@ -65,10 +65,18 @@ test('M2 renderer uses escaped email-table background and inner-cell padding', a
 
 test('M2 structural validator prevents table-layout nesting that breaks mail clients', async () => {
 	const validator = await source('src/Design/Profile/Mail/Validator.php');
-	assert.match(validator, /mail\.column_structural_child/);
-	assert.match(validator, /mail\.section_parent/);
-	assert.match(validator, /mail\.columns_parent/);
-	assert.match(validator, /mail\.column_parent/);
+	// Native Mail enforces parent membership through canonical definitions,
+	// not the retired M2-specific diagnostic identifiers.
+	const contract = await source('src/Design/Profile/Mail/Contract.php');
+	assert.match(validator, /! in_array\( \$parent, \$definitions\[ \$type \]\['parents'\], true \)/);
+	assert.match(validator, /'mail\.columns' === \$type && \( count\( \$children \) !== 2/);
+	assert.match(validator, /'mail\.leaf_children'/);
+	assert.match(contract, /'mail\.section' => \[/);
+	assert.match(contract, /'parents' => \[ self::ROOT_TYPE \]/);
+	assert.match(contract, /'mail\.columns' => \[/);
+	assert.match(contract, /'parents' => \[ 'mail\.section' \]/);
+	assert.match(contract, /'mail\.column' => \[/);
+	assert.match(contract, /'parents' => \[ 'mail\.columns' \]/);
 });
 
 test('Legacy columns are optional style additions, no migration required', async () => {
