@@ -38,7 +38,7 @@ final class DesignerPreview {
 		$report = $this->preview_report();
 		$data = $report['report_data'] ?? null;
 		if ( ! is_array( $data ) ) {
-			throw new \\RuntimeException( 'Reports Designer preview snapshot is missing.' );
+			throw new \RuntimeException( 'Reports Designer preview snapshot is missing.' );
 		}
 
 		$locale = get_locale();
