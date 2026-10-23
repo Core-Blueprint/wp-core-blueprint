@@ -236,7 +236,7 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 			});
 		} catch (_) {
 			notify('UNKNOWN');
-			return Object.freeze({ status: 'unknown', operationId });
+			return Object.freeze({ status: 'unknown', reason: 'SAVE_TRANSPORT_UNVERIFIED', operationId });
 		}
 		if (response?.status === 'committed') {
 			try { return await accept(response.receipt ?? response); }
@@ -253,7 +253,7 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 			return Object.freeze({ status: response.status, operationId });
 		}
 		notify('UNKNOWN');
-		return Object.freeze({ status: 'unknown', operationId });
+		return Object.freeze({ status: 'unknown', reason: 'SAVE_SERVER_UNVERIFIED', operationId });
 	};
 
 	const recover = async () => {
@@ -266,7 +266,7 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 			});
 		} catch (_) {
 			notify('UNKNOWN');
-			return Object.freeze({ status: 'unknown' });
+			return Object.freeze({ status: 'unknown', reason: 'SAVE_RECOVERY_UNVERIFIED' });
 		}
 		if (response?.status === 'committed') {
 			try { return await accept(response.receipt ?? response); }
