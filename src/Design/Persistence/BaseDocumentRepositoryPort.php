@@ -143,6 +143,13 @@ final class BaseDocumentRepositoryPort extends BaseDocumentTransactionPort {
 					'corrupt' => 'READ_UNAVAILABLE',
 				];
 				$category = $reasons[ (string) ( $result['status'] ?? '' ) ] ?? 'UNCLASSIFIED';
+				// MYSQL errno has no SQL text and was captured before any
+				// readback. It is trustworthy only for a failed writer query.
+				$errno = $result['db_errno'] ?? null;
+				if ( 'error' === ( $result['status'] ?? null )
+					&& is_int( $errno ) && $errno >= 1 && $errno <= 65535 ) {
+					$category = 'DB_' . $errno;
+				}
 				return [ 'status' => 'refused', 'reason' => 'SAVE_STORAGE_' . $stage . '_' . $category ];
 			}
 			$this->last_document = $accepted['document'];
