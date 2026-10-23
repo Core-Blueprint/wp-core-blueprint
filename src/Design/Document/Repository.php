@@ -277,7 +277,13 @@ final class Repository {
 	}
 
 	private static function encode( array $document ): ?string {
-		$json = wp_json_encode( $document, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+		// This table deliberately mixes ASCII integrity hashes with UTF-8 document
+		// fields. WordPress wpdb::get_table_charset() treats that combination
+		// as ASCII when validating a non-ASCII SQL statement, potentially
+		// refusing a legitimate Mail INSERT before mysqli (errno remains 0).
+		// Escape Unicode in the SQL-bound JSON; json_decode() recovers the
+		// exact original UTF-8 values. Never disable wpdb's text checks.
+		$json = wp_json_encode( $document, JSON_UNESCAPED_SLASHES );
 		return is_string( $json ) && '' !== $json ? $json : null;
 	}
 
