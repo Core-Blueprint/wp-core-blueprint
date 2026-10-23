@@ -126,9 +126,24 @@ final class BaseDocumentRepositoryPort extends BaseDocumentTransactionPort {
 			);
 			if ( ( $result['status'] ?? null ) !== 'saved'
 				|| ! is_string( $result['revision'] ?? null ) ) {
-				return ( $result['status'] ?? null ) === 'conflict'
-					? [ 'status' => 'conflict' ]
-					: [ 'status' => 'refused', 'reason' => 'SAVE_DOCUMENT_STORAGE_REFUSED' ];
+				if ( 'conflict' === ( $result['status'] ?? null ) ) {
+					return [ 'status' => 'conflict' ];
+				}
+				// The writer's exact bounded outcome is known here. Keep it
+				// distinct until the outer transaction confirms ROLLBACK,
+				// without exposing SQL, document content or storage internals.
+				$stage = '0' === $intent->expected_revision ? 'CREATE' : 'UPDATE';
+				$reasons = [
+					'invalid' => 'INVALID',
+					'unavailable' => 'SCHEMA_UNAVAILABLE',
+					'error' => 'QUERY_FAILED',
+					'uncertain' => 'READBACK_UNVERIFIED',
+					'missing' => 'READ_UNAVAILABLE',
+					'unsupported' => 'READ_UNAVAILABLE',
+					'corrupt' => 'READ_UNAVAILABLE',
+				];
+				$category = $reasons[ (string) ( $result['status'] ?? '' ) ] ?? 'UNCLASSIFIED';
+				return [ 'status' => 'refused', 'reason' => 'SAVE_STORAGE_' . $stage . '_' . $category ];
 			}
 			$this->last_document = $accepted['document'];
 			$this->last_intent = $intent;
