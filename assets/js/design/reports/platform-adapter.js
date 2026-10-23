@@ -204,7 +204,7 @@ export const propertiesFor=node=>Object.hasOwn(defs,node?.type)
 
 export function createRenderAdapter({root,document:doc,profileId}) {
 	if (!root || !doc || profileId !== 'base/reports') throw new TypeError('HOST_MODULE_MISSING');
-	let editor = null, container = null, frame = null, preview = null, destroyed = false;
+	let editor = null, container = null, frame = null, preview = null, dropLayer = null, destroyed = false;
 	let activeSignal = null, request = null, connectedObserver = null;
 	let lastDocumentKey = '', lastProject = null, requestedSerial = 0;
 	const el = (tag, cls, value = '') => {
@@ -277,6 +277,44 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		container.classList.remove('is-fetching', 'is-preview-error');
 		schedulePreview(html);
 	};
+
+	// The isolated renderer sends only bounded, generation-verified geometry.
+	// This adapter creates same-document proxy zones outside the iframe; the
+	// Base drag controller continues owning validation and command dispatch.
+	const onRegions = (regions) => {
+		if (destroyed || activeSignal?.aborted || !dropLayer || !frame || !lastProject) return;
+		dropLayer.replaceChildren();
+		const frameTop = frame.offsetTop;
+		const frameLeft = frame.offsetLeft;
+		if (!Number.isFinite(frameTop) || !Number.isFinite(frameLeft)) return;
+		for (const region of regions) {
+			if (!/^r(?:0|[1-9][0-9]*)$/.test(region.id)) continue;
+			const index = Number(region.id.slice(1));
+			const node = lastProject.root.children[index];
+			if (!Number.isSafeInteger(index) || !node) continue;
+			const zone = el('div', 'cb-reports-platform__drop-region');
+			zone.dataset.cbDesignDropZoneId = 'node/' + index;
+			zone.setAttribute('aria-label', 'Place report element near ' + node.type.replace('reports.', ''));
+			zone.style.position = 'absolute';
+			zone.style.boxSizing = 'border-box';
+			zone.style.left = frameLeft + 'px';
+			zone.style.top = (frameTop + region.top) + 'px';
+			zone.style.width = frame.clientWidth + 'px';
+			zone.style.height = Math.max(8, region.height) + 'px';
+			zone.style.pointerEvents = 'none';
+			zone.style.visibility = 'hidden';
+			dropLayer.append(zone);
+		}
+		if (container?.closest('[data-cb-design-dnd-active="true"]')) {
+			for (const zone of dropLayer.children) {
+				zone.style.pointerEvents = 'auto';
+				zone.style.visibility = 'visible';
+			}
+		}
+		dropLayer.dispatchEvent(new doc.defaultView.CustomEvent(
+			'cb:designer-dropzones-changed', {bubbles: true}
+		));
+	};
 	const onActivate = (region) => {
 		if (destroyed || activeSignal?.aborted || !editor || !container?.isConnected
 			|| !/^r(?:0|[1-9][0-9]*)$/.test(region)) return;
@@ -295,13 +333,19 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			activeSignal = signal;
 			container = el('div', 'cb-reports-platform');
 			container.dataset.cbReportsPreview = '1';
+			container.style.position = 'relative';
 			const note = el('p', 'cb-reports-platform__preview-note', 'Loading report preview…');
 			note.dataset.cbReportsPreviewNote = '1';
 			frame = el('iframe', 'cb-reports-platform__preview-frame');
 			frame.setAttribute('title', 'Maintenance report preview');
-			container.append(note, frame);
+			dropLayer = el('div', 'cb-reports-platform__drop-layer');
+			dropLayer.style.position = 'absolute';
+			dropLayer.style.inset = '0';
+			dropLayer.style.zIndex = '5';
+			dropLayer.style.pointerEvents = 'none';
+			container.append(note, frame, dropLayer);
 			root.append(container);
-			preview = createFlowPreviewHost(frame, {onActivate});
+			preview = createFlowPreviewHost(frame, {onActivate, onRegions});
 		},
 		async update({project, selection, signal}) {
 			if (destroyed || signal?.aborted || activeSignal?.aborted || !container || !preview) {
@@ -369,6 +413,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			editor = null;
 			container?.remove();
 			container = null;
+			dropLayer = null;
 			frame = null;
 			lastProject = null;
 		},
