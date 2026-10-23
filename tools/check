@@ -25,6 +25,9 @@ for required in \
   tests/public-core-scanner-threat-regression.php \
   tests/public-core-scanner-ui-regression.php \
   tests/public-design-document-storage-regression.php \
+  tests/public-design-mixed-charset-json-regression.php \
+  tests/public-design-save-envelope-identity-regression.php \
+  tests/public-design-mail-save-contract-regression.php \
   tests/public-design-document-migration-regression.php \
   tests/public-design-document-consumer-adoption-regression.php \
   tests/public-designer-v2-abi-regression.php \
@@ -58,6 +61,9 @@ php tests/public-tile-foundation-regression.php
 php tests/public-core-scanner-threat-regression.php
 php tests/public-core-scanner-ui-regression.php
 php tests/public-design-document-storage-regression.php
+php tests/public-design-mixed-charset-json-regression.php
+php tests/public-design-save-envelope-identity-regression.php
+php tests/public-design-mail-save-contract-regression.php
 php tests/public-design-document-migration-regression.php
 php tests/public-design-document-consumer-adoption-regression.php
 php tests/public-designer-v2-abi-regression.php
