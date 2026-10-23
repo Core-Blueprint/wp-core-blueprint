@@ -137,7 +137,19 @@ async function activate() {
 	const profileId=mail?'base/mail':'base/reports';
 	const selected=mail?screen.querySelector('[data-cb-mail-template-select]'):null;
 	const resourceKey=mail?(selected?.value||mail.dataset.cbMailTemplate||''):'maintenance';
-	const loadingStatus=origin.querySelector('p[role="status"]');
+	// Preserve the PHP-rendered status element until Host READY or refusal.
+	const loadingContext=origin.querySelector('[data-cb-platform-base-context]') ||
+		(origin.matches('[data-cb-platform-base-context]') ? origin : null);
+	const startupHeader=screen.querySelector('.cb-core-platform-screen__header');
+	const failStartup=(code)=>{
+		// The old PHP header is never presented during normal startup.
+		// On an actual failure, reveal its Close link so users can safely exit.
+		screen.dataset.cbPlatformFailed='true';
+		screen.setAttribute('aria-busy','false');
+		if(loadingContext)loadingContext.hidden=true;
+		if(startupHeader)startupHeader.hidden=false;
+		showRefusal(panel,code);
+	};
 	const previous=origin.querySelector('[data-cb-design-shell]');
 	if(previous)previous.hidden=true;
 	const panel=document.createElement('div');
@@ -150,8 +162,9 @@ async function activate() {
 		if(form){form.hidden=true;form.setAttribute('inert','');}
 		origin.append(panel);
 	}else{
-		origin.hidden=true;
-		origin.setAttribute('inert','');
+		// Keep the server-rendered loading status visible while the Host
+		// fetches and verifies its context; overlay it rather than blanking
+		// Reports before the canonical Designer is ready.
 		origin.parentNode.insertBefore(panel,origin.nextSibling);
 	}
 	const root=document.createElement('section');
@@ -161,7 +174,7 @@ async function activate() {
 	canvas.setAttribute('data-cb-platform-mount','');
 	root.append(canvas);
 	panel.append(root);
-	if(!resourceKey){if(loadingStatus)loadingStatus.hidden=true;showRefusal(panel,'HOST_CONTEXT_REFUSED');return;}
+	if(!resourceKey){failStartup('HOST_CONTEXT_REFUSED');return;}
 	try {
 		const loaded=await loadWordPressContext(profileId,resourceKey,0);
 		const host=attachTrustedDesignerHost({
@@ -190,8 +203,10 @@ async function activate() {
 		// replace only its visible text with the shared Base close glyph.
 		decorateDesignerControl(close, 'x', {iconOnly: true, label: 'Close Designer'});
 		closeSlot.append(close);
-		if(loadingStatus)loadingStatus.hidden=true;
+		if(loadingContext)loadingContext.hidden=true;
+		if(reports){origin.hidden=true;origin.setAttribute('inert','');}
 		screen.dataset.cbPlatformMounted='true';
+		screen.setAttribute('aria-busy','false');
 		const transitionSafe=()=>{
 			if(host.state!=='READY')return false;
 			const status=host.editor?.saveStatus?.();
@@ -216,8 +231,7 @@ async function activate() {
 			});
 		}
 	} catch(error) {
-		if(loadingStatus)loadingStatus.hidden=true;
-		showRefusal(panel,String(error?.code||error?.message||'HOST_CONTEXT_REFUSED'));
+		failStartup(String(error?.code||error?.message||'HOST_CONTEXT_REFUSED'));
 	}
 }
 

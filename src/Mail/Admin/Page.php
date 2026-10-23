@@ -167,8 +167,8 @@ final class Page extends PageBase {
 						</div>
 					</div>
 				<?php else : ?>
-					<div class="cb-core-platform-screen" data-cb-platform-screen>
-						<header class="cb-core-platform-screen__header">
+					<div class="cb-core-platform-screen" data-cb-platform-screen aria-busy="true">
+						<header class="cb-core-platform-screen__header" hidden>
 							<strong><?php esc_html_e( 'Mail Designer', 'core-blueprint' ); ?></strong>
 							<label class="screen-reader-text" for="cb-mail-platform-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
 							<select id="cb-mail-platform-template" class="cb-core-platform-screen__subtitle" data-cb-mail-template-select aria-label="<?php esc_attr_e( 'Template', 'core-blueprint' ); ?>">

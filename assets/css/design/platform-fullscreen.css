@@ -19,6 +19,14 @@
 	color: var(--cb-text, #e5e7eb);
 }
 
+/* The PHP fallback header must be hidden from first paint, not hidden
+   only after the Host finishes mounting. Its controls remain in the DOM
+   for transfer to the canonical toolbar and for a genuine error fallback. */
+.cb-core-platform-screen__header[hidden],
+.cb-core-platform-screen [data-cb-platform-base-context][hidden] {
+	display: none !important;
+}
+
 .cb-core-platform-screen__header {
 	display: flex;
 	align-items: center;
@@ -49,6 +57,29 @@
 	margin-left: auto !important;
 	flex: 0 0 auto;
 }
+
+/* Server-provided loading state overlays the unfinished Host without the
+   obsolete header. Works for both nested Mail and direct Reports contexts. */
+.cb-core-platform-screen:not([data-cb-platform-mounted="true"]):not([data-cb-platform-failed="true"]) [data-cb-platform-base-context] {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	box-sizing: border-box;
+	background: var(--cb-surface-0, #0b0f16);
+	color: var(--cb-text-muted, #94a3b8);
+	text-align: center;
+}
+.cb-core-platform-screen [data-cb-platform-base-context] > p[role="status"] {
+	max-width: 36rem;
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
 
 .cb-core-platform-screen__body {
 	display: flex;
