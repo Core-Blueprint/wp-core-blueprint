@@ -279,6 +279,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		stopObserver();
 		if (preview) preview.render('');
 		if (container) {
+			container.dataset.cbReportsPreviewSource = 'error';
 			container.classList.remove('is-fetching');
 			container.classList.add('is-preview-error');
 			const status = container.querySelector('[data-cb-reports-preview-note]');
@@ -295,6 +296,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 	const showCompiled = (html, source) => {
 		if (destroyed || activeSignal?.aborted) return;
 		const note = container.querySelector('[data-cb-reports-preview-note]');
+		container.dataset.cbReportsPreviewSource = source;
 		note.textContent = source === 'sample'
 			? 'Example report metrics; site identity may reflect this installation.'
 			: 'Most recent archived report. Historical values, not live status.';
@@ -357,6 +359,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			activeSignal = signal;
 			container = el('div', 'cb-reports-platform');
 			container.dataset.cbReportsPreview = '1';
+			container.dataset.cbReportsPreviewSource = 'loading';
 			container.style.position = 'relative';
 			const note = el('p', 'cb-reports-platform__preview-note', 'Loading report preview…');
 			note.dataset.cbReportsPreviewNote = '1';
@@ -388,6 +391,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			const serial = ++requestedSerial;
 			const abort = () => localRequest.abort();
 			signal?.addEventListener('abort', abort, {once: true});
+			container.dataset.cbReportsPreviewSource = 'loading';
 			container.classList.add('is-fetching');
 			container.classList.remove('is-preview-error');
 			const note = container.querySelector('[data-cb-reports-preview-note]');

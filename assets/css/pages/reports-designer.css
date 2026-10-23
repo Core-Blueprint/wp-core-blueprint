@@ -28,40 +28,61 @@
 	border: 1px solid #dde3eb;
 	line-height: 1.55;
 }
-/* R3-A: the native Reports canvas shows the canonical PHP Flow preview.
- * The iframe is sandboxed and self-sized by the existing Flow preview host.
- * These labels are Designer chrome, never part of the PDF document. */
+/* R-P4A: Reports document-stage chrome, outside the isolated Flow iframe.
+ * The white page remains square and the canonical PDF and Flow typography
+ * remain the only authority for the report's actual contents. */
 .cb-reports-platform {
+	--cb-reports-paper-width: 860px;
 	display: block;
 	box-sizing: border-box;
 	min-height: 100%;
 	width: 100%;
-	padding: 16px 20px 36px;
+	padding: clamp(16px, 2.5vw, 32px) clamp(12px, 3vw, 36px) clamp(32px, 4vw, 56px);
 }
 .cb-reports-platform__preview-note {
+	display: flex;
+	align-items: center;
+	gap: 10px;
 	box-sizing: border-box;
-	max-width: 860px;
-	margin: 0 auto 12px;
-	padding: 8px 12px;
+	max-width: var(--cb-reports-paper-width);
+	margin: 0 auto 16px;
+	padding: 10px 14px;
 	border: 1px solid var(--cb-border);
-	border-radius: 4px;
+	border-radius: var(--cb-radius-md, 8px);
 	background: var(--cb-surface-1);
 	color: var(--cb-text);
 	font-size: 12px;
 	line-height: 1.5;
 }
+/* Status indicators carry no invented page count or document metadata.
+ * Text remains the canonical, accessible explanation of the preview source. */
+.cb-reports-platform__preview-note::before {
+	content: '';
+	display: block;
+	flex: 0 0 7px;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--cb-text-muted);
+}
+.cb-reports-platform[data-cb-reports-preview-source="sample"] .cb-reports-platform__preview-note::before {
+	background: var(--cb-report-accent);
+}
+.cb-reports-platform[data-cb-reports-preview-source="archived"] .cb-reports-platform__preview-note::before {
+	background: var(--cb-text-muted);
+}
 .cb-reports-platform__preview-frame {
 	display: block;
 	box-sizing: border-box;
 	width: 100%;
-	max-width: 860px;
+	max-width: var(--cb-reports-paper-width);
 	min-height: 0;
 	margin: 0 auto;
 	padding: 0;
-	border: 1px solid #dde3eb;
+	border: 1px solid #cbd5e1;
 	border-radius: 0;
-	background: #fff;
-	box-shadow: 0 2px 18px rgb(0 0 0 / 9%);
+	background: var(--cb-report-paper);
+	box-shadow: 0 10px 36px rgb(0 0 0 / 16%), 0 2px 8px rgb(0 0 0 / 7%);
 }
 .cb-reports-platform.is-fetching .cb-reports-platform__preview-frame,
 .cb-reports-platform.is-preview-error .cb-reports-platform__preview-frame {
@@ -70,8 +91,17 @@
 .cb-reports-platform.is-preview-error .cb-reports-platform__preview-note {
 	border-color: var(--cb-danger);
 }
+.cb-reports-platform.is-preview-error .cb-reports-platform__preview-note::before {
+	background: var(--cb-danger);
+}
 @media (max-width: 640px) {
-	.cb-reports-platform { padding: 12px 8px 24px; }
+	.cb-reports-platform {
+		padding: 12px 8px 28px;
+	}
+	.cb-reports-platform__preview-note {
+		padding: 10px 12px;
+		margin-bottom: 12px;
+	}
 }
 
 .cb-reports-platform__branding {
