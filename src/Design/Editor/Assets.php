@@ -154,6 +154,15 @@ final class Assets {
 			[ self::DESIGNER_COMPOSITION_STYLE ],
 			self::asset_version( 'assets/css/design/platform-fullscreen.css' )
 		);
+		// The fullscreen Host must use the same coloured gradient mark as
+		// the Base HUD and Brand Lockup, not the white admin-menu SVG.
+		// Resolve the image from the canonical Base-owned brand source.
+		wp_add_inline_style(
+			'cb-core-designer-platform-fullscreen',
+			'.cb-core-design-shell--native .cb-core-design-shell__brand-mark {'
+			. 'background-image: url("' . CoreBlueprintMark::data_uri() . '");'
+			. '}'
+		);
 		foreach ( [
 			'@cb-core/mail-platform' => 'assets/js/design/mail/platform-adapter.js',
 			'@cb-core/reports-platform' => 'assets/js/design/reports/platform-adapter.js',
