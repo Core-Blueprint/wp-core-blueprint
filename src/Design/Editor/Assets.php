@@ -125,6 +125,85 @@ final class Assets {
 	}
 
 	/**
+	 * Localized, presentation-only labels for Base native Designer profiles.
+	 * Registry fingerprints, schema fields and Save identifiers stay unchanged.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function platform_field_labels(): array {
+		return [
+			'accent_color' => __( 'Accent Color', 'core-blueprint' ),
+			'corner_style' => __( 'Corner Style', 'core-blueprint' ),
+			'density' => __( 'Density', 'core-blueprint' ),
+			'logo_attachment_id' => __( 'Logo', 'core-blueprint' ),
+			'page_format' => __( 'Page Format', 'core-blueprint' ),
+			'page_orientation' => __( 'Page Orientation', 'core-blueprint' ),
+			'page_margin_mm' => __( 'Page Margin (mm)', 'core-blueprint' ),
+			'provider_contact' => __( 'Provider Contact', 'core-blueprint' ),
+			'provider_name' => __( 'Provider Name', 'core-blueprint' ),
+			'section_spacing_mm' => __( 'Section Spacing (mm)', 'core-blueprint' ),
+			'show_logo' => __( 'Show Logo', 'core-blueprint' ),
+			'surface_style' => __( 'Surface Style', 'core-blueprint' ),
+			'text_scale' => __( 'Text Scale', 'core-blueprint' ),
+			'subject' => __( 'Subject', 'core-blueprint' ),
+			'preheader' => __( 'Preheader', 'core-blueprint' ),
+			'title' => __( 'Title', 'core-blueprint' ),
+			'enabled' => __( 'Enabled', 'core-blueprint' ),
+			'showIntro' => __( 'Show Introduction', 'core-blueprint' ),
+			'showNotes' => __( 'Show Notes', 'core-blueprint' ),
+			'showPageNumber' => __( 'Show Page Number', 'core-blueprint' ),
+			'showSiteUrl' => __( 'Show Site URL', 'core-blueprint' ),
+			'showMetadata' => __( 'Show Metadata', 'core-blueprint' ),
+			'text' => __( 'Text', 'core-blueprint' ),
+			'showDetails' => __( 'Show Details', 'core-blueprint' ),
+			'label' => __( 'Label', 'core-blueprint' ),
+			'value' => __( 'Value', 'core-blueprint' ),
+			'showHeading' => __( 'Show Heading', 'core-blueprint' ),
+			'showSecurity' => __( 'Show Security', 'core-blueprint' ),
+			'showBackups' => __( 'Show Backups', 'core-blueprint' ),
+			'background' => __( 'Background', 'core-blueprint' ),
+			'contentBackground' => __( 'Content Background', 'core-blueprint' ),
+			'textColor' => __( 'Text Color', 'core-blueprint' ),
+			'accentColor' => __( 'Accent Color', 'core-blueprint' ),
+			'fontFamily' => __( 'Font Family', 'core-blueprint' ),
+			'width' => __( 'Width', 'core-blueprint' ),
+			'padding' => __( 'Padding', 'core-blueprint' ),
+			'spacing' => __( 'Spacing', 'core-blueprint' ),
+			'fontSize' => __( 'Font Size', 'core-blueprint' ),
+			'align' => __( 'Alignment', 'core-blueprint' ),
+			'color' => __( 'Color', 'core-blueprint' ),
+			'markup' => __( 'Rich Text', 'core-blueprint' ),
+			'url' => __( 'URL', 'core-blueprint' ),
+			'radius' => __( 'Corner Radius', 'core-blueprint' ),
+			'alt' => __( 'Alternative Text', 'core-blueprint' ),
+			'height' => __( 'Height', 'core-blueprint' ),
+			'ratio' => __( 'Column Ratio', 'core-blueprint' ),
+			'gap' => __( 'Column Gap', 'core-blueprint' ),
+			'heading' => __( 'Heading', 'core-blueprint' ),
+			'section' => __( 'Section', 'core-blueprint' ),
+			'rich-text' => __( 'Rich Text', 'core-blueprint' ),
+			'button' => __( 'Button', 'core-blueprint' ),
+			'image' => __( 'Image', 'core-blueprint' ),
+			'divider' => __( 'Divider', 'core-blueprint' ),
+			'spacer' => __( 'Spacer', 'core-blueprint' ),
+			'columns' => __( 'Two Columns', 'core-blueprint' ),
+			'column' => __( 'Column', 'core-blueprint' ),
+			'activity' => __( 'Activity', 'core-blueprint' ),
+			'current-state' => __( 'Current State', 'core-blueprint' ),
+			'footer' => __( 'Footer', 'core-blueprint' ),
+			'header' => __( 'Header', 'core-blueprint' ),
+			'kpis' => __( 'KPIs', 'core-blueprint' ),
+			'metric' => __( 'Metric', 'core-blueprint' ),
+			'notes' => __( 'Notes', 'core-blueprint' ),
+			'paragraph' => __( 'Paragraph', 'core-blueprint' ),
+			'status' => __( 'Status', 'core-blueprint' ),
+			'summary' => __( 'Summary', 'core-blueprint' ),
+			'mail' => __( 'Mail', 'core-blueprint' ),
+			'reports' => __( 'Reports', 'core-blueprint' ),
+		];
+	}
+
+	/**
 	 * Single native Platform v1 entrypoint for the TWO Base-owned Designers.
 	 * Never enqueue the historical Mail/Reports editor engines on these routes.
 	 * JavaScript imports precisely these statically registered WordPress modules.
@@ -179,6 +258,7 @@ final class Assets {
 			'window.cbCorePlatformV1=' . wp_json_encode( [
 				'restRoot' => esc_url_raw( rest_url() ),
 				'nonce' => wp_create_nonce( 'wp_rest' ),
+				'labels' => self::platform_field_labels(),
 			] ) . ';',
 			'before'
 		);
