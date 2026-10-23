@@ -48,8 +48,8 @@ final class SaveEnvelope {
 		if ( $blog_id < 1 || $actor_id < 1
 			|| ! self::label( $resource_type, 48 )
 			|| ! self::label( $resource_key, 191 )
-			|| ! self::label( $profile_id, 128 )
-			|| ! self::label( $project_schema, 128 )
+			|| ! self::profile_id( $profile_id )
+			|| ! self::project_schema( $project_schema )
 			|| ! preg_match( '/^sha256:[a-f0-9]{64}$/D', $registry_fingerprint )
 			|| ! preg_match( '/^[A-Za-z0-9_-]{22,128}$/D', $operation_id )
 			|| ! self::decimal( $expected_revision ) ) {
@@ -159,6 +159,24 @@ final class SaveEnvelope {
 		$maximum = (string) PHP_INT_MAX;
 		return strlen( $revision ) < strlen( $maximum )
 			|| ( strlen( $revision ) === strlen( $maximum ) && strcmp( $revision, $maximum ) <= 0 );
+	}
+
+	/**
+	 * Exactly the trusted ProfileRegistry v1 ID contract. Unlike document
+	 * resource IDs, designer profile IDs are slash-separated namespaces.
+	 */
+	private static function profile_id( string $id ): bool {
+		return strlen( $id ) <= 128
+			&& 1 === preg_match( '~^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$~D', $id );
+	}
+
+	/**
+	 * Exactly the RegistryCompiler v1 project-schema contract. The final
+	 * slash-delimited positive generation number is part of the identity.
+	 */
+	private static function project_schema( string $id ): bool {
+		return strlen( $id ) <= 128
+			&& 1 === preg_match( '~^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*/[1-9][0-9]*$~D', $id );
 	}
 
 	private static function label( string $label, int $max ): bool {
