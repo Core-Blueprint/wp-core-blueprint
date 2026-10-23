@@ -761,3 +761,46 @@ test('isolated Flow geometry messages are generation-bound, bounded, and never a
 	env.dispatch(env.iframe.contentWindow, message(2, valid));
 	assert.deepEqual(delivered.at(-1), []);
 });
+
+
+test('isolated Flow bridge publishes only bounded semantic geometry and preserves size messages', () => {
+	const bridge = sizingBridge();
+	const sent = [];
+	class RegionElement {
+		getAttribute(name) { return name === 'data-cb-flow-preview-region' ? 'r1' : null; }
+		getBoundingClientRect() { return {top: 64, height: 48, bottom: 112}; }
+	}
+	const region = new RegionElement();
+	const root = {
+		scrollHeight: 480, offsetHeight: 480,
+		getBoundingClientRect: () => ({height: 480}),
+		getAttribute: name => name === 'data-cb-flow-preview-root' ? '1' : null,
+		querySelectorAll: selector => selector === '[data-cb-flow-preview-region]' ? [region] : [],
+		addEventListener() {},
+	};
+	const documentObject = {
+		querySelectorAll(selector) {
+			if (selector === 'meta[name="cb-core-flow-preview-protocol"]') return [{content: '1'}];
+			if (selector === '[data-cb-flow-preview-root]') return [root];
+			return [];
+		},
+		documentElement: {
+			getAttribute(name) { return name === 'data-cb-core-flow-preview-generation' ? '7' : null; },
+		},
+	};
+	const windowObject = {
+		parent: {postMessage(data) { sent.push(data); }},
+		addEventListener() {},
+	};
+	class ResizeObserverStub {observe() {}}
+	runInNewContext(bridge, {
+		window: windowObject, document: documentObject,
+		ResizeObserver: ResizeObserverStub, HTMLElement: RegionElement,
+		requestAnimationFrame: () => 1, Number, Math,
+	});
+	assert.deepEqual(JSON.parse(JSON.stringify(sent)), [
+		{type: 'cb-core-flow-preview-regions', version: 1, generation: 7,
+			regions: [{id: 'r1', top: 64, height: 48}]},
+		{type: 'cb-core-flow-preview-size', version: 1, generation: 7, height: 480},
+	]);
+});
