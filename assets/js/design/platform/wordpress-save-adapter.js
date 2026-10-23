@@ -40,7 +40,7 @@ const notifyDesignerSave = ({outcome, phase, reason = null}) => {
 		'SAVE_DOCUMENT_NORMALIZATION_REFUSED', 'SAVE_DOCUMENT_WRITE_REFUSED',
 		'SAVE_DOCUMENT_VERIFY_REFUSED', 'SAVE_OPERATION_RECEIPT_REFUSED',
 		'SAVE_REFUSED_UNCLASSIFIED',
-	].includes(reason)) {
+	].includes(reason) || /^SAVE_STORAGE_(CREATE|UPDATE)_(INVALID|SCHEMA_UNAVAILABLE|QUERY_FAILED|READBACK_UNVERIFIED|READ_UNAVAILABLE|UNCLASSIFIED)$/.test(reason ?? '')) {
 		console.warn('[Core Blueprint Designer] Save refused at:', reason);
 	}
 	switch (outcome) {
