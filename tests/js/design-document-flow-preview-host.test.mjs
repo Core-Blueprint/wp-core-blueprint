@@ -725,3 +725,39 @@ test('Reports consumer preserves failure state when canonical Flow host refuses 
 	assert.match(guard, /setPreviewState\(\s*i18n\.previewFailed[^;]+,\s*'error'\s*\);/);
 	assert.match(guard, /\breturn;/);
 });
+
+
+test('isolated Flow geometry messages are generation-bound, bounded, and never authorize mutations', () => {
+	const env = harness();
+	const delivered = [];
+	const host = createFlowPreviewHost(env.iframe, {
+		onRegions: regions => delivered.push(regions),
+	});
+	assert.equal(host.render(canonicalHtml()), true);
+	const message = (generation, regions) => ({
+		type: 'cb-core-flow-preview-regions', version: 1, generation, regions,
+	});
+	const valid = [{id: 'r1', top: 120, height: 40}];
+	env.dispatch({}, message(1, valid));
+	env.dispatch(env.iframe.contentWindow, message(0, valid));
+	env.dispatch(env.iframe.contentWindow, message(2, valid));
+	env.dispatch(env.iframe.contentWindow, message(1, [{id: 'r1', top: NaN, height: 40}]));
+	env.dispatch(env.iframe.contentWindow, message(1, [{id: 'r1', top: 120, height: -1}]));
+	env.dispatch(env.iframe.contentWindow, message(1, [valid[0], valid[0]]));
+	env.dispatch(env.iframe.contentWindow, {...message(1, valid), unexpected: true});
+	assert.deepEqual(delivered.map(regions=>regions.length), [0]);
+	env.dispatch(env.iframe.contentWindow, message(1, valid));
+	assert.deepEqual(delivered.map(regions=>regions.length), [0,1]);
+	assert.equal(Object.isFrozen(delivered[1]), true);
+	assert.equal(Object.isFrozen(delivered[1][0]), true);
+	assert.deepEqual(delivered[1][0], valid[0]);
+	host.render(canonicalHtml());
+	env.dispatch(env.iframe.contentWindow, message(1, valid));
+	assert.deepEqual(delivered.map(regions=>regions.length), [0,1,0]);
+	env.dispatch(env.iframe.contentWindow, message(2, valid));
+	assert.deepEqual(delivered.map(regions=>regions.length), [0,1,0,1]);
+	host.destroy();
+	assert.deepEqual(delivered.at(-1), []);
+	env.dispatch(env.iframe.contentWindow, message(2, valid));
+	assert.deepEqual(delivered.at(-1), []);
+});
