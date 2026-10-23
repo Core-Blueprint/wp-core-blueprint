@@ -1222,14 +1222,43 @@ export const attachTrustedDesignerHost = ({
 				return !!target && (typeof profileModule.canInsert !== 'function'
 					|| profileModule.canInsert(project, component.type, target.parentPath) === true);
 			};
-			const refreshElements = (project) => {
+			// Reports advertises singleton ownership; Base never duplicates this type list.
+			const existingReportComponentPath = (project, component) => {
+				if (activeRegistry.profileId !== 'base/reports' || component.singleton !== true
+					|| !Array.isArray(project?.root?.children)) return null;
+				const index = project.root.children.findIndex(node => node?.type === component.type);
+				return index < 0 ? null : [index];
+			};
+			const showSelectedInspector = () => {
+				controller.activatePanel('inspector');
+				if (stagedRoot.classList.contains('is-right-panel-collapsed')) {
+					stagedRoot.querySelector('[data-cb-design-shell-drawer-toggle="right"]')?.click();
+				}
+			};
+			const refreshElements = (project, selection) => {
 				for (const component of components) {
 					const button = componentButtons.get(component.id);
 					if (!button) continue;
-					const available = !signal.aborted && canInsertComponent(project, component);
+					const existingPath = existingReportComponentPath(project, component);
+					const available = !signal.aborted && (existingPath !== null || canInsertComponent(project, component));
 					button.disabled = !available;
-					button.title = available ? 'Add ' + component.label
-						: 'This element cannot be added in the current report context.';
+					if (activeRegistry.profileId === 'base/reports') {
+						const label = platformFieldLabel(component.type, component.label);
+						const action = existingPath !== null ? 'Edit' : 'Add';
+						button.querySelector('.cb-core-design-shell__palette-item-label').textContent = action + ' ' + label;
+						button.setAttribute('aria-label', action + ' ' + label);
+						button.dataset.cbDesignElementAction = action.toLowerCase();
+						const selected = existingPath !== null && selection?.primary?.kind === 'node'
+							&& JSON.stringify(selection.primary.path) === JSON.stringify(existingPath);
+						button.classList.toggle('is-active', selected);
+						if (existingPath !== null) button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+						else button.removeAttribute('aria-pressed');
+						button.title = existingPath !== null ? 'Edit existing ' + label
+							: available ? 'Add ' + label : 'This element cannot be added in the current report context.';
+					} else {
+						button.title = available ? 'Add ' + component.label
+							: 'This element cannot be added in the current report context.';
+					}
 				}
 			};
 			for (const component of components) {
@@ -1248,6 +1277,13 @@ export const attachTrustedDesignerHost = ({
 				button.addEventListener('click', () => {
 					if (signal.aborted || host.state !== 'READY') return;
 					const project = editor.project();
+					const existingPath = existingReportComponentPath(project, component);
+					if (existingPath !== null) {
+						const ref = {kind: 'node', path: existingPath};
+						editor.select([ref], ref);
+						showSelectedInspector();
+						return;
+					}
 					if (!canInsertComponent(project, component)) return;
 					const target = insertionTarget(project, component.type);
 					if (!target) return;
@@ -1263,6 +1299,7 @@ export const attachTrustedDesignerHost = ({
 							const path = [...parentPath, actualIndex];
 							const ref = {kind: 'node', path};
 							editor.select([ref], ref);
+							showSelectedInspector();
 						}
 					}
 				}, {signal});
@@ -1380,7 +1417,7 @@ export const attachTrustedDesignerHost = ({
 					}
 				}
 				refreshSettings();
-				refreshElements(project);
+				refreshElements(project, selection);
 				syncDropZones();
 				// A field edit may dirty the joint Save without changing History.
 				// Refresh the ONE SaveCoordinator-derived button status after Host

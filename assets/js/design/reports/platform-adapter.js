@@ -48,7 +48,7 @@ const labels = Object.freeze({
 	'reports.summary':'Summary',
 });
 const components = Object.freeze(Object.keys(defaults).sort().map(type=>Object.freeze({
-	id:'base/'+type.replace('.', '-'),type,label:labels[type],
+	id:'base/'+type.replace('.', '-'),type,label:labels[type],singleton:singletons.has(type),
 })));
 const validPath = path=>Array.isArray(path)&&path.length<=64
 	&&path.every(i=>Number.isSafeInteger(i)&&i>=0);
