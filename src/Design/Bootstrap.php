@@ -58,7 +58,7 @@ final class Bootstrap {
 	 * Consumer callbacks may register data-only descriptors during this hook.
 	 * There is no browser registration or second registry authority.
 	 */
-	public static function frozen_registry(): FrozenRegistry {
+	public static function frozen_registry( ?string $consumer_profile_id = null ): FrozenRegistry {
 		$providers = new ProviderRegistry();
 		$types = new DesignTypeRegistry( $providers );
 		$capabilities = new CapabilityRegistry( $providers );
@@ -67,21 +67,59 @@ final class Bootstrap {
 		$components = new ComponentRegistry();
 		$controls = new ControlRegistry();
 		$modules = new ModuleCatalog();
-		// Only independently approved installed artifacts can declare trusted
-		// executable profile modules. No empty or dummy registry is published.
 		$artifact = ApprovedManifestSource::base();
+		// Base-only registry remains untouched for native Mail/Reports. An
+		// explicitly selected consumer must be an installed, verified plugin.
+		$consumer = null === $consumer_profile_id ? null
+			: ConsumerAdmission::resolve( $consumer_profile_id );
 		if ( ! $providers->register( MailPlatform::PROVIDER ) ) {
 			throw new \DomainException( 'REGISTRY_COLLISION' );
 		}
 		MailPlatform::declare_type( $types, $capabilities, $authorizations );
 		ReportsPlatform::declare_type( $types, $capabilities, $authorizations );
+		// Every provider/type must exist BEFORE either native or consumer
+		// profile captures the same canonical schema snapshot.
+		if ( null !== $consumer ) {
+			( $consumer['declare'] )( $providers, $types, $capabilities, $authorizations );
+		}
 		MailPlatform::register( $types, $profiles, $components, $controls, $modules, $artifact );
 		ReportsPlatform::register( $types, $profiles, $components, $controls, $modules, $artifact );
-		// Third-party installed packages require a separate Base+consumer
-		// attestation; the first Base-only release does not grant that scope.
-		// A later explicit integration may provide additional trusted sources.
-		return ( new RegistryCompiler( $providers, $types, $capabilities, $authorizations ) )
+		if ( null !== $consumer ) {
+			( $consumer['register'] )(
+				$types, $profiles, $components, $controls, $modules, $consumer['artifact']
+			);
+		}
+		$registry = ( new RegistryCompiler( $providers, $types, $capabilities, $authorizations ) )
 			->compile( $profiles, $components, $controls, $modules );
+		if ( null !== $consumer ) {
+			$profile = $registry->profile( $consumer_profile_id );
+			$profile_ids = array_column( $registry->graph()['profiles'], 'id' );
+			sort( $profile_ids, SORT_STRING );
+			$expected_profiles = [ MailPlatform::PROFILE, ReportsPlatform::PROFILE, $consumer_profile_id ];
+			sort( $expected_profiles, SORT_STRING );
+			if ( $profile_ids !== $expected_profiles
+				|| null === $profile || $profile['owner'] === MailPlatform::PROVIDER ) {
+				throw new \DomainException( 'REGISTRY_INVALID' );
+			}
+			$found = false;
+			foreach ( $registry->modules() as $module ) {
+				$is_base = $module['owner'] === MailPlatform::PROVIDER;
+				$path = $module['packagePath'];
+				if ( $is_base !== str_starts_with( $path, 'base/' ) ) {
+					throw new \DomainException( 'REGISTRY_INVALID' );
+				}
+				if ( ! $is_base ) {
+					$relative = substr( $path, strlen( 'consumer/' ) );
+					$expected_stamp = ApprovedManifestSource::module_stamp( $consumer['artifact'], $relative );
+					if ( ! hash_equals( $expected_stamp, $module['stamp'] ) ) {
+						throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
+					}
+					if ( $module['id'] === $profile['moduleId'] ) $found = true;
+				}
+			}
+			if ( ! $found ) throw new \DomainException( 'HOST_MODULE_MISSING' );
+		}
+		return $registry;
 	}
 
 	/**
