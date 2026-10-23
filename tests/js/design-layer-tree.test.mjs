@@ -291,9 +291,17 @@ test('tree owns bounded sibling move controls while consumers provide only reord
 
 	const first = tree.row('first');
 	const actions = first.children[2];
-	assert.equal(actions.children.length, 2);
-	assert.equal(actions.children[0].disabled, true);
-	assert.equal(actions.children[1].disabled, false);
-	actions.children[1].dispatchEvent(new Event('click'));
+	// The public tree now exposes Base's canonical context menu instead of
+	// two per-row reorder buttons. Reorder remains bounded by the domain
+	// policy and is activated through the shared sibling drag gesture.
+	assert.equal(actions.children.length, 1);
+	assert.equal(actions.children[0].dataset.cbDesignLayerMenuTrigger, '1');
+	assert.equal(first.draggable, true);
+	first.dispatchEvent(new Event('dragstart'));
+	const second = tree.row('second');
+	const over = new Event('dragover', { cancelable: true });
+	second.dispatchEvent(over);
+	assert.equal(over.defaultPrevented, true);
+	second.dispatchEvent(new Event('drop', { cancelable: true }));
 	assert.equal(movedTo, 1);
 });
