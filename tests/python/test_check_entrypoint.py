@@ -34,6 +34,11 @@ class CheckEntrypointTest(unittest.TestCase):
         write('tests/public-core-scanner-threat-regression.php')
         write('tests/public-core-scanner-ui-regression.php')
         write('tests/public-design-document-storage-regression.php')
+        # These are mandatory Level 1 tests in tools/check. The isolated
+        # orchestration fixture provides inert files, never real plugin code.
+        write('tests/public-design-mixed-charset-json-regression.php')
+        write('tests/public-design-save-envelope-identity-regression.php')
+        write('tests/public-design-mail-save-contract-regression.php')
         write('tests/public-design-document-migration-regression.php')
         write('tests/public-design-document-consumer-adoption-regression.php')
         write('tests/public-designer-v2-abi-regression.php')
@@ -86,6 +91,9 @@ class CheckEntrypointTest(unittest.TestCase):
                 'php|tests/public-core-scanner-threat-regression.php',
                 'php|tests/public-core-scanner-ui-regression.php',
                 'php|tests/public-design-document-storage-regression.php',
+                'php|tests/public-design-mixed-charset-json-regression.php',
+                'php|tests/public-design-save-envelope-identity-regression.php',
+                'php|tests/public-design-mail-save-contract-regression.php',
                 'php|tests/public-design-document-migration-regression.php',
                 'php|tests/public-design-document-consumer-adoption-regression.php',
                 'php|tests/public-designer-v2-abi-regression.php',
