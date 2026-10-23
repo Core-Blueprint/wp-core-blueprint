@@ -365,6 +365,20 @@ authorization, History and Save Authority remain canonical and unchanged.
   field expose Hide/Show.
 - Deletion of a parent with descendants always requires explicit confirmation.
   No one-click delete action belongs in the canvas or Inspector.
+- **Consumer-safe semantic confirmation (Foundation v2):** a Layers tree item
+  may supply `actions.remove: { onActivate, disabled?, label?, confirmation? }`.
+  `confirmation` is either a descriptor
+  `{title: string, message: string, confirmLabel: string}` or a synchronous
+  `({label, descendantCount}) => descriptor` factory. Base validates three
+  nonempty bounded strings, shows the accessible Base-owned alertdialog and
+  invokes the already-authorized `onActivate()` only after explicit
+  confirmation. No HTML is interpreted. Missing descriptions use a neutral
+  warning that the action affects descendants rather than claiming to delete
+  them. Invalid consumer descriptions fail closed. Explicit confirmation also
+  applies to an item without visible child rows.
+- **Evaluator semantics:** deleting a Section moves Questions to Unassigned;
+  the extension can truthfully explain this without implementing a separate
+  destructive dialog or copying Base's internal Layers implementation.
 - The shared overlay never permanently reserves horizontal label space;
   left and right Designer rails/drawers are capped at 260px.
 
