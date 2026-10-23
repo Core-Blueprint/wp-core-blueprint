@@ -179,6 +179,19 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 		return Object.freeze({ status: 'committed', operationId: evidence.operationId, dirty, storeRevision: acceptedStoreRevision });
 	};
 
+	const safeUnknownReason = response => {
+		const allowed = new Set([
+			'SAVE_TX_STATE_UNVERIFIED', 'SAVE_TX_BEGIN_UNVERIFIED',
+			'SAVE_TX_ROLLBACK_UNVERIFIED', 'SAVE_OPERATION_CLAIM_UNVERIFIED',
+			'SAVE_TX_COMMIT_UNVERIFIED', 'SAVE_POSTCOMMIT_RECEIPT_UNVERIFIED',
+			'SAVE_TX_EXCEPTION_UNVERIFIED', 'SAVE_RECOVERY_PREFLIGHT_UNVERIFIED',
+			'SAVE_LEDGER_SCHEMA_UNVERIFIED', 'SAVE_LEDGER_READ_UNVERIFIED',
+			'SAVE_LEDGER_STATE_UNVERIFIED', 'SAVE_LEDGER_RECEIPT_INVALID',
+			'SAVE_DISPATCH_UNVERIFIED',
+		]);
+		return allowed.has(response?.reason) ? response.reason : 'SAVE_SERVER_UNVERIFIED';
+	};
+
 	const performSave = async () => {
 		if (destroyed || blocksContextTransition() || pending) return Object.freeze({ status: 'refused', code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
 		if (adapter.canSave() !== true) return Object.freeze({ status: 'refused' });
@@ -253,7 +266,7 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 			return Object.freeze({ status: response.status, operationId });
 		}
 		notify('UNKNOWN');
-		return Object.freeze({ status: 'unknown', reason: 'SAVE_SERVER_UNVERIFIED', operationId });
+		return Object.freeze({ status: 'unknown', reason: safeUnknownReason(response), operationId });
 	};
 
 	const recover = async () => {
@@ -277,7 +290,10 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 		}
 		// Absence/missing row/HTTP 404/timeouts do not establish no-write.
 		notify('UNKNOWN');
-		return Object.freeze({ status: 'unknown', reason: 'SAVE_RECOVERY_UNVERIFIED' });
+		return Object.freeze({
+			status: 'unknown', reason: response?.status === 'unknown'
+				? safeUnknownReason(response) : 'SAVE_RECOVERY_UNVERIFIED',
+		});
 	};
 
 	// Exact countersigned SaveCoordinatorV1 Host-private callable surface.
