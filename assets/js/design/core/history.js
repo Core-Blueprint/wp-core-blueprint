@@ -311,7 +311,10 @@ export class CommandHistory {
 		const project = this.#commit({
 			nextProject: stage.project, nextEditor, undo, redo: [],
 			action: 'execute', source: 'command',
-			forceSelection: false,
+			// Staged structural commands can select a new node at the same
+			// path as the previously selected node. Publish the semantic
+			// selection intent even when path equality is unchanged.
+			forceSelection: stage.forceSelection,
 			selectionAction: String(command.label || 'command'),
 		});
 		this.#nextEntryId = entry.id;
