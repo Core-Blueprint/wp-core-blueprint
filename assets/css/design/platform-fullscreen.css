@@ -176,6 +176,35 @@
 	gap: 8px;
 	flex: 0 0 auto;
 }
+
+/* Reuse Base's existing packaged SVG mark, no new logo asset or runtime JS. */
+.cb-core-design-shell--native .cb-core-design-shell__brand-mark {
+	display: block;
+	flex: 0 0 auto;
+	width: 28px;
+	height: 28px;
+	background: transparent url('../../core-blueprint-icon.svg') center / contain no-repeat;
+}
+.cb-core-design-shell--native .cb-core-design-shell__toolbar [data-cb-design-shell-primary-action],
+.cb-core-design-shell--native .cb-core-design-shell__native-close .cb-core-design-shell__icon-button {
+	display: inline-flex !important;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 40px;
+	min-width: 40px !important;
+	height: 40px;
+	min-height: 40px !important;
+	margin: 0;
+	padding: 0 !important;
+	white-space: nowrap;
+}
+.cb-core-design-shell--native .cb-core-design-shell__toolbar [data-cb-design-shell-primary-action] .cb-core-design-shell__icon,
+.cb-core-design-shell--native .cb-core-design-shell__native-close .cb-core-design-shell__icon {
+	width: 20px;
+	height: 20px;
+}
+
 .cb-core-design-shell--native .cb-core-design-shell__brand-wordmark {
 	font-family: var(--cb-ff-heading, 'Space Grotesk', sans-serif);
 	font-size: 14px;
