@@ -8,7 +8,7 @@ test('v2 public session and shared Layers/DnD/Toast entrypoints are exported thr
   const editor = await root('assets/js/design/editor.js');
   const assets = await root('src/Design/Editor/Assets.php');
   const shell = await root('assets/js/design/shell/layers.js');
-  assert.match(assets, /public const MODULE_ID = '@cb-core\\/design-editor';/);
+  assert.match(assets, /public const MODULE_ID = '@cb-core\/design-editor';/);
   assert.match(assets, /public const DOMAIN_SESSION_API = 2;/);
   assert.match(assets, /public const SAVE_AUTHORITY_UI_API = 1;/);
   assert.match(assets, /public const DESIGNER_EXIT_GUARD_API = 1;/);
