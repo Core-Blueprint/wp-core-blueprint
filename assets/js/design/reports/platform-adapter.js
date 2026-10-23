@@ -193,36 +193,6 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 				'Dynamic report data: '+labels[node.type]));
 		}
 		node.children.forEach((child,i)=>section.append(renderNode(child,[...path,i])));
-		if(path.length>0&&node.type!=='reports.header'&&node.type!=='reports.footer') {
-			const actions=el('div','cb-reports-platform__node-actions');
-			const addAction=(label,disabled,callback)=>{
-				const button=el('button','cb-reports-platform__action',label);
-				button.type='button';button.disabled=disabled;
-				button.addEventListener('click',event=>{
-					event.stopPropagation();
-					if(!destroyed&&editor&&!disabled)callback();
-				});
-				actions.append(button);
-			};
-			const parentPath=path.slice(0,-1);
-			const position=path.at(-1);
-			const parent=nodeAt(editor.project().root,parentPath);
-			const firstAllowed=parent.type===TYPE?1:0;
-			const lastAllowed=parent.type===TYPE?parent.children.length-2:parent.children.length-1;
-			addAction('Up',position<=firstAllowed,()=>editor.execute('reports.reorder',{
-				parentPath,fromIndex:position,toIndex:position-1,
-			}));
-			addAction('Down',position>=lastAllowed,()=>editor.execute('reports.reorder',{
-				parentPath,fromIndex:position,toIndex:position+1,
-			}));
-			if(Object.hasOwn(node.properties,'enabled')){
-				addAction(node.properties.enabled==='on'?'Hide':'Show',false,()=>
-					editor.execute('reports.set',{path,key:'enabled',
-						value:node.properties.enabled==='on'?'off':'on'}));
-			}
-			addAction('Remove',false,()=>editor.execute('reports.remove',{path}));
-			section.append(actions);
-		}
 		section.addEventListener('click',event=>{
 			event.stopPropagation();
 			if(!destroyed&&editor&&container?.isConnected)
