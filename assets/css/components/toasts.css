@@ -29,6 +29,14 @@ body:has(.cb-core-design-shell.is-fullscreen) .cb-core-toast-container--core {
 	z-index: 100110;
 }
 
+/* Native Mail/Reports Designer occupies a separate fixed Host layer at
+ * z-index 100150, without the legacy .is-fullscreen class. Keep shared Base
+ * Toast above it instead of creating a second notification implementation. */
+body:has(.cb-core-platform-screen[data-cb-platform-mounted="true"]) .cb-core-toast-container--core,
+body:has(.cb-core-platform-screen[data-cb-platform-mounted="true"]) .cb-core-toast-container--wp-native {
+	z-index: 100160;
+}
+
 .cb-core-toast-container--core .cb-core-toast {
 	display: flex;
 	align-items: center;
