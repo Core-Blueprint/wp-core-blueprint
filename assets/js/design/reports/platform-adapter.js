@@ -1,3 +1,4 @@
+import {createFlowPreviewHost} from '../document/flow/preview-host.js';
 import {
 	insertNodeCommand, removeNodeCommand, reorderNodeCommand, setPropertyCommand,
 } from '../core/commands.js';
@@ -185,84 +186,174 @@ export const propertiesFor=node=>Object.hasOwn(defs,node?.type)
 	})):[];
 
 export function createRenderAdapter({root,document:doc,profileId}) {
-	if(!root||!doc||profileId!=='base/reports')throw new TypeError('HOST_MODULE_MISSING');
-	let editor=null,container=null,destroyed=false;
-	const el=(tag,cls,text='')=>{
-		const node=doc.createElement(tag);node.className=cls;node.textContent=text;return node;
+	if (!root || !doc || profileId !== 'base/reports') throw new TypeError('HOST_MODULE_MISSING');
+	let editor = null, container = null, frame = null, preview = null, destroyed = false;
+	let activeSignal = null, request = null, connectedObserver = null;
+	let lastDocumentKey = '', lastProject = null, requestedSerial = 0;
+	const el = (tag, cls, value = '') => {
+		const node = doc.createElement(tag);
+		node.className = cls;
+		node.textContent = value;
+		return node;
 	};
-	const renderNode=(node,path)=>{
-		const section=el('section','cb-reports-platform__node cb-reports-platform__'+node.type.replace('reports.',''));
-		section.tabIndex=0;
-		section.dataset.cbDesignNodePath=JSON.stringify(path);
-		section.dataset.cbDesignNodeType=node.type;
-		if(node.properties.enabled==='off')section.classList.add('is-hidden-report');
-		if(node.type==='reports.section')section.append(el('h2','cb-reports-platform__section-title',node.properties.title));
-		else if(node.type==='reports.heading')section.append(el('h3','cb-reports-platform__heading',node.properties.text));
-		else if(node.type==='reports.paragraph')section.append(el('p','cb-reports-platform__paragraph',node.properties.text));
-		else if(node.type==='reports.metric'){
-			const metric=el('dl','cb-reports-platform__metric');
-			metric.append(el('dt','cb-reports-platform__metric-label',node.properties.label));
-			metric.append(el('dd','cb-reports-platform__metric-value',node.properties.value));
-			section.append(metric);
-		}else if(node.type==='reports.header'){
-			section.append(el('strong','cb-reports-platform__eyebrow','HEADER'));
-		}else if(node.type==='reports.footer'){
-			section.append(el('strong','cb-reports-platform__eyebrow','FOOTER'));
-		}else{
-			section.append(el('strong','cb-reports-platform__eyebrow',labels[node.type]));
-			section.append(el('span','cb-reports-platform__dynamic',
-				'Dynamic report data: '+labels[node.type]));
+	const resolveEndpoint = () => {
+		const config = doc.defaultView?.cbCorePlatformV1;
+		if (typeof config?.restRoot !== 'string' || !config.restRoot
+			|| typeof config?.nonce !== 'string' || !config.nonce) {
+			throw new TypeError('REPORTS_PREVIEW_UNAVAILABLE');
 		}
-		node.children.forEach((child,i)=>section.append(renderNode(child,[...path,i])));
-		section.addEventListener('click',event=>{
-			event.stopPropagation();
-			if(!destroyed&&editor&&container?.isConnected)
-				editor.select([{kind:'node',path}],{kind:'node',path});
-		});
-		return section;
+		const base = new URL(config.restRoot, doc.baseURI);
+		const endpoint = base.searchParams.has('rest_route')
+			? (() => {
+				base.searchParams.set('rest_route', '/core-blueprint/v1/reports-designer/preview');
+				return base.href;
+			})()
+			: new URL('core-blueprint/v1/reports-designer/preview', base).href;
+		return {endpoint, nonce: config.nonce};
 	};
-	const show=project=>{
-		validateProject(project);
-		const fields=editor.persistedFields();
-		const documentView=el('article','cb-reports-platform__document');
-		if(/^#[0-9a-fA-F]{6}$/.test(fields.accent_color||''))
-			documentView.style.setProperty('--cb-report-accent',fields.accent_color);
-		documentView.dataset.cbReportsDensity=fields.density||'comfortable';
-		const brand=el('div','cb-reports-platform__branding',
-			fields.provider_name||'Core Blueprint');
-		documentView.append(brand);
-		documentView.append(el('h1','cb-reports-platform__title',project.root.properties.title));
-		project.root.children.forEach((node,i)=>documentView.append(renderNode(node,[i])));
-		container.replaceChildren(documentView);
+	const selectedRegion = (selection) => {
+		const path = selection?.primary?.kind === 'node' ? selection.primary.path : null;
+		return Array.isArray(path) && Number.isSafeInteger(path[0]) && path[0] >= 0
+			? 'r' + path[0] : null;
 	};
+	const stopObserver = () => {
+		connectedObserver?.disconnect();
+		connectedObserver = null;
+	};
+	const schedulePreview = (html) => {
+		stopObserver();
+		const apply = () => {
+			if (destroyed || activeSignal?.aborted || !container?.isConnected) return;
+			stopObserver();
+			if (!preview?.render(html)) throw new Error('REPORTS_PREVIEW_UNAVAILABLE');
+		};
+		if (container.isConnected) {
+			apply();
+		} else {
+			const Observer = doc.defaultView?.MutationObserver;
+			if (!Observer || !doc.documentElement) throw new Error('REPORTS_PREVIEW_UNAVAILABLE');
+			connectedObserver = new Observer(apply);
+			connectedObserver.observe(doc.documentElement, {childList: true, subtree: true});
+		}
+	};
+	const showError = () => {
+		stopObserver();
+		if (preview) preview.render('');
+		if (container) {
+			container.classList.remove('is-fetching');
+			container.classList.add('is-preview-error');
+			const status = container.querySelector('[data-cb-reports-preview-note]');
+			if (status) {
+				status.hidden = false;
+				status.textContent = 'Report preview unavailable. No changes have been saved.';
+			}
+		}
+		lastDocumentKey = '';
+	};
+	const showCompiled = (html, source) => {
+		if (destroyed || activeSignal?.aborted) return;
+		const note = container.querySelector('[data-cb-reports-preview-note]');
+		note.textContent = source === 'sample'
+			? 'Preview using example data. Not live site information.'
+			: 'Preview using the most recent archived report. Not live site information.';
+		note.hidden = false;
+		container.classList.remove('is-fetching', 'is-preview-error');
+		schedulePreview(html);
+	};
+	const onActivate = (region) => {
+		if (destroyed || activeSignal?.aborted || !editor || !container?.isConnected
+			|| !/^r(?:0|[1-9][0-9]*)$/.test(region)) return;
+		const index = Number(region.slice(1));
+		if (!Number.isSafeInteger(index) || !lastProject?.root?.children?.[index]) return;
+		const path = [index];
+		editor.select([{kind: 'node', path}], {kind: 'node', path});
+	};
+
 	return Object.freeze({
-		contractVersion:1,
-		mount({editor:session,signal}){
-			if(destroyed||signal?.aborted||typeof session?.project!=='function')throw new TypeError('RENDER_STALE');
-			editor=session;container=el('div','cb-reports-platform');root.append(container);
+		contractVersion: 1,
+		mount({editor: session, signal}) {
+			if (destroyed || signal?.aborted || typeof session?.project !== 'function'
+				|| typeof session?.persistedFields !== 'function') throw new TypeError('RENDER_STALE');
+			editor = session;
+			activeSignal = signal;
+			container = el('div', 'cb-reports-platform');
+			container.dataset.cbReportsPreview = '1';
+			const note = el('p', 'cb-reports-platform__preview-note', 'Loading report preview…');
+			note.dataset.cbReportsPreviewNote = '1';
+			frame = el('iframe', 'cb-reports-platform__preview-frame');
+			frame.setAttribute('title', 'Maintenance report preview');
+			container.append(note, frame);
+			root.append(container);
+			preview = createFlowPreviewHost(frame, {onActivate});
 		},
-		update({project,selection,signal}){
-			if(destroyed||signal?.aborted||!container)throw new TypeError('RENDER_STALE');
-			show(project);this.syncSelection({selection});
-		},
-		syncSelection({selection}){
-			const key=selection?.primary?.kind==='node'?JSON.stringify(selection.primary.path):null;
-			for(const node of container?.querySelectorAll('[data-cb-design-node-path]')||[]){
-				const selected=node.dataset.cbDesignNodePath===key;
-				node.classList.toggle('is-selected',selected);
-				node.setAttribute('aria-selected',selected?'true':'false');
+		async update({project, selection, signal}) {
+			if (destroyed || signal?.aborted || activeSignal?.aborted || !container || !preview) {
+				throw new TypeError('RENDER_STALE');
+			}
+			validateProject(project);
+			lastProject = project;
+			const fields = editor.persistedFields();
+			const documentKey = JSON.stringify({project, fields});
+			preview.setSelection(selectedRegion(selection));
+			if (documentKey === lastDocumentKey) return;
+
+			request?.abort();
+			request = new AbortController();
+			const localRequest = request;
+			const serial = ++requestedSerial;
+			const abort = () => localRequest.abort();
+			signal?.addEventListener('abort', abort, {once: true});
+			container.classList.add('is-fetching');
+			container.classList.remove('is-preview-error');
+			const note = container.querySelector('[data-cb-reports-preview-note]');
+			note.hidden = false;
+			note.textContent = 'Updating report preview…';
+			try {
+				const {endpoint, nonce} = resolveEndpoint();
+				const response = await doc.defaultView.fetch(endpoint, {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': nonce,
+					},
+					body: documentKey,
+					cache: 'no-store',
+					signal: localRequest.signal,
+				});
+				if (!response.ok) throw new Error('REPORTS_PREVIEW_UNAVAILABLE');
+				const data = await response.json();
+				if (!data || data.status !== 'ready'
+					|| !['sample', 'archived'].includes(data.source)
+					|| typeof data.html !== 'string') throw new Error('REPORTS_PREVIEW_UNAVAILABLE');
+				if (destroyed || activeSignal?.aborted || serial !== requestedSerial) return;
+				showCompiled(data.html, data.source);
+				lastDocumentKey = documentKey;
+			} catch (error) {
+				if (!destroyed && !activeSignal?.aborted && serial === requestedSerial) showError();
+			} finally {
+				signal?.removeEventListener('abort', abort);
+				if (request === localRequest) request = null;
 			}
 		},
-		captureFocus(){
-			const target=doc.activeElement;
-			return root.contains(target)?target.dataset.cbDesignNodePath||null:null;
+		syncSelection({selection}) {
+			if (!destroyed) preview?.setSelection(selectedRegion(selection));
 		},
-		restoreFocus(token){
-			if(typeof token!=='string'||!container)return;
-			for(const node of container.querySelectorAll('[data-cb-design-node-path]')){
-				if(node.dataset.cbDesignNodePath===token){node.focus({preventScroll:true});break;}
-			}
+		captureFocus() { return null; },
+		restoreFocus() {},
+		destroy() {
+			destroyed = true;
+			++requestedSerial;
+			request?.abort();
+			request = null;
+			stopObserver();
+			preview?.destroy();
+			preview = null;
+			editor = null;
+			container?.remove();
+			container = null;
+			frame = null;
+			lastProject = null;
 		},
-		destroy(){destroyed=true;editor=null;container?.remove();container=null;},
 	});
 }
