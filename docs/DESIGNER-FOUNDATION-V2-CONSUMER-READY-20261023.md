@@ -1,0 +1,71 @@
+# Base Designer Foundation v2 — Consumer Ready candidate
+
+**Date:** 2026-10-23  
+**Owner:** WP Suite Overseer / Base  
+**Repository:** `Core-Blueprint/wp-core-blueprint`  
+**Integration branch:** `feature/designer-p0-save-toast-reconciliation-20261023`  
+**Authority:** source candidate for owner-approved DF-01 through DF-05, not a main merge or public release. Resolve the exact candidate with `git rev-parse HEAD` when building; do not reuse an older ZIP or checksum.
+
+## Product freeze and scope
+
+**Goal:** Base supplies one shared, stable Designer Foundation that Evaluator and Automations can consume through the public Base API after the accepted Base build is merged to `main`. This is not a new Designer framework or an external native Host-profile registration feature.
+
+Included:
+- `@cb-core/design-editor` public `createDomainSession()`, History, `captureSave()`, `rebase()`, shared Designer Shell, Layers, Inspector, Navigation, DnD and Toast.
+- Existing Base native Mail and Reports profiles continue to edit with one authoritative Save stack; WordPress Admin stays canonical.
+- **DF-01:** `createDesignerLayerTree()` accepts semantic remove confirmation on an `actions.remove` config, including a synchronous descriptor factory. Base owns the accessible dialog and final user confirmation. Consumers supply truthful domain semantics and registered authorization/mutation callbacks. Default parent confirmation no longer falsely says all descendants will be removed; malformed descriptors fail closed.
+- **DF-02:** public v2 capability and export pairing documented and covered by `tests/js/design-consumer-ready-api.test.mjs`; no private class imports or extra consumer-owned framework.
+- **DF-03:** native Mail Unicode first-create Save and Reports Save have owner-reported functional field PASS from the preceding incident. Full **Save → close → Reopen** for the *exact final candidate* remains a required field gate, not a claim made by SOURCE changes.
+- **DF-04:** retired `subject + project` CAS fixture reconciled to native `project + fields`; separate, labelled test-only admission seam does not enter shipped product. The storage test now exercises Unicode SQL-safe serialization and keeps revision CAS/ABA/conflict/failed readback checks. Existing standalone Unicode/receipt/Mail tests are part of the standard `tools/check` gate, and all `tests/js/*.test.mjs` are discovered automatically.
+- **DF-05:** verify exact artifact, close product tests and produce a single owner-reviewable source/ZIP candidate before considering a fast-forward to `main`.
+
+**Not included, and not a blocker for public Foundation consumers:**
+- New external native Host profile admission / new package artifact trust machinery from the parallel `feature/designer-consumer-admission-v1-20261023` experiment.
+- Reports editor polish, additional report elements, publication rendering redesign, or DND-03 gestures.
+- A new test harness, legacy document migration, second History engine, second Save authority, WordPress.org publication or CI/CD rollout.
+
+## Public consumer boundary
+
+Consumer code imports only public Base `@cb-core/design-editor`, modal/toast and the intended WordPress Admin contracts. It must pin a compatible Base artifact and verify `Assets::DOMAIN_SESSION_API >= 2` as well as actually resolved ESM exports. Base owns the shared interaction framework, not the consumer's domain authorization, normalizer, revision/Head CAS, persistence and verified receipt.
+
+**Semantic Layers deletion:** if removing a container moves child entities (Evaluator Section to Unassigned Questions), the consumer supplies `actions.remove.confirmation = {title,message,confirmLabel}` or the synchronous descriptor factory; the confirmation text must describe that action accurately. A descriptor is not permission to delete. Existing Base callback, nested dialog, keyboard controls and Undo/Redo contract remain unchanged.
+
+**Save:** consumers `captureSave()` before their own authorized backend Save; only a verified same-document, same-revision authoritative receipt permits `rebase()` and one success feedback. False receipts, server uncertainty, failed persistence or concurrent Save must never masquerade as success. Base's Mail/Reports native Save is not automatically a consumer-domain persistence writer.
+
+## Verification matrix
+
+| Gate | Evidence required | Current classification |
+|---|---|---|
+| Exact branch and changes | `git status --short` clean, `git rev-parse HEAD`, diff versus main | GitHub SOURCE diff review; exact local evidence OPEN |
+| SOURCE syntax and regressions | `./tools/check` exit 0, including all standalone CAS/Unicode/Mail and Node tests | OPEN for new HEAD |
+| DEV ZIP and checksum | `./tools/build-dev`, generated SHA-256 and `.sha256` check on exact HEAD | OPEN |
+| Mail | Open existing WordPress notification template, edit accented/non-ASCII text and Section, Save, close, Reopen, confirm persistent content; Undo/Redo | Earlier Save functional PASS, final-HEAD Save/Reopen OPEN |
+| Reports | Edit document with ordinary and nested elements, Save, close, Reopen; confirm controls, Layers and presentation remain intact | Earlier Save functional PASS, final-HEAD Save/Reopen OPEN |
+| Shared Layers | Context menu/keyboard, correct nested-delete dialog, Cancel, Confirm, Undo/Redo, no duplicate Base Toast | SOURCE behavior implemented; installed proof OPEN |
+| External API | `@cb-core/design-editor` v2 plus PHP capability from **same installed Base ZIP**; consumer-specific pairing later | SOURCE contract; installed pair OPEN |
+| Release/merge | Owner review and separate explicit `main` GO; any release actions separately authorized | HOLD |
+
+## Minimal operator check
+
+From `~/Downloads/wp-core-blueprint`:
+
+```bash
+git fetch origin
+git switch feature/designer-p0-save-toast-reconciliation-20261023
+git pull --ff-only origin feature/designer-p0-save-toast-reconciliation-20261023
+git status --short
+git rev-parse HEAD
+./tools/check
+./tools/build-dev
+ZIP="dist/dev/core-blueprint-1.0.0-dev-$(git rev-parse --short=12 HEAD).zip"
+sha256sum "$ZIP"
+(cd dist/dev && sha256sum -c "$(basename "$ZIP").sha256")
+```
+
+Install only the freshly checked DEV ZIP on the operator's WordPress sandbox. Reopen Mail and Reports after Save, verify visual/History/Toast behavior, and record the exact HEAD and checksum with the field result. If `tools/check` fails, fix the *actual* regression in scope and rerun; do not claim the batch Golden. If an installed failure arises, stop at the exact failed feature and preserve the working existing document. Avoid more broad architecture work.
+
+## Completion / governance
+
+Only after exact-head Level 1 and operator field acceptance can Overseer propose `SOURCE/PRODUCT CONSUMER READY` and request explicit GO for a controlled non-force `main` merge. Verify branch lease and merge-base again at that time; no silent merge, release, deployment, CI/CD or irreversible database modification.
+
+The Evaluator modern Store branch and Automations Designer adoption branch are already SOURCE candidates, but their final cross-repository pairing starts only after an accepted Base `main` target is available per the owner's sequencing request. Their independent Save security, installed field smoke and Golden remain their domain responsibility.
