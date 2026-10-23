@@ -5,15 +5,25 @@
  */
 .cb-core-reports__designer-preview-surface,
 .cb-reports-platform {
+	/* Report paper, ink and accents never inherit the active Admin theme. */
 	--cb-report-accent: #0064c8;
+	--cb-report-paper: #fff;
+	--cb-report-ink: #1f2937;
+	--cb-report-subtle: #475569;
+	--cb-report-muted: #64748b;
 	min-width: 0;
 }
 .cb-reports-platform__document {
 	max-width: 860px;
 	margin: 0 auto;
 	padding: clamp(20px, 4vw, 48px);
-	background: #fff;
-	color: #1f2937;
+	/* Shield against generic Admin typography that consumes --cb-text*. */
+	--cb-text: var(--cb-report-ink);
+	--cb-text-strong: var(--cb-report-ink);
+	--cb-text-muted: var(--cb-report-muted);
+	color-scheme: light;
+	background: var(--cb-report-paper);
+	color: var(--cb-report-ink);
 	box-shadow: 0 2px 18px rgb(0 0 0 / 9%);
 	border: 1px solid #dde3eb;
 	border-radius: 8px;
@@ -37,7 +47,7 @@
 	padding: 16px;
 	border: 1px solid #e3e8ef;
 	border-radius: 6px;
-	background: #fff;
+	background: var(--cb-report-paper);
 	outline-offset: 2px;
 }
 .cb-reports-platform__node:hover {
@@ -55,7 +65,7 @@
 	content: 'Hidden in PDF';
 	display: inline-block;
 	margin-top: 8px;
-	color: #475569;
+	color: var(--cb-report-subtle);
 	font-size: 12px;
 }
 .cb-reports-platform__eyebrow {
@@ -68,7 +78,7 @@
 }
 .cb-reports-platform__dynamic {
 	display: block;
-	color: #64748b;
+	color: var(--cb-report-muted);
 	margin-top: 6px;
 	font-size: 13px;
 }
@@ -92,7 +102,7 @@
 	gap: 12px;
 }
 .cb-reports-platform__metric-label {
-	color: #475569;
+	color: var(--cb-report-subtle);
 }
 .cb-reports-platform__metric-value {
 	font-weight: 700;
@@ -107,28 +117,14 @@
 	overflow: auto;
 }
 
-.cb-reports-platform__node-actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	margin-top: 12px;
-}
-.cb-reports-platform__action {
-	border: 1px solid #cbd5e1;
-	border-radius: 4px;
-	padding: 4px 8px;
-	background: #f8fafc;
-	color: #334155;
-	font: inherit;
-	font-size: 12px;
-	cursor: pointer;
-}
-.cb-reports-platform__action:hover:not(:disabled),
-.cb-reports-platform__action:focus-visible {
-	border-color: var(--cb-report-accent);
-	color: var(--cb-report-accent);
-}
-.cb-reports-platform__action:disabled {
-	opacity: .35;
-	cursor: not-allowed;
+/* Explicit report colours also win over contextual Admin heading selectors. */
+.cb-reports-platform .cb-reports-platform__document :is(
+	.cb-reports-platform__branding,
+	.cb-reports-platform__title,
+	.cb-reports-platform__section-title,
+	.cb-reports-platform__heading,
+	.cb-reports-platform__paragraph,
+	.cb-reports-platform__metric
+) {
+	color: var(--cb-report-ink);
 }
