@@ -105,6 +105,36 @@ test('native Save transport does not turn server unknown into success or refusal
 	assert.match(transport,/SAVE_LEDGER_READ_UNVERIFIED/);
 });
 
+test('rolled-back Mail refusals reveal only a bounded phase without optimistic success', async () => {
+	const read = instantiateRequest(async () => ({
+		ok: true, status: 200, json: async () => ({
+			status: 'refused', reason: 'SAVE_DOCUMENT_VALIDATION_REFUSED',
+		}),
+	}));
+	const response = await read('save','POST',{operationId:'test'});
+	assert.deepEqual(response, {
+		status: 'refused', reason: 'SAVE_DOCUMENT_VALIDATION_REFUSED',
+	});
+	const seen = [];
+	const toast = {success: () => seen.push('success'), warning: () => seen.push('warning'),
+		error: () => seen.push('error')};
+	const warnings = [];
+	const display = new Function('baseToast','config','console',
+		extract('const notifyDesignerSave = ', '\nconst config=') + '\nreturn notifyDesignerSave;'
+	)(toast, {saveNotices:{}}, {warn: (...args) => warnings.push(args)});
+	display({phase:'save', outcome:response.status, reason:response.reason});
+	assert.deepEqual(seen,['error']);
+	assert.deepEqual(warnings, [[
+		'[Core Blueprint Designer] Save refused at:', 'SAVE_DOCUMENT_VALIDATION_REFUSED',
+	]]);
+	assert.ok(!JSON.stringify(warnings).includes('operationId'));
+	const authority = await readFile(
+		new URL('../../assets/js/design/platform/save-coordinator.js', import.meta.url), 'utf8');
+	assert.match(authority,/safeRefusedReason\(response\)/);
+	assert.match(editor,/SAVE_DOCUMENT_VALIDATION_REFUSED/);
+	assert.match(transport,/SAVE_DOCUMENT_VALIDATION_REFUSED/);
+});
+
 test('native Host requires toast module and preserves legacy no-double-toast behaviour', () => {
 	assert.match(transport,/import \{ toast as baseToast \} from '@cb-core\/toast'/);
 	assert.match(transport,/notifySave:notifyDesignerSave/);
