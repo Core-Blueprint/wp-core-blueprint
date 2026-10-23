@@ -67,7 +67,8 @@ final class MaintenanceFlowCompiler {
 				$blocks[] = $block;
 			}
 			if ( [] !== $indexes ) {
-				$regions[ wp_json_encode( [ $index ] ) ] = $indexes;
+				// Flow preview semantic IDs are bounded tokens, not JSON paths.
+				$regions[ 'r' . (string) $index ] = $indexes;
 			}
 		}
 		return [
