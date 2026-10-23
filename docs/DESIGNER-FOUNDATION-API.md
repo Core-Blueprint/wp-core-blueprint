@@ -18,6 +18,8 @@ import {
 	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerDragDropController,
+	resolveDesignerDropPlacement,
+	designerDropZoneId,
 	commands,
 	profiles,
 	animateLayoutChange,
@@ -211,6 +213,41 @@ provides their DOM/isolated-preview adapters, dropzone geometry and visual
 polish. DND-03 adds touch/pointer-specific gestures, auto-scroll and complex
 moving/nesting flows. Do not mark installed functional acceptance until those
 consumer runtime paths pass. Existing Layers drag/reorder remains unchanged.
+
+### DND-02 — native canvas placement (SOURCE candidate)
+
+Base's shared native Host now uses the same DND-01 controller to connect the
+Elements palette to Mail and Reports. The profile's existing `*.insert` command
+remains authoritative, with no second Save, History or document mutation engine.
+
+- **Mail:** registered HTML canvas nodes become semantic dropzones. The
+  consumer's typed `allowedParents` schema restricts insertion. Zones can
+  represent a Section, Column, or an existing child; valid before/inside/after
+  positions resolve into the existing Mail insert command.
+- **Reports:** the existing isolated `srcdoc` Flow preview remains
+  `sandbox="allow-scripts"` and governed by its strict CSP. It reports only
+  bounded semantic region IDs with approximate geometry via the established,
+  generation-verified preview bridge. The parent creates ordinary DOM overlay
+  zones; the iframe never receives a command, project or Save credential.
+  Header/Footer and singleton policies remain domain owned. Empty/unmapped
+  canvas regions fall back to an end-of-content insertion before the Footer.
+- **External consumers:** `resolveDesignerDropPlacement(options)` and
+  `designerDropZoneId(path)` are now public ESM named exports. The global
+  facade exposes `shell.dragDrop.resolvePlacement` and `shell.dragDrop.zoneId`.
+  A consumer can use these optional helpers or provide its own constrained
+  resolver to the public DND controller.
+- **Lifecycle:** renderer updates unregister replaced HTML nodes. An isolated
+  renderer notifies the Host of new proxy zones after a verified preview
+  generation. Drag gestures cannot mutate old Host contexts, and disabled
+  palette elements cannot become drag sources.
+
+**Limits:** This SOURCE candidate covers palette-to-canvas insertion using
+native HTML drag and keyboard modes. Touch/pointer polyfill, repositioning of
+existing nodes across parents, auto-scroll and arbitrary nested report-preview
+selection remain DND-03 follow-ups. This is not yet a WordPress browser PASS:
+the installed dev ZIP, native Mail/Reports acceptance, Save/Reopen and
+independent consumer verification remain required. The 17 existing legacy
+public editor/Layer test failures must not be relabeled as DND-02 successes.
 
 ### Shared Layers interactions (Mail, Reports and future profiles)
 
