@@ -156,7 +156,7 @@ check_design_document( ! Repository::valid_revision( '09' ) && ! Repository::val
 check_design_document( ! Repository::valid_revision( '9223372036854775808' ), 'overflow rejected' );
 check_design_document( 'invalid' === Repository::create( Repository::MAIL, 'a.b', '1', $mail )['status'], 'create must require revision zero' );
 check_design_document( 'saved' === Repository::create( Repository::MAIL, 'a.b', '0', $mail )['status'], 'first create succeeds' );
-$first_json = $wpdb->rows['wp_cb_design_documents'][hash( 'sha256', Repository::MAIL . "\\0" . 'a.b' )]['document_json'] ?? '';
+$first_json = $wpdb->rows['wp_cb_design_documents'][hash( 'sha256', Repository::MAIL . "\0" . 'a.b' )]['document_json'] ?? '';
 check_design_document( ! preg_match( '/[^\\x00-\\x7F]/', $first_json ), 'Unicode is ASCII-safe in SQL-bound JSON' );
 check_design_document( json_decode( $first_json, true, 128, JSON_THROW_ON_ERROR ) === $mail, 'decoded Unicode persists losslessly' );
 check_design_document( 'conflict' === Repository::create( Repository::MAIL, 'a.b', '0', $mail )['status'], 'duplicate key conflict' );
