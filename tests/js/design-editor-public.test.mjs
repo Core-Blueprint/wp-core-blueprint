@@ -343,6 +343,12 @@ test('public historyStatus exposes frozen undo/redo capability without CommandHi
 const nodePathSelection = (snapshot) => {
 	assert.ok(Array.isArray(snapshot.refs), 'typed selection refs remain public');
 	assert.ok(Number.isSafeInteger(snapshot.contextEpoch), 'typed context epoch remains public');
+	assert.deepEqual(snapshot.refs.map((ref) => {
+		assert.equal(ref.kind, 'node', 'this fixture uses node-only selection');
+		return ref.path;
+	}), snapshot.paths, 'typed refs and node-path projection stay equivalent');
+	assert.deepEqual(snapshot.primaryRef?.path ?? null, snapshot.primary,
+		'typed primary identity and legacy projection stay equivalent');
 	return { paths: snapshot.paths, primary: snapshot.primary };
 };
 
