@@ -145,7 +145,7 @@ The public named ESM export is `createDesignerDragDropController` from
 `window.cbCore.designEditor.shell.dragDrop.createController`.
 
 **Ownership:** Base owns the gesture, registered DOM source/zone lifecycle,
-drop indicator attributes, pointer/keyboard operation and stale-context guard.
+drop indicator attributes, native HTML drag events, keyboard operation and stale-context guard.
 The consumer owns semantic drop resolution, legal parent/child restrictions,
 permission checks and a single synchronous command dispatch via the existing
 Domain Session or native Host EditorFacade. The controller never mutates the
