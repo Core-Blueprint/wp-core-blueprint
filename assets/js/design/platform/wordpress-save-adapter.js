@@ -1,4 +1,4 @@
-import { attachTrustedDesignerHost } from '@cb-core/design-editor';
+import { attachTrustedDesignerHost, decorateDesignerControl } from '@cb-core/design-editor';
 import * as mailProfile from '@cb-core/mail-platform';
 import * as reportsProfile from '@cb-core/reports-platform';
 
@@ -186,6 +186,9 @@ async function activate() {
 		const contextControl=selected||screen.querySelector('[data-cb-platform-header-context]');
 		if(!contextSlot||!closeSlot||!close||!contextControl)throw issue('HOST_CAPABILITY_UNAVAILABLE');
 		contextSlot.append(contextControl);
+		// Keep the same server-provided close URL and beforeunload guard;
+		// replace only its visible text with the shared Base close glyph.
+		decorateDesignerControl(close, 'x', {iconOnly: true, label: 'Close Designer'});
 		closeSlot.append(close);
 		if(loadingStatus)loadingStatus.hidden=true;
 		screen.dataset.cbPlatformMounted='true';
