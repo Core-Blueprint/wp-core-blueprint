@@ -24,7 +24,7 @@ final class TransactionalSave {
 	 */
 	public function save( SaveEnvelope $intent, BaseDocumentTransactionPort $port ): array {
 		if ( ! $this->preflight( $intent, $port ) ) {
-			return [ 'status' => 'refused' ];
+			return [ 'status' => 'refused', 'reason' => 'SAVE_PREFLIGHT_REFUSED' ];
 		}
 		global $wpdb;
 		// Fail closed: never start a nested or caller-owned transaction.
@@ -56,7 +56,7 @@ final class TransactionalSave {
 
 			$locked = $port->load_locked( $intent );
 			if ( ! in_array( $locked['status'] ?? null, [ 'found', 'missing' ], true ) ) {
-				return $this->finish_refusal();
+				return $this->finish_refusal( 'refused', 'SAVE_DOCUMENT_LOAD_REFUSED' );
 			}
 			if ( 'missing' === $locked['status'] ) {
 				// Only the authorized first creation at revision zero may insert.
@@ -73,20 +73,23 @@ final class TransactionalSave {
 			}
 			// No client scope or preflight authorization is sufficient by itself.
 			if ( ! $port->authorize( $intent ) ) {
-				return $this->finish_refusal();
+				return $this->finish_refusal( 'refused', 'SAVE_DOCUMENT_AUTHORIZATION_REFUSED' );
 			}
 			$written = $port->write_locked( $intent, $locked );
 			if ( ( $written['status'] ?? null ) !== 'accepted'
 				|| ! is_string( $written['revision'] ?? null )
 				|| ! ( $written['project'] ?? null ) instanceof \stdClass
 				|| ! ( $written['fields'] ?? null ) instanceof \stdClass ) {
-				return $this->finish_refusal( ( $written['status'] ?? null ) === 'conflict' ? 'conflict' : 'refused' );
+				return $this->finish_refusal(
+					( $written['status'] ?? null ) === 'conflict' ? 'conflict' : 'refused',
+					is_string( $written['reason'] ?? null ) ? $written['reason'] : 'SAVE_DOCUMENT_WRITE_REFUSED'
+				);
 			}
 			$next = $written['revision'];
 			$expected_next = (string) ( (int) $intent->expected_revision + 1 );
 			if ( ! SaveEnvelope::decimal( $next ) || $next !== $expected_next
 				|| ! $port->verify_locked( $intent, $next, $written['project'], $written['fields'] ) ) {
-				return $this->finish_refusal();
+				return $this->finish_refusal( 'refused', 'SAVE_DOCUMENT_VERIFY_REFUSED' );
 			}
 
 			// All normalization is inside the port's authoritative domain write.
@@ -116,7 +119,7 @@ final class TransactionalSave {
 				'acceptedDigest' => $intent->digest( $accepted_project, $accepted_fields ),
 			] );
 			if ( ! $this->ledger->mark_committed( $intent, $next, $receipt_json ) ) {
-				return $this->finish_refusal();
+				return $this->finish_refusal( 'refused', 'SAVE_OPERATION_RECEIPT_REFUSED' );
 			}
 			$commit_attempted = true;
 			$wpdb->last_error = '';
@@ -164,8 +167,13 @@ final class TransactionalSave {
 	}
 
 	/** Return a conclusive refusal only when ROLLBACK was acknowledged. */
-	private function finish_refusal( string $status = 'refused' ): array {
-		return $this->rollback() ? [ 'status' => $status ] : [ 'status' => 'unknown', 'reason' => 'SAVE_TX_ROLLBACK_UNVERIFIED' ];
+	private function finish_refusal( string $status = 'refused', string $reason = 'SAVE_DOCUMENT_WRITE_REFUSED' ): array {
+		if ( ! $this->rollback() ) {
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_TX_ROLLBACK_UNVERIFIED' ];
+		}
+		return 'refused' === $status
+			? [ 'status' => 'refused', 'reason' => $reason ]
+			: [ 'status' => $status ];
 	}
 
 	private function rollback(): bool {
