@@ -17,6 +17,7 @@ import {
 	createDesignerShell,
 	createDesignerLayerTree,
 	createDesignerSelectionController,
+	createDesignerDragDropController,
 	commands,
 	profiles,
 	animateLayoutChange,
@@ -136,6 +137,80 @@ The stable shell helpers are:
 The global facade exposes the same capabilities under `window.cbCore.designEditor.shell`.
 
 Navigation is available as `window.cbCore.designEditor.shell.navigation.create` and the frozen extension as `shell.paletteRoles`. Navigation remains distinct from Layers and is not an editor profile.
+
+### Shared Drag & Drop Foundation DND-01 (SOURCE candidate)
+
+The public named ESM export is `createDesignerDragDropController` from
+`@cb-core/design-editor`. The equivalent facade is
+`window.cbCore.designEditor.shell.dragDrop.createController`.
+
+**Ownership:** Base owns the gesture, registered DOM source/zone lifecycle,
+drop indicator attributes, pointer/keyboard operation and stale-context guard.
+The consumer owns semantic drop resolution, legal parent/child restrictions,
+permission checks and a single synchronous command dispatch via the existing
+Domain Session or native Host EditorFacade. The controller never mutates the
+project, History, Save Authority, or a consumer's domain state directly.
+
+```js
+const dnd = createDesignerDragDropController({
+  root: designerShellRoot,
+  isReady: () => editorIsReady(),
+  // Stable actor/site/resource/profile/Host-context identity. Change this when
+  // switching the active document, user, or authorized Host context.
+  getContextKey: () => activeContextKey(),
+  resolveIntent: ({source, zoneId, edge}) =>
+    domainCanvas.resolveDrop({source, zoneId, edge}),
+  canDrop: ({source, intent}) =>
+    domainCanvas.isAllowedDrop({source, intent}),
+  commit: ({source, intent}) =>
+    domainCommands.executeDrop({source, intent}),
+});
+const releaseSource = dnd.registerSource(paletteButton, {
+  id: 'vendor/heading', type: 'vendor.heading', kind: 'palette',
+});
+const releaseZone = dnd.registerZone(canvasRegion, {id: 'section/1'});
+// On renderer update: release old zones, register the new DOM/proxy zones.
+// On Host context exit: releaseSource(); releaseZone(); dnd.destroy();
+```
+
+The five extension capabilities are expressible through the one Base-owned
+controller, without importing private Base modules:
+
+1. **Drag-source registration:** `registerSource(element,{id,type,kind,path?})`.
+   `kind` is `palette` (new element) or `node` (existing project path).
+2. **Dropzone provider:** `registerZone(element,{id})` on an actual DOM zone or
+   an adapter-owned positioned proxy.
+3. **Domain drop policy:** synchronous `resolveIntent({source,zoneId,edge})`
+   and `canDrop({source,intent})`. Null/false, an error or asynchronous result
+   refuses the gesture. Both callbacks are advisory, not a Save authorization.
+4. **Canvas adapter:** maps rendered nodes to zone IDs and adapts the
+   `before|inside|after` edge. A secured iframe must publish only bounded,
+   authenticated placement geometry to its adapter; it must not execute
+   project mutations or receive unrestricted document commands.
+5. **Command adapter:** `commit({source,intent})` synchronously dispatches
+   exactly one existing, domain-authorized registered command. It must throw
+   on refusal; the controller never writes directly or creates a History stack.
+
+**Safety and lifecycle:** Pointer drags are accepted only after starting from
+a registered source in the same Designer root. Text in `DataTransfer` is not
+an identity or authorization token. On drop, the controller re-evaluates the
+active context, source, target and consumer policy. A changed Host context
+invalidates the gesture. Every successful gesture commits at most once.
+Unregister/destroy clears handlers and drop-indicator attributes.
+`getContextKey()` must return a bounded, nonempty ID using letters, digits,
+`._:/-`; it must change after switching the authorized actor/site/resource or
+Host context, not merely after hovering/selection.
+
+**Keyboard:** Alt+ArrowDown picks up a focused registered source, Tab moves to
+focusable zones, ArrowUp/ArrowDown chooses before/after, Enter or Space commits,
+and Escape cancels. Ordinary palette Enter activation is preserved.
+
+**Status:** DND-01 makes the core API available to public consumers; it does
+not yet wire native Mail/Reports palette buttons to their canvases. DND-02
+provides their DOM/isolated-preview adapters, dropzone geometry and visual
+polish. DND-03 adds touch/pointer-specific gestures, auto-scroll and complex
+moving/nesting flows. Do not mark installed functional acceptance until those
+consumer runtime paths pass. Existing Layers drag/reorder remains unchanged.
 
 ### Shared Layers interactions (Mail, Reports and future profiles)
 
