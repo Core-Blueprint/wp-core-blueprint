@@ -200,7 +200,7 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 			'SAVE_DOCUMENT_NORMALIZATION_REFUSED', 'SAVE_DOCUMENT_WRITE_REFUSED',
 			'SAVE_DOCUMENT_VERIFY_REFUSED', 'SAVE_OPERATION_RECEIPT_REFUSED',
 		]);
-		return allowed.has(response?.reason) || /^SAVE_STORAGE_(CREATE|UPDATE)_(INVALID|SCHEMA_UNAVAILABLE|QUERY_FAILED|READBACK_UNVERIFIED|READ_UNAVAILABLE|UNCLASSIFIED)$/.test(response?.reason ?? '') ? response.reason : 'SAVE_REFUSED_UNCLASSIFIED';
+		return allowed.has(response?.reason) || /^SAVE_STORAGE_(CREATE|UPDATE)_(INVALID|SCHEMA_UNAVAILABLE|QUERY_FAILED|READBACK_UNVERIFIED|READ_UNAVAILABLE|UNCLASSIFIED|DB_[1-9][0-9]{0,4})$/.test(response?.reason ?? '') ? response.reason : 'SAVE_REFUSED_UNCLASSIFIED';
 	};
 
 	const performSave = async () => {
