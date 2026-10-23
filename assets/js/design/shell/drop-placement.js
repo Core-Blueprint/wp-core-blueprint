@@ -43,10 +43,15 @@ export const resolveDesignerDropPlacement = ({
 	if (!target || !Array.isArray(target.children)) return null;
 	const allowed = allowedParentsByType.get(source.type);
 	if (!allowed || !(allowed instanceof Set)) return null;
-	// Dropping in the middle of a leaf means insert immediately AFTER that
-	// leaf, never append at some unrelated parent/root. Containers still
-	// accept true nesting when the domain allows it.
+	// A center drop on a container is a request to insert INSIDE it.
+	// Do not silently reinterpret a forbidden nested Section as a sibling
+	// on the root. A center drop on a leaf may resolve next to that leaf.
 	const insideTarget = edge === 'inside' && allowed.has(target.type);
+	if (edge === 'inside' && targetPath.length !== 0 && !insideTarget) {
+		const targetCanContainElements = [...allowedParentsByType.values()]
+			.some(parents => parents instanceof Set && parents.has(target.type));
+		if (targetCanContainElements) return null;
+	}
 	const parentPath = targetPath.length === 0 || insideTarget
 		? targetPath : targetPath.slice(0, -1);
 	const parent = at(project.root, parentPath);
