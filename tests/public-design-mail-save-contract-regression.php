@@ -6,6 +6,14 @@ declare(strict_types=1);
  * pass the same PHP-only native document admission used by Repository::write.
  * No WordPress runtime, database writes, fixture migration or public release.
  */
+
+use CoreBlueprint\Core\Design\Document\Repository;
+use CoreBlueprint\Core\Design\Editor\PlatformTransport;
+use CoreBlueprint\Core\Design\Persistence\SaveEnvelope;
+use CoreBlueprint\Core\Design\Profile\Mail\Contract;
+use CoreBlueprint\Core\Design\Profile\Mail\Validator;
+use CoreBlueprint\Core\Mail\Designer\WordPressTemplates;
+
 defined( 'ABSPATH' ) || define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 if ( ! function_exists( '__' ) ) {
 	function __( string $value, string $domain = '' ): string { return $value; }
@@ -29,13 +37,6 @@ foreach ( [
 ] as $file ) {
 	require_once $root . '/' . $file;
 }
-
-use CoreBlueprint\Core\Design\Document\Repository;
-use CoreBlueprint\Core\Design\Editor\PlatformTransport;
-use CoreBlueprint\Core\Design\Persistence\SaveEnvelope;
-use CoreBlueprint\Core\Design\Profile\Mail\Contract;
-use CoreBlueprint\Core\Design\Profile\Mail\Validator;
-use CoreBlueprint\Core\Mail\Designer\WordPressTemplates;
 
 $check = static function ( bool $valid, string $name ): void {
 	if ( ! $valid ) {
