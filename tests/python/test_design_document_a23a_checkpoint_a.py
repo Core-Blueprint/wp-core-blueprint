@@ -1,6 +1,9 @@
-"""Source-only A2.3a checkpoint A guards. No WP, MariaDB or Docker.
+"""A2.3a document-authority invariants after native Designer adoption.
 
-This does not replace separately authorized DB-backed, editor or PDF tests.
+The retired Mail DocumentAdapter is not part of Base Platform v1.
+These read-only checks verify the preserved cutover authority and the new
+single native Mail/Reports transaction authority, not legacy write paths.
+No WordPress, MariaDB, Docker or source mutation is required.
 """
 
 from pathlib import Path
@@ -9,7 +12,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 DOC = ROOT / "src" / "Design" / "Document"
-MAIL = ROOT / "src" / "Mail" / "Designer" / "DocumentAdapter.php"
+MAIL = ROOT / "src" / "Design" / "Editor" / "PlatformTransport.php"
+PORT = ROOT / "src" / "Design" / "Persistence" / "BaseDocumentRepositoryPort.php"
 REPORTS = ROOT / "src" / "Reports" / "DesignDocumentAdapter.php"
 
 
@@ -18,6 +22,7 @@ class A23aCheckpointASourceContract(unittest.TestCase):
     def setUpClass(cls):
         cls.authority = (DOC / "Authority.php").read_text(encoding="utf-8")
         cls.mail = MAIL.read_text(encoding="utf-8")
+        cls.port = PORT.read_text(encoding="utf-8")
         cls.reports = REPORTS.read_text(encoding="utf-8")
 
     @staticmethod
@@ -75,34 +80,52 @@ class A23aCheckpointASourceContract(unittest.TestCase):
         ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, self.authority)
-        self.assertIn("! Authority::uncustomized_mail_id", self.mail)
+        # The historical migration authority still verifies that a missing
+        # row was never customized. Native Host context is a separate,
+        # read-only default view, not a revived legacy migration writer.
+        self.assertIn("Mail::default_for_resource( $resource )", self.mail)
+        self.assertIn("'revision'", self.mail)
+        self.assertIn("$revision = '0';", self.mail)
+        self.assertIn("self::valid_content( $doc['project'], $doc['fields'], $registry, $profile )", self.mail)
 
-    def test_mail_revision_zero_create_and_versioned_reset(self):
+    def test_native_mail_create_requires_revision_zero_validated_identity(self):
         for requirement in (
-            "'revision' => '0'",
-            "Repository::create( Repository::MAIL",
-            "Repository::save( Repository::MAIL",
-            "Repository::reset( Repository::MAIL",
-            "Repository::valid_revision(",
-            "new Validator()",
+            "Repository::MAIL",
+            "'0' === $item->expected_revision",
+            "self::identity( $item->profile_id, $item->resource_key ) !== null",
+            "self::valid_native_document( $item->resource_type",
+            "new BaseDocumentRepositoryPort(",
+            "new TransactionalSave(",
+            "SaveEnvelope::canonical_json(",
+            "Mail::default_for_resource( $resource )",
         ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, self.mail)
+
+        self.assertIn("Repository::write_in_transaction(", self.port)
+        self.assertNotIn("Repository::save( Repository::MAIL", self.mail)
+        self.assertNotIn("Repository::create( Repository::MAIL", self.mail)
         self.assertNotIn("update_option(", self.mail)
         self.assertNotIn("delete_option(", self.mail)
 
-    def test_reports_one_cas_document_no_default_on_missing(self):
+    def test_native_reports_missing_default_is_read_only_and_legacy_writer_blocked(self):
         for requirement in (
-            "'branding' => $branding",
-            "'composer' => [ 'maintenance' => $composer ]",
-            "Repository::save( Repository::REPORTS",
-            "Repository::reset( Repository::REPORTS",
-            "MaintenanceTemplate::normalize(",
-            "ReportBrandingInput::normalize(",
-            "'status' => 'missing' === ",
+            "'missing' === ( $read['status'] ?? null )",
+            "PlatformAdapter::default_project()",
+            "PlatformAdapter::default_fields()",
+            "NativeComposition::assert_document( $document )",
+            "Repository::get( Repository::REPORTS, self::KEY )",
+            "public static function save(",
+            "public static function reset(",
+            "return [ 'status' => 'blocked' ];",
         ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, self.reports)
+
+        self.assertIn("Repository::REPORTS", self.mail)
+        self.assertIn("new TransactionalSave(", self.mail)
+        self.assertNotIn("Repository::save( Repository::REPORTS", self.reports)
+        self.assertNotIn("Repository::reset( Repository::REPORTS", self.reports)
         self.assertNotIn("Settings::set_key(", self.reports)
         self.assertNotIn("update_option(", self.reports)
 
