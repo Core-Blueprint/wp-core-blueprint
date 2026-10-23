@@ -233,6 +233,91 @@ export const createDesignerLayerRow = ({
 	});
 };
 
+/**
+ * Shared Foundation projection of trusted profile layer capabilities.
+ *
+ * The profile declares *which* commands are meaningful for a node and their
+ * legal bounds. Base owns affordances, lifecycle guards and the one canonical
+ * command dispatch. No DOM, profile names or document mutation lives here.
+ */
+export const projectDesignerLayerInteractions = ({
+	node, parent = null, path, policy, commandIds, execute, isReady,
+} = {}) => {
+	if (!node || typeof node !== 'object' || !Array.isArray(node.children)
+		|| !Array.isArray(path) || path.some((i) => !Number.isSafeInteger(i) || i < 0)
+		|| !policy || typeof policy !== 'object' || Array.isArray(policy)
+		|| typeof policy.remove !== 'boolean'
+		|| typeof execute !== 'function' || typeof isReady !== 'function'
+		|| !commandIds || ['remove', 'reorder', 'set'].some(
+			(name) => typeof commandIds[name] !== 'string' || !commandIds[name]
+		)) throw new TypeError('DESIGNER_LAYER_POLICY_INVALID');
+
+	const actions = {};
+	const parentPath = path.slice(0, -1);
+	const index = path.at(-1);
+	if (policy.remove) {
+		if (!parent || path.length === 0) throw new TypeError('DESIGNER_LAYER_POLICY_INVALID');
+		actions.remove = {
+			onActivate: () => {
+				if (isReady()) execute(commandIds.remove, {path: [...path]});
+			},
+		};
+	}
+
+	let hidden = null;
+	if (policy.visibility !== null && policy.visibility !== undefined) {
+		const visible = policy.visibility;
+		if (!visible || typeof visible !== 'object' || Array.isArray(visible)
+			|| typeof visible.key !== 'string' || !visible.key
+			|| !Object.hasOwn(node.properties || {}, visible.key)
+			|| typeof visible.shownValue !== 'string' || typeof visible.hiddenValue !== 'string'
+			|| visible.shownValue === visible.hiddenValue
+			|| ![visible.shownValue, visible.hiddenValue].includes(node.properties[visible.key])) {
+			throw new TypeError('DESIGNER_LAYER_POLICY_INVALID');
+		}
+		hidden = node.properties[visible.key] === visible.hiddenValue;
+		actions[hidden ? 'show' : 'hide'] = {
+			onActivate: () => {
+				if (isReady()) execute(commandIds.set, {
+					path: [...path], key: visible.key,
+					value: hidden ? visible.shownValue : visible.hiddenValue,
+				});
+			},
+		};
+	}
+
+	let reorder = null;
+	if (policy.reorder !== null && policy.reorder !== undefined) {
+		const range = policy.reorder;
+		if (!parent || !Array.isArray(parent.children) || path.length === 0
+			|| !range || typeof range !== 'object' || Array.isArray(range)
+			|| !Number.isSafeInteger(range.minIndex) || !Number.isSafeInteger(range.maxIndex)
+			|| range.minIndex < 0 || range.maxIndex >= parent.children.length
+			|| index < range.minIndex || index > range.maxIndex) {
+			throw new TypeError('DESIGNER_LAYER_POLICY_INVALID');
+		}
+		if (range.maxIndex > range.minIndex) {
+			reorder = {
+				index, minIndex: range.minIndex, maxIndex: range.maxIndex,
+				onMove: (toIndex) => {
+					if (isReady() && Number.isSafeInteger(toIndex)
+						&& toIndex >= range.minIndex && toIndex <= range.maxIndex
+						&& toIndex !== index) {
+						execute(commandIds.reorder, {
+							parentPath: [...parentPath], fromIndex: index, toIndex,
+						});
+					}
+				},
+			};
+		}
+	}
+	return Object.freeze({
+		actions: Object.freeze(actions),
+		reorder: reorder ? Object.freeze(reorder) : null,
+		hidden,
+	});
+};
+
 const normalizeTreeItems = (items) => {
 	if (!Array.isArray(items)) throw new TypeError('Designer layer tree items must be an array.');
 	return items.filter((item) => item && typeof item === 'object' && !Array.isArray(item));
