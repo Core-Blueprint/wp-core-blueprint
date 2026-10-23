@@ -28,6 +28,52 @@
 	border: 1px solid #dde3eb;
 	line-height: 1.55;
 }
+/* R3-A: the native Reports canvas shows the canonical PHP Flow preview.
+ * The iframe is sandboxed and self-sized by the existing Flow preview host.
+ * These labels are Designer chrome, never part of the PDF document. */
+.cb-reports-platform {
+	display: block;
+	box-sizing: border-box;
+	min-height: 100%;
+	width: 100%;
+	padding: 16px 20px 36px;
+}
+.cb-reports-platform__preview-note {
+	box-sizing: border-box;
+	max-width: 860px;
+	margin: 0 auto 12px;
+	padding: 8px 12px;
+	border: 1px solid var(--cb-border);
+	border-radius: 4px;
+	background: var(--cb-surface-1);
+	color: var(--cb-text);
+	font-size: 12px;
+	line-height: 1.5;
+}
+.cb-reports-platform__preview-frame {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 860px;
+	min-height: 0;
+	margin: 0 auto;
+	padding: 0;
+	border: 1px solid #dde3eb;
+	border-radius: 0;
+	background: #fff;
+	box-shadow: 0 2px 18px rgb(0 0 0 / 9%);
+}
+.cb-reports-platform.is-fetching .cb-reports-platform__preview-frame,
+.cb-reports-platform.is-preview-error .cb-reports-platform__preview-frame {
+	visibility: hidden !important;
+}
+.cb-reports-platform.is-preview-error .cb-reports-platform__preview-note {
+	border-color: var(--cb-danger);
+}
+@media (max-width: 640px) {
+	.cb-reports-platform { padding: 12px 8px 24px; }
+}
+
 .cb-reports-platform__branding {
 	border-left: 4px solid var(--cb-report-accent);
 	padding: 8px 12px;
