@@ -175,6 +175,23 @@ export const layerPolicyFor = (node, parent, index) => {
 	});
 };
 
+/**
+ * Report Elements are insertable only into a valid native parent. Existing
+ * singleton report-data blocks cannot be added twice, even from the palette.
+ * This is presentation guidance; reports.insert remains authoritative.
+ */
+export const canInsert = (project, type, parentPath = []) => {
+	try {
+		validateProject(project);
+		if (!Object.hasOwn(defaults, type) || !validPath(parentPath)) return false;
+		const parent = nodeAt(project.root, parentPath);
+		return !!parent && defs[type].parents.includes(parent.type)
+			&& (!singletons.has(type) || !project.root.children.some(node => node.type === type));
+	} catch (_) {
+		return false;
+	}
+};
+
 export const resolveCommand=id=>Object.hasOwn(table,id)?table[id]:null;
 export const componentsFor=()=>components;
 export const propertiesFor=node=>Object.hasOwn(defs,node?.type)
