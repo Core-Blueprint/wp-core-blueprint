@@ -5,6 +5,7 @@ import { createPlatformHost } from './platform/host.js';
 import { createRegistryView } from './platform/registry.js';
 import { createPersistedFields, canonicalSaveJSON } from './platform/persisted-fields.js';
 import { createSaveCoordinator as createCanonicalSaveCoordinator } from './platform/save-coordinator.js';
+import { createDesignerDragDropController } from './shell/drag-drop.js';
 import {
 	CommandHistory,
 	EditorState,
@@ -1356,6 +1357,7 @@ export const commands = Object.freeze({
 	setProperty: setPropertyCommand,
 });
 export {
+	createDesignerDragDropController,
 	CommandHistory,
 	DESIGNER_ICON_NAMES,
 	DESIGNER_LAYER_ACTIONS,
@@ -1421,6 +1423,9 @@ const publicApi = Object.freeze({
 			createSection: createDesignerInspectorSection,
 			createToggle: createDesignerInspectorToggle,
 			autosizeTextarea: enableDesignerTextareaAutosize,
+		}),
+		dragDrop: Object.freeze({
+			createController: createDesignerDragDropController,
 		}),
 		layers: Object.freeze({
 			actions: DESIGNER_LAYER_ACTIONS,
