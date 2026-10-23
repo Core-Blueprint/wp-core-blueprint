@@ -271,6 +271,26 @@ after a confirmed outer rollback. Do not infer a SQL root cause or change
 transaction semantics before the next bounded runtime category is observed.
 Mail Save remains P0 BLOCKED; Reports and shared DND/Toast remain unchanged.
 
+**Unicode/SQL rootcause correction candidate (23 October 2026):**
+WordPress `wpdb::get_table_charset()` treats the deliberate mix of
+`ascii_bin` hash columns and UTF-8 document/receipt columns as ASCII.
+`wpdb::query()` can then reject non-ASCII prepared SQL before mysqli runs;
+the default Mail templates contain Unicode punctuation. This explains a
+failed first-document Mail INSERT with no driver errno while ASCII-only
+Reports documents could already save.
+
+The repository's SQL-bound document JSON now escapes Unicode rather than
+using `JSON_UNESCAPED_UNICODE`. The shared SaveEnvelope adds
+`storage_json()` for lossless ASCII-safe receipt storage only.
+`canonical_json()`, payload/receipt digests, CAS, authorization,
+transaction isolation and receipt verification remain unchanged.
+Decoded project, fields and receipt values retain all original UTF-8.
+No schema migration, WordPress charset-filter override or relaxed database
+checks. PHP SOURCE regression:
+`tests/public-design-mixed-charset-json-regression.php`.
+Mail Save/Reopen on the installed WordPress sandbox is still required before
+this can be marked as runtime PASS.
+
 **INSERT evidence follow-up:** The live `SAVE_STORAGE_CREATE_QUERY_FAILED`
 response has narrowed Mail to the new-document INSERT. The repository now
 captures only the numeric mysqli errno immediately after an unsuccessful
