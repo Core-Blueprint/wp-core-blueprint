@@ -74,7 +74,8 @@ const normalizeAction = (value) => {
 		disabled: value.disabled === true,
 		label: typeof value.label === 'string' ? value.label.trim() || null : null,
 		onActivate,
-		confirmation: Object.hasOwn(value, 'confirmation') ? value.confirmation : null,
+		confirmation: Object.hasOwn(value, 'confirmation') && value.confirmation !== undefined
+			? value.confirmation : null,
 	});
 };
 
