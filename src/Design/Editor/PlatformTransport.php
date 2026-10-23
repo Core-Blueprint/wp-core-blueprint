@@ -293,7 +293,13 @@ final class PlatformTransport {
 				'SAVE_DOCUMENT_VERIFY_REFUSED', 'SAVE_OPERATION_RECEIPT_REFUSED',
 			];
 			$reason = $result['reason'] ?? '';
-			$body['reason'] = is_string( $reason ) && in_array( $reason, $refused_phases, true )
+			$storage_phase = is_string( $reason )
+				&& 1 === preg_match(
+					'/^SAVE_STORAGE_(?:CREATE|UPDATE)_(?:INVALID|SCHEMA_UNAVAILABLE|QUERY_FAILED|READBACK_UNVERIFIED|READ_UNAVAILABLE|UNCLASSIFIED)$/D',
+					$reason
+				);
+			$body['reason'] = is_string( $reason )
+				&& ( in_array( $reason, $refused_phases, true ) || $storage_phase )
 				? $reason : 'SAVE_REFUSED_UNCLASSIFIED';
 		}
 		return new \WP_REST_Response( $body, 200 );
