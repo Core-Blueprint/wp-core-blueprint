@@ -1,4 +1,4 @@
-import { createDesignerInspectorTextControl } from './inspector.js';
+import { createDesignerInspectorTextControl, createDesignerInspectorToggle } from './inspector.js';
 
 /**
  * One typed Inspector control surface shared by Base Mail and Reports.
@@ -13,6 +13,48 @@ export function createDesignerInspectorValueControl({
 		throw new TypeError('INSPECTOR_SCHEMA_INVALID');
 	}
 	const type = schema.type;
+	// Exact two-state string enums use the canonical checkbox row; the value
+	// transported to the command and Save authority remains 'on' or 'off'.
+	// Do not broaden this to arbitrary enums, where a select is required.
+	const onOff = type === 'string' && Array.isArray(schema.enum)
+		&& schema.enum.length === 2 && schema.enum.includes('on') && schema.enum.includes('off');
+	if (onOff) {
+		if (value !== 'on' && value !== 'off') throw new TypeError('INSPECTOR_SCHEMA_INVALID');
+		const toggle = createDesignerInspectorToggle({
+			label, checked: value === 'on', documentRef, dataset: {cbControlKey: key},
+		});
+		let current = value;
+		let destroyed = false;
+		const changed = () => {
+			if (destroyed || toggle.control.disabled) return;
+			const next = toggle.control.checked ? 'on' : 'off';
+			if (next === current) return;
+			try {
+				onCommit(next);
+				current = next;
+			} catch (error) {
+				// A refused command cannot leave the visual control optimistic.
+				toggle.control.checked = current === 'on';
+				throw error;
+			}
+		};
+		toggle.control.addEventListener('change', changed);
+		return Object.freeze({
+			element: toggle.element, control: toggle.control,
+			update({value: next = current} = {}) {
+				if (destroyed) return false;
+				if (next !== 'on' && next !== 'off') throw new TypeError('INSPECTOR_SCHEMA_INVALID');
+				current = next;
+				toggle.control.checked = next === 'on';
+				return true;
+			},
+			destroy() {
+				if (destroyed) return;
+				destroyed = true;
+				toggle.control.removeEventListener('change', changed);
+			},
+		});
+	}
 	// HTML color picker only for a declared string field whose current value
 	// is a valid hex color and whose control identity describes a color.
 	const colorControl = type === 'string' && !Array.isArray(schema.enum)

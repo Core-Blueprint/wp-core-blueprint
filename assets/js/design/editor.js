@@ -1393,7 +1393,8 @@ export const attachTrustedDesignerHost = ({
 							context: 'Selected element', documentRef: stagedRoot.ownerDocument,
 						});
 						inspectorPanel.append(identity.element);
-						for (const field of profileModule.propertiesFor(node)) {
+						const fields = profileModule.propertiesFor(node);
+						const addControl = (field, target) => {
 							const control = createDesignerInspectorValueControl({
 								key: 'node.' + field.key, label: platformFieldLabel(field.key, field.label),
 								value: field.value, multiline: field.multiline,
@@ -1402,13 +1403,36 @@ export const attachTrustedDesignerHost = ({
 								onCommit: (value) => {
 									if (!signal.aborted && host.state === 'READY') {
 										editor.execute(prefix + '.set', {
-										path: [...primary.path], key: field.key, value,
+											path: [...primary.path], key: field.key, value,
 										});
 									}
 								},
 							});
 							inspectorControls.set(field.key, control);
-							inspectorPanel.append(control.element);
+							target.append(control.element);
+						};
+						if (activeRegistry.profileId === 'base/reports' && fields.length > 1) {
+							// Group the existing typed controls for Reports only.
+							// Registry fields and command paths stay unchanged.
+							const displayFields = fields.filter((field) => {
+								const schema = propertySchemaFor(node, field.key);
+								return schema.type === 'boolean' || (schema.type === 'string'
+									&& Array.isArray(schema.enum) && schema.enum.length === 2
+									&& schema.enum.includes('on') && schema.enum.includes('off'));
+							});
+							const contentFields = fields.filter((field) => !displayFields.includes(field));
+							for (const [title, groupFields] of [
+								['Content', contentFields], ['Display options', displayFields],
+							]) {
+								if (!groupFields.length) continue;
+								const section = createDesignerInspectorSection({
+									title, expanded: true, documentRef: stagedRoot.ownerDocument,
+								});
+								inspectorPanel.append(section.element);
+								for (const field of groupFields) addControl(field, section.body);
+							}
+						} else {
+							for (const field of fields) addControl(field, inspectorPanel);
 						}
 					} else {
 						for (const field of profileModule.propertiesFor(node)) {
