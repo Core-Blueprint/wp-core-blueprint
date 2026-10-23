@@ -1071,6 +1071,37 @@ export const attachTrustedDesignerHost = ({
 				description.textContent = 'Report data is populated when a report is generated.';
 				dynamicSection.append(description);
 			}
+			// Palette state follows the live document and selection. A trusted profile
+			// can further restrict insertability (for example Reports singletons).
+			// The registered command still enforces all domain rules.
+			const insertionTarget = (project, type) => {
+				const primary = editor.selection()?.primary;
+				let parentPath = primary?.kind === 'node' ? [...primary.path] : [];
+				const admissible = allowedParentsByType.get(type);
+				if (!admissible || !admissible.size) throw new Error('REGISTRY_INVALID');
+				let parent = nodeAt(project.root, parentPath);
+				while (parent && !admissible.has(parent.type) && parentPath.length > 0) {
+					parentPath = parentPath.slice(0, -1);
+					parent = nodeAt(project.root, parentPath);
+				}
+				return parent && admissible.has(parent.type) ? {parentPath, parent} : null;
+			};
+			const componentButtons = new Map();
+			const canInsertComponent = (project, component) => {
+				const target = insertionTarget(project, component.type);
+				return !!target && (typeof profileModule.canInsert !== 'function'
+					|| profileModule.canInsert(project, component.type, target.parentPath) === true);
+			};
+			const refreshElements = (project) => {
+				for (const component of components) {
+					const button = componentButtons.get(component.id);
+					if (!button) continue;
+					const available = !signal.aborted && canInsertComponent(project, component);
+					button.disabled = !available;
+					button.title = available ? 'Add ' + component.label
+						: 'This element cannot be added in the current report context.';
+				}
+			};
 			for (const component of components) {
 				const button = stagedRoot.ownerDocument.createElement('button');
 				button.type = 'button';
@@ -1079,8 +1110,6 @@ export const attachTrustedDesignerHost = ({
 				button.dataset.cbDesignComponentId = component.id;
 				button.classList.add('cb-core-design-shell__palette-item--stacked');
 				decorateDesignerElement(button, component.type, {label: platformFieldLabel(component.type, component.label)});
-				// Use explicit flex children rather than a bare text node: icon
-				// always sits above its own centered, wrapping label.
 				const elementIcon = button.querySelector('[data-cb-design-shell-lucide-icon]');
 				const elementLabel = doc.createElement('span');
 				elementLabel.className = 'cb-core-design-shell__palette-item-label';
@@ -1089,24 +1118,28 @@ export const attachTrustedDesignerHost = ({
 				button.addEventListener('click', () => {
 					if (signal.aborted || host.state !== 'READY') return;
 					const project = editor.project();
-					const primary = editor.selection()?.primary;
-					let parentPath = primary?.kind === 'node' ? [...primary.path] : [];
-					const admissible = allowedParentsByType.get(component.type);
-					if (!admissible || !admissible.size) throw new Error('REGISTRY_INVALID');
-					let parent = nodeAt(project.root, parentPath);
-					while (parent && !admissible.has(parent.type) && parentPath.length > 0) {
-						parentPath = parentPath.slice(0, -1);
-						parent = nodeAt(project.root, parentPath);
+					if (!canInsertComponent(project, component)) return;
+					const target = insertionTarget(project, component.type);
+					if (!target) return;
+					const {parentPath, parent} = target;
+					const index = parent.children.length;
+					editor.execute(prefix + '.insert', {parentPath, index, type: component.type});
+					// After inserting report content, focus its actual Inspector context.
+					// The fixed Footer remains the last root child in native Reports.
+					if (activeRegistry.profileId === 'base/reports') {
+						const siblings = nodeAt(editor.project().root, parentPath)?.children;
+						const actualIndex = parentPath.length === 0 ? index - 1 : index;
+						if (siblings?.[actualIndex]?.type === component.type) {
+							const path = [...parentPath, actualIndex];
+							const ref = {kind: 'node', path};
+							editor.select([ref], ref);
+						}
 					}
-					if (!parent || !admissible.has(parent.type)) {
-						throw new Error('COMMAND_REFUSED');
-					}
-					editor.execute(prefix + '.insert', {
-						parentPath, index: parent.children.length, type: component.type,
-					});
 				}, {signal});
+				componentButtons.set(component.id, button);
 				componentGrid.append(button);
 			}
+
 			const settingsPanel = stagedRoot.querySelector('[data-cb-platform-panel="settings"]');
 			if (!settingsPanel) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
 			const settingsControls = new Map();
@@ -1216,6 +1249,7 @@ export const attachTrustedDesignerHost = ({
 					}
 				}
 				refreshSettings();
+				refreshElements(project);
 				// A field edit may dirty the joint Save without changing History.
 				// Refresh the ONE SaveCoordinator-derived button status after Host
 				// projection, never infer saved state from a toolbar event.
