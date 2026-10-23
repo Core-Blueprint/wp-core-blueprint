@@ -62,8 +62,11 @@ $check( PlatformTransport::valid_native_document( Repository::MAIL, $document ),
 $check( Repository::valid_document( Repository::MAIL, $document ),
 	'Repository writer admission accepts the edited document' );
 
-$project = json_decode( SaveEnvelope::canonical_json( (object) $document['project'] ), true, 128, JSON_THROW_ON_ERROR );
-$fields = json_decode( SaveEnvelope::canonical_json( (object) $document['fields'] ), true, 128, JSON_THROW_ON_ERROR );
+// The transport first decodes incoming JSON to nested stdClass objects.
+$project_object = json_decode( wp_json_encode( $document['project'] ), false, 128, JSON_THROW_ON_ERROR );
+$fields_object = json_decode( wp_json_encode( $document['fields'] ), false, 128, JSON_THROW_ON_ERROR );
+$project = json_decode( SaveEnvelope::canonical_json( $project_object ), true, 128, JSON_THROW_ON_ERROR );
+$fields = json_decode( SaveEnvelope::canonical_json( $fields_object ), true, 128, JSON_THROW_ON_ERROR );
 $check( Repository::valid_document( Repository::MAIL, [ 'project' => $project, 'fields' => $fields ] ),
 	'canonical server SaveEnvelope roundtrip remains admissible' );
 
