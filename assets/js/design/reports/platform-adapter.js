@@ -153,6 +153,27 @@ const table=Object.freeze({
 		return setPropertyCommand(i.path,[i.key],i.value).apply(p);
 	}),
 });
+/**
+ * Reports-specific editing limits. Header/Footer are fixed document anchors;
+ * ordinary root sections reorder between them, nested elements within their
+ * parent. Only nodes with an actual persisted 'enabled' field may be hidden.
+ */
+export const layerPolicyFor = (node, parent, index) => {
+	const anchoredNode = node?.type === 'reports.header' || node?.type === 'reports.footer';
+	const editable = !!parent && !anchoredNode;
+	const anchoredParent = parent?.type === TYPE;
+	const minIndex = anchoredParent ? 1 : 0;
+	const maxIndex = parent ? parent.children.length - (anchoredParent ? 2 : 1) : -1;
+	const visibility = editable && Object.hasOwn(node.properties || {}, 'enabled')
+		? Object.freeze({key: 'enabled', shownValue: 'on', hiddenValue: 'off'}) : null;
+	return Object.freeze({
+		remove: editable,
+		reorder: editable && Number.isSafeInteger(index) && index >= minIndex && index <= maxIndex
+			? Object.freeze({minIndex, maxIndex}) : null,
+		visibility,
+	});
+};
+
 export const resolveCommand=id=>Object.hasOwn(table,id)?table[id]:null;
 export const componentsFor=()=>components;
 export const propertiesFor=node=>Object.hasOwn(defs,node?.type)
