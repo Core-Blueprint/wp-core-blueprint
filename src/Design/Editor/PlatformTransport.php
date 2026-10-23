@@ -120,7 +120,7 @@ final class PlatformTransport {
 			// stable category codes, never internal exception details or paths.
 			// A Save failure remains UNKNOWN unless the transaction proves otherwise.
 			if ( 'context' !== $action ) {
-				return new \WP_REST_Response( [ 'status' => 'unknown', 'code' => 'SAVE_UNKNOWN' ], 200 );
+				return new \WP_REST_Response( [ 'status' => 'unknown', 'reason' => 'SAVE_DISPATCH_UNVERIFIED' ], 200 );
 			}
 			$code = $error instanceof \DomainException ? $error->getMessage() : '';
 			if ( 'HOST_CONTEXT_REFUSED' === $code ) return self::deny( 'HOST_CONTEXT_REFUSED' );
@@ -264,9 +264,25 @@ final class PlatformTransport {
 			$receipt = json_decode( $result['receipt_json'], true, 128, JSON_THROW_ON_ERROR );
 			return new \WP_REST_Response( [ 'status' => 'committed', 'receipt' => $receipt ], 200 );
 		}
-		return new \WP_REST_Response( [
-			'status' => $result['status'] ?? 'unknown',
-		], 200 );
+		$status = (string) ( $result['status'] ?? 'unknown' );
+		// A bounded phase classification is diagnostic metadata, never a
+		// write authorization or proof of successful persistence. No SQL,
+		// document values, tokens, actor identities or exception messages.
+		$unknown_phases = [
+			'SAVE_TX_STATE_UNVERIFIED', 'SAVE_TX_BEGIN_UNVERIFIED',
+			'SAVE_TX_ROLLBACK_UNVERIFIED', 'SAVE_OPERATION_CLAIM_UNVERIFIED',
+			'SAVE_TX_COMMIT_UNVERIFIED', 'SAVE_POSTCOMMIT_RECEIPT_UNVERIFIED',
+			'SAVE_TX_EXCEPTION_UNVERIFIED', 'SAVE_RECOVERY_PREFLIGHT_UNVERIFIED',
+			'SAVE_LEDGER_SCHEMA_UNVERIFIED', 'SAVE_LEDGER_READ_UNVERIFIED',
+			'SAVE_LEDGER_STATE_UNVERIFIED', 'SAVE_LEDGER_RECEIPT_INVALID',
+		];
+		$body = [ 'status' => $status ];
+		if ( 'unknown' === $status ) {
+			$reason = $result['reason'] ?? '';
+			$body['reason'] = is_string( $reason ) && in_array( $reason, $unknown_phases, true )
+				? $reason : 'SAVE_SERVER_UNVERIFIED';
+		}
+		return new \WP_REST_Response( $body, 200 );
 	}
 
 	/**
