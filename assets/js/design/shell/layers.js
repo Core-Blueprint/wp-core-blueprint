@@ -11,6 +11,14 @@ const ACTION_DEFINITIONS = Object.freeze({
 		icon: 'arrow-down',
 		label: 'Move element down',
 	}),
+	hide: Object.freeze({
+		icon: 'eye-off',
+		label: 'Hide element',
+	}),
+	show: Object.freeze({
+		icon: 'eye',
+		label: 'Show element',
+	}),
 	remove: Object.freeze({
 		icon: 'trash-2',
 		label: 'Remove element',
@@ -175,7 +183,7 @@ export const createDesignerLayerRow = ({
 	actionContainer.className = 'cb-core-design-shell__layer-actions';
 	actionContainer.dataset.cbDesignLayerActions = '1';
 
-	for (const actionName of ['moveUp', 'moveDown', 'remove']) {
+	for (const actionName of ['moveUp', 'moveDown', 'hide', 'show', 'remove']) {
 		const actionConfig = normalizeAction(actions[actionName]);
 		if (!actionConfig) continue;
 		actionContainer.append(createActionButton(documentRef, actionName, actionConfig));
@@ -437,11 +445,16 @@ export const createDesignerLayerTree = ({
 						if (!dragRecord || dragRecord.parentKey !== parentKey) return;
 						if (siblingIndex < dragRecord.reorder.minIndex || siblingIndex > dragRecord.reorder.maxIndex) return;
 						event.preventDefault();
+						row.classList.add('is-drop-target');
 						if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+					});
+					row.addEventListener('dragleave', (event) => {
+						if (!row.contains(event.relatedTarget)) row.classList.remove('is-drop-target');
 					});
 					row.addEventListener('drop', (event) => {
 						if (!dragRecord || dragRecord.parentKey !== parentKey) return;
 						event.preventDefault();
+						row.classList.remove('is-drop-target');
 						const targetIndex = siblingIndex;
 						if (
 							targetIndex >= dragRecord.reorder.minIndex
@@ -452,7 +465,12 @@ export const createDesignerLayerTree = ({
 						}
 						dragRecord = null;
 					});
-					row.addEventListener('dragend', () => { dragRecord = null; });
+					row.addEventListener('dragend', () => {
+						dragRecord = null;
+						for (const target of element.querySelectorAll('.is-drop-target')) {
+							target.classList.remove('is-drop-target');
+						}
+					});
 				}
 
 				const node = documentRef.createElement('div');
