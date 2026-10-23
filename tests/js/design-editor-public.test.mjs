@@ -338,6 +338,14 @@ test('public historyStatus exposes frozen undo/redo capability without CommandHi
 	assert.throws(() => session.historyStatus(), /disposed/);
 });
 
+// Typed refs/contextEpoch are canonical; these older selection tests assert
+// only the backwards-compatible node-path projection without hiding refs.
+const nodePathSelection = (snapshot) => {
+	assert.ok(Array.isArray(snapshot.refs), 'typed selection refs remain public');
+	assert.ok(Number.isSafeInteger(snapshot.contextEpoch), 'typed context epoch remains public');
+	return { paths: snapshot.paths, primary: snapshot.primary };
+};
+
 test('public setSelection provides atomic multi-path and external projection without persisting selection', () => {
 	const events = [];
 	const session = publicEditor.createSession({
@@ -346,25 +354,25 @@ test('public setSelection provides atomic multi-path and external projection wit
 		onSelectionChange: (snapshot, context) => events.push({ snapshot, action: context.event.action }),
 	});
 	assert.equal(session.setSelection([[0]], { primary: [0], source: 'layers' }), true);
-	assert.deepEqual(session.selection(), { paths: [[0]], primary: [0] });
+	assert.deepEqual(nodePathSelection(session.selection()), { paths: [[0]], primary: [0] });
 	assert.equal(session.setSelection([[0]], { primary: [0], source: 'layers' }), false);
 	assert.equal(events.length, 1);
 
-	const before = session.selection();
+	const before = nodePathSelection(session.selection());
 	assert.throws(() => session.setSelection([[0], [42]], { source: 'layers' }), /outside the current project/);
-	assert.deepEqual(session.selection(), before, 'invalid project paths must not partially mutate selection');
+	assert.deepEqual(nodePathSelection(session.selection()), before, 'invalid project paths must not partially mutate selection');
 
 	assert.equal(session.setSelection([[0], [42], [42]], { primary: [42], source: 'external-projection', external: true }), true);
-	assert.deepEqual(session.selection(), { paths: [[0], [42]], primary: [42] });
+	assert.deepEqual(nodePathSelection(session.selection()), { paths: [[0], [42]], primary: [42] });
 	assert.equal(events.length, 2, 'one coherent event must publish the external set');
 	assert.equal(events[1].action, 'set');
 	assert.deepEqual(Object.keys(session.snapshot()).includes('editor_state'), false, 'selection must not be persisted');
 	assert.throws(() => session.setSelection([[-1]], { external: true }), /non-negative integers/);
 	assert.throws(() => session.setSelection([[0]], { primary: [-1], external: true }), /non-negative integers/);
-	assert.deepEqual(session.selection(), { paths: [[0], [42]], primary: [42] }, 'invalid external paths or primary must not mutate selection');
+	assert.deepEqual(nodePathSelection(session.selection()), { paths: [[0], [42]], primary: [42] }, 'invalid external paths or primary must not mutate selection');
 
 	assert.equal(session.clearSelection({ source: 'external-projection' }), true);
-	assert.deepEqual(session.selection(), { paths: [], primary: null });
+	assert.deepEqual(nodePathSelection(session.selection()), { paths: [], primary: null });
 	session.dispose();
 	assert.throws(() => session.setSelection([[0]], { external: true }), /disposed/);
 });
@@ -377,7 +385,7 @@ test('public setSelection rejects non-member primary atomically in both strict a
 		onSelectionChange: (snapshot, context) => events.push({ snapshot, action: context.event.action }),
 	});
 	assert.equal(session.setSelection([[0]], { source: 'consumer' }), true);
-	const before = session.selection();
+	const before = nodePathSelection(session.selection());
 	const revisionEvents = events.length;
 
 	// [] addresses the existing root, but it was not selected.
@@ -393,11 +401,11 @@ test('public setSelection rejects non-member primary atomically in both strict a
 		() => session.setSelection([], { primary: [0], external: true }),
 		/primary must be one of the selected paths/,
 	);
-	assert.deepEqual(session.selection(), before, 'invalid primary must not change state');
+	assert.deepEqual(nodePathSelection(session.selection()), before, 'invalid primary must not change state');
 	assert.equal(events.length, revisionEvents, 'invalid primary must not publish an event');
 
 	assert.equal(session.setSelection([[0], [0], [42]], { primary: [42], external: true }), true);
-	assert.deepEqual(session.selection(), { paths: [[0], [42]], primary: [42] }, 'deduplication must preserve valid primary');
+	assert.deepEqual(nodePathSelection(session.selection()), { paths: [[0], [42]], primary: [42] }, 'deduplication must preserve valid primary');
 	assert.equal(events.length, revisionEvents + 1);
 	session.dispose();
 });
@@ -472,7 +480,9 @@ test('project change consumers observe reconciled selection for structural comma
 
 
 const domainProject = (description = 'First') => ({
-	schema_version: 1,
+	// Source-only consumer unit fixture has no verified installed Host registry.
+	// Only schema generation 0 is permitted without that trusted context.
+	schema_version: 0,
 	design_type: 'fixture.domain',
 	root: { id: 'domain', type: 'domain', props: { description }, children: [] },
 });
@@ -484,6 +494,13 @@ const editDomain = (description) => ({
 		next.root.props.description = description;
 		return { project: next };
 	},
+});
+
+test('untrusted domain unit sessions reject stable generation 1 without Host registry', () => {
+	const candidate = domainProject('Rejected');
+	candidate.schema_version = 1;
+	assert.throws(() => publicEditor.createDomainSession({ project: candidate }),
+		/verified Host registry context/);
 });
 
 test('P02 domain session validates consumer commands and owns isolated reversible history', () => {
