@@ -56,6 +56,7 @@ import {
 	DESIGNER_VIEWPORT_ORDER,
 	configureDesignerViewports,
 } from './shell/viewports.js';
+import { configureDesignerDocumentView } from './shell/document-view.js';
 
 const PROFILE_APIS = Object.freeze({
 	'document-fixed': Object.freeze({ ...fixedProfile }),
@@ -566,16 +567,29 @@ const composePlatformChrome = (root, profileId) => {
 		'data-cb-platform-context-slot': '',
 	});
 	startZone.append(brand, contextSlot);
-	const viewport = node('div', 'cb-core-design-shell__toolbar-group', {
-		'data-cb-design-shell-viewport-group': '', role: 'group', 'aria-label': 'Preview width',
-	});
-	for (const [id, label] of [['mobile','Mobile'], ['tablet','Tablet'], ['desktop','Desktop']]) {
-		viewport.append(node('button', 'button cb-core-button', {
-			type: 'button', 'data-cb-design-shell-viewport': id,
-			'aria-pressed': id === 'desktop' ? 'true' : 'false',
-		}, label));
+	if (profileId === 'base/mail') {
+		const viewport = node('div', 'cb-core-design-shell__toolbar-group', {
+			'data-cb-design-shell-viewport-group': '', role: 'group', 'aria-label': 'Preview width',
+		});
+		for (const [id, label] of [['mobile','Mobile'], ['tablet','Tablet'], ['desktop','Desktop']]) {
+			viewport.append(node('button', 'button cb-core-button', {
+				type: 'button', 'data-cb-design-shell-viewport': id,
+				'aria-pressed': id === 'desktop' ? 'true' : 'false',
+			}, label));
+		}
+		centerZone.append(viewport);
+	} else {
+		const documentGroup = node('div', 'cb-core-design-shell__toolbar-group', {
+			role: 'group', 'aria-label': 'Document view',
+		});
+		const documentButton = button('Document view', 'data-cb-design-shell-document-view-toggle');
+		decorateDesignerControl(documentButton, 'file-text', {
+			iconOnly: true, label: 'Switch to fixed document width',
+		});
+		documentButton.setAttribute('aria-pressed', 'true');
+		documentGroup.append(documentButton);
+		centerZone.append(documentGroup);
 	}
-	centerZone.append(viewport);
 	const history = node('div', 'cb-core-design-shell__toolbar-group', {
 		role: 'group', 'aria-label': 'History',
 	});
@@ -1069,7 +1083,11 @@ export const attachTrustedDesignerHost = ({
 			// against duplicate controllers by createDesignerShell().
 			configurePlatformSidebars(stagedRoot, signal);
 			configurePlatformBrand(stagedRoot, signal);
-			configureDesignerViewports(stagedRoot, {active: 'desktop'});
+			if (activeRegistry.profileId === 'base/mail') {
+				configureDesignerViewports(stagedRoot, {active: 'desktop'});
+			} else if (activeRegistry.profileId === 'base/reports') {
+				configureDesignerDocumentView(stagedRoot, {mode: 'fit', signal});
+			}
 			const controller = createDesignerShell(stagedRoot, {
 				session: editor,
 				platformStaged: true,
@@ -1628,6 +1646,7 @@ export {
 	animateLayoutChange,
 	configureDesignerSidebar,
 	configureDesignerViewports,
+	configureDesignerDocumentView,
 	createDesignerIcon,
 	createDesignerInspectorControls,
 	createDesignerInspectorTextControl,
@@ -1664,6 +1683,7 @@ const publicApi = Object.freeze({
 		create: createDesignerShell,
 		configureSidebar: configureDesignerSidebar,
 		configureViewports: configureDesignerViewports,
+		configureDocumentView: configureDesignerDocumentView,
 		sidebarRoles: DESIGNER_SIDEBAR_ROLES,
 		viewportOrder: DESIGNER_VIEWPORT_ORDER,
 		paletteRoles: DESIGNER_PALETTE_ROLES,

@@ -53,6 +53,12 @@ const ICONS = Object.freeze({
 		['line', { x1: '8', x2: '16', y1: '21', y2: '21' }],
 		['line', { x1: '12', x2: '12', y1: '17', y2: '21' }],
 	]),
+	'file-text': Object.freeze([
+		['path', { d: 'M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z' }],
+		['path', { d: 'M14 2v6h6' }],
+		['path', { d: 'M8 13h8' }],
+		['path', { d: 'M8 17h8' }],
+	]),
 	'maximize-2': Object.freeze([
 		['path', { d: 'M15 3h6v6' }],
 		['path', { d: 'm21 3-7 7' }],

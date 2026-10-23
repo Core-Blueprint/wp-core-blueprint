@@ -340,14 +340,19 @@
 .cb-core-design-shell--native .cb-mail-platform {
 	padding: 0;
 }
-/* Device buttons act on the displayed document width, not the workarea. */
-.cb-core-design-shell--native[data-cb-design-shell-viewport="mobile"] .cb-mail-platform__frame,
-.cb-core-design-shell--native[data-cb-design-shell-viewport="mobile"] .cb-reports-platform__document {
+/* Device previews belong to Mail. Document mode owns Reports preview geometry. */
+.cb-core-design-shell--native[data-cb-design-shell-viewport="mobile"] .cb-mail-platform__frame {
 	max-width: min(430px, 100%) !important;
 }
-.cb-core-design-shell--native[data-cb-design-shell-viewport="tablet"] .cb-mail-platform__frame,
-.cb-core-design-shell--native[data-cb-design-shell-viewport="tablet"] .cb-reports-platform__document {
+.cb-core-design-shell--native[data-cb-design-shell-viewport="tablet"] .cb-mail-platform__frame {
 	max-width: min(782px, 100%) !important;
+}
+/* Fixed preview width changes only the sandboxed HTML iframe's CSS box.
+ * The parent workarea keeps overflow:auto, so narrow canvases can scroll.
+ * No transforms, zoom or PDF/pagination changes are introduced. */
+.cb-core-design-shell--native[data-cb-design-shell-document-view="fixed"] .cb-reports-platform__preview-frame {
+	width: 860px;
+	max-width: none;
 }
 
 @media (max-width: 1280px) {
