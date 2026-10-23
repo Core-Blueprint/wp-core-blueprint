@@ -82,6 +82,28 @@ test('native Save outcomes use only the canonical Toast Foundation', () => {
 	assert.ok(!JSON.stringify(log).includes('operationId'));
 });
 
+test('native fullscreen Toast is above the Designer screen without a legacy fullscreen class', async () => {
+	const css = await readFile(new URL('../../assets/css/components/toasts.css', import.meta.url), 'utf8');
+	const screenCss = await readFile(new URL('../../assets/css/design/platform-fullscreen.css', import.meta.url), 'utf8');
+	const screenZ = Number(screenCss.match(/\\.cb-core-platform-screen \\{[\\s\\S]*?z-index:\\s*(\\d+)/)?.[1]);
+	const nativeZ = Number(css.match(/body:has\\(\\.cb-core-platform-screen\\[data-cb-platform-mounted="true"\\]\\) \\.cb-core-toast-container--core,[\\s\\S]*?z-index:\\s*(\\d+)/)?.[1]);
+	assert.equal(screenZ, 100150);
+	assert.ok(nativeZ > screenZ, 'Base Toast should appear above native Mail and Reports screens');
+});
+
+test('native Save transport does not turn server unknown into success or refusal', async () => {
+	const reason = 'SAVE_LEDGER_READ_UNVERIFIED';
+	const request = instantiateRequest(async () => ({
+		ok:true, status:200, json:async()=>({status:'unknown',reason}),
+	}));
+	assert.deepEqual(await request('save','POST',{operationId:'dummy'}),{status:'unknown',reason});
+	const editor = await readFile(new URL('../../assets/js/design/editor.js', import.meta.url), 'utf8');
+	const coordinator = await readFile(new URL('../../assets/js/design/platform/save-coordinator.js', import.meta.url), 'utf8');
+	assert.match(coordinator,/safeUnknownReason\\(response\\)/);
+	assert.match(editor,/SAVE_LEDGER_READ_UNVERIFIED/);
+	assert.match(transport,/SAVE_LEDGER_READ_UNVERIFIED/);
+});
+
 test('native Host requires toast module and preserves legacy no-double-toast behaviour', () => {
 	assert.match(transport,/import \{ toast as baseToast \} from '@cb-core\/toast'/);
 	assert.match(transport,/notifySave:notifyDesignerSave/);
