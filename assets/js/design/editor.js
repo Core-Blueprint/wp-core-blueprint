@@ -976,7 +976,12 @@ export const attachTrustedDesignerHost = ({
 						bubbles: true,
 						detail: Object.freeze({state: saveState, nativeHandled: notifySave !== null}),
 					}));
-					try { notifySave?.(Object.freeze({outcome, phase: 'save'})); }
+					try { notifySave?.(Object.freeze({
+						outcome, phase: 'save',
+						reason: ['SAVE_TRANSPORT_UNVERIFIED', 'SAVE_SERVER_UNVERIFIED',
+							'SAVE_RECEIPT_INVALID', 'SAVE_RECOVERY_UNVERIFIED']
+							.includes(result?.reason) ? result.reason : null,
+					})); }
 					catch (_) { /* UI observers cannot change Save Authority. */ }
 				}).catch(() => {
 					// A failed browser callback or rejection is NOT proof of no-write.
