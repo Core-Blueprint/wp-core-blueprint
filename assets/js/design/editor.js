@@ -1142,18 +1142,67 @@ export const attachTrustedDesignerHost = ({
 				const selected = new Set((selection?.refs || [])
 					.filter((ref) => ref?.kind === 'node').map((ref) => JSON.stringify(ref.path)));
 				const walk = (node, path) => {
-					if (!node || !Array.isArray(node.children)) throw new Error('SCHEMA_DOMAIN_INVALID');
-					return {
-						key: JSON.stringify(path),
-						path,
-						ref: Object.freeze({kind: 'node', path: Object.freeze([...path])}),
-						label: platformFieldLabel(node.type),
-						meta: node.provider,
-						selected: selected.has(JSON.stringify(path)),
-						children: node.children.map((child, i) => walk(child, [...path, i])),
+				if (!node || !Array.isArray(node.children)) throw new Error('SCHEMA_DOMAIN_INVALID');
+				const ref = Object.freeze({kind: 'node', path: Object.freeze([...path])});
+				const reports = activeRegistry.profileId === 'base/reports';
+				const locked = node.type === 'reports.header' || node.type === 'reports.footer';
+				const editable = reports && path.length > 0 && !locked;
+				const parentPath = path.slice(0, -1);
+				const parent = path.length ? nodeAt(project.root, parentPath) : null;
+				const position = path.at(-1);
+				const anchored = parent?.type === 'core.blueprint.reports';
+				const minIndex = anchored ? 1 : 0;
+				const maxIndex = anchored ? parent.children.length - 2 : (parent?.children.length ?? 0) - 1;
+				const actions = {};
+				if (editable) {
+					if (Object.hasOwn(node.properties, 'enabled')) {
+						const hidden = node.properties.enabled === 'off';
+						actions[hidden ? 'show' : 'hide'] = {
+							onActivate: () => {
+								if (signal.aborted || host.state !== 'READY') return;
+								editor.execute('reports.set', {
+									path: [...path], key: 'enabled', value: hidden ? 'on' : 'off',
+								});
+							},
+						};
+					}
+					actions.remove = {
+						onActivate: () => {
+							if (signal.aborted || host.state !== 'READY') return;
+							editor.execute('reports.remove', {path: [...path]});
+						},
 					};
+				}
+				// Header/Footer stay anchored; nested Sections reorder only among siblings.
+				const reorder = editable && parent && maxIndex > minIndex
+					&& position >= minIndex && position <= maxIndex
+					? {
+						index: position, minIndex, maxIndex,
+						onMove: (toIndex) => {
+							if (signal.aborted || host.state !== 'READY'
+								|| !Number.isSafeInteger(toIndex) || toIndex < minIndex || toIndex > maxIndex
+								|| toIndex === position) return;
+							editor.execute('reports.reorder', {
+								parentPath: [...parentPath], fromIndex: position, toIndex,
+							});
+						},
+					} : null;
+				return {
+					key: JSON.stringify(path),
+					path,
+					ref,
+					label: platformFieldLabel(node.type),
+					meta: node.provider,
+					selected: selected.has(JSON.stringify(path)),
+					children: node.children.map((child, i) => walk(child, [...path, i])),
+					...(reorder ? {reorder} : {}),
+					...(editable ? {actions} : {}),
+					...(editable && Object.hasOwn(node.properties, 'enabled') ? {
+						dataset: {cbDesignLayerHidden: node.properties.enabled === 'off' ? 'true' : 'false'},
+					} : {}),
 				};
-				tree.render([walk(project.root, [])]);
+			};
+			tree.render([walk(project.root, [])]);
 				const primary = selection?.primary;
 				const inspected = primary?.kind === 'node' ? nodeAt(project.root, primary.path) : null;
 				const key = inspected ? JSON.stringify([primary.path, inspected.type]) : null;
@@ -1171,7 +1220,9 @@ export const attachTrustedDesignerHost = ({
 							context: 'Selected element', documentRef: stagedRoot.ownerDocument,
 						});
 						inspectorPanel.append(identity.element);
-						if (primary.path.length > 0) {
+						if (primary.path.length > 0
+							&& !(activeRegistry.profileId === 'base/reports'
+								&& (node.type === 'reports.header' || node.type === 'reports.footer'))) {
 							const remove = stagedRoot.ownerDocument.createElement('button');
 							remove.type = 'button';
 							remove.className = 'button cb-core-design-shell__inspector-remove';
