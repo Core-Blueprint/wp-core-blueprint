@@ -24,10 +24,21 @@ final class DesignerPreview {
 	 * Unsaved native state is permitted only for preview, never persisted here.
 	 */
 	public function render( ?array $native = null ): string {
+		return $this->render_with_source( $native )['html'];
+	}
+
+	/**
+	 * The one canonical Flow preview plus explicit snapshot provenance.
+	 * No report snapshot is ever written by this read-only operation.
+	 *
+	 * @param array{project:array<string,mixed>,fields:array<string,mixed>}|null $native
+	 * @return array{html:string,source:string}
+	 */
+	public function render_with_source( ?array $native = null ): array {
 		$report = $this->preview_report();
-		$data   = $report['report_data'] ?? null;
+		$data = $report['report_data'] ?? null;
 		if ( ! is_array( $data ) ) {
-			throw new \RuntimeException( 'Reports Designer preview snapshot is missing.' );
+			throw new \\RuntimeException( 'Reports Designer preview snapshot is missing.' );
 		}
 
 		$locale = get_locale();
@@ -36,14 +47,17 @@ final class DesignerPreview {
 		}
 
 		$document = $this->compiler->compile( $report, $data, $locale, $native );
-
-		return FlowRenderApi::preview_html(
+		$html = FlowRenderApi::preview_html(
 			$document['layout'],
 			$document['blocks'],
 			$document['locale'],
 			$document['presentation'],
 			$document['preview_regions']
 		);
+		return [
+			'html' => $html,
+			'source' => (int) ( $report['id'] ?? 0 ) > 0 ? 'archived' : 'sample',
+		];
 	}
 
 	/**
