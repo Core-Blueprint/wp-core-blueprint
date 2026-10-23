@@ -83,6 +83,24 @@ const CMDS=Object.freeze({
    &&valueOK(i.value,TYPES[at.type].controls[i.key]);
  },(p,i)=>setPropertyCommand(i.path,[i.key],i.value).apply(p)),
 });
+/**
+ * Domain permissions only: the shared Base Layers primitive renders actions
+ * and dispatches the registered commands. Mail has no persisted visibility
+ * property, so this profile does not advertise Hide/Show.
+ */
+export const layerPolicyFor = (node, parent, index) => {
+	const hasParent = !!parent;
+	const fixedColumn = node?.type === 'mail.column';
+	const reorderParent = hasParent && parent.type !== 'mail.columns';
+	const maxIndex = hasParent ? parent.children.length - 1 : -1;
+	return Object.freeze({
+		remove: hasParent && !fixedColumn,
+		reorder: reorderParent && !fixedColumn && Number.isSafeInteger(index)
+			? Object.freeze({minIndex: 0, maxIndex}) : null,
+		visibility: null,
+	});
+};
+
 export const resolveCommand=id=>has(CMDS,id)?CMDS[id]:null;
 export const componentsFor=()=>COMPONENTS;
 export const propertiesFor=n=>!propsOK(n?.type,n?.properties)?[]:
