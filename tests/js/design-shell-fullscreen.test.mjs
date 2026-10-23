@@ -10,6 +10,7 @@ const iconsSource = new URL('../../assets/js/design/shell/icons.js', import.meta
 const layersSource = new URL('../../assets/js/design/shell/layers.js', import.meta.url);
 const navigationSource = new URL('../../assets/js/design/shell/navigation.js', import.meta.url);
 const inspectorSource = new URL('../../assets/js/design/shell/inspector.js', import.meta.url);
+const inspectorValueSource = new URL('../../assets/js/design/shell/inspector-value-control.js', import.meta.url);
 const selectionControllerSource = new URL('../../assets/js/design/shell/selection-controller.js', import.meta.url);
 const launchSource = new URL('../../assets/js/features/designer-launch.js', import.meta.url);
 const shellCss = new URL('../../assets/css/design/editor-shell.css', import.meta.url);
@@ -190,6 +191,7 @@ before(async () => {
 	const layerSource = await readFile(layersSource, 'utf8');
 	const navigationModuleSource = await readFile(navigationSource, 'utf8');
 	const inspectorModuleSource = await readFile(inspectorSource, 'utf8');
+	const inspectorValueModuleSource = await readFile(inspectorValueSource, 'utf8');
 	const selectionSource = await readFile(selectionControllerSource, 'utf8');
 	const modulePath = join(tempDirectory, 'shell.mjs');
 	await writeFile(join(tempDirectory, 'package.json'), '{"type":"module"}\n');
@@ -197,6 +199,7 @@ before(async () => {
 	await writeFile(join(tempDirectory, 'layers.js'), layerSource);
 	await writeFile(join(tempDirectory, 'navigation.js'), navigationModuleSource);
 	await writeFile(join(tempDirectory, 'inspector.js'), inspectorModuleSource);
+	await writeFile(join(tempDirectory, 'inspector-value-control.js'), inspectorValueModuleSource);
 	await writeFile(join(tempDirectory, 'selection-controller.js'), selectionSource);
 	await writeFile(modulePath, source);
 
