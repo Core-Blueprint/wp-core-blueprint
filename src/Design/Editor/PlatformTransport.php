@@ -295,7 +295,7 @@ final class PlatformTransport {
 			$reason = $result['reason'] ?? '';
 			$storage_phase = is_string( $reason )
 				&& 1 === preg_match(
-					'/^SAVE_STORAGE_(?:CREATE|UPDATE)_(?:INVALID|SCHEMA_UNAVAILABLE|QUERY_FAILED|READBACK_UNVERIFIED|READ_UNAVAILABLE|UNCLASSIFIED)$/D',
+					'/^SAVE_STORAGE_(?:CREATE|UPDATE)_(?:INVALID|SCHEMA_UNAVAILABLE|QUERY_FAILED|READBACK_UNVERIFIED|READ_UNAVAILABLE|UNCLASSIFIED|DB_[1-9][0-9]{0,4})$/D',
 					$reason
 				);
 			$body['reason'] = is_string( $reason )
