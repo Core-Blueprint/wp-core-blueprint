@@ -47,9 +47,13 @@ test('Base refuses unknown paths and invalid parent-child positions without muta
 	for (const zone of ['node/9','node/1.-1','node/01','node/1.__proto__','node/99.0','node/1.5000']) {
 		assert.equal(place(zone, 'after'), null, zone);
 	}
-	assert.equal(place('node/0', 'inside'), null, 'Header is not a container');
-	assert.equal(place('node/2', 'inside'), null, 'Footer is not a container');
-	assert.equal(place('node/1.0', 'inside'), null, 'Heading is not a container');
+	assert.equal(place('node/0', 'inside')?.input.index, 1,
+		'Header middle resolves to insertion after the fixed header');
+	assert.equal(place('node/2', 'inside')?.input.index, 3,
+		'Footer middle resolves to root insertion; Reports command anchors Footer');
+	assert.deepEqual(place('node/1.0', 'inside')?.input,
+		{parentPath: [1], index: 1, type: 'reports.heading'},
+		'Leaf middle resolves to an adjacent sibling');
 	assert.equal(place('node/1', 'inside', {source:{...source, kind:'node'}}), null);
 	assert.equal(place('node/1', 'inside', {source:{...source, type:'reports.section'}}), null);
 	assert.equal(place('node/1', 'after', {canInsert:()=>false}), null);
