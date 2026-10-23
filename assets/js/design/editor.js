@@ -1344,6 +1344,7 @@ export {
 	enableDesignerTextareaAutosize,
 	createDesignerLayerRow,
 	createDesignerLayerTree,
+	projectDesignerLayerInteractions,
 	createDesignerNavigation,
 	createDesignerSelectionController,
 	createDesignerShell,
@@ -1391,6 +1392,7 @@ const publicApi = Object.freeze({
 			actions: DESIGNER_LAYER_ACTIONS,
 			createRow: createDesignerLayerRow,
 			createTree: createDesignerLayerTree,
+			projectInteractions: projectDesignerLayerInteractions,
 		}),
 		selection: Object.freeze({
 			createController: createDesignerSelectionController,
