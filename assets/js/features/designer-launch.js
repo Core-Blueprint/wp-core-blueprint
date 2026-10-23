@@ -107,6 +107,10 @@
 		const saveAuthorized = save?.getAttribute?.('data-cb-design-shell-save-authorized') !== 'false';
 
 		shell.addEventListener(SAVE_EVENT, (event) => {
+			// The native verified Host has its own recovery-capable Save UI
+			// and has already notified via Base Toast. Do not double-toast
+			// or permanently disable its Verify Save control here.
+			if (event.detail?.nativeHandled === true) return;
 			const state = String(event.detail?.state || '').trim();
 			if (!['saving', 'saved', 'error', 'idle', 'unknown'].includes(state)) return;
 			// A lost/ambiguous response cannot turn into verified success via a later
