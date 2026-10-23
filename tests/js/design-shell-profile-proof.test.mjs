@@ -169,7 +169,8 @@ test('document-fixed consumer session remains unchanged across shared shell full
 
 test('P02 public history facade drives Base-owned toolbar history without exposing private classes', async () => {
 	const project = {
-		schema_version: 1,
+		// Isolated History facade fixture has no verified stable-v1 Host snapshot.
+		schema_version: 0,
 		design_type: 'fixture.shell-proof.domain',
 		root: { type: 'domain', props: { label: 'Initial' }, children: [] },
 	};
