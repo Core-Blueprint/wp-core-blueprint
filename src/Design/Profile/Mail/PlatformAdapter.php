@@ -72,7 +72,7 @@ final class PlatformAdapter {
 		if ( ! $modules->register( [
 			'id' => self::MODULE, 'owner' => self::PROVIDER,
 			'dependencies' => [], 'exports' => [
-				'authorizeCommand', 'createRenderAdapter', 'resolveCommand',
+				'authorizeCommand', 'createRenderAdapter', 'layerPolicyFor', 'resolveCommand',
 				'validateCommandInput', 'validateProject',
 			],
 			'stamp' => ApprovedManifestSource::module_stamp( $artifact, self::PATH ),
