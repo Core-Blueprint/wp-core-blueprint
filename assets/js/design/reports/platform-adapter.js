@@ -254,8 +254,8 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		if (destroyed || activeSignal?.aborted) return;
 		const note = container.querySelector('[data-cb-reports-preview-note]');
 		note.textContent = source === 'sample'
-			? 'Preview using example data. Not live site information.'
-			: 'Preview using the most recent archived report. Not live site information.';
+			? 'Example report metrics; site identity may reflect this installation.'
+			: 'Most recent archived report. Historical values, not live status.';
 		note.hidden = false;
 		container.classList.remove('is-fetching', 'is-preview-error');
 		schedulePreview(html);
