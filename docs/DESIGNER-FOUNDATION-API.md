@@ -271,6 +271,16 @@ after a confirmed outer rollback. Do not infer a SQL root cause or change
 transaction semantics before the next bounded runtime category is observed.
 Mail Save remains P0 BLOCKED; Reports and shared DND/Toast remain unchanged.
 
+**INSERT evidence follow-up:** The live `SAVE_STORAGE_CREATE_QUERY_FAILED`
+response has narrowed Mail to the new-document INSERT. The repository now
+captures only the numeric mysqli errno immediately after an unsuccessful
+INSERT and before the subsequent readback. After a confirmed rollback, a
+bounded `SAVE_STORAGE_CREATE_DB_<errno>` diagnostic may be emitted; the
+fallback remains `SAVE_STORAGE_CREATE_QUERY_FAILED` if no numeric code is
+available. No SQL text, database name, credentials, template contents or
+connection error strings are returned. This is a diagnostic patch, NOT a
+database-repair migration or proof of a successful Save.
+
 **Status:** Source implementation and local deterministic checks only. The
 real WordPress sandbox must demonstrate Mail and Reports Save/Reopen with
 verifiable persisted receipts. A passing build does not prove that the server
