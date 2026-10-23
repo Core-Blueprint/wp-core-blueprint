@@ -140,6 +140,9 @@ test('Mail storage CREATE and UPDATE failures remain bounded refusals, never suc
 		'SAVE_STORAGE_CREATE_INVALID',
 		'SAVE_STORAGE_CREATE_SCHEMA_UNAVAILABLE',
 		'SAVE_STORAGE_CREATE_QUERY_FAILED',
+		'SAVE_STORAGE_CREATE_DB_1062',
+		'SAVE_STORAGE_CREATE_DB_1146',
+		'SAVE_STORAGE_CREATE_DB_1406',
 		'SAVE_STORAGE_CREATE_READBACK_UNVERIFIED',
 		'SAVE_STORAGE_UPDATE_QUERY_FAILED',
 		'SAVE_STORAGE_UPDATE_READBACK_UNVERIFIED',
@@ -168,6 +171,31 @@ test('Mail storage CREATE and UPDATE failures remain bounded refusals, never suc
 	assert.match(coordinator, /SAVE_STORAGE_/);
 	assert.match(editor, /SAVE_STORAGE_/);
 	assert.match(transport, /SAVE_STORAGE_/);
+});
+
+test('Mail numeric database errors stay allowlisted and exclude SQL or private data', async () => {
+	const repository = await readFile(
+		new URL('../../src/Design/Document/Repository.php', import.meta.url), 'utf8');
+	const port = await readFile(
+		new URL('../../src/Design/Persistence/BaseDocumentRepositoryPort.php', import.meta.url), 'utf8');
+	const endpoint = await readFile(
+		new URL('../../src/Design/Editor/PlatformTransport.php', import.meta.url), 'utf8');
+	const coordinator = await readFile(
+		new URL('../../assets/js/design/platform/save-coordinator.js', import.meta.url), 'utf8');
+	assert.match(repository, /\$db_errno = 1 !== \$affected \? self::safe_mysql_errno\(\) : null;/);
+	assert.ok(repository.indexOf('$db_errno = 1 !== $affected')
+		< repository.indexOf('$after = self::read( $type, $key )'),
+		'Database errno captured before another statement can replace it');
+	assert.match(repository, /\$wpdb->dbh instanceof \\mysqli/);
+	assert.match(port, /is_int\( \$errno \) && \$errno >= 1 && \$errno <= 65535/);
+	assert.match(endpoint, /DB_\[1-9\]\[0-9\]\{0,4\}/);
+	assert.match(coordinator, /DB_\[1-9\]\[0-9\]\{0,4\}/);
+	const valid = /^SAVE_STORAGE_(CREATE|UPDATE)_(INVALID|SCHEMA_UNAVAILABLE|QUERY_FAILED|READBACK_UNVERIFIED|READ_UNAVAILABLE|UNCLASSIFIED|DB_[1-9][0-9]{0,4})$/;
+	for (const code of ['SAVE_STORAGE_CREATE_DB_1062', 'SAVE_STORAGE_CREATE_DB_1406',
+		'SAVE_STORAGE_CREATE_DB_1146']) assert.equal(valid.test(code), true);
+	for (const code of ['SAVE_STORAGE_CREATE_DB_0', 'SAVE_STORAGE_CREATE_DB_123456',
+		'SAVE_STORAGE_CREATE_DB_1062_SQL', 'SAVE_STORAGE_CREATE_DB_1062_password',
+		'SAVE_STORAGE_CREATE_DB_-1']) assert.equal(valid.test(code), false);
 });
 
 test('native Host requires toast module and preserves legacy no-double-toast behaviour', () => {
