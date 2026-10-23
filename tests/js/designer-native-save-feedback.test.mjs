@@ -147,7 +147,7 @@ test('Mail storage CREATE and UPDATE failures remain bounded refusals, never suc
 	const seen = [];
 	const warnings = [];
 	const presenter = new Function('baseToast','config','console',
-		extract('const notifyDesignerSave = ', '\\nconst config=') + '\\nreturn notifyDesignerSave;'
+		extract('const notifyDesignerSave = ', '\nconst config=') + '\nreturn notifyDesignerSave;'
 	)({
 		success: () => seen.push('success'),
 		error: () => seen.push('error'),
