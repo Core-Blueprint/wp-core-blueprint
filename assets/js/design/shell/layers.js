@@ -61,7 +61,7 @@ const resolveRemoveConfirmation = (source, context) => {
 const normalizeAction = (value) => {
 	if (value === null || value === undefined || value === false) return null;
 	if (typeof value === 'function') {
-		return Object.freeze({ disabled: false, label: null, onActivate: value });
+		return Object.freeze({ disabled: false, label: null, onActivate: value, confirmation: null });
 	}
 	if (typeof value !== 'object' || Array.isArray(value)) {
 		throw new TypeError('Designer layer actions must be callbacks, configuration objects or false.');
