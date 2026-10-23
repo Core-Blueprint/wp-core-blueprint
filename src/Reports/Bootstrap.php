@@ -60,6 +60,9 @@ final class Bootstrap {
 		// public Golden shell on its own Preferences tab without turning the
 		// entire Preferences page into a Designer consumer.
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_preferences_designer' ], 999 );
+		// Native Reports compilation for the canonical Designer canvas.
+		// This endpoint is read-only and separately capability/nonce gated.
+		add_action( 'rest_api_init', [ DesignerPreviewEndpoint::class, 'register_routes' ] );
 	}
 
 	/**
