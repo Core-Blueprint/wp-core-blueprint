@@ -54,7 +54,19 @@ async function request(action,method,payload=null,signal=null) {
 	if(signal)options.signal=signal;
 	const response=await fetch(u.href,options);
 	const body=await response.json();
-	if(!response.ok)throw issue(String(body?.code||'HOST_CONTEXT_REFUSED'));
+	if(!response.ok) {
+		// The Base REST Save route conclusively refuses before entering the
+		// transaction on these exact authenticated validation responses.
+		// Do not translate that proven no-write into a misleading UNKNOWN.
+		// Network errors, proxy errors, WordPress error envelopes and recovery
+		// failures remain ambiguous and MUST NOT authorize a retry.
+		if(action==='save' && [400,403,409].includes(response.status)
+			&& body && typeof body==='object' && !Array.isArray(body)
+			&& ['refused','conflict','idempotency_reused'].includes(body.status)) {
+			return body;
+		}
+		throw issue('SAVE_TRANSPORT_UNVERIFIED');
+	}
 	return body;
 }
 
