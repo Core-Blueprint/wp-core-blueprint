@@ -654,11 +654,20 @@ const configurePlatformSidebars = (root, signal) => {
 					+ (record.side === 'left' ? 'Elements and Layers' : 'Inspector and Settings')});
 			if (compact) {
 				record.panel.setAttribute('aria-hidden', isClosed ? 'true' : 'false');
-				if (isClosed) record.panel.setAttribute('inert', '');
-				else record.panel.removeAttribute('inert');
+				if (isClosed) {
+					record.panel.setAttribute('inert', '');
+					record.panel.removeAttribute('role');
+					record.panel.removeAttribute('aria-modal');
+				} else {
+					record.panel.removeAttribute('inert');
+					record.panel.setAttribute('role', 'dialog');
+					record.panel.setAttribute('aria-modal', 'true');
+				}
 			} else {
 				record.panel.removeAttribute('aria-hidden');
 				record.panel.removeAttribute('inert');
+				record.panel.removeAttribute('role');
+				record.panel.removeAttribute('aria-modal');
 			}
 		}
 	};
@@ -683,10 +692,26 @@ const configurePlatformSidebars = (root, signal) => {
 	backdrop.addEventListener('click', () => close(true), {signal});
 	workspace.addEventListener('keydown', (event) => {
 		if (!compact || event.defaultPrevented) return;
-		if (event.key === 'Escape' && rails.some((record) => !collapsed(record))) {
+		const open = rails.find((record) => !collapsed(record));
+		if (!open) return;
+		if (event.key === 'Escape') {
 			event.preventDefault();
 			event.stopPropagation();
 			close(true);
+		} else if (event.key === 'Tab') {
+			// Focus stays inside the mobile drawer; collapse restores launcher focus.
+			const tabbables = [...open.panel.querySelectorAll('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')]
+				.filter((element) => element.getClientRects().length > 0);
+			if (!tabbables.length) return;
+			const first = tabbables[0], last = tabbables[tabbables.length - 1];
+			const active = doc.activeElement;
+			if (!open.panel.contains(active) || (event.shiftKey && active === first)) {
+				event.preventDefault();
+				(event.shiftKey ? last : first).focus();
+			} else if (!event.shiftKey && active === last) {
+				event.preventDefault();
+				first.focus();
+			}
 		}
 	}, {signal});
 	const responsive = () => {
