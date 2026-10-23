@@ -98,6 +98,24 @@ final class SaveEnvelope {
 		return self::encode_node( $value, 0 );
 	}
 
+	/**
+	 * An ASCII-only transport encoding of the SAME canonical JSON value.
+	 *
+	 * The WordPress DB layer classifies mixed ascii_bin + utf8mb4 tables
+	 * conservatively as ASCII, potentially rejecting a UTF-8 SQL literal
+	 * before it reaches MySQL. Keep canonical_json() unchanged for all
+	 * existing digests and signatures; only SQL-bound receipt JSON uses
+	 * this lossless escaped representation.
+	 *
+	 * UTF-8 text is preserved after decoding. Keys remain in deterministic
+	 * canonical order, and floats/unsafe keys are still rejected upstream.
+	 */
+	public static function storage_json( mixed $value ): string {
+		$canonical = self::canonical_json( $value );
+		$decoded = json_decode( $canonical, false, 128, JSON_THROW_ON_ERROR );
+		return json_encode( $decoded, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES );
+	}
+
 	private static function encode_node( mixed $value, int $depth ): string {
 		if ( $depth > 64 ) {
 			throw new \InvalidArgumentException( 'SCHEMA_LIMIT_EXCEEDED: JSON nesting.' );
