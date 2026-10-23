@@ -214,6 +214,44 @@ polish. DND-03 adds touch/pointer-specific gestures, auto-scroll and complex
 moving/nesting flows. Do not mark installed functional acceptance until those
 consumer runtime paths pass. Existing Layers drag/reorder remains unchanged.
 
+### Native Save Authority and Base Toast presentation (P0 SOURCE candidate)
+
+The native WordPress Host uses the same Base Toast Foundation as legacy
+Designer Mode: `@cb-core/toast`, enqueued through
+`CoreBlueprint\\Core\\UI\\Assets::enqueue_toasts()`. Consumers MUST NOT
+construct a separate notification system. Save results are presented ONLY
+after the canonical SaveCoordinator has returned a classified outcome:
+
+- `committed`: show a success toast only after authenticated receipt
+  correlation, full accepted-field validation and baseline rebase.
+- `refused`, `conflict`, `idempotency_reused`: show an error toast;
+  the server response must establish no-write/rolled-back refusal.
+- `unknown`: show a bounded warning, retain original operation identity
+  in the private SaveCoordinator and keep the **Verify save status** action.
+  No retry with a new operation ID or optimistic success is permitted.
+- `persisted-unsynchronized`: show a persistent error toast and block
+  context transition. It may have been committed, but local editor History
+  has not been reconciled.
+
+The existing `cb:design-shell:savechange` event is sent for interoperability
+only; `nativeHandled: true` denotes the native Host's already-rendered Base
+toast. Legacy listeners must not duplicate it or disable the recovery control.
+In native mode the old persistent notice below the toolbar is used only as a
+fallback when the canonical toast adapter was not supplied.
+
+The WordPress transport distinguishes conclusively refused, pre-transaction
+`400/403/409` Save responses with an exact authenticated
+`{status:'refused'|'conflict'|'idempotency_reused'}` body from ambiguous
+network/HTTP/receipt outcomes. Recover responses, CDN error pages and
+unverified payloads never establish no-write. Unknown outcome console
+diagnostics contain ONLY a bounded phase label; never log user content,
+nonce, resource identity, request or receipt.
+
+**Status:** Source implementation and local deterministic checks only. The
+real WordPress sandbox must demonstrate Mail and Reports Save/Reopen with
+verifiable persisted receipts. A passing build does not prove that the server
+schema and commit/recovery path are healthy on the target installation.
+
 ### DND-02 — native canvas placement (SOURCE candidate)
 
 Base's shared native Host now uses the same DND-01 controller to connect the
