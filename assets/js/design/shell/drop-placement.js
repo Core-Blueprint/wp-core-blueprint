@@ -41,14 +41,19 @@ export const resolveDesignerDropPlacement = ({
 	if (!targetPath) return null;
 	const target = at(project.root, targetPath);
 	if (!target || !Array.isArray(target.children)) return null;
-	const parentPath = edge === 'inside' || targetPath.length === 0
+	const allowed = allowedParentsByType.get(source.type);
+	if (!allowed || !(allowed instanceof Set)) return null;
+	// Dropping in the middle of a leaf means insert immediately AFTER that
+	// leaf, never append at some unrelated parent/root. Containers still
+	// accept true nesting when the domain allows it.
+	const insideTarget = edge === 'inside' && allowed.has(target.type);
+	const parentPath = targetPath.length === 0 || insideTarget
 		? targetPath : targetPath.slice(0, -1);
 	const parent = at(project.root, parentPath);
-	if (!parent || !Array.isArray(parent.children)
-		|| !allowedParentsByType.get(source.type)?.has(parent.type)) return null;
-	const index = targetPath.length === 0 || edge === 'inside'
+	if (!parent || !Array.isArray(parent.children) || !allowed.has(parent.type)) return null;
+	const index = targetPath.length === 0 || insideTarget
 		? parent.children.length
-		: targetPath.at(-1) + (edge === 'after' ? 1 : 0);
+		: targetPath.at(-1) + (edge === 'after' || edge === 'inside' ? 1 : 0);
 	if (!Number.isSafeInteger(index) || index < 0 || index > parent.children.length) return null;
 	try {
 		if (canInsert && canInsert(project, source.type, parentPath) !== true) return null;
