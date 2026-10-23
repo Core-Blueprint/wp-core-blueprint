@@ -31,25 +31,27 @@ final class TransactionalSave {
 		$wpdb->last_error = '';
 		$active = $wpdb->get_var( 'SELECT @@in_transaction' );
 		if ( '' !== (string) $wpdb->last_error || '0' !== (string) $active ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_TX_STATE_UNVERIFIED' ];
 		}
 		$wpdb->last_error = '';
 		if ( false === $wpdb->query( 'START TRANSACTION' ) || '' !== (string) $wpdb->last_error ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_TX_BEGIN_UNVERIFIED' ];
 		}
 		$commit_attempted = false;
 		try {
 			$claim = $this->ledger->claim( $intent );
 			if ( 'duplicate' === $claim ) {
 				if ( ! $this->rollback() ) {
-					return [ 'status' => 'unknown' ];
+					return [ 'status' => 'unknown', 'reason' => 'SAVE_TX_ROLLBACK_UNVERIFIED' ];
 				}
 				// The duplicate index serializes concurrent operation IDs. Read the
 				// original receipt, never take a new ID or construct a new receipt.
 				return $this->recover( $intent, $port );
 			}
 			if ( 'claimed' !== $claim ) {
-				return $this->rollback() ? [ 'status' => 'unknown' ] : [ 'status' => 'unknown' ];
+				return $this->rollback()
+					? [ 'status' => 'unknown', 'reason' => 'SAVE_OPERATION_CLAIM_UNVERIFIED' ]
+					: [ 'status' => 'unknown', 'reason' => 'SAVE_TX_ROLLBACK_UNVERIFIED' ];
 			}
 
 			$locked = $port->load_locked( $intent );
@@ -119,19 +121,19 @@ final class TransactionalSave {
 			$commit_attempted = true;
 			$wpdb->last_error = '';
 			if ( false === $wpdb->query( 'COMMIT' ) || '' !== (string) $wpdb->last_error ) {
-				return [ 'status' => 'unknown' ];
+				return [ 'status' => 'unknown', 'reason' => 'SAVE_TX_COMMIT_UNVERIFIED' ];
 			}
 			// No success claim based solely on COMMIT's transport result.
 			$resolved = $this->recover( $intent, $port );
 			if ( 'committed' !== $resolved['status'] || $resolved['receipt_json'] !== $receipt_json ) {
-				return [ 'status' => 'unknown' ];
+				return [ 'status' => 'unknown', 'reason' => 'SAVE_POSTCOMMIT_RECEIPT_UNVERIFIED' ];
 			}
 			return $resolved;
 		} catch ( \Throwable $exception ) {
 			if ( ! $commit_attempted ) {
 				$this->rollback();
 			}
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_TX_EXCEPTION_UNVERIFIED' ];
 		}
 	}
 
@@ -141,7 +143,7 @@ final class TransactionalSave {
 	 */
 	public function recover( SaveEnvelope $intent, BaseDocumentTransactionPort $port ): array {
 		if ( ! $this->preflight( $intent, $port ) ) {
-			return [ 'status' => 'unknown' ];
+			return [ 'status' => 'unknown', 'reason' => 'SAVE_RECOVERY_PREFLIGHT_UNVERIFIED' ];
 		}
 		return $this->ledger->lookup( $intent );
 	}
@@ -163,7 +165,7 @@ final class TransactionalSave {
 
 	/** Return a conclusive refusal only when ROLLBACK was acknowledged. */
 	private function finish_refusal( string $status = 'refused' ): array {
-		return $this->rollback() ? [ 'status' => $status ] : [ 'status' => 'unknown' ];
+		return $this->rollback() ? [ 'status' => $status ] : [ 'status' => 'unknown', 'reason' => 'SAVE_TX_ROLLBACK_UNVERIFIED' ];
 	}
 
 	private function rollback(): bool {
