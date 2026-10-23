@@ -639,6 +639,21 @@
 	box-shadow: inset 2px 0 0 var(--cb-accent);
 }
 
+/* Registered reorder handles reuse the canonical Layers native drag support. */
+.cb-core-design-shell__layer-row[draggable="true"] {
+	cursor: grab;
+}
+.cb-core-design-shell__layer-row[draggable="true"]:active {
+	cursor: grabbing;
+}
+.cb-core-design-shell__layer-row.is-drop-target {
+	border-color: var(--cb-accent);
+	box-shadow: inset 0 0 0 1px var(--cb-accent);
+}
+.cb-core-design-shell__layer-row[data-cb-design-layer-hidden="true"] .cb-core-design-shell__layer-label {
+	opacity: .55;
+}
+
 .cb-core-design-shell__layer-toggle,
 .cb-core-design-shell__layer-toggle-spacer {
 	grid-column: 1;
