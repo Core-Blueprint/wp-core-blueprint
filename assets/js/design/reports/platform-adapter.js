@@ -254,6 +254,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		}
 	};
 	const showError = () => {
+		const alreadyReported = container?.classList.contains('is-preview-error') === true;
 		stopObserver();
 		if (preview) preview.render('');
 		if (container) {
@@ -263,6 +264,9 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			if (status) {
 				status.hidden = false;
 				status.textContent = 'Report preview unavailable. No changes have been saved.';
+				if (!alreadyReported) {
+					doc.defaultView?.cbCore?.toast?.error?.(status.textContent);
+				}
 			}
 		}
 		lastDocumentKey = '';
