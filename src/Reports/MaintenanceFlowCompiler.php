@@ -32,7 +32,7 @@ final class MaintenanceFlowCompiler {
 	 * @param array<string,mixed> $report
 	 * @param array<string,mixed> $snapshot
 	 * @param array{project:array<string,mixed>,fields:array<string,mixed>}|null $native
-	 * @return array{layout:array<string,mixed>,blocks:list<RenderBlock>,locale:string,presentation:Presentation,preview_regions:array<string,list<int>>}
+	 * @return array{layout:array<string,mixed>,blocks:list<RenderBlock>,locale:string,presentation:Presentation,preview_regions:array<string,list<int|list<int>>>}
 	 */
 	public function compile( array $report, array $snapshot, string $locale, ?array $native = null ): array {
 		$this->assert_input( $report, $snapshot, $locale );
@@ -50,6 +50,7 @@ final class MaintenanceFlowCompiler {
 
 		$blocks = [];
 		$regions = [];
+		$nested_regions = [];
 		$first_content = true;
 		$spacing = (float) (int) $fields['section_spacing_mm'];
 		foreach ( $project['root']['children'] as $index => $node ) {
@@ -67,11 +68,24 @@ final class MaintenanceFlowCompiler {
 				$blocks[] = $block;
 			}
 			if ( [] !== $indexes && count( $regions ) < 100 ) {
-				// Flow preview permits up to 100 bounded semantic selection IDs.
-				// Extra elements still render correctly; they simply have no
-				// click-target metadata in the continuous-screen target.
+				// Root regions have priority within the bounded Flow preview budget.
 				$regions[ 'r' . (string) $index ] = $indexes;
 			}
+			if ( 'reports.section' === $node['type'] && [] !== $indexes ) {
+				// Outer Composer spacing container -> inner Section container.
+				// Child 0 is the Section heading; each native child emits one block.
+				foreach ( $node['children'] as $child_index => $child ) {
+					$nested_regions[ 'r' . (string) $index . '.' . (string) $child_index ] =
+						[ [ $indexes[0], 0, $child_index + 1 ] ];
+				}
+			}
+		}
+		// Preserve all available root targets before assigning nested targets.
+		foreach ( $nested_regions as $region_id => $paths ) {
+			if ( count( $regions ) >= 100 ) {
+				break;
+			}
+			$regions[ $region_id ] = $paths;
 		}
 		return [
 			'layout' => self::layout( $fields ),

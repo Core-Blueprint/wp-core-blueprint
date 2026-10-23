@@ -202,6 +202,31 @@ export const propertiesFor=node=>Object.hasOwn(defs,node?.type)
 		options:Array.isArray(spec)?[...spec]:undefined,
 	})):[];
 
+/**
+ * Reports-only semantic region paths. The isolated Flow iframe never receives
+ * access to the domain session; the Host validates every path before selection.
+ */
+const previewRegionForPath = (selection, project) => {
+	const path = selection?.primary?.kind === 'node' ? selection.primary.path : null;
+	if (!validPath(path) || (path.length !== 1 && path.length !== 2)) return null;
+	const parent = project?.root?.children?.[path[0]];
+	if (!parent || parent.properties?.enabled === 'off'
+		|| (path.length === 2 && parent.type !== 'reports.section')
+		|| !nodeAt(project.root, path)) return null;
+	return 'r' + path.join('.');
+};
+const previewPathForRegion = (region, project) => {
+	if (typeof region !== 'string' || region.length > 64
+		|| !/^r(?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*))?$/.test(region)) return null;
+	const path = region.slice(1).split('.').map(Number);
+	if (!validPath(path)) return null;
+	const parent = project?.root?.children?.[path[0]];
+	if (!parent || parent.properties?.enabled === 'off'
+		|| (path.length === 2 && parent.type !== 'reports.section')
+		|| !nodeAt(project.root, path)) return null;
+	return path;
+};
+
 export function createRenderAdapter({root,document:doc,profileId}) {
 	if (!root || !doc || profileId !== 'base/reports') throw new TypeError('HOST_MODULE_MISSING');
 	let editor = null, container = null, frame = null, preview = null, dropLayer = null, destroyed = false;
@@ -228,11 +253,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			: new URL('core-blueprint/v1/reports-designer/preview', base).href;
 		return {endpoint, nonce: config.nonce};
 	};
-	const selectedRegion = (selection) => {
-		const path = selection?.primary?.kind === 'node' ? selection.primary.path : null;
-		return Array.isArray(path) && Number.isSafeInteger(path[0]) && path[0] >= 0
-			? 'r' + path[0] : null;
-	};
+	const selectedRegion = (selection) => previewRegionForPath(selection, lastProject);
 	const stopObserver = () => {
 		connectedObserver?.disconnect();
 		connectedObserver = null;
@@ -321,10 +342,9 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 	};
 	const onActivate = (region) => {
 		if (destroyed || activeSignal?.aborted || !editor || !container?.isConnected
-			|| !/^r(?:0|[1-9][0-9]*)$/.test(region)) return;
-		const index = Number(region.slice(1));
-		if (!Number.isSafeInteger(index) || !lastProject?.root?.children?.[index]) return;
-		const path = [index];
+			|| container.classList.contains('is-fetching')) return;
+		const path = previewPathForRegion(region, lastProject);
+		if (path === null) return;
 		editor.select([{kind: 'node', path}], {kind: 'node', path});
 	};
 
