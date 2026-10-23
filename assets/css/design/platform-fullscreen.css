@@ -113,3 +113,205 @@
 		padding: 8px;
 	}
 }
+
+/* Canonical Platform v1 composition. Presentation-only; the existing Base
+   Shell/History/Save and Designer Mode drawer classes remain authoritative. */
+.cb-core-platform-screen[data-cb-platform-mounted="true"] > .cb-core-platform-screen__header {
+	display: none;
+}
+.cb-core-platform-screen[data-cb-platform-mounted="true"] > .cb-core-platform-screen__body {
+	padding: 0;
+}
+
+.cb-core-platform-screen .cb-core-design-shell--native {
+	width: 100%;
+	height: 100%;
+	min-height: 0;
+	background: var(--cb-surface-0);
+}
+
+.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__toolbar {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	align-items: center;
+	gap: 14px;
+	width: 100%;
+	min-height: 60px;
+	margin: 0;
+	padding: 9px 16px;
+	border: 0;
+	border-bottom: 1px solid var(--cb-border);
+	border-radius: 0;
+	background: var(--cb-surface-1);
+}
+
+.cb-core-design-shell--native .cb-core-design-shell__toolbar-zone {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	gap: 10px;
+}
+.cb-core-design-shell--native .cb-core-design-shell__toolbar-zone--end {
+	justify-content: flex-end;
+}
+.cb-core-design-shell--native .cb-core-design-shell__toolbar-zone--center {
+	justify-content: center;
+}
+.cb-core-design-shell--native .cb-core-design-shell__brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	flex: 0 0 auto;
+}
+.cb-core-design-shell--native .cb-core-design-shell__brand-wordmark {
+	font-family: var(--cb-ff-heading, 'Space Grotesk', sans-serif);
+	font-size: 14px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.cb-core-design-shell--native .cb-core-design-shell__native-profile {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--cb-text-muted);
+	white-space: nowrap;
+}
+.cb-core-design-shell--native .cb-core-design-shell__native-context {
+	display: inline-flex;
+	align-items: center;
+	min-width: 0;
+	max-width: 260px;
+}
+.cb-core-design-shell--native .cb-core-design-shell__native-context select {
+	max-width: 100%;
+	min-width: 140px;
+	margin: 0;
+}
+.cb-core-design-shell--native .cb-core-design-shell__native-context > span {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.cb-core-design-shell--native .cb-core-design-shell__native-close .button {
+	margin: 0 !important;
+}
+
+.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__workspace--collapsible {
+	flex: 1 1 auto;
+	width: 100%;
+	min-height: 0;
+	gap: 0;
+	padding: 0;
+	overflow: hidden;
+}
+.cb-core-platform-screen .cb-core-design-shell--native .cb-core-design-shell__palette,
+.cb-core-platform-screen .cb-core-design-shell--native .cb-core-design-shell__sidebar {
+	display: flex;
+	flex-direction: column;
+	border-block: 0;
+	border-radius: 0;
+	padding: 0;
+	overflow: hidden;
+}
+.cb-core-design-shell--native .cb-core-design-shell__panel-header {
+	position: relative;
+	flex: 0 0 44px;
+	margin: 0;
+}
+.cb-core-design-shell--native .cb-core-design-shell__tabs {
+	flex: 0 0 auto;
+}
+.cb-core-design-shell--native .cb-core-design-shell__panel {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+}
+.cb-core-design-shell--native .cb-core-design-shell__panel-body {
+	align-content: start;
+}
+.cb-core-design-shell--native .cb-core-design-shell__palette-grid {
+	--cb-design-palette-columns: 2;
+}
+.cb-core-design-shell--native .cb-core-design-shell__dynamic-grid .cb-core-design-shell__dynamic-item {
+	min-height: 40px;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.cb-core-platform-screen .cb-core-design-shell--native .cb-core-design-shell__canvas {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 0;
+	max-height: 100%;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: var(--cb-surface-2);
+	overflow: hidden;
+}
+.cb-core-platform-screen .cb-core-design-shell--native .cb-core-design-shell__canvas-workarea {
+	display: block;
+	width: 100%;
+	height: 100%;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	overflow: auto;
+	background: var(--cb-surface-2);
+}
+.cb-core-design-shell--native .cb-mail-platform,
+.cb-core-design-shell--native .cb-reports-platform {
+	min-height: 100%;
+	width: 100%;
+	box-sizing: border-box;
+}
+.cb-core-design-shell--native .cb-mail-platform {
+	padding: 0;
+}
+/* Device buttons act on the displayed document width, not the workarea. */
+.cb-core-design-shell--native[data-cb-design-shell-viewport="mobile"] .cb-mail-platform__frame,
+.cb-core-design-shell--native[data-cb-design-shell-viewport="mobile"] .cb-reports-platform__document {
+	max-width: min(430px, 100%) !important;
+}
+.cb-core-design-shell--native[data-cb-design-shell-viewport="tablet"] .cb-mail-platform__frame,
+.cb-core-design-shell--native[data-cb-design-shell-viewport="tablet"] .cb-reports-platform__document {
+	max-width: min(782px, 100%) !important;
+}
+
+@media (max-width: 1280px) {
+	.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__workspace--collapsible {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.cb-core-platform-screen .cb-core-design-shell--native .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
+	.cb-core-platform-screen .cb-core-design-shell--native .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+		max-height: none;
+		height: 100%;
+	}
+	.cb-core-design-shell--native .cb-core-design-shell__toolbar-zone {
+		gap: 6px;
+	}
+	.cb-core-design-shell--native .cb-core-design-shell__brand-wordmark,
+	.cb-core-design-shell--native .cb-core-design-shell__native-profile {
+		display: none;
+	}
+	.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__toolbar {
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	}
+}
+@media (max-width: 600px) {
+	.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__toolbar {
+		padding: 8px;
+		gap: 6px;
+	}
+	.cb-core-design-shell--native .cb-core-design-shell__native-context {
+		max-width: 128px;
+	}
+	.cb-core-design-shell--native .cb-core-design-shell__native-context select {
+		min-width: 0;
+		width: 100%;
+	}
+}
