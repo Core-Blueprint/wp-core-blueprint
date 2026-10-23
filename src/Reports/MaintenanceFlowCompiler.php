@@ -66,8 +66,10 @@ final class MaintenanceFlowCompiler {
 				$indexes[] = count( $blocks );
 				$blocks[] = $block;
 			}
-			if ( [] !== $indexes ) {
-				// Flow preview semantic IDs are bounded tokens, not JSON paths.
+			if ( [] !== $indexes && count( $regions ) < 100 ) {
+				// Flow preview permits up to 100 bounded semantic selection IDs.
+				// Extra elements still render correctly; they simply have no
+				// click-target metadata in the continuous-screen target.
 				$regions[ 'r' . (string) $index ] = $indexes;
 			}
 		}
