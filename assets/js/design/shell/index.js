@@ -8,6 +8,7 @@ import {
 	DESIGNER_LAYER_ACTIONS,
 	createDesignerLayerRow,
 	createDesignerLayerTree,
+	projectDesignerLayerInteractions,
 } from './layers.js';
 import { DESIGNER_PALETTE_ROLES, createDesignerNavigation } from './navigation.js';
 import { createDesignerInspectorValueControl } from './inspector-value-control.js';
@@ -774,6 +775,7 @@ export {
 	enableDesignerTextareaAutosize,
 	createDesignerLayerRow,
 	createDesignerLayerTree,
+	projectDesignerLayerInteractions,
 	createDesignerSelectionController,
 	decorateDesignerControl,
 	decorateDesignerElement,
