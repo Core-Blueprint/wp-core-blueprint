@@ -281,6 +281,20 @@ final class PlatformTransport {
 			$reason = $result['reason'] ?? '';
 			$body['reason'] = is_string( $reason ) && in_array( $reason, $unknown_phases, true )
 				? $reason : 'SAVE_SERVER_UNVERIFIED';
+		} elseif ( 'refused' === $status ) {
+			// Only a confirmed pre-transaction refusal or acknowledged ROLLBACK
+			// may reveal a phase category. No request contents, SQL, user IDs,
+			// exception details or operation identity are returned.
+			$refused_phases = [
+				'SAVE_PREFLIGHT_REFUSED', 'SAVE_DOCUMENT_LOAD_REFUSED',
+				'SAVE_DOCUMENT_AUTHORIZATION_REFUSED', 'SAVE_DOCUMENT_CREATION_REFUSED',
+				'SAVE_DOCUMENT_VALIDATION_REFUSED', 'SAVE_DOCUMENT_STORAGE_REFUSED',
+				'SAVE_DOCUMENT_NORMALIZATION_REFUSED', 'SAVE_DOCUMENT_WRITE_REFUSED',
+				'SAVE_DOCUMENT_VERIFY_REFUSED', 'SAVE_OPERATION_RECEIPT_REFUSED',
+			];
+			$reason = $result['reason'] ?? '';
+			$body['reason'] = is_string( $reason ) && in_array( $reason, $refused_phases, true )
+				? $reason : 'SAVE_REFUSED_UNCLASSIFIED';
 		}
 		return new \WP_REST_Response( $body, 200 );
 	}
