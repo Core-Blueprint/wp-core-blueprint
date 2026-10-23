@@ -72,7 +72,11 @@ export const createDesignerDragDropController = ({
 		emit(reason, reason === 'cancelled' ? 'Element placement cancelled.' : 'Element placement unavailable.');
 	};
 	const validGesture = () => {
-		if (!gesture || !ready()) return false;
+		if (!gesture) return false;
+		if (!ready() || !root.contains(gesture.origin)) {
+			cancel('stale');
+			return false;
+		}
 		try {
 			if (context() !== gesture.contextKey) {
 				cancel('stale');
@@ -85,7 +89,7 @@ export const createDesignerDragDropController = ({
 		}
 	};
 	const candidate = (zone, edge) => {
-		if (!validGesture()) return null;
+		if (!validGesture() || !root.contains(zone.element) || zones.get(zone.element) !== zone) return null;
 		if (!['before', 'inside', 'after'].includes(edge)) return null;
 		try {
 			const proposed = resolveIntent(Object.freeze({
