@@ -30,6 +30,8 @@ test('native toolbar only condenses its identity when space is insufficient, pre
 	const fullscreen = await source('../../assets/css/design/platform-fullscreen.css');
 	assert.match(editor, /const configurePlatformBrand = \(root, signal\) =>/);
 	assert.match(editor, /start\.scrollWidth > available \+ 1/);
+	assert.match(editor, /startRect\.right \+ gap > centerRect\.left \+ 1/);
+	assert.match(editor, /startRect\.right \+ gap > endRect\.left \+ 1/);
 	assert.match(editor, /new view\.ResizeObserver\(sync\)/);
 	assert.match(editor, /new view\.MutationObserver\(sync\)/);
 	assert.match(editor, /signal\.addEventListener\('abort'/);

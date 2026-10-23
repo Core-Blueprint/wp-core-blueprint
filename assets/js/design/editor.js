@@ -668,8 +668,20 @@ const configurePlatformBrand = (root, signal) => {
 		if (signal.aborted || !root.isConnected) return;
 		toolbar.classList.remove('is-identity-condensed');
 		const available = start.clientWidth;
+		const center = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--center');
+		const end = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--end');
+		const gap = parseFloat(view.getComputedStyle(toolbar).columnGap) || 8;
+		const startRect = start.getBoundingClientRect();
+		const centerRect = center?.getBoundingClientRect();
+		const endRect = end?.getBoundingClientRect();
+		// The start zone can be intrinsically wider than its grid track:
+		// measuring scrollWidth alone would miss overlap with Center / Save.
+		const collision = startRect.width > 0 && Boolean(
+			(centerRect?.width > 0 && startRect.right + gap > centerRect.left + 1)
+			|| (endRect?.width > 0 && startRect.right + gap > endRect.left + 1)
+		);
 		toolbar.classList.toggle('is-identity-condensed',
-			available > 0 && start.scrollWidth > available + 1);
+			available > 0 && (start.scrollWidth > available + 1 || collision));
 	};
 	const resize = typeof view.ResizeObserver === 'function'
 		? new view.ResizeObserver(sync) : null;
