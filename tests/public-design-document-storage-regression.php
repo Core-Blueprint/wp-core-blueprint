@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 /**
  * Standalone, SOURCE-ONLY CAS state machine regression (no WP or MariaDB).
+ * A deliberately isolated native project+fields domain seam validates
+ * storage shape; the production FrozenRegistry is exercised separately.
  * Real InnoDB two-worker evidence is a separate authorized Level 2 gate.
  */
 define( 'ABSPATH', __DIR__ . '/' );
@@ -115,6 +117,7 @@ final class DesignDocumentFakeDb {
 	}
 }
 
+require_once __DIR__ . '/fixtures/design-document-cas-native-domain.php';
 require_once dirname( __DIR__ ) . '/src/Design/Document/Schema.php';
 require_once dirname( __DIR__ ) . '/src/Design/Document/Repository.php';
 
@@ -128,9 +131,20 @@ function check_design_document( bool $pass, string $label ): void {
 }
 
 $wpdb = new DesignDocumentFakeDb();
-$mail = [ 'subject' => 'Saved subject', 'project' => [ 'root' => [ 'type' => 'mail.root' ] ] ];
-$other = [ 'subject' => 'Other', 'project' => [ 'root' => [ 'type' => 'mail.root' ] ] ];
-$report = [ 'branding' => [ 'accent_color' => '#0064c8' ], 'composer' => [ 'blocks' => [] ] ];
+// Native storage is exactly project+fields. The former subject+project
+// source fixture exercised a retired development representation.
+$mail = [
+	'project' => [ 'schema_version' => 1, 'root' => [ 'type' => 'mail.root', 'children' => [] ] ],
+	'fields' => [ 'subject' => 'Saved subject — welkom' ],
+];
+$other = [
+	'project' => [ 'schema_version' => 1, 'root' => [ 'type' => 'mail.root', 'children' => [] ] ],
+	'fields' => [ 'subject' => 'Other — café' ],
+];
+$report = [
+	'project' => [ 'schema_version' => 1, 'root' => [ 'type' => 'reports.root', 'children' => [] ] ],
+	'fields' => [ 'branding' => [ 'accent_color' => '#0064c8' ] ],
+];
 
 check_design_document( 'wp_cb_design_documents' === Schema::table_name(), 'site-scoped table name' );
 check_design_document( Schema::healthy(), 'source schema metadata' );
@@ -142,6 +156,9 @@ check_design_document( ! Repository::valid_revision( '09' ) && ! Repository::val
 check_design_document( ! Repository::valid_revision( '9223372036854775808' ), 'overflow rejected' );
 check_design_document( 'invalid' === Repository::create( Repository::MAIL, 'a.b', '1', $mail )['status'], 'create must require revision zero' );
 check_design_document( 'saved' === Repository::create( Repository::MAIL, 'a.b', '0', $mail )['status'], 'first create succeeds' );
+$first_json = $wpdb->rows['wp_cb_design_documents'][hash( 'sha256', Repository::MAIL . "\\0" . 'a.b' )]['document_json'] ?? '';
+check_design_document( ! preg_match( '/[^\\x00-\\x7F]/', $first_json ), 'Unicode is ASCII-safe in SQL-bound JSON' );
+check_design_document( json_decode( $first_json, true, 128, JSON_THROW_ON_ERROR ) === $mail, 'decoded Unicode persists losslessly' );
 check_design_document( 'conflict' === Repository::create( Repository::MAIL, 'a.b', '0', $mail )['status'], 'duplicate key conflict' );
 check_design_document( 'saved' === Repository::create( Repository::MAIL, 'c.d', '0', $other )['status'], 'independent Mail row' );
 check_design_document( 'saved' === Repository::create( Repository::REPORTS, 'maintenance', '0', $report )['status'], 'Reports singleton create' );
@@ -162,7 +179,7 @@ $wpdb->bad_after_write = true;
 check_design_document( 'uncertain' === Repository::save( Repository::MAIL, 'a.b', '4', $other )['status'], 'failed readback cannot acknowledge' );
 $wpdb->bad_readback = false;
 $wpdb->bad_index = true;
-check_design_document( 'unavailable' === Repository::get( Repository::MAIL, 'a.b' )['status'], 'missing unique constraint fails closed' );
+check_design_document( 'unavailable' === Repository::save( Repository::MAIL, 'a.b', '5', $other )['status'], 'missing unique constraint prevents writes' );
 $wpdb->bad_index = false;
 $wpdb->engine = 'MyISAM';
 check_design_document( 'unavailable' === Repository::save( Repository::REPORTS, 'maintenance', '1', $report )['status'], 'non-InnoDB fails closed' );
