@@ -181,6 +181,9 @@ const showRefusal=(container,code)=>{
 		?'The Designer is temporarily unavailable. No changes were made.'
 		:'The Designer could not verify your permissions or document. Nothing was changed.';
 	container.replaceChildren(note);
+	// Fatal startup refusal remains visibly persistent, but temporary
+	// feedback also uses the same Foundation as other Base Designers.
+	baseToast.error(note.textContent);
 };
 
 async function activate() {
