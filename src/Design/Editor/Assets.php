@@ -210,6 +210,9 @@ final class Assets {
 	 */
 	public static function enqueue_platform(): void {
 		self::enqueue();
+		// Native Mail/Reports Host uses the same Core Toast Foundation as
+		// every other Designer surface, including in fullscreen mode.
+		\CoreBlueprint\Core\UI\Assets::enqueue_toasts( \CoreBlueprint\Core\UI\Assets::TOAST_PRESENTATION_CORE );
 		wp_enqueue_style(
 			self::BUTTON_STYLE, CB_CORE_URL . 'assets/css/components/buttons.css',
 			[ self::TOKEN_STYLE ], self::asset_version( 'assets/css/components/buttons.css' )
@@ -265,7 +268,7 @@ final class Assets {
 		wp_enqueue_script_module(
 			'@cb-core/base-platform-v1',
 			CB_CORE_URL . 'assets/js/design/platform/wordpress-save-adapter.js',
-			[ self::MODULE_ID, '@cb-core/mail-platform', '@cb-core/reports-platform' ],
+			[ self::MODULE_ID, '@cb-core/toast', '@cb-core/mail-platform', '@cb-core/reports-platform' ],
 			self::asset_version( 'assets/js/design/platform/wordpress-save-adapter.js' )
 		);
 	}
