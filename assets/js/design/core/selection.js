@@ -235,7 +235,11 @@ export class SelectionState {
 			this.#batchDepth -= 1;
 			if (completed && this.#batchDepth === 0) {
 				const after = this.snapshot();
-				if (!sameRefs(normalizeSnapshot(before), normalizeSnapshot(after))) {
+				if (!sameRefs(normalizeSnapshot(before), normalizeSnapshot(after))
+					|| metadata?.force === true) {
+					// A structural command may replace the node identified by
+					// the same selected path. Publish one final semantic event,
+					// not each transient remap performed inside the batch.
 					this.#revision += 1;
 					this.notify(Object.freeze({
 						revision: this.#revision, ...eventMeta(metadata, 'batch'),
