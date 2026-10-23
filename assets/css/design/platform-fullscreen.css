@@ -388,3 +388,24 @@
 		width: 100%;
 	}
 }
+
+
+/* Shared DND-02: Base owns the visible placement affordances for all profiles. */
+.cb-core-design-shell--native [data-cb-design-component-id][draggable="true"]:not(:disabled),
+.cb-core-design-shell--native [data-cb-design-component-id][draggable="true"]:not(:disabled) * {
+	cursor: grab;
+}
+.cb-core-design-shell--native [data-cb-design-drop-active="true"] {
+	outline: 2px solid #00a8e8;
+	outline-offset: -2px;
+}
+.cb-core-design-shell--native [data-cb-design-drop-active="true"][data-cb-design-drop-edge="before"] {
+	box-shadow: inset 0 4px 0 #00a8e8;
+}
+.cb-core-design-shell--native [data-cb-design-drop-active="true"][data-cb-design-drop-edge="after"] {
+	box-shadow: inset 0 -4px 0 #00a8e8;
+}
+.cb-core-design-shell--native[data-cb-design-dnd-active="true"] .cb-reports-platform__drop-region {
+	background: rgba(0, 168, 232, .035);
+	border: 1px dashed rgba(0, 168, 232, .28);
+}
