@@ -33,6 +33,16 @@ const notifyDesignerSave = ({outcome, phase, reason = null}) => {
 			console.warn('[Core Blueprint Designer] Unverified Save phase:', reason);
 		}
 	}
+	if (outcome === 'refused' && [
+		'SAVE_PREFLIGHT_REFUSED', 'SAVE_DOCUMENT_LOAD_REFUSED',
+		'SAVE_DOCUMENT_AUTHORIZATION_REFUSED', 'SAVE_DOCUMENT_CREATION_REFUSED',
+		'SAVE_DOCUMENT_VALIDATION_REFUSED', 'SAVE_DOCUMENT_STORAGE_REFUSED',
+		'SAVE_DOCUMENT_NORMALIZATION_REFUSED', 'SAVE_DOCUMENT_WRITE_REFUSED',
+		'SAVE_DOCUMENT_VERIFY_REFUSED', 'SAVE_OPERATION_RECEIPT_REFUSED',
+		'SAVE_REFUSED_UNCLASSIFIED',
+	].includes(reason)) {
+		console.warn('[Core Blueprint Designer] Save refused at:', reason);
+	}
 	switch (outcome) {
 	case 'committed':
 		baseToast.success(label('saved', 'Changes saved and verified.'));
