@@ -1,4 +1,5 @@
 import { attachTrustedDesignerHost, decorateDesignerControl } from '@cb-core/design-editor';
+import { toast as baseToast } from '@cb-core/toast';
 import * as mailProfile from '@cb-core/mail-platform';
 import * as reportsProfile from '@cb-core/reports-platform';
 
@@ -7,6 +8,30 @@ const MODULES=new Map([
 	['@cb-core/reports-platform',reportsProfile],
 ]);
 const issue=(code)=>Object.assign(new Error(code),{code});
+
+// Native Designer uses the canonical Base Toast Foundation, never a second
+// notification stack or an optimistic success inferred from HTTP 200.
+const notifyDesignerSave = ({outcome, phase}) => {
+	if (phase !== 'save') return;
+	switch (outcome) {
+	case 'committed':
+		baseToast.success('Changes saved and verified.');
+		break;
+	case 'conflict':
+		baseToast.error('This document changed elsewhere. Your changes were not confirmed as saved.');
+		break;
+	case 'refused':
+	case 'idempotency_reused':
+		baseToast.error('Save was refused. Your changes have not been confirmed as saved.');
+		break;
+	case 'persisted-unsynchronized':
+		baseToast.error('Changes may be stored, but the editor could not reconcile them. Keep this Designer open.', {persistent:true});
+		break;
+	default:
+		baseToast.warning('Save outcome is uncertain. Choose Verify save status to check the original operation. Keep this Designer open.', {persistent:true});
+		break;
+	}
+};
 const config=typeof window!=='undefined'?window.cbCorePlatformV1:null;
 const validConfig=()=>{
 	if(!config||typeof config!=='object'||typeof config.restRoot!=='string'
@@ -187,6 +212,7 @@ async function activate() {
 				return loaded;
 			},
 			createSaveAdapter:createWordPressSaveAdapter,
+			notifySave:notifyDesignerSave,
 		});
 		await host.mount({bootstrap:loaded.bootstrap,project:loaded.project,persistedFields:loaded.fields});
 		// Host-READY is the only point where the native toolbar may replace the
