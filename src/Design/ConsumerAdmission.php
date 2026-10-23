@@ -46,8 +46,9 @@ final class ConsumerAdmission {
 		// Native consumers are installed normal plugins in v1. Symlinks,
 		// arbitrary paths and a caller-selected Base root are not admitted.
 		$plugins_root = realpath( WP_PLUGIN_DIR );
-		$root = realpath( $entry['installedRoot'] );
-		if ( false === $plugins_root || false === $root || is_link( $entry['installedRoot'] )
+		$installed_path = rtrim( $entry['installedRoot'], '/\\' );
+		$root = realpath( $installed_path );
+		if ( false === $plugins_root || false === $root || is_link( $installed_path )
 			|| dirname( $root ) !== $plugins_root || $root === realpath( CB_CORE_DIR ) ) {
 			throw new \DomainException( 'ARTIFACT_RUNTIME_MISMATCH' );
 		}
