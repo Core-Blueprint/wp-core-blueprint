@@ -277,7 +277,7 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 		}
 		// Absence/missing row/HTTP 404/timeouts do not establish no-write.
 		notify('UNKNOWN');
-		return Object.freeze({ status: 'unknown' });
+		return Object.freeze({ status: 'unknown', reason: 'SAVE_RECOVERY_UNVERIFIED' });
 	};
 
 	// Exact countersigned SaveCoordinatorV1 Host-private callable surface.
