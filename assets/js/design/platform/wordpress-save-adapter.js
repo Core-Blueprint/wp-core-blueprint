@@ -11,24 +11,43 @@ const issue=(code)=>Object.assign(new Error(code),{code});
 
 // Native Designer uses the canonical Base Toast Foundation, never a second
 // notification stack or an optimistic success inferred from HTTP 200.
-const notifyDesignerSave = ({outcome, phase}) => {
+const notifyDesignerSave = ({outcome, phase, reason = null}) => {
 	if (phase !== 'save') return;
+	const messages = config?.saveNotices || {};
+	const label = (key, fallback) => typeof messages[key] === 'string'
+		&& messages[key].trim() ? messages[key] : fallback;
+	if (outcome === 'unknown') {
+		// A bounded classification only; never log request bodies, document
+		// data, tokens, operation IDs or raw backend messages.
+		if (['SAVE_TRANSPORT_UNVERIFIED', 'SAVE_SERVER_UNVERIFIED',
+			'SAVE_RECEIPT_INVALID', 'SAVE_RECOVERY_UNVERIFIED'].includes(reason)) {
+			console.warn('[Core Blueprint Designer] Unverified Save phase:', reason);
+		}
+	}
 	switch (outcome) {
 	case 'committed':
-		baseToast.success('Changes saved and verified.');
+		baseToast.success(label('saved', 'Changes saved and verified.'));
 		break;
 	case 'conflict':
-		baseToast.error('This document changed elsewhere. Your changes were not confirmed as saved.');
+		baseToast.error(label('conflict',
+			'This document changed elsewhere. Your changes were not confirmed as saved.'));
 		break;
 	case 'refused':
 	case 'idempotency_reused':
-		baseToast.error('Save was refused. Your changes have not been confirmed as saved.');
+		baseToast.error(label('refused',
+			'Save was refused. Your changes have not been confirmed as saved.'));
 		break;
 	case 'persisted-unsynchronized':
-		baseToast.error('Changes may be stored, but the editor could not reconcile them. Keep this Designer open.', {persistent:true});
+		baseToast.error(label('unsynchronized',
+			'Changes may be stored, but the editor could not reconcile them. Keep this Designer open.'),
+			{persistent:true});
 		break;
 	default:
-		baseToast.warning('Save outcome is uncertain. Choose Verify save status to check the original operation. Keep this Designer open.', {persistent:true});
+		// Do not leave an obsolete UNKNOWN toast after verified recovery;
+		// canonical Save/Exit guards preserve the uncertain state meanwhile.
+		baseToast.warning(label('unknown',
+			'Save outcome is uncertain. Choose Verify save status to check the original operation. Keep this Designer open.'),
+			{duration:12000});
 		break;
 	}
 };
