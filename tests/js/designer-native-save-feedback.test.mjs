@@ -135,6 +135,41 @@ test('rolled-back Mail refusals reveal only a bounded phase without optimistic s
 	assert.match(transport,/SAVE_DOCUMENT_VALIDATION_REFUSED/);
 });
 
+test('Mail storage CREATE and UPDATE failures remain bounded refusals, never success', async () => {
+	const codes = [
+		'SAVE_STORAGE_CREATE_INVALID',
+		'SAVE_STORAGE_CREATE_SCHEMA_UNAVAILABLE',
+		'SAVE_STORAGE_CREATE_QUERY_FAILED',
+		'SAVE_STORAGE_CREATE_READBACK_UNVERIFIED',
+		'SAVE_STORAGE_UPDATE_QUERY_FAILED',
+		'SAVE_STORAGE_UPDATE_READBACK_UNVERIFIED',
+	];
+	const seen = [];
+	const warnings = [];
+	const presenter = new Function('baseToast','config','console',
+		extract('const notifyDesignerSave = ', '\\nconst config=') + '\\nreturn notifyDesignerSave;'
+	)({
+		success: () => seen.push('success'),
+		error: () => seen.push('error'),
+		warning: () => seen.push('warning'),
+	}, {saveNotices:{}}, {warn: (...args) => warnings.push(args)});
+	for (const reason of codes) {
+		const req = instantiateRequest(async () => ({
+			ok: true, status: 200, json: async () => ({status: 'refused', reason}),
+		}));
+		const response = await req('save','POST',{operationId:'dummy'});
+		presenter({phase:'save', outcome:response.status, reason:response.reason});
+	}
+	assert.deepEqual(seen, codes.map(() => 'error'));
+	assert.deepEqual(warnings.map(args => args[1]), codes);
+	assert.ok(!JSON.stringify(warnings).includes('operationId'));
+	const coordinator = await readFile(
+		new URL('../../assets/js/design/platform/save-coordinator.js', import.meta.url), 'utf8');
+	assert.match(coordinator, /SAVE_STORAGE_/);
+	assert.match(editor, /SAVE_STORAGE_/);
+	assert.match(transport, /SAVE_STORAGE_/);
+});
+
 test('native Host requires toast module and preserves legacy no-double-toast behaviour', () => {
 	assert.match(transport,/import \{ toast as baseToast \} from '@cb-core\/toast'/);
 	assert.match(transport,/notifySave:notifyDesignerSave/);
