@@ -17,6 +17,12 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        // Native Designer Save verification and recovery outcomes (P0).
+        'Changes saved and verified.' => 'Änderungen gespeichert und bestätigt.',
+        'This document changed elsewhere. Your changes were not confirmed as saved.' => 'Dieses Dokument wurde an anderer Stelle geändert. Das Speichern Ihrer Änderungen wurde nicht bestätigt.',
+        'Save was refused. Your changes have not been confirmed as saved.' => 'Das Speichern wurde abgelehnt. Ihre Änderungen wurden nicht nachweislich gespeichert.',
+        'Changes may be stored, but the editor could not reconcile them. Keep this Designer open.' => 'Die Änderungen wurden möglicherweise gespeichert, aber der Editor konnte sie nicht abgleichen. Lassen Sie diesen Designer geöffnet.',
+        'Save outcome is uncertain. Choose Verify save status to check the original operation. Keep this Designer open.' => 'Das Ergebnis des Speicherns ist ungewiss. Wählen Sie „Speicherstatus überprüfen“, um den ursprünglichen Vorgang zu prüfen. Lassen Sie diesen Designer geöffnet.',
         // Canonical Base Designer Exit Guard v1 labels (WordPress gettext).
         'Close Designer?' => 'Designer schließen?',
         'Return to the previous page?' => 'Zur vorherigen Seite zurückkehren?',
