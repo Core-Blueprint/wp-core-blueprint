@@ -64,9 +64,9 @@ test('Renderer sanitizes rich-text HTML and uses table-based responsive columns'
 	assert.match(richText, /esc_html\(/);
 	assert.doesNotMatch(richText, /'script'\s*=>/);
 	assert.doesNotMatch(richText, /'style'\s*=>/);
-	assert.match(validator, /mail\.columns_count/);
-	assert.match(validator, /mail\.column_parent/);
-	assert.match(validator, /mail\.rich_text_markup/);
+	assert.match(validator, /\$errors->error\( 'mail\.columns', 'Two columns are required\.'/);
+	assert.match(validator, /! in_array\( \$parent, \$definitions\[ \$type \]\['parents'\], true \)/);
+	assert.match(validator, /self::valid_value\( \$properties\[ \$key \], \$rule \)/);
 });
 
 test('beginner-facing link helper refuses active and unsupported URLs', () => {
@@ -100,8 +100,10 @@ test('Mail rich-text inspector has visual editing by default with safe Advanced 
 	assert.match(client, /sanitizeMailMarkup\(element\.innerHTML/);
 	assert.match(client, /onCommit\(clean\)/);
 	assert.match(css, /\.cb-mail-rich-text-controls__editor:focus-visible/);
-	assert.doesNotMatch(baseMailCss, /\.cb-mail-rich-text-controls__editor/);
-	assert.match(assets, /DesignEditorAssets::enqueue_mail_rich_text_controls\(\)/);
+	assert.match(baseMailCss, /\.cb-mail-platform \.cb-mail-rich-text-controls__editor/);
+	assert.doesNotMatch(baseMailCss, /(?<!cb-mail-platform )\.cb-mail-rich-text-controls__editor\s*\{/);
+	assert.match(assets, /DesignEditorAssets::enqueue_platform\(\)/);
+	assert.match(assets, /Deliberately do NOT enqueue mail-designer\.js/);
 	assert.match(publicAssets, /function enqueue_mail_rich_text_controls\(\): void/);
 	assert.match(publicAssets, /assets\/css\/design\/mail-rich-text-controls\.css/);
 	assert.doesNotMatch(client, /document\.execCommand/);
