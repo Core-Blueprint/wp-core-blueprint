@@ -45,6 +45,24 @@ Consumer code imports only public Base `@cb-core/design-editor`, modal/toast and
 | External API | `@cb-core/design-editor` v2 plus PHP capability from **same installed Base ZIP**; consumer-specific pairing later | SOURCE contract; installed pair OPEN |
 | Release/merge | Owner review and separate explicit `main` GO; any release actions separately authorized | HOLD |
 
+## DF-04 regression reconciliation after first installed candidate check
+
+The owner's first complete Level 1 run against `bf7d813c6dcc180a4f0fd8292037207b1c00d468` reported **292 PASS, 53 FAIL out of 345 tests** while PHP syntax, translation parity, standalone document/CAS/Unicode/Mail checks, shipped 121 JS syntax, DEV ZIP and SHA-256 check passed. The DEV ZIP checksum from that **obsolete candidate** was `69902f297ad7f004e7368d0a25033cd446fd5627cb692de377496231d826bbe9` and must not be reused.
+
+The failing tests were grouped and reconciled by root cause rather than disabling the suite:
+
+- Legacy domain fixtures incorrectly declared stable `schema_version: 1` without the verified installed Host Registry context. Isolated unit fixtures now remain generation zero, and a separate negative assertion verifies that stable generation one is still blocked for an untrusted standalone consumer.
+- Existing Selection tests assumed only `{paths,primary}`, whereas current typed snapshots additionally expose `refs`, `primaryRef` and `contextEpoch`. The tests check node-path projections while retaining typed-identity assertions.
+- **Production bug corrected:** History discarded staged `forceSelection` during commit. It now forwards semantic selection intent; SelectionState also honors an explicit forced final batch event. Insert-at-same-path must notify the Inspector/Layers even where path equality masks a new node.
+- The fullscreen test isolated ESM files but omitted the public `inspector-value-control.js` dependency. The fixture now copies this module.
+- The Layers DnD test expected obsolete per-row reorder buttons instead of the canonical context-menu and bounded sibling DnD interaction.
+- The Exit Guard translation check froze a retired global 3990-message count while canonical source now contains 4032 messages. Localized key coverage remains tested and canonical catalog parity is enforced by the PHP translation gate.
+- The older Mail tests expected pre-native validator error names and separate Mail-rich-text enqueue. Assertions now check the native domain parent/column invariants and one scoped Base Platform asset authority.
+
+**Independent source evidence:** the new v2 public API/Layers tests previously passed 5/5 direct assertions. The four modified Mail source tests were separately evaluated against current production SOURCE, 4/4 PASS. All reconciled test files passed JavaScript syntax. These targeted checks **do not** replace a complete local Level 1 re-run on the final HEAD.
+
+**Merge rule unchanged:** a fresh exact-HEAD `./tools/check` must exit 0. If any failure persists, inspect the exact test output and fix only a demonstrated test drift or product defect; do not mark the 53 failures ignored, mask them with blanket skips, or merge with a red gate.
+
 ## Minimal operator check
 
 From `~/Downloads/wp-core-blueprint`:
