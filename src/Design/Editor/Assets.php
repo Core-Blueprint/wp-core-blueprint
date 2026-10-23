@@ -262,6 +262,13 @@ final class Assets {
 				'restRoot' => esc_url_raw( rest_url() ),
 				'nonce' => wp_create_nonce( 'wp_rest' ),
 				'labels' => self::platform_field_labels(),
+				'saveNotices' => [
+					'saved' => __( 'Changes saved and verified.', 'core-blueprint' ),
+					'conflict' => __( 'This document changed elsewhere. Your changes were not confirmed as saved.', 'core-blueprint' ),
+					'refused' => __( 'Save was refused. Your changes have not been confirmed as saved.', 'core-blueprint' ),
+					'unsynchronized' => __( 'Changes may be stored, but the editor could not reconcile them. Keep this Designer open.', 'core-blueprint' ),
+					'unknown' => __( 'Save outcome is uncertain. Choose Verify save status to check the original operation. Keep this Designer open.', 'core-blueprint' ),
+				],
 			] ) . ';',
 			'before'
 		);
