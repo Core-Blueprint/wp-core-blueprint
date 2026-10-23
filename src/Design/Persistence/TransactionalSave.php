@@ -96,7 +96,9 @@ final class TransactionalSave {
 			// Receipt contains the FULL accepted project AND FULL accepted fields.
 			$accepted_project = SaveEnvelope::decode_object( SaveEnvelope::canonical_json( $written['project'] ) );
 			$accepted_fields = SaveEnvelope::decode_object( SaveEnvelope::canonical_json( $written['fields'] ) );
-			$receipt_json = SaveEnvelope::canonical_json( (object) [
+			// Persist receipt JSON in an ASCII-safe, lossless representation.
+			// The nested project/fields digests remain unchanged canonical UTF-8.
+			$receipt_json = SaveEnvelope::storage_json( (object) [
 				'contractVersion' => 1,
 				'status' => 'committed',
 				'operationId' => $intent->operation_id,
