@@ -82,7 +82,7 @@ final class BaseDocumentRepositoryPort extends BaseDocumentTransactionPort {
 		$this->last_document = null;
 		$this->last_intent = null;
 		if ( ! $this->authorize( $intent ) ) {
-			return [ 'status' => 'refused' ];
+			return [ 'status' => 'refused', 'reason' => 'SAVE_DOCUMENT_AUTHORIZATION_REFUSED' ];
 		}
 		$read = Repository::read_for_update( $intent->resource_type, $intent->resource_key );
 		if ( ( $locked['status'] ?? null ) === 'missing' ) {
@@ -93,10 +93,10 @@ final class BaseDocumentRepositoryPort extends BaseDocumentTransactionPort {
 			}
 			try {
 				if ( ( $this->authorize_creation )( $intent ) !== true ) {
-					return [ 'status' => 'refused' ];
+					return [ 'status' => 'refused', 'reason' => 'SAVE_DOCUMENT_CREATION_REFUSED' ];
 				}
 			} catch ( \Throwable $error ) {
-				return [ 'status' => 'refused' ];
+				return [ 'status' => 'refused', 'reason' => 'SAVE_DOCUMENT_CREATION_REFUSED' ];
 			}
 		} elseif ( ( $locked['status'] ?? null ) !== 'found'
 			|| ( $read['status'] ?? null ) !== 'found'
@@ -114,7 +114,7 @@ final class BaseDocumentRepositoryPort extends BaseDocumentTransactionPort {
 				|| ! ( $accepted['project'] ?? null ) instanceof \stdClass
 				|| ! ( $accepted['fields'] ?? null ) instanceof \stdClass
 				|| ! Repository::valid_document( $intent->resource_type, $accepted['document'] ) ) {
-				return [ 'status' => 'refused' ];
+				return [ 'status' => 'refused', 'reason' => 'SAVE_DOCUMENT_VALIDATION_REFUSED' ];
 			}
 			// The returned receipt values must represent precisely what domain
 			// normalization will actually persist; verify this after CAS.
@@ -126,7 +126,9 @@ final class BaseDocumentRepositoryPort extends BaseDocumentTransactionPort {
 			);
 			if ( ( $result['status'] ?? null ) !== 'saved'
 				|| ! is_string( $result['revision'] ?? null ) ) {
-				return [ 'status' => ( $result['status'] ?? null ) === 'conflict' ? 'conflict' : 'refused' ];
+				return ( $result['status'] ?? null ) === 'conflict'
+					? [ 'status' => 'conflict' ]
+					: [ 'status' => 'refused', 'reason' => 'SAVE_DOCUMENT_STORAGE_REFUSED' ];
 			}
 			$this->last_document = $accepted['document'];
 			$this->last_intent = $intent;
@@ -137,7 +139,7 @@ final class BaseDocumentRepositoryPort extends BaseDocumentTransactionPort {
 				'fields' => $fields,
 			];
 		} catch ( \Throwable $error ) {
-			return [ 'status' => 'refused' ];
+			return [ 'status' => 'refused', 'reason' => 'SAVE_DOCUMENT_NORMALIZATION_REFUSED' ];
 		}
 	}
 
