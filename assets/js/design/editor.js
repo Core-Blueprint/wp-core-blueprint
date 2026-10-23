@@ -498,6 +498,25 @@ export const createPlatformSessionBridge = ({
  * The registered RenderAdapter owns the inner render surface, not this toolbar.
  * No template HTML or document-provided event handlers are executed.
  */
+/**
+ * Presentation-only label resolver for every native Designer profile.
+ * Verified Registry keys and Save/Command authority remain unchanged.
+ */
+const platformFieldLabel = (key, fallback = '') => {
+	const source = String(key ?? '');
+	const leaf = source.split('.').at(-1);
+	const dictionary = typeof window !== 'undefined' ? window.cbCorePlatformV1?.labels : null;
+	const localized = dictionary && typeof dictionary === 'object'
+		? (dictionary[source] ?? dictionary[leaf]) : null;
+	if (typeof localized === 'string' && localized.trim()) return localized;
+	const raw = typeof fallback === 'string' && fallback.trim() && fallback !== source
+		? fallback : leaf;
+	return raw.replace(/([a-z\d])([A-Z])/g, '$1 $2')
+		.replace(/[_-]+/g, ' ').replace(/\bUrl\b/gi, 'URL')
+		.replace(/\bId\b/gi, 'ID')
+		.replace(/^./, letter => letter.toUpperCase());
+};
+
 const composePlatformChrome = (root, profileId) => {
 	if (root.childNodes.length || root.isConnected) throw new Error('HOST_CONTEXT_REFUSED');
 	const doc = root.ownerDocument;
@@ -1054,16 +1073,16 @@ export const attachTrustedDesignerHost = ({
 				const button = stagedRoot.ownerDocument.createElement('button');
 				button.type = 'button';
 				button.className = 'button cb-core-design-shell__palette-item';
-				button.textContent = component.label;
+				button.textContent = platformFieldLabel(component.type, component.label);
 				button.dataset.cbDesignComponentId = component.id;
 				button.classList.add('cb-core-design-shell__palette-item--stacked');
-				decorateDesignerElement(button, component.type, {label: component.label});
+				decorateDesignerElement(button, component.type, {label: platformFieldLabel(component.type, component.label)});
 				// Use explicit flex children rather than a bare text node: icon
 				// always sits above its own centered, wrapping label.
 				const elementIcon = button.querySelector('[data-cb-design-shell-lucide-icon]');
 				const elementLabel = doc.createElement('span');
 				elementLabel.className = 'cb-core-design-shell__palette-item-label';
-				elementLabel.textContent = component.label;
+				elementLabel.textContent = platformFieldLabel(component.type, component.label);
 				button.replaceChildren(...(elementIcon ? [elementIcon] : []), elementLabel);
 				button.addEventListener('click', () => {
 					if (signal.aborted || host.state !== 'READY') return;
@@ -1097,7 +1116,7 @@ export const attachTrustedDesignerHost = ({
 					let control = settingsControls.get(key);
 					if (!control) {
 						control = createDesignerInspectorValueControl({
-							key: 'persisted.' + key, label: definition.labelKey, value,
+							key: 'persisted.' + key, label: platformFieldLabel(key, definition.labelKey), value,
 							schema: definition.valueSchema,
 							documentRef: stagedRoot.ownerDocument,
 							onCommit: (next) => {
@@ -1128,7 +1147,7 @@ export const attachTrustedDesignerHost = ({
 						key: JSON.stringify(path),
 						path,
 						ref: Object.freeze({kind: 'node', path: Object.freeze([...path])}),
-						label: node.type,
+						label: platformFieldLabel(node.type),
 						meta: node.provider,
 						selected: selected.has(JSON.stringify(path)),
 						children: node.children.map((child, i) => walk(child, [...path, i])),
@@ -1148,7 +1167,7 @@ export const attachTrustedDesignerHost = ({
 					if (!inspectorInitialized) {
 						inspectorInitialized = true;
 						const identity = createDesignerInspectorIdentity({
-							label: node.type, eyebrow: node.provider,
+							label: platformFieldLabel(node.type), eyebrow: node.provider,
 							context: 'Selected element', documentRef: stagedRoot.ownerDocument,
 						});
 						inspectorPanel.append(identity.element);
@@ -1165,7 +1184,7 @@ export const attachTrustedDesignerHost = ({
 						}
 						for (const field of profileModule.propertiesFor(node)) {
 							const control = createDesignerInspectorValueControl({
-								key: 'node.' + field.key, label: field.label,
+								key: 'node.' + field.key, label: platformFieldLabel(field.key, field.label),
 								value: field.value, multiline: field.multiline,
 								schema: propertySchemaFor(node, field.key),
 								documentRef: stagedRoot.ownerDocument,
