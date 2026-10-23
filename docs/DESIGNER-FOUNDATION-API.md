@@ -260,6 +260,17 @@ no-write proofs or allowed permissions. **No Save runtime PASS is claimed**
 until a Mail and Reports Save receives a complete verified receipt and both
 documents survive reopen.
 
+**Mail Save P0 field finding:** Live Mail returns `refused` with
+`SAVE_DOCUMENT_STORAGE_REFUSED`, while Reports can save. This proves
+domain admission has already succeeded and the repository has not returned a
+verified `saved` result. The storage port now distinguishes CREATE vs UPDATE
+and the finite internal Repository outcomes `INVALID`,
+`SCHEMA_UNAVAILABLE`, `QUERY_FAILED`, `READBACK_UNVERIFIED`,
+`READ_UNAVAILABLE` and `UNCLASSIFIED`. These codes reach the browser only
+after a confirmed outer rollback. Do not infer a SQL root cause or change
+transaction semantics before the next bounded runtime category is observed.
+Mail Save remains P0 BLOCKED; Reports and shared DND/Toast remain unchanged.
+
 **Status:** Source implementation and local deterministic checks only. The
 real WordPress sandbox must demonstrate Mail and Reports Save/Reopen with
 verifiable persisted receipts. A passing build does not prove that the server
