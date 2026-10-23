@@ -15,7 +15,11 @@ test('public opt-in Mail CSS and consumer boundaries are explicit', async () => 
 	const css = await readFile(new URL('../../assets/css/design/mail-rich-text-controls.css', import.meta.url), 'utf8');
 	assert.match(assets, /function enqueue_mail_rich_text_controls/);
 	assert.match(assets, /mail-rich-text-controls\.css/);
-	assert.match(mail, /DesignEditorAssets::enqueue_mail_rich_text_controls/);
+	// Native Mail uses the one Base Platform asset/Save path. The explicit
+	// rich-text helper remains available for optional legacy consumers, but
+	// this screen must not enqueue a second Mail editor.
+	assert.match(mail, /DesignEditorAssets::enqueue_platform\(\)/);
+	assert.match(mail, /Deliberately do NOT enqueue mail-designer\.js/);
 	assert.match(css, /\.cb-mail-rich-text-controls__editor/);
 	assert.doesNotMatch(css, /cb-core-mail-designer__preview-frame/);
 });
