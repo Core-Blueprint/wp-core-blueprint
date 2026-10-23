@@ -1449,6 +1449,8 @@ export const commands = Object.freeze({
 	setProperty: setPropertyCommand,
 });
 export {
+	designerDropZoneId,
+	resolveDesignerDropPlacement,
 	createDesignerDragDropController,
 	CommandHistory,
 	DESIGNER_ICON_NAMES,
@@ -1518,6 +1520,8 @@ const publicApi = Object.freeze({
 		}),
 		dragDrop: Object.freeze({
 			createController: createDesignerDragDropController,
+			zoneId: designerDropZoneId,
+			resolvePlacement: resolveDesignerDropPlacement,
 		}),
 		layers: Object.freeze({
 			actions: DESIGNER_LAYER_ACTIONS,
