@@ -34,6 +34,30 @@ const normalizeDepth = (value) => {
 	return Number.isInteger(depth) && depth >= 0 ? depth : 0;
 };
 
+/**
+ * Domain-owned remove semantics, Base-owned accessible confirmation UI.
+ * Text is rendered with textContent, never interpreted as HTML. The caller
+ * may provide a descriptor or a synchronous descriptor factory; invalid
+ * descriptors fail closed before any domain remove command is dispatched.
+ */
+const resolveRemoveConfirmation = (source, context) => {
+	if (source === null || source === undefined) return null;
+	const descriptor = typeof source === 'function' ? source(Object.freeze({...context})) : source;
+	if (!descriptor || typeof descriptor !== 'object' || Array.isArray(descriptor)) {
+		throw new TypeError('Designer remove confirmation requires a descriptor object.');
+	}
+	const fields = ['title', 'message', 'confirmLabel'];
+	const values = fields.map((field) => descriptor[field]);
+	if (values.some((value) => typeof value !== 'string' || !value.trim() || value.trim().length > 400)) {
+		throw new TypeError('Designer remove confirmation requires bounded nonempty title, message and confirmLabel.');
+	}
+	return Object.freeze({
+		title: values[0].trim(),
+		message: values[1].trim(),
+		confirmLabel: values[2].trim(),
+	});
+};
+
 const normalizeAction = (value) => {
 	if (value === null || value === undefined || value === false) return null;
 	if (typeof value === 'function') {
@@ -50,6 +74,7 @@ const normalizeAction = (value) => {
 		disabled: value.disabled === true,
 		label: typeof value.label === 'string' ? value.label.trim() || null : null,
 		onActivate,
+		confirmation: Object.hasOwn(value, 'confirmation') ? value.confirmation : null,
 	});
 };
 
@@ -427,17 +452,26 @@ export const createDesignerLayerTree = ({
 
 		const confirmChildrenDelete = (action) => {
 			const descendants = countDescendants(children);
+			const explicit = resolveRemoveConfirmation(action.confirmation, {
+				label: String(label || 'Element'),
+				descendantCount: descendants,
+			});
+			const confirmation = explicit || {
+				title: 'Delete ' + label + '?',
+				message: 'This action affects ' + descendants + ' nested element'
+					+ (descendants === 1 ? '' : 's') + '. You can undo this change.',
+				confirmLabel: 'Confirm delete',
+			};
 			popup.replaceChildren();
 			popup.setAttribute('role', 'alertdialog');
 			popup.setAttribute('aria-label', 'Confirm deletion of ' + label);
 
 			const heading = documentRef.createElement('strong');
 			heading.className = 'cb-core-design-shell__layer-confirm-heading';
-			heading.textContent = 'Delete ' + label + '?';
+			heading.textContent = confirmation.title;
 			const message = documentRef.createElement('p');
 			message.className = 'cb-core-design-shell__layer-confirm-message';
-			message.textContent = 'This also removes ' + descendants + ' nested element'
-				+ (descendants === 1 ? '' : 's') + '. You can undo this change.';
+			message.textContent = confirmation.message;
 			const buttons = documentRef.createElement('div');
 			buttons.className = 'cb-core-design-shell__layer-confirm-actions';
 			const cancel = documentRef.createElement('button');
@@ -448,8 +482,9 @@ export const createDesignerLayerTree = ({
 			const remove = documentRef.createElement('button');
 			remove.type = 'button';
 			remove.className = 'button cb-core-design-shell__layer-confirm-delete';
-			remove.textContent = 'Delete with children';
+			remove.textContent = confirmation.confirmLabel;
 			remove.addEventListener('click', () => {
+				if (activeMenu?.popup !== popup || action.disabled) return;
 				closeMenu({ restoreFocus: true });
 				action.onActivate();
 			});
@@ -481,8 +516,12 @@ export const createDesignerLayerTree = ({
 			button.disabled = config.disabled;
 			button.addEventListener('click', () => {
 				if (config.disabled || typeof config.onActivate !== 'function') return;
-				if (name === 'remove' && countDescendants(children) > 0) {
-					confirmChildrenDelete(config);
+				if (name === 'remove'
+					&& (countDescendants(children) > 0 || config.confirmation !== null)) {
+					// Invalid consumer semantics must never trigger a remove.
+					// The menu stays open for cancellation when validation fails.
+					try { confirmChildrenDelete(config); }
+					catch (_) { closeMenu({ restoreFocus: true }); }
 					return;
 				}
 				closeMenu({ restoreFocus: true });
