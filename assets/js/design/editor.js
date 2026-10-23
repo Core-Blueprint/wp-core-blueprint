@@ -1192,7 +1192,7 @@ export const attachTrustedDesignerHost = ({
 					path,
 					ref,
 					label: platformFieldLabel(node.type),
-					meta: node.provider,
+					meta: reports ? (path.length === 0 ? 'Document' : '') : node.provider,
 					selected: selected.has(JSON.stringify(path)),
 					children: node.children.map((child, i) => walk(child, [...path, i])),
 					...(reorder ? {reorder} : {}),
