@@ -57,7 +57,7 @@ final class Repository {
 		// Capture the numeric driver code BEFORE the follow-up SELECT can
 		// overwrite mysqli's error state. Never return raw SQL, last_error,
 		// document content or DB connection details to the REST consumer.
-		$db_errno = self::safe_mysql_errno();
+		$db_errno = 1 !== $affected ? self::safe_mysql_errno() : null;
 		if ( 1 !== $affected ) {
 			$after = self::read( $type, $key );
 			if ( 'found' === $after['status'] ) {
@@ -167,8 +167,12 @@ final class Repository {
 		if ( ! isset( $wpdb->dbh ) || ! $wpdb->dbh instanceof \mysqli ) {
 			return null;
 		}
-		$errno = mysqli_errno( $wpdb->dbh );
-		return $errno >= 1 && $errno <= 65535 ? $errno : null;
+		try {
+			$errno = mysqli_errno( $wpdb->dbh );
+			return $errno >= 1 && $errno <= 65535 ? $errno : null;
+		} catch ( \Throwable $error ) {
+			return null;
+		}
 	}
 
 	private static function in_transaction(): bool {
