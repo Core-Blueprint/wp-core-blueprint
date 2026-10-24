@@ -436,4 +436,10 @@ unset(
     $catalog['messages']['Reports subsystem not loaded.']
 );
 
+// B1 shared context transition labels (Base-owned; consumer domains are unchanged).
+$catalog['messages'] = array_replace($catalog['messages'], [
+    'Switch design' => 'Mudar de design',
+    'Save or discard your changes before switching designs.' => 'Guarde ou descarte as alterações antes de mudar de design.',
+]);
+
 return $catalog;
