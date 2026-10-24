@@ -449,3 +449,32 @@ test('B2-R3-01: EntityRefs reject inherited required fields and hidden/symbol ke
   assert.equal(events.length, 1, 'Invalid EntityRefs must not emit Selection events');
   session.dispose();
 });
+
+
+test('B2-F02: exact commit-only History revision is additive and frozen', () => {
+  const session = create();
+  const order = [];
+  let direct;
+  let committed;
+  session.subscribeSelection((_selection, {event}) => {
+    if (Object.hasOwn(event, 'historyRevision')) {
+      committed = event;
+      order.push('selection');
+    } else {
+      direct = event;
+      order.push('standalone');
+    }
+  });
+  session.subscribeHistory(({historyRevision}) => {
+    assert.equal(committed.historyRevision, historyRevision);
+    order.push('history');
+  });
+  session.select([ref('one')], ref('one'), {expectedEpoch: 0, source: 'command'});
+  assert.equal(Object.hasOwn(direct, 'historyRevision'), false);
+  order.length = 0;
+  session.replace(project(), {contextChanged: true, source: 'command'});
+  assert.deepEqual(order, ['selection', 'history']);
+  assert.equal(Number.isSafeInteger(committed.historyRevision), true);
+  assert.ok(Object.isFrozen(committed));
+  session.dispose();
+});
