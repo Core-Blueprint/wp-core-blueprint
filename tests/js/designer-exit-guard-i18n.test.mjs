@@ -14,6 +14,8 @@ const expectedNew = [
   'Save or discard your changes before closing the Designer.',
   'What should happen to your changes?',
   'Discard changes',
+  'Switch design',
+  'Save or discard your changes before switching designs.',
   'Close Designer',
   'Wait for the current save to finish.',
   'The Designer cannot be closed safely. Try again.',
