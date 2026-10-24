@@ -389,3 +389,28 @@ test('F02-T06: verified normalized replay can commit Selection without Project e
   expectViews(trace);
   controller.destroy(); session.dispose();
 });
+
+test('F02-T10: refresh refuses pending Selection-only commit with no Project event', () => {
+  const session = create(), refusals = [];
+  const {controller, trace} = install(session);
+  session.subscribeSelection((_selection, {event}) => {
+    if (!Object.hasOwn(event, 'historyRevision')) return;
+    try { controller.refresh(); } catch (error) { refusals.push(error.message); }
+  });
+  session.replace(project(), {contextChanged: true});
+  assert.equal(refusals.length, 1);
+  assert.match(refusals[0], /pending History/);
+  expectViews(trace);
+  controller.destroy(); session.dispose();
+});
+
+test('F02-T12: public module and PHP SOURCE capability gates remain unchanged', async () => {
+  assert.equal(typeof editor.createDomainSession, 'function');
+  assert.equal(typeof editor.createDesignerSelectionController, 'function');
+  assert.equal(typeof editor.createSession, 'function');
+  assert.equal(typeof window.cbCore?.designEditor?.createDomainSession, 'function');
+  const assets = await readFile(new URL('../../src/Design/Editor/Assets.php', import.meta.url), 'utf8');
+  assert.match(assets, /public const DOMAIN_SESSION_API\s*=\s*3\s*;/);
+  assert.match(assets, /public const DESIGNER_EXIT_GUARD_API\s*=\s*2\s*;/);
+  assert.match(assets, /public const MODULE_ID\s*=\s*'@cb-core\/design-editor'/);
+});
