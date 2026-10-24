@@ -88,6 +88,7 @@ export const createDesignerSelectionController = ({
 
 
 	const unsubscribers = [];
+	let domainCommitPending = () => false;
 	if (nativeHost) {
 		unsubscribers.push(session.subscribe((event) => synchronize(session.selection(), { event })));
 		synchronize(session.selection(), {
@@ -103,6 +104,7 @@ export const createDesignerSelectionController = ({
 		let pendingRevision = null;
 		let pendingInvalid = false;
 		let lastHistoryRevision = null;
+		domainCommitPending = () => pendingProject || pendingRevision !== null || pendingInvalid;
 		unsubscribers.push(session.subscribe((_project, event) => {
 			pendingProject = true;
 			pendingEvent = event;
@@ -187,7 +189,7 @@ export const createDesignerSelectionController = ({
 		},
 		refresh() {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
-			if (typedDomain && (pendingProject || pendingRevision !== null || pendingInvalid)) {
+			if (typedDomain && domainCommitPending()) {
 				throw new Error('Designer Selection view synchronization is pending History.');
 			}
 			synchronize(session.selection(), {
