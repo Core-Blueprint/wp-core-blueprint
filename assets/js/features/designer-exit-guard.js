@@ -315,7 +315,9 @@
 			} finally {
 				transitionDispatch.delete(shell);
 			}
-			return Object.freeze({ status: 'applied', result: await target });
+			const result = await target;
+			if (result === false) throw new Error('CONTEXT_CHANGE_FAILED');
+			return Object.freeze({ status: 'applied', result });
 		} catch (error) {
 			return Object.freeze({ status: 'failed', error });
 		} finally {
