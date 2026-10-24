@@ -317,9 +317,10 @@ export const createDomainSession = ({
 	allowCommand = null,
 	onChange = null,
 	verifyRebase = null,
+	resolveSelectionEntity = null,
 	historyLimit = 100,
 } = {}) => {
-	for (const [name, candidate] of Object.entries({ validateProject, allowCommand, onChange, verifyRebase })) {
+	for (const [name, candidate] of Object.entries({ validateProject, allowCommand, onChange, verifyRebase, resolveSelectionEntity })) {
 		if (candidate !== null && typeof candidate !== 'function') {
 			throw new TypeError('Domain session ' + name + ' must be a function or null.');
 		}
@@ -327,6 +328,7 @@ export const createDomainSession = ({
 	const projectState = new ProjectState(project, { validate: validateProject });
 	const editorState = new EditorState();
 	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase });
+	editorState.selection.configureDomain({ resolveEntity: resolveSelectionEntity, contextEpoch: history.contextEpoch });
 	let disposed = false;
 	const assertActive = () => {
 		if (disposed) throw new Error('Domain editor session has been disposed.');
@@ -345,6 +347,24 @@ export const createDomainSession = ({
 			return history.replace(nextProject, options);
 		},
 		subscribe,
+		selection() { assertActive(); return editorState.selection.typedSnapshot(); },
+		select(refs, primary = null, { expectedEpoch, source = 'ui' } = {}) {
+			assertActive();
+			history.assertWritable();
+			return editorState.selection.setDomainRefs(refs, primary, {
+				project: projectState.current(), contextEpoch: expectedEpoch, source,
+			});
+		},
+		subscribeSelection(listener, { emitCurrent = false } = {}) {
+			assertActive();
+			if (typeof listener !== 'function') throw new TypeError('Domain Selection listener must be a function.');
+			return editorState.selection.subscribe(
+				(event) => listener(editorState.selection.typedSnapshot(), Object.freeze({
+					event, projectRevision: projectState.revision,
+				})),
+				{ emitCurrent },
+			);
+		},
 		execute(command) {
 			assertActive();
 			if (!command || typeof command.apply !== 'function') {

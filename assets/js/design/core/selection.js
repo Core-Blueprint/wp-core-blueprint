@@ -70,9 +70,11 @@ export class SelectionState {
 	#contextEpoch = 0;
 	#resolveEntity = null;
 	#configured = false;
+	#domain = false;
 	#listeners = new Set();
 	#batchDepth = 0;
 
+	get isDomain() { return this.#domain; }
 	get revision() { return this.#revision; }
 	get contextEpoch() { return this.#contextEpoch; }
 
@@ -86,16 +88,23 @@ export class SelectionState {
 		this.#configured = true;
 	}
 
+	configureDomain({ resolveEntity = null, contextEpoch } = {}) {
+		if (resolveEntity !== null && typeof resolveEntity !== 'function') throw new TypeError('Domain Selection resolver must be a function or null.');
+		this.configureTyped({ resolveEntity: resolveEntity ?? (() => false), contextEpoch });
+		this.#domain = true;
+	}
+
 	fork() {
 		const staged = new SelectionState();
 		staged.#resolveEntity = this.#resolveEntity;
 		staged.#contextEpoch = this.#contextEpoch;
 		staged.#configured = this.#configured;
+		staged.#domain = this.#domain;
 		staged.restoreCommitted(this.snapshot(), this.#revision);
 		return staged;
 	}
 
-	#validateRefs(refs, project, expectedEpoch) {
+	#validateRefs(refs, project, expectedEpoch, rejectDuplicates = false) {
 		if (!Array.isArray(refs) || !project?.root || !Number.isSafeInteger(expectedEpoch)
 			|| expectedEpoch !== this.#contextEpoch) {
 			throw this.#invalid();
@@ -109,7 +118,10 @@ export class SelectionState {
 				if (ref.kind === 'entity' && (!this.#resolveEntity
 					|| this.#resolveEntity(ref, project) !== true)) throw this.#invalid();
 				const key = refKey(ref);
-				if (seen.has(key)) continue;
+				if (seen.has(key)) {
+					if (rejectDuplicates) throw this.#invalid();
+					continue;
+				}
 				seen.add(key);
 				unique.push(ref);
 			}
@@ -137,12 +149,17 @@ export class SelectionState {
 	}
 
 	setRefs(refs, primary = null, { project, contextEpoch = this.#contextEpoch, source = 'host', action = 'set', force = false } = {}) {
-		const { unique, seen } = this.#validateRefs(refs, project, contextEpoch);
+		const { unique, seen } = this.#validateRefs(refs, project, contextEpoch, this.#domain);
 		let normalizedPrimary;
 		try { normalizedPrimary = primary === null ? null : normalizeRef(primary); }
 		catch (_) { throw this.#invalid(); }
 		if (normalizedPrimary && !seen.has(refKey(normalizedPrimary))) throw this.#invalid();
 		return this.#publish(unique, normalizedPrimary, { source, action, force });
+	}
+
+	setDomainRefs(refs, primary = null, { project, contextEpoch, source = 'ui' } = {}) {
+		if (!this.#domain || !Number.isSafeInteger(contextEpoch)) throw this.#invalid();
+		return this.setRefs(refs, primary, { project, contextEpoch, source, action: 'select' });
 	}
 
 	typedSnapshot() {
@@ -266,9 +283,13 @@ export class SelectionState {
 
 	commitSnapshot(snapshot, metadata = {}) {
 		const next = normalizeSnapshot(snapshot);
-		if (sameRefs({ refs: this.#refs, primary: this.#primary }, next) && metadata.force !== true) return null;
+		const nextEpoch = this.#domain ? metadata.contextEpoch : this.#contextEpoch;
+		if (this.#domain && (!Number.isSafeInteger(nextEpoch) || nextEpoch < this.#contextEpoch)) throw new TypeError('Committed Selection context generation cannot move backwards.');
+		if (sameRefs({ refs: this.#refs, primary: this.#primary }, next)
+			&& nextEpoch === this.#contextEpoch && metadata.force !== true) return null;
 		this.#refs = [...next.refs];
 		this.#primary = next.primary;
+		this.#contextEpoch = nextEpoch;
 		return Object.freeze({
 			revision: ++this.#revision,
 			source: metadata.source || 'command',
@@ -281,6 +302,10 @@ export class SelectionState {
 		this.#refs = [...next.refs];
 		this.#primary = next.primary;
 		this.#revision = revision;
+		if (this.#domain) {
+			if (!Number.isSafeInteger(snapshot.contextEpoch) || snapshot.contextEpoch < 0) throw new TypeError('Cannot restore Domain Selection without a context generation.');
+			this.#contextEpoch = snapshot.contextEpoch;
+		}
 	}
 
 	notify(event, onObserverFailure = null) {
@@ -290,6 +315,8 @@ export class SelectionState {
 			catch (_) { onObserverFailure?.('selection'); }
 		}
 	}
+
+	dispose() { this.#listeners.clear(); }
 
 	toJSON() {
 		throw new TypeError('SelectionState is editor-session state and must not be persisted in DesignProject.');

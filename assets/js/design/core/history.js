@@ -74,6 +74,8 @@ export class CommandHistory {
 		});
 	}
 
+	get contextEpoch() { return this.#contextEpoch; }
+
 	get canUndo() { return this.#undo.length > 0; }
 	get canRedo() { return this.#redo.length > 0; }
 	get size() { return this.#undo.length; }
@@ -209,12 +211,16 @@ export class CommandHistory {
 			baseline: this.#baseline, acknowledged: this.#baselineAcknowledged,
 			historyRevision: this.#historyRevision, contextEpoch: this.#contextEpoch,
 		};
+		const nextContextEpoch = contextReset ? this.#contextEpoch + 1 : this.#contextEpoch;
+		if (!Number.isSafeInteger(nextContextEpoch)) throw new RangeError('Designer context epoch exhausted.');
 		const projectChanged = !sameValue(nextProject, previous.project);
 		let projectEvent = null;
 		let selectionEvent = null;
 		try {
 			selectionEvent = this.#editorState.commitSnapshot(nextEditor, {
-				source: selectionSource, action: selectionAction, force: forceSelection,
+				source: selectionSource, action: selectionAction,
+				force: forceSelection || (contextReset && this.#editorState.selection.isDomain),
+				contextEpoch: nextContextEpoch,
 			});
 			if (projectChanged) {
 				projectEvent = this.#projectState.commitStaged(nextProject, { source });
@@ -223,7 +229,7 @@ export class CommandHistory {
 			this.#redo = redo;
 			if (nextBaseline !== null) this.#baseline = nextBaseline;
 			if (contextReset) {
-				this.#contextEpoch += 1;
+				this.#contextEpoch = nextContextEpoch;
 				this.#baselineAcknowledged = false;
 			}
 			if (acknowledge) this.#baselineAcknowledged = true;
@@ -357,6 +363,7 @@ export class CommandHistory {
 			const project = this.#projectState.stage(entry.beforeProject);
 			const editor = this.#stageEditor();
 			editor.restore(entry.beforeEditor);
+			editor.reconcile(project.root, { project });
 			this.#commit({
 				nextProject: project, nextEditor: editor.snapshot(),
 				undo: this.#undo.slice(0, -1), redo: [...this.#redo, entry],
@@ -373,6 +380,7 @@ export class CommandHistory {
 			const project = this.#projectState.stage(entry.afterProject);
 			const editor = this.#stageEditor();
 			editor.restore(entry.afterEditor);
+			editor.reconcile(project.root, { project });
 			const undo = [...this.#undo, entry];
 			if (undo.length > this.#limit) undo.splice(0, undo.length - this.#limit);
 			this.#commit({
@@ -399,7 +407,7 @@ export class CommandHistory {
 			const label = safeSource(source);
 			const next = this.#projectState.stage(project);
 			const editor = this.#stageEditor();
-			if (resetSelection) editor.selection.clear();
+			if (resetSelection || contextChanged) editor.selection.clear();
 			else editor.reconcile(next.root, { project: next });
 			const editorSnapshot = editor.snapshot();
 			const differs = !sameValue(next, this.#projectState.current());
@@ -539,6 +547,7 @@ export class CommandHistory {
 		this.#unsubscribeExternal = null;
 		this.#historyListeners.clear();
 		this.#diagnosticListeners.clear();
+		this.#editorState.selection.dispose();
 		this.#undo = [];
 		this.#redo = [];
 		this.#savepoints = new WeakMap();
