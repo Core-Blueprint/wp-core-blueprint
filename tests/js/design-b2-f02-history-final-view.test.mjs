@@ -226,10 +226,11 @@ test('F02-T09: History adapter errors diagnose and next commit has no stale pend
   for (const failing of ['layers', 'inspector', 'canvas']) {
     const session = create(), diagnostics = [];
     session.subscribeDiagnostics((event) => diagnostics.push(event));
-    let errorOnce = true;
+    let errorOnce = false;
     const {controller, trace} = install(session, {
       [failing]() { if (errorOnce) {errorOnce = false; throw Error('adapter failure');} },
     });
+    errorOnce = true;
     session.replace(project(), {contextChanged: true});
     assert.equal(diagnostics.length, 1);
     assert.equal(diagnostics[0].code, 'CB_DESIGNER_OBSERVER_FAILED');
@@ -244,10 +245,11 @@ test('F02-T09: History adapter errors diagnose and next commit has no stale pend
 test('F02-T09: ordinary Selection failure does not fabricate History diagnostics', () => {
   const session = create(), diagnostics = [];
   session.subscribeDiagnostics((event) => diagnostics.push(event));
-  let errorOnce = true;
+  let errorOnce = false;
   const {controller, trace} = install(session, {layers() {
     if (errorOnce) { errorOnce = false; throw Error('standalone view failure'); }
   }});
+  errorOnce = true;
   session.select([ref('one')], ref('one'), {expectedEpoch: 0});
   assert.deepEqual(diagnostics, []);
   trace.length = 0;
