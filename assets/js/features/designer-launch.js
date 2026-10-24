@@ -149,23 +149,12 @@
 		});
 	};
 
-	// Registered before the later-loaded designer-context.js capture listener:
-	// an UNKNOWN or unverified dirty state must never reach a context adapter.
-	const blockContextChange = (event) => {
-		const control = event.target instanceof HTMLSelectElement ? event.target : null;
-		if (!control || !control.closest('[data-cb-design-shell-context]')) return;
-		const root = control.closest('[data-cb-design-launch-root]');
-		const shell = root?.querySelector('[data-cb-design-shell]');
-		if (shell && window.cbCore?.designerExitGuard?.canTransition?.(shell) === true) return;
-		event.preventDefault();
-		event.stopImmediatePropagation();
-		control.value = String(control.dataset.cbDesignShellContextValue ?? control.value);
-		window.cbCore?.toast?.error?.(String(config.exitGuardLabels?.unavailable || 'The Designer cannot be closed safely. Try again.'));
-	};
-	document.addEventListener('change', blockContextChange, true);
+	// The shared context controller owns the single capture-phase change path.
+	// Keep the earlier-loading capture guard for direct/forged context events.
+	// The Guard grants a one-dispatch synchronous window only AFTER user approval.
 	document.addEventListener('cb:design-shell:contextrequest', (event) => {
 		const shell = event.target?.querySelector?.('[data-cb-design-shell]');
-		if (shell && window.cbCore?.designerExitGuard?.canTransition?.(shell) === true) return;
+		if (shell && window.cbCore?.designerExitGuard?.isTransitionDispatchAuthorized?.(shell) === true) return;
 		event.stopImmediatePropagation();
 	}, true);
 
