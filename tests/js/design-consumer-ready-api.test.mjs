@@ -4,12 +4,12 @@ import { test } from 'node:test';
 
 const root = (path) => readFile(new URL('../../' + path, import.meta.url), 'utf8');
 
-test('v2 public session and shared Layers/DnD/Toast entrypoints are exported through a single Base module', async () => {
+test('v3 Domain Selection and shared Layers/DnD/Toast entrypoints are exported through one Base module', async () => {
   const editor = await root('assets/js/design/editor.js');
   const assets = await root('src/Design/Editor/Assets.php');
   const shell = await root('assets/js/design/shell/layers.js');
   assert.match(assets, /public const MODULE_ID = '@cb-core\/design-editor';/);
-  assert.match(assets, /public const DOMAIN_SESSION_API = 2;/);
+  assert.match(assets, /public const DOMAIN_SESSION_API = 3;/);
   assert.match(assets, /public const SAVE_AUTHORITY_UI_API = 1;/);
   assert.match(assets, /public const DESIGNER_EXIT_GUARD_API = 2;/);
   for (const declaration of ['export const createSession =', 'export const createDomainSession =',
@@ -18,6 +18,9 @@ test('v2 public session and shared Layers/DnD/Toast entrypoints are exported thr
     'resolveDesignerDropPlacement,']) {
     assert.ok(editor.includes(declaration), declaration);
   }
+  assert.match(editor, /selection\(\) \{ assertActive\(\); return editorState\.selection\.typedSnapshot\(\); \}/);
+  assert.match(editor, /subscribeSelection\(listener/);
+  assert.match(editor, /setDomainRefs\(refs/);
   assert.match(editor, /captureSave\(\)/);
   assert.match(editor, /rebase\(/);
   assert.match(editor, /shell: Object\.freeze\(/);

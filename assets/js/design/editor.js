@@ -350,10 +350,11 @@ export const createDomainSession = ({
 		selection() { assertActive(); return editorState.selection.typedSnapshot(); },
 		select(refs, primary = null, { expectedEpoch, source = 'ui' } = {}) {
 			assertActive();
-			history.assertWritable();
-			return editorState.selection.setDomainRefs(refs, primary, {
+			// Resolver and observer callbacks execute inside the same guarded
+			// Selection mutation. Nested writes are denied before publication.
+			return history.guardPolicy(() => editorState.selection.setDomainRefs(refs, primary, {
 				project: projectState.current(), contextEpoch: expectedEpoch, source,
-			});
+			}));
 		},
 		subscribeSelection(listener, { emitCurrent = false } = {}) {
 			assertActive();

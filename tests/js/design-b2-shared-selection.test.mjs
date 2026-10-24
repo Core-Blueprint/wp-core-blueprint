@@ -341,3 +341,30 @@ test('B2-R1: Save token and observer reentrancy cannot cross canonical context',
   off();
   session.dispose();
 });
+
+test('B2-R3: entity membership resolver cannot mutate Selection during validation', () => {
+  let session;
+  let denyNext = false;
+  let nestedRefusal = null;
+  session = editor.createDomainSession({
+    project: project(),
+    resolveSelectionEntity(candidate, current) {
+      if (!denyNext) return resolver(candidate, current);
+      try {
+        session.select([], null, { expectedEpoch: 0, source: 'resolver' });
+      } catch (error) {
+        nestedRefusal = error.code;
+      }
+      return false;
+    },
+  });
+  session.select([ref('one')], ref('one'), { expectedEpoch: 0 });
+  const before = session.selection();
+  denyNext = true;
+  assert.throws(() => session.select([ref('one')], ref('one'), { expectedEpoch: 0 }),
+    (error) => error.code === 'SELECTION_INVALID');
+  assert.equal(nestedRefusal, 'DESIGNER_REENTRANT');
+  assert.deepEqual(session.selection(), before,
+    'Invalid membership must not commit a nested Selection clear');
+  session.dispose();
+});
