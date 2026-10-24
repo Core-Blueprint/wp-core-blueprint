@@ -75,10 +75,24 @@ test('B2-S01/R3: one immutable typed Domain facade, strict shape and membership'
   assert.deepEqual(selected.primary, ref('one'));
   assert.equal(session.select([ref('one')], ref('one'), { expectedEpoch: 0 }), false);
   assert.deepEqual(session.historyStatus(), { canUndo: false, canRedo: false, size: 0 });
-  assert.equal(session.select([node], node, { expectedEpoch: 0 }), true);
-  assert.deepEqual(session.selection().primary, node);
+  // Evaluator's records live inside root.props: do not invent tree paths for them.
+  // Test real typed node membership separately with a canonical Base tree node.
+  const canonicalNode = (type, children = []) => ({
+    type, provider: 'fixture.selection', properties: {}, children,
+  });
+  const nodeSession = editor.createDomainSession({
+    project: {
+      schema_version: 0,
+      design_type: 'fixture.node-selection',
+      root: canonicalNode('root', [canonicalNode('child')]),
+    },
+  });
+  assert.equal(nodeSession.select([node], node, { expectedEpoch: 0 }), true);
+  assert.deepEqual(nodeSession.selection().primary, node);
   const saved = session.snapshot();
-  assert.equal(JSON.stringify(saved).includes('contextEpoch'), false);
+  assert.equal(Object.hasOwn(saved, 'selection'), false);
+  assert.equal(Object.hasOwn(saved.root.props, 'selection'), false);
+  nodeSession.dispose();
   session.dispose();
 });
 
@@ -185,7 +199,9 @@ test('B2-S03/S07: subscribe, clear, Save and disposal remain transient', () => {
   session.select([ref('one')], ref('one'), { expectedEpoch: 0 });
   assert.equal(observations.length, 2);
   const checkpoint = session.captureSave();
-  assert.equal(JSON.stringify(checkpoint.submittedProject).includes('selection'), false);
+  assert.deepEqual(checkpoint.submittedProject, session.snapshot());
+  assert.equal(Object.hasOwn(checkpoint.submittedProject, 'selection'), false);
+  assert.equal(Object.hasOwn(checkpoint.submittedProject.root.props, 'selection'), false);
   session.rebase({ saveToken: checkpoint.token, baselineProject: checkpoint.submittedProject });
   assert.deepEqual(session.selection().primary, ref('one'));
   assert.equal(session.select([], null, { expectedEpoch: 0 }), true);
