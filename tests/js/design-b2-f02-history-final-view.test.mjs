@@ -424,3 +424,42 @@ test('F02-T12: public module and PHP SOURCE capability gates remain unchanged', 
   assert.match(assets, /public const DESIGNER_EXIT_GUARD_API\s*=\s*2\s*;/);
   assert.match(assets, /public const MODULE_ID\s*=\s*'@cb-core\/design-editor'/);
 });
+
+test('F02-T08: out-of-order commit marker is refused and next valid revision recovers', () => {
+  const session = create(), diagnostics = [], views = [];
+  session.subscribeDiagnostics((event) => diagnostics.push(event));
+  let replayOldRevision = false;
+  const wrapped = Object.freeze({
+    project: () => session.project(),
+    selection: () => session.selection(),
+    select: (...args) => session.select(...args),
+    subscribe: (cb) => session.subscribe(cb),
+    subscribeHistory: (cb) => session.subscribeHistory(cb),
+    subscribeSelection(cb) {
+      return session.subscribeSelection((selection, context) => {
+        const event = replayOldRevision
+          ? Object.freeze({...context.event, historyRevision: context.event.historyRevision - 1})
+          : context.event;
+        cb(selection, { ...context, event });
+      });
+    },
+  });
+  const controller = editor.createDesignerSelectionController({
+    typed: 'domain', session: wrapped,
+    renderLayers: () => views.push('layers'),
+    renderInspector: () => views.push('inspector'),
+    syncCanvas: () => views.push('canvas'),
+  });
+  views.length = 0;
+  session.replace(project(), {contextChanged: true});
+  assert.deepEqual(views, ['layers', 'inspector', 'canvas']);
+  views.length = 0;
+  replayOldRevision = true;
+  session.replace(project(), {contextChanged: true});
+  assert.deepEqual(views, []);
+  assert.equal(diagnostics.at(-1)?.phase, 'history');
+  replayOldRevision = false;
+  session.replace(project(), {contextChanged: true});
+  assert.deepEqual(views, ['layers', 'inspector', 'canvas']);
+  controller.destroy(); session.dispose();
+});
