@@ -92,7 +92,8 @@ test('Designer shell displays no transient toolbar messages and preserves local 
 	assert.equal(reports.includes('data-cb-design-shell-status'), false);
 	assert.ok(mail.includes('screen-reader-text" data-cb-mail-preview-status aria-live="polite"'));
 	assert.ok(mailRuntime.includes('window.cbCore?.toast?.error?.(message)'));
-	assert.ok(contextRuntime.includes("window.cbCore?.toast?.error?.(error?.message || label('error', 'Could not load selection.'))"));
+	assert.ok(contextRuntime.includes("window.cbCore?.toast?.error?.(label('error', 'Could not load selection.'))"));
+	assert.equal(contextRuntime.includes('outcome.error?.message'), false, 'context errors cannot expose raw consumer messages');
 	assert.equal(contextRuntime.includes("setTransition(shell, 'error'"), false);
 	assert.ok(reportsRuntime.includes("if ( kind === 'error' && message ) window.cbCore?.toast?.error?.( message )"));
 	assert.ok(assets.includes('Assets::enqueue_toasts('));
