@@ -196,7 +196,7 @@ test('EXIT-P0-05: context and fullscreen escape use synchronous Base refusal gat
 	const launch = read('assets/js/features/designer-launch.js');
 	const shell = read('assets/js/design/shell/index.js');
 	assert.match(launch, /cb:design-shell:contextrequest/);
-	assert.match(launch, /canTransition/);
+	assert.match(launch, /isTransitionDispatchAuthorized/);
 	assert.match(shell, /cb:design-shell:beforeexit/);
 	assert.match(shell, /cancelable: true/);
 });
