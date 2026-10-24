@@ -76,10 +76,11 @@
 		document.querySelectorAll('[data-cb-design-shell-context] select').forEach(bindControl);
 	};
 
+	// The only context-change capture handler. A consumer never receives the
+	// request event until the shared Exit Guard has authorized Save/Discard.
 	document.addEventListener('change', (event) => {
 		const control = event.target instanceof HTMLSelectElement ? event.target : null;
 		if (!control || !control.closest('[data-cb-design-shell-context]')) return;
-
 		const context = control.closest('[data-cb-design-shell-context]');
 		const root = context?.closest('[data-cb-design-launch-root]');
 		const shell = root?.querySelector('[data-cb-design-shell]');
@@ -91,55 +92,83 @@
 
 		const previousValue = String(control.dataset.cbDesignShellContextValue ?? '');
 		const value = String(control.value || '');
-		if (value === previousValue || activeRoots.has(root)) {
-			control.value = previousValue;
+		control.value = previousValue; // Never display an unapplied target as current.
+		if (value === previousValue || activeRoots.has(root)) return;
+
+		const guard = window.cbCore?.designerExitGuard;
+		if (typeof guard?.requestTransition !== 'function') {
+			window.cbCore?.toast?.error?.(label('error', 'Could not load selection.'));
 			return;
 		}
 
-		let responsePromise = null;
-		let responded = false;
-		const respondWith = (promise) => {
-			if (responded) throw new Error('Designer context switch already has a response.');
-			responded = true;
-			responsePromise = Promise.resolve(promise);
+		activeRoots.add(root); // Synchronous lock, including modal and loading.
+		control.disabled = true;
+		let generation = 0;
+		let transition = null;
+		let wasInert = false;
+		let previousBusy = null;
+		const apply = () => {
+			let responded = false;
+			let responsePromise = null;
+			const respondWith = (promise) => {
+				if (responded) throw new Error('Designer context switch already has a response.');
+				responded = true;
+				responsePromise = Promise.resolve(promise);
+			};
+			// Exactly one consumer event inside the Guard's synchronous dispatch
+			// window. No synthetic re-dispatch and no second authorization.
+			root.dispatchEvent(new CustomEvent(REQUEST_EVENT, {
+				bubbles: true,
+				cancelable: false,
+				detail: { value, previousValue, control, respondWith },
+			}));
+			if (!responded || !responsePromise) {
+				throw new Error('Designer context provider did not accept the request.');
+			}
+			generation = (transitionGenerations.get(shell) || 0) + 1;
+			transitionGenerations.set(shell, generation);
+			transition = setTransition(shell, 'loading', label('loading', 'Loading…'));
+			wasInert = shell.hasAttribute('inert');
+			previousBusy = shell.getAttribute('aria-busy');
+			shell.setAttribute('inert', '');
+			shell.setAttribute('aria-busy', 'true');
+			return responsePromise;
 		};
 
-		root.dispatchEvent(new CustomEvent(REQUEST_EVENT, {
-			bubbles: true,
-			cancelable: false,
-			detail: {
-				value,
-				previousValue,
-				control,
-				respondWith,
-			},
-		}));
-
-		if (!responded || !responsePromise) {
+		void guard.requestTransition(shell, apply).then((outcome) => {
+			if (outcome?.status === 'applied') {
+				control.value = value;
+				control.dataset.cbDesignShellContextValue = value;
+				if (transition) {
+					setTransition(shell, 'ready', label('ready', 'Ready'));
+					hideTransition(shell, transition, generation, 120);
+				}
+				root.dispatchEvent(new CustomEvent(CHANGED_EVENT, {
+					bubbles: true,
+					detail: { value, previousValue, control, result: outcome.result },
+				}));
+			} else {
+				control.value = previousValue;
+				if (transition) hideTransition(shell, transition, generation, 0);
+				if (outcome?.status === 'blocked' || outcome?.status === 'failed') {
+					const message = outcome.status === 'failed'
+						? (outcome.error?.message || label('error', 'Could not load selection.'))
+						: label('error', 'Could not load selection.');
+					window.cbCore?.toast?.error?.(message);
+				}
+				// Cancel is intentionally silent. Save errors are shown inside
+				// the canonical Modal and by the consumer's existing Save toast.
+			}
+		}).catch(() => {
 			control.value = previousValue;
-			return;
-		}
-
-		activeRoots.add(root);
-		control.disabled = true;
-		const generation = (transitionGenerations.get(shell) || 0) + 1;
-		transitionGenerations.set(shell, generation);
-		const transition = setTransition(shell, 'loading', label('loading', 'Loading…'));
-
-		responsePromise.then((result) => {
-			control.dataset.cbDesignShellContextValue = value;
-			setTransition(shell, 'ready', label('ready', 'Ready'));
-			root.dispatchEvent(new CustomEvent(CHANGED_EVENT, {
-				bubbles: true,
-				detail: { value, previousValue, control, result },
-			}));
-			hideTransition(shell, transition, generation, 120);
-		}).catch((error) => {
-			control.value = previousValue;
-			// Context-switch failures are operation feedback, not toolbar/overlay notices.
-			window.cbCore?.toast?.error?.(error?.message || label('error', 'Could not load selection.'));
-			hideTransition(shell, transition, generation, 0);
+			if (transition) hideTransition(shell, transition, generation, 0);
+			window.cbCore?.toast?.error?.(label('error', 'Could not load selection.'));
 		}).finally(() => {
+			if (transition) {
+				if (!wasInert) shell.removeAttribute('inert');
+				if (previousBusy === null) shell.removeAttribute('aria-busy');
+				else shell.setAttribute('aria-busy', previousBusy);
+			}
 			control.disabled = false;
 			activeRoots.delete(root);
 		});
