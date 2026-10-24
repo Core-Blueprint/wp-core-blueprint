@@ -116,7 +116,15 @@ export class CommandHistory {
 		const failures = new Set();
 		const failed = (phase) => failures.add(phase);
 		if (projectEvent) this.#projectState.notify(projectEvent, failed);
-		if (selectionEvent) this.#editorState.selection.notify(selectionEvent, failed);
+		if (selectionEvent) {
+			// Commit correlation is issued only by canonical History, never by
+			// standalone Selection or consumer-controlled source/action labels.
+			// Preserve native Host and profile-bound Selection event ABI.
+			const published = this.#editorState.selection.isDomain
+				? Object.freeze({ ...selectionEvent, historyRevision: this.#historyRevision })
+				: selectionEvent;
+			this.#editorState.selection.notify(published, failed);
+		}
 		const event = Object.freeze({
 			action,
 			source,
