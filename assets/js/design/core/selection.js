@@ -7,12 +7,19 @@ const identity = (value) => {
 	}
 	return value;
 };
+const hasExactOwnFields = (ref, fields) => {
+	// Reflect.ownKeys includes non-enumerable and symbol properties. Inherited
+	// required fields never satisfy own-property membership, even if the
+	// enumerable key count happens to match a valid SelectionRef.
+	const keys = Reflect.ownKeys(ref);
+	return keys.length === fields.length && fields.every((field) => Object.hasOwn(ref, field));
+};
 const normalizeRef = (ref) => {
 	if (!ref || typeof ref !== 'object' || Array.isArray(ref)) throw new TypeError('Invalid selection reference.');
-	if (ref.kind === 'node' && Object.keys(ref).length === 2) {
+	if (hasExactOwnFields(ref, ['kind', 'path']) && ref.kind === 'node') {
 		return Object.freeze({ kind: 'node', path: Object.freeze(normalizePath(ref.path)) });
 	}
-	if (ref.kind === 'entity' && Object.keys(ref).length === 3) {
+	if (hasExactOwnFields(ref, ['kind', 'type', 'id']) && ref.kind === 'entity') {
 		return Object.freeze({ kind: 'entity', type: identity(ref.type), id: identity(ref.id) });
 	}
 	throw new TypeError('Selection reference must be a strict node or entity reference.');
