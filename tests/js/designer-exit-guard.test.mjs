@@ -71,6 +71,7 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 	return {
 		shell, events, modals, toasts,
 		request: () => window.cbCore.designerExitGuard.request(shell, exit),
+		transition: (apply) => window.cbCore.designerExitGuard.requestTransition(shell, apply),
 		setDirty: (value) => { dirtyNow = value; },
 		beginSaving: () => { busyNow = true; shell.dataset.cbDesignShellSaveState = 'saving'; },
 		releaseModal: () => { if (!confirmModal) throw new Error('Modal is not pending'); confirmModal(); },
@@ -96,7 +97,7 @@ test('EXIT-A01: Base intercepts the canonical fullscreen lifecycle before exit',
 	assert.match(launch, /bindExitGuard\(shell, fullscreen\)/);
 	assert.match(launch, /event\.preventDefault\(\)/);
 	assert.match(launch, /api\(\)\?\.request\?\.\(shell/);
-	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 1/);
+	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 2/);
 	assert.match(assets, /enqueue_modals/);
 	assert.match(assets, /DESIGNER_EXIT_GUARD_SCRIPT/);
 });
@@ -240,63 +241,23 @@ test('EXIT-P0-09: detached and unregistered shell does not cause stale unload wa
 });
 
 
-test('G2-S T06: actual context-change capture prevents dirty and UNKNOWN selections before the adapter', () => {
-  const launch = read('assets/js/features/designer-launch.js');
-  const begin = launch.indexOf('\tconst blockContextChange = (event) => {');
-  const end = launch.indexOf('\n\tconst panelToggleLabel', begin);
-  assert.ok(begin !== -1 && end > begin, 'canonical context guard must be extractable');
-
-  const handlers = new Map();
-  class HTMLSelectElement {}
-  const shellFixture = fixture();
-  const shell = shellFixture.shell;
-  const root = { querySelector: (selector) => selector === '[data-cb-design-shell]' ? shell : null };
-  const select = new HTMLSelectElement();
-  select.value = 'another-template';
-  select.dataset = { cbDesignShellContextValue: 'original-template' };
-  select.closest = (selector) => selector === '[data-cb-design-shell-context]' ? {} :
-    selector === '[data-cb-design-launch-root]' ? root : null;
-  const doc = { addEventListener: (name, callback, capture) => {
-    assert.equal(capture, true, 'context protection must run during capture');
-    handlers.set(name, callback);
-  } };
-  const errors = [];
-  runInNewContext(launch.slice(begin, end), {
-    document: doc, HTMLSelectElement,
-    window: { cbCore: { designerExitGuard: { canTransition: () => shellFixture.canTransition() },
-      toast: { error: (message) => errors.push(message) } } },
-    config: { exitGuardLabels: { unavailable: 'Context blocked' } },
-  });
-  assert.equal(typeof handlers.get('change'), 'function');
-  assert.equal(typeof handlers.get('cb:design-shell:contextrequest'), 'function');
-
-  const attemptChange = () => {
-    let prevented = false, stopped = false;
-    select.value = 'another-template';
-    handlers.get('change')({ target: select,
-      preventDefault() { prevented = true; },
-      stopImmediatePropagation() { stopped = true; } });
-    return { prevented, stopped, value: select.value };
-  };
-  const attemptRequest = () => {
-    let stopped = false;
-    handlers.get('cb:design-shell:contextrequest')({
-      target: root, stopImmediatePropagation() { stopped = true; },
-    });
-    return stopped;
-  };
-
-  assert.deepEqual(attemptChange(), { prevented: false, stopped: false, value: 'another-template' });
-  assert.equal(attemptRequest(), false);
-  shellFixture.setDirty(true);
-  assert.deepEqual(attemptChange(), { prevented: true, stopped: true, value: 'original-template' });
-  assert.equal(attemptRequest(), true);
-  shellFixture.setDirty(false);
-  shell.dataset.cbDesignShellSaveOutcomeUnknown = 'true';
-  shell.dataset.cbDesignShellSaveState = 'unknown';
-  assert.deepEqual(attemptChange(), { prevented: true, stopped: true, value: 'original-template' });
-  assert.equal(attemptRequest(), true);
-  assert.equal(errors.length, 2);
+test('B1-ABI: Base capture blocks unapproved event dispatch, while the shared context controller owns authorization', () => {
+	const launch = read('assets/js/features/designer-launch.js');
+	const context = read('assets/js/features/designer-context.js');
+	const guard = read('assets/js/features/designer-exit-guard.js');
+	const assets = read('src/Design/Editor/Assets.php');
+	assert.doesNotMatch(launch, /const blockContextChange\s*=/);
+	assert.match(launch, /isTransitionDispatchAuthorized\?\.\(shell\)/);
+	assert.match(launch, /cb:design-shell:contextrequest/);
+	assert.match(context, /guard\.requestTransition\(shell, apply\)/);
+	assert.match(context, /activeRoots\.add\(root\)/);
+	assert.match(context, /root\.dispatchEvent\(new CustomEvent\(REQUEST_EVENT/);
+	assert.match(context, /status === 'applied'/);
+	assert.match(context, /control\.value = previousValue/);
+	assert.match(guard, /transitionDispatch\.add\(shell\)/);
+	assert.match(guard, /transitionDispatch\.delete\(shell\)/);
+	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 2/);
+	assert.match(assets, /DESIGNER_CONTEXT_SCRIPT/);
 });
 
 test('G2-S T09: modal opened before a newer edit, active Save and adapter replacement must not close', async () => {
@@ -324,4 +285,123 @@ test('G2-S T09: modal opened before a newer edit, active Save and adapter replac
   assert.equal(await pendingCombined, false);
   assert.equal(combined.exits, 0);
   assert.equal(combined.writes, 0);
+});
+
+
+test('B1-01: clean transition commits without modal or Save', async () => {
+	const f = fixture({dirty: false});
+	let loads = 0;
+	const result = await f.transition(() => { loads++; return Promise.resolve('loaded'); });
+	assert.equal(result.status, 'applied');
+	assert.equal(result.result, 'loaded');
+	assert.equal(loads, 1);
+	assert.equal(f.modals.length, 0);
+	assert.equal(f.writes, 0);
+	assert.equal(f.toasts.length, 0);
+});
+
+test('B1-02: dirty Save requires verified receipt and a clean recheck', async () => {
+	const f = fixture({dirty: true});
+	let loads = 0;
+	const result = await f.transition(() => { loads++; return true; });
+	assert.equal(result.status, 'applied');
+	assert.equal(loads, 1);
+	assert.equal(f.writes, 1);
+	assert.equal(f.modals.length, 1);
+	assert.equal(f.modals[0].confirmLabel, 'Switch design');
+	assert.equal(f.toasts.length, 0, 'the consumer alone owns Save feedback');
+	const unverified = fixture({dirty: true, receipt: false});
+	const refused = await unverified.transition(() => { throw new Error('Must not apply'); });
+	assert.notEqual(refused.status, 'applied');
+	assert.equal(unverified.writes, 1);
+});
+
+test('B1-03: explicit dirty Discard authorizes without a write', async () => {
+	const f = fixture({dirty: true, action: 'discard'});
+	let calls = 0;
+	assert.equal((await f.transition(() => { calls++; return true; })).status, 'applied');
+	assert.equal(calls, 1);
+	assert.equal(f.writes, 0);
+	assert.equal(f.modals.length, 1);
+});
+
+test('B1-04: Cancel never dispatches a context request', async () => {
+	const f = fixture({dirty: true, accept: false});
+	let calls = 0;
+	assert.equal((await f.transition(() => { calls++; return true; })).status, 'cancelled');
+	assert.equal(calls, 0);
+	assert.equal(f.writes, 0);
+});
+
+test('B1-05: UNKNOWN and in-flight Save always block, including Discard', async () => {
+	for (const f of [fixture({dirty: true, unknown: true, action: 'discard'}), fixture({dirty: true, busy: true})]) {
+		let calls = 0;
+		assert.equal((await f.transition(() => { calls++; })).status, 'blocked');
+		assert.equal(calls, 0);
+		assert.equal(f.modals.length, 0);
+	}
+});
+
+test('B1-06: late edits during Save forbid context replacement', async () => {
+	const f = fixture({dirty: true, changeDuringSave: true});
+	let calls = 0;
+	const result = await f.transition(() => { calls++; return true; });
+	assert.notEqual(result.status, 'applied');
+	assert.equal(calls, 0);
+	assert.equal(f.writes, 1);
+});
+
+test('B1-07: modal pending, duplicate requests and exit requests are single-flight', async () => {
+	const f = fixture({dirty: true, deferredModal: true});
+	let calls = 0;
+	const first = f.transition(() => { calls++; return Promise.resolve(true); });
+	assert.equal(f.modals.length, 1);
+	assert.equal((await f.transition(() => { calls++; })).status, 'blocked');
+	assert.equal(await f.request(), false, 'Exit Guard must share its lock with transition');
+	assert.equal(f.modals.length, 1);
+	f.releaseModal();
+	assert.equal((await first).status, 'applied');
+	assert.equal(calls, 1);
+});
+
+test('B1-08: rejected target does not announce an applied switch', async () => {
+	const f = fixture();
+	const result = await f.transition(() => Promise.reject(new Error('Target read failed')));
+	assert.equal(result.status, 'failed');
+	assert.match(result.error.message, /Target read failed/);
+	assert.equal(f.modals.length, 0);
+});
+
+test('B1-09: a late Save or adapter replacement prevents dispatch after modal', async () => {
+	const saving = fixture({dirty: true, deferredModal: true, action: 'discard'});
+	let calls = 0;
+	const request = saving.transition(() => { calls++; return true; });
+	saving.beginSaving();
+	saving.releaseModal();
+	assert.notEqual((await request).status, 'applied');
+	assert.equal(calls, 0);
+	const replaced = fixture({dirty: true, deferredModal: true, action: 'discard'});
+	let replacedCalls = 0;
+	const replacement = replaced.transition(() => { replacedCalls++; return true; });
+	replaced.replaceAdapter();
+	replaced.releaseModal();
+	assert.notEqual((await replacement).status, 'applied');
+	assert.equal(replacedCalls, 0);
+});
+
+test('B1-10: direct unapproved context event is rejected by capture', () => {
+	const launch = read('assets/js/features/designer-launch.js');
+	const begin = launch.indexOf("document.addEventListener('cb:design-shell:contextrequest'");
+	const end = launch.indexOf('\n\tconst panelToggleLabel', begin);
+	assert.ok(begin >= 0 && end > begin);
+	const callbacks = new Map();
+	const shell = {};
+	const root = {querySelector: () => shell};
+	runInNewContext(launch.slice(begin, end), {
+		document: {addEventListener: (name, callback) => callbacks.set(name, callback)},
+		window: {cbCore: {designerExitGuard: {isTransitionDispatchAuthorized: () => false}}},
+	});
+	let rejected = 0;
+	callbacks.get('cb:design-shell:contextrequest')({target: root, stopImmediatePropagation() {rejected++;}});
+	assert.equal(rejected, 1);
 });
