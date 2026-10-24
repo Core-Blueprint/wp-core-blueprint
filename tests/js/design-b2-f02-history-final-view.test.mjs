@@ -66,7 +66,9 @@ const change = (ids, version) => Object.freeze({
 });
 const install = (session, adapters = {}) => {
   const trace = [];
+  let initialized = false;
   const render = (name) => (ctx) => {
+    if (!initialized) return; // Ignore initial controller sync, not a History commit.
     trace.push([name, ctx.event, ctx.selection, ctx.project]);
     adapters[name]?.(ctx);
   };
@@ -75,7 +77,7 @@ const install = (session, adapters = {}) => {
     renderLayers: render('layers'), renderInspector: render('inspector'),
     syncCanvas: render('canvas'),
   });
-  trace.length = 0; // Initial presentation is not a History commit.
+  initialized = true;
   return { trace, controller };
 };
 const expectViews = (trace) => assert.deepEqual(trace.map((line) => line[0]), ['layers', 'inspector', 'canvas']);
