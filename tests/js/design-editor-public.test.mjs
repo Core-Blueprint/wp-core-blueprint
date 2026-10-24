@@ -890,3 +890,21 @@ test('G1c: same-value context switch invalidates a pending checkpoint without ch
 	assert.deepEqual(session.baselineSnapshot(), before);
 	session.dispose();
 });
+
+
+test('B2: public ESM and frozen browser facade expose typed Domain Selection without internal classes', () => {
+	assert.equal(publicEditor.createDomainSession, window.cbCore.designEditor.createDomainSession);
+	assert.equal(publicEditor.createDesignerSelectionController,
+		window.cbCore.designEditor.shell.selection.createController);
+	assert.equal(Object.isFrozen(window.cbCore.designEditor), true);
+	const session = publicEditor.createDomainSession({ project: domainProject('Selection') });
+	assert.deepEqual(Object.keys(session).filter((name) =>
+		['selection', 'select', 'subscribeSelection'].includes(name)).sort(),
+		['select', 'selection', 'subscribeSelection']);
+	assert.equal(session.selection().contextEpoch, 0);
+	assert.equal(Object.isFrozen(session.selection()), true);
+	assert.equal(session.select([], null, { expectedEpoch: 0 }), false);
+	assert.throws(() => session.select([], null, { expectedEpoch: 9 }),
+		(error) => error.code === 'SELECTION_INVALID');
+	session.dispose();
+});
