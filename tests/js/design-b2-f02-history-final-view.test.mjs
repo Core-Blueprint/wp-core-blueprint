@@ -289,3 +289,78 @@ test('F02-T11: native Host remains on original subscribe/selection ABI', () => {
   controller.destroy();
   assert.equal(listener, null);
 });
+
+test('F02-T08/T09: tampered or repeated commit markers fail closed with History diagnostic', () => {
+  // Negative fault injection wraps only the published event; CommandHistory
+  // and the controller remain the real Base implementations.
+  for (const damage of ['mismatch', 'duplicate', 'invalid']) {
+    const session = create(), diagnostics = [], views = [];
+    session.subscribeDiagnostics((event) => diagnostics.push(event));
+    const faultySession = Object.freeze({
+      project: () => session.project(),
+      selection: () => session.selection(),
+      select: (...args) => session.select(...args),
+      subscribe: (listener) => session.subscribe(listener),
+      subscribeHistory: (listener) => session.subscribeHistory(listener),
+      subscribeSelection(listener) {
+        return session.subscribeSelection((selection, context) => {
+          const changed = {
+            ...context.event,
+            historyRevision: damage === 'mismatch'
+              ? context.event.historyRevision + 1
+              : damage === 'invalid' ? 'not-an-integer' : context.event.historyRevision,
+          };
+          listener(selection, { ...context, event: Object.freeze(changed) });
+          if (damage === 'duplicate') listener(selection, { ...context, event: Object.freeze(changed) });
+        });
+      },
+    });
+    const controller = editor.createDesignerSelectionController({
+      typed: 'domain', session: faultySession,
+      renderLayers: () => views.push('layers'),
+      renderInspector: () => views.push('inspector'),
+      syncCanvas: () => views.push('canvas'),
+    });
+    views.length = 0;
+    session.replace(project(), { contextChanged: true });
+    assert.deepEqual(views, [], damage + ' must never publish verified final views');
+    assert.equal(diagnostics.length, 1, damage + ' must report isolated History observer error');
+    assert.equal(diagnostics[0].phase, 'history');
+    controller.destroy();
+    session.dispose();
+  }
+});
+
+test('F02-T07/T10: History-only does not activate panel or rebind Selection epoch', () => {
+  const session = create();
+  let activations = 0, views = 0;
+  const controller = editor.createDesignerSelectionController({
+    typed: 'domain', session, shell: { activatePanel() { activations += 1; } },
+    renderLayers: () => { views += 1; },
+    renderInspector: () => {},
+    syncCanvas: () => {},
+  });
+  views = 0;
+  const epoch = session.selection().contextEpoch;
+  const baseline = session.captureSave();
+  session.rebase({saveToken: baseline.token, baselineProject: baseline.submittedProject});
+  assert.equal(views, 1);
+  assert.equal(activations, 0);
+  assert.equal(session.selection().contextEpoch, epoch);
+  assert.equal(session.historyStatus().size, 0);
+  controller.destroy(); session.dispose();
+});
+
+test('F02-T10: refresh refuses pending Project but final commit still renders', () => {
+  const session = create(), errors = [];
+  const {controller, trace} = install(session);
+  session.subscribe(() => {
+    try { controller.refresh(); }
+    catch (error) { errors.push(error.message); }
+  });
+  session.execute(change(['one'], 1));
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /pending History/);
+  expectViews(trace);
+  controller.destroy(); session.dispose();
+});
