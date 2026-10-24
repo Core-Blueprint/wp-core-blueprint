@@ -364,3 +364,28 @@ test('F02-T10: refresh refuses pending Project but final commit still renders', 
   expectViews(trace);
   controller.destroy(); session.dispose();
 });
+
+test('F02-T06: verified normalized replay can commit Selection without Project event', () => {
+  const session = editor.createDomainSession({
+    project: project(), resolveSelectionEntity: resolver,
+    verifyRebase: () => true,
+  });
+  session.select([ref('one')], ref('one'), {expectedEpoch: 0});
+  const checkpoint = session.captureSave();
+  session.execute(change(['one'], 1)); // Late edit after the checkpoint.
+  const phases = [];
+  session.subscribe((_project, event) => phases.push(['P', event]));
+  session.subscribeSelection((_selection, {event}) => phases.push(['S', event.historyRevision]));
+  session.subscribeHistory((event) => phases.push(['H', event.historyRevision]));
+  const {controller, trace} = install(session, {layers: () => phases.push(['V'])});
+  const result = session.rebase({
+    saveToken: checkpoint.token, baselineProject: project(['one'], 2),
+  });
+  assert.equal(result.normalized, true);
+  assert.equal(result.retainedUndoSteps, 1);
+  assert.deepEqual(phases.map(([kind]) => kind), ['S', 'H', 'V']);
+  assert.equal(phases[0][1], phases[1][1]);
+  assert.equal(session.selection().primary, null);
+  expectViews(trace);
+  controller.destroy(); session.dispose();
+});
