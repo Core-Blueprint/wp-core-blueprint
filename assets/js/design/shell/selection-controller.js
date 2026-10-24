@@ -23,14 +23,21 @@ export const createDesignerSelectionController = ({
 	typed = false,
 	requestInvalidation = null,
 } = {}) => {
+	const nativeHost = typed === true;
+	const typedDomain = typed === 'domain';
+	if (typed !== false && !nativeHost && !typedDomain) {
+		throw new TypeError('Unknown Designer selection strategy.');
+	}
 	if (
 		!session
-		|| (!typed && typeof session.subscribeSelection !== 'function')
+		|| (!nativeHost && typeof session.subscribeSelection !== 'function')
 		|| typeof session.select !== 'function'
-		|| (!typed && typeof session.clearSelection !== 'function')
+		|| (!nativeHost && !typedDomain && typeof session.clearSelection !== 'function')
 		|| typeof session.selection !== 'function'
-		|| (!typed && typeof session.inspector !== 'function')
-		|| (typed && typeof session.subscribe !== 'function')
+		|| (!nativeHost && !typedDomain && typeof session.inspector !== 'function')
+		|| (nativeHost && typeof session.subscribe !== 'function')
+		|| (typedDomain && (typeof session.subscribe !== 'function'
+			|| typeof session.subscribeHistory !== 'function'))
 	) {
 		throw new TypeError('Designer selection controller requires a Design Foundation session.');
 	}
@@ -50,7 +57,7 @@ export const createDesignerSelectionController = ({
 		if (destroyed) return;
 		const viewContext = Object.freeze({
 			selection: snapshot,
-			primary: typed
+			primary: (nativeHost || typedDomain)
 				? (snapshot.primary ?? null)
 				: (snapshot.primary === null ? null : [...snapshot.primary]),
 			inspector: context.inspector ?? (typeof session.inspector === 'function' ? session.inspector() : null),
@@ -60,7 +67,7 @@ export const createDesignerSelectionController = ({
 		});
 
 		// Typed Host invalidation is the only render scheduling entrypoint.
-		if (typed && invalidate) {
+		if (nativeHost && invalidate) {
 			invalidate(viewContext);
 		} else {
 			layersAdapter?.(viewContext);
@@ -79,37 +86,72 @@ export const createDesignerSelectionController = ({
 		}
 	};
 
-	const subscribe = typed ? session.subscribe : session.subscribeSelection;
-	if (typeof subscribe !== 'function') throw new TypeError('Typed Host facade requires subscribe().');
-	const unsubscribe = typed
-		? subscribe((event) => synchronize(session.selection(), { event }))
-		: subscribe(synchronize, { emitCurrent: true });
-	if (typed) synchronize(session.selection(), {
-		event: Object.freeze({ source: 'controller', action: 'sync' }),
-	});
+
+	const unsubscribers = [];
+	if (nativeHost) {
+		unsubscribers.push(session.subscribe((event) => synchronize(session.selection(), { event })));
+		synchronize(session.selection(), {
+			event: Object.freeze({ source: 'controller', action: 'sync' }),
+		});
+	} else if (typedDomain) {
+		// History publishes project, Selection, then History. Delay project refresh
+		// until that final boundary to avoid rendering an intermediate view.
+		let pendingProject = false;
+		let pendingEvent = null;
+		unsubscribers.push(session.subscribe((_project, event) => {
+			pendingProject = true;
+			pendingEvent = event;
+		}));
+		unsubscribers.push(session.subscribeSelection((snapshot, context) => {
+			if (pendingProject) {
+				pendingEvent = context.event;
+				return;
+			}
+			// An ordinary select/clear has no History commit. Render immediately.
+			synchronize(snapshot, { event: context.event });
+		}));
+		unsubscribers.push(session.subscribeHistory(() => {
+			if (!pendingProject) return;
+			const event = pendingEvent;
+			pendingProject = false;
+			pendingEvent = null;
+			synchronize(session.selection(), { event });
+		}));
+		synchronize(session.selection(), {
+			event: Object.freeze({ source: 'controller', action: 'sync' }),
+		});
+	} else {
+		unsubscribers.push(session.subscribeSelection(synchronize, { emitCurrent: true }));
+	}
+	const unsubscribe = () => { for (const release of unsubscribers.splice(0)) release(); };
 
 	return Object.freeze({
 		select(path, {
 			additive = false,
 			openInspector = true,
 			source = 'ui',
+			expectedEpoch,
 		} = {}) {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
-			const ref = typed && Array.isArray(path) ? Object.freeze({ kind: 'node', path: [...path] }) : path;
-			const accepted = typed
+			const ref = (nativeHost || typedDomain) && Array.isArray(path)
+				? Object.freeze({ kind: 'node', path: [...path] }) : path;
+			const accepted = nativeHost || typedDomain
 				? session.select(
 					additive
 						? [...(session.selection().refs || []).filter((candidate) => JSON.stringify(candidate) !== JSON.stringify(ref)), ref]
 						: [ref],
 					ref,
+					...(typedDomain ? [{ expectedEpoch, source }] : []),
 				)
 				: session.select(path, { additive, source });
 			if (accepted && openInspector) activateInspector();
 			return accepted;
 		},
-		clear({ source = 'ui' } = {}) {
+		clear({ source = 'ui', expectedEpoch } = {}) {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
-			return typed ? session.select([], null) : session.clearSelection({ source });
+			return nativeHost ? session.select([], null)
+				: typedDomain ? session.select([], null, { expectedEpoch, source })
+					: session.clearSelection({ source });
 		},
 		refresh() {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
