@@ -368,3 +368,84 @@ test('B2-R3: entity membership resolver cannot mutate Selection during validatio
     'Invalid membership must not commit a nested Selection clear');
   session.dispose();
 });
+
+
+test('B2-R3-01: NodeRefs reject inherited required fields and extra own keys atomically', () => {
+  const canonicalNode = (type, children = []) => ({
+    type, provider: 'fixture.selection', properties: {}, children,
+  });
+  const session = editor.createDomainSession({
+    project: {
+      schema_version: 0, design_type: 'fixture.node-selection',
+      root: canonicalNode('root', [canonicalNode('child')]),
+    },
+  });
+  const events = [];
+  session.subscribeSelection((_snapshot, context) => events.push(context.event));
+  assert.equal(session.select([node], node, { expectedEpoch: 0 }), true);
+  const selection = session.selection();
+  const history = session.historyStatus();
+  const hidden = Object.defineProperty({ kind: 'node', path: [0] }, 'hidden', {
+    value: true, enumerable: false,
+  });
+  const symbolic = { kind: 'node', path: [0] };
+  symbolic[Symbol('unexpected')] = true;
+  const invalid = [
+    Object.assign(Object.create({ kind: 'node' }), { path: [0], extra: 'kind' }),
+    Object.assign(Object.create({ path: [0] }), { kind: 'node', extra: 'path' }),
+    Object.create({ kind: 'node', path: [0] }),
+    { kind: 'node', path: [0], extra: true },
+    hidden,
+    symbolic,
+  ];
+  for (const candidate of invalid) {
+    assert.throws(() => session.select([candidate], candidate, { expectedEpoch: 0 }),
+      (error) => error.code === 'SELECTION_INVALID');
+    assert.throws(() => session.select([node], candidate, { expectedEpoch: 0 }),
+      (error) => error.code === 'SELECTION_INVALID');
+    assert.deepEqual(session.selection(), selection, 'No invalid NodeRef can change Selection');
+    assert.deepEqual(session.historyStatus(), history, 'No invalid NodeRef can change History');
+  }
+  assert.equal(events.length, 1, 'Invalid NodeRefs must not emit Selection events');
+  session.dispose();
+});
+
+test('B2-R3-01: EntityRefs reject inherited required fields and hidden/symbol keys atomically', () => {
+  const session = create();
+  const selected = ref('one');
+  const events = [];
+  session.subscribeSelection((_snapshot, context) => events.push(context.event));
+  assert.equal(session.select([selected], selected, { expectedEpoch: 0 }), true);
+  const selection = session.selection();
+  const history = session.historyStatus();
+  const hidden = Object.defineProperty({
+    kind: 'entity', type: 'evaluator.question', id: 'one',
+  }, 'hidden', { value: true, enumerable: false });
+  const symbolic = { kind: 'entity', type: 'evaluator.question', id: 'one' };
+  symbolic[Symbol('unexpected')] = true;
+  const invalid = [
+    Object.assign(Object.create({ kind: 'entity' }), {
+      type: 'evaluator.question', id: 'one', extra: 'kind',
+    }),
+    Object.assign(Object.create({ type: 'evaluator.question' }), {
+      kind: 'entity', id: 'one', extra: 'type',
+    }),
+    Object.assign(Object.create({ id: 'one' }), {
+      kind: 'entity', type: 'evaluator.question', extra: 'id',
+    }),
+    Object.create({ kind: 'entity', type: 'evaluator.question', id: 'one' }),
+    { kind: 'entity', type: 'evaluator.question', id: 'one', extra: true },
+    hidden,
+    symbolic,
+  ];
+  for (const candidate of invalid) {
+    assert.throws(() => session.select([candidate], candidate, { expectedEpoch: 0 }),
+      (error) => error.code === 'SELECTION_INVALID');
+    assert.throws(() => session.select([selected], candidate, { expectedEpoch: 0 }),
+      (error) => error.code === 'SELECTION_INVALID');
+    assert.deepEqual(session.selection(), selection, 'No invalid EntityRef can change Selection');
+    assert.deepEqual(session.historyStatus(), history, 'No invalid EntityRef can change History');
+  }
+  assert.equal(events.length, 1, 'Invalid EntityRefs must not emit Selection events');
+  session.dispose();
+});
