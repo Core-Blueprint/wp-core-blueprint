@@ -27,7 +27,7 @@ final class Assets {
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */
 	public const INSPECTOR_COMPOSITION_API = 1;
 	/** Public fail-closed Exit Guard, not an A2-06 receipt/recovery API. */
-	public const DESIGNER_EXIT_GUARD_API = 1;
+	public const DESIGNER_EXIT_GUARD_API = 2;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
 	public const MAIL_RICH_TEXT_STYLE = 'cb-core-design-mail-rich-text';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
@@ -388,6 +388,8 @@ final class Assets {
 				'choiceTitle' => __( 'What should happen to your changes?', 'core-blueprint' ),
 				'save' => __( 'Save changes', 'core-blueprint' ),
 				'discard' => __( 'Discard changes', 'core-blueprint' ),
+				'transitionConfirm' => __( 'Switch design', 'core-blueprint' ),
+				'transitionDirtyDescription' => __( 'Save or discard your changes before switching designs.', 'core-blueprint' ),
 				'close' => __( 'Close Designer', 'core-blueprint' ),
 				'cancel' => __( 'Cancel', 'core-blueprint' ),
 				'busy' => __( 'Wait for the current save to finish.', 'core-blueprint' ),
