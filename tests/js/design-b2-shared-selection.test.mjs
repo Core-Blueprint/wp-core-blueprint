@@ -281,3 +281,47 @@ test('B2-S08: Domain Selection never authorizes native generation 1', () => {
   assert.throws(() => editor.createDomainSession({ project: invalid, resolveSelectionEntity: resolver }),
     /verified Host registry/);
 });
+
+test('B2-R2: project-only command refreshes all views once without fabricating a selection event', () => {
+  const session = create();
+  session.select([ref('one')], ref('one'), { expectedEpoch: 0 });
+  const observations = [];
+  const semantics = [];
+  session.subscribeSelection((_selection, meta) => semantics.push(meta.event.action));
+  const controller = editor.createDesignerSelectionController({
+    typed: 'domain', session,
+    renderLayers: () => observations.push('layers'),
+    renderInspector: () => observations.push('inspector'),
+    syncCanvas: () => observations.push('canvas'),
+  });
+  observations.length = 0;
+  session.execute(edit(['one'], 2));
+  assert.deepEqual(observations, ['layers', 'inspector', 'canvas']);
+  assert.equal(semantics.length, 0, 'Project-only commits are not Selection edits');
+  assert.deepEqual(session.selection().primary, ref('one'));
+  controller.destroy();
+  session.dispose();
+});
+
+test('B2-R1: Save token and observer reentrancy cannot cross canonical context', () => {
+  const session = create();
+  const oldCheckpoint = session.captureSave();
+  session.select([ref('one')], ref('one'), { expectedEpoch: 0 });
+  const refusals = [];
+  const off = session.subscribe(() => {
+    try {
+      session.select([ref('one')], ref('one'), { expectedEpoch: session.selection().contextEpoch });
+    } catch (error) { refusals.push(error.code); }
+  });
+  session.replace(project(['one'], 7), { contextChanged: true });
+  assert.deepEqual(refusals, ['DESIGNER_REENTRANT']);
+  assert.equal(session.selection().contextEpoch, 1);
+  assert.equal(session.selection().primary, null);
+  assert.throws(() => session.rebase({
+    saveToken: oldCheckpoint.token, baselineProject: oldCheckpoint.submittedProject,
+  }), (error) => error.code === 'SAVE_CONTEXT_CHANGED');
+  assert.equal(session.selection().contextEpoch, 1);
+  assert.equal(session.selection().primary, null);
+  off();
+  session.dispose();
+});
