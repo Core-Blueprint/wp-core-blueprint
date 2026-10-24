@@ -94,27 +94,59 @@ export const createDesignerSelectionController = ({
 			event: Object.freeze({ source: 'controller', action: 'sync' }),
 		});
 	} else if (typedDomain) {
-		// History publishes project, Selection, then History. Delay project refresh
-		// until that final boundary to avoid rendering an intermediate view.
+		// Canonical History dispatches Project, commit-marked Selection and
+		// finally History. A same-project context reset has no Project event.
+		// The History revision marker, never consumer-supplied source labels,
+		// separates commit Selection from independent select/clear.
 		let pendingProject = false;
 		let pendingEvent = null;
+		let pendingRevision = null;
+		let pendingInvalid = false;
+		let lastHistoryRevision = null;
 		unsubscribers.push(session.subscribe((_project, event) => {
 			pendingProject = true;
 			pendingEvent = event;
 		}));
 		unsubscribers.push(session.subscribeSelection((snapshot, context) => {
-			if (pendingProject) {
-				pendingEvent = context.event;
+			const event = context.event;
+			if (Object.hasOwn(event, 'historyRevision')) {
+				const revision = event.historyRevision;
+				if (!Number.isSafeInteger(revision) || revision < 1
+					|| pendingRevision !== null
+					|| (lastHistoryRevision !== null && revision <= lastHistoryRevision)) {
+					pendingInvalid = true;
+				}
+				pendingRevision = revision;
+				pendingEvent = event;
 				return;
 			}
-			// An ordinary select/clear has no History commit. Render immediately.
-			synchronize(snapshot, { event: context.event });
+			if (pendingProject || pendingRevision !== null || pendingInvalid) {
+				// Unmarked Selection within a pending commit has no proof of
+				// matching History. Never publish an unverified final view.
+				pendingInvalid = true;
+				return;
+			}
+			// Independent select/clear has no History event and renders now.
+			synchronize(snapshot, { event });
 		}));
-		unsubscribers.push(session.subscribeHistory(() => {
-			if (!pendingProject) return;
-			const event = pendingEvent;
+		unsubscribers.push(session.subscribeHistory((historyEvent) => {
+			const revision = historyEvent.historyRevision;
+			const correlated = Number.isSafeInteger(revision) && revision > 0
+				&& (lastHistoryRevision === null || revision > lastHistoryRevision)
+				&& !pendingInvalid
+				&& (pendingRevision === null || pendingRevision === revision);
+			const event = pendingEvent ?? historyEvent;
+			// Clear BEFORE invoking adapters: an exception is a diagnostic, not
+			// a stale pending view or justification to repeat a committed edit.
 			pendingProject = false;
 			pendingEvent = null;
+			pendingRevision = null;
+			pendingInvalid = false;
+			if (!correlated) {
+				throw new Error('Designer Selection History correlation failed.');
+			}
+			lastHistoryRevision = revision;
+			// History-only clear/rebase also requires exactly one final view.
 			synchronize(session.selection(), { event });
 		}));
 		synchronize(session.selection(), {
@@ -155,6 +187,9 @@ export const createDesignerSelectionController = ({
 		},
 		refresh() {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
+			if (typedDomain && (pendingProject || pendingRevision !== null || pendingInvalid)) {
+				throw new Error('Designer Selection view synchronization is pending History.');
+			}
 			synchronize(session.selection(), {
 				event: Object.freeze({ source: 'controller', action: 'refresh' }),
 				profile: session.profile,
