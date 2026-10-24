@@ -113,6 +113,9 @@
 			const respondWith = (promise) => {
 				if (responded) throw new Error('Designer context switch already has a response.');
 				responded = true;
+				if (!promise || typeof promise.then !== 'function') {
+					throw new TypeError('Designer context provider must return a promise.');
+				}
 				responsePromise = Promise.resolve(promise);
 			};
 			// Exactly one consumer event inside the Guard's synchronous dispatch
@@ -151,10 +154,8 @@
 				control.value = previousValue;
 				if (transition) hideTransition(shell, transition, generation, 0);
 				if (outcome?.status === 'blocked' || outcome?.status === 'failed') {
-					const message = outcome.status === 'failed'
-						? (outcome.error?.message || label('error', 'Could not load selection.'))
-						: label('error', 'Could not load selection.');
-					window.cbCore?.toast?.error?.(message);
+					// Never surface raw consumer errors, URLs, form values or REST payloads.
+					window.cbCore?.toast?.error?.(label('error', 'Could not load selection.'));
 				}
 				// Cancel is intentionally silent. Save errors are shown inside
 				// the canonical Modal and by the consumer's existing Save toast.
