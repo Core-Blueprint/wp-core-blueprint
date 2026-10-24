@@ -1,8 +1,8 @@
 # Core Blueprint Designer Foundation API
 
-Status: **public v1 frozen contract + v2 SOURCE candidate; installed ZIP acceptance pending**.
+Status: **Designer Foundation v2 SOURCE contract; B2 Shared Selection Foundation under independent SOURCE validation. Installed ZIP acceptance pending**.
 
-**G1d-B v2 SOURCE candidate, installed ZIP acceptance pending:** transactional history, `captureSave()` and `rebase()` are implemented in both session factories and PHP `Assets::DOMAIN_SESSION_API` declares `2` on this candidate branch. This is a source capability, not acceptance of a built, installed artifact. Consumers must require the *same installed Base package* to provide PHP capability `>= 2`, executable WordPress-resolved ESM exports and consumer-specific integration acceptance. Existing v1 users remain supported. No consumer may import a low-level history engine as a substitute.
+**G1d-B v2 SOURCE candidate, installed ZIP acceptance pending:** transactional history, `captureSave()` and `rebase()` are implemented in both session factories and PHP `Assets::DOMAIN_SESSION_API` declares `2` on this candidate branch. This is a source capability, not acceptance of a built, installed artifact. Consumers must require the *same installed Base package* to provide PHP capability `>= 2`, executable WordPress-resolved ESM exports and consumer-specific integration acceptance. No deprecated selection authority or compatibility shim is provided. No consumer may import a low-level history engine as a substitute.
 
 The Designer Foundation is the Base-owned editor engine and shell boundary for Core Blueprint designers. Consumers own domain semantics, persistence, validation and domain rendering. Base owns editor/session mechanics, shared shell behavior and the public integration boundary.
 
@@ -67,9 +67,9 @@ The session owns project validation against the selected profile, command histor
 
 Both methods live on the existing public session from `createSession({profile})` and preserve existing shell/navigation, history and document-profile semantics. They do not substitute for the separate public domain-neutral state/history session (P02) documented below. Public class exports such as ProjectState/EditorState/CommandHistory are not thereby promoted to consumer contracts.
 
-### Domain-neutral sessions (P02, additive public v1 API)
+### Domain-neutral sessions (canonical public v2 API)
 
-`createDomainSession({ project, validateProject = null, allowCommand = null, onChange = null, historyLimit = 100 })` is the supported public session for non-document/non-mail consumers. No document/mail profile, evaluator-specific engine, selection model, or persistence is introduced.
+`createDomainSession({ project, validateProject = null, allowCommand = null, onChange = null, verifyRebase = null, resolveSelectionEntity = null, historyLimit = 100 })` is the supported public session for non-document/non-mail consumers. No document/mail profile, evaluator-specific engine, second selection state, or persistence is introduced.
 
 - `project()` returns the frozen DesignProject; `snapshot()` clones it for consumer-controlled persistence. Only the DesignProject belongs in portable data.
 - `replace(project, { source = 'consumer' })` validates and replaces the project. Replacement resets history by default. `validateProject(project)` is a synchronous domain-owned validator: throw on invalid data. Base additionally validates the DesignProject envelope.
@@ -80,6 +80,42 @@ Both methods live on the existing public session from `createSession({profile})`
 - Public PHP capability gate: `CoreBlueprint\\Core\\Design\\Editor\\Assets::DOMAIN_SESSION_API >= 1`. Public JS module and global facade expose `createDomainSession`. The low-level `ProjectState`, `EditorState`, and `CommandHistory` classes stay outside consumer contracts; the v1 profile-based `createSession()` is unchanged.
 
 A consumer adopting P02 must install a compatible Base and extension together. This does not change which Evaluation data may be stored or transmitted.
+
+### B2 Shared Selection Foundation v1.1 — Typed Domain Sessions (SOURCE candidate)
+
+The *same* Base `EditorState.selection` used by CommandHistory is the only transient Selection authority. B2 does not change native Mail/Reports Host admission, profile-bound Selection, Save authority or the schema generation-1 trust boundary. This is not an installed WordPress/browser PASS.
+
+```js
+const session = createDomainSession({
+  project: validatedDomainProject,
+  validateProject(project) { validateDomain(project); },
+  resolveSelectionEntity(ref, currentProject) {
+    // Pure synchronous membership in the CURRENT validated project only.
+    // Return exactly true for one unambiguous typed identity.
+    return resolveUniqueDomainIdentity(ref, currentProject) === true;
+  },
+});
+const rendered = session.selection(); // frozen {refs, primary, revision, contextEpoch}
+const epochOfRenderedUI = rendered.contextEpoch;
+session.select([{kind:'entity', type:'automations.action', id:'send_email'}],
+  {kind:'entity', type:'automations.action', id:'send_email'},
+  {expectedEpoch: epochOfRenderedUI, source:'ui'});
+session.select([], null, {expectedEpoch: epochOfRenderedUI, source:'ui'});
+const release = session.subscribeSelection((selection, {event, projectRevision}) => {
+  renderDomainSelection(selection, event, projectRevision);
+}, {emitCurrent:true});
+release();
+```
+
+**Strict refs.** Exactly `{kind:'node',path:[...]}` for an existing project-tree node, or `{kind:'entity',type,id}` for a unique resolver-confirmed domain object. Base checks bounds and exact keys, primary membership and duplicates *before* mutation. A duplicate ref is a refusal, never silent deduplication. A missing resolver, wrong type, missing/ambiguous entity, exception, Promise or any non-`true` resolver result fails closed. The resolver grants no DOM, network, Command, Save, REST or native Host authority. Transient Evaluator editor keys remain distinct from persistent evaluation IDs. Automations selects by stable `step_id` / `condition_id`, never array index or DOM identity. Inventory subitems require their own unique consumer membership proof, otherwise only the owning Question may be selected.
+
+**Epoch fence.** `CommandHistory.#contextEpoch` owns the generation. The Domain Selection epoch is a committed projection of that authority, not another counter. Every effective `replace()` increments it; a true no-op does not. `contextChanged:true` always clears selection, regardless of `resetSelection`, and invalidates stale DOM actions. `expectedEpoch` is mandatory for both select and clear; it must be captured with the original rendered DOM context, **not substituted with the newest session epoch inside a late event handler**. Undo/Redo recover valid Selection within the current epoch and never rewind it. Rebase cannot resurrect an older context.
+
+**Subscription and controller.** `subscribeSelection(listener, {emitCurrent})` emits `(frozenSelection, {event,projectRevision})`, returns an idempotent unsubscribe and never writes to the Domain Project. Use `createDesignerSelectionController({typed:'domain', session, renderLayers, renderInspector, syncCanvas})`. The controller's `select(ref, {expectedEpoch})` and `clear({expectedEpoch})` require the epoch captured from their original DOM context. It listens to both Selection and project revisions, then flushes one coherent view at the final History notification; direct Selection-only changes render once without a fictitious History mutation. Native Host remains `typed:true`, with its exact existing `session.subscribe()` and `session.select(refs, primary)` ABI. The common controller remains the only view synchronizer. Consumers own domain labels and Inspector forms.
+
+**History and disposal.** Selection is not portable project data, a Save payload, a second command engine, or an independent dirty/Undo step. Commands restore/reconcile typed refs using existing staged EditorState, with rollback restoring both epoch projections. Observers read committed project/Selection/History in project → Selection → History order. Dispose the controller before the session; `destroy()` and unsubscribe are idempotent, and disposed sessions reject new Selection operations. Native Host profile and render adapter lifecycle are unchanged.
+
+Capability: `Assets::DOMAIN_SESSION_API = 3` is authorized **only after** this complete source contract and its B2/R1/R2/R3 tests pass. `DESIGNER_EXIT_GUARD_API = 2` remains unchanged.
 
 ### Designer v2 SOURCE candidate: shared sessions, immutable history and guarded saves (G1d-B)
 
@@ -399,7 +435,7 @@ No domain-specific layer action assembly belongs in the Host.
 - Use `decorateDesignerElement(control, semanticType, { label, icon })` for palette items. Base chooses `heading-1`, `align-left`, `image`, `mouse-pointer-click` or safe `shapes` fallback; a recognized curated icon may be requested by a consumer. No private icon module imports.
 - Designers without Layers (for example Automations) **do not render a Layers tab**. Optional data and actions stay absent rather than producing placeholders.
 - A separate Dynamic Data tab, right-hand Layers, and consumer-owned replacements for Base rails **fail the canonical source layout**. This contract decision does not change extension markup automatically. Newsletter, Reports, Evaluator and other consumers require their own version-pinned integration checks and explicit acceptance; no Base-only source test can certify their installed behavior.
-- A Layers click in the left palette keeps Layers active while updating the right Inspector. For profile-bound sessions, `createDesignerSelectionController()` supplies source-aware selection and synchronization. Domain-neutral `createDomainSession()` does not expose the profile-bound selection API; its consumers must implement domain selection mapping while reusing Base Layers and Inspector presentation.
+- A Layers click in the left palette keeps Layers active while updating the right Inspector. For profile-bound sessions, `createDesignerSelectionController()` supplies source-aware selection and synchronization. Typed Domain Sessions use the B2 public `selection()`, `select()` and `subscribeSelection()` facade on the existing Base EditorState, while consumers remain responsible for entity membership and Inspector domain controls.
 
 
 
