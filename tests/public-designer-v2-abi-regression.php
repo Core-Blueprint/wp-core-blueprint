@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * G1d-B source-only public v2 contract preflight, never installed ZIP proof.
+ * G1d-B v2 History/Save with B2 v3 Shared Selection SOURCE preflight, never installed ZIP proof.
  * Run alongside executable JavaScript tests and installed WP module tests.
  */
 $root = dirname(__DIR__);
@@ -20,7 +20,7 @@ $require = static function (bool $condition, string $name): void {
         exit(1);
     }
 };
-$require((bool) preg_match('/public const DOMAIN_SESSION_API\s*=\s*2\s*;/', $assets), 'PHP v2 capability');
+$require((bool) preg_match('/public const DOMAIN_SESSION_API\s*=\s*3\s*;/', $assets), 'PHP v3 capability (v2 History/Save + B2 Shared Selection)');
 $require(str_contains($assets, "public const MODULE_ID = '@cb-core/design-editor'"), 'canonical module identifier');
 $require(str_contains($assets, 'wp_enqueue_script_module(') && str_contains($assets, 'self::MODULE_ID'), 'WordPress module registration');
 $require(str_contains($assets, 'public static function enqueue_designer_mode('), 'Designer Mode boundary');
@@ -37,4 +37,4 @@ $require(str_contains($editor, 'window.cbCore.designEditor = publicApi'), 'globa
 $require(str_contains($shell, 'session.subscribeHistory(syncHistory)'), 'Shell postcommit history');
 $require(str_contains($document, 'v2 SOURCE candidate'), 'documentation source state');
 $require(str_contains($document, 'installed ZIP acceptance pending'), 'documented packaging gate');
-echo "Base Designer G1d-B public v2 SOURCE regression: PASS\n";
+echo "Base Designer G1d-B v2 History/Save + B2 v3 Shared Selection SOURCE regression: PASS\n";
