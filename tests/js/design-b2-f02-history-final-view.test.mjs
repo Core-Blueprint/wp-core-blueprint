@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { cp, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -23,7 +24,16 @@ async function convert(dir) {
 before(async () => {
   temp = await mkdtemp(join(tmpdir(), 'cb-b2-f02-'));
   const dest = join(temp, 'design');
-  await cp(new URL('../../assets/js/design/', import.meta.url), dest, { recursive: true });
+  const pinnedRoot = process.env.CB_F02_BASE_SOURCE;
+  if (pinnedRoot) {
+    const actual = execFileSync('git', ['-C', pinnedRoot, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).trim();
+    assert.equal(actual, '9ce68f14c12ceac88d20aa692be8a5bb064c56aa',
+      'RED evidence must use the exact frozen B2 parent, never the candidate or main');
+  }
+  await cp(pinnedRoot
+    ? join(pinnedRoot, 'assets/js/design')
+    : new URL('../../assets/js/design/', import.meta.url),
+  dest, { recursive: true });
   await convert(dest);
   globalThis.window = {};
   editor = await import(pathToFileURL(join(dest, 'editor.mjs')).href);
