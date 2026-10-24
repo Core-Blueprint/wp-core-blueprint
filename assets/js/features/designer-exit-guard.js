@@ -19,6 +19,8 @@
 		choiceTitle: 'What should happen to your changes?',
 		save: 'Save changes',
 		discard: 'Discard changes',
+		transitionConfirm: 'Switch design',
+		transitionDirtyDescription: 'Save or discard your changes before switching designs.',
 		close: 'Close Designer',
 		cancel: 'Cancel',
 		busy: 'Wait for the current save to finish.',
