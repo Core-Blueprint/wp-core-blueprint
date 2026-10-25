@@ -598,7 +598,7 @@ namespace {
         s2_assert($refused, 'native profile refuses historical/invalid project payload');
     }
     $badDocument = ['branding' => $document['fields'], 'composer' => ['maintenance' => []]];
-    s2_assert('invalid' === $transaction::staged(Settings::$values, $badDocument, $desired)['status'],
+    s2_assert('invalid' === $transaction::staged(\CoreBlueprint\Core\Settings::$values, $badDocument, $desired)['status'],
         'historical persisted document cannot enter native transaction');
     $validDoc = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::read()['document'];
     $badProject = $desired;
@@ -606,11 +606,11 @@ namespace {
     $blocked = false;
     try { $section->normalize($badProject); } catch (\Throwable $error) { $blocked = true; }
     s2_assert($blocked, 'native Project schema rejects extra properties');
-    s2_assert('invalid' === $transaction::staged(Settings::$values, $validDoc, $badProject)['status'],
+    s2_assert('invalid' === $transaction::staged(\CoreBlueprint\Core\Settings::$values, $validDoc, $badProject)['status'],
         'invalid native Project refuses without SQL writes');
     $badFields = $validDoc;
     $badFields['fields']['density'] = 'unknown';
-    s2_assert('invalid' === $transaction::staged(Settings::$values, $badFields, $desired)['status'],
+    s2_assert('invalid' === $transaction::staged(\CoreBlueprint\Core\Settings::$values, $badFields, $desired)['status'],
         'invalid native Fields refuse staging');
 
     $blockedComposer = false;
