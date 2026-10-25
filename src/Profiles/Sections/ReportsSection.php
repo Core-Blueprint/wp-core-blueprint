@@ -122,7 +122,8 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 			}
 			return;
 		}
-		self::require_legacy_profile_authority();
+		// Schema v2 has no legacy or prepared authority fallback.
+		throw new \RuntimeException( 'REPORTS_PROFILE_ACTIVE_AUTHORITY_REQUIRED' );
 	}
 
 	/** Engine-only synchronous transaction result; generic apply remains void. */
