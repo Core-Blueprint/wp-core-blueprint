@@ -331,6 +331,20 @@ function s3_engine_integration_child(): void {
     $pos = strpos($source, $boundary);
     s3_assert(false !== $pos, 'S2 declarations boundary is stable');
     $harness = substr($source, 0, $pos);
+    // The child runs from an isolated system temp file, so its production
+    // native-validator includes must resolve to the verified SOURCE checkout.
+    $sourceRoot = dirname(__DIR__);
+    foreach ([
+        'src/Design/Profile/Reports/PlatformAdapter.php',
+        'src/Reports/Composer/NativeComposition.php',
+        'src/Reports/Composer/MaintenanceTemplate.php',
+    ] as $sourcePath) {
+        $oldRequire = "require_once dirname( __DIR__ ) . '/" . $sourcePath . "';";
+        s3_assert(1 === substr_count($harness, $oldRequire),
+            'native source include is present exactly once');
+        $harness = str_replace($oldRequire,
+            'require_once ' . var_export($sourceRoot . '/' . $sourcePath, true) . ';', $harness);
+    }
 
     $oldLease = <<<'OLD'
     final class ApplyLock {
@@ -462,7 +476,7 @@ SECTIONS;
     // PHP resolves parent classes as it evaluates each declaration.
     // Keep the original S2 SectionRegistry where it is, and define the
     // S3 Engine doubles only AFTER the unchanged ExactSection declaration.
-    $endProfiles = "}\nnamespace {\n    /**\n     * Fake transactional SQL store";
+    $endProfiles = "}\nnamespace {\n    // The source-only harness exercises the real native v1 validator";
     s3_assert(1 === substr_count($harness, $endProfiles),
         'single post-ExactSection insertion boundary in S2 harness');
     $harness = str_replace($endProfiles, $fakeSections . "\n" . $endProfiles, $harness);
@@ -486,7 +500,7 @@ namespace CoreBlueprint\Core\Log {
     }
 }
 AUDIT;
-    $nsMarker = "namespace {\n    /**\n     * Fake transactional SQL store";
+    $nsMarker = "namespace {\n    // The source-only harness exercises the real native v1 validator";
     s3_assert(1 === substr_count($harness, $nsMarker), 'insert audit sink into isolated process');
     $harness = str_replace($nsMarker, $audit . "\n" . $nsMarker, $harness);
 
