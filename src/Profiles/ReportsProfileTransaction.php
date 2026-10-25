@@ -7,6 +7,7 @@ use CoreBlueprint\Core\Design\Document\Authority;
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Document\Schema;
 use CoreBlueprint\Core\Reports\DesignDocumentAdapter;
+use CoreBlueprint\Core\Reports\Composer\NativeComposition;
 use CoreBlueprint\Core\Settings;
 use CoreBlueprint\Core\Settings\OptionCas;
 
@@ -15,9 +16,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Internal A2.4-S2 canonical Reports two-row transaction boundary.
  *
- * This class is intentionally NOT connected to active Profiles Apply. Engine
- * and ReportsSection must continue to block active mutation until separate
- * field, WordPress Level 2 and cutover acceptances are recorded.
+ * Schema v2 uses one strict native {project,fields} document and the existing
+ * Engine-scoped consent and two-row transactional safety boundary.
  *
  * Native option prefilters and prewrite action execute BEFORE START TRANSACTION.
  * No arbitrary WP callbacks run while either row lock is held.
@@ -70,12 +70,15 @@ final class ReportsProfileTransaction {
         $document = DesignDocumentAdapter::read();
         if ( 'ok' !== ( $settings['status'] ?? '' )
             || 'found' !== ( $document['status'] ?? '' )
-            || ! Repository::valid_revision( (string) ( $document['revision'] ?? '' ), false ) ) {
+            || ! Repository::valid_revision( (string) ( $document['revision'] ?? '' ), false )
+            || ! is_string( $settings['raw'] ?? null )
+            || ! NativeComposition::valid_document( $document['document'] ?? null ) ) {
             return [ 'status' => 'recovery_required' ];
         }
         return [ 'status' => 'ok', 'witness' => [
             'settings_sha256' => hash( 'sha256', $settings['raw'] ),
             'document_revision' => $document['revision'],
+            'document_sha256' => self::document_hash( $document['document'] ),
         ] ];
     }
 
@@ -88,7 +91,9 @@ final class ReportsProfileTransaction {
     public static function staged( array $stored_settings, array $stored_document, array $incoming ): array {
         // Settings::get() projects defaults but the raw option may omit
         // default-only nodes. Missing is valid; a present non-array is not.
-        if ( ! DesignDocumentAdapter::valid_document( $stored_document )
+        if ( ! NativeComposition::valid_document( $stored_document )
+            || ! is_array( $incoming['project'] ?? null )
+            || ! isset( $incoming['branding']['provider_name'], $incoming['branding']['provider_contact'], $incoming['branding']['accent_color'] )
             || ( array_key_exists( 'reports', $stored_settings )
                 && ! is_array( $stored_settings['reports'] ) )
             || ( isset( $stored_settings['reports'] )
@@ -103,11 +108,12 @@ final class ReportsProfileTransaction {
         $settings['reports']['email_alerts']['generation_failed'] = $incoming['email_alerts']['generation_failed'];
 
         $document = $stored_document;
+        // Preserve native project nodes without lossy Composer projection.
+        $document['project'] = $incoming['project'];
         foreach ( [ 'provider_name', 'provider_contact', 'accent_color' ] as $field ) {
-            $document['branding'][ $field ] = $incoming['branding'][ $field ];
+            $document['fields'][ $field ] = $incoming['branding'][ $field ];
         }
-        $document['composer']['maintenance'] = $incoming['composer']['maintenance'];
-        if ( ! DesignDocumentAdapter::valid_document( $document ) ) {
+        if ( ! NativeComposition::valid_document( $document ) ) {
             return [ 'status' => 'invalid' ];
         }
         return [ 'status' => 'ok', 'settings' => $settings, 'document' => $document ];
@@ -125,6 +131,7 @@ final class ReportsProfileTransaction {
         global $wpdb;
 
         if ( 'active' !== ( Authority::inspect()['status'] ?? '' )
+            || ! self::valid_profile_witness( $expected )
             || ! isset( $wpdb ) || ! is_object( $wpdb )
             || ! is_string( $wpdb->options ?? null ) ) {
             return [ 'status' => 'blocked' ];
@@ -141,8 +148,7 @@ final class ReportsProfileTransaction {
         if ( 'ok' !== ( $read['status'] ?? '' ) || 'found' !== ( $doc['status'] ?? '' ) ) {
             return [ 'status' => 'recovery_required', 'reason' => 'document_unavailable' ];
         }
-        if ( $strict_profile && ( ! self::valid_profile_witness( $expected )
-            || self::document_hash( $doc['document'] ) !== $expected['document_sha256'] ) ) {
+        if ( self::document_hash( $doc['document'] ) !== $expected['document_sha256'] ) {
             return [ 'status' => 'conflict', 'reason' => 'document_preimage_mismatch' ];
         }
         if ( hash( 'sha256', $read['raw'] ) !== ( $expected['settings_sha256'] ?? '' )
@@ -257,7 +263,7 @@ final class ReportsProfileTransaction {
         if ( ! is_array( $locked_payload ) || $locked_payload !== $doc['document'] ) {
             return self::abort( 'conflict', 'document_payload_mismatch' );
         }
-        if ( $strict_profile && self::document_hash( $locked_payload ) !== $expected['document_sha256'] ) {
+        if ( self::document_hash( $locked_payload ) !== $expected['document_sha256'] ) {
             return self::abort( 'conflict', 'document_locked_preimage' );
         }
 

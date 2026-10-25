@@ -3,13 +3,12 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Profiles\Sections;
 
-use CoreBlueprint\Core\Profiles\CanonicalJson;
 use CoreBlueprint\Core\Profiles\ExactSection;
 use CoreBlueprint\Core\Profiles\SchemaGuard;
 use CoreBlueprint\Core\Profiles\VersionGuardedSectionInterface;
 use CoreBlueprint\Core\Profiles\ReportsProfileTransaction;
 use CoreBlueprint\Core\Settings\OptionCas;
-use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Reports\Composer\NativeComposition;
 use CoreBlueprint\Core\Settings;
 use CoreBlueprint\Core\Design\Document\Authority;
 use CoreBlueprint\Core\Reports\DesignDocumentAdapter;
@@ -19,8 +18,8 @@ defined( 'ABSPATH' ) || exit;
 final class ReportsSection extends ExactSection implements VersionGuardedSectionInterface {
 	public function id(): string { return 'reports'; }
 	public function label(): string { return __( 'Reports policy', 'core-blueprint' ); }
-	public function description(): string { return __( 'Report retention, branding and composer policy. Report snapshots, recipient addresses and attachment IDs are not included.', 'core-blueprint' ); }
-	public function schema_version(): int { return 1; }
+	public function description(): string { return __( 'Report retention, branding and complete native Reports project. Report snapshots and recipient addresses are not included.', 'core-blueprint' ); }
+	public function schema_version(): int { return 2; }
 
 	public function export(): array {
 		$reports = Settings::get()['reports'] ?? [];
@@ -37,19 +36,22 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 				'provider_contact' => sanitize_text_field( (string) ( $branding['provider_contact'] ?? '' ) ),
 				'accent_color'     => $this->color( (string) ( $branding['accent_color'] ?? '#0064c8' ) ),
 			],
-			'composer' => [ 'maintenance' => MaintenanceTemplate::current() ],
+			'project' => $live['project'],
 		];
 	}
 
 	public function normalize( array $incoming ): array {
-		SchemaGuard::exact_keys( $incoming, [ 'retention_days', 'email_alerts', 'branding', 'composer' ], 'Reports' );
+		SchemaGuard::exact_keys( $incoming, [ 'retention_days', 'email_alerts', 'branding', 'project' ], 'Reports' );
 		$branding = SchemaGuard::object( $incoming['branding'] ?? null, 'Reports branding' );
 		SchemaGuard::exact_keys( $branding, [ 'provider_name', 'provider_contact', 'accent_color' ], 'Reports branding' );
 		$alerts = SchemaGuard::object( $incoming['email_alerts'] ?? null, 'Reports email alerts' );
 		SchemaGuard::exact_keys( $alerts, [ 'generation_failed' ], 'Reports email alerts' );
-		$composer_root = SchemaGuard::object( $incoming['composer'] ?? null, 'Reports composer' );
-		SchemaGuard::exact_keys( $composer_root, [ 'maintenance' ], 'Reports composer' );
-		$composer = SchemaGuard::object( $composer_root['maintenance'] ?? null, 'Reports maintenance composer' );
+		$project = SchemaGuard::object( $incoming['project'] ?? null, 'Reports native project' );
+		try {
+			NativeComposition::assert_project( $project );
+		} catch ( \Throwable $error ) {
+			SchemaGuard::invalid_value( 'Reports native project' );
+		}
 		$retention = SchemaGuard::int( $incoming['retention_days'] ?? null, 'Reports retention days' );
 		if ( $retention < 7 || $retention > 3650 ) {
 			SchemaGuard::invalid_value( 'Reports retention days' );
@@ -64,10 +66,6 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 		if ( sanitize_text_field( $provider_name ) !== $provider_name || sanitize_text_field( $provider_contact ) !== $provider_contact ) {
 			SchemaGuard::invalid_value( 'Reports branding' );
 		}
-		$normalized_composer = MaintenanceTemplate::normalize( $composer );
-		if ( CanonicalJson::encode( $normalized_composer ) !== CanonicalJson::encode( $composer ) ) {
-			SchemaGuard::invalid_value( 'Reports maintenance composer' );
-		}
 		return [
 			'retention_days' => $retention,
 			'email_alerts' => [ 'generation_failed' => SchemaGuard::bool( $alerts['generation_failed'] ?? null, 'Reports generation-failed alerts' ) ],
@@ -76,7 +74,7 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 				'provider_contact' => $provider_contact,
 				'accent_color'     => strtolower( $accent_color ),
 			],
-			'composer' => [ 'maintenance' => $normalized_composer ],
+			'project' => $project,
 		];
 	}
 
@@ -89,30 +87,25 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 	/** @return array<string,string> */
 	public function version_witness(): array {
 		$authority = (string) ( Authority::inspect()['status'] ?? 'blocked' );
-		if ( ! in_array( $authority, [ 'legacy', 'prepared', 'active' ], true ) ) {
+		if ( 'active' !== $authority ) {
 			throw new \RuntimeException( 'Reports Profile recovery_required: authority' );
 		}
 		$row = OptionCas::read();
 		if ( 'ok' !== ( $row['status'] ?? '' ) ) {
 			throw new \RuntimeException( 'Reports Profile recovery_required: settings_unavailable' );
 		}
-		$revision = 'legacy';
-		if ( 'active' === $authority ) {
-			$document = DesignDocumentAdapter::read();
-			if ( 'found' !== ( $document['status'] ?? '' ) ) {
-				throw new \RuntimeException( 'Reports Profile recovery_required: document_unavailable' );
-			}
-			$revision = (string) $document['revision'];
+		$document = DesignDocumentAdapter::read();
+		if ( 'found' !== ( $document['status'] ?? '' )
+			|| ! is_string( $row['raw'] ?? null )
+			|| ! is_array( $document['document'] ?? null ) ) {
+			throw new \RuntimeException( 'Reports Profile recovery_required: document_unavailable' );
 		}
-		$witness = [
+		return [
 			'authority'         => $authority,
 			'settings_sha256'   => hash( 'sha256', $row['raw'] ),
-			'document_revision' => $revision,
+			'document_revision' => (string) $document['revision'],
+			'document_sha256'   => ReportsProfileTransaction::document_hash( $document['document'] ),
 		];
-		if ( 'active' === $authority ) {
-			$witness['document_sha256'] = ReportsProfileTransaction::document_hash( $document['document'] );
-		}
-		return $witness;
 	}
 
 	/** Canonical active authority needs an intact read-only transaction witness. */
@@ -123,7 +116,8 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 			$transaction = ReportsProfileTransaction::witness();
 			if ( 'ok' !== ( $transaction['status'] ?? '' )
 				|| ( $transaction['witness']['settings_sha256'] ?? null ) !== $full['settings_sha256']
-				|| ( $transaction['witness']['document_revision'] ?? null ) !== $full['document_revision'] ) {
+				|| ( $transaction['witness']['document_revision'] ?? null ) !== $full['document_revision']
+				|| ( $transaction['witness']['document_sha256'] ?? null ) !== $full['document_sha256'] ) {
 				throw new \RuntimeException( 'Reports Profile recovery_required: canonical_authority' );
 			}
 			return;
@@ -146,43 +140,15 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 		return ReportsProfileTransaction::apply_profile_guarded( $this->normalize( $incoming ), $expected );
 	}
 
-	/** Repeat policy at direct apply and rollback boundaries. */
-	public function restore( array $snapshot, array $incoming, string $actor ): void {
-		self::require_legacy_profile_authority();
-		parent::restore( $snapshot, $incoming, $actor );
-	}
-
-	private static function require_legacy_profile_authority(): void {
-		$state = Authority::inspect()['status'];
-		if ( ! in_array( $state, [ 'legacy', 'prepared' ], true ) ) {
-			throw new \RuntimeException(
-				__( 'Reports Profile import is temporarily unavailable while canonical Reports storage is active or requires recovery. No Profile sections were changed. Review the Reports storage policy.', 'core-blueprint' )
-			);
-		}
-	}
-
+	/** No generic Section API may bypass the native, Engine-scoped transaction. */
 	public function apply( array $incoming, string $actor ): void {
-		// Generic SectionInterface::apply MUST remain read-only for active.
-		self::require_legacy_profile_authority();
-		$changes = self::represented_paths( $this->normalize( $incoming ) );
-		if ( ! Settings::set_paths( $changes, $actor )
-			&& ( 'unchanged' !== Settings::last_write_status() || ! Settings::matches_paths( $changes ) ) ) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception text is translated and escaped at presentation.
-			throw new \RuntimeException( __( 'Could not apply the Reports profile policy.', 'core-blueprint' ) );
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
-		}
+		unset( $incoming, $actor );
+		throw new \RuntimeException( 'REPORTS_PROFILE_GUARDED_APPLY_REQUIRED' );
 	}
 
-	/** @return array<string,mixed> */
-	private static function represented_paths( array $data ): array {
-		return [
-			'reports.retention_days'                 => $data['retention_days'],
-			'reports.email_alerts.generation_failed' => $data['email_alerts']['generation_failed'],
-			'reports.branding.provider_name'         => $data['branding']['provider_name'],
-			'reports.branding.provider_contact'      => $data['branding']['provider_contact'],
-			'reports.branding.accent_color'          => $data['branding']['accent_color'],
-			'reports.composer.maintenance'           => $data['composer']['maintenance'],
-		];
+	public function restore( array $snapshot, array $incoming, string $actor ): void {
+		unset( $snapshot, $incoming, $actor );
+		throw new \RuntimeException( 'REPORTS_PROFILE_GUARDED_RESTORE_REQUIRED' );
 	}
 
 	/** Compensate only from exact post-apply Settings bytes. */
@@ -196,76 +162,7 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 		unset( $incoming, $actor );
 		$now = $this->version_witness();
 		if ( 'active' === ( $before_witness['authority'] ?? null ) ) {
-			if ( null === $after_witness ) {
-				if ( $now === $before_witness ) {
-					return;
-				}
-				throw new \RuntimeException( 'Reports Profile recovery_required: missing_post_witness' );
-			}
-			$committed = [
-				'authority'         => 'active',
-				'settings_sha256'   => $after_witness['settings_sha256'] ?? null,
-				'document_revision' => $after_witness['document_revision'] ?? null,
-				'document_sha256'   => $after_witness['document_sha256'] ?? null,
-			];
-			if ( count( $after_witness ) !== 3 || $now !== $committed ) {
-				throw new \RuntimeException( 'Reports Profile recovery_required: concurrent_revision' );
-			}
-			$result = ReportsProfileTransaction::reverse_profile_guarded(
-				$this->normalize( $snapshot ), $after_witness
-			);
-			$restored = is_array( $result['witness'] ?? null ) ? [
-				'authority'         => 'active',
-				'settings_sha256'   => $result['witness']['settings_sha256'] ?? null,
-				'document_revision' => $result['witness']['document_revision'] ?? null,
-				'document_sha256'   => $result['witness']['document_sha256'] ?? null,
-			] : null;
-			// Compensation advances the document revision. The represented
-			// snapshot must be restored, but its OLD revision cannot reappear.
-			if ( ! in_array( $result['status'] ?? '', [ 'saved', 'unchanged' ], true )
-				|| null === $restored
-				|| ! $this->verify( $snapshot )
-				|| $this->version_witness() !== $restored ) {
-				throw new \RuntimeException( 'Reports Profile recovery_required: compensation_unverified' );
-			}
-			return;
-		}
-		if ( null === $after_witness ) {
-			if ( $now === $before_witness ) {
-				return;
-			}
-			throw new \RuntimeException( 'Reports Profile recovery_required: missing_post_witness' );
-		}
-		if ( $now !== $after_witness ) {
-			throw new \RuntimeException( 'Reports Profile recovery_required: concurrent_revision' );
-		}
-		$this->assert_apply_allowed();
-		$row = OptionCas::read();
-		if ( 'ok' !== ( $row['status'] ?? '' )
-			|| hash( 'sha256', $row['raw'] ) !== $after_witness['settings_sha256'] ) {
-			throw new \RuntimeException( 'Reports Profile recovery_required: settings_revision' );
-		}
-		$changes = self::represented_paths( $this->normalize( $snapshot ) );
-		$desired = $row['value'];
-		foreach ( $changes as $path => $value ) {
-			$node = &$desired;
-			foreach ( explode( '.', $path ) as $part ) {
-				if ( ! is_array( $node ) || ! array_key_exists( $part, $node ) ) {
-					throw new \RuntimeException( 'Reports Profile recovery_required: invalid_settings' );
-				}
-				$node = &$node[ $part ];
-			}
-			$node = $value;
-			unset( $node );
-		}
-		$result = OptionCas::write( $row['value'], $desired, $row['raw'], $changes );
-		if ( 'saved' !== ( $result['status'] ?? '' )
-			&& 'unchanged' !== ( $result['status'] ?? '' ) ) {
-			throw new \RuntimeException( 'Reports Profile recovery_required: compensation_conflict' );
-		}
-		if ( ! $this->verify( $snapshot ) ) {
-			throw new \RuntimeException( 'Reports Profile recovery_required: compensation_unverified' );
-		}
+			throw new \RuntimeException( 'REPORTS_PROFILE_ACTIVE_AUTHORITY_REQUIRED' );
 	}
 
 	private function color( string $value ): string {

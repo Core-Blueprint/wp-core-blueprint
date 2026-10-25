@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Reports\Composer;
 
-use CoreBlueprint\Core\Reports\DesignDocumentAdapter;
 defined( 'ABSPATH' ) || exit;
 
 final class MaintenanceTemplate {
@@ -20,8 +19,8 @@ final class MaintenanceTemplate {
 
 	/** @return array{schema_version:int,blocks:list<array{id:string,type:string,enabled:bool,settings:array<string,mixed>}>} */
 	public static function current(): array {
-		$raw = DesignDocumentAdapter::current()['composer'];
-		return self::normalize( is_array( $raw ) ? $raw : [] );
+		// The native project has no Composer transport or default fallback.
+		throw new \RuntimeException( 'REPORTS_NATIVE_COMPOSER_UNAVAILABLE' );
 	}
 
 	/**
