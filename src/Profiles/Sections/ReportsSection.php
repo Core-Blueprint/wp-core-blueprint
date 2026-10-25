@@ -162,7 +162,41 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 		unset( $incoming, $actor );
 		$now = $this->version_witness();
 		if ( 'active' === ( $before_witness['authority'] ?? null ) ) {
-			throw new \RuntimeException( 'REPORTS_PROFILE_ACTIVE_AUTHORITY_REQUIRED' );
+			if ( null === $after_witness ) {
+				if ( $now === $before_witness ) {
+					return;
+				}
+				throw new \RuntimeException( 'Reports Profile recovery_required: missing_post_witness' );
+			}
+			$committed = [
+				'authority'         => 'active',
+				'settings_sha256'   => $after_witness['settings_sha256'] ?? null,
+				'document_revision' => $after_witness['document_revision'] ?? null,
+				'document_sha256'   => $after_witness['document_sha256'] ?? null,
+			];
+			if ( count( $after_witness ) !== 3 || $now !== $committed ) {
+				throw new \RuntimeException( 'Reports Profile recovery_required: concurrent_revision' );
+			}
+			$result = ReportsProfileTransaction::reverse_profile_guarded(
+				$this->normalize( $snapshot ), $after_witness
+			);
+			$restored = is_array( $result['witness'] ?? null ) ? [
+				'authority'         => 'active',
+				'settings_sha256'   => $result['witness']['settings_sha256'] ?? null,
+				'document_revision' => $result['witness']['document_revision'] ?? null,
+				'document_sha256'   => $result['witness']['document_sha256'] ?? null,
+			] : null;
+			// Compensation advances the document revision. The represented
+			// snapshot must be restored, but its OLD revision cannot reappear.
+			if ( ! in_array( $result['status'] ?? '', [ 'saved', 'unchanged' ], true )
+				|| null === $restored
+				|| ! $this->verify( $snapshot )
+				|| $this->version_witness() !== $restored ) {
+				throw new \RuntimeException( 'Reports Profile recovery_required: compensation_unverified' );
+			}
+			return;
+		}
+		throw new \RuntimeException( 'REPORTS_PROFILE_ACTIVE_AUTHORITY_REQUIRED' );
 	}
 
 	private function color( string $value ): string {
