@@ -25,7 +25,9 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 	public function export(): array {
 		$reports = Settings::get()['reports'] ?? [];
 		$live = DesignDocumentAdapter::current();
-		$branding = $live['branding'];
+		// Native Reports persists one strict {project,fields} document.
+		// Never read the removed pre-native `branding` document envelope.
+		$branding = $live['fields'];
 		$alerts = is_array( $reports['email_alerts'] ?? null ) ? $reports['email_alerts'] : [];
 		return [
 			'retention_days' => max( 7, min( 3650, (int) ( $reports['retention_days'] ?? 365 ) ) ),

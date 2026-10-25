@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Document\Schema;
+use CoreBlueprint\Core\Design\Profile\Mail\Contract as NativeMailContract;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -34,7 +35,9 @@ final class DesignDocumentStorageFoundationTest extends WP_UnitTestCase {
 	}
 
 	private function mail( string $subject ): array {
-		return [ 'subject' => $subject, 'project' => [ 'root' => [ 'type' => 'mail.root' ] ] ];
+		$document = NativeMailContract::default_document();
+		$document['fields']['subject'] = $subject;
+		return $document;
 	}
 
 	public function test_create_save_and_reset_use_real_single_row_revision_cas(): void {
@@ -78,6 +81,13 @@ final class DesignDocumentStorageFoundationTest extends WP_UnitTestCase {
 		self::assertSame( 'saved', $saved['status'] );
 		self::assertSame( '9007199254740994', $saved['revision'] );
 		self::assertIsString( $saved['revision'] );
+	}
+
+	public function test_pre_native_mail_envelope_is_refused_without_writes(): void {
+		$key = $this->key();
+		$obsolete = [ 'subject' => 'Legacy subject', 'project' => [ 'root' => [ 'type' => 'mail.root' ] ] ];
+		self::assertSame( 'invalid', Repository::create( Repository::MAIL, $key, '0', $obsolete )['status'] );
+		self::assertSame( 'missing', Repository::get( Repository::MAIL, $key )['status'] );
 	}
 
 	public function test_invalid_revision_never_writes(): void {

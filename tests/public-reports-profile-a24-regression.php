@@ -72,6 +72,7 @@ namespace CoreBlueprint\Core\Reports\Composer {
 namespace CoreBlueprint\Core\Reports {
     final class DesignDocumentAdapter {
         public const KEY = 'maintenance';
+        public static ?array $native_fields_override = null;
         public static array $record = [
             'revision' => '9007199254740993',
             'branding' => [
@@ -82,7 +83,12 @@ namespace CoreBlueprint\Core\Reports {
             ],
             'composer' => [ 'schema_version' => 1, 'blocks' => [] ],
         ];
-        public static function current(): array { return self::$record + [ 'authority' => 'active' ]; }
+        public static function current(): array {
+            return self::$record + [
+                'fields' => self::$native_fields_override ?? self::$record['branding'],
+                'authority' => 'active',
+            ];
+        }
         public static function read(): array { return [
             'status' => 'found', 'revision' => self::$record['revision'],
             'document' => [
@@ -525,6 +531,23 @@ namespace {
     s2_assert( ! isset( \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'] ), 'sparse Settings transaction does not materialize other alert defaults' );
     s2_assert( true === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['notes']['keep'], 'sparse Settings transaction preserves unrelated root settings' );
     s2_assert( $canonical['branding']['show_logo'] === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['show_logo'], 'sparse transaction preserves nonrepresented canonical branding' );
+
+    // Native v1 fields, not the historical document branding key, are the
+    // authoritative input for the Profile export projection.
+    $adapter = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::class;
+    $adapter::$native_fields_override = array_replace($adapter::$record['branding'], [
+        'provider_name' => 'Native source of truth',
+        'provider_contact' => 'native@example.test',
+        'accent_color' => '#123abc',
+    ]);
+    $native_export = (new \CoreBlueprint\Core\Profiles\Sections\ReportsSection())->export();
+    s2_assert('Native source of truth' === $native_export['branding']['provider_name'],
+        'S2/R2: Profile export reads native fields instead of obsolete document branding');
+    s2_assert('native@example.test' === $native_export['branding']['provider_contact'],
+        'S2/R2: provider contact comes from current native fields');
+    s2_assert('#123abc' === $native_export['branding']['accent_color'],
+        'S2/R2: accent comes from current native fields');
+    $adapter::$native_fields_override = null;
 
     echo "Core Blueprint Base A2.4-S2 Reports Profile source-only regression PASS\n";
 }

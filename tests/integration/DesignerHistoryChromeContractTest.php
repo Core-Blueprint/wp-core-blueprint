@@ -21,9 +21,10 @@ final class CB_Designer_History_Chrome_Contract_Test extends WP_UnitTestCase {
 		self::assertStringNotContainsString( 'queueMicrotask(syncHistory)', $shell );
 	}
 
-	public function test_both_session_factories_delegate_to_single_command_history(): void {
+	public function test_both_session_factories_and_native_host_use_single_command_history_implementation(): void {
 		$editor = $this->source( 'assets/js/design/editor.js' );
-		self::assertSame( 2, substr_count( $editor, 'new CommandHistory(' ) );
+		// Profile, Domain and native Host each construct the SAME Base-owned engine.
+		self::assertSame( 3, substr_count( $editor, 'new CommandHistory(' ) );
 		self::assertStringContainsString( 'history.captureSave()', $editor );
 		self::assertStringContainsString( 'history.rebase(options)', $editor );
 		self::assertStringContainsString( 'history.subscribeHistory(listener)', $editor );
@@ -35,7 +36,7 @@ final class CB_Designer_History_Chrome_Contract_Test extends WP_UnitTestCase {
 	 */
 	public function test_g1d_v2_php_capability_matches_the_public_editor_module(): void {
 		self::assertSame( '@cb-core/design-editor', \CoreBlueprint\Core\Design\Editor\Assets::MODULE_ID );
-		self::assertSame( 2, \CoreBlueprint\Core\Design\Editor\Assets::DOMAIN_SESSION_API );
+		self::assertSame( 3, \CoreBlueprint\Core\Design\Editor\Assets::DOMAIN_SESSION_API );
 
 		$facade = $this->source( 'assets/js/design/editor.js' );
 		foreach ( [ 'createSession', 'createDomainSession', 'subscribeHistory', 'subscribeDiagnostics', 'captureSave', 'baselineSnapshot', 'rebase', 'clearHistory' ] as $symbol ) {

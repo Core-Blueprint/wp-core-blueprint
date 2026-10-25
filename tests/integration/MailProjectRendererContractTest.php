@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use CoreBlueprint\Core\Design\Profile\Mail\BindingInterpolator;
+use CoreBlueprint\Core\Design\Profile\Mail\Contract as NativeMailContract;
 use CoreBlueprint\Core\Mail\ProjectRenderer;
 
 final class CB_Mail_Project_Renderer_Contract_Test extends WP_UnitTestCase {
@@ -13,12 +14,13 @@ final class CB_Mail_Project_Renderer_Contract_Test extends WP_UnitTestCase {
 
 		$rendered = ( new ProjectRenderer() )->render(
 			$project,
-			'Welcome {{contact.first_name}} / {{contact.missing}}',
-			[ 'contact.first_name' => '<Jane>' ]
+			[ 'subject' => 'Welcome {{contact.first_name}} / {{contact.missing}}', 'preheader' => '' ],
+			[ 'contact.first_name' => 'Jane & Friends' ]
 		);
 
-		self::assertSame( 'Welcome <Jane> / ', $rendered['subject'] );
-		self::assertStringContainsString( 'Hello &lt;Jane&gt; / ', $rendered['html'] );
+		self::assertSame( 'Welcome Jane & Friends /', $rendered['subject'] );
+		self::assertSame( '', $rendered['preheader'] );
+		self::assertStringContainsString( 'Hello Jane &amp; Friends / ', $rendered['html'] );
 		self::assertStringNotContainsString( '{{contact.first_name}}', $rendered['html'] );
 	}
 
@@ -27,8 +29,10 @@ final class CB_Mail_Project_Renderer_Contract_Test extends WP_UnitTestCase {
 			$this->node( 'mail.text', [ 'text' => 'Preview' ] ),
 		] );
 
-		$runtime = ( new ProjectRenderer() )->render( $project, 'Runtime' );
-		$preview = ( new ProjectRenderer() )->render( $project, 'Preview', [], [ 'editor_markers' => true ] );
+		$runtime = ( new ProjectRenderer() )->render( $project, [ 'subject' => 'Runtime', 'preheader' => '' ] );
+		$preview = ( new ProjectRenderer() )->render(
+			$project, [ 'subject' => 'Preview', 'preheader' => '' ], [], [ 'editor_markers' => true ]
+		);
 
 		self::assertStringNotContainsString( 'data-cb-mail-editor-node', $runtime['html'] );
 		self::assertStringContainsString( 'data-cb-mail-editor-node="1"', $preview['html'] );
@@ -36,11 +40,26 @@ final class CB_Mail_Project_Renderer_Contract_Test extends WP_UnitTestCase {
 
 	public function test_project_renderer_propagates_invalid_project_validation_failure(): void {
 		$this->expectException( InvalidArgumentException::class );
-
 		( new ProjectRenderer() )->render(
 			[ 'design_type' => 'mail-template' ],
-			'Invalid project'
+			[ 'subject' => 'Invalid project', 'preheader' => '' ]
 		);
+	}
+
+	public function test_project_renderer_refuses_non_native_field_envelopes(): void {
+		$project = NativeMailContract::default_document()['project'];
+		foreach ( [
+			[ 'subject' => 'Valid but missing preheader' ],
+			[ 'subject' => '', 'preheader' => '' ],
+			[ 'subject' => 'Valid', 'preheader' => '', 'legacy' => true ],
+		] as $fields ) {
+			try {
+				( new ProjectRenderer() )->render( $project, $fields );
+				self::fail( 'Renderer accepted invalid native Mail fields.' );
+			} catch ( InvalidArgumentException $error ) {
+				self::assertStringContainsString( 'invalid', strtolower( $error->getMessage() ) );
+			}
+		}
 	}
 
 	public function test_project_renderer_keeps_storage_resolution_and_transport_outside_public_contract(): void {
@@ -76,34 +95,13 @@ final class CB_Mail_Project_Renderer_Contract_Test extends WP_UnitTestCase {
 
 	/** @param list<array<string,mixed>> $children @return array<string,mixed> */
 	private function project( array $children ): array {
-		return [
-			'schema_version' => 0,
-			'design_type' => 'mail-template',
-			'root' => [
-				'type' => 'mail.root',
-				'provider' => 'core',
-				'properties' => [
-					'layout' => [
-						'width' => 600,
-						'background' => '#f3f4f6',
-						'contentBackground' => '#ffffff',
-						'fontFamily' => 'Arial, Helvetica, sans-serif',
-						'textColor' => '#1f2937',
-						'accentColor' => '#2563eb',
-					],
-				],
-				'children' => [ [
-					'type' => 'mail.section',
-					'provider' => 'core',
-					'properties' => [ 'padding' => 32, 'background' => '#ffffff' ],
-					'children' => $children,
-				] ],
-			],
-		];
+		$project = NativeMailContract::default_document()['project'];
+		$project['root']['children'] = [ NativeMailContract::node( 'mail.section', $children ) ];
+		return $project;
 	}
 
 	/** @param array<string,mixed> $properties @return array<string,mixed> */
 	private function node( string $type, array $properties ): array {
-		return [ 'type' => $type, 'provider' => 'core', 'properties' => $properties, 'children' => [] ];
+		return NativeMailContract::node( $type, [], $properties );
 	}
 }
