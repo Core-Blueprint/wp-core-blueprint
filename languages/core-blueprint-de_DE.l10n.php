@@ -402,7 +402,6 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'The mail template save could not be verified.' => 'Das Speichern der Mailvorlage konnte nicht überprüft werden.',
     'Mail document storage requires operator attention.' => 'Der Speicher für Maildokumente erfordert die Prüfung durch einen Administrator.',
     'Core Blueprint Mail Designer could not safely load a saved template. WordPress handled the original system notification unchanged. Review the Mail Designer storage before editing this template.' => 'Core Blueprint Mail Designer konnte eine gespeicherte Vorlage nicht sicher laden. WordPress hat die ursprüngliche Systembenachrichtigung unverändert verarbeitet. Prüfen Sie den Mail-Designer-Speicher, bevor Sie diese Vorlage bearbeiten.',
-    'Reports Profile import is temporarily unavailable while canonical Reports storage is active or requires recovery. No Profile sections were changed. Review the Reports storage policy.' => 'Der Import des Reports-Profils ist vorübergehend nicht verfügbar, solange der kanonische Reports-Speicher aktiv ist oder wiederhergestellt werden muss. Es wurden keine Profilabschnitte geändert. Prüfen Sie die Reports-Speicherrichtlinie.',
     'The Reports design is invalid.' => 'Der Reports-Entwurf ist ungültig.',
     'Reports storage is unavailable.' => 'Der Reports-Speicher ist nicht verfügbar.',
     'Reports storage is blocked.' => 'Der Reports-Speicher ist gesperrt.',

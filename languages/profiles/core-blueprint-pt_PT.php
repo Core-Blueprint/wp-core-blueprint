@@ -91,7 +91,7 @@ return [
         'Core Profiles: configuration exported' => 'Core Profiles: configuração exportada',
         'Core Profiles: import preview created' => 'Core Profiles: pré-visualização de importação criada',
         'Core Profiles: rollback requires attention' => 'Core Profiles: a reversão requer atenção',
-        'Report retention, branding and composer policy. Report snapshots, recipient addresses and attachment IDs are not included.' => 'Política de retenção, branding e composição de relatórios. Snapshots de relatórios, endereços de destinatários e IDs de anexos não são incluídos.',
+        'Report retention, branding and complete native Reports project. Report snapshots and recipient addresses are not included.' => 'Política de retenção de relatórios, identidade visual e projeto nativo completo do Reports. Os instantâneos dos relatórios e os endereços dos destinatários não estão incluídos.',
         'Reports policy' => 'Política do Reports',
         'Review Profile' => 'Rever perfil',
         'Scanner schedule, coverage and alert policy. Scan results and approved baselines are not included.' => 'Política de agendamento, cobertura e alertas do scanner. Resultados de análises e baselines aprovadas não são incluídos.',

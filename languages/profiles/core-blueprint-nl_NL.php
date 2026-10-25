@@ -91,7 +91,7 @@ return [
         'Core Profiles: configuration exported' => 'Core Profiles: configuratie geëxporteerd',
         'Core Profiles: import preview created' => 'Core Profiles: importvoorbeeld gemaakt',
         'Core Profiles: rollback requires attention' => 'Core Profiles: rollback vereist aandacht',
-        'Report retention, branding and composer policy. Report snapshots, recipient addresses and attachment IDs are not included.' => 'Beleid voor rapportbewaring, branding en composer. Rapportsnapshots, ontvangeradressen en bijlage-ID’s worden niet meegenomen.',
+        'Report retention, branding and complete native Reports project. Report snapshots and recipient addresses are not included.' => 'Beleid voor rapportbewaring, huisstijl en het volledige native Reports-project. Rapportsnapshots en ontvangeradressen zijn niet opgenomen.',
         'Reports policy' => 'Reports-beleid',
         'Review Profile' => 'Profiel controleren',
         'Scanner schedule, coverage and alert policy. Scan results and approved baselines are not included.' => 'Beleid voor scanschema, dekking en meldingen. Scanresultaten en goedgekeurde baselines worden niet meegenomen.',
