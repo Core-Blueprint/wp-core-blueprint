@@ -361,6 +361,7 @@ namespace {
     $desired['retention_days'] = 900;
     $desired['email_alerts']['generation_failed'] = true;
     $desired['branding']['provider_name'] = 'new';
+    $desired['project']['root']['children'][1]['children'][1]['properties']['text'] = 'Profile-approved native paragraph update';
     $document = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::read()['document'];
     $stage = \CoreBlueprint\Core\Profiles\ReportsProfileTransaction::staged(
         \CoreBlueprint\Core\Settings::$values, $document, $desired
@@ -374,7 +375,9 @@ namespace {
     s2_assert( 'new' === $stage['document']['fields']['provider_name'], 'represented canonical branding staged' );
     s2_assert( 'off' === $stage['document']['fields']['show_logo'], 'unrepresented show_logo preserved' );
     s2_assert( 'comfortable' === $stage['document']['fields']['density'], 'unrepresented presentation preserved' );
-    s2_assert( $document['project'] === $stage['document']['project'], 'unchanged native project never normalized' );
+    s2_assert( $stage['document']['project'] === $desired['project'], 'all represented native project edits staged verbatim' );
+    s2_assert( 'A retained paragraph' === $document['project']['root']['children'][1]['children'][1]['properties']['text'],
+        'staging does not mutate the original native Project reference' );
     s2_assert( '9007199254740993' === $section->version_witness()['document_revision'], 'stage is read-only' );
     $blocked = false;
     try { $section->apply( $incoming, 'source-test' ); }
@@ -402,6 +405,8 @@ namespace {
     s2_assert( true === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'], 'unrepresented Settings alert retained' );
     s2_assert( 'off' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['show_logo'], 'unrepresented canonical logo field retained' );
     s2_assert( '9007199254740994' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'], 'decimal revision increment is exact' );
+    s2_assert( $desired['project'] === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['project'],
+        'committed native project retains nested Section/Heading/Paragraph/Metric topology' );
     s2_assert( [ 'update_option', 'update_option_cb_core_settings', 'updated_option' ] === $GLOBALS['s2_actions'], 'native prewrite and postcommit ordering preserved' );
 
     $after_settings = \CoreBlueprint\Core\Settings\OptionCas::$row;
@@ -612,6 +617,35 @@ namespace {
     try { \CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate::current(); }
     catch (\RuntimeException $error) { $blockedComposer = true; }
     s2_assert($blockedComposer, 'old MaintenanceTemplate current projection cannot fabricate defaults');
+
+    // A valid but too-large native Project cannot reach SQL UPDATE.
+    // Node lengths stay schema-valid; only the complete document exceeds
+    // the bounded two-row transaction's maximum serialized byte length.
+    $oversized = $desired;
+    $oversized['project']['root']['children'][1]['children'] = array_fill(0, 20, [
+        'type' => 'reports.paragraph',
+        'provider' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::PROVIDER,
+        'properties' => ['text' => str_repeat('a', 20000)],
+        'children' => [],
+    ]);
+    s2_assert(\CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document([
+        'project' => $oversized['project'], 'fields' => $adapter::$record['fields'],
+    ]), 'oversized fixture is otherwise valid native schema');
+    $wpdb = new S2FakeDb();
+    $largeWitness = [
+        'settings_sha256' => hash('sha256', \CoreBlueprint\Core\Settings\OptionCas::$row['raw']),
+        'document_revision' => $adapter::$record['revision'],
+        'document_sha256' => $transaction::document_hash($adapter::read()['document']),
+    ];
+    $large = $transaction::apply_profile_guarded($oversized, $largeWitness);
+    s2_assert('invalid' === ($large['status'] ?? null), 'oversized native Project fails closed');
+    s2_assert(0 === $wpdb->option_writes && 0 === $wpdb->document_writes,
+        'oversized native Project performs no SQL writes');
+    // Truncated/corrupt native documents are refused before any transaction.
+    $corrupt = $adapter::read()['document'];
+    unset($corrupt['project']['root']['children'][0]['provider']);
+    s2_assert('invalid' === $transaction::staged(\CoreBlueprint\Core\Settings::$values, $corrupt, $desired)['status'],
+        'corrupt persisted native project is not normalized or repaired');
 
     echo "Core Blueprint Base A2.4-S2 Reports Profile source-only regression PASS\n";
 }

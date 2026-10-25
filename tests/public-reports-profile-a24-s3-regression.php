@@ -65,6 +65,7 @@ function s3_incoming(): array {
     $value['retention_days'] = 90;
     $value['email_alerts']['generation_failed'] = true;
     $value['branding']['provider_name'] = 'approved-new';
+    $value['project']['root']['children'][1]['children'][2]['properties']['value'] = '99';
     return $value;
 }
 
@@ -84,6 +85,8 @@ s3_assert('9007199254740993' === $approved['document_revision'],
     'revision above JS safe-integer boundary preserved as decimal');
 s3_assert($approved['document_sha256'] === Transaction::document_hash(Design::read()['document']),
     'one canonical digest across Engine and two-row transaction');
+s3_assert(3 === count($before['project']['root']['children'][1]['children']),
+    'native Profile preserves nested Heading, Paragraph and Metric elements');
 
 // A full Engine preview fingerprint must change even when the exported
 // Reports subsection and monotonic revision stay identical.
@@ -155,6 +158,8 @@ s3_assert('saved' === ($saved['status'] ?? '') && isset($saved['witness']['docum
     'definite committed S3 change returns exact full postreceipt');
 s3_assert($saved['witness']['document_sha256'] === Transaction::document_hash(Design::read()['document']),
     'committed postreceipt from exact staged document');
+s3_assert('99' === Design::$record['project']['root']['children'][1]['children'][2]['properties']['value'],
+    'native Metric value persisted inside the untouched topology');
 s3_assert(1 === $wpdb->option_writes && 1 === $wpdb->document_writes,
     'exact two-row write');
 $reversed = Transaction::reverse_profile_guarded($before, $saved['witness']);
