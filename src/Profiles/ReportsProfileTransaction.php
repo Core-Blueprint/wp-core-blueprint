@@ -357,6 +357,7 @@ final class ReportsProfileTransaction {
         return [ 'status' => 'saved', 'witness' => [
             'settings_sha256' => hash( 'sha256', $options_after ),
             'document_revision' => $revision_after,
+            'document_sha256' => self::document_hash( $next_document ),
         ] ];
     }
 

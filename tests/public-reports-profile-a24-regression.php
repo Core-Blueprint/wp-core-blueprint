@@ -63,41 +63,25 @@ namespace CoreBlueprint\Core\Design\Document {
         public static function table_name(): string { return 'wp_cb_design_documents'; }
     }
 }
-namespace CoreBlueprint\Core\Reports\Composer {
-    final class MaintenanceTemplate {
-        public static function current(): array { return [ 'schema_version' => 1, 'blocks' => [] ]; }
-        public static function normalize( array $value ): array { return $value; }
-    }
-}
 namespace CoreBlueprint\Core\Reports {
     final class DesignDocumentAdapter {
         public const KEY = 'maintenance';
-        public static ?array $native_fields_override = null;
-        public static array $record = [
-            'revision' => '9007199254740993',
-            'branding' => [
-                'logo_attachment_id' => 0, 'show_logo' => false,
-                'provider_name' => 'old', 'provider_contact' => 'private@example.test',
-                'accent_color' => '#0064c8', 'surface_style' => 'cards',
-                'density' => 'comfortable', 'corner_style' => 'soft', 'text_scale' => 'standard',
-            ],
-            'composer' => [ 'schema_version' => 1, 'blocks' => [] ],
-        ];
+        public static array $record = [];
         public static function current(): array {
-            return self::$record + [
-                'fields' => self::$native_fields_override ?? self::$record['branding'],
-                'authority' => 'active',
+            return [
+                'revision' => self::$record['revision'],
+                'project' => self::$record['project'],
+                'fields' => self::$record['fields'],
             ];
         }
-        public static function read(): array { return [
-            'status' => 'found', 'revision' => self::$record['revision'],
-            'document' => [
-                'branding' => self::$record['branding'],
-                'composer' => [ 'maintenance' => self::$record['composer'] ],
-            ],
-        ]; }
+        public static function read(): array {
+            return [
+                'status' => 'found', 'revision' => self::$record['revision'],
+                'document' => ['project' => self::$record['project'], 'fields' => self::$record['fields']],
+            ];
+        }
         public static function valid_document( mixed $document ): bool {
-            return is_array( $document ) && isset( $document['branding'], $document['composer']['maintenance'] );
+            return \CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document( $document );
         }
     }
 }
@@ -176,6 +160,43 @@ namespace CoreBlueprint\Core\Profiles {
     }
 }
 namespace {
+    // The source-only harness exercises the real native v1 validator and
+    // PlatformAdapter definitions rather than a permissive document double.
+    require_once dirname( __DIR__ ) . '/src/Design/Profile/Reports/PlatformAdapter.php';
+    require_once dirname( __DIR__ ) . '/src/Reports/Composer/NativeComposition.php';
+    require_once dirname( __DIR__ ) . '/src/Reports/Composer/MaintenanceTemplate.php';
+
+    function s2_native_record(): array {
+        $adapter = \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::class;
+        $project = $adapter::default_project();
+        $provider = $adapter::PROVIDER;
+        $section = [
+            'type' => 'reports.section', 'provider' => $provider,
+            'properties' => ['title' => 'Extra section', 'enabled' => 'on'],
+            'children' => [
+                ['type' => 'reports.heading', 'provider' => $provider,
+                    'properties' => ['text' => 'Custom heading'], 'children' => []],
+                ['type' => 'reports.paragraph', 'provider' => $provider,
+                    'properties' => ['text' => 'A retained paragraph'], 'children' => []],
+                ['type' => 'reports.metric', 'provider' => $provider,
+                    'properties' => ['label' => 'KPI', 'value' => '42'], 'children' => []],
+            ],
+        ];
+        array_splice($project['root']['children'], 1, 0, [$section]);
+        $record = [
+            'revision' => '9007199254740993',
+            'project' => $project,
+            'fields' => array_replace($adapter::default_fields(), [
+                'provider_name' => 'old', 'provider_contact' => 'private@example.test',
+                'density' => 'comfortable', 'show_logo' => 'off',
+            ]),
+        ];
+        if (!\CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document(
+            ['project' => $record['project'], 'fields' => $record['fields']]
+        )) { throw new \RuntimeException('Invalid native Reports fixture'); }
+        return $record;
+    }
+
     /**
      * Fake transactional SQL store with two independent row identities.
      * Only the exact prepared queries emitted by the production source pass.
@@ -221,7 +242,7 @@ namespace {
                     'document_key' => 'maintenance',
                     'payload_schema' => 1,
                     'revision' => $row['revision'],
-                    'document_json' => json_encode( [ 'branding' => $row['branding'], 'composer' => [ 'maintenance' => $row['composer'] ] ] ),
+                    'document_json' => json_encode( [ 'project' => $row['project'], 'fields' => $row['fields'] ] ),
                 ];
             }
             throw new \RuntimeException( 'Unexpected S2 read query' );
@@ -274,8 +295,8 @@ namespace {
                 if ( $before['revision'] !== $args[6] ) { return 0; }
                 $next = json_decode( $args[1], true, 128, JSON_THROW_ON_ERROR );
                 \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'] = (string) ( (int) $before['revision'] + 1 );
-                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding'] = $next['branding'];
-                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['composer'] = $next['composer']['maintenance'];
+                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields'] = $next['fields'];
+                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['project'] = $next['project'];
                 $this->document_writes++;
                 return 1;
             }
@@ -283,6 +304,7 @@ namespace {
         }
     }
 
+    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = s2_native_record();
     require_once dirname( __DIR__ ) . '/src/Profiles/VersionGuardedSectionInterface.php';
     require_once dirname( __DIR__ ) . '/src/Profiles/Sections/ReportsSection.php';
     require_once dirname( __DIR__ ) . '/src/Profiles/ReportsProfileTransaction.php';
@@ -299,7 +321,12 @@ namespace {
     $section = new \CoreBlueprint\Core\Profiles\Sections\ReportsSection();
     $current = $section->export();
     $incoming = $section->normalize( $current );
-    s2_assert( $incoming === $current, 'round-trip of represented Reports schema' );
+    s2_assert( $incoming === $current, 'round-trip of native Reports Profile schema v2' );
+    s2_assert( 2 === $section->schema_version(), 'Reports section schema is strictly v2' );
+    s2_assert( 1 === \CoreBlueprint\Core\Profiles\Document::FORMAT_VERSION, 'Profiles transport format remains v1' );
+    s2_assert( $current['project'] === s2_native_record()['project'], 'native Section/Heading/Paragraph/Metric subtree exported losslessly' );
+    s2_assert( \CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document(\CoreBlueprint\Core\Reports\DesignDocumentAdapter::read()['document']), 'real native validator accepts positive fixture' );
+    s2_assert( 3 === count($current['project']['root']['children'][1]['children']), 'nested native children retain order' );
     // Test-first RED: a healthy active canonical document must support
     // READ-ONLY preview. It must not activate mutation/import.
     $section->preflight( $incoming, $current );
@@ -308,7 +335,7 @@ namespace {
         'format' => \CoreBlueprint\Core\Profiles\Document::FORMAT,
         'format_version' => \CoreBlueprint\Core\Profiles\Document::FORMAT_VERSION,
         'profile' => [ 'name' => 'Reports fixture', 'description' => '' ],
-        'sections' => [ 'reports' => [ 'schema_version' => 1, 'data' => $current ] ],
+        'sections' => [ 'reports' => [ 'schema_version' => 2, 'data' => $current ] ],
     ];
     $preview = \CoreBlueprint\Core\Profiles\Engine::preview( $profile_document );
     s2_assert( isset( $preview['fingerprint'], $preview['witnesses']['reports'] ), 'preview binds opaque Reports revision' );
@@ -339,13 +366,15 @@ namespace {
         \CoreBlueprint\Core\Settings::$values, $document, $desired
     );
     s2_assert( 'ok' === $stage['status'], 'canonical Reports section stages safely' );
+    s2_assert( $stage['document']['project'] === $desired['project'], 'staged project retains every nested element without Composer conversion' );
     s2_assert( 900 === $stage['settings']['reports']['retention_days'], 'represented retention staged' );
     s2_assert( true === $stage['settings']['reports']['email_alerts']['generation_failed'], 'represented alert staged' );
     s2_assert( true === $stage['settings']['reports']['email_alerts']['other'], 'other alert preserved' );
     s2_assert( 420 === $stage['settings']['reports']['branding']['legacy_logo_id'], 'legacy branding preserved' );
-    s2_assert( 'new' === $stage['document']['branding']['provider_name'], 'represented canonical branding staged' );
-    s2_assert( false === $stage['document']['branding']['show_logo'], 'unrepresented show_logo preserved' );
-    s2_assert( 'comfortable' === $stage['document']['branding']['density'], 'unrepresented presentation preserved' );
+    s2_assert( 'new' === $stage['document']['fields']['provider_name'], 'represented canonical branding staged' );
+    s2_assert( 'off' === $stage['document']['fields']['show_logo'], 'unrepresented show_logo preserved' );
+    s2_assert( 'comfortable' === $stage['document']['fields']['density'], 'unrepresented presentation preserved' );
+    s2_assert( $document['project'] === $stage['document']['project'], 'unchanged native project never normalized' );
     s2_assert( '9007199254740993' === $section->version_witness()['document_revision'], 'stage is read-only' );
     $blocked = false;
     try { $section->apply( $incoming, 'source-test' ); }
@@ -364,13 +393,14 @@ namespace {
     $expected = [
         'settings_sha256' => hash( 'sha256', $before_settings['raw'] ),
         'document_revision' => $before_doc['revision'],
+        'document_sha256' => $transaction::document_hash(\CoreBlueprint\Core\Reports\DesignDocumentAdapter::read()['document']),
     ];
     $saved = $transaction::apply_guarded( $desired, $expected );
     s2_assert( 'saved' === $saved['status'], 'atomic two-row transaction committed' );
     s2_assert( 1 === $wpdb->option_writes && 1 === $wpdb->document_writes, 'each intended row updated once' );
     s2_assert( 900 === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['retention_days'], 'committed retention verified' );
     s2_assert( true === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'], 'unrepresented Settings alert retained' );
-    s2_assert( false === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['show_logo'], 'unrepresented canonical logo field retained' );
+    s2_assert( 'off' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['show_logo'], 'unrepresented canonical logo field retained' );
     s2_assert( '9007199254740994' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'], 'decimal revision increment is exact' );
     s2_assert( [ 'update_option', 'update_option_cb_core_settings', 'updated_option' ] === $GLOBALS['s2_actions'], 'native prewrite and postcommit ordering preserved' );
 
@@ -439,7 +469,7 @@ namespace {
     \CoreBlueprint\Core\Settings::accept_cas( $after_settings['value'] );
     \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = $after_document;
     $wpdb->before_lock = static function (): void {
-        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'] = 'compact';
         // Deliberately retain the exact previous revision.
     };
     $before_option_attempts = $wpdb->option_writes;
@@ -452,7 +482,7 @@ namespace {
     s2_assert( $before_option_attempts === $wpdb->option_writes, 'document JSON race cannot write Settings' );
     s2_assert( $before_document_attempts === $wpdb->document_writes, 'document JSON race cannot write canonical document' );
     s2_assert(
-        'compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'],
+        'compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'],
         'unrepresented density from independent same-revision writer survives'
     );
     s2_assert(
@@ -472,13 +502,13 @@ namespace {
     \CoreBlueprint\Core\Settings::accept_cas( $after_settings['value'] );
     \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = $after_document;
     $wpdb->before_lock = static function (): void {
-        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'] = 'compact';
         \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['revision'] = '9007199254740995';
     };
     $revision_race = $transaction::apply_guarded( $second, $saved['witness'] );
     s2_assert( 'conflict' === $revision_race['status'], 'document content and revision race conflicts' );
     s2_assert(
-        'compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'],
+        'compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'],
         'revision race leaves other writer density unchanged'
     );
     s2_assert(
@@ -524,18 +554,20 @@ namespace {
     $sparse_expected = [
         'settings_sha256' => hash( 'sha256', $sparse_row['raw'] ),
         'document_revision' => $after_document['revision'],
+        'document_sha256' => $transaction::document_hash(\CoreBlueprint\Core\Reports\DesignDocumentAdapter::read()['document']),
     ];
     $sparse_saved = $transaction::apply_guarded( $desired, $sparse_expected );
     s2_assert( 'saved' === ( $sparse_saved['status'] ?? '' ), 'sparse Settings transaction atomically commits represented leaves' );
     s2_assert( ! isset( \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['branding'] ), 'sparse Settings transaction does not materialize branding defaults' );
     s2_assert( ! isset( \CoreBlueprint\Core\Settings\OptionCas::$row['value']['reports']['email_alerts']['other'] ), 'sparse Settings transaction does not materialize other alert defaults' );
     s2_assert( true === \CoreBlueprint\Core\Settings\OptionCas::$row['value']['notes']['keep'], 'sparse Settings transaction preserves unrelated root settings' );
-    s2_assert( $canonical['branding']['show_logo'] === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['show_logo'], 'sparse transaction preserves nonrepresented canonical branding' );
+    s2_assert( $canonical['fields']['show_logo'] === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['show_logo'], 'sparse transaction preserves nonrepresented canonical branding' );
 
     // Native v1 fields, not the historical document branding key, are the
     // authoritative input for the Profile export projection.
     $adapter = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::class;
-    $adapter::$native_fields_override = array_replace($adapter::$record['branding'], [
+    $original_native_fields = $adapter::$record['fields'];
+    $adapter::$record['fields'] = array_replace($adapter::$record['fields'], [
         'provider_name' => 'Native source of truth',
         'provider_contact' => 'native@example.test',
         'accent_color' => '#123abc',
@@ -547,7 +579,39 @@ namespace {
         'S2/R2: provider contact comes from current native fields');
     s2_assert('#123abc' === $native_export['branding']['accent_color'],
         'S2/R2: accent comes from current native fields');
-    $adapter::$native_fields_override = null;
+    $adapter::$record['fields'] = $original_native_fields;
+
+    // Schema v1 and old Composer envelopes must fail closed before any write.
+    s2_assert(!$section->supports_schema_version(1), 'schema v1 refused');
+    foreach ([
+        array_replace($current, ['composer' => ['maintenance' => ['blocks' => []]]]),
+        array_diff_key($current, ['project' => true]) + ['composer' => ['maintenance' => []]],
+        array_replace($current, ['project' => ['schema_version' => 1]]),
+    ] as $invalid) {
+        $refused = false;
+        try { $section->normalize($invalid); } catch (\Throwable $error) { $refused = true; }
+        s2_assert($refused, 'native profile refuses historical/invalid project payload');
+    }
+    $badDocument = ['branding' => $document['fields'], 'composer' => ['maintenance' => []]];
+    s2_assert('invalid' === $transaction::staged(Settings::$values, $badDocument, $desired)['status'],
+        'historical persisted document cannot enter native transaction');
+    $validDoc = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::read()['document'];
+    $badProject = $desired;
+    $badProject['project']['root']['children'][1]['children'][0]['properties']['unknown'] = 'must reject';
+    $blocked = false;
+    try { $section->normalize($badProject); } catch (\Throwable $error) { $blocked = true; }
+    s2_assert($blocked, 'native Project schema rejects extra properties');
+    s2_assert('invalid' === $transaction::staged(Settings::$values, $validDoc, $badProject)['status'],
+        'invalid native Project refuses without SQL writes');
+    $badFields = $validDoc;
+    $badFields['fields']['density'] = 'unknown';
+    s2_assert('invalid' === $transaction::staged(Settings::$values, $badFields, $desired)['status'],
+        'invalid native Fields refuse staging');
+
+    $blockedComposer = false;
+    try { \CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate::current(); }
+    catch (\RuntimeException $error) { $blockedComposer = true; }
+    s2_assert($blockedComposer, 'old MaintenanceTemplate current projection cannot fabricate defaults');
 
     echo "Core Blueprint Base A2.4-S2 Reports Profile source-only regression PASS\n";
 }

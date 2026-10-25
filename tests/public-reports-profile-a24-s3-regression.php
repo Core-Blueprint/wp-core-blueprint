@@ -42,17 +42,7 @@ function s3_reset(): S2FakeDb {
         'autoload' => 'off',
         'table' => 'wp_options',
     ];
-    Design::$record = [
-        'revision' => '9007199254740993',
-        'branding' => [
-            'logo_attachment_id' => 0, 'show_logo' => false,
-            'provider_name' => 'old', 'provider_contact' => 'private@example.test',
-            'accent_color' => '#0064c8', 'surface_style' => 'cards',
-            'density' => 'comfortable', 'corner_style' => 'soft',
-            'text_scale' => 'standard',
-        ],
-        'composer' => ['schema_version' => 1, 'blocks' => []],
-    ];
+    Design::$record = s2_native_record();
     return $wpdb;
 }
 
@@ -101,20 +91,20 @@ $previewDoc = [
     'format' => CoreBlueprint\Core\Profiles\Document::FORMAT,
     'format_version' => CoreBlueprint\Core\Profiles\Document::FORMAT_VERSION,
     'profile' => ['name' => 'S3 full-document', 'description' => ''],
-    'sections' => ['reports' => ['schema_version' => 1, 'data' => $before]],
+    'sections' => ['reports' => ['schema_version' => 2, 'data' => $before]],
 ];
 $previewBefore = CoreBlueprint\Core\Profiles\Engine::preview($previewDoc);
-Design::$record['branding']['density'] = 'compact';
+Design::$record['fields']['density'] = 'compact';
 $previewAfter = CoreBlueprint\Core\Profiles\Engine::preview($previewDoc);
 s3_assert($previewBefore['fingerprint'] !== $previewAfter['fingerprint'],
     'unrepresented document drift must invalidate Engine preview consent');
 s3_assert($previewBefore['witnesses']['reports']['document_revision'] ===
     $previewAfter['witnesses']['reports']['document_revision'],
     'same revision alone never establishes full-content equality');
-Design::$record['branding']['density'] = 'comfortable';
+Design::$record['fields']['density'] = 'comfortable';
 
 // R01, R02: same revision, unrepresented change before stage: first read must reject.
-Design::$record['branding']['density'] = 'compact';
+Design::$record['fields']['density'] = 'compact';
 s3_assert($approved['document_revision'] === Design::$record['revision'],
     'independent same-revision writer retained revision');
 s3_assert($approved['document_sha256'] !== s3_expected()['document_sha256'],
@@ -125,20 +115,20 @@ $stale = Transaction::apply_profile_guarded($next, $approved);
 s3_assert('conflict' === ($stale['status'] ?? ''), 'prestage same-revision drift blocked');
 s3_assert($baselineOptionWrites === $wpdb->option_writes && $baselineDocWrites === $wpdb->document_writes,
     'prestage rejected before either UPDATE');
-s3_assert('compact' === Design::$record['branding']['density'],
+s3_assert('compact' === Design::$record['fields']['density'],
     'outside writer is preserved');
 
 // R03: document changes between helper read and row lock.
 $wpdb = s3_reset();
 $approved = s3_expected();
 $wpdb->before_lock = static function(): void {
-    Design::$record['branding']['density'] = 'compact';
+    Design::$record['fields']['density'] = 'compact';
 };
 $staleLocked = Transaction::apply_profile_guarded($next, $approved);
 s3_assert('conflict' === ($staleLocked['status'] ?? ''), 'locked same-revision drift refused');
 s3_assert(0 === $wpdb->option_writes && 0 === $wpdb->document_writes,
     'locked drift cannot mutate any row');
-s3_assert('compact' === Design::$record['branding']['density'], 'locked race preserves outsider');
+s3_assert('compact' === Design::$record['fields']['density'], 'locked race preserves outsider');
 
 // R05: malformed/missing digest fails closed, never falls back to two-field S2.
 $wpdb = s3_reset();
@@ -182,7 +172,7 @@ $docOnlyResult = Transaction::apply_profile_guarded($docOnly, $approved);
 s3_assert('saved' === ($docOnlyResult['status'] ?? ''), 'document-only canonical update saved');
 s3_assert(0 === $wpdb->option_writes && 1 === $wpdb->document_writes,
     'document-only S3 does not write Settings or call Settings update hooks');
-s3_assert('comfortable' === Design::$record['branding']['density'],
+s3_assert('comfortable' === Design::$record['fields']['density'],
     'document-only S3 keeps unrepresented branding');
 
 $wpdb = s3_reset();
@@ -230,13 +220,13 @@ $wpdb = s3_reset();
 $approved = s3_expected();
 $saved = Transaction::apply_profile_guarded($next, $approved);
 s3_assert('saved' === ($saved['status'] ?? ''), 'fixture postcommit setup');
-Design::$record['branding']['density'] = 'compact';
+Design::$record['fields']['density'] = 'compact';
 $writesBefore = [$wpdb->option_writes, $wpdb->document_writes];
 $reversed = Transaction::reverse_profile_guarded($before, $saved['witness']);
 s3_assert('conflict' === ($reversed['status'] ?? ''), 'postcommit outsider makes original receipt stale');
 s3_assert($writesBefore === [$wpdb->option_writes, $wpdb->document_writes],
     'stale compensation cannot clobber outsider');
-s3_assert('compact' === Design::$record['branding']['density'], 'outside content preserved');
+s3_assert('compact' === Design::$record['fields']['density'], 'outside content preserved');
 
 // R07-R09: the SECTION adapter must never exchange the receipt obtained
 // synchronously from the transaction for a later post-commit live read.
@@ -247,7 +237,7 @@ $approvedFull = $section->version_witness();
 $sectionSaved = $section->apply_profile_guarded($next, 'source-only', $approvedFull);
 s3_assert('saved' === ($sectionSaved['status'] ?? ''), 'receipt race section setup saved');
 $originalReceipt = $sectionSaved['witness'];
-Design::$record['branding']['density'] = 'compact'; // no revision change
+Design::$record['fields']['density'] = 'compact'; // no revision change
 $writeCounts = [$wpdb->option_writes, $wpdb->document_writes];
 $restoreBlocked = false;
 try {
@@ -259,7 +249,7 @@ try {
 s3_assert($restoreBlocked, 'section refuses reverse using stale actual commit receipt');
 s3_assert($writeCounts === [$wpdb->option_writes, $wpdb->document_writes],
     'section rollback never overwrites postcommit outside writer');
-s3_assert('compact' === Design::$record['branding']['density'],
+s3_assert('compact' === Design::$record['fields']['density'],
     'section rollback preserves non-exported postcommit change');
 
 // R10: outsider Settings raw edit after commit similarly denies compensation.
@@ -280,7 +270,7 @@ s3_assert('unchanged' === ($noChange['status'] ?? '') &&
     $approved === ($noChange['witness'] ?? null), 'unchanged returns checked original exact pair');
 s3_assert(0 === $wpdb->option_writes && 0 === $wpdb->document_writes, 'no-op wrote no rows');
 $wpdb->before_lock = static function(): void {
-    Design::$record['branding']['density'] = 'compact';
+    Design::$record['fields']['density'] = 'compact';
 };
 $noOpRace = Transaction::apply_profile_guarded($before, $approved);
 s3_assert('conflict' === ($noOpRace['status'] ?? ''), 'no-op race must validate under lock');
@@ -387,7 +377,7 @@ OLD_CAS;
                 ++self::$s3_reverse_window_reads;
                 if (2 === self::$s3_reverse_window_reads) {
                     self::$s3_reverse_window_armed = false;
-                    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+                    \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'] = 'compact';
                     $GLOBALS['s3_reverse_window_fired'] = true;
                 }
             }
@@ -446,7 +436,7 @@ NEW_CAS;
         public function apply(array $incoming, string $actor): void {
             $mode = $incoming['intent'];
             if ('external-doc' === $mode) {
-                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+                \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'] = 'compact';
             }
             if ('external-settings' === $mode) {
                 $row = &\CoreBlueprint\Core\Settings\OptionCas::$row;
@@ -556,16 +546,7 @@ ACTION;
             'status' => 'ok', 'raw' => serialize($value), 'value' => $value,
             'autoload' => 'on', 'table' => 'wp_options',
         ];
-        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = [
-            'revision' => '9007199254740993',
-            'branding' => [
-                'logo_attachment_id' => 0, 'show_logo' => false, 'provider_name' => 'old',
-                'provider_contact' => 'private@example.test', 'accent_color' => '#0064c8',
-                'surface_style' => 'cards', 'density' => 'comfortable',
-                'corner_style' => 'soft', 'text_scale' => 'standard',
-            ],
-            'composer' => ['schema_version' => 1, 'blocks' => []],
-        ];
+        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record = s2_native_record();
         return $db;
     }
     function s3e_doc(bool $reportsChange, bool $securityChange, string $later = ''): array {
@@ -576,7 +557,7 @@ ACTION;
             $data['email_alerts']['generation_failed'] = true;
             $data['branding']['provider_name'] = 'approved';
         }
-        $sections = ['reports' => ['schema_version' => 1, 'data' => $data]];
+        $sections = ['reports' => ['schema_version' => 2, 'data' => $data]];
         if ($securityChange) {
             $sections = ['security' => ['schema_version' => 1, 'data' => ['enabled' => true]]] + $sections;
         }
@@ -632,8 +613,8 @@ ACTION;
     }
     s3e_assert(!s3e_audit('profiles.applied') && s3e_audit('profiles.apply_failed'), 'verified safe rollback audit');
     s3e_assert($before === \CoreBlueprint\Core\Settings\OptionCas::$row['raw'], 'full Settings restored');
-    s3e_assert('old' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['provider_name'], 'canonical provider reversed');
-    s3e_assert('comfortable' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'], 'unrepresented density retained');
+    s3e_assert('old' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['provider_name'], 'canonical provider reversed');
+    s3e_assert('comfortable' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'], 'unrepresented density retained');
     s3e_assert(2 === $db->document_writes && 2 === $db->option_writes, 'definite save and guarded reverse');
     s3e_lease();
 
@@ -644,7 +625,7 @@ ACTION;
         s3e_assert(str_contains($e->getMessage(), 'could not be restored'), 'manual recovery after postcommit race');
     }
     s3e_assert(s3e_audit('profiles.rollback_failed') && !s3e_audit('profiles.applied'), 'postcommit outsider recovery audit');
-    s3e_assert('compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'], 'never clobber density');
+    s3e_assert('compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'], 'never clobber density');
     s3e_lease();
 
     // Same protection for unrelated Settings raw writer.
@@ -682,9 +663,9 @@ ACTION;
         'strict reverse refuses BEFORE any compensation SQL writes');
     s3e_assert($beforeSettings !== \CoreBlueprint\Core\Settings\OptionCas::$row['raw'],
         'Reports committed option remains awaiting explicit recovery');
-    s3e_assert('approved' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['provider_name'],
+    s3e_assert('approved' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['provider_name'],
         'Reports postcommit represented fields not silently reversed');
-    s3e_assert('compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'],
+    s3e_assert('compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'],
         'independent same-revision density edit preserved');
     s3e_assert(s3e_audit('profiles.rollback_failed') && !s3e_audit('profiles.apply_failed')
         && !s3e_audit('profiles.applied'), 'recovery audit never claims safe rollback or apply');
@@ -723,13 +704,13 @@ ACTION;
     // succeed, even when the represented Reports fields still verify.
     $db = s3e_reset();
     $GLOBALS['s3_commit_observer'] = static function(): void {
-        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'] = 'compact';
+        \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'] = 'compact';
     };
     try { s3e_run(s3e_doc(true, false)); s3e_assert(false, 'posthook outsider must fail'); }
     catch (\RuntimeException $e) {
         s3e_assert(str_contains($e->getMessage(), 'could not be restored'), 'postreceipt rollback conflict detected');
     }
-    s3e_assert('compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['branding']['density'], 'posthook outsider remains');
+    s3e_assert('compact' === \CoreBlueprint\Core\Reports\DesignDocumentAdapter::$record['fields']['density'], 'posthook outsider remains');
     s3e_assert(s3e_audit('profiles.rollback_failed') && !s3e_audit('profiles.applied'), 'posthook source recovery audit');
     s3e_lease();
 
