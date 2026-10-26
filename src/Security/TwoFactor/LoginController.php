@@ -165,7 +165,7 @@ final class LoginController {
 				);
 
 				if ( ! empty( $result['recovery_codes'] ) ) {
-					self::render_recovery_codes( $result['recovery_codes'], $url );
+					self::render_recovery_codes( $result['recovery_codes'], $url, (int) $user->ID );
 					exit;
 				}
 
@@ -279,10 +279,10 @@ final class LoginController {
 	}
 
 	/** @param string[] $codes */
-	private static function render_recovery_codes( array $codes, string $continue_url ): void {
+	private static function render_recovery_codes( array $codes, string $continue_url, int $user_id ): void {
 		login_header( __( 'Save your recovery codes', 'core-blueprint' ) );
 		echo '<p class="message">' . esc_html__( 'Save these recovery codes now. Each code can be used once, and they cannot be displayed again.', 'core-blueprint' ) . '</p>';
-		if ( CredentialStore::STATUS_RECOVERY_REQUIRED === CredentialStore::enrollment_status( get_current_user_id() ) ) {
+		if ( CredentialStore::STATUS_RECOVERY_REQUIRED === CredentialStore::enrollment_status( $user_id ) ) {
 			echo '<p class="message">' . esc_html__( 'Your authenticator credential still requires recovery. These new codes preserve a second factor, but do not repair the authenticator. Contact an authorized site operator to restore enrollment.', 'core-blueprint' ) . '</p>';
 		}
 		echo '<ul>';
