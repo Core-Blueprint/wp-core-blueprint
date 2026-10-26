@@ -18,7 +18,9 @@ final class CB_Base_Two_Factor_Security_Containment_Test extends WP_UnitTestCase
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->original_policy = Settings::get()[ Policy::SETTINGS_KEY ] ?? Policy::default_config();
+		$this->original_policy = is_array( Settings::get()[ Policy::SETTINGS_KEY ] ?? null )
+			? Settings::get()[ Policy::SETTINGS_KEY ]
+			: Policy::default_config();
 		$this->original_bypass = get_option( CB_CORE_BYPASS_OPT, false );
 		$this->original_pagenow = (string) ( $GLOBALS['pagenow'] ?? '' );
 		delete_option( CB_CORE_BYPASS_OPT );
@@ -72,6 +74,17 @@ final class CB_Base_Two_Factor_Security_Containment_Test extends WP_UnitTestCase
 		self::assertSame( CredentialStore::STATUS_RECOVERY_REQUIRED, CredentialStore::enrollment_status( $user_id ) );
 		$this->expectException( RuntimeException::class );
 		EnrollmentStore::start( $user_id );
+	}
+
+	public function test_h1_missing_secret_or_marker_remains_recovery_required(): void {
+		$user_with_marker = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		update_user_meta( $user_with_marker, CredentialStore::META_ENROLLED_AT, time() );
+		self::assertSame( CredentialStore::STATUS_RECOVERY_REQUIRED, CredentialStore::enrollment_status( $user_with_marker ) );
+
+		$user_with_secret = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		update_user_meta( $user_with_secret, CredentialStore::META_SECRET, [ 'version' => 1, 'algorithm' => 'sodium_secretbox', 'nonce' => 'bad', 'ciphertext' => 'bad' ] );
+		self::assertSame( CredentialStore::STATUS_RECOVERY_REQUIRED, CredentialStore::enrollment_status( $user_with_secret ) );
+		self::assertTrue( CredentialStore::is_enrolled( $user_with_secret ) );
 	}
 
 	public function test_h1_last_recovery_code_is_replaced_atomically_at_login_and_not_reusable(): void {
