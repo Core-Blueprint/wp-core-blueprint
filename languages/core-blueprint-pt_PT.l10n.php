@@ -441,4 +441,13 @@ $catalog['messages'] = array_replace($catalog['messages'], [
     'Save or discard your changes before switching designs.' => 'Guarde ou descarte as alterações antes de mudar de design.',
 ]);
 
+
+// H1 security containment: unavailable credentials and recovery-only login.
+$catalog['messages'] = array_replace( $catalog['messages'], [
+    'Your authenticator credential is unavailable. Use an unused recovery code or request authorized account recovery.' => 'As credenciais do autenticador não estão disponíveis. Utilize um código de recuperação não utilizado ou solicite uma recuperação de conta autorizada.',
+    'Your stored authenticator credential is unavailable. Use an unused recovery code or request authorized account recovery. Do not start a new enrollment.' => 'As credenciais do autenticador guardadas não estão disponíveis. Utilize um código de recuperação não utilizado ou solicite uma recuperação de conta autorizada. Não inicie uma nova inscrição.',
+    'Save these recovery codes now. Each code can be used once, and they cannot be displayed again.' => 'Guarde já estes códigos de recuperação. Cada código só pode ser utilizado uma vez e não poderá voltar a ser apresentado.',
+    'Your authenticator credential still requires recovery. These new codes preserve a second factor, but do not repair the authenticator. Contact an authorized site operator to restore enrollment.' => 'As credenciais do autenticador ainda necessitam de recuperação. Estes novos códigos mantêm um segundo fator, mas não recuperam o autenticador. Contacte um administrador autorizado do site para restabelecer a inscrição.',
+] );
+
 return $catalog;
