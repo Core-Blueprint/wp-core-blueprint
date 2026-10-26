@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Security\TwoFactor;
 
 use RuntimeException;
-use Throwable;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;
