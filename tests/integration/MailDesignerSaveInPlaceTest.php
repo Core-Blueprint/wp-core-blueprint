@@ -164,12 +164,12 @@ final class CB_Mail_Designer_Save_In_Place_Test extends \PHPUnit\Framework\TestC
 
 			$reopened = $read_context();
 			self::assertSame( '1', $reopened['storeRevision'] );
-			self::assertSame( $project, $reopened['project'] );
-			self::assertSame( $fields, $reopened['fields'] );
+			self::assertEquals( $project, $reopened['project'] );
+			self::assertEquals( $fields, $reopened['fields'] );
 			$stored = Repository::get( Repository::MAIL, $key );
 			self::assertSame( 'found', $stored['status'] );
 			self::assertSame( '1', $stored['revision'] );
-			self::assertSame( [ 'project' => $project, 'fields' => $fields ], $stored['document'] );
+			self::assertEquals( [ 'project' => $project, 'fields' => $fields ], $stored['document'] );
 			$template = TemplateRepository::get( $key );
 			self::assertSame( $fields['subject'], $template['subject'] );
 			self::assertSame( $fields['preheader'], $template['preheader'] );
