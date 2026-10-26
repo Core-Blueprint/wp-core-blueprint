@@ -126,12 +126,14 @@ final class LoginController {
 			];
 		}
 
-		if ( Authenticator::verify_recovery_code( (int) $user->ID, $candidate ) ) {
+		$replacement_codes = RecoveryCodes::consume_for_login( (int) $user->ID, $candidate );
+		if ( is_array( $replacement_codes ) ) {
 			return [
-				'status' => 'success',
-				'state'  => $state,
-				'user'   => $user,
-				'method' => 'recovery',
+				'status'         => 'success',
+				'state'          => $state,
+				'user'           => $user,
+				'method'         => 'recovery',
+				'recovery_codes' => $replacement_codes,
 			];
 		}
 
@@ -262,6 +264,9 @@ final class LoginController {
 			}
 		} else {
 			echo '<p class="message">' . esc_html__( 'Enter your authenticator code or a recovery code.', 'core-blueprint' ) . '</p>';
+			if ( CredentialStore::STATUS_RECOVERY_REQUIRED === CredentialStore::enrollment_status( (int) $state['user_id'] ) ) {
+				echo '<p class="message">' . esc_html__( 'Your authenticator credential is unavailable. Use an unused recovery code or request authorized account recovery.', 'core-blueprint' ) . '</p>';
+			}
 		}
 
 		echo '<form name="cb-two-factor" method="post" action="' . esc_url( $action ) . '">';
