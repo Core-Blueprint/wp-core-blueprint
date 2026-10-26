@@ -2,8 +2,6 @@
 declare(strict_types=1);
 
 use CoreBlueprint\Core\Design\Profile\Document\Flow\RenderBlock;
-use CoreBlueprint\Core\Reports\Composer\BlockCatalog;
-use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
 use CoreBlueprint\Core\Reports\MaintenanceAggregator;
 use CoreBlueprint\Core\Reports\MaintenanceFlowCompiler;
 use CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter;
@@ -11,21 +9,7 @@ use CoreBlueprint\Core\Reports\Composer\NativeComposition;
 
 final class CB_Reports_Composer_Compiler_Test extends WP_UnitTestCase {
 
-	public function test_compiler_follows_normalized_composer_order_and_disabled_state(): void {
-		$template = [
-			'schema_version' => MaintenanceTemplate::SCHEMA_VERSION,
-			'blocks' => [
-				[ 'type' => BlockCatalog::HEADER, 'enabled' => true ],
-				[ 'type' => BlockCatalog::NOTES, 'enabled' => true ],
-				[ 'type' => BlockCatalog::STATUS, 'enabled' => true ],
-				[ 'type' => BlockCatalog::KPIS, 'enabled' => false ],
-				[ 'type' => BlockCatalog::CURRENT_STATE, 'enabled' => false ],
-				[ 'type' => BlockCatalog::ACTIVITY, 'enabled' => false ],
-				[ 'type' => BlockCatalog::SUMMARY, 'enabled' => false ],
-				[ 'type' => BlockCatalog::FOOTER, 'enabled' => true ],
-			],
-		];
-
+	public function test_compiler_follows_native_node_order_and_disabled_state(): void {
 		$report = [
 			'period_start' => '2026-09-01',
 			'period_end'   => '2026-09-13',

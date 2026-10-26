@@ -122,8 +122,6 @@ final class CB_Mail_Designer_Golden_M1_M2_Contract_Test extends WP_UnitTestCase 
 		] );
 		$html = ( new HtmlRenderer() )->render( $project );
 		self::assertStringContainsString( 'width="50%"', $html );
-		self::assertStringContainsString( 'width="50%"', $html );
-		self::assertStringNotContainsString( 'style="padding:12px;"', $html );
 		self::assertStringNotContainsString( 'style="padding:12px;"', $html );
 	}
 

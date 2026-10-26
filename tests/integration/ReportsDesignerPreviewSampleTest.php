@@ -24,8 +24,11 @@ final class CB_Reports_Designer_Preview_Sample_Test extends WP_UnitTestCase {
 		$html = ( new DesignerPreview() )->render( $native );
 
 		self::assertStringStartsWith( '<!doctype html>', $html );
-		self::assertStringContainsString( 'data-cb-flow-preview-region="header"', $html );
-		self::assertStringContainsString( 'data-cb-flow-preview-region="kpis"', $html );
+		self::assertSame( 'reports.header', $native['project']['root']['children'][0]['type'] );
+		self::assertSame( 'reports.kpis', $native['project']['root']['children'][2]['type'] );
+		self::assertStringContainsString( 'data-cb-flow-preview-region="r0"', $html );
+		self::assertStringContainsString( 'data-cb-flow-preview-region="r2"', $html );
+		self::assertStringContainsString( 'Updates Performed', $html );
 		self::assertStringContainsString( 'Example Plugin', $html );
 		self::assertStringContainsString( 'data-cb-core-flow-preview-sizing="1"', $html );
 	}

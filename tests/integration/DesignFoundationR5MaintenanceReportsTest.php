@@ -162,7 +162,7 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 
 	public function test_page_footer_is_typed_escaped_and_renderer_owns_page_counter(): void {
 		$html = ( new HtmlRenderer() )->render(
-			MaintenanceFlowCompiler::layout(),
+			MaintenanceFlowCompiler::layout( $this->native()['fields'] ),
 			[
 				RenderBlock::text( 'Body' ),
 				RenderBlock::page_footer( '<unsafe footer>', '<Page>' ),

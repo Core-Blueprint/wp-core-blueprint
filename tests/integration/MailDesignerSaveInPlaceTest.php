@@ -2,13 +2,18 @@
 declare(strict_types=1);
 
 use CoreBlueprint\Core\Design\Document\Repository;
+use CoreBlueprint\Core\Design\Document\Schema;
+use CoreBlueprint\Core\Design\Persistence\OperationLedger;
+use CoreBlueprint\Core\Design\Persistence\OperationSchema;
+use CoreBlueprint\Core\Mail\Settings as MailSettings;
+use CoreBlueprint\Core\Mail\Designer\Renderer as MailRenderer;
 use CoreBlueprint\Core\Design\Editor\PlatformTransport;
 use CoreBlueprint\Core\Design\Profile\Mail\Contract;
 use CoreBlueprint\Core\Mail\Admin\TemplateActions;
 use CoreBlueprint\Core\Mail\Designer\TemplateRepository;
 use CoreBlueprint\Core\Mail\Designer\WordPressTemplates;
 
-final class CB_Mail_Designer_Save_In_Place_Test extends WP_UnitTestCase {
+final class CB_Mail_Designer_Save_In_Place_Test extends \PHPUnit\Framework\TestCase {
 	public function test_historical_admin_post_and_ajax_save_have_no_write_authority(): void {
 		TemplateActions::boot();
 		self::assertFalse( has_action( 'admin_post_cb_core_mail_template_save', [ TemplateActions::class, 'save' ] ) );
@@ -60,6 +65,164 @@ final class CB_Mail_Designer_Save_In_Place_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'registryFingerprint', $source );
 		self::assertStringContainsString( "'status' => 'unknown'", $source );
 		self::assertStringNotContainsString( 'TemplateRepository::save(', $source );
+	}
+
+
+	/**
+	 * Real native REST Save/Reopen/Render/CAS acceptance, using WordPress already
+	 * bootstrapped by the integration suite. Intentionally not WP_UnitTestCase:
+	 * its surrounding PHPUnit transaction would make TransactionalSave correctly
+	 * refuse the Save instead of proving the positive path. Execute only inside
+	 * a separately authorized dedicated WordPress integration database.
+	 */
+	public function test_native_platform_save_reopen_render_and_stale_cas_in_real_wordpress(): void {
+		global $wpdb;
+		self::assertSame( '0', (string) $wpdb->get_var( 'SELECT @@in_transaction' ),
+			'Positive Platform Save must own its transaction; no nested PHPUnit transaction.' );
+		self::assertTrue( Schema::healthy() );
+		self::assertTrue( OperationSchema::healthy() );
+
+		$key = 'wordpress.new-user-admin';
+		self::assertSame( 'missing', Repository::get( Repository::MAIL, $key )['status'],
+			'A pre-existing Mail document must never be overwritten by this fixture.' );
+		$old_settings = get_option( MailSettings::OPTION, null );
+		$old_user = get_current_user_id();
+		$actor_id = 0;
+		$operations = [];
+		try {
+			$unique = bin2hex( random_bytes( 6 ) );
+			$created = wp_insert_user( [
+				'user_login' => 'cb_l2r1_' . $unique,
+				'user_pass' => wp_generate_password( 32, true, true ),
+				'user_email' => 'cb_l2r1_' . $unique . '@example.test',
+				'role' => 'administrator',
+			] );
+			self::assertFalse( is_wp_error( $created ) );
+			$actor_id = (int) $created;
+			self::assertGreaterThan( 0, $actor_id );
+			wp_set_current_user( $actor_id );
+			self::assertTrue( current_user_can( 'manage_options' ) );
+
+			$settings = MailSettings::all();
+			$settings['designer_enabled'] = true;
+			MailSettings::save( $settings );
+			self::assertTrue( MailSettings::designer_enabled() );
+
+			$read_context = static function () use ( $key ): array {
+				$request = new WP_REST_Request( 'GET', '/core-blueprint/v1/designer-platform/context' );
+				$request->set_param( 'action', 'context' );
+				$request->set_param( 'profileId', 'base/mail' );
+				$request->set_param( 'resourceKey', $key );
+				$request->set_param( 'contextEpoch', 0 );
+				$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+				self::assertTrue( PlatformTransport::permission( $request ) );
+				$response = PlatformTransport::dispatch( $request );
+				self::assertInstanceOf( WP_REST_Response::class, $response );
+				$data = $response->get_data();
+				self::assertSame( 'loaded', $data['status'] ?? null );
+				return $data;
+			};
+			$submit = static function ( array $context, array $project, array $fields,
+				string $revision, string $operation_id ): array {
+				$request = new WP_REST_Request( 'POST', '/core-blueprint/v1/designer-platform/save' );
+				$request->set_param( 'action', 'save' );
+				$request->set_header( 'Content-Type', 'application/json' );
+				$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+				$request->set_body( (string) wp_json_encode( [
+					'contractVersion' => 1,
+					'profileId' => $context['profileId'],
+					'resourceType' => $context['resourceType'],
+					'resourceKey' => $context['resourceKey'],
+					'projectSchema' => $context['projectSchema'],
+					'registryFingerprint' => $context['registryFingerprint'],
+					'operationId' => $operation_id,
+					'expectedStoreRevision' => $revision,
+					'project' => $project,
+					'fields' => $fields,
+				] ) );
+				self::assertTrue( PlatformTransport::permission( $request ) );
+				$response = PlatformTransport::dispatch( $request );
+				self::assertInstanceOf( WP_REST_Response::class, $response );
+				return $response->get_data();
+			};
+
+			$context = $read_context();
+			self::assertSame( '0', $context['storeRevision'] );
+			$project = $context['project'];
+			$fields = $context['fields'];
+			$project['root']['children'][0]['children'][1]['properties']['text'] = 'L2-R1 native render proof';
+			$fields['subject'] = 'L2-R1 native subject';
+			$fields['preheader'] = 'L2-R1 native preheader';
+			self::assertTrue( PlatformTransport::valid_native_document( Repository::MAIL, [
+				'project' => $project, 'fields' => $fields,
+			] ) );
+
+			$operations[] = 'L2R1_' . bin2hex( random_bytes( 14 ) );
+			$first = $submit( $context, $project, $fields, '0', $operations[0] );
+			self::assertSame( 'committed', $first['status'] ?? null );
+			self::assertSame( '1', $first['receipt']['acceptedStoreRevision'] ?? null );
+
+			$reopened = $read_context();
+			self::assertSame( '1', $reopened['storeRevision'] );
+			self::assertSame( $project, $reopened['project'] );
+			self::assertSame( $fields, $reopened['fields'] );
+			$stored = Repository::get( Repository::MAIL, $key );
+			self::assertSame( 'found', $stored['status'] );
+			self::assertSame( '1', $stored['revision'] );
+			self::assertSame( [ 'project' => $project, 'fields' => $fields ], $stored['document'] );
+			$template = TemplateRepository::get( $key );
+			self::assertSame( $fields['subject'], $template['subject'] );
+			self::assertSame( $fields['preheader'], $template['preheader'] );
+			$rendered = MailRenderer::render( $key, [] );
+			self::assertIsArray( $rendered );
+			self::assertSame( $fields['subject'], $rendered['subject'] );
+			self::assertSame( $fields['preheader'], $rendered['preheader'] );
+			self::assertStringContainsString( 'L2-R1 native render proof', $rendered['html'] );
+
+			$stale_fields = $fields;
+			$stale_fields['subject'] = 'STALE WRITE MUST NOT LAND';
+			$operations[] = 'L2R1_' . bin2hex( random_bytes( 14 ) );
+			$stale = $submit( $context, $project, $stale_fields, '0', $operations[1] );
+			self::assertSame( 'conflict', $stale['status'] ?? null );
+			$after = Repository::get( Repository::MAIL, $key );
+			self::assertSame( $stored, $after );
+			self::assertSame( '1', $read_context()['storeRevision'] );
+			self::assertStringNotContainsString( 'STALE WRITE MUST NOT LAND',
+				(string) ( MailRenderer::render( $key, [] )['subject'] ?? '' ) );
+
+			$fields['subject'] = 'L2-R1 revision two';
+			$operations[] = 'L2R1_' . bin2hex( random_bytes( 14 ) );
+			$second = $submit( $reopened, $project, $fields, '1', $operations[2] );
+			self::assertSame( 'committed', $second['status'] ?? null );
+			self::assertSame( '2', $second['receipt']['acceptedStoreRevision'] ?? null );
+			self::assertSame( '2', $read_context()['storeRevision'] );
+			self::assertSame( 'L2-R1 revision two', TemplateRepository::get( $key )['subject'] );
+		} finally {
+			// Test-owned synthetic data only. Never touch any pre-existing row,
+			// site installation, database or the separate H1 evidence workspace.
+			foreach ( $operations as $operation ) {
+				$wpdb->delete( OperationSchema::table_name(), [
+					'blog_id' => (int) get_current_blog_id(),
+					'actor_id' => $actor_id,
+					'operation_id_hash' => OperationLedger::operation_hash( $operation ),
+				], [ '%d', '%d', '%s' ] );
+			}
+			if ( $actor_id > 0 ) {
+				$wpdb->delete( Schema::table_name(), [
+					'identity_hash' => hash( 'sha256', Repository::MAIL . "\0" . $key ),
+				], [ '%s' ] );
+			}
+			if ( null === $old_settings ) {
+				delete_option( MailSettings::OPTION );
+			} else {
+				update_option( MailSettings::OPTION, $old_settings, false );
+			}
+			wp_set_current_user( $old_user );
+			if ( $actor_id > 0 ) {
+				require_once ABSPATH . 'wp-admin/includes/user.php';
+				wp_delete_user( $actor_id );
+			}
+		}
 	}
 
 	public function test_active_editor_does_not_enqueue_the_deprecated_mail_save_adapter(): void {
