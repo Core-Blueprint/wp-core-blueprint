@@ -49,34 +49,50 @@ final class RecoveryCodes {
 	}
 
 	public static function consume( int $user_id, string $candidate ): bool {
-		$candidate = self::normalize( $candidate );
-		if ( 20 !== strlen( $candidate ) || 1 !== preg_match( '/^[A-F0-9]{20}$/', $candidate ) ) {
-			return false;
-		}
+		return null !== self::consume_candidate( $user_id, $candidate, false );
+	}
 
+	/**
+	 * Login-only, one-time recovery. When redeeming the final code, new hashes
+	 * replace the consumed hash in the SAME compare-and-swap write, so a failed
+	 * write never strands an account without valid recovery material.
+	 *
+	 * @return string[]|null null on denial, [] if no renewal, codes if renewed
+	 */
+	public static function consume_for_login( int $user_id, string $candidate ): ?array {
+		return self::consume_candidate( $user_id, $candidate, true );
+	}
+
+	/** @return string[]|null */
+	private static function consume_candidate( int $user_id, string $candidate, bool $replenish_final ): ?array {
+		$candidate = self::normalize( $candidate );
+		if ( $user_id <= 0 || 20 !== strlen( $candidate ) || 1 !== preg_match( '/^[A-F0-9]{20}$/', $candidate ) ) {
+			return null;
+		}
 		for ( $attempt = 0; $attempt < 3; $attempt++ ) {
 			$hashes = CredentialStore::recovery_hashes( $user_id );
 			foreach ( $hashes as $index => $hash ) {
 				if ( ! wp_check_password( $candidate, $hash ) ) {
 					continue;
 				}
-
 				$next = $hashes;
 				unset( $next[ $index ] );
 				$next = array_values( $next );
-
+				$replacement_codes = [];
+				if ( $replenish_final && [] === $next ) {
+					$material = self::generate_material();
+					$next = $material['hashes'];
+					$replacement_codes = $material['codes'];
+				}
 				if ( ! CredentialStore::claim_recovery_hashes( $user_id, $hashes, $next ) ) {
 					continue 2;
 				}
-
 				Audit::recovery_code_used( $user_id, count( $next ) );
-				return true;
+				return $replacement_codes;
 			}
-
-			return false;
+			return null;
 		}
-
-		return false;
+		return null;
 	}
 
 	public static function remaining( int $user_id ): int {
@@ -84,6 +100,11 @@ final class RecoveryCodes {
 	}
 
 	/** @return array{codes:string[],hashes:string[]} */
+	/** @return array{codes:string[],hashes:string[]} */
+	public static function new_material(): array {
+		return self::generate_material();
+	}
+
 	private static function generate_material(): array {
 		$codes  = [];
 		$hashes = [];
