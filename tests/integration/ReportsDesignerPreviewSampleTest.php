@@ -2,11 +2,9 @@
 declare(strict_types=1);
 
 use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
-use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter;
 use CoreBlueprint\Core\Reports\DesignerPreview;
 use CoreBlueprint\Core\Reports\MaintenanceFlowCompiler;
-use CoreBlueprint\Core\Reports\ReportBranding;
-use CoreBlueprint\Core\Reports\ReportBrandingInput;
 use CoreBlueprint\Core\Reports\State as ReportsState;
 
 final class CB_Reports_Designer_Preview_Sample_Test extends WP_UnitTestCase {
@@ -22,8 +20,8 @@ final class CB_Reports_Designer_Preview_Sample_Test extends WP_UnitTestCase {
 
 	public function test_disabled_reports_still_renders_a_real_flow_designer_sample(): void {
 		self::assertFalse( ReportsState::is_enabled(), 'This case exercises the disabled Reports master switch.' );
-		$branding = ReportBrandingInput::normalize( [] );
-		$html = ( new DesignerPreview() )->render( $branding, MaintenanceTemplate::defaults() );
+		$native = [ 'project' => PlatformAdapter::default_project(), 'fields' => PlatformAdapter::default_fields() ];
+		$html = ( new DesignerPreview() )->render( $native );
 
 		self::assertStringStartsWith( '<!doctype html>', $html );
 		self::assertStringContainsString( 'data-cb-flow-preview-region="header"', $html );
@@ -49,20 +47,11 @@ final class CB_Reports_Designer_Preview_Sample_Test extends WP_UnitTestCase {
 		$data   = $report['report_data'] ?? null;
 		self::assertIsArray( $data );
 
-		$document = ( new MaintenanceFlowCompiler() )->compile(
-			$report,
-			$data,
-			[
-				'logo_url'         => '',
-				'fallback_text'    => 'Core Blueprint',
-				'provider_name'    => '',
-				'provider_contact' => '',
-				'accent_color'     => ReportBranding::DEFAULT_ACCENT,
-				'is_default'       => true,
-			],
-			'en_US',
-			MaintenanceTemplate::defaults()
-		);
+		$native = [ 'project' => PlatformAdapter::default_project(), 'fields' => PlatformAdapter::default_fields() ];
+		$document = ( new MaintenanceFlowCompiler() )->compile( $report, $data, 'en_US', $native );
+		self::assertSame( 'en_US', $document['locale'] );
+		self::assertArrayHasKey( 'r0', $document['preview_regions'] );
+		self::assertArrayHasKey( 'r7', $document['preview_regions'] );
 
 		$html = ( new HtmlRenderer() )->render(
 			$document['layout'],

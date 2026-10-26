@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 use CoreBlueprint\Core\Design\Profile\Document\Flow\HtmlRenderer;
 use CoreBlueprint\Core\Design\Profile\Document\Flow\PdfRenderer;
-use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
+use CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter;
 use CoreBlueprint\Core\Reports\MaintenanceAggregator;
 use CoreBlueprint\Core\Reports\MaintenanceFlowCompiler;
-use CoreBlueprint\Core\Reports\ReportBranding;
+
 
 final class CB_Reports_Modern_Flow_Composition_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */
@@ -75,24 +75,21 @@ final class CB_Reports_Modern_Flow_Composition_Test extends WP_UnitTestCase {
 	}
 
 	/** @return array<string,mixed> */
-	private function branding(): array {
-		return [
-			'logo_url'         => '',
-			'fallback_text'    => 'Core Blueprint',
-			'provider_name'    => 'Example Provider',
+	private function native( array $overrides = [] ): array {
+		$fields = array_replace( PlatformAdapter::default_fields(), [
+			'provider_name' => 'Example Provider',
 			'provider_contact' => 'support@example.test',
-			'accent_color'     => '#3455db',
-			'is_default'       => false,
-		];
+			'accent_color' => '#3455db',
+		], $overrides );
+		return [ 'project' => PlatformAdapter::default_project(), 'fields' => $fields ];
 	}
 
 	public function test_maintenance_compiler_uses_semantic_foundation_blocks_for_modern_report_presentation(): void {
 		$document = ( new MaintenanceFlowCompiler() )->compile(
 			$this->report(),
 			$this->snapshot(),
-			$this->branding(),
 			'en_US',
-			MaintenanceTemplate::defaults()
+			$this->native()
 		);
 
 		$types = array_map( static fn ( $block ): string => $block->type(), $document['blocks'] );
@@ -125,7 +122,7 @@ final class CB_Reports_Modern_Flow_Composition_Test extends WP_UnitTestCase {
 	}
 
 	public function test_bounded_appearance_presets_change_the_shared_flow_renderer(): void {
-		$branding = $this->branding() + [
+		$appearance = [
 			'surface_style' => 'flat',
 			'density'       => 'compact',
 			'corner_style'  => 'square',
@@ -135,9 +132,8 @@ final class CB_Reports_Modern_Flow_Composition_Test extends WP_UnitTestCase {
 		$document = ( new MaintenanceFlowCompiler() )->compile(
 			$this->report(),
 			$this->snapshot(),
-			$branding,
 			'en_US',
-			MaintenanceTemplate::defaults()
+			$this->native( $appearance )
 		);
 		$html = ( new HtmlRenderer() )->render(
 			$document['layout'],
@@ -155,9 +151,8 @@ final class CB_Reports_Modern_Flow_Composition_Test extends WP_UnitTestCase {
 		$document = ( new MaintenanceFlowCompiler() )->compile(
 			$this->report(),
 			$this->snapshot(),
-			$this->branding(),
 			'en_US',
-			MaintenanceTemplate::defaults()
+			$this->native()
 		);
 		$pdf = ( new PdfRenderer() )->render(
 			$document['layout'],

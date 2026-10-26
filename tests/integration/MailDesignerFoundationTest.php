@@ -4,6 +4,10 @@ declare(strict_types=1);
 use CoreBlueprint\Core\Admin\ScreenContext;
 use CoreBlueprint\Core\Design\Profile\Mail\HtmlRenderer;
 use CoreBlueprint\Core\Design\Profile\Mail\Validator;
+use CoreBlueprint\Core\Design\Profile\Mail\Contract;
+use CoreBlueprint\Core\Design\Profile\Mail\PlatformAdapter;
+use CoreBlueprint\Core\Design\Editor\PlatformTransport;
+use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Mail\Designer\BindingRegistry;
 use CoreBlueprint\Core\Mail\Designer\ComponentRegistry;
 use CoreBlueprint\Core\Mail\Designer\Renderer;
@@ -92,8 +96,11 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		$templates = TemplateRegistry::all();
 		self::assertArrayHasKey( 'wordpress.password-reset', $templates );
 		self::assertArrayHasKey( 'wordpress.new-user', $templates );
-		self::assertSame( 'mail-template', $templates['wordpress.password-reset']['project']['design_type'] );
-		self::assertSame( 'mail.root', $templates['wordpress.password-reset']['project']['root']['type'] );
+		self::assertSame( Contract::DESIGN_TYPE, $templates['wordpress.password-reset']['project']['design_type'] );
+		self::assertSame( Contract::ROOT_TYPE, $templates['wordpress.password-reset']['project']['root']['type'] );
+		self::assertFalse( ( new Validator() )->validate( $templates['wordpress.password-reset']['project'] )->has_errors() );
+		self::assertTrue( PlatformTransport::valid_native_document( Repository::MAIL,
+			\CoreBlueprint\Core\Mail\Designer\WordPressTemplates::default_document( 'wordpress.password-reset' ) ) );
 	}
 
 	public function test_mail_renderer_escapes_user_content_and_interpolates_scalar_bindings(): void {
@@ -197,120 +204,72 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( 'data-cb-design-shell-viewport="mobile"', $template );
 	}
 
-	public function test_core_textual_components_use_content_label_for_editable_copy(): void {
-		$components = ComponentRegistry::all();
-
-		foreach ( [ 'heading', 'text' ] as $component_id ) {
-			self::assertArrayHasKey( $component_id, $components );
-			$fields = array_values( array_filter(
-				$components[ $component_id ]['inspector'],
-				static fn ( array $field ): bool => 'text' === ( $field['key'] ?? '' )
-			) );
-			self::assertCount( 1, $fields );
-			self::assertSame( __( 'Content', 'core-blueprint' ), $fields[0]['label'] );
+	public function test_native_text_and_heading_have_strict_editable_content_schemas(): void {
+		foreach ( [ 'mail.heading', 'mail.text' ] as $type ) {
+			$definition = Contract::definitions()[ $type ];
+			self::assertArrayHasKey( 'text', $definition['properties'] );
+			self::assertSame( 'string', $definition['properties']['text']['type'] );
+			self::assertGreaterThanOrEqual( 10000, $definition['properties']['text']['maxLength'] );
+			$project = $this->project( [ Contract::node( $type, [], [ 'text' => 'Editable copy' ] ) ] );
+			self::assertFalse( ( new Validator() )->validate( $project )->has_errors() );
 		}
 	}
 
-	public function test_mail_designer_uses_canonical_layers_and_selection_lifecycle(): void {
-		$root = dirname( __DIR__, 2 );
-		$feature = (string) file_get_contents( $root . '/assets/js/features/mail-designer.js' );
-
-		self::assertStringContainsString( 'createDesignerLayerTree', $feature );
-		self::assertStringContainsString( 'const selectAfterTextCommit = (path, options) => {', $feature );
-		self::assertStringContainsString( 'if (!finishActiveText()) return false;', $feature );
-		self::assertStringContainsString( 'return selectionController?.select(path, options) ?? false;', $feature );
-		self::assertStringContainsString( 'onSelectItem: (path, options) => selectAfterTextCommit(path, options)', $feature );
-		self::assertStringContainsString( 'path: [...path]', $feature );
-		self::assertStringNotContainsString( 'onSelect: () => selectionController?.select(path)', $feature );
-		self::assertStringContainsString( 'createDesignerSelectionController', $feature );
-		self::assertStringContainsString( 'mailProfile.createMailRichTextControls({', $feature );
-		self::assertStringContainsString( 'mailProfile.createMailInlineTextController({', $feature );
-		self::assertStringNotContainsString( "from '../design/mail/", $feature );
-		self::assertStringContainsString( 'renderLayers: renderStructure', $feature );
-		self::assertStringContainsString( 'renderInspector,', $feature );
-		self::assertStringContainsString( 'syncCanvas: syncPreviewSelection', $feature );
-		self::assertStringContainsString( 'context?.inspector?.target ?? session.inspector().target', $feature );
-		self::assertStringContainsString( 'selectedEntry?.node ?? null', $feature );
-		self::assertStringNotContainsString( 'const nodeAt =', $feature );
-		self::assertStringContainsString( 'resetSelection: true', $feature );
-		self::assertStringContainsString( "remove: node.type !== 'mail.section'", $feature );
-		self::assertStringNotContainsString( 'renderSelectionViews', $feature );
-		self::assertStringNotContainsString( 'session.editorState.selection.select', $feature );
-		self::assertStringNotContainsString( 'session.editorState.selection.clear', $feature );
-		self::assertStringNotContainsString( 'createDesignerLayerRow', $feature );
-		self::assertStringNotContainsString( 'dragPath', $feature );
-		self::assertStringNotContainsString( 'decorateDesignerControl', $feature );
-		self::assertStringNotContainsString( "remove.textContent = 'Remove element';", $feature );
+	public function test_mail_designer_uses_the_authorized_native_platform(): void {
+		self::assertSame( 'base/mail', PlatformAdapter::PROFILE );
+		self::assertSame( Contract::DESIGN_TYPE, PlatformAdapter::TYPE );
+		$native = PlatformAdapter::default_for_resource( 'wordpress.password-reset' );
+		self::assertIsArray( $native );
+		self::assertTrue( PlatformTransport::valid_native_document( Repository::MAIL, $native ) );
+		$invalid = $native;
+		$invalid['project']['root']['type'] = 'mail.root';
+		self::assertFalse( PlatformTransport::valid_native_document( Repository::MAIL, $invalid ) );
+		$assets = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Mail/Admin/DesignerAssets.php' );
+		self::assertStringContainsString( 'DesignEditorAssets::enqueue_platform()', $assets );
+		self::assertStringNotContainsString( "wp_enqueue_script_module( '@cb-core/mail-designer'", $assets );
 	}
 
-	public function test_mail_designer_uses_shared_clipboard_feedback_without_mutating_token_labels(): void {
-		$root = dirname( __DIR__, 2 );
-		$feature = (string) file_get_contents( $root . '/assets/js/features/mail-designer.js' );
-		$assets = (string) file_get_contents( $root . '/src/Mail/Admin/DesignerAssets.php' );
-		$manifest = (string) file_get_contents( $root . '/src/Admin/ScreenAssetRegistry.php' );
-
-		self::assertStringContainsString( "window.cbCore?.clipboard", $feature );
-		self::assertStringContainsString( 'clipboard.enhance(button, {', $feature );
-		self::assertStringContainsString( 'text: token,', $feature );
-		self::assertStringContainsString( 'icon: false,', $feature );
-		self::assertStringNotContainsString( 'navigator.clipboard.writeText', $feature );
-		self::assertStringNotContainsString( "button.textContent = 'Copied';", $feature );
-		self::assertStringContainsString( "[ DesignEditorAssets::MODULE_ID, '@cb-core/clipboard' ]", $assets );
-		self::assertStringContainsString( "'templates' === \$tab", $manifest );
-		self::assertStringContainsString( "'foundation.clipboard'", $manifest );
+	public function test_mail_native_presentation_does_not_register_legacy_editor_transport(): void {
+		$assets = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Mail/Admin/DesignerAssets.php' );
+		self::assertStringContainsString( 'platform_fullscreen_requested()', $assets );
+		self::assertStringContainsString( "current_user_can( 'manage_options' )", $assets );
+		self::assertStringContainsString( 'DesignerState::is_enabled()', $assets );
+		self::assertStringContainsString( 'DesignEditorAssets::enqueue_platform()', $assets );
+		self::assertStringNotContainsString( 'self::SAVE_MODULE_ID,', $assets );
 	}
 
-	public function test_mail_designer_shell_starts_hidden_until_shared_launch_activates_it(): void {
-		$root = dirname( __DIR__, 2 );
-		$template = (string) file_get_contents( $root . '/templates/mail-designer.php' );
-
-		self::assertStringContainsString( '<div class="cb-core-design-shell" data-cb-design-shell hidden>', $template );
+	public function test_legacy_mail_project_is_rejected_without_compatibility_coercion(): void {
+		$legacy = $this->project( [ Contract::node( 'mail.text', [], [ 'text' => 'Protected' ] ) ] );
+		$legacy['schema_version'] = 0;
+		$legacy['design_type'] = 'mail-template';
+		$legacy['root']['type'] = 'mail.root';
+		self::assertTrue( ( new Validator() )->validate( $legacy )->has_errors() );
+		self::assertFalse( PlatformTransport::valid_native_document( Repository::MAIL, [
+			'project' => $legacy, 'fields' => [ 'subject' => 'Protected', 'preheader' => '' ],
+		] ) );
 	}
 
-	public function test_mail_designer_opts_into_shared_fullscreen_without_owning_fullscreen_runtime(): void {
-		$root = dirname( __DIR__, 2 );
-		$template = (string) file_get_contents( $root . '/templates/mail-designer.php' );
-		$feature = (string) file_get_contents( $root . '/assets/js/features/mail-designer.js' );
-
-		self::assertStringContainsString( 'data-cb-design-shell-fullscreen', $template );
-		self::assertStringContainsString( 'aria-pressed="false"', $template );
-		self::assertStringContainsString( "__( 'Fullscreen mode', 'core-blueprint' )", $template );
-		self::assertStringNotContainsString( "'Fullscreen mode', 'default'", $template );
-		self::assertStringNotContainsString( 'toggleFullscreen', $feature );
-		self::assertStringNotContainsString( 'enterFullscreen', $feature );
-		self::assertStringNotContainsString( 'exitFullscreen', $feature );
+	public function test_native_platform_owns_fullscreen_and_save_presentation(): void {
+		$assets = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Mail/Admin/DesignerAssets.php' );
+		$transport = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Design/Editor/PlatformTransport.php' );
+		self::assertStringContainsString( 'DesignEditorAssets::enqueue_platform()', $assets );
+		self::assertStringContainsString( 'new TransactionalSave(', $transport );
+		self::assertStringContainsString( 'expectedStoreRevision', $transport );
+		self::assertStringContainsString( "'status' => 'unknown'", $transport );
 	}
 
-	/** @param list<array<string,mixed>> $children @return array<string,mixed> */
+	/** @param list<array<string,mixed>> $children */
 	private function project( array $children ): array {
 		return [
-			'schema_version' => 0,
-			'design_type' => 'mail-template',
-			'root' => [
-				'type' => 'mail.root',
-				'provider' => 'core',
-				'properties' => [
-					'layout' => [
-						'width' => 600,
-						'background' => '#f3f4f6',
-						'contentBackground' => '#ffffff',
-						'fontFamily' => 'Arial, Helvetica, sans-serif',
-						'textColor' => '#1f2937',
-						'accentColor' => '#2563eb',
-					],
-				],
-				'children' => [ [
-					'type' => 'mail.section',
-					'provider' => 'core',
-					'properties' => [ 'padding' => 32, 'background' => '#ffffff' ],
-					'children' => $children,
-				] ],
-			],
+			'schema_version' => 1,
+			'design_type' => Contract::DESIGN_TYPE,
+			'root' => Contract::node( Contract::ROOT_TYPE, [
+				Contract::node( 'mail.section', $children ),
+			] ),
 		];
 	}
 
-	/** @param array<string,mixed> $properties @return array<string,mixed> */
 	private function node( string $type, array $properties ): array {
-		return [ 'type' => $type, 'provider' => 'core', 'properties' => $properties, 'children' => [] ];
+		return Contract::node( $type, [], $properties );
 	}
 }

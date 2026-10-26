@@ -31,85 +31,60 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 		self::assertSame( BlockCatalog::FOOTER, $template['blocks'][ count( $template['blocks'] ) - 1 ]['type'] );
 	}
 
-	public function test_reports_module_data_exposes_only_bounded_composer_state_and_labels(): void {
-		$definitions = $this->source( 'src/Admin/AdminModuleDefinitionsPreferences.php' );
-
-		self::assertStringContainsString( 'MaintenanceTemplate::current()', $definitions );
-		self::assertStringContainsString( "'blockLabels'", $definitions );
-		self::assertStringContainsString( "'composerUi'", $definitions );
-		self::assertStringContainsString( "'@cb-core/design-editor'", $definitions );
+	public function test_native_reports_platform_validates_complete_document_and_denies_composer_envelopes(): void {
+		$document = [
+			'project' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_project(),
+			'fields' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_fields(),
+		];
+		self::assertTrue( \CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document( $document ) );
+		self::assertTrue( \CoreBlueprint\Core\Design\Editor\PlatformTransport::valid_native_document(
+			\CoreBlueprint\Core\Design\Document\Repository::REPORTS, $document
+		) );
+		$invalid = $document;
+		$invalid['composer'] = MaintenanceTemplate::defaults();
+		self::assertFalse( \CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document( $invalid ) );
+		$invalid = $document;
+		$invalid['project']['root']['children'][0]['properties']['enabled'] = 'on';
+		self::assertFalse( \CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document( $invalid ) );
 	}
 
-	public function test_reports_runtime_adapts_bounded_composer_to_the_public_design_session(): void {
-		$runtime  = $this->source( 'assets/js/features/reports-preferences.js' );
-		$template = $this->source( 'templates/preferences-reports.php' );
-
-		self::assertStringContainsString( 'normalizeClientTemplate', $runtime );
-		self::assertStringContainsString( 'projectFromComposer', $runtime );
-		self::assertStringContainsString( 'composerFromProject', $runtime );
-		self::assertStringContainsString( 'createSession', $runtime );
-		self::assertStringContainsString( "profile: 'document-flow'", $runtime );
-		self::assertStringContainsString( 'buildComposerControls', $runtime );
-		self::assertStringContainsString( 'renderComposerControls', $runtime );
-		self::assertStringContainsString( 'renderElements', $runtime );
-		self::assertStringContainsString( 'renderLayers', $runtime );
-		self::assertStringContainsString( 'renderInspector', $runtime );
-		self::assertStringContainsString( 'moveBlock', $runtime );
-		self::assertStringContainsString( 'createDesignerLayerTree', $runtime );
-		self::assertStringContainsString( 'onSelectItem: ( path, options ) => selectionController?.select( path, options )', $runtime );
-		self::assertStringContainsString( 'path: [ index ]', $runtime );
-		self::assertStringNotContainsString( 'onSelect: () => selectionController?.select( [ index ] )', $runtime );
-		self::assertStringContainsString( 'createDesignerSelectionController', $runtime );
-		self::assertStringContainsString( 'previewHost?.setSelection', $runtime );
-		self::assertStringContainsString( "qs( '[data-cb-report-elements]'", $runtime );
-		self::assertStringContainsString( "qs( '[data-cb-report-layers]'", $runtime );
-		self::assertStringContainsString( "qs( '[data-cb-report-inspector]'", $runtime );
-		self::assertStringContainsString( "layerTree = createDesignerLayerTree", $runtime );
-		self::assertStringContainsString( 'commands.reorderNode( [], index, target )', $runtime );
-		self::assertStringNotContainsString( 'createLayerMoveButton', $runtime );
-		self::assertStringNotContainsString( 'session.editorState.selection', $runtime );
-		self::assertStringContainsString( "commands.setProperty( [ index ], [ 'enabled' ]", $runtime );
-		self::assertStringContainsString( "template: JSON.stringify( composer )", $runtime );
-		self::assertStringContainsString( "apiPost( 'cb_core_preview_report_branding', nonce, reportsPayload() )", $runtime );
-		self::assertStringContainsString( 'syncPreviewSelection();', $runtime );
-		self::assertStringContainsString( "apiPost( 'cb_core_save_report_branding', nonce, {", $runtime );
-		self::assertStringContainsString( 'session.captureSave()', $runtime );
-		self::assertStringContainsString( 'session.rebase(', $runtime );
-		self::assertStringContainsString( 'expected_revision: submitted.revision', $runtime );
-		self::assertStringContainsString( 'template: JSON.stringify( submitted.composer )', $runtime );
-		self::assertStringContainsString( 'cb-core-design-shell__panel-section', $runtime );
-		self::assertStringContainsString( 'createDesignerInspectorIdentity', $runtime );
-		self::assertStringContainsString( 'createDesignerInspectorControls', $runtime );
-		self::assertStringContainsString( 'createDesignerInspectorToggle', $runtime );
-		self::assertStringNotContainsString( "field.className = 'cb-core-design-shell__field'", $runtime );
-		self::assertStringContainsString( 'cb-core-design-shell__palette-grid', $template );
-		self::assertStringContainsString( 'data-cb-report-elements', $template );
-		self::assertStringContainsString( 'data-cb-design-shell-context', $template );
-		self::assertStringContainsString( 'data-cb-design-shell-undo', $template );
-		self::assertStringContainsString( 'data-cb-design-shell-redo', $template );
-		self::assertStringNotContainsString( 'createSnapshotHistory', $runtime );
-		self::assertStringNotContainsString( 'moveSelectedBlock', $runtime );
-		self::assertStringNotContainsString( 'window.location', $runtime );
-		self::assertStringNotContainsString( 'location.reload', $runtime );
+	public function test_active_reports_editor_uses_native_platform_not_legacy_composer_transport(): void {
+		$bootstrap = $this->source( 'src/Reports/Bootstrap.php' );
+		self::assertStringContainsString( 'DesignEditorAssets::platform_fullscreen_requested()', $bootstrap );
+		self::assertStringContainsString( 'DesignEditorAssets::enqueue_platform()', $bootstrap );
+		self::assertStringContainsString( "wp_dequeue_script_module( '@cb-core/reports-preferences' )", $bootstrap );
+		self::assertStringContainsString( "current_user_can( 'cb_manage_branding' )", $bootstrap );
+		$adapter = \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::class;
+		self::assertSame( 'base/reports', $adapter::PROFILE );
+		self::assertSame( 'core.blueprint.reports', $adapter::TYPE );
 	}
 
-	public function test_ajax_authority_commits_branding_and_template_as_one_reports_document(): void {
+	public function test_legacy_composer_write_cannot_mutate_native_design_authority(): void {
+		$before = \CoreBlueprint\Core\Design\Document\Repository::get(
+			\CoreBlueprint\Core\Design\Document\Repository::REPORTS, 'maintenance'
+		);
+		$branding = \CoreBlueprint\Core\Reports\ReportBrandingInput::normalize( [] );
+		$template = MaintenanceTemplate::defaults();
+		self::assertSame( 'blocked', \CoreBlueprint\Core\Reports\DesignDocumentAdapter::save(
+			'0', $branding, $template
+		)['status'] );
+		self::assertSame( 'blocked', \CoreBlueprint\Core\Reports\DesignDocumentAdapter::reset( '0' )['status'] );
+		self::assertSame( $before, \CoreBlueprint\Core\Design\Document\Repository::get(
+			\CoreBlueprint\Core\Design\Document\Repository::REPORTS, 'maintenance'
+		) );
+	}
+
+	public function test_legacy_ajax_branch_is_explicit_and_cannot_gain_native_authority(): void {
 		$handler = $this->source( 'src/Ajax/Handlers/Branding.php' );
 		$preview = $this->source( 'src/Reports/DesignerPreview.php' );
-
-		self::assertStringContainsString( 'normalized_template_request()', $handler );
-		self::assertStringContainsString( "\$composer['maintenance']", $handler );
+		$adapter = $this->source( 'src/Reports/DesignDocumentAdapter.php' );
+		self::assertStringContainsString( '\CoreBlueprint\Core\Design\Document\Authority::inspect()', $handler );
+		self::assertStringContainsString( "'active' === \$authority['status']", $handler );
+		self::assertStringContainsString( "DesignDocumentAdapter::save( \$expected, \$branding, \$template )", $handler );
+		self::assertStringContainsString( "if ( ! in_array( \$authority['status'], [ 'legacy', 'prepared' ], true ) )", $handler );
 		self::assertStringContainsString( 'Settings::set_paths( [', $handler );
-		self::assertStringContainsString( "'reports.branding' => \$branding", $handler );
-		self::assertStringContainsString( "'reports.composer.maintenance' => \$template", $handler );
-		self::assertStringContainsString( 'verify_legacy_write( $updated, $branding, $template', $handler );
-		self::assertStringContainsString( 'OptionCas::read()', $handler );
-		self::assertStringNotContainsString( "Settings::set_key( 'reports',", $handler );
-		self::assertStringContainsString( "'template' => \$template", $handler );
-		self::assertStringContainsString( 'MaintenanceTemplate::defaults()', $handler );
-		self::assertStringContainsString( 'MaintenanceTemplate::current()', $handler );
-		self::assertStringContainsString( 'MaintenanceTemplate::from_json', $handler );
-		self::assertStringContainsString( 'render( $branding, $template )', $handler );
-		self::assertStringContainsString( '?array $template = null', $preview );
+		self::assertStringContainsString( "return [ 'status' => 'blocked' ];", $adapter );
+		self::assertStringContainsString( 'render( ?array $native = null )', $preview );
+		self::assertStringContainsString( 'FlowRenderApi::preview_html(', $preview );
 	}
 }

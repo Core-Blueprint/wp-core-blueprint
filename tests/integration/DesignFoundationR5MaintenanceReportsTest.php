@@ -9,7 +9,8 @@ use CoreBlueprint\Core\Reports\MaintenanceAggregator;
 use CoreBlueprint\Core\Reports\MaintenanceFlowBranding;
 use CoreBlueprint\Core\Reports\MaintenanceFlowCompiler;
 use CoreBlueprint\Core\Reports\MaintenancePdf;
-use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter;
+use CoreBlueprint\Core\Reports\Composer\NativeComposition;
 
 final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTestCase {
 	/** @return array<string,mixed> */
@@ -91,15 +92,13 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 	}
 
 	/** @return array<string,mixed> */
-	private function branding(): array {
-		return [
-			'logo_url'         => '',
-			'fallback_text'    => 'Core Blueprint',
-			'provider_name'    => 'Infused <Agency>',
+	private function native(): array {
+		$fields = array_replace( PlatformAdapter::default_fields(), [
+			'provider_name' => 'Infused <Agency>',
 			'provider_contact' => 'support@example.test',
-			'accent_color'     => '#0064c8',
-			'is_default'       => false,
-		];
+			'accent_color' => '#0064c8',
+		] );
+		return [ 'project' => PlatformAdapter::default_project(), 'fields' => $fields ];
 	}
 
 	private function html( bool $with_security = true ): string {
@@ -109,7 +108,7 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 
 	/** @param array<string,mixed> $snapshot */
 	private function render_snapshot( array $snapshot ): string {
-		$document = ( new MaintenanceFlowCompiler() )->compile( $this->report( $snapshot ), $snapshot, $this->branding(), 'en_GB' );
+		$document = ( new MaintenanceFlowCompiler() )->compile( $this->report( $snapshot ), $snapshot, 'en_GB', $this->native() );
 		return ( new HtmlRenderer() )->render( $document['layout'], $document['blocks'], $document['locale'], $document['presentation'] );
 	}
 
@@ -179,82 +178,52 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 	}
 
 	public function test_flow_branding_resolves_local_png_and_safe_fallback_without_remote_fetch(): void {
-		$settings = Settings::get();
-		$previous_reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
-		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=', true );
+		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=', true );
 		self::assertIsString( $png );
-
 		$upload = wp_upload_bits( 'cb-r5-maintenance-branding.png', null, $png );
 		self::assertSame( '', (string) ( $upload['error'] ?? '' ) );
-		self::assertNotEmpty( $upload['file'] ?? '' );
-
-		$attachment_id = wp_insert_attachment(
-			[
-				'post_mime_type' => 'image/png',
-				'post_title'     => 'R5 Maintenance branding',
-				'post_status'    => 'inherit',
-			],
-			(string) $upload['file']
-		);
+		$attachment_id = wp_insert_attachment( [
+			'post_mime_type' => 'image/png', 'post_title' => 'R5 Maintenance branding',
+			'post_status' => 'inherit',
+		], (string) $upload['file'] );
 		self::assertFalse( is_wp_error( $attachment_id ) );
-		$attachment_id = (int) $attachment_id;
-		self::assertGreaterThan( 0, $attachment_id );
-		update_attached_file( $attachment_id, (string) $upload['file'] );
-
+		self::assertGreaterThan( 0, (int) $attachment_id );
+		update_attached_file( (int) $attachment_id, (string) $upload['file'] );
 		try {
-			Settings::set_key(
-				'reports',
-				[
-					'branding' => [
-						'logo_attachment_id' => $attachment_id,
-						'provider_name'       => 'Infused Provider',
-						'provider_contact'    => 'hello@example.test',
-						'accent_color'        => '#123abc',
-					],
-				],
-				'r5-test'
+			$native = $this->native();
+			$native['fields']['logo_attachment_id'] = (string) $attachment_id;
+			$native['fields']['provider_name'] = 'Infused Provider';
+			$native['fields']['provider_contact'] = 'hello@example.test';
+			$native['fields']['accent_color'] = '#123abc';
+			NativeComposition::assert_document( $native );
+			$resolved = MaintenanceFlowBranding::resolve_values(
+				NativeComposition::flow_branding( $native['fields'] )
 			);
-
-			$resolved = MaintenanceFlowBranding::resolve();
 			self::assertStringStartsWith( 'data:image/png;base64,', $resolved['logo_url'] );
 			self::assertSame( '', $resolved['fallback_text'] );
 			self::assertSame( 'Infused Provider', $resolved['provider_name'] );
 			self::assertSame( 'hello@example.test', $resolved['provider_contact'] );
 			self::assertSame( '#123abc', $resolved['accent_color'] );
-			$serialized = wp_json_encode( $resolved );
-			self::assertIsString( $serialized );
+			$serialized = (string) wp_json_encode( $resolved );
 			self::assertStringNotContainsString( 'http://', $serialized );
 			self::assertStringNotContainsString( 'https://', $serialized );
 			self::assertStringNotContainsString( 'file://', $serialized );
 
-			Settings::set_key(
-				'reports',
-				[
-					'branding' => [
-						'logo_attachment_id' => 0,
-						'provider_name'       => '',
-						'provider_contact'    => '',
-						'accent_color'        => '#0064c8',
-					],
-				],
-				'r5-test-fallback'
+			$native['fields']['logo_attachment_id'] = '0';
+			$native['fields']['provider_name'] = '';
+			$native['fields']['provider_contact'] = '';
+			$native['fields']['accent_color'] = '#0064c8';
+			NativeComposition::assert_document( $native );
+			$fallback = MaintenanceFlowBranding::resolve_values(
+				NativeComposition::flow_branding( $native['fields'] )
 			);
-
-			$fallback = MaintenanceFlowBranding::resolve();
-			if ( '' !== $fallback['logo_url'] ) {
-				self::assertStringStartsWith( 'data:image/png;base64,', $fallback['logo_url'] );
-				self::assertSame( '', $fallback['fallback_text'] );
-			} else {
-				self::assertSame( 'Core Blueprint', $fallback['fallback_text'] );
-			}
-			$serialized = wp_json_encode( $fallback );
-			self::assertIsString( $serialized );
-			self::assertStringNotContainsString( 'http://', $serialized );
-			self::assertStringNotContainsString( 'https://', $serialized );
-			self::assertStringNotContainsString( 'file://', $serialized );
+			self::assertSame( '', $fallback['logo_url'] );
+			self::assertSame( 'Core Blueprint', $fallback['fallback_text'] );
+			self::assertStringNotContainsString( 'http://', (string) wp_json_encode( $fallback ) );
+			self::assertStringNotContainsString( 'https://', (string) wp_json_encode( $fallback ) );
+			self::assertStringNotContainsString( 'file://', (string) wp_json_encode( $fallback ) );
 		} finally {
-			Settings::set_key( 'reports', $previous_reports, 'r5-test-restore' );
-			wp_delete_attachment( $attachment_id, true );
+			wp_delete_attachment( (int) $attachment_id, true );
 		}
 	}
 
@@ -274,7 +243,7 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 		$invalid = $snapshot;
 		$invalid['snapshot_version'] = 999;
 		try {
-			$compiler->compile( $this->report( $invalid ), $invalid, $this->branding(), 'en_GB' );
+			$compiler->compile( $this->report( $invalid ), $invalid, 'en_GB', $this->native() );
 			self::fail( 'Unsupported snapshot version was accepted.' );
 		} catch ( RuntimeException $error ) {
 			self::assertStringContainsString( 'version', $error->getMessage() );
@@ -283,7 +252,7 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 		$invalid = $snapshot;
 		$invalid['site']['url'] = '';
 		try {
-			$compiler->compile( $this->report( $invalid ), $invalid, $this->branding(), 'en_GB' );
+			$compiler->compile( $this->report( $invalid ), $invalid, 'en_GB', $this->native() );
 			self::fail( 'Missing site URL was accepted.' );
 		} catch ( RuntimeException $error ) {
 			self::assertStringContainsString( 'metadata', $error->getMessage() );
@@ -292,7 +261,7 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 		$report = $this->report( $snapshot );
 		$report['generated_at'] = '';
 		try {
-			$compiler->compile( $report, $snapshot, $this->branding(), 'en_GB' );
+			$compiler->compile( $report, $snapshot, 'en_GB', $this->native() );
 			self::fail( 'Missing generated_at was accepted.' );
 		} catch ( RuntimeException $error ) {
 			self::assertStringContainsString( 'metadata', $error->getMessage() );
@@ -319,7 +288,7 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 		$snapshot['sections']['plugin_updates']['rows'] = $rows;
 		$snapshot['sections']['plugin_updates']['truncated'] = false;
 
-		$document = ( new MaintenanceFlowCompiler() )->compile( $this->report( $snapshot ), $snapshot, $this->branding(), 'en_GB' );
+		$document = ( new MaintenanceFlowCompiler() )->compile( $this->report( $snapshot ), $snapshot, 'en_GB', $this->native() );
 		self::assertSame( [ 'width' => 210.0, 'height' => 297.0 ], $document['layout']['page'] );
 		$pdf = ( new PdfRenderer() )->render( $document['layout'], $document['blocks'], $document['locale'], $document['presentation'] );
 		self::assertStringStartsWith( '%PDF-', $pdf );

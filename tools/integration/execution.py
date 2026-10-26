@@ -366,7 +366,25 @@ def run_full_suite(version: str, sha: str) -> None:
         assert_owner(sha)
         gate = command[1]
         record_receipt(f"{index:02d}-start", sha, version, "running", gate=gate)
-        result = subprocess.run(command, cwd=SOURCE, env=env, check=False)
+        # Persist the full unfiltered gate output before judging its exit status.
+        # Both files are new-only, private and confined to the verified workspace.
+        def output_file(suffix: str):
+            location = TEST_ROOT / "evidence" / f"{index:02d}-{suffix}.log"
+            descriptor = os.open(
+                location, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+                getattr(os, "O_NOFOLLOW", 0), 0o600
+            )
+            return os.fdopen(descriptor, "wb")
+
+        with output_file("stdout") as stdout, output_file("stderr") as stderr:
+            result = subprocess.run(
+                command, cwd=SOURCE, env=env, check=False,
+                stdout=stdout, stderr=stderr,
+            )
+            stdout.flush()
+            stderr.flush()
+            os.fsync(stdout.fileno())
+            os.fsync(stderr.fileno())
         if result.returncode:
             record_receipt(f"{index:02d}-fail", sha, version, "fail",
                            gate=gate, exit_code=result.returncode)

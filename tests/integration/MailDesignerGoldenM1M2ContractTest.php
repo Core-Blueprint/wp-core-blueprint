@@ -4,32 +4,23 @@ declare(strict_types=1);
 use CoreBlueprint\Core\Design\Profile\Mail\HtmlRenderer;
 use CoreBlueprint\Core\Design\Profile\Mail\RichText;
 use CoreBlueprint\Core\Design\Profile\Mail\Validator;
+use CoreBlueprint\Core\Design\Profile\Mail\Contract;
 
 /** Proposed Golden contract tests. Run with WP/PHPUnit only after Base reconciliation. */
 final class CB_Mail_Designer_Golden_M1_M2_Contract_Test extends WP_UnitTestCase {
 	/** @param list<array<string,mixed>> $section_children */
 	private function project( array $section_children ): array {
 		return [
-			'schema_version' => 0,
-			'design_type' => 'mail-template',
-			'root' => [
-				'type' => 'mail.root',
-				'provider' => 'core',
-				'properties' => [ 'layout' => [ 'width' => 600 ] ],
-				'children' => [
-					[
-						'type' => 'mail.section',
-						'provider' => 'core',
-						'properties' => [ 'background' => '#ffffff', 'padding' => 20 ],
-						'children' => $section_children,
-					],
-				],
-			],
+			'schema_version' => 1,
+			'design_type' => Contract::DESIGN_TYPE,
+			'root' => Contract::node( Contract::ROOT_TYPE, [
+				Contract::node( 'mail.section', $section_children, [ 'padding' => 20 ] ),
+			] ),
 		];
 	}
 
 	private function node( string $type, array $properties = [], array $children = [] ): array {
-		return [ 'type' => $type, 'provider' => 'core', 'properties' => $properties, 'children' => $children ];
+		return Contract::node( $type, $children, $properties );
 	}
 
 	public function test_allowlisted_rich_text_preserves_semantics_but_rejects_active_markup(): void {
@@ -122,7 +113,7 @@ final class CB_Mail_Designer_Golden_M1_M2_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( 'Secondary column', $html );
 	}
 
-	public function test_legacy_unstyled_columns_remain_untouched(): void {
+	public function test_native_default_columns_keep_equal_width_and_no_extra_padding(): void {
 		$project = $this->project( [
 			$this->node( 'mail.columns', [ 'ratio' => 'equal', 'gap' => 0 ], [
 				$this->node( 'mail.column', [], [ $this->node( 'mail.text', [ 'text' => 'Left' ] ) ] ),
@@ -131,27 +122,25 @@ final class CB_Mail_Designer_Golden_M1_M2_Contract_Test extends WP_UnitTestCase 
 		] );
 		$html = ( new HtmlRenderer() )->render( $project );
 		self::assertStringContainsString( 'width="50%"', $html );
-		self::assertStringNotContainsString( 'class="cb-mail-column" width="50%" valign="top" bgcolor=', $html );
+		self::assertStringContainsString( 'width="50%"', $html );
+		self::assertStringNotContainsString( 'style="padding:12px;"', $html );
 		self::assertStringNotContainsString( 'style="padding:12px;"', $html );
 	}
 
-	public function test_column_background_is_sanitized_and_padding_is_bounded(): void {
+	public function test_invalid_column_styling_is_rejected_instead_of_silently_sanitized(): void {
 		$project = $this->project( [
 			$this->node( 'mail.columns', [ 'ratio' => 'right-wide' ], [
 				$this->node( 'mail.column', [ 'background' => 'javascript:alert(1)', 'padding' => 999 ], [
 					$this->node( 'mail.text', [ 'text' => 'No unsafe styling' ] ),
 				] ),
-				$this->node( 'mail.column', [ 'background' => [ 'invalid' ], 'padding' => -100 ], [
+				$this->node( 'mail.column', [ 'background' => '#ffffff', 'padding' => -100 ], [
 					$this->node( 'mail.text', [ 'text' => 'Fallback' ] ),
 				] ),
 			] ),
 		] );
-		$html = ( new HtmlRenderer() )->render( $project );
-		self::assertStringContainsString( 'width="40%"', $html );
-		self::assertStringContainsString( 'width="60%"', $html );
-		self::assertStringContainsString( 'style="padding:32px;"', $html );
-		self::assertStringNotContainsString( 'javascript:', $html );
-		self::assertStringNotContainsString( 'bgcolor="invalid"', $html );
+		self::assertTrue( ( new Validator() )->validate( $project )->has_errors() );
+		$this->expectException( \InvalidArgumentException::class );
+		( new HtmlRenderer() )->render( $project );
 	}
 
 	public function test_mail_column_rejects_nested_sections_and_nested_columns(): void {
