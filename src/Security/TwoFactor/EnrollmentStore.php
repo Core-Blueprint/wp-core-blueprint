@@ -158,8 +158,7 @@ final class EnrollmentStore {
 		];
 	}
 
-	/** @param array<string,mixed> $state */
-	/** The caller holds the enrollment lock. */
+	/** @param array<string,mixed> $state The caller holds the enrollment lock. */
 	private static function persist( int $user_id, array $state ): void {
 		if ( metadata_exists( 'user', $user_id, self::META_PENDING ) ) {
 			self::delete_pending( $user_id, get_user_meta( $user_id, self::META_PENDING, true ) );
