@@ -93,7 +93,7 @@ final class TwoFactorReadinessCheck implements CheckInterface {
 					'base_enrolled'             => $base_enrolled,
 					'external_provider_owned'   => $external,
 					'base_without_recovery'     => $base_without_recovery,
-					'base_recovery_required'     => $base_recovery_required;
+					'base_recovery_required'     => $base_recovery_required,
 				],
 				[
 					'policy_mode'               => $config['mode'],
@@ -103,7 +103,7 @@ final class TwoFactorReadinessCheck implements CheckInterface {
 					'base_enrolled'             => $base_enrolled,
 					'external_provider_owned'   => $external,
 					'base_without_recovery'     => $base_without_recovery,
-					'base_recovery_required'     => $base_recovery_required;
+					'base_recovery_required'     => $base_recovery_required,
 				]
 			);
 		} catch ( \Throwable $e ) {
