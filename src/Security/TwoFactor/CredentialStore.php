@@ -76,7 +76,9 @@ final class CredentialStore {
 					throw new RuntimeException( 'Two-factor enrollment persistence failed.' );
 				}
 				$created[ $key ] = $value;
-				if ( get_user_meta( $user_id, $key, true ) !== $value ) {
+				$current = get_user_meta( $user_id, $key, true );
+				$verified = is_array( $value ) ? $current === $value : (string) $current === (string) $value;
+				if ( ! $verified ) {
 					throw new RuntimeException( 'Two-factor enrollment persistence verification failed.' );
 				}
 			}
