@@ -33,6 +33,7 @@ final class RecoveryManager {
 			throw new RuntimeException( 'Two-factor reset requires a valid WordPress user.' );
 		}
 
+		return CredentialStore::with_enrollment_lock( $user_id, static function () use ( $user, $source, $user_id ): array {
 		$credential_keys = [
 			CredentialStore::META_SECRET,
 			CredentialStore::META_RECOVERY,
@@ -61,7 +62,7 @@ final class RecoveryManager {
 		}
 
 		if ( $pending ) {
-			EnrollmentStore::clear( $user_id );
+			delete_user_meta( $user_id, EnrollmentStore::META_PENDING );
 		}
 
 		if ( $credential_records > 0 ) {
@@ -88,5 +89,6 @@ final class RecoveryManager {
 
 		Audit::authentication_reset( $user_id, $source, $stats );
 		return $stats;
+		} );
 	}
 }
