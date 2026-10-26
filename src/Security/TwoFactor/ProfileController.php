@@ -100,7 +100,8 @@ final class ProfileController {
 
 		$user_id   = (int) $profile_user->ID;
 		$providers = ProviderDetector::providers_for_user( $profile_user );
-		$enrolled  = CredentialStore::is_enrolled( $user_id );
+		$status    = CredentialStore::enrollment_status( $user_id );
+		$enrolled  = CredentialStore::STATUS_NOT_ENROLLED !== $status;
 		$pending   = ! $enrolled && EnrollmentStore::has_pending( $user_id );
 		$notice    = self::take_notice( $user_id );
 
@@ -119,6 +120,9 @@ final class ProfileController {
 		}
 
 		if ( $enrolled ) {
+			if ( CredentialStore::STATUS_RECOVERY_REQUIRED === $status ) {
+				echo '<p class="notice notice-error inline">' . esc_html__( 'Your stored authenticator credential is unavailable. Use an unused recovery code or request authorized account recovery. Do not start a new enrollment.', 'core-blueprint' ) . '</p>';
+			}
 			self::render_enrolled( $profile_user, $providers );
 		} elseif ( $pending ) {
 			self::render_pending( [] !== $providers );
@@ -204,7 +208,9 @@ final class ProfileController {
 	}
 
 	private static function render_enrolled( WP_User $user, array $providers ): void {
-		echo '<p><strong>' . esc_html__( 'Base two-factor authentication is active.', 'core-blueprint' ) . '</strong></p>';
+		if ( CredentialStore::STATUS_READY === CredentialStore::enrollment_status( (int) $user->ID ) ) {
+			echo '<p><strong>' . esc_html__( 'Base two-factor authentication is active.', 'core-blueprint' ) . '</strong></p>';
+		}
 		echo '<p>' . esc_html( sprintf(
 			/* translators: %d: number of unused recovery codes */
 			__( 'Unused recovery codes: %d', 'core-blueprint' ),
