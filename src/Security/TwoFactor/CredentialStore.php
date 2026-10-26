@@ -21,6 +21,72 @@ final class CredentialStore {
 	public const META_ENROLLED_AT   = '_cb_core_two_factor_enrolled_at';
 	public const META_LAST_TIMESTEP = '_cb_core_two_factor_last_timestep';
 	public const META_CHALLENGE_GENERATION = '_cb_core_two_factor_challenge_generation';
+	public const STATUS_NOT_ENROLLED = 'not_enrolled';
+	public const STATUS_READY = 'ready';
+	public const STATUS_RECOVERY_REQUIRED = 'recovery_required';
+
+	/** Durable WordPress option lock; abandoned locks fail closed for operator recovery. */
+	public static function with_enrollment_lock( int $user_id, callable $operation ): mixed {
+		if ( $user_id <= 0 ) {
+			throw new RuntimeException( 'Invalid two-factor enrollment identity.' );
+		}
+		$option = 'cb_core_2fa_enrollment_lock_' . $user_id;
+		$owner = bin2hex( random_bytes( 16 ) );
+		if ( ! add_option( $option, $owner, '', false ) ) {
+			throw new RuntimeException( 'Two-factor enrollment is busy. Try again later.' );
+		}
+		try {
+			return $operation();
+		} finally {
+			if ( hash_equals( $owner, (string) get_option( $option, '' ) ) ) {
+				delete_option( $option );
+			}
+		}
+	}
+
+	/**
+	 * Create canonical enrollment without overwriting existing authentication data.
+	 * Only records inserted by this call may be rolled back on write failure.
+	 * The caller must hold the enrollment lock.
+	 *
+	 * @param string[] $recovery_hashes
+	 */
+	public static function create_enrollment( int $user_id, string $secret, int $timestep, array $recovery_hashes ): void {
+		if (
+			$user_id <= 0
+			|| $timestep < 0
+			|| self::STATUS_NOT_ENROLLED !== self::enrollment_status( $user_id )
+			|| count( $recovery_hashes ) !== RecoveryCodes::CODE_COUNT
+		) {
+			throw new RuntimeException( 'Two-factor enrollment cannot replace existing authentication state.' );
+		}
+		$values = [
+			self::META_SECRET        => CredentialCipher::encrypt( self::normalize_secret( $secret ), $user_id ),
+			self::META_ENROLLED_AT   => time(),
+			self::META_LAST_TIMESTEP => $timestep,
+			self::META_RECOVERY      => self::normalize_recovery_hashes( $recovery_hashes ),
+		];
+		$created = [];
+		try {
+			foreach ( $values as $key => $value ) {
+				if (
+					metadata_exists( 'user', $user_id, $key )
+					|| ! add_user_meta( $user_id, $key, $value, true )
+				) {
+					throw new RuntimeException( 'Two-factor enrollment persistence failed.' );
+				}
+				$created[ $key ] = $value;
+				if ( get_user_meta( $user_id, $key, true ) !== $value ) {
+					throw new RuntimeException( 'Two-factor enrollment persistence verification failed.' );
+				}
+			}
+		} catch ( \Throwable $error ) {
+			foreach ( array_reverse( $created, true ) as $key => $value ) {
+				delete_user_meta( $user_id, (string) $key, $value );
+			}
+			throw $error;
+		}
+	}
 
 	public static function store_totp_secret( int $user_id, string $secret ): void {
 		if ( $user_id <= 0 ) {
@@ -58,15 +124,34 @@ final class CredentialStore {
 		return CredentialCipher::decrypt( $stored, $user_id );
 	}
 
-	public static function is_enrolled( int $user_id ): bool {
-		if ( (int) get_user_meta( $user_id, self::META_ENROLLED_AT, true ) <= 0 ) {
-			return false;
+	/**
+	 * Pending setup never counts as canonical enrollment; every existing
+	 * canonical record still counts when its TOTP secret cannot be decrypted.
+	 */
+	public static function enrollment_status( int $user_id ): string {
+		if ( $user_id <= 0 ) {
+			return self::STATUS_NOT_ENROLLED;
+		}
+		$has_secret = metadata_exists( 'user', $user_id, self::META_SECRET );
+		$has_marker = metadata_exists( 'user', $user_id, self::META_ENROLLED_AT );
+		$has_recovery = metadata_exists( 'user', $user_id, self::META_RECOVERY );
+		if ( ! $has_secret && ! $has_marker && ! $has_recovery ) {
+			return self::STATUS_NOT_ENROLLED;
+		}
+		if ( ! $has_secret || ! $has_marker || self::enrolled_at( $user_id ) <= 0 ) {
+			return self::STATUS_RECOVERY_REQUIRED;
 		}
 		try {
-			return null !== self::totp_secret( $user_id );
+			return null !== self::totp_secret( $user_id )
+				? self::STATUS_READY
+				: self::STATUS_RECOVERY_REQUIRED;
 		} catch ( RuntimeException ) {
-			return false;
+			return self::STATUS_RECOVERY_REQUIRED;
 		}
+	}
+
+	public static function is_enrolled( int $user_id ): bool {
+		return self::STATUS_NOT_ENROLLED !== self::enrollment_status( $user_id );
 	}
 
 	public static function enrolled_at( int $user_id ): int {
