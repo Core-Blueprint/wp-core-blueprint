@@ -73,7 +73,7 @@ final class TwoFactorReadinessCheck implements CheckInterface {
 				$identity_hashes[] = Fingerprint::hash( [
 					'user_id'          => $user_id,
 					'base_enrolled'    => $base,
-					'base_status'      => $base_status;
+					'base_status'      => $base_status,
 					'external'         => $providers,
 					'recovery_present' => $recovery_present,
 				] );
