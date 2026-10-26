@@ -80,7 +80,7 @@ final class TwoFactorReadinessCheck implements CheckInterface {
 			}
 			sort( $identity_hashes, SORT_STRING );
 
-			$attention = $base_recovery_required > 0 || ( Policy::MODE_ENFORCE === $config['mode'] && $unprotected > 0 );
+			$attention = $base_recovery_required > 0 || $base_without_recovery > 0 || ( Policy::MODE_ENFORCE === $config['mode'] && $unprotected > 0 );
 			return new Evidence(
 				$attention ? Evidence::HEALTH_ATTENTION : Evidence::HEALTH_OK,
 				$attention ? 'two-factor.enforcement-gap' : 'two-factor.ready',
