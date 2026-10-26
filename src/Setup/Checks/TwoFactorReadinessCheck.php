@@ -45,6 +45,7 @@ final class TwoFactorReadinessCheck implements CheckInterface {
 			$base_enrolled = 0;
 			$external = 0;
 			$base_without_recovery = 0;
+			$base_recovery_required = 0;
 
 			foreach ( get_users() as $user ) {
 				if ( ! $user instanceof WP_User || ! PrivilegedAccessPolicy::is_privileged( $user ) ) {
@@ -53,29 +54,33 @@ final class TwoFactorReadinessCheck implements CheckInterface {
 
 				$total++;
 				$user_id   = (int) $user->ID;
-				$base      = CredentialStore::is_enrolled( $user_id );
+				$base_status = CredentialStore::enrollment_status( $user_id );
+				$base = CredentialStore::STATUS_NOT_ENROLLED !== $base_status;
+				$needs_recovery = CredentialStore::STATUS_RECOVERY_REQUIRED === $base_status;
 				$providers = ProviderDetector::providers_for_user( $user );
 				sort( $providers, SORT_STRING );
 				$external_owned = [] !== $providers;
 				$recovery_present = $base && [] !== CredentialStore::recovery_hashes( $user_id );
-				$is_protected = $base || $external_owned;
+				$is_protected = ( $base && ( ! $needs_recovery || $recovery_present ) ) || $external_owned;
 
 				$protected += $is_protected ? 1 : 0;
 				$unprotected += $is_protected ? 0 : 1;
 				$base_enrolled += $base ? 1 : 0;
 				$external += $external_owned ? 1 : 0;
 				$base_without_recovery += $base && ! $recovery_present ? 1 : 0;
+				$base_recovery_required += $needs_recovery ? 1 : 0;
 
 				$identity_hashes[] = Fingerprint::hash( [
 					'user_id'          => $user_id,
 					'base_enrolled'    => $base,
+					'base_status'      => $base_status;
 					'external'         => $providers,
 					'recovery_present' => $recovery_present,
 				] );
 			}
 			sort( $identity_hashes, SORT_STRING );
 
-			$attention = Policy::MODE_ENFORCE === $config['mode'] && $unprotected > 0;
+			$attention = $base_recovery_required > 0 || ( Policy::MODE_ENFORCE === $config['mode'] && $unprotected > 0 );
 			return new Evidence(
 				$attention ? Evidence::HEALTH_ATTENTION : Evidence::HEALTH_OK,
 				$attention ? 'two-factor.enforcement-gap' : 'two-factor.ready',
@@ -88,6 +93,7 @@ final class TwoFactorReadinessCheck implements CheckInterface {
 					'base_enrolled'             => $base_enrolled,
 					'external_provider_owned'   => $external,
 					'base_without_recovery'     => $base_without_recovery,
+					'base_recovery_required'     => $base_recovery_required;
 				],
 				[
 					'policy_mode'               => $config['mode'],
@@ -97,6 +103,7 @@ final class TwoFactorReadinessCheck implements CheckInterface {
 					'base_enrolled'             => $base_enrolled,
 					'external_provider_owned'   => $external,
 					'base_without_recovery'     => $base_without_recovery,
+					'base_recovery_required'     => $base_recovery_required;
 				]
 			);
 		} catch ( \Throwable $e ) {
