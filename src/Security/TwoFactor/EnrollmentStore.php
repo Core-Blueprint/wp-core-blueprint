@@ -34,27 +34,26 @@ final class EnrollmentStore {
 		if ( ! ( $user instanceof WP_User ) ) {
 			throw new RuntimeException( 'Two-factor enrollment requires a valid WordPress user.' );
 		}
-		if ( CredentialStore::is_enrolled( $user_id ) ) {
-			throw new RuntimeException( 'This user is already enrolled in two-factor authentication.' );
-		}
-
-		$existing = self::pending_secret( $user_id );
-		if ( null !== $existing ) {
-			return $existing;
-		}
-
-		$secret = Totp::generate_secret();
-		$now    = time();
-		$state  = [
-			'version'    => self::VERSION,
-			'secret'     => CredentialCipher::encrypt( $secret, $user_id ),
-			'created_at' => $now,
-			'expires_at' => $now + self::TTL_SECONDS,
-		];
-
-		self::persist( $user_id, $state );
-		Audit::enrollment_started( $user_id );
-		return $secret;
+		return CredentialStore::with_enrollment_lock( $user_id, static function () use ( $user_id ): string {
+			if ( CredentialStore::is_enrolled( $user_id ) ) {
+				throw new RuntimeException( 'This user is already enrolled in two-factor authentication.' );
+			}
+			$existing = self::pending_secret( $user_id );
+			if ( null !== $existing ) {
+				return $existing;
+			}
+			$secret = Totp::generate_secret();
+			$now = time();
+			$state = [
+				'version'    => self::VERSION,
+				'secret'     => CredentialCipher::encrypt( $secret, $user_id ),
+				'created_at' => $now,
+				'expires_at' => $now + self::TTL_SECONDS,
+			];
+			self::persist( $user_id, $state );
+			Audit::enrollment_started( $user_id );
+			return $secret;
+		} );
 	}
 
 	public static function has_pending( int $user_id ): bool {
@@ -64,7 +63,7 @@ final class EnrollmentStore {
 		}
 
 		if ( null === self::normalize_state( $state ) ) {
-			self::delete_pending( $user_id );
+			self::delete_pending( $user_id, $state );
 			return false;
 		}
 
@@ -79,14 +78,14 @@ final class EnrollmentStore {
 
 		$normalized = self::normalize_state( $state );
 		if ( null === $normalized ) {
-			self::delete_pending( $user_id );
+			self::delete_pending( $user_id, $state );
 			return null;
 		}
 
 		try {
 			return CredentialCipher::decrypt( $normalized['secret'], $user_id );
 		} catch ( RuntimeException ) {
-			self::delete_pending( $user_id );
+			self::delete_pending( $user_id, $state );
 			return null;
 		}
 	}
@@ -97,46 +96,40 @@ final class EnrollmentStore {
 	 * @return string[]|null Recovery codes on success, null for an invalid TOTP.
 	 */
 	public static function confirm( int $user_id, string $code, ?int $timestamp = null ): ?array {
-		if ( CredentialStore::is_enrolled( $user_id ) ) {
-			return null;
-		}
-
-		$secret = self::pending_secret( $user_id );
-		if ( null === $secret ) {
-			return null;
-		}
-
-		$at       = $timestamp ?? time();
-		$timestep = Totp::verify( $secret, $code, $at, 1, -1 );
-		if ( null === $timestep ) {
-			return null;
-		}
-
-		try {
-			CredentialStore::store_totp_secret( $user_id, $secret );
-			if ( ! CredentialStore::claim_timestep( $user_id, $timestep ) ) {
-				throw new RuntimeException( 'Could not consume the two-factor enrollment timestep.' );
+		return CredentialStore::with_enrollment_lock( $user_id, static function () use ( $user_id, $code, $timestamp ): ?array {
+			if ( CredentialStore::is_enrolled( $user_id ) ) {
+				return null;
 			}
-
-			$codes = RecoveryCodes::generate_for_user( $user_id );
-			if ( RecoveryCodes::CODE_COUNT !== count( $codes ) ) {
+			$state = get_user_meta( $user_id, self::META_PENDING, true );
+			$secret = self::pending_secret( $user_id );
+			if ( null === $secret ) {
+				return null;
+			}
+			$timestep = Totp::verify( $secret, $code, $timestamp ?? time(), 1, -1 );
+			if ( null === $timestep ) {
+				return null;
+			}
+			$material = RecoveryCodes::new_material();
+			if ( RecoveryCodes::CODE_COUNT !== count( $material['codes'] ) ) {
 				throw new RuntimeException( 'Could not issue two-factor recovery codes.' );
 			}
-
-			self::clear( $user_id );
+			self::delete_pending( $user_id, $state );
+			if ( metadata_exists( 'user', $user_id, self::META_PENDING ) ) {
+				throw new RuntimeException( 'Could not consume pending two-factor enrollment.' );
+			}
+			CredentialStore::create_enrollment( $user_id, $secret, $timestep, $material['hashes'] );
 			Audit::enrollment_completed( $user_id );
-			return $codes;
-		} catch ( Throwable $error ) {
-			CredentialStore::clear( $user_id );
-			throw $error;
-		}
+			return $material['codes'];
+		} );
 	}
 
 	public static function clear( int $user_id ): void {
-		self::delete_pending( $user_id );
-		if ( metadata_exists( 'user', $user_id, self::META_PENDING ) ) {
-			throw new RuntimeException( 'Could not clear pending two-factor enrollment state.' );
-		}
+		CredentialStore::with_enrollment_lock( $user_id, static function () use ( $user_id ): void {
+			self::delete_pending( $user_id );
+			if ( metadata_exists( 'user', $user_id, self::META_PENDING ) ) {
+				throw new RuntimeException( 'Could not clear pending two-factor enrollment state.' );
+			}
+		} );
 	}
 
 	/**
@@ -167,18 +160,25 @@ final class EnrollmentStore {
 	}
 
 	/** @param array<string,mixed> $state */
+	/** The caller holds the enrollment lock. */
 	private static function persist( int $user_id, array $state ): void {
-		$result = update_user_meta( $user_id, self::META_PENDING, $state );
-		if ( false !== $result ) {
-			return;
+		if ( metadata_exists( 'user', $user_id, self::META_PENDING ) ) {
+			self::delete_pending( $user_id, get_user_meta( $user_id, self::META_PENDING, true ) );
 		}
-
-		if ( get_user_meta( $user_id, self::META_PENDING, true ) !== $state ) {
+		if (
+			metadata_exists( 'user', $user_id, self::META_PENDING )
+			|| ! add_user_meta( $user_id, self::META_PENDING, $state, true )
+			|| get_user_meta( $user_id, self::META_PENDING, true ) !== $state
+		) {
 			throw new RuntimeException( 'Could not persist pending two-factor enrollment state.' );
 		}
 	}
 
-	private static function delete_pending( int $user_id ): void {
-		delete_user_meta( $user_id, self::META_PENDING );
+	private static function delete_pending( int $user_id, mixed $expected = null ): void {
+		if ( null === $expected ) {
+			delete_user_meta( $user_id, self::META_PENDING );
+			return;
+		}
+		delete_user_meta( $user_id, self::META_PENDING, $expected );
 	}
 }
