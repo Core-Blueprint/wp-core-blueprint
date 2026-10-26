@@ -209,6 +209,11 @@ final class Registry {
 				'description' => 'Inspect Base-owned two-factor state for one user.',
 			],
 			[
+				'name'        => 'two-factor unlock',
+				'class'       => Commands\TwoFactor\Unlock::class,
+				'description' => 'Manually release one verified abandoned Base two-factor enrollment lock.',
+			],
+			[
 				'name'        => 'two-factor reset',
 				'class'       => Commands\TwoFactor\Reset::class,
 				'description' => 'Trusted server-side reset of Base-owned two-factor state.',

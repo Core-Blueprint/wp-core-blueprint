@@ -25,24 +25,142 @@ final class CredentialStore {
 	public const STATUS_READY = 'ready';
 	public const STATUS_RECOVERY_REQUIRED = 'recovery_required';
 
-	/** Durable WordPress option lock; abandoned locks fail closed for operator recovery. */
+	/**
+	 * Exact-value option lock. No elapsed-time takeover is ever attempted by a
+	 * normal request. Abandoned locks require an explicit trusted CLI action.
+	 */
 	public static function with_enrollment_lock( int $user_id, callable $operation ): mixed {
 		if ( $user_id <= 0 ) {
 			throw new RuntimeException( 'Invalid two-factor enrollment identity.' );
 		}
-		$option = 'cb_core_2fa_enrollment_lock_' . $user_id;
-		$owner = bin2hex( random_bytes( 16 ) );
-		if ( ! add_option( $option, $owner, '', false ) ) {
+		$option = self::enrollment_lock_name( $user_id );
+		$record = [
+			'version'    => 1,
+			'owner'      => bin2hex( random_bytes( 16 ) ),
+			'created_at' => time(),
+		];
+		if ( ! add_option( $option, $record, '', false ) ) {
 			throw new RuntimeException( 'Two-factor enrollment is busy. Try again later.' );
 		}
 		try {
 			return $operation();
 		} finally {
-			if ( hash_equals( $owner, (string) get_option( $option, '' ) ) ) {
-				delete_option( $option );
+			if ( ! self::delete_enrollment_lock_exact( $option, maybe_serialize( $record ) ) ) {
+				throw new RuntimeException( 'Could not release the original two-factor enrollment lock.' );
 			}
 		}
 	}
+
+	/**
+	 * Read-only recovery evidence for trusted WP-CLI. Never disclose the owner
+	 * token or raw option bytes; the digest is an exact compare identity only.
+	 *
+	 * @return array{sha256:string,created_at:int,legacy:bool}|null
+	 */
+	public static function enrollment_lock_evidence( int $user_id ): ?array {
+		if ( $user_id <= 0 || ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+			return null;
+		}
+		$raw = self::read_enrollment_lock_raw( self::enrollment_lock_name( $user_id ) );
+		return null === $raw ? null : self::describe_enrollment_lock( $raw );
+	}
+
+	/**
+	 * Explicit, manually confirmed server-side recovery. An old timestamp is
+	 * NOT proof of abandonment. The command operator must independently verify
+	 * that the original process has terminated before providing confirmation.
+	 */
+	public static function recover_enrollment_lock(
+		int $user_id,
+		string $expected_sha256,
+		bool $confirmed_inactive,
+		bool $allow_legacy = false
+	): bool {
+		if ( ! defined( 'WP_CLI' ) || ! WP_CLI || $user_id <= 0 || ! $confirmed_inactive ) {
+			throw new RuntimeException( 'Trusted CLI and explicit inactive-process confirmation are required.' );
+		}
+		if ( 1 !== preg_match( '/^[a-f0-9]{64}$/', $expected_sha256 ) ) {
+			throw new RuntimeException( 'A valid exact lock fingerprint is required.' );
+		}
+		$option = self::enrollment_lock_name( $user_id );
+		$raw = self::read_enrollment_lock_raw( $option );
+		$evidence = null === $raw ? null : self::describe_enrollment_lock( $raw );
+		if ( null === $evidence || ! hash_equals( $evidence['sha256'], $expected_sha256 ) ) {
+			return false;
+		}
+		if ( $evidence['legacy'] ) {
+			if ( ! $allow_legacy ) {
+				throw new RuntimeException( 'Legacy lock recovery requires separate explicit confirmation.' );
+			}
+		} elseif ( $evidence['created_at'] > time() - 600 ) {
+			throw new RuntimeException( 'A recently acquired lock cannot be recovered.' );
+		}
+		if ( ! self::delete_enrollment_lock_exact( $option, $raw ) ) {
+			return false;
+		}
+		Audit::enrollment_lock_recovered( $user_id, $evidence['legacy'] );
+		return true;
+	}
+
+	private static function enrollment_lock_name( int $user_id ): string {
+		return 'cb_core_2fa_enrollment_lock_' . $user_id;
+	}
+
+	/** Read the actual database value, not an object-cache snapshot. */
+	private static function read_enrollment_lock_raw( string $option ): ?string {
+		global $wpdb;
+		$value = $wpdb->get_var( $wpdb->prepare(
+			"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1",
+			$option
+		) );
+		return is_string( $value ) ? $value : null;
+	}
+
+	/** @return array{sha256:string,created_at:int,legacy:bool}|null */
+	private static function describe_enrollment_lock( string $raw ): ?array {
+		$decoded = is_serialized( $raw ) ? @unserialize( $raw, [ 'allowed_classes' => false ] ) : $raw;
+		if (
+			is_array( $decoded )
+			&& count( $decoded ) === 3
+			&& 1 === ( $decoded['version'] ?? null )
+			&& is_string( $decoded['owner'] ?? null )
+			&& 1 === preg_match( '/^[a-f0-9]{32}$/', $decoded['owner'] )
+			&& is_int( $decoded['created_at'] ?? null )
+			&& $decoded['created_at'] > 0
+			&& $decoded['created_at'] <= time()
+		) {
+			return [ 'sha256' => hash( 'sha256', $raw ), 'created_at' => $decoded['created_at'], 'legacy' => false ];
+		}
+		if ( is_string( $decoded ) && '' !== $decoded && strlen( $decoded ) <= 256 ) {
+			return [ 'sha256' => hash( 'sha256', $raw ), 'created_at' => 0, 'legacy' => true ];
+		}
+		return null;
+	}
+
+	/**
+	 * Database-level compare-and-delete protects against deleting a newer lock
+	 * even when the WordPress option cache contains the old owner.
+	 */
+	private static function delete_enrollment_lock_exact( string $option, string $expected_raw ): bool {
+		global $wpdb;
+		try {
+			$deleted = $wpdb->query( $wpdb->prepare(
+				"DELETE FROM {$wpdb->options} WHERE option_name = %s AND BINARY option_value = BINARY %s",
+				$option,
+				$expected_raw
+			) );
+		} finally {
+			// Direct SQL must invalidate both autoloaded and individual option caches.
+			wp_cache_delete( $option, 'options' );
+			wp_cache_delete( 'notoptions', 'options' );
+			wp_cache_delete( 'alloptions', 'options' );
+		}
+		if ( false === $deleted ) {
+			throw new RuntimeException( 'Two-factor enrollment lock database write failed.' );
+		}
+		return 1 === (int) $deleted;
+	}
+
 
 	/**
 	 * Create canonical enrollment without overwriting existing authentication data.

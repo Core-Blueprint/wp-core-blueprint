@@ -10,6 +10,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Audit {
 
+	public const EVENT_ENROLLMENT_LOCK_RECOVERED = 'security.twofactor.enrollment.lock_recovered';
 	public const EVENT_ENROLLMENT_STARTED   = 'security.twofactor.enrollment.started';
 	public const EVENT_ENROLLMENT_COMPLETED = 'security.twofactor.enrollment.completed';
 	public const EVENT_RECOVERY_CODE_USED   = 'security.twofactor.recovery.used';
@@ -23,6 +24,17 @@ final class Audit {
 
 	/** @var array<string,bool> */
 	private static array $bypass_logged = [];
+
+	public static function enrollment_lock_recovered( int $user_id, bool $legacy ): void {
+		if ( $user_id <= 0 ) {
+			return;
+		}
+		AuditLog::log( self::EVENT_ENROLLMENT_LOCK_RECOVERED, 'warning', [
+			'user_id' => $user_id,
+			'legacy'  => $legacy,
+			'source'  => 'trusted_cli',
+		] );
+	}
 
 	public static function enrollment_started( int $user_id ): void {
 		if ( $user_id <= 0 ) {
