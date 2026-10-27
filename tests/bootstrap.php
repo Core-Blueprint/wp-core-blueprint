@@ -2,6 +2,13 @@
 declare(strict_types=1);
 
 $root = dirname( __DIR__ );
+
+// PHPUnit's isolated-test subprocess reboots WordPress against the same test DB.
+// The parent suite already installed WordPress; reinstalling here can block on
+// parent-held table locks. Never skip the initial parent-process installation.
+if ( function_exists( '__phpunit_run_isolated_test' ) ) {
+	putenv( 'WP_TESTS_SKIP_INSTALL=1' );
+}
 $tests_dir = rtrim( (string) getenv( 'WP_TESTS_DIR' ), "/\\" );
 $plugin_file = (string) getenv( 'CB_PLUGIN_FILE' );
 
