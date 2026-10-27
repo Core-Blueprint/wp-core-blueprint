@@ -17,6 +17,9 @@ import importlib.util
 import io
 import json
 import os
+import selectors
+import signal
+import time
 from pathlib import Path
 import subprocess
 import sys
@@ -305,7 +308,7 @@ def test_environment(version: str) -> dict[str, str]:
 def integration_commands(version: str) -> tuple[tuple[str, ...], ...]:
     return (
         ("php", "vendor/bin/phpunit", "--testsuite", "integration", "--do-not-cache-result",
-         "--fail-on-skipped", "--fail-on-incomplete"),
+         "--fail-on-skipped", "--fail-on-incomplete", "--debug"),
         ("bash", "tests/bin/run-performance-baseline.sh"),
         ("bash", "tests/bin/run-lifecycle-scenario.sh"),
         ("bash", "tests/bin/install-pinned-starter.sh"),
@@ -322,7 +325,8 @@ def integration_commands(version: str) -> tuple[tuple[str, ...], ...]:
 
 def record_receipt(name: str, sha: str, version: str, status: str,
                    gate: str = "", exit_code: int | None = None,
-                   gate_count: int | None = None) -> None:
+                   gate_count: int | None = None,
+                   timeout_reason: str | None = None) -> None:
     """Write immutable gate evidence inside the strictly owned test workspace.
 
     Files are new-only; no existing record can be overwritten or post-edited.
@@ -336,6 +340,8 @@ def record_receipt(name: str, sha: str, version: str, status: str,
         "wordpress": version, "database": DB, "status": status,
         "gate": gate, "exit_code": exit_code, "gate_count": gate_count,
     }
+    if timeout_reason is not None:
+        record["timeout_reason"] = timeout_reason
     path = TEST_ROOT / "evidence" / f"{name}.json"
     fd = None
     try:
@@ -352,6 +358,81 @@ def record_receipt(name: str, sha: str, version: str, status: str,
     finally:
         if fd is not None:
             os.close(fd)
+
+
+
+GATE_INACTIVITY_SECONDS = 180
+GATE_MAX_SECONDS = 1800
+
+
+def terminate_gate_group(process: subprocess.Popen) -> None:
+    """Stop the entire isolated gate process group, including descendants."""
+    for sig, grace in ((signal.SIGTERM, 5), (signal.SIGKILL, 3)):
+        try:
+            os.killpg(process.pid, sig)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=grace)
+        except subprocess.TimeoutExpired:
+            pass
+
+
+def run_gate(command: tuple[str, ...], env: dict[str, str],
+             stdout, stderr, *,
+             inactivity_seconds: float = GATE_INACTIVITY_SECONDS,
+             max_seconds: float = GATE_MAX_SECONDS) -> tuple[int, str | None]:
+    """Tee live stdout/stderr into immutable logs; timeout is never success."""
+    process = subprocess.Popen(
+        command, cwd=SOURCE, env=env, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, start_new_session=True, bufsize=0,
+    )
+    started = last_activity = time.monotonic()
+    timeout_reason = None
+    streams = ((process.stdout, stdout, sys.stdout),
+               (process.stderr, stderr, sys.stderr))
+    try:
+        with selectors.DefaultSelector() as selector:
+            for pipe, log, console in streams:
+                selector.register(pipe, selectors.EVENT_READ, (log, console))
+            while selector.get_map() or process.poll() is None:
+                now = time.monotonic()
+                if now - started >= max_seconds:
+                    timeout_reason = "total"
+                    break
+                if now - last_activity >= inactivity_seconds:
+                    timeout_reason = "inactivity"
+                    break
+                for key, _ in selector.select(timeout=min(
+                    0.5, max_seconds - (now - started),
+                    inactivity_seconds - (now - last_activity),
+                )):
+                    chunk = os.read(key.fd, 65536)
+                    if not chunk:
+                        selector.unregister(key.fileobj)
+                        key.fileobj.close()
+                        continue
+                    log, console = key.data
+                    log.write(chunk)
+                    log.flush()
+                    live_binary = getattr(console, "buffer", None)
+                    if live_binary is not None:
+                        live_binary.write(chunk)
+                        live_binary.flush()
+                    else:
+                        console.write(chunk.decode("utf-8", errors="replace"))
+                        console.flush()
+                    last_activity = time.monotonic()
+        if timeout_reason is not None:
+            terminate_gate_group(process)
+            return 124, timeout_reason
+        return process.wait(), None
+    finally:
+        if process.poll() is None:
+            terminate_gate_group(process)
+        for pipe, _, _ in streams:
+            if not pipe.closed:
+                pipe.close()
 
 
 def run_full_suite(version: str, sha: str) -> None:
@@ -377,19 +458,29 @@ def run_full_suite(version: str, sha: str) -> None:
             return os.fdopen(descriptor, "wb")
 
         with output_file("stdout") as stdout, output_file("stderr") as stderr:
-            result = subprocess.run(
-                command, cwd=SOURCE, env=env, check=False,
-                stdout=stdout, stderr=stderr,
-            )
-            stdout.flush()
-            stderr.flush()
-            os.fsync(stdout.fileno())
-            os.fsync(stderr.fileno())
-        if result.returncode:
-            record_receipt(f"{index:02d}-fail", sha, version, "fail",
-                           gate=gate, exit_code=result.returncode)
+            try:
+                exit_code, timeout_reason = run_gate(command, env, stdout, stderr)
+            except OSError as error:
+                record_receipt(f"{index:02d}-fail", sha, version, "fail", gate=gate)
+                raise preflight.PreflightError(
+                    f"Required Base integration gate could not start or stream: {gate}"
+                ) from error
+            finally:
+                stdout.flush()
+                stderr.flush()
+                os.fsync(stdout.fileno())
+                os.fsync(stderr.fileno())
+        if timeout_reason is not None:
+            record_receipt(f"{index:02d}-timeout", sha, version, "timeout",
+                           gate=gate, exit_code=124, timeout_reason=timeout_reason)
             raise preflight.PreflightError(
-                f"Required Base integration gate failed (exit {result.returncode}): {gate}"
+                f"Required Base integration gate timed out ({timeout_reason}): {gate}"
+            )
+        if exit_code:
+            record_receipt(f"{index:02d}-fail", sha, version, "fail",
+                           gate=gate, exit_code=exit_code)
+            raise preflight.PreflightError(
+                f"Required Base integration gate failed (exit {exit_code}): {gate}"
             )
         record_receipt(f"{index:02d}-pass", sha, version, "pass",
                        gate=gate, exit_code=0)
