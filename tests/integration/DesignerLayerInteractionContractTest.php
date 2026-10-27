@@ -15,7 +15,8 @@ final class CB_Designer_Layer_Interaction_Contract_Test extends WP_UnitTestCase 
 		$shell  = $this->source( 'assets/js/design/shell/index.js' );
 		$editor = $this->source( 'assets/js/design/editor.js' );
 
-		self::assertStringContainsString( "from './layers.js';", $shell );
+		// Git source is unversioned; the canonical package stamps static imports.
+		self::assertMatchesRegularExpression( "~from '\\./layers\\.js(?:\\?cb-design=[a-f0-9]{16})?';~", $shell );
 		self::assertStringContainsString( 'createDesignerLayerRow', $shell );
 		self::assertStringContainsString( 'createDesignerLayerTree', $shell );
 		self::assertStringContainsString( 'DESIGNER_LAYER_ACTIONS', $shell );
