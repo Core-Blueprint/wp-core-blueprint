@@ -201,6 +201,28 @@ class ExecutionSafetyTest(unittest.TestCase):
                           "--format=tar", self.sha], command)
         self.assertNotIn("install-wp-tests.sh", " ".join(command))
 
+    def test_isolated_packaging_stages_canonical_manifest_only(self):
+        plugin = self.root / "wp/wp-content/plugins/core-blueprint"
+        plugin.mkdir(parents=True)
+        (plugin / "core-blueprint.php").write_text("source")
+        builder = mock.Mock(PLATFORM_MANIFEST="artifact-manifest.json")
+        builder.runtime_hashes.return_value = {"core-blueprint.php": "same"}
+        builder.collect_files.return_value = []
+        builder.design_module_revision.return_value = "fixture-revision"
+        builder.package_payloads.return_value = {
+            "core-blueprint.php": b"packaged",
+            "artifact-manifest.json": b"verified-manifest",
+        }
+        with mock.patch.object(execution, "PLUGIN_DIR", plugin), \
+             mock.patch.object(execution, "assert_owner"), \
+             mock.patch.object(execution.preflight, "read_source_commit", return_value=self.sha), \
+             mock.patch.object(execution, "canonical_packager", return_value=builder), \
+             mock.patch.object(execution, "verify_runtime_parity") as parity:
+            execution.stage_packaged_runtime(self.sha)
+        self.assertEqual(b"packaged", (plugin / "core-blueprint.php").read_bytes())
+        self.assertEqual(b"verified-manifest", (plugin / "artifact-manifest.json").read_bytes())
+        parity.assert_called_once_with(self.sha)
+
     def test_group_writable_lock_parent_is_refused(self):
         self.area.chmod(0o770)
         with self.assertRaisesRegex(preflight.PreflightError, "Test parent"):
