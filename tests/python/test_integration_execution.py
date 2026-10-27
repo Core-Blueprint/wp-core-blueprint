@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -323,6 +324,50 @@ class ExecutionSafetyTest(unittest.TestCase):
         self.assertEqual(self.sha, record["git_sha"])
         self.assertTrue((self.area / "evidence/01-pass.json").exists())
         self.assertTrue((self.area / "evidence/02-pass.json").exists())
+
+    def test_c3_diagnostic_refuses_any_other_slot(self):
+        with mock.patch.dict(os.environ, {"CB_BASE_GATE01_DIAGNOSTIC": "1"}), \
+             mock.patch.object(execution.preflight, "RUN_SLOT", "c3final_20261027"):
+            with self.assertRaisesRegex(preflight.PreflightError, "restricted"):
+                execution.diagnostic_gate_enabled()
+
+    def test_c3_diagnostic_debug_streams_both_logs_and_completes(self):
+        script = (
+            "import sys; "
+            "print(\"Test 'Fixture::test_one' started\", flush=True); "
+            "print(\"Test 'Fixture::test_one' ended\", flush=True); "
+            "print(\"diagnostic stderr fixture\", file=sys.stderr, flush=True)"
+        )
+        out = self.area / "stdout"
+        err = self.area / "stderr"
+        with out.open("wb") as stdout, err.open("wb") as stderr:
+            code, stalled = execution.bounded_debug_phpunit(
+                (sys.executable, "-u", "-c", script),
+                dict(os.environ), stdout, stderr, inactivity=3, maximum=5, grace=0.1,
+            )
+        self.assertEqual(0, code)
+        self.assertFalse(stalled)
+        self.assertIn(b"Fixture::test_one' ended", out.read_bytes())
+        self.assertIn(b"diagnostic stderr fixture", err.read_bytes())
+
+    def test_c3_diagnostic_stall_kills_child_and_is_not_pass(self):
+        script = (
+            "import time; "
+            "print(\"Test 'Fixture::test_stall' started\", flush=True); "
+            "time.sleep(20)"
+        )
+        out = self.area / "stall-stdout"
+        err = self.area / "stall-stderr"
+        with out.open("wb") as stdout, err.open("wb") as stderr:
+            code, stalled = execution.bounded_debug_phpunit(
+                (sys.executable, "-u", "-c", script),
+                dict(os.environ), stdout, stderr,
+                inactivity=0.4, maximum=2, grace=0.1,
+            )
+        self.assertEqual(124, code)
+        self.assertTrue(stalled)
+        self.assertIn(b"STALL=INACTIVITY", err.read_bytes())
+        self.assertIn(b"Fixture::test_stall", err.read_bytes())
 
     def test_cli_execute_remains_blocked_without_any_changes(self):
         result = subprocess.run(

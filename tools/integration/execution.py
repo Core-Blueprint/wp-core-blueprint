@@ -18,9 +18,13 @@ import io
 import json
 import os
 from pathlib import Path
+import re
+import selectors
+import signal
 import subprocess
 import sys
 import tarfile
+import time
 import urllib.request
 from urllib.parse import urlparse
 
@@ -354,6 +358,115 @@ def record_receipt(name: str, sha: str, version: str, status: str,
             os.close(fd)
 
 
+# C3 DIAG-01: opt-in instrumentation, restricted to one new-only test slot.
+# Production files, test selection, existing gates and standard runs are unchanged.
+DIAGNOSTIC_SLOT = "c3diag_20261027"
+DIAGNOSTIC_INACTIVITY_SECONDS = 180
+DIAGNOSTIC_GATE_MAX_SECONDS = 1800
+DIAGNOSTIC_TERM_GRACE_SECONDS = 10
+
+
+def diagnostic_gate_enabled() -> bool:
+    if os.environ.get("CB_BASE_GATE01_DIAGNOSTIC") != "1":
+        return False
+    if preflight.RUN_SLOT != DIAGNOSTIC_SLOT:
+        raise preflight.PreflightError(
+            "Gate 01 diagnostic is restricted to the fresh c3diag_20261027 slot."
+        )
+    return True
+
+
+def bounded_debug_phpunit(
+    command: tuple[str, ...], env: dict[str, str], stdout, stderr,
+    inactivity: float = DIAGNOSTIC_INACTIVITY_SECONDS,
+    maximum: float = DIAGNOSTIC_GATE_MAX_SECONDS,
+    grace: float = DIAGNOSTIC_TERM_GRACE_SECONDS,
+) -> tuple[int, bool]:
+    """Mirror stdout/stderr live, trace test boundaries, and bound one PHPunit process group.
+
+    Return (exit code, stalled). A timeout never becomes a passing gate receipt.
+    Other Level 2 gates keep the original command and evidence behavior.
+    """
+    print("[C3 DIAG-01] PHPUnit --debug, live logs, 180s idle / 1800s max", flush=True)
+    child = subprocess.Popen(
+        [*command, "--debug"], cwd=SOURCE, env=env,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True,
+        bufsize=0,
+    )
+    started = last_output = time.monotonic()
+    last_started = last_ended = "UNKNOWN"
+    pending = b""
+    stalled_reason = None
+    selector = selectors.DefaultSelector()
+    try:
+        assert child.stdout is not None and child.stderr is not None
+        selector.register(child.stdout, selectors.EVENT_READ, (stdout, sys.stdout))
+        selector.register(child.stderr, selectors.EVENT_READ, (stderr, sys.stderr))
+        while selector.get_map() or child.poll() is None:
+            now = time.monotonic()
+            if now - started >= maximum:
+                stalled_reason = "MAX_RUNTIME"
+                break
+            if now - last_output >= inactivity:
+                stalled_reason = "INACTIVITY"
+                break
+            for key, _ in selector.select(timeout=0.5):
+                data = os.read(key.fileobj.fileno(), 65536)
+                if not data:
+                    selector.unregister(key.fileobj)
+                    continue
+                last_output = time.monotonic()
+                log_file, terminal = key.data
+                log_file.write(data)
+                log_file.flush()
+                # Debug output can be sizable; preserve original bytes in the gate log.
+                terminal.write(data.decode("utf-8", errors="replace"))
+                terminal.flush()
+                if key.fileobj is child.stdout:
+                    lines = (pending + data).split(b"\n")
+                    pending = lines.pop()
+                    for raw in lines:
+                        match = re.search(rb"Test '([^']+)' (started|ended)", raw)
+                        if match:
+                            name = match.group(1).decode("utf-8", errors="replace")
+                            if match.group(2) == b"started":
+                                last_started = name
+                            else:
+                                last_ended = name
+        if stalled_reason is None:
+            result = child.wait()
+            print(f"[C3 DIAG-01] PHPUnit exit={result}; last started={last_started}; "
+                  f"last ended={last_ended}", flush=True)
+            return result, False
+
+        diagnostic = (
+            f"[C3 DIAG-01] STALL={stalled_reason}; last started={last_started}; "
+            f"last ended={last_ended}; no PASS receipt.\n"
+        )
+        stderr.write(diagnostic.encode("utf-8"))
+        stderr.flush()
+        print(diagnostic, end="", file=sys.stderr, flush=True)
+        return 124, True
+    finally:
+        selector.close()
+        if child.poll() is None or stalled_reason is not None:
+            try:
+                os.killpg(child.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                child.wait(timeout=grace)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(child.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                child.wait(timeout=5)
+        for stream in (child.stdout, child.stderr):
+            if stream is not None:
+                stream.close()
+
+
 def run_full_suite(version: str, sha: str) -> None:
     """Full local suite with persistent fail-closed per-gate evidence."""
     verify_runtime_parity(sha)
@@ -361,6 +474,7 @@ def run_full_suite(version: str, sha: str) -> None:
     (TEST_ROOT / "tmp").mkdir(exist_ok=False)
     (TEST_ROOT / "evidence").mkdir(mode=0o700, exist_ok=False)
     commands = integration_commands(version)
+    diagnostic = diagnostic_gate_enabled()
     record_receipt("00-start", sha, version, "running", gate_count=len(commands))
     for index, command in enumerate(commands, start=1):
         assert_owner(sha)
@@ -377,19 +491,30 @@ def run_full_suite(version: str, sha: str) -> None:
             return os.fdopen(descriptor, "wb")
 
         with output_file("stdout") as stdout, output_file("stderr") as stderr:
-            result = subprocess.run(
-                command, cwd=SOURCE, env=env, check=False,
-                stdout=stdout, stderr=stderr,
-            )
+            if diagnostic and index == 1:
+                exit_code, stalled = bounded_debug_phpunit(command, env, stdout, stderr)
+            else:
+                result = subprocess.run(
+                    command, cwd=SOURCE, env=env, check=False,
+                    stdout=stdout, stderr=stderr,
+                )
+                exit_code, stalled = result.returncode, False
             stdout.flush()
             stderr.flush()
             os.fsync(stdout.fileno())
             os.fsync(stderr.fileno())
-        if result.returncode:
-            record_receipt(f"{index:02d}-fail", sha, version, "fail",
-                           gate=gate, exit_code=result.returncode)
+        if stalled:
+            record_receipt(f"{index:02d}-stall", sha, version, "stall",
+                           gate=gate, exit_code=124)
             raise preflight.PreflightError(
-                f"Required Base integration gate failed (exit {result.returncode}): {gate}"
+                "C3 DIAG-01: PHPUnit inactivity or maximum runtime reached; "
+                "inspect immutable 01-stdout/01-stderr logs and 01-stall.json."
+            )
+        if exit_code:
+            record_receipt(f"{index:02d}-fail", sha, version, "fail",
+                           gate=gate, exit_code=exit_code)
+            raise preflight.PreflightError(
+                f"Required Base integration gate failed (exit {exit_code}): {gate}"
             )
         record_receipt(f"{index:02d}-pass", sha, version, "pass",
                        gate=gate, exit_code=0)
