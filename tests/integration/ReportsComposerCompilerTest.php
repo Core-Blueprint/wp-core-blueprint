@@ -68,19 +68,19 @@ final class CB_Reports_Composer_Compiler_Test extends WP_UnitTestCase {
 		$reordered_document = ( new MaintenanceFlowCompiler() )->compile(
 			$report, $snapshot, 'en_US', [ 'project' => $reordered, 'fields' => PlatformAdapter::default_fields() ]
 		);
-		self::assertSame( 'reports.status', $reordered['root']['children'][1]['type'] );
+		self::assertSame( 'reports.notes', $reordered['root']['children'][1]['type'] );
 		self::assertSame( [ 2 ], $reordered_document['preview_regions']['r1'] );
 		self::assertSame( [ 3 ], $reordered_document['preview_regions']['r2'] );
 		self::assertNotSame( $document['blocks'][2]->payload(), $reordered_document['blocks'][2]->payload() );
 
 		$disabled = $project;
 		$disabled['root']['children'][1]['properties']['enabled'] = 'off';
-		$without_notes = ( new MaintenanceFlowCompiler() )->compile(
+		$without_status = ( new MaintenanceFlowCompiler() )->compile(
 			$report, $snapshot, 'en_US', [ 'project' => $disabled, 'fields' => PlatformAdapter::default_fields() ]
 		);
-		self::assertArrayNotHasKey( 'r1', $without_notes['preview_regions'] );
+		self::assertArrayNotHasKey( 'r1', $without_status['preview_regions'] );
 		self::assertSame( [ 'columns', 'rule', 'container', 'page_footer' ],
-			array_map( static fn ( RenderBlock $block ): string => $block->type(), $without_notes['blocks'] )
+			array_map( static fn ( RenderBlock $block ): string => $block->type(), $without_status['blocks'] )
 		);
 	}
 

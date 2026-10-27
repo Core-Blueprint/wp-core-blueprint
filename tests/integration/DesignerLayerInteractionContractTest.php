@@ -31,7 +31,9 @@ final class CB_Designer_Layer_Interaction_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( "icon: 'arrow-up'", $layers );
 		self::assertStringContainsString( "icon: 'arrow-down'", $layers );
 		self::assertStringContainsString( "icon: 'trash-2'", $layers );
-		self::assertStringContainsString( "for (const actionName of ['moveUp', 'moveDown', 'remove'])", $layers );
+		self::assertStringContainsString( "['moveUp', 'moveDown', 'hide', 'show', 'remove']", $layers );
+		self::assertStringContainsString( 'for (const actionName of quickActions)', $layers );
+		self::assertStringContainsString( "menuTrigger.setAttribute('aria-haspopup', 'menu');", $layers );
 		self::assertStringContainsString( 'iconOnly: true', $layers );
 		self::assertStringContainsString( "button.dataset.cbDesignLayerAction = actionName;", $layers );
 		self::assertStringContainsString( "config.layerActionLabels?.[actionName]", $layers );
@@ -67,7 +69,7 @@ final class CB_Designer_Layer_Interaction_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( "'remove'   => __( 'Remove element', 'core-blueprint' )", $assets );
 	}
 
-	public function test_layer_actions_are_overlayed_and_revealed_by_hover_focus_or_selection(): void {
+	public function test_layer_actions_are_overlayed_and_revealed_by_hover_or_focus(): void {
 		$css = $this->source( 'assets/css/design/designer-composition.css' );
 
 		self::assertStringContainsString( '.cb-core-design-shell__layer-tree', $css );
@@ -80,7 +82,8 @@ final class CB_Designer_Layer_Interaction_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( 'visibility: hidden;', $css );
 		self::assertStringContainsString( '.cb-core-design-shell__layer-row:hover > .cb-core-design-shell__layer-actions', $css );
 		self::assertStringContainsString( '.cb-core-design-shell__layer-row:focus-within > .cb-core-design-shell__layer-actions', $css );
-		self::assertStringContainsString( '.cb-core-design-shell__layer-row.is-selected > .cb-core-design-shell__layer-actions', $css );
+		self::assertStringContainsString( '.cb-core-design-shell__layer-row.is-selected {', $css );
+		self::assertStringContainsString( 'box-shadow: inset 2px 0 0 var(--cb-accent);', $css );
 		self::assertStringContainsString( 'pointer-events: auto;', $css );
 	}
 

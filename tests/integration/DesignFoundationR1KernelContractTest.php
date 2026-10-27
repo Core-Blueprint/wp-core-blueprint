@@ -73,10 +73,11 @@ final class CB_Design_Foundation_R1_Kernel_Contract_Test extends WP_UnitTestCase
 		self::assertSame( [], $project->root() );
 	}
 
-	public function test_unknown_stable_schema_generation_fails_closed(): void {
+	public function test_stable_schema_requires_trusted_frozen_profile_definitions(): void {
 		[ , , , , $serializer ] = $this->kernel();
 		$json = '{"schema_version":1,"design_type":"coreblueprint.maintenance.report","root":{}}';
-		$this->expectException( ValidationException::class );
+		$this->expectException( \LogicException::class );
+		$this->expectExceptionMessage( 'Stable schema v1 requires trusted frozen profile definitions.' );
 		$serializer->decode( $json, true );
 	}
 

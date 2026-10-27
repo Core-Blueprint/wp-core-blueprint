@@ -120,7 +120,8 @@ final class CB_Reports_Designer_Composition_Contract_Test extends WP_UnitTestCas
 		$style    = $this->source( 'assets/css/pages/reports-designer.css' );
 
 		self::assertStringContainsString( '[data-cb-report-preview]', $style );
-		self::assertStringContainsString( '#cb-core-logo-preview img', $style );
+		self::assertStringContainsString( '.cb-reports-platform__branding', $style );
+		self::assertStringContainsString( '--cb-report-paper: #fff;', $style );
 		self::assertStringNotContainsString( 'style="background:#fff;"', $template );
 		self::assertStringContainsString( 'background: transparent;', $style );
 		self::assertStringContainsString( 'background:#fff;', $this->source( 'src/Design/Profile/Document/Flow/HtmlRenderer.php' ) );

@@ -109,7 +109,9 @@ final class CB_Designer_Mode_Header_Test extends WP_UnitTestCase {
 		self::assertStringContainsString( "'cbCoreDesignerLaunch'", $assets );
 		self::assertStringContainsString( 'CoreBlueprintLockup::enqueue_assets()', $assets );
 		self::assertStringContainsString( 'CoreBlueprintMark::data_uri()', $assets );
-		self::assertStringContainsString( "DesignEditorAssets::enqueue_designer_mode( __( 'Mail Designer', 'core-blueprint' ) );", $page );
+		self::assertStringContainsString( 'DesignEditorAssets::platform_fullscreen_requested()', $page );
+		$mail_assets = (string) file_get_contents( $root . '/src/Mail/Admin/DesignerAssets.php' );
+		self::assertStringContainsString( 'DesignEditorAssets::enqueue_platform();', $mail_assets );
 		self::assertStringNotContainsString( "assets/js/features/designer-launch.js", $page );
 		self::assertStringNotContainsString( 'wp_localize_script(', $page );
 	}

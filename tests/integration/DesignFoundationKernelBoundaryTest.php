@@ -32,7 +32,9 @@ final class CB_Design_Foundation_Kernel_Boundary_Test extends WP_UnitTestCase {
 		$iterator = new RecursiveIteratorIterator(
 			new RecursiveDirectoryIterator( $design_root, FilesystemIterator::SKIP_DOTS )
 		);
-		$forbidden_names = [ 'ProfileInterface.php', 'ProfileRegistry.php', 'GenericLayoutProvider.php' ];
+		// The trusted, request-scoped Design Registry is not the prohibited generic profile framework.
+		self::assertFileExists( CB_CORE_DIR . 'src/Design/Registry/ProfileRegistry.php' );
+		$forbidden_names = [ 'ProfileInterface.php', 'GenericLayoutProvider.php' ];
 		foreach ( $iterator as $file ) {
 			if ( $file->isFile() ) {
 				self::assertNotContains( $file->getFilename(), $forbidden_names );

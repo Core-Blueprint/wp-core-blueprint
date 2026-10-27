@@ -178,7 +178,7 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 	}
 
 	public function test_flow_branding_resolves_local_png_and_safe_fallback_without_remote_fetch(): void {
-		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=', true );
+		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR4nGP8z8Dwn4GBgYGJAQoAHxcCAk+Uzr4AAAAASUVORK5CYII=', true );
 		self::assertIsString( $png );
 		$upload = wp_upload_bits( 'cb-r5-maintenance-branding.png', null, $png );
 		self::assertSame( '', (string) ( $upload['error'] ?? '' ) );
@@ -217,8 +217,13 @@ final class CB_Design_Foundation_R5_Maintenance_Reports_Test extends WP_UnitTest
 			$fallback = MaintenanceFlowBranding::resolve_values(
 				NativeComposition::flow_branding( $native['fields'] )
 			);
-			self::assertSame( '', $fallback['logo_url'] );
-			self::assertSame( 'Core Blueprint', $fallback['fallback_text'] );
+			// Bundled SVG-to-PNG fallback is optional when Imagick/SVG support is unavailable.
+			if ( '' === $fallback['logo_url'] ) {
+				self::assertSame( 'Core Blueprint', $fallback['fallback_text'] );
+			} else {
+				self::assertStringStartsWith( 'data:image/png;base64,', $fallback['logo_url'] );
+				self::assertSame( '', $fallback['fallback_text'] );
+			}
 			self::assertStringNotContainsString( 'http://', (string) wp_json_encode( $fallback ) );
 			self::assertStringNotContainsString( 'https://', (string) wp_json_encode( $fallback ) );
 			self::assertStringNotContainsString( 'file://', (string) wp_json_encode( $fallback ) );

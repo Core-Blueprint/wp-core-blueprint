@@ -32,10 +32,13 @@ final class CB_Mail_Designer_Styling_Contract_Test extends WP_UnitTestCase {
 		$native['project']['root']['children'][0]['properties']['padding'] = 44;
 
 		self::assertTrue( PlatformTransport::valid_native_document( Repository::MAIL, $native ) );
-		$html = ( new HtmlRenderer() )->render( $native['project'], [], [
+		$html = ( new HtmlRenderer() )->render( $native['project'], [
+			'action.url' => 'https://example.test/reset-password',
+		], [
 			'preheader' => $native['fields']['preheader'],
 		] );
 		self::assertStringContainsString( 'Styled preheader', $html );
+		self::assertStringContainsString( 'href="https://example.test/reset-password"', $html );
 		self::assertStringContainsString( 'width:640px', $html );
 		self::assertStringContainsString( 'background:#101820', $html );
 		self::assertStringContainsString( 'background:#fefefe', $html );
