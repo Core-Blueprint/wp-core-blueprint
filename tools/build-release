@@ -313,6 +313,24 @@ def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str
     return payloads
 
 
+def packaged_runtime_matches(source: Path, plugin_dir: Path) -> bool:
+    """Check the installed test runtime against exact canonical packaged bytes.
+
+    Built Designer assets and artifact-manifest.json intentionally differ from
+    raw Git sources. Never accept an arbitrary runtime or fabricated manifest.
+    """
+    if plugin_dir.is_symlink() or not plugin_dir.is_dir():
+        return False
+    files = collect_files(source)
+    payloads = package_payloads(source, files, design_module_revision(source))
+    expected = {name: hashlib.sha256(data).hexdigest() for name, data in payloads.items()}
+    actual = runtime_hashes(plugin_dir)
+    manifest = plugin_dir / PLATFORM_MANIFEST
+    if manifest.is_file() and not manifest.is_symlink():
+        actual[PLATFORM_MANIFEST] = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    return actual == expected
+
+
 def add_packaged_bytes(archive: zipfile.ZipFile, relative: str, payload: bytes) -> None:
     """The existing deterministic ZIP metadata, now for generated files too."""
     info = zipfile.ZipInfo(f"{PLUGIN_ROOT}/{relative}", FIXED_ZIP_TIME)
@@ -346,8 +364,8 @@ def preflight(source: Path, expected: dict[str, str]) -> None:
     plugin = Path(os.environ["CB_PLUGIN_FILE"]).resolve()
     if plugin.name != "core-blueprint.php" or plugin.parent.name != PLUGIN_ROOT:
         fail("CB_PLUGIN_FILE must identify the canonical core-blueprint/core-blueprint.php test copy.")
-    if not plugin.is_file() or runtime_hashes(plugin.parent) != expected:
-        fail("WordPress test copy differs from release source; refresh it before building.")
+    if not plugin.is_file() or not packaged_runtime_matches(source, plugin.parent):
+        fail("WordPress test copy differs from exact canonical package; refresh the owned test runtime.")
 
     run_gate([
         "php", "-r",
@@ -375,8 +393,8 @@ def preflight(source: Path, expected: dict[str, str]) -> None:
     run_gate(["php", "vendor/bin/phpunit", "--testsuite", "integration",
               "--do-not-cache-result", "--fail-on-skipped", "--fail-on-incomplete"],
              source, "WordPress integration")
-    if runtime_hashes(source) != expected or runtime_hashes(plugin.parent) != expected:
-        fail("Release source or WordPress test copy changed during validation.")
+    if runtime_hashes(source) != expected or not packaged_runtime_matches(source, plugin.parent):
+        fail("Release source or packaged WordPress test copy changed during validation.")
 
 
 def verify_archive(path: Path, expected: dict[str, str]) -> None:
