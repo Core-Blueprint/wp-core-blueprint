@@ -7,6 +7,7 @@ import io
 import json
 import os
 from pathlib import Path
+import sys
 import subprocess
 import tarfile
 import tempfile
@@ -277,7 +278,7 @@ class ExecutionSafetyTest(unittest.TestCase):
     def test_full_matrix_keeps_phpunit_and_existing_scenarios(self):
         commands = execution.integration_commands("7.0")
         flat = " ".join(" ".join(item) for item in commands)
-        for value in ("--fail-on-skipped", "--fail-on-incomplete",
+        for value in ("--fail-on-skipped", "--fail-on-incomplete", "--debug",
                       "run-lifecycle-scenario.sh", "install-pinned-starter.sh",
                       "run-consumer-scenario.sh", "run-module-conformance-scenario.sh",
                       "run-performance-baseline.sh", "run-cli-provenance-conformance.sh",
@@ -298,7 +299,7 @@ class ExecutionSafetyTest(unittest.TestCase):
         fake = mock.Mock(returncode=12)
         with mock.patch.object(execution, "verify_runtime_parity"), \
              mock.patch.object(execution, "assert_owner"), \
-             mock.patch.object(execution.subprocess, "run", return_value=fake) as run, \
+             mock.patch.object(execution, "run_gate", return_value=(12, None)) as run, \
              mock.patch.object(execution, "TEST_ROOT", self.area):
             with self.assertRaisesRegex(preflight.PreflightError, "Required Base integration gate failed"):
                 execution.run_full_suite("7.0", self.sha)
@@ -312,7 +313,7 @@ class ExecutionSafetyTest(unittest.TestCase):
              mock.patch.object(execution, "integration_commands", return_value=(
                  ("php", "tests/fixture.php"), ("bash", "tests/fixture.sh"),
              )), \
-             mock.patch.object(execution.subprocess, "run", return_value=mock.Mock(returncode=0)) as run, \
+             mock.patch.object(execution, "run_gate", return_value=(0, None)) as run, \
              mock.patch.object(execution, "TEST_ROOT", self.area):
             execution.run_full_suite("7.0", self.sha)
         self.assertEqual(2, run.call_count)
@@ -323,6 +324,66 @@ class ExecutionSafetyTest(unittest.TestCase):
         self.assertEqual(self.sha, record["git_sha"])
         self.assertTrue((self.area / "evidence/01-pass.json").exists())
         self.assertTrue((self.area / "evidence/02-pass.json").exists())
+
+    def test_gate_streams_both_outputs_live_and_into_logs(self):
+        stdout, stderr = io.BytesIO(), io.BytesIO()
+        with mock.patch.object(execution, "SOURCE", self.area), \
+             mock.patch("sys.stdout", new_callable=io.StringIO) as live_out, \
+             mock.patch("sys.stderr", new_callable=io.StringIO) as live_err:
+            result = execution.run_gate(
+                (sys.executable, "-u", "-c",
+                 "import sys; print('out-marker'); print('err-marker', file=sys.stderr)"),
+                os.environ.copy(), stdout, stderr,
+                inactivity_seconds=10, max_seconds=15,
+            )
+        self.assertEqual((0, None), result)
+        self.assertIn(b"out-marker", stdout.getvalue())
+        self.assertIn(b"err-marker", stderr.getvalue())
+        self.assertIn("out-marker", live_out.getvalue())
+        self.assertIn("err-marker", live_err.getvalue())
+
+    def test_gate_timeout_never_records_pass(self):
+        with mock.patch.object(execution, "verify_runtime_parity"), \
+             mock.patch.object(execution, "assert_owner"), \
+             mock.patch.object(execution, "run_gate",
+                               return_value=(124, "inactivity")) as run, \
+             mock.patch.object(execution, "TEST_ROOT", self.area):
+            with self.assertRaisesRegex(preflight.PreflightError, "timed out"):
+                execution.run_full_suite("7.0", self.sha)
+        run.assert_called_once()
+        receipt = json.loads((self.area / "evidence/01-timeout.json").read_text())
+        self.assertEqual("timeout", receipt["status"])
+        self.assertEqual("inactivity", receipt["timeout_reason"])
+        self.assertEqual(124, receipt["exit_code"])
+        self.assertFalse((self.area / "evidence/01-pass.json").exists())
+        self.assertFalse((self.area / "evidence/99-final-pass.json").exists())
+
+    def test_gate_inactivity_timeout_terminates_child_process_group(self):
+        marker = self.area / "child.pid"
+        script = (
+            "import subprocess,sys,time;"
+            "child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)']);"
+            f"open({str(marker)!r},'w').write(str(child.pid));"
+            "print('started',flush=True);time.sleep(30)"
+        )
+        with mock.patch.object(execution, "SOURCE", self.area), \
+             mock.patch("sys.stdout", new_callable=io.StringIO):
+            result = execution.run_gate(
+                (sys.executable, "-u", "-c", script), os.environ.copy(),
+                io.BytesIO(), io.BytesIO(), inactivity_seconds=3, max_seconds=12,
+            )
+        self.assertEqual((124, "inactivity"), result)
+        self.assertTrue(marker.is_file())
+        child_pid = int(marker.read_text())
+        try:
+            os.kill(child_pid, 0)
+        except ProcessLookupError:
+            pass
+        else:
+            # An orphaned terminated child can remain a zombie until reaped.
+            self.assertEqual(
+                "Z", (Path("/proc") / str(child_pid) / "stat").read_text().split()[2]
+            )
 
     def test_cli_execute_remains_blocked_without_any_changes(self):
         result = subprocess.run(
