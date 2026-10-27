@@ -6,6 +6,7 @@ use CoreBlueprint\Core\Design\Document\Schema;
 use CoreBlueprint\Core\Design\Persistence\OperationLedger;
 use CoreBlueprint\Core\Design\Persistence\OperationSchema;
 use CoreBlueprint\Core\Mail\Settings as MailSettings;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\Mail\Designer\Renderer as MailRenderer;
 use CoreBlueprint\Core\Design\Editor\PlatformTransport;
 use CoreBlueprint\Core\Design\Profile\Mail\Contract;
@@ -108,6 +109,14 @@ final class CB_Mail_Designer_Save_In_Place_Test extends \PHPUnit\Framework\TestC
 			$actor_id = (int) $created;
 			self::assertGreaterThan( 0, $actor_id );
 			wp_set_current_user( $actor_id );
+			$actor = get_userdata( $actor_id );
+			self::assertInstanceOf( \WP_User::class, $actor );
+			// Production denies newly created privileged identities until approved.
+			// Model an operator-approved synthetic fixture through the signed registry.
+			self::assertFalse( PrivilegedAccessRegistry::is_approved( $actor ) );
+			self::assertFalse( current_user_can( 'manage_options' ) );
+			self::assertTrue( PrivilegedAccessRegistry::approve( $actor, 0, 'test_fixture' ) );
+			self::assertTrue( PrivilegedAccessRegistry::is_approved( $actor ) );
 			self::assertTrue( current_user_can( 'manage_options' ) );
 
 			$settings = MailSettings::all();
