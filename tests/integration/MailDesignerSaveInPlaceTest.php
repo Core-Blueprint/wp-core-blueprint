@@ -69,11 +69,18 @@ final class CB_Mail_Designer_Save_In_Place_Test extends \PHPUnit\Framework\TestC
 
 
 	/**
-	 * Real native REST Save/Reopen/Render/CAS acceptance, using WordPress already
-	 * bootstrapped by the integration suite. Intentionally not WP_UnitTestCase:
-	 * its surrounding PHPUnit transaction would make TransactionalSave correctly
-	 * refuse the Save instead of proving the positive path. Execute only inside
-	 * a separately authorized dedicated WordPress integration database.
+	 * Real native REST Save/Reopen/Render/CAS acceptance. Unlike the read-only
+	 * contracts above, the positive path MUST own an independent DB transaction.
+	 * WordPress PHPUnit cases may leave the parent process DB connection inside
+	 * an ambient test transaction; sharing it correctly makes TransactionalSave
+	 * refuse the Save. Isolate only this positive test in a fresh PHP process,
+	 * bootstrap WordPress afresh, and never inherit parent PHPUnit globals.
+	 * Keep the explicit @@in_transaction == 0 guard below: no implicit COMMIT,
+	 * ROLLBACK, reconnect or bypass of the production fail-closed behavior.
+	 * Execute only inside a separately authorized dedicated integration database.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
 	public function test_native_platform_save_reopen_render_and_stale_cas_in_real_wordpress(): void {
 		global $wpdb;
