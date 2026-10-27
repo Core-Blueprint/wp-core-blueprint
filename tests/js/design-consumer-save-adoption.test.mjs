@@ -52,13 +52,50 @@ test('Original WordPress security notifications are preserved with bounded opera
   assert.ok(!native.includes('getMessage()'));
 });
 
-test('No active marker is ever written; independent ever-active witness blocks downgrade', () => {
-  assert.ok(authority.includes('EVER_ACTIVE_OPTION'));
-  assert.ok(authority.includes("if ( null !== $witness_row )"));
-  assert.ok(authority.includes("self::valid_receipt( $witness, 'ever-active' )"));
-  for (const pattern of [/\bupdate_option\(/, /\badd_option\(/, /\bdelete_option\(/]) {
-    assert.doesNotMatch(authority, pattern);
-  }
+test('Clean-v1 authority refuses historical sources and uncertain primary DB state without writes', () => {
+  const inspectStart = authority.indexOf('public static function inspect(): array');
+  const reportsStart = authority.indexOf('private static function reports_design_is_default(');
+  assert.ok(inspectStart >= 0 && reportsStart > inspectStart, 'native-v1 inspect method exists');
+  const inspect = authority.slice(inspectStart, reportsStart);
+
+  // All five historical sources must be inspected before treating native storage as clean.
+  const namesStart = inspect.indexOf('$names = [');
+  const namesEnd = inspect.indexOf('];', namesStart);
+  assert.ok(namesStart >= 0 && namesEnd > namesStart, 'physical source inventory exists');
+  const names = inspect.slice(namesStart, namesEnd);
+  for (const marker of [
+    "ACTIVE_OPTION = 'cb_core_design_docs_cutover'",
+    "EVER_ACTIVE_OPTION = 'cb_core_design_docs_ever_active_v1'",
+    "PREPARED_OPTION = 'cb_core_design_docs_prepared_v1'",
+    "BACKUP_OPTION = 'cb_core_design_docs_migration_backup_v1'",
+  ]) assert.ok(authority.includes(marker), 'Missing historical authority marker: ' + marker);
+  for (const source of [
+    'self::ACTIVE_OPTION', 'self::EVER_ACTIVE_OPTION',
+    'self::PREPARED_OPTION', 'self::BACKUP_OPTION',
+    '\\CoreBlueprint\\Core\\Mail\\Designer\\TemplateRepository::OPTION',
+    'self::SETTINGS_OPTION',
+  ]) assert.ok(names.includes(source), 'Missing physical option source: ' + source);
+
+  // No cached option fallback: admission reads each site-bound option from the primary DB.
+  assert.ok(inspect.includes('get_current_blog_id()'));
+  assert.ok(inspect.includes('Schema::healthy()'));
+  assert.match(inspect, /foreach\s*\(\s*\$names\s+as\s+\$name\s*\)/);
+  assert.match(inspect, /\$wpdb->get_row\s*\(\s*\$wpdb->prepare\s*\(/);
+  assert.ok(inspect.includes("'SELECT option_value FROM %i WHERE option_name = %s LIMIT 1'"));
+  assert.ok(inspect.includes('$wpdb->options'));
+  assert.ok(inspect.includes('ARRAY_A'));
+  assert.match(inspect, /\$wpdb->last_error[\s\S]*?return \[\s*'status'\s*=>\s*'blocked'\s*\];/);
+
+  // Any historical row, even empty, denies admission; customized Reports also blocks.
+  assert.match(inspect, /foreach\s*\(\s*array_slice\s*\(\s*\$names\s*,\s*0\s*,\s*5\s*\)\s+as\s+\$name\s*\)\s*\{\s*if\s*\(\s*null !== \$rows\[\$name\]\s*\)\s*\{\s*return \[\s*'status' => 'blocked'\s*\];/);
+  assert.match(inspect, /null !== \$rows\[self::SETTINGS_OPTION\][\s\S]*?reports_design_is_default\(\s*\$rows\[self::SETTINGS_OPTION\]\s*\)[\s\S]*?return \[\s*'status' => 'blocked'\s*\];/);
+  assert.ok(inspect.includes("return [ 'status' => 'active' ];"));
+
+  const codeOnly = authority.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  for (const pattern of [
+    /\bget_option\s*\(/, /\bupdate_option\s*\(/, /\badd_option\s*\(/,
+    /\bdelete_option\s*\(/, /\bMigration(?:Inventory|Backup)?::/,
+  ]) assert.doesNotMatch(codeOnly, pattern);
 });
 
 test('Reports Profile v2 requires active native authority, full witness and guarded compensation', () => {
