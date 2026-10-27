@@ -1,133 +1,35 @@
-"""Source-only contract for the isolated G1d-A2.2 WP-CLI migration gate.
-
-These tests never start WordPress or MariaDB and never execute SQL.
-A separate, explicitly authorized Level 2 run supplies runtime evidence.
-"""
+"""Read-only clean-v1 WP-CLI smoke source contract."""
 
 from pathlib import Path
-import re
 import unittest
-
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT / "tests" / "bin" / "run-cli-smoke-scenario.sh"
-FIXTURE = ROOT / "tests" / "bin" / "design-document-migration-conformance.php"
 RUNNER = ROOT / "tools" / "integration" / "execution.py"
 
 
-class DesignDocumentMigrationCliGateTest(unittest.TestCase):
-    def test_fixture_is_called_after_real_wp_cli_install(self):
+class NativeV1CliGateTest(unittest.TestCase):
+    def test_clean_native_authority_is_read_after_activation(self):
         shell = CLI.read_text(encoding="utf-8")
-        call = 'wp_cli eval-file "$ROOT/tests/bin/design-document-migration-conformance.php"'
         self.assertIn("wp_cli plugin activate core-blueprint", shell)
-        self.assertIn(call, shell)
+        self.assertIn("Authority::inspect()", shell)
+        self.assertIn("Repository::get(", shell)
+        self.assertIn('native_authority" != "active"', shell)
+        self.assertIn('native_reports" != "missing"', shell)
         self.assertLess(
             shell.index("wp_cli plugin activate core-blueprint"),
-            shell.index(call),
+            shell.index("Authority::inspect()"),
         )
-        self.assertIn("[A2.2] final prepare-only conformance PASS", shell)
+        self.assertIn("[B0] real WP-CLI smoke scenario PASS", shell)
+        for forbidden in (
+            "Migration::prepare(", "MigrationBackup::",
+            "migration-conformance.php", "db reset", "db drop", "wp_cli eval-file",
+        ):
+            self.assertNotIn(forbidden, shell)
 
-    def test_canonical_level2_runs_the_cli_gate(self):
+    def test_level2_keeps_isolated_cli_gate(self):
         runner = RUNNER.read_text(encoding="utf-8")
         self.assertIn('"tests/bin/run-cli-smoke-scenario.sh"', runner)
-
-    def test_fixture_rejects_non_isolated_database_and_proves_rollback(self):
-        source = FIXTURE.read_text(encoding="utf-8")
-        for required in (
-            "CB_BASE_TEST_SLOT",
-            "core_blueprint_base_",
-            "CB_CLI_TABLE_PREFIX",
-            "Migration::prepare()",
-            "Migration::freshness()",
-            "MigrationBackup::read_verified()",
-            "START TRANSACTION",
-            "CREATE TRIGGER",
-            "SIGNAL SQLSTATE '45000'",
-            "partial inserts fully rolled back",
-            "source_changed",
-            "target_changed",
-            "no active cutover marker",
-            "preexisting target-row conflict",
-            "cb_a22_clear_preparation",
-        ):
-            with self.subTest(required=required):
-                self.assertIn(required, source)
-
-    def test_isolation_guard_matches_canonical_runner_slot_contract(self):
-        source = FIXTURE.read_text(encoding="utf-8")
-        match = re.search(r"preg_match\( '(/[^']+/D)', \$slot \)", source)
-        self.assertIsNotNone(
-            match, "PHP fixture slot guard must expose one testable regex"
-        )
-        php_regex = match.group(1)
-        self.assertTrue(php_regex.startswith("/") and php_regex.endswith("/D"))
-        matcher = re.compile(php_regex[1:-2])
-        self.assertIn("strlen( $slot ) <= 24", source)
-
-        for slot in (
-            "g1d_a22_20261017",
-            "g1d_a22r6_20261019",
-            "designer_i18n_20261019",
-            "designer_contract_1019",
-        ):
-            with self.subTest(valid_slot=slot):
-                self.assertLessEqual(len(slot), 24)
-                self.assertIsNotNone(matcher.fullmatch(slot))
-        for slot in (
-            "", "UPPERCASE", "_leading", "trailing_", "two__underscores",
-            "bad-hyphen", "bad.dot", "bad/path", "bad\\nnewline",
-            "a" * 25,
-        ):
-            with self.subTest(invalid_slot=slot):
-                self.assertTrue(len(slot) > 24 or matcher.fullmatch(slot) is None)
-
-    def test_a22_requires_authoritative_owned_runner_workspace(self):
-        source = FIXTURE.read_text(encoding="utf-8")
-        for required in (
-            ".base-integration-owner.json",
-            "0700 === ( fileperms( $workspace ) & 0777 )",
-            "fileowner( $workspace ) === fileowner( $owner_file )",
-            "$root === $workspace . '/wp'",
-            "'git_sha'",
-            "'database'",
-            "'new-only-no-cleanup'",
-            "ksort( $owner );",
-            "ksort( $expected_owner );",
-            "$owner === $expected_owner",
-            "$owner['wordpress'] === get_bloginfo( 'version' )",
-            "'owned Base Level 2 workspace'",
-            "'authoritative Base owner marker'",
-        ):
-            with self.subTest(required=required):
-                self.assertIn(required, source)
-
-    def test_isolation_guards_identify_failing_clause(self):
-        source = FIXTURE.read_text(encoding="utf-8")
-        for required in (
-            "'approved A2.2 test slot'",
-            "'owned Base Level 2 workspace'",
-            "'authoritative Base owner marker'",
-            "'isolated database name'",
-            "'isolated test workspace'",
-            "'loopback MariaDB binding'",
-            "'isolated WordPress table prefix'",
-            "'real WP-CLI runtime'",
-            "cb_a22_assert( $passes, 'isolation guard: ' . $label )",
-        ):
-            with self.subTest(guard=required):
-                self.assertIn(required, source)
-
-    def test_eval_file_rejects_strict_types_directive(self):
-        # WP-CLI evaluates eval-file within an existing PHP compilation unit.
-        source = FIXTURE.read_text(encoding="utf-8")
-        self.assertTrue(source.startswith("<?php\n"))
-        self.assertNotIn("declare(strict_types=1)", source)
-
-    def test_no_public_migration_endpoint(self):
-        source = FIXTURE.read_text(encoding="utf-8")
-        self.assertNotIn("register_rest_route(", source)
-        self.assertNotIn("register_activation_hook(", source)
-        self.assertNotIn("wp_ajax_cb_core_design_docs", source)
 
 
 if __name__ == "__main__":

@@ -16,12 +16,9 @@ namespace CoreBlueprint\Core\Ajax\Handlers;
 
 use CoreBlueprint\Core\Ajax\Guards;
 use CoreBlueprint\Core\Ajax\Request;
-use CoreBlueprint\Core\Log\AuditLog;
 use CoreBlueprint\Core\Reports\Composer\MaintenanceTemplate;
 use CoreBlueprint\Core\Reports\DesignerPreview;
-use CoreBlueprint\Core\Reports\ReportBranding;
 use CoreBlueprint\Core\Reports\ReportBrandingInput;
-use CoreBlueprint\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -35,126 +32,17 @@ final class Branding {
 		add_action( 'wp_ajax_cb_core_preview_report_branding', [ __CLASS__, 'preview' ] );
 	}
 
+	/** Legacy AJAX writers are permanently non-authoritative. */
 	public static function save(): void {
 		Request::nonce( 'cb_core_admin' );
 		self::require_manage_branding();
-		try {
-			$branding = self::normalized_request();
-			$template = self::normalized_template_request();
-		} catch ( \InvalidArgumentException $error ) {
-			wp_send_json_error( [ 'message' => __( 'The Reports design is invalid.', 'core-blueprint' ) ], 422 );
-		} catch ( \Throwable $error ) {
-			wp_send_json_error( [ 'message' => __( 'Reports storage is unavailable.', 'core-blueprint' ) ], 503 );
-		}
-		$expected = self::expected_revision();
-		$authority = \CoreBlueprint\Core\Design\Document\Authority::inspect();
-		if ( 'active' === $authority['status'] ) {
-			$result = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::save( $expected, $branding, $template );
-			self::respond_canonical( $result );
-		}
-		if ( ! in_array( $authority['status'], [ 'legacy', 'prepared' ], true ) ) {
-			wp_send_json_error( [ 'message' => __( 'Reports storage is blocked.', 'core-blueprint' ) ], 503 );
-		}
-		if ( 'legacy' !== $expected ) {
-			wp_send_json_error( [ 'message' => __( 'Reload the Reports Designer before saving.', 'core-blueprint' ) ], 409 );
-		}
-
-		$settings = Settings::get();
-		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
-		$composer = is_array( $reports['composer'] ?? null ) ? $reports['composer'] : [];
-		$reports['branding'] = $branding;
-		$composer['maintenance'] = $template;
-		$reports['composer'] = $composer;
-		$updated = Settings::set_paths( [
-			'reports.branding' => $branding,
-			'reports.composer.maintenance' => $template,
-		], 'preferences.reports_designer' );
-		self::verify_legacy_write( $updated, $branding, $template, __( 'Reports save could not be verified.', 'core-blueprint' ) );
-		if ( $updated ) {
-			AuditLog::log( 'reports.designer_updated', 'notice', [ 'by' => get_current_user_id() ] );
-		}
-		self::respond_design( $branding, $template, 'legacy' );
+		wp_send_json_error( [ 'message' => __( 'Use the Designer Platform to save Reports designs.', 'core-blueprint' ) ], 409 );
 	}
 
 	public static function reset(): void {
 		Request::nonce( 'cb_core_admin' );
 		self::require_manage_branding();
-		$expected = self::expected_revision();
-		$authority = \CoreBlueprint\Core\Design\Document\Authority::inspect();
-		if ( 'active' === $authority['status'] ) {
-			$result = \CoreBlueprint\Core\Reports\DesignDocumentAdapter::reset( $expected );
-			self::respond_canonical( $result );
-		}
-		if ( ! in_array( $authority['status'], [ 'legacy', 'prepared' ], true ) ) {
-			wp_send_json_error( [ 'message' => __( 'Reports storage is blocked.', 'core-blueprint' ) ], 503 );
-		}
-		if ( 'legacy' !== $expected ) {
-			wp_send_json_error( [ 'message' => __( 'Reload the Reports Designer before resetting.', 'core-blueprint' ) ], 409 );
-		}
-		$defaults = ReportBranding::settings_defaults();
-		$template = MaintenanceTemplate::defaults();
-		$settings = Settings::get();
-		$reports = is_array( $settings['reports'] ?? null ) ? $settings['reports'] : [];
-		$composer = is_array( $reports['composer'] ?? null ) ? $reports['composer'] : [];
-		$reports['branding'] = $defaults;
-		$composer['maintenance'] = $template;
-		$reports['composer'] = $composer;
-		$updated = Settings::set_paths( [
-			'reports.branding' => $defaults,
-			'reports.composer.maintenance' => $template,
-		], 'preferences.reports_designer' );
-		self::verify_legacy_write( $updated, $defaults, $template, __( 'Reports reset could not be verified.', 'core-blueprint' ) );
-		if ( $updated ) {
-			AuditLog::log( 'reports.designer_reset', 'notice', [ 'by' => get_current_user_id() ] );
-		}
-		self::respond_design( $defaults, $template, 'legacy' );
-	}
-
-	/** Verify the actual stored legacy fields, never a stale request cache. */
-	private static function verify_legacy_write( bool $changed, array $branding, array $template, string $failure_message ): void {
-		$status = Settings::last_write_status();
-		if ( ! $changed && 'unchanged' !== $status ) {
-			wp_send_json_error( [ 'message' => $failure_message, 'code' => 'reports_settings_conflict' ], 'conflict' === $status || 'refused' === $status ? 409 : 503 );
-		}
-		$source = \CoreBlueprint\Core\Settings\OptionCas::read();
-		$reports = 'ok' === ( $source['status'] ?? '' ) ? (array) ( $source['value']['reports'] ?? [] ) : [];
-		if ( 'ok' !== ( $source['status'] ?? '' )
-			|| ( $reports['branding'] ?? ReportBranding::settings_defaults() ) !== $branding
-			|| ( $reports['composer']['maintenance'] ?? MaintenanceTemplate::defaults() ) !== $template ) {
-			wp_send_json_error( [ 'message' => $failure_message, 'code' => 'reports_settings_unverified' ], 503 );
-		}
-	}
-
-	private static function expected_revision(): string {
-		return isset( $_POST['expected_revision'] ) && is_string( $_POST['expected_revision'] )
-			? (string) wp_unslash( $_POST['expected_revision'] ) : '';
-	}
-
-	private static function respond_canonical( array $result ): never {
-		if ( 'saved' !== ( $result['status'] ?? '' ) ) {
-			$reason = (string) ( $result['status'] ?? 'error' );
-			wp_send_json_error(
-				[ 'message' => __( 'Reports design could not be saved. Reload if it has changed.', 'core-blueprint' ) ],
-				'conflict' === $reason ? 409 : ( 'invalid' === $reason ? 422 : 503 )
-			);
-		}
-		$document = $result['document'] ?? null;
-		if ( ! is_array( $document ) || ! is_string( $result['revision'] ?? null )
-			|| ! \CoreBlueprint\Core\Reports\DesignDocumentAdapter::valid_document( $document ) ) {
-			wp_send_json_error( [ 'message' => __( 'Reports save readback failed.', 'core-blueprint' ) ], 503 );
-		}
-		self::respond_design( $document['branding'], $document['composer']['maintenance'], $result['revision'] );
-	}
-
-	private static function respond_design( array $branding, array $template, string $revision ): never {
-		$logo_id = (int) ( $branding['logo_attachment_id'] ?? 0 );
-		$logo_url = $logo_id > 0 ? ReportBranding::attachment_url( $logo_id, 'medium' ) : '';
-		wp_send_json_success( $branding + [
-			'logo_url' => $logo_url,
-			'template' => $template,
-			'revision' => $revision,
-			'document' => [ 'branding' => $branding, 'composer' => [ 'maintenance' => $template ] ],
-		] );
+		wp_send_json_error( [ 'message' => __( 'Use the Designer Platform to reset Reports designs.', 'core-blueprint' ) ], 409 );
 	}
 
 	/**

@@ -92,19 +92,23 @@ printf '%s\n' "$status_output"
 echo "[B0] Read-only Base CLI command PASS"
 
 
-# Run the A2.2 migration scenario on this exclusively owned CLI fixture site.
-# WP_UnitTestCase normally has an ambient transaction: only this independent
-# WP-CLI request proves START TRANSACTION/COMMIT/ROLLBACK on real InnoDB.
-# The PHP fixture rejects any database other than this exact new A2.2 test slot.
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-echo "[A2.2] starting isolated prepare-only database conformance"
-migration_output="$(wp_cli eval-file "$ROOT/tests/bin/design-document-migration-conformance.php")" || {
-  printf '%s\n' "$migration_output" >&2
+# C3 clean-v1 smoke, read-only against an exclusively installed CLI site.
+# No historical migration, seed, repair, delete or direct document write.
+native_authority="$(wp_cli eval 'echo (string) ( \CoreBlueprint\Core\Design\Document\Authority::inspect()["status"] ?? "blocked" );')" || {
+  echo "[C3] Native v1 authority inspection failed." >&2
   exit 1
 }
-printf '%s\n' "$migration_output"
-grep -Fq '[A2.2] final prepare-only conformance PASS' <<<"$migration_output" || {
-  echo '[A2.2] required migration proof marker missing' >&2
+if [[ "$native_authority" != "active" ]]; then
+  echo "[C3] Native v1 authority refused: $native_authority" >&2
+  exit 1
+fi
+native_reports="$(wp_cli eval '$read = \CoreBlueprint\Core\Design\Document\Repository::get( \CoreBlueprint\Core\Design\Document\Repository::REPORTS, "maintenance" ); echo (string) ( $read["status"] ?? "blocked" );')" || {
+  echo "[C3] Read-only native Reports inspection failed." >&2
   exit 1
 }
+if [[ "$native_reports" != "missing" ]]; then
+  echo "[C3] Fresh CLI site must have no native Reports row." >&2
+  exit 1
+fi
+echo "[C3] clean-v1 authority and unpersisted Reports default context PASS"
 echo "[B0] real WP-CLI smoke scenario PASS"

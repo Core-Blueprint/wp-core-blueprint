@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Design\Editor;
 
 use CoreBlueprint\Core\Design\Bootstrap as DesignerBootstrap;
+use CoreBlueprint\Core\Design\Document\Authority;
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Integrity\ApprovedManifestSource;
 use CoreBlueprint\Core\Design\Persistence\BaseDocumentRepositoryPort;
@@ -147,6 +148,9 @@ final class PlatformTransport {
 		$registry = DesignerBootstrap::frozen_registry();
 		$profile_info = $registry->profile( $profile );
 		if ( null === $profile_info ) return self::deny( 'HOST_CONTEXT_REFUSED' );
+		if ( 'active' !== ( Authority::inspect()['status'] ?? 'blocked' ) ) {
+			return self::deny( 'SAVE_AUTHORITY_UNAVAILABLE', 503 );
+		}
 		$loaded = Repository::get( $identity['type'], $identity['key'] );
 		if ( 'found' === ( $loaded['status'] ?? null ) ) {
 			$doc = $loaded['document'];
@@ -214,6 +218,10 @@ final class PlatformTransport {
 		if ( null === $identity || ( $data['resourceType'] ?? null ) !== $identity['type'] ) {
 			return new \WP_REST_Response( [ 'status' => 'refused' ], 403 );
 		}
+		// Refuse ambiguous authority before beginning a Save transaction.
+		if ( 'active' !== ( Authority::inspect()['status'] ?? 'blocked' ) ) {
+			return new \WP_REST_Response( [ 'status' => 'refused' ], 409 );
+		}
 		$registry = DesignerBootstrap::frozen_registry();
 		$selected = $registry->profile( $profile );
 		if ( null === $selected || $selected['projectSchema'] !== ( $data['projectSchema'] ?? null )
@@ -230,7 +238,8 @@ final class PlatformTransport {
 			(string) ( $data['expectedStoreRevision'] ?? '' ), $project, $fields
 		);
 		$authorizer = static fn ( SaveEnvelope $item ): bool =>
-			self::authorized_resource( $item->profile_id, $item->resource_type, $item->resource_key )
+			'active' === ( Authority::inspect()['status'] ?? 'blocked' )
+			&& self::authorized_resource( $item->profile_id, $item->resource_type, $item->resource_key )
 			&& $item->resource_type === $identity['type']
 			&& $item->registry_fingerprint === $registry->fingerprint();
 		$normalize = static function ( SaveEnvelope $item, ?array $existing ) use ( $registry ): array {
@@ -247,7 +256,8 @@ final class PlatformTransport {
 				'project' => $item->project, 'fields' => $item->fields ];
 		};
 		$create = static fn ( SaveEnvelope $item ): bool =>
-			'0' === $item->expected_revision
+			'active' === ( Authority::inspect()['status'] ?? 'blocked' )
+			&& '0' === $item->expected_revision
 			&& ( ( Mail::PROFILE === $item->profile_id && Repository::MAIL === $item->resource_type )
 				|| ( Reports::PROFILE === $item->profile_id && Repository::REPORTS === $item->resource_type
 					&& 'maintenance' === $item->resource_key ) )

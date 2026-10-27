@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Mail\Designer;
 
+use CoreBlueprint\Core\Design\Document\Authority;
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Profile\Mail\Validator;
 
@@ -26,6 +27,9 @@ final class TemplateRepository {
 	public static function get( string $template_id ): ?array {
 		$definition = TemplateRegistry::get( $template_id );
 		if ( ! is_array( $definition ) ) return null;
+		if ( 'active' !== ( Authority::inspect()['status'] ?? 'blocked' ) ) {
+			throw new DocumentUnavailable( 'blocked' );
+		}
 		$read = Repository::get( Repository::MAIL, $template_id );
 		$status = (string) ( $read['status'] ?? 'unavailable' );
 		if ( 'found' === $status ) {

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Reports;
 
+use CoreBlueprint\Core\Design\Document\Authority;
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter;
 use CoreBlueprint\Core\Reports\Composer\NativeComposition;
@@ -50,6 +51,9 @@ final class DesignDocumentAdapter {
 
 	/** @return array<string,mixed> */
 	public static function read(): array {
+		if ( 'active' !== ( Authority::inspect()['status'] ?? 'blocked' ) ) {
+			return [ 'status' => 'blocked' ];
+		}
 		$result = Repository::get( Repository::REPORTS, self::KEY );
 		if ( 'found' !== ( $result['status'] ?? null ) ) {
 			return [ 'status' => $result['status'] ?? 'blocked' ];

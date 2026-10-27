@@ -74,16 +74,18 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 		) );
 	}
 
-	public function test_legacy_ajax_branch_is_explicit_and_cannot_gain_native_authority(): void {
+	public function test_legacy_ajax_writers_are_denied_without_bypassing_foundation(): void {
 		$handler = $this->source( 'src/Ajax/Handlers/Branding.php' );
 		$preview = $this->source( 'src/Reports/DesignerPreview.php' );
 		$adapter = $this->source( 'src/Reports/DesignDocumentAdapter.php' );
-		self::assertStringContainsString( '\CoreBlueprint\Core\Design\Document\Authority::inspect()', $handler );
-		self::assertStringContainsString( "'active' === \$authority['status']", $handler );
-		self::assertStringContainsString( "DesignDocumentAdapter::save( \$expected, \$branding, \$template )", $handler );
-		self::assertStringContainsString( "if ( ! in_array( \$authority['status'], [ 'legacy', 'prepared' ], true ) )", $handler );
-		self::assertStringContainsString( 'Settings::set_paths( [', $handler );
+		self::assertStringContainsString( "Request::nonce( 'cb_core_admin' )", $handler );
+		self::assertStringContainsString( 'self::require_manage_branding()', $handler );
+		self::assertStringNotContainsString( 'Settings::set_paths(', $handler );
+		self::assertStringNotContainsString( 'DesignDocumentAdapter::save(', $handler );
+		self::assertStringNotContainsString( 'DesignDocumentAdapter::reset(', $handler );
+		self::assertStringContainsString( 'wp_send_json_error(', $handler );
 		self::assertStringContainsString( "return [ 'status' => 'blocked' ];", $adapter );
+		self::assertStringContainsString( 'Authority::inspect()', $adapter );
 		self::assertStringContainsString( 'render( ?array $native = null )', $preview );
 		self::assertStringContainsString( 'FlowRenderApi::preview_html(', $preview );
 	}
