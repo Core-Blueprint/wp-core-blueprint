@@ -78,10 +78,10 @@ final class CB_Mail_Designer_Styling_Contract_Test extends WP_UnitTestCase {
 			$id => [ 'subject' => 'Legacy override', 'project' => $native['project'] ],
 		], false );
 		self::assertSame( [], TemplateRepository::overrides() );
-		$loaded = TemplateRepository::get( $id );
-		self::assertIsArray( $loaded );
-		self::assertNotSame( 'Legacy override', $loaded['subject'] );
-		self::assertSame( 'native', $loaded['authority'] );
-		self::assertTrue( Repository::valid_revision( (string) $loaded['revision'] ) );
+		// Even a historical option is an ambiguous source: native authority
+		// must refuse it, never silently use it or fall back to defaults.
+		self::assertSame( 'blocked', \CoreBlueprint\Core\Design\Document\Authority::inspect()['status'] );
+		$this->expectException( \CoreBlueprint\Core\Mail\Designer\DocumentUnavailable::class );
+		TemplateRepository::get( $id );
 	}
 }
