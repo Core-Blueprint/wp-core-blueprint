@@ -266,19 +266,50 @@ def stage_pinned_environment(version: str, sha: str) -> None:
     # Exact source-copy parity is verified separately, before any PHP/WordPress code executes.
 
 
-def verify_runtime_parity(sha: str) -> None:
-    assert_owner(sha)
+def canonical_packager():
+    """Reuse the single canonical builder; do not mint synthetic test manifests."""
     builder_path = SOURCE / "tools/build-release"
     loader = importlib.machinery.SourceFileLoader("cb_base_release_parity", str(builder_path))
     spec = importlib.util.spec_from_loader(loader.name, loader)
     builder = importlib.util.module_from_spec(spec)
     loader.exec_module(builder)
+    return builder
+
+
+def stage_packaged_runtime(sha: str) -> None:
+    """Transform only the newly owned test copy into the genuine Base package."""
+    assert_owner(sha)
+    if preflight.read_source_commit(SOURCE) != sha:
+        raise preflight.PreflightError("Base source moved before packaging.")
+    builder = canonical_packager()
     if builder.runtime_hashes(SOURCE) != builder.runtime_hashes(PLUGIN_DIR):
-        raise preflight.PreflightError(
-            "Staged WordPress plugin differs from exact release source; refusing tests."
-        )
+        raise preflight.PreflightError("Staged source is not the exact committed runtime.")
+    payloads = builder.package_payloads(
+        SOURCE, builder.collect_files(SOURCE), builder.design_module_revision(SOURCE)
+    )
+    for relative, data in payloads.items():
+        staged = PLUGIN_DIR / relative
+        if staged.is_symlink() or (staged.exists() and not staged.is_file()):
+            raise preflight.PreflightError("Packaged runtime path is not an ordinary file.")
+        if relative == builder.PLATFORM_MANIFEST:
+            with staged.open("xb") as output:
+                output.write(data)
+        else:
+            if not staged.is_file():
+                raise preflight.PreflightError("Packaged runtime file missing from exact Git stage.")
+            staged.write_bytes(data)
+    verify_runtime_parity(sha)
+
+
+def verify_runtime_parity(sha: str) -> None:
+    assert_owner(sha)
     if preflight.read_source_commit(SOURCE) != sha:
         raise preflight.PreflightError("Base source SHA changed during staging.")
+    builder = canonical_packager()
+    if not builder.packaged_runtime_matches(SOURCE, PLUGIN_DIR):
+        raise preflight.PreflightError(
+            "Staged WordPress plugin differs from exact canonical package; refusing tests."
+        )
 
 
 def test_environment(version: str) -> dict[str, str]:
@@ -504,6 +535,7 @@ def prepared_pipeline() -> None:
         create_new_workspace(sha, version)
         create_fresh_database(sha)
         stage_pinned_environment(version, sha)
+        stage_packaged_runtime(sha)
         run_full_suite(version, sha)
 
 
