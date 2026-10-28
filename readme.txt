@@ -5,7 +5,7 @@ Tags: security, audit-log, permissions, user-roles, admin-tools
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -159,6 +159,11 @@ The public source repository is https://github.com/Core-Blueprint/wp-core-bluepr
 5. Permissions separates WordPress Administrator access from trusted Core Blueprint Operator authority.
 
 == Changelog ==
+
+= 1.0.1 =
+
+* Align Mail Templates and Maintenance Reports Designer entry actions with the branded Core Blueprint button.
+* Prepare the next stable Base update with the shared Designer Foundation additions and updated multilingual release metadata.
 
 = 1.0.0 =
 
