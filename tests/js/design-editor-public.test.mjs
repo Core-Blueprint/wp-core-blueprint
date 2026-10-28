@@ -976,3 +976,108 @@ test('CM-1 stays optional, flat and command-authority-neutral', async () => {
 	assert.match(source, /close\(\{restoreFocus: false\}\)/);
 	assert.match(source, /listeners\.splice\(0\)\.forEach\(off => off\(\)\)/);
 });
+
+test('CM-1 refuses changed permissions, context and disabled actions with focus cleanup', () => {
+	class Mock {
+		constructor(doc) {
+			this.ownerDocument = doc; this.handlers = {}; this.children = [];
+			this.parentElement = null; this.style = {}; this.dataset = {};
+			this.attributes = {}; this.isConnected = true; this.hidden = false;
+		}
+		addEventListener(type, fn) { (this.handlers[type] ??= []).push(fn); }
+		removeEventListener(type, fn) {
+			this.handlers[type] = (this.handlers[type] || []).filter(item => item !== fn);
+		}
+		dispatchEvent(event) {
+			event.target ??= this;
+			for (const fn of this.handlers[event.type] || []) fn(event);
+		}
+		contains(target) { return target === this || this.children.some(child => child.contains(target)); }
+		closest() { return null; }
+		append(...elements) {
+			for (const element of elements) { this.children.push(element); element.parentElement = this; }
+		}
+		replaceChildren(...elements) {
+			this.children = [];
+			for (const element of elements) {
+				if (element.fragment) this.append(...element.children);
+				else this.append(element);
+			}
+		}
+		getBoundingClientRect() { return {left: 20, top: 30, bottom: 70, width: 180, height: 60}; }
+		setAttribute(name, value) { this.attributes[name] = value; }
+		getAttribute(name) { return this.attributes[name]; }
+		remove() {
+			if (this.parentElement) {
+				this.parentElement.children = this.parentElement.children.filter(child => child !== this);
+			}
+			this.isConnected = false;
+		}
+		focus() { this.ownerDocument.activeElement = this; }
+	}
+	const documentRef = new Mock(null);
+	documentRef.ownerDocument = documentRef;
+	documentRef.body = new Mock(documentRef);
+	documentRef.defaultView = {innerWidth: 800, innerHeight: 500};
+	documentRef.documentElement = {clientWidth: 800, clientHeight: 500};
+	documentRef.createElement = () => new Mock(documentRef);
+	documentRef.createDocumentFragment = () => {
+		const fragment = new Mock(documentRef);
+		fragment.fragment = true;
+		return fragment;
+	};
+	const root = new Mock(documentRef), viewport = new Mock(documentRef);
+	const node = new Mock(documentRef);
+	root.append(viewport);
+	viewport.append(node);
+	let context = 'document/1', allowed = true, disabled = false;
+	const invocations = [];
+	const controller = publicEditor.createDesignerContextMenu({
+		root, viewport,
+		getContextKey: () => context,
+		getItems: () => [{id: 'duplicate', label: 'Duplicate', disabled}],
+		canInvoke: () => allowed,
+		onInvoke: action => invocations.push(action),
+	});
+	const unregister = controller.registerTarget(node, {kind: 'node', id: 'n1'});
+	const rightClick = () => {
+		const event = {type: 'contextmenu', target: node, clientX: 300, clientY: 200,
+			preventDefault() {this.prevented = true;}};
+		viewport.dispatchEvent(event);
+		assert.equal(event.prevented, true);
+		return documentRef.body.children[0];
+	};
+	let menu = rightClick();
+	menu.children[0].dispatchEvent({type: 'click'});
+	assert.equal(invocations.length, 1);
+	assert.equal(documentRef.activeElement, node);
+
+	menu = rightClick();
+	allowed = false;
+	menu.children[0].dispatchEvent({type: 'click'});
+	assert.equal(invocations.length, 1);
+
+	allowed = true;
+	menu = rightClick();
+	context = 'document/2';
+	menu.children[0].dispatchEvent({type: 'click'});
+	assert.equal(invocations.length, 1);
+
+	menu = rightClick();
+	disabled = true;
+	menu.children[0].dispatchEvent({type: 'click'});
+	assert.equal(invocations.length, 1);
+
+	disabled = false;
+	const key = {type: 'keydown', target: node, key: 'F10', shiftKey: true,
+		preventDefault() {this.prevented = true;}};
+	root.dispatchEvent(key);
+	assert.equal(key.prevented, true);
+	documentRef.body.children[0].dispatchEvent({type: 'keydown', key: 'Escape',
+		preventDefault() {}});
+	assert.equal(documentRef.activeElement, node);
+	assert.equal(unregister(), true);
+	controller.destroy();
+	assert.equal(documentRef.body.children.length, 0);
+	assert.throws(() => controller.open(), /DESTROYED/);
+});
