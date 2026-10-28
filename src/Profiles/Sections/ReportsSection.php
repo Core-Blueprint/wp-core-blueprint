@@ -11,6 +11,7 @@ use CoreBlueprint\Core\Settings\OptionCas;
 use CoreBlueprint\Core\Reports\Composer\NativeComposition;
 use CoreBlueprint\Core\Settings;
 use CoreBlueprint\Core\Design\Document\Authority;
+use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Reports\DesignDocumentAdapter;
 
 defined( 'ABSPATH' ) || exit;
