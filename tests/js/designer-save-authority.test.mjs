@@ -39,6 +39,7 @@ const setup = (authorization) => {
   bind(shell, save);
   return {
     save, shell,
+    setAuthorization(value) { attrs.set('data-cb-design-shell-save-authorized', value); },
     dispatch(state) { onSave({ detail: { state, message: state } }); },
   };
 };
@@ -94,4 +95,15 @@ test('explicitly unauthorized Save remains denied when its outcome becomes UNKNO
   ui.dispatch('idle');
   assert.equal(ui.save.disabled, true);
   assert.equal(ui.shell.dataset.cbDesignShellSaveOutcomeUnknown, 'true');
+});
+
+test('consumer may revoke Save after initialization and no later status may re-enable it', () => {
+  const ui = setup('true');
+  ui.dispatch('idle');
+  assert.equal(ui.save.disabled, false);
+  ui.setAuthorization('false');
+  for (const state of ['error', 'idle', 'saving', 'saved', 'idle']) {
+    ui.dispatch(state);
+    assert.equal(ui.save.disabled, true, 'revoked Save became active on ' + state);
+  }
 });
