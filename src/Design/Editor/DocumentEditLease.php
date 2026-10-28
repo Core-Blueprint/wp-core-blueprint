@@ -35,6 +35,10 @@ final class DocumentEditLease {
             return [ 'status' => 'unavailable' ];
         }
 
+        if ( ! self::transactional_store_available() ) {
+            return [ 'status' => 'unavailable' ];
+        }
+
         $key     = self::key( $type, $id );
         $expires = time() + self::TTL_SECONDS;
         $value   = self::encode( $expires, $actor, $token );
@@ -86,6 +90,9 @@ final class DocumentEditLease {
             return [ 'status' => 'invalid' ];
         }
 
+        if ( ! self::transactional_store_available() ) {
+            return [ 'status' => 'unavailable' ];
+        }
         $key = self::key( $type, $id );
         for ( $attempt = 0; $attempt < 2; $attempt++ ) {
             $stored = self::read( $key );
@@ -139,12 +146,7 @@ final class DocumentEditLease {
         if ( '1' !== (string) $in_transaction || '' !== (string) $wpdb->last_error ) {
             return false;
         }
-        $wpdb->last_error = '';
-        $engine = $wpdb->get_var( $wpdb->prepare(
-            'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s LIMIT 1',
-            $wpdb->options
-        ) );
-        if ( 0 !== strcasecmp( (string) $engine, 'InnoDB' ) || '' !== (string) $wpdb->last_error ) {
+        if ( ! self::transactional_store_available() ) {
             return false;
         }
         $stored = self::read( self::key( $type, $id ), true );
@@ -170,6 +172,18 @@ final class DocumentEditLease {
             'DELETE FROM %i WHERE option_name = %s AND BINARY option_value = BINARY %s',
             $wpdb->options, $key, $stored['value']
         ) ) && '' === (string) $wpdb->last_error;
+    }
+
+    /** Editing locks must not admit a session that cannot perform safe Save. */
+    private static function transactional_store_available(): bool {
+        global $wpdb;
+        $wpdb->last_error = '';
+        $engine = $wpdb->get_var( $wpdb->prepare(
+            'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s LIMIT 1',
+            $wpdb->options
+        ) );
+        return '' === (string) $wpdb->last_error
+            && 0 === strcasecmp( (string) $engine, 'InnoDB' );
     }
 
     private static function current_actor( string $type, string $id ): int {
