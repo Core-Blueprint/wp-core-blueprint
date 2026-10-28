@@ -18,6 +18,7 @@ defined( 'ABSPATH' ) || exit;
  * No table, migration, scheduler, REST route or parallel Designer is created.
  */
 final class DocumentEditLease {
+    public const API_VERSION = 1;
     public const TTL_SECONDS = 180;
     private const PREFIX = 'cb_core_edit_lease_v1_';
 
