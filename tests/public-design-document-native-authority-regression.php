@@ -34,6 +34,10 @@ namespace {
 	$GLOBALS['cb_c3_blog'] = 1;
 }
 namespace CoreBlueprint\Core\Design\Document {
+	final class Repository {
+		public const MAIL = 'base.mail-template';
+		public const REPORTS = 'base.maintenance-report-design';
+	}
 	final class Schema {
 		public static bool $healthy = true;
 		public static function healthy(): bool { return self::$healthy; }
@@ -55,10 +59,14 @@ namespace CoreBlueprint\Core {
 namespace {
 	require_once dirname( __DIR__ ) . '/src/Design/Document/Authority.php';
 	use CoreBlueprint\Core\Design\Document\Authority;
+	use CoreBlueprint\Core\Design\Document\Repository;
 	use CoreBlueprint\Core\Design\Document\Schema;
 
 	cb_c3_check( 'active' === Authority::inspect()['status'], 'clean fresh v1 admitted' );
 	cb_c3_check( count( $wpdb->reads ) === 6, 'six real primary DB option reads' );
+	cb_c3_check( 'active' === Authority::inspect( Repository::MAIL )['status'], 'clean Mail admitted' );
+	cb_c3_check( 'active' === Authority::inspect( Repository::REPORTS )['status'], 'clean Reports admitted' );
+	cb_c3_check( 'blocked' === Authority::inspect( 'unknown.document' )['status'], 'unknown type fails closed' );
 	$defaults = \CoreBlueprint\Core\Settings::defaults()['reports'];
 	$wpdb->rows['cb_core_settings'] = [ 'option_value' => serialize( [
 		'reports' => $defaults, 'other_policy' => [ 'retention_days' => 77 ],
@@ -68,6 +76,7 @@ namespace {
 	$custom['reports']['branding']['provider_name'] = 'historical customization';
 	$wpdb->rows['cb_core_settings']['option_value'] = serialize( $custom );
 	cb_c3_check( 'blocked' === Authority::inspect()['status'], 'custom Reports branding blocks' );
+	cb_c3_check( 'blocked' === Authority::inspect( Repository::REPORTS )['status'], 'Reports customization still blocked' );
 	$wpdb->rows['cb_core_settings']['option_value'] = 'broken-serialized-settings';
 	cb_c3_check( 'blocked' === Authority::inspect()['status'], 'corrupt Settings blocks' );
 	$wpdb->rows['cb_core_settings']['option_value'] = serialize( [ 'reports' => [] ] );
@@ -80,26 +89,46 @@ namespace {
 	] as $key ) {
 		$wpdb->rows[$key] = [ 'option_value' => '' ];
 		cb_c3_check( 'blocked' === Authority::inspect()['status'], 'legacy source refused: ' . $key );
+		$reports_expected = 'cb_core_mail_template_overrides' === $key ? 'active' : 'blocked';
+		cb_c3_check( $reports_expected === Authority::inspect( Repository::REPORTS )['status'], 'Reports scoped legacy source: ' . $key );
 		unset( $wpdb->rows[$key] );
 	}
+	// The full historical Mail value is never deleted, read into a native default
+	// or silently rewritten when a Reports document is admitted.
+	$wpdb->rows['cb_core_mail_template_overrides'] = [ 'option_value' => 'historical Mail customizations' ];
+	$preserved_rows = $wpdb->rows;
+	cb_c3_check( 'active' === Authority::inspect( Repository::REPORTS )['status'], 'Reports ignores only Mail sentinel' );
+	cb_c3_check( 'blocked' === Authority::inspect( Repository::MAIL )['status'], 'Mail remains blocked' );
+	cb_c3_check( $preserved_rows === $wpdb->rows, 'Mail history remains byte-for-byte unchanged' );
+	unset( $wpdb->rows['cb_core_mail_template_overrides'] );
 	$wpdb->fail = true;
 	cb_c3_check( 'blocked' === Authority::inspect()['status'], 'DB errors fail closed' );
+	cb_c3_check( 'blocked' === Authority::inspect( Repository::REPORTS )['status'], 'Reports DB error fails closed' );
 	$wpdb->fail = false;
 	Schema::$healthy = false;
 	cb_c3_check( 'blocked' === Authority::inspect()['status'], 'unhealthy schema fails closed' );
+	cb_c3_check( 'blocked' === Authority::inspect( Repository::REPORTS )['status'], 'Reports schema fails closed' );
 	Schema::$healthy = true;
 	$GLOBALS['cb_c3_blog'] = 0;
 	cb_c3_check( 'blocked' === Authority::inspect()['status'], 'invalid site identity fails closed' );
+	cb_c3_check( 'blocked' === Authority::inspect( Repository::REPORTS )['status'], 'Reports site identity fails closed' );
 
 	$root = dirname( __DIR__ );
 	$transport = file_get_contents( $root . '/src/Design/Editor/PlatformTransport.php' );
 	$mail = file_get_contents( $root . '/src/Mail/Designer/TemplateRepository.php' );
 	$reports = file_get_contents( $root . '/src/Reports/DesignDocumentAdapter.php' );
+	$reports_profile = file_get_contents( $root . '/src/Profiles/ReportsProfileTransaction.php' );
+	$reports_section = file_get_contents( $root . '/src/Profiles/Sections/ReportsSection.php' );
 	$branding = file_get_contents( $root . '/src/Ajax/Handlers/Branding.php' );
-	cb_c3_check( substr_count( $transport, 'Authority::inspect()' ) >= 3, 'REST context and Save guarded' );
+	cb_c3_check( substr_count( $transport, 'Authority::inspect(' ) === 4, 'REST context and Save guarded' );
 	cb_c3_check( str_contains( $transport, 'new TransactionalSave(' ), 'single canonical Save' );
+	cb_c3_check( str_contains( $transport, "Authority::inspect( \$identity['type'] )" ), 'context and save use resolved type' );
+	cb_c3_check( str_contains( $transport, 'Authority::inspect( $item->resource_type )' ), 'transaction callbacks use immutable intent type' );
 	cb_c3_check( str_contains( $mail, 'Authority::inspect()' ), 'Mail reader guarded' );
-	cb_c3_check( str_contains( $reports, 'Authority::inspect()' ), 'Reports reader guarded' );
+	cb_c3_check( str_contains( $reports, 'Authority::inspect( Repository::REPORTS )' ), 'Reports reader typed guard' );
+	cb_c3_check( substr_count( $reports_profile, 'Authority::inspect( Repository::REPORTS )' ) === 2, 'Reports Profile transaction typed guard' );
+	cb_c3_check( substr_count( $reports_section, 'Authority::inspect( Repository::REPORTS )' ) === 3, 'Reports Profile section typed guard' );
+	cb_c3_check( str_contains( $reports_section, 'use CoreBlueprint\\Core\\Design\\Document\\Repository;' ), 'Reports Profile section resolves canonical Repository namespace' );
 	cb_c3_check( ! str_contains( $branding, 'Settings::set_paths(' ), 'legacy AJAX Settings writes removed' );
 	cb_c3_check( str_contains( $branding, "Request::nonce( 'cb_core_admin' )" )
 		&& str_contains( $branding, 'self::require_manage_branding()' ), 'AJAX security preserved' );

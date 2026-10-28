@@ -52,8 +52,8 @@ test('Original WordPress security notifications are preserved with bounded opera
   assert.ok(!native.includes('getMessage()'));
 });
 
-test('Clean-v1 authority refuses historical sources and uncertain primary DB state without writes', () => {
-  const inspectStart = authority.indexOf('public static function inspect(): array');
+test('Native authority scopes Mail history to Mail and refuses global conflicts and uncertain DB state', () => {
+  const inspectStart = authority.indexOf('public static function inspect( string $resource_type = Repository::MAIL ): array');
   const reportsStart = authority.indexOf('private static function reports_design_is_default(');
   assert.ok(inspectStart >= 0 && reportsStart > inspectStart, 'native-v1 inspect method exists');
   const inspect = authority.slice(inspectStart, reportsStart);
@@ -86,8 +86,10 @@ test('Clean-v1 authority refuses historical sources and uncertain primary DB sta
   assert.ok(inspect.includes('ARRAY_A'));
   assert.match(inspect, /\$wpdb->last_error[\s\S]*?return \[\s*'status'\s*=>\s*'blocked'\s*\];/);
 
-  // Any historical row, even empty, denies admission; customized Reports also blocks.
-  assert.match(inspect, /foreach\s*\(\s*array_slice\s*\(\s*\$names\s*,\s*0\s*,\s*5\s*\)\s+as\s+\$name\s*\)\s*\{\s*if\s*\(\s*null !== \$rows\[\$name\]\s*\)\s*\{\s*return \[\s*'status' => 'blocked'\s*\];/);
+  // Only Reports can skip the Mail-specific sentinel; other historic rows remain denied.
+  assert.match(inspect, /foreach\s*\(\s*array_slice\s*\(\s*\$names\s*,\s*0\s*,\s*5\s*\)\s+as\s+\$name\s*\)/);
+  assert.match(inspect, /Repository::REPORTS\s*===\s*\$resource_type[\s\S]*?TemplateRepository::OPTION\s*===\s*\$name[\s\S]*?continue;/);
+  assert.match(inspect, /if\s*\(\s*null !== \$rows\[\$name\]\s*\)\s*\{\s*return \[\s*'status' => 'blocked'\s*\];/);
   assert.match(inspect, /null !== \$rows\[self::SETTINGS_OPTION\][\s\S]*?reports_design_is_default\(\s*\$rows\[self::SETTINGS_OPTION\]\s*\)[\s\S]*?return \[\s*'status' => 'blocked'\s*\];/);
   assert.ok(inspect.includes("return [ 'status' => 'active' ];"));
 
