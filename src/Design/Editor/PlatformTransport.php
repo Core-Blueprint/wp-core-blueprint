@@ -148,7 +148,7 @@ final class PlatformTransport {
 		$registry = DesignerBootstrap::frozen_registry();
 		$profile_info = $registry->profile( $profile );
 		if ( null === $profile_info ) return self::deny( 'HOST_CONTEXT_REFUSED' );
-		if ( 'active' !== ( Authority::inspect()['status'] ?? 'blocked' ) ) {
+		if ( 'active' !== ( Authority::inspect( $identity['type'] )['status'] ?? 'blocked' ) ) {
 			return self::deny( 'SAVE_AUTHORITY_UNAVAILABLE', 503 );
 		}
 		$loaded = Repository::get( $identity['type'], $identity['key'] );
@@ -219,7 +219,7 @@ final class PlatformTransport {
 			return new \WP_REST_Response( [ 'status' => 'refused' ], 403 );
 		}
 		// Refuse ambiguous authority before beginning a Save transaction.
-		if ( 'active' !== ( Authority::inspect()['status'] ?? 'blocked' ) ) {
+		if ( 'active' !== ( Authority::inspect( $identity['type'] )['status'] ?? 'blocked' ) ) {
 			return new \WP_REST_Response( [ 'status' => 'refused' ], 409 );
 		}
 		$registry = DesignerBootstrap::frozen_registry();
@@ -238,7 +238,7 @@ final class PlatformTransport {
 			(string) ( $data['expectedStoreRevision'] ?? '' ), $project, $fields
 		);
 		$authorizer = static fn ( SaveEnvelope $item ): bool =>
-			'active' === ( Authority::inspect()['status'] ?? 'blocked' )
+			'active' === ( Authority::inspect( $item->resource_type )['status'] ?? 'blocked' )
 			&& self::authorized_resource( $item->profile_id, $item->resource_type, $item->resource_key )
 			&& $item->resource_type === $identity['type']
 			&& $item->registry_fingerprint === $registry->fingerprint();
@@ -256,7 +256,7 @@ final class PlatformTransport {
 				'project' => $item->project, 'fields' => $item->fields ];
 		};
 		$create = static fn ( SaveEnvelope $item ): bool =>
-			'active' === ( Authority::inspect()['status'] ?? 'blocked' )
+			'active' === ( Authority::inspect( $item->resource_type )['status'] ?? 'blocked' )
 			&& '0' === $item->expected_revision
 			&& ( ( Mail::PROFILE === $item->profile_id && Repository::MAIL === $item->resource_type )
 				|| ( Reports::PROFILE === $item->profile_id && Repository::REPORTS === $item->resource_type
