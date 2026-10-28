@@ -18,6 +18,8 @@ import {
 	createDesignerLayerTree,
 	createDesignerSelectionController,
 	createDesignerDragDropController,
+	createDesignerCanvasNavigation,
+	createDesignerContextMenu,
 	resolveDesignerDropPlacement,
 	designerDropZoneId,
 	commands,
@@ -213,6 +215,42 @@ and have an accessible name. \`cb:design-canvas:navigationchange\` only
 observes view changes. No project, Save, Selection or History writes occur.
 The consumer owns Fit/Center buttons, node coordinate conversion, graph
 semantics and persistence.
+
+### Optional Designer Context Menu CM-1 (SOURCE candidate)
+
+The named ESM export \`createDesignerContextMenu\` is also available at
+\`window.cbCore.designEditor.shell.contextMenu.create\`. The installed
+Base capability is \`Assets::DESIGNER_CONTEXT_MENU_API >= 1\` and must match
+the same actual JS export. This controller is opt-in and does not alter
+Mail, Maintenance Reports, Contracts, Reports or their existing shell UI.
+
+\`createDesignerContextMenu({root, viewport, getContextKey, getItems,
+canInvoke, onInvoke, ariaLabel?})\` owns a temporary Base-themed flat menu
+with viewport-clamped fixed positioning. Registered canvas objects use
+\`registerTarget(element,{kind,id})\`, which returns an idempotent unregister
+callback. \`open({target?,clientX?,clientY?,invoker?})\` opens for the supplied
+registered target or empty canvas; \`close()\` and \`destroy()\` are provided.
+The viewport must be within the root; registered targets must be within
+the viewport and have stable IDs. Blank nested scene areas may use
+\`data-cb-design-canvas-background\` and the scene itself may use
+\`data-cb-design-canvas-scene\`.
+
+\`getItems({target})\` synchronously supplies up to 50 unique
+\`{id,label,disabled?}\` action descriptors. **No children/submenus in v1.**
+A right-click on a registered object or blank scene opens the menu.
+The focused target uses Shift+F10. Up/Down, Home/End, Enter/Space and Escape
+work through accessible menu/menuitem semantics; disabled items never
+execute and focus is restored on close.
+
+Immediately before dispatching an action, Base validates the original
+context key, that a registered target still exists, re-reads the action
+list, rejects a now-disabled/absent action, and requires synchronous
+\`canInvoke({actionId,target}) === true\`. Only then does it call
+\`onInvoke({actionId,target})\`. The consumer *again* validates command
+authorization at its command boundary. The menu never mutates data,
+creates History entries or grants permissions. The optional
+\`cb:design-context-menu:open\` and \`...:close\` events are informational.
+\`destroy()\` unregisters listeners, removes menu DOM and clears target state.
 
 ### Shared Drag & Drop Foundation DND-01 (SOURCE candidate)
 
