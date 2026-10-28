@@ -17,6 +17,8 @@ final class EditLeaseFakeDb {
     public bool $fail_read = false;
     public bool $in_transaction = false;
     public string $engine = 'InnoDB';
+    public string $server_version = '11.4.0-MariaDB';
+    public bool $mysql_transaction_instrumented = true;
     public mixed $before_update = null;
     private array $prepared = [];
 
@@ -27,15 +29,21 @@ final class EditLeaseFakeDb {
     }
 
     public function get_var( string $statement ): ?string {
-        if ( 'SELECT @@in_transaction' === $statement ) {
-            return $this->in_transaction ? '1' : '0';
-        }
-        $id = str_replace( ' FOR UPDATE', '', $statement );
-        [ $query, $args ] = $this->prepared[$id];
         if ( $this->fail_read ) {
             $this->last_error = 'offline';
             return null;
         }
+        if ( 'SELECT VERSION()' === $statement ) {
+            return $this->server_version;
+        }
+        if ( 'SELECT @@session.in_transaction' === $statement ) {
+            return $this->in_transaction ? '1' : '0';
+        }
+        if ( str_contains( $statement, 'FROM performance_schema.events_transactions_current' ) ) {
+            return $this->mysql_transaction_instrumented && $this->in_transaction ? '1' : null;
+        }
+        $id = str_replace( ' FOR UPDATE', '', $statement );
+        [ $query, $args ] = $this->prepared[$id];
         if ( str_starts_with( $query, 'SELECT ENGINE' ) ) {
             return $this->engine;
         }
@@ -118,6 +126,15 @@ $wpdb->engine = 'MyISAM';
 assert_lease( 'unavailable' === Lease::claim( 'contracts.template', 'noninnodb', $allowed )['status'], 'non-InnoDB claim denied' );
 assert_lease( ! Lease::owns_for_save( 'contracts.template', 'a', $first['token'], $allowed ), 'nontransactional option store denied' );
 $wpdb->engine = 'InnoDB';
+$wpdb->in_transaction = false;
+$wpdb->server_version = '8.0.44';
+assert_lease( ! Lease::owns_for_save( 'contracts.template', 'a', $first['token'], $allowed ), 'mysql rejects no transaction' );
+$wpdb->in_transaction = true;
+assert_lease( Lease::owns_for_save( 'contracts.template', 'a', $first['token'], $allowed ), 'mysql active same-session transaction accepted' );
+$wpdb->mysql_transaction_instrumented = false;
+assert_lease( ! Lease::owns_for_save( 'contracts.template', 'a', $first['token'], $allowed ), 'mysql absent performance instrument fails closed' );
+$wpdb->mysql_transaction_instrumented = true;
+$wpdb->server_version = '8.0.44-unknown';
 $wpdb->in_transaction = false;
 assert_lease( ! Lease::owns( 'contracts.template', 'a', str_repeat( '0', 64 ), $allowed ), 'wrong token' );
 assert_lease( 'locked' === Lease::claim( 'contracts.template', 'a', $allowed )['status'], 'second tab same user denied' );
