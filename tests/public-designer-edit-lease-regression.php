@@ -100,6 +100,7 @@ function assert_lease( bool $condition, string $label ): void {
     }
 }
 
+assert_lease( 1 === Lease::API_VERSION, 'public capability version' );
 $wpdb = new EditLeaseFakeDb();
 $allowed = static fn ( string $type, string $id ): bool => true;
 $denied  = static fn ( string $type, string $id ): bool => false;
