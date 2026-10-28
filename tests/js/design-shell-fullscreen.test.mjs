@@ -16,6 +16,7 @@ const launchSource = new URL('../../assets/js/features/designer-launch.js', impo
 const shellCss = new URL('../../assets/css/design/editor-shell.css', import.meta.url);
 const buttonCss = new URL('../../assets/css/components/buttons.css', import.meta.url);
 const mailLaunchPage = new URL('../../src/Mail/Admin/Page.php', import.meta.url);
+const maintenanceReportsPage = new URL('../../src/Admin/Pages/Preferences.php', import.meta.url);
 const adminAssetCatalog = new URL('../../src/Admin/AdminAssetCatalog.php', import.meta.url);
 let tempDirectory;
 let createDesignerShell;
@@ -565,4 +566,23 @@ test('Base Mail launch reuses the branded Designer CTA while preserving its GET 
 	assert.doesNotMatch(shell, /\.cb-core-design-launch__mark\s*\{/);
 	assert.match(catalog, /public static function minimal_shell\(\): array[\s\S]*?'shell.buttons'/);
 	assert.doesNotMatch(page, /data-cb-design-launch-root/);
+});
+
+test('Maintenance Reports uses branded Designer entry without changing fullscreen route or permission admission', async () => {
+	const [page, buttons] = await Promise.all([
+		readFile(maintenanceReportsPage, 'utf8'),
+		readFile(buttonCss, 'utf8'),
+	]);
+	assert.match(page, /use CoreBlueprint\\Core\\Brand\\CoreBlueprintMark;/);
+	assert.match(page, /private function render_reports_tab\(/);
+	assert.match(page, /current_user_can\( 'cb_manage_branding' \)/);
+	assert.match(page, /platform_fullscreen_requested\(\)/);
+	assert.match(page, /\$editor_url = add_query_arg\( 'cb_designer', '1', \$landing_url \)/);
+	assert.match(page, /<a class="button button-primary cb-core-button cb-core-button--primary cb-core-design-launch" href="<\?php echo esc_url\( \$editor_url \); \?>"/);
+	assert.match(page, /CoreBlueprintMark::data_uri\(\)/);
+	assert.match(page, /cb-core-design-launch__mark/);
+	assert.match(page, /cb-core-design-launch__label/);
+	assert.match(page, /Design with Core Blueprint/);
+	assert.match(buttons, /\.cb-core-design-launch-wrap\s*\{/);
+	assert.match(buttons, /\.cb-core-design-launch__mark\s*\{/);
 });
