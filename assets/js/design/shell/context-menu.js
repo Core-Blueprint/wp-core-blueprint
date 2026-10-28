@@ -5,6 +5,7 @@
 const activeMenus = new WeakMap();
 const EDITABLE = 'input, textarea, select, [contenteditable]';
 const ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/;
+const validId = value => typeof value === 'string' && ID.test(value);
 const isElement = (el, doc) => el && el.ownerDocument === doc
 	&& typeof el.addEventListener === 'function' && typeof el.contains === 'function';
 
@@ -65,7 +66,7 @@ export const createDesignerContextMenu = ({
 		const seen = new Set();
 		const prepared = [];
 		for (const item of supplied) {
-			if (!item || typeof item !== 'object' || !ID.test(item.id)
+			if (!item || typeof item !== 'object' || !validId(item.id)
 				|| typeof item.label !== 'string' || !item.label.trim()
 				|| seen.has(item.id) || item.children !== undefined) return [];
 			seen.add(item.id);
@@ -187,7 +188,7 @@ export const createDesignerContextMenu = ({
 	const registerTarget = (element, {kind, id} = {}) => {
 		assertActive();
 		if (!isElement(element, doc) || !viewport.contains(element)
-			|| targets.has(element) || !ID.test(kind) || !ID.test(id)) {
+			|| targets.has(element) || !validId(kind) || !validId(id)) {
 			throw new TypeError('DESIGNER_CONTEXT_MENU_TARGET_INVALID');
 		}
 		const descriptor = Object.freeze({kind, id});
