@@ -1001,7 +1001,10 @@ test('CM-1 refuses changed permissions, context and disabled actions with focus 
 			this.handlers[type] = (this.handlers[type] || []).filter(item => item !== fn);
 		}
 		dispatchEvent(event) {
-			event.target ??= this;
+			// Native Event.target is read-only; emulate EventTarget dispatch in this DOM double.
+			if (event.target == null) {
+				Object.defineProperty(event, 'target', {value: this, configurable: true});
+			}
 			for (const fn of this.handlers[event.type] || []) fn(event);
 		}
 		contains(target) { return target === this || this.children.some(child => child.contains(target)); }
