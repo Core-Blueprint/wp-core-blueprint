@@ -44,14 +44,19 @@ class A23aCheckpointASourceContract(unittest.TestCase):
             self.assertNotIn(prohibited, source)
 
     def test_rest_context_save_and_create_all_require_authority(self):
-        self.assertGreaterEqual(self.mail.count("Authority::inspect()"), 3)
-        self.assertIn("'active' === ( Authority::inspect()['status'] ?? 'blocked' )", self.mail)
+        # Context and pre-save use verified resource identity. The immutable
+        # SaveEnvelope type is also checked by the transaction callbacks.
+        self.assertEqual(self.mail.count("Authority::inspect( $identity['type'] )"), 2)
+        self.assertEqual(self.mail.count("Authority::inspect( $item->resource_type )"), 2)
+        self.assertNotIn("Authority::inspect()", self.mail)
+        self.assertIn("'active' === ( Authority::inspect( $item->resource_type )['status'] ?? 'blocked' )", self.mail)
         self.assertIn("self::valid_content( $doc['project'], $doc['fields'], $registry, $profile )", self.mail)
         self.assertIn("$revision = '0';", self.mail)
         self.assertIn("Mail::default_for_resource( $resource )", self.mail)
 
     def test_native_reports_reader_denies_conflicts(self):
-        self.assertIn("Authority::inspect()", self.reports)
+        self.assertIn("Authority::inspect( Repository::REPORTS )", self.reports)
+        self.assertNotIn("Authority::inspect()", self.reports)
         self.assertIn("return [ 'status' => 'blocked' ];", self.reports)
         self.assertIn("PlatformAdapter::default_project()", self.reports)
         self.assertIn("PlatformAdapter::default_fields()", self.reports)
