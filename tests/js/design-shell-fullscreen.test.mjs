@@ -504,3 +504,17 @@ test('Base fullscreen yields Escape, Tab and focus to an active modal', () => {
 		shell.exitFullscreen();
 	}
 });
+
+test('terminal consumer denial disables pending and pre-initialization manual launcher', async () => {
+  const launch = await readFile(launchSource, 'utf8');
+  const manual = launch.match(/const initializeManualLaunch = \([^)]*\) => \{([\s\S]*?)\n\t\};/)?.[1] ?? '';
+  const failure = launch.match(/const renderFailure = \([^)]*\) => \{([\s\S]*?)\n\t\};/)?.[1] ?? '';
+  assert.match(failure, /root\.dataset\.cbDesignLaunchState = 'error'/);
+  assert.match(failure, /launcher\.disabled = true/);
+  assert.match(failure, /launcher\.removeAttribute\('aria-busy'\)/);
+  assert.match(manual, /root\.addEventListener\(FAILURE_EVENT/);
+  assert.match(manual, /launchPending = false;[\s\S]*button\.disabled = true/);
+  assert.match(manual, /if \(denied\(\)\) clearPending\(\)/);
+  assert.match(manual, /if \(denied\(\)\) \{[\s\S]*clearPending\(\);[\s\S]*return;/);
+  assert.match(launch, /if \(root\.dataset\.cbDesignLaunchState !== 'error'\) root\.dataset\.cbDesignLaunchState = 'ready'/);
+});
