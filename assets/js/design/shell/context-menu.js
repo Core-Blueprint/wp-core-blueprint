@@ -130,21 +130,23 @@ export const createDesignerContextMenu = ({
 		assertActive();
 		close({restoreFocus: false});
 		const record = target && typeof target === 'object' ? target : Object.freeze({kind: 'canvas', id: 'canvas'});
-		const match = [...targets].find(([, value]) => value === record);
+		const match = [...targets].find(([, value]) => value.kind === record.kind && value.id === record.id);
 		const element = match?.[0] || null;
-		if (target && !element && record.kind !== 'canvas') return false;
+		if (target && !element && !(record.kind === 'canvas' && record.id === 'canvas')) return false;
+		// Use the registered immutable descriptor, never caller-controlled fields.
+		const resolved = match?.[1] || record;
 		let supplied;
 		let context;
 		try {
 			context = currentContext();
-			supplied = normalizedItems(record);
+			supplied = normalizedItems(resolved);
 		} catch (_) {
 			return false;
 		}
 		if (!supplied.length) return false;
 		const candidateInvoker = invoker?.isConnected !== false && typeof invoker?.focus === 'function'
 			? invoker : element || viewport;
-		opened = {target: record, element, context, invoker: candidateInvoker};
+		opened = {target: resolved, element, context, invoker: candidateInvoker};
 		items = supplied;
 		const fragment = doc.createDocumentFragment();
 		for (const item of supplied) {
@@ -177,7 +179,7 @@ export const createDesignerContextMenu = ({
 		focusAt(index >= 0 ? index : 0);
 		if (typeof CustomEvent === 'function') {
 			root.dispatchEvent(new CustomEvent('cb:design-context-menu:open', {
-				bubbles: true, detail: Object.freeze({target: record}),
+				bubbles: true, detail: Object.freeze({target: resolved}),
 			}));
 		}
 		return true;
