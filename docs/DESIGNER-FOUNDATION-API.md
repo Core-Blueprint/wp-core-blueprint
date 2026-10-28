@@ -181,6 +181,39 @@ The global facade exposes the same capabilities under `window.cbCore.designEdito
 
 Navigation is available as `window.cbCore.designEditor.shell.navigation.create` and the frozen extension as `shell.paletteRoles`. Navigation remains distinct from Layers and is not an editor profile.
 
+### Optional Canvas Navigation CN-1 (SOURCE candidate)
+
+The named public ESM export \`createDesignerCanvasNavigation\` is also available
+as \`window.cbCore.designEditor.shell.canvasNavigation.create\`. It is
+independent of responsive \`configureDesignerViewports()\`.
+Installed consumers must check
+\`CoreBlueprint\Core\Design\Editor\Assets::CANVAS_NAVIGATION_API >= 1\`
+and the actual JS export from the same installed build.
+
+\`createDesignerCanvasNavigation({root, viewport, scene, getContentBounds,
+getContextKey, isReady, onViewChange?})\` requires a Designer shell root, a
+focusable scrollable viewport and nested scene. \`getContentBounds()\` returns
+finite unscaled \`{x,y,width,height}\` with positive width and height.
+\`getContextKey()\` returns the authorized context identity.
+
+Controller: \`panBy(dx,dy)\` (viewport CSS pixels), \`fitToScreen({padding=32})\`,
+\`centerOnContent()\`, \`clientToCanvas({clientX,clientY})\`,
+\`canvasToClient({x,y})\`, \`getView()\` and idempotent \`destroy()\`.
+The read-only view is \`{x,y,scale,scrollLeft,scrollTop}\`. Scene transforms
+are presentation-only; nodes and SVG connections stay in the same scene
+coordinate system. Do not apply competing consumer transforms.
+
+Initial positioning fits content. Resize maintains useful positioning;
+context changes reset the view. Empty-surface left drag, middle drag and
+Space+left drag pan. Ordinary left dragging does not intercept interactive
+nodes; optional nested backgrounds use \`data-cb-design-canvas-background\`,
+interactive objects use \`data-cb-design-canvas-object\`. Native scrollbar,
+wheel and keyboard fallback remain available. The viewport should be focusable
+and have an accessible name. \`cb:design-canvas:navigationchange\` only
+observes view changes. No project, Save, Selection or History writes occur.
+The consumer owns Fit/Center buttons, node coordinate conversion, graph
+semantics and persistence.
+
 ### Shared Drag & Drop Foundation DND-01 (SOURCE candidate)
 
 The public named ESM export is `createDesignerDragDropController` from
