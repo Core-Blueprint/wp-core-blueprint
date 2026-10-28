@@ -946,11 +946,23 @@ test('CN-1 pan, fit and coordinates operate on transient viewport state', () => 
 	const point = controller.clientToCanvas(client);
 	assert.ok(Math.abs(point.x - 132) < 1e-8);
 	assert.ok(Math.abs(point.y - 254) < 1e-8);
+	const pointer = (type, props) => {
+		const event = new Event(type, {cancelable: true});
+		Object.defineProperties(event, Object.fromEntries(
+			Object.entries(props).map(([name, value]) => [name, {value}])
+		));
+		viewport.dispatchEvent(event);
+	};
+	pointer('pointerdown', {pointerType: 'mouse', button: 1, pointerId: 7, clientX: 200, clientY: 220});
+	pointer('pointermove', {pointerId: 7, clientX: 225, clientY: 235});
+	pointer('pointerup', {pointerId: 7});
+	assert.equal(controller.getView().x, fitted.x + 25, 'middle-pointer pans x');
+	assert.equal(controller.getView().y, fitted.y + 15, 'middle-pointer pans y');
 	assert.equal(controller.panBy(40, -20), true);
-	assert.equal(controller.getView().x, fitted.x + 40);
-	assert.equal(controller.getView().y, fitted.y - 20);
+	assert.equal(controller.getView().x, fitted.x + 65);
+	assert.equal(controller.getView().y, fitted.y - 5);
 	controller.centerOnContent();
-	assert.notEqual(controller.getView().x, fitted.x + 40);
+	assert.notEqual(controller.getView().x, fitted.x + 65);
 	assert.equal(controller.fitToScreen({padding: 16}), true);
 	assert.ok(controller.getView().scale > fitted.scale);
 	context = 'editor/2';
