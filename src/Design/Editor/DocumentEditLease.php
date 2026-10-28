@@ -121,6 +121,36 @@ final class DocumentEditLease {
             && self::is_owner( self::decode( $stored['value'] ), $actor, $token );
     }
 
+    /**
+     * Save-time guard. Must run INSIDE the consumer's existing InnoDB
+     * transaction and on its same wpdb connection, before the document write.
+     * FOR UPDATE prevents lease expiry/takeover between validation and commit.
+     * A plain owns() preflight alone is never enough for Save authorization.
+     */
+    public static function owns_for_save( string $type, string $id, string $token, callable $authorize ): bool {
+        $actor = self::actor( $type, $id, $authorize );
+        if ( $actor < 1 || ! self::valid_token( $token ) ) {
+            return false;
+        }
+        global $wpdb;
+        $wpdb->last_error = '';
+        $in_transaction = $wpdb->get_var( 'SELECT @@in_transaction' );
+        if ( '1' !== (string) $in_transaction || '' !== (string) $wpdb->last_error ) {
+            return false;
+        }
+        $wpdb->last_error = '';
+        $engine = $wpdb->get_var( $wpdb->prepare(
+            'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s LIMIT 1',
+            $wpdb->options
+        ) );
+        if ( 0 !== strcasecmp( (string) $engine, 'InnoDB' ) || '' !== (string) $wpdb->last_error ) {
+            return false;
+        }
+        $stored = self::read( self::key( $type, $id ), true );
+        return 'found' === $stored['status']
+            && self::is_owner( self::decode( $stored['value'] ), $actor, $token );
+    }
+
     /** Best-effort release: never delete a lock acquired by a subsequent owner. */
     public static function release( string $type, string $id, string $token ): bool {
         $actor = self::current_actor( $type, $id );
@@ -200,13 +230,14 @@ final class DocumentEditLease {
     }
 
     /** @return array{status:string,value?:string} */
-    private static function read( string $key ): array {
+    private static function read( string $key, bool $for_update = false ): array {
         global $wpdb;
         $wpdb->last_error = '';
-        $value = $wpdb->get_var( $wpdb->prepare(
+        $query = $wpdb->prepare(
             'SELECT option_value FROM %i WHERE option_name = %s LIMIT 1',
             $wpdb->options, $key
-        ) );
+        );
+        $value = $wpdb->get_var( $query . ( $for_update ? ' FOR UPDATE' : '' ) );
         if ( '' !== (string) $wpdb->last_error ) {
             return [ 'status' => 'error' ];
         }
