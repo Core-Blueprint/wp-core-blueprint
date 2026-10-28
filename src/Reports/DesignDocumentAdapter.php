@@ -51,7 +51,7 @@ final class DesignDocumentAdapter {
 
 	/** @return array<string,mixed> */
 	public static function read(): array {
-		if ( 'active' !== ( Authority::inspect()['status'] ?? 'blocked' ) ) {
+		if ( 'active' !== ( Authority::inspect( Repository::REPORTS )['status'] ?? 'blocked' ) ) {
 			return [ 'status' => 'blocked' ];
 		}
 		$result = Repository::get( Repository::REPORTS, self::KEY );
