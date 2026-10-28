@@ -140,10 +140,7 @@ final class DocumentEditLease {
         if ( $actor < 1 || ! self::valid_token( $token ) ) {
             return false;
         }
-        global $wpdb;
-        $wpdb->last_error = '';
-        $in_transaction = $wpdb->get_var( 'SELECT @@in_transaction' );
-        if ( '1' !== (string) $in_transaction || '' !== (string) $wpdb->last_error ) {
+        if ( ! self::active_database_transaction() ) {
             return false;
         }
         if ( ! self::transactional_store_available() ) {
@@ -172,6 +169,40 @@ final class DocumentEditLease {
             'DELETE FROM %i WHERE option_name = %s AND BINARY option_value = BINARY %s',
             $wpdb->options, $key, $stored['value']
         ) ) && '' === (string) $wpdb->last_error;
+    }
+
+    /**
+     * Fail-closed transaction probe on the SAME wpdb connection.
+     * MariaDB exposes @@in_transaction. MySQL does not: its supported
+     * transaction event is performance_schema.events_transactions_current.
+     * If the MySQL instrument/consumer is unavailable, refuse Save.
+     */
+    private static function active_database_transaction(): bool {
+        global $wpdb;
+        $wpdb->last_error = '';
+        $server = $wpdb->get_var( 'SELECT VERSION()' );
+        if ( ! is_string( $server ) || '' !== (string) $wpdb->last_error ) {
+            return false;
+        }
+
+        if ( false !== stripos( $server, 'mariadb' ) ) {
+            $wpdb->last_error = '';
+            $active = $wpdb->get_var( 'SELECT @@session.in_transaction' );
+            return '1' === (string) $active && '' === (string) $wpdb->last_error;
+        }
+
+        // MySQL 8.x: only an ACTIVE event for THIS connection is accepted.
+        // No cached state, plugin flag, autocommit guess or cross-session trust.
+        if ( ! preg_match( '/\\A(?:8|9)\\.[0-9]+\\.[0-9]+/', $server ) ) {
+            return false;
+        }
+        $wpdb->last_error = '';
+        $active = $wpdb->get_var(
+            "SELECT 1 FROM performance_schema.events_transactions_current AS tx
+            INNER JOIN performance_schema.threads AS th ON th.THREAD_ID = tx.THREAD_ID
+            WHERE th.PROCESSLIST_ID = CONNECTION_ID() AND tx.STATE = 'ACTIVE' LIMIT 1"
+        );
+        return '1' === (string) $active && '' === (string) $wpdb->last_error;
     }
 
     /** Editing locks must not admit a session that cannot perform safe Save. */
