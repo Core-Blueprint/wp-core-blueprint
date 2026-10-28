@@ -468,6 +468,9 @@ export const createDesignerShell = (root, {
 		// Base Modal Foundation dialogs live at document.body level. They own
 		// focus while open; the Designer shell must not pull focus out of one.
 		if (document.querySelector?.('dialog[open]')?.contains?.(active)) return;
+		// The optional Base context menu lives above the clipped fullscreen root.
+		// Its menuitems retain focus while the popup is open.
+		if (document.querySelector?.('.cb-core-design-context-menu:not([hidden])')?.contains?.(active)) return;
 		if (active && root.contains(active)) return;
 		focusInside();
 	}
@@ -476,6 +479,7 @@ export const createDesignerShell = (root, {
 		if (!fullscreenState || event.defaultPrevented) return;
 		// Native dialog owns Tab focus trapping and Escape cancellation.
 		if (document.querySelector?.('dialog[open]')) return;
+		if (document.querySelector?.('.cb-core-design-context-menu:not([hidden])')?.contains?.(event.target)) return;
 		if (event.key === 'Escape') {
 			event.preventDefault();
 			exitFullscreen();
