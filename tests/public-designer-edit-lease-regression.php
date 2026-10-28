@@ -15,6 +15,8 @@ final class EditLeaseFakeDb {
     public array $rows = [];
     public bool $fail_write = false;
     public bool $fail_read = false;
+    public bool $in_transaction = false;
+    public string $engine = 'InnoDB';
     public mixed $before_update = null;
     private array $prepared = [];
 
@@ -25,13 +27,20 @@ final class EditLeaseFakeDb {
     }
 
     public function get_var( string $statement ): ?string {
-        [ $query, $args ] = $this->prepared[$statement];
-        if ( ! str_starts_with( $query, 'SELECT option_value' ) ) {
-            throw new RuntimeException( 'Unexpected lease query.' );
+        if ( 'SELECT @@in_transaction' === $statement ) {
+            return $this->in_transaction ? '1' : '0';
         }
+        $id = str_replace( ' FOR UPDATE', '', $statement );
+        [ $query, $args ] = $this->prepared[$id];
         if ( $this->fail_read ) {
             $this->last_error = 'offline';
             return null;
+        }
+        if ( str_starts_with( $query, 'SELECT ENGINE' ) ) {
+            return $this->engine;
+        }
+        if ( ! str_starts_with( $query, 'SELECT option_value' ) ) {
+            throw new RuntimeException( 'Unexpected lease query.' );
         }
         return $this->rows[$args[1]] ?? null;
     }
@@ -101,6 +110,13 @@ $first = Lease::claim( 'contracts.template', 'a', $allowed );
 assert_lease( 'acquired' === $first['status'] && strlen( $first['token'] ) === 64, 'first claim' );
 assert_lease( $first['expires_at'] > time(), 'bounded expiry' );
 assert_lease( Lease::owns( 'contracts.template', 'a', $first['token'], $allowed ), 'own lease' );
+assert_lease( ! Lease::owns_for_save( 'contracts.template', 'a', $first['token'], $allowed ), 'save guard requires transaction' );
+$wpdb->in_transaction = true;
+assert_lease( Lease::owns_for_save( 'contracts.template', 'a', $first['token'], $allowed ), 'same-transaction save gate' );
+$wpdb->engine = 'MyISAM';
+assert_lease( ! Lease::owns_for_save( 'contracts.template', 'a', $first['token'], $allowed ), 'nontransactional option store denied' );
+$wpdb->engine = 'InnoDB';
+$wpdb->in_transaction = false;
 assert_lease( ! Lease::owns( 'contracts.template', 'a', str_repeat( '0', 64 ), $allowed ), 'wrong token' );
 assert_lease( 'locked' === Lease::claim( 'contracts.template', 'a', $allowed )['status'], 'second tab same user denied' );
 $GLOBALS['current_actor'] = 8;
