@@ -63,7 +63,7 @@ final class ReportsProfileTransaction {
 
     /** @return array{status:string,witness?:array<string,string>} */
     public static function witness(): array {
-        if ( 'active' !== ( Authority::inspect()['status'] ?? '' ) ) {
+        if ( 'active' !== ( Authority::inspect( Repository::REPORTS )['status'] ?? '' ) ) {
             return [ 'status' => 'blocked' ];
         }
         $settings = OptionCas::read();
@@ -130,7 +130,7 @@ final class ReportsProfileTransaction {
     public static function apply_guarded( array $incoming, array $expected, bool $strict_profile = false ): array {
         global $wpdb;
 
-        if ( 'active' !== ( Authority::inspect()['status'] ?? '' )
+        if ( 'active' !== ( Authority::inspect( Repository::REPORTS )['status'] ?? '' )
             || ! self::valid_profile_witness( $expected )
             || ! isset( $wpdb ) || ! is_object( $wpdb )
             || ! is_string( $wpdb->options ?? null ) ) {
