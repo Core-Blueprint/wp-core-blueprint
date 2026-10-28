@@ -19,6 +19,9 @@ final class EditLeaseFakeDb {
     public string $engine = 'InnoDB';
     public string $server_version = '11.4.0-MariaDB';
     public bool $mysql_transaction_instrumented = true;
+    public bool $mysql_consumers_enabled = true;
+    public bool $mysql_thread_instrumented = true;
+    public bool $mariadb_probe_available = true;
     public mixed $before_update = null;
     private array $prepared = [];
 
@@ -37,7 +40,16 @@ final class EditLeaseFakeDb {
             return $this->server_version;
         }
         if ( 'SELECT @@session.in_transaction' === $statement ) {
+            if ( ! $this->mariadb_probe_available ) {
+                $this->last_error = 'unsupported';
+                return null;
+            }
             return $this->in_transaction ? '1' : '0';
+        }
+        if ( str_contains( $statement, 'FROM performance_schema.setup_instruments' ) ) {
+            return $this->mysql_transaction_instrumented
+                && $this->mysql_consumers_enabled && $this->mysql_thread_instrumented
+                ? '1' : null;
         }
         if ( str_contains( $statement, 'FROM performance_schema.events_transactions_current' ) ) {
             return $this->mysql_transaction_instrumented && $this->in_transaction ? '1' : null;
@@ -115,6 +127,23 @@ $denied  = static fn ( string $type, string $id ): bool => false;
 
 assert_lease( 'denied' === Lease::claim( 'contracts.template', 'a', $denied )['status'], 'consumer-owned deny' );
 assert_lease( 'denied' === Lease::claim( '../oops', 'a', $allowed )['status'], 'scope validation' );
+$wpdb->mariadb_probe_available = false;
+assert_lease( 'unavailable' === Lease::claim( 'contracts.template', 'mariadb-no-save-probe', $allowed )['status'], 'mariadb refuses unsupported save probe' );
+$wpdb->mariadb_probe_available = true;
+$wpdb->server_version = '8.0.44';
+$wpdb->mysql_transaction_instrumented = false;
+assert_lease( 'unavailable' === Lease::claim( 'contracts.template', 'mysql-no-instrument', $allowed )['status'], 'mysql disabled instrument blocks admission' );
+$wpdb->mysql_transaction_instrumented = true;
+$wpdb->mysql_consumers_enabled = false;
+assert_lease( 'unavailable' === Lease::claim( 'contracts.template', 'mysql-no-consumer', $allowed )['status'], 'mysql disabled consumers block admission' );
+$wpdb->mysql_consumers_enabled = true;
+$wpdb->mysql_thread_instrumented = false;
+assert_lease( 'unavailable' === Lease::claim( 'contracts.template', 'mysql-uninstrumented-thread', $allowed )['status'], 'mysql uninstrumented thread blocks admission' );
+$wpdb->mysql_thread_instrumented = true;
+assert_lease( 'acquired' === Lease::claim( 'contracts.template', 'mysql-ready', $allowed )['status'], 'mysql compatible admission succeeds' );
+$wpdb->server_version = '5.7.44';
+assert_lease( 'unavailable' === Lease::claim( 'contracts.template', 'mysql-old', $allowed )['status'], 'unsupported mysql version denied' );
+$wpdb->server_version = '11.4.0-MariaDB';
 $first = Lease::claim( 'contracts.template', 'a', $allowed );
 assert_lease( 'acquired' === $first['status'] && strlen( $first['token'] ) === 64, 'first claim' );
 assert_lease( $first['expires_at'] > time(), 'bounded expiry' );
