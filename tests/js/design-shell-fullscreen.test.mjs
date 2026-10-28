@@ -518,3 +518,26 @@ test('terminal consumer denial disables pending and pre-initialization manual la
   assert.match(manual, /if \(denied\(\)\) \{[\s\S]*clearPending\(\);[\s\S]*return;/);
   assert.match(launch, /if \(root\.dataset\.cbDesignLaunchState !== 'error'\) root\.dataset\.cbDesignLaunchState = 'ready'/);
 });
+
+test('fullscreen yields focus and Escape to the optional Base context menu', () => {
+	const {root} = buildShell();
+	const shell = createDesignerShell(root);
+	const oldQuery = document.querySelector;
+	const menuFocused = new FakeElement(document);
+	const overlay = {contains: () => true};
+	document.querySelector = selector =>
+		selector === '.cb-core-design-context-menu:not([hidden])' ? overlay : null;
+	try {
+		assert.equal(shell.enterFullscreen(), true);
+		document.activeElement = menuFocused;
+		document.dispatchEvent(new Event('focusin'));
+		assert.equal(document.activeElement, menuFocused, 'menu item must keep focus');
+		const escape = keyEvent('Escape');
+		document.dispatchEvent(escape);
+		assert.equal(escape.defaultPrevented, false, 'menu owns Escape');
+		assert.equal(root.classList.contains('is-fullscreen'), true);
+	} finally {
+		document.querySelector = oldQuery;
+		shell.exitFullscreen();
+	}
+});
