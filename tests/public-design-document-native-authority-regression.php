@@ -128,6 +128,7 @@ namespace {
 	cb_c3_check( str_contains( $reports, 'Authority::inspect( Repository::REPORTS )' ), 'Reports reader typed guard' );
 	cb_c3_check( substr_count( $reports_profile, 'Authority::inspect( Repository::REPORTS )' ) === 2, 'Reports Profile transaction typed guard' );
 	cb_c3_check( substr_count( $reports_section, 'Authority::inspect( Repository::REPORTS )' ) === 3, 'Reports Profile section typed guard' );
+	cb_c3_check( str_contains( $reports_section, 'use CoreBlueprint\\Core\\Design\\Document\\Repository;' ), 'Reports Profile section resolves canonical Repository namespace' );
 	cb_c3_check( ! str_contains( $branding, 'Settings::set_paths(' ), 'legacy AJAX Settings writes removed' );
 	cb_c3_check( str_contains( $branding, "Request::nonce( 'cb_core_admin' )" )
 		&& str_contains( $branding, 'self::require_manage_branding()' ), 'AJAX security preserved' );
