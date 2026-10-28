@@ -22,6 +22,7 @@ use CoreBlueprint\Core\AdminNotices\Admin as AdminNoticesAdmin;
 use CoreBlueprint\Core\Themes;
 use CoreBlueprint\Core\UI;
 use CoreBlueprint\Core\HUD\MenuPreferences;
+use CoreBlueprint\Core\Brand\CoreBlueprintMark;
 use CoreBlueprint\Core\HUD\Registry as HudRegistry;
 
 defined( 'ABSPATH' ) || exit;
@@ -642,9 +643,12 @@ final class Preferences extends PageBase {
 					<h1 class="cb-core-title"><?php esc_html_e( 'Reports Designer', 'core-blueprint' ); ?></h1>
 					<p class="cb-core-intro"><?php esc_html_e( 'Edit the maintenance report composition and branding.', 'core-blueprint' ); ?></p>
 				</header>
-				<a class="button button-primary cb-core-button cb-core-button--primary" href="<?php echo esc_url( $editor_url ); ?>">
-					<?php esc_html_e( 'Edit with Core Blueprint', 'core-blueprint' ); ?>
-				</a>
+				<div class="cb-core-design-launch-wrap">
+					<a class="button button-primary cb-core-button cb-core-button--primary cb-core-design-launch" href="<?php echo esc_url( $editor_url ); ?>" aria-label="<?php esc_attr_e( 'Open Designer Mode', 'core-blueprint' ); ?>">
+						<img class="cb-core-design-launch__mark" src="<?php echo esc_attr( CoreBlueprintMark::data_uri() ); ?>" alt="" aria-hidden="true">
+						<span class="cb-core-design-launch__label"><?php esc_html_e( 'Design with Core Blueprint', 'core-blueprint' ); ?></span>
+					</a>
+				</div>
 			</div>
 		<?php else : ?>
 			<div class="cb-core-platform-screen" data-cb-platform-screen aria-busy="true">
