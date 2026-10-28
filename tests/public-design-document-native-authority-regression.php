@@ -63,10 +63,10 @@ namespace {
 	use CoreBlueprint\Core\Design\Document\Schema;
 
 	cb_c3_check( 'active' === Authority::inspect()['status'], 'clean fresh v1 admitted' );
+	cb_c3_check( count( $wpdb->reads ) === 6, 'six real primary DB option reads' );
 	cb_c3_check( 'active' === Authority::inspect( Repository::MAIL )['status'], 'clean Mail admitted' );
 	cb_c3_check( 'active' === Authority::inspect( Repository::REPORTS )['status'], 'clean Reports admitted' );
 	cb_c3_check( 'blocked' === Authority::inspect( 'unknown.document' )['status'], 'unknown type fails closed' );
-	cb_c3_check( count( $wpdb->reads ) === 6, 'six real primary DB option reads' );
 	$defaults = \CoreBlueprint\Core\Settings::defaults()['reports'];
 	$wpdb->rows['cb_core_settings'] = [ 'option_value' => serialize( [
 		'reports' => $defaults, 'other_policy' => [ 'retention_days' => 77 ],
