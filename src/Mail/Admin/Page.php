@@ -17,6 +17,7 @@ use CoreBlueprint\Core\Admin\TabNav;
 use CoreBlueprint\Core\Design\Editor\Assets as DesignEditorAssets;
 use CoreBlueprint\Core\Mail\ConflictDetector;
 use CoreBlueprint\Core\Mail\DeliveryState;
+use CoreBlueprint\Core\Brand\CoreBlueprintMark;
 use CoreBlueprint\Core\Mail\Designer\BindingRegistry;
 use CoreBlueprint\Core\Mail\Designer\ComponentRegistry;
 use CoreBlueprint\Core\Mail\Designer\Renderer as DesignerRenderer;
@@ -159,9 +160,12 @@ final class Page extends PageBase {
 											<option value="<?php echo esc_attr( (string) $id ); ?>" <?php selected( $id, $template_id ); ?>><?php echo esc_html( (string) $definition['label'] ); ?></option>
 										<?php endforeach; ?>
 									</select>
-									<button type="submit" name="cb_designer" value="1" class="button button-primary cb-core-button cb-core-button--primary">
-										<?php esc_html_e( 'Edit with Core Blueprint', 'core-blueprint' ); ?>
-									</button>
+									<div class="cb-core-design-launch-wrap">
+										<button type="submit" name="cb_designer" value="1" class="button button-primary cb-core-button cb-core-button--primary cb-core-design-launch" aria-label="<?php esc_attr_e( 'Open Designer Mode', 'core-blueprint' ); ?>">
+											<img class="cb-core-design-launch__mark" src="<?php echo esc_attr( CoreBlueprintMark::data_uri() ); ?>" alt="" aria-hidden="true">
+											<span class="cb-core-design-launch__label"><?php esc_html_e( 'Design with Core Blueprint', 'core-blueprint' ); ?></span>
+										</button>
+									</div>
 								</form>
 							</section>
 						</div>
