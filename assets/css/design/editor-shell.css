@@ -533,3 +533,12 @@ html.cb-core-design-shell-focus-mode body {
 		min-width: 0;
 	}
 }
+
+/* Opt-in Canvas Navigation: never changes legacy document canvases. */
+[data-cb-design-canvas-viewport].cb-core-design-canvas--panning {
+	cursor: grabbing;
+	user-select: none;
+}
+[data-cb-design-canvas-viewport].cb-core-design-canvas--panning * {
+	cursor: grabbing !important;
+}
