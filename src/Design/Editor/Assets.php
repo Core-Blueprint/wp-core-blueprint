@@ -28,6 +28,8 @@ final class Assets {
 	public const INSPECTOR_COMPOSITION_API = 1;
 	/** Optional shared graph-neutral canvas pan/fit controller. */
 	public const CANVAS_NAVIGATION_API = 1;
+	/** Optional shared flat context menu presenter; no domain authority. */
+	public const DESIGNER_CONTEXT_MENU_API = 1;
 	/** Public fail-closed Exit Guard, not an A2-06 receipt/recovery API. */
 	public const DESIGNER_EXIT_GUARD_API = 2;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
