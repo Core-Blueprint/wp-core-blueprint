@@ -915,8 +915,11 @@ test('B2: public ESM and frozen browser facade expose typed Domain Selection wit
 
 test('CN-1 pan, fit and coordinates operate on transient viewport state', () => {
 	const events = new EventTarget();
-	const scene = {style: {transform: '', transformOrigin: ''}};
-	const doc = {defaultView: events};
+	const scene = new EventTarget();
+	scene.style = {transform: '', transformOrigin: ''};
+	scene.getBoundingClientRect = () => ({left: 0, top: 0, width: 1400, height: 900});
+	const doc = new EventTarget();
+	doc.defaultView = events;
 	const classes = new Set();
 	const viewport = new EventTarget();
 	Object.assign(viewport, {
