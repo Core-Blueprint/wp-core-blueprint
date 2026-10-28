@@ -76,6 +76,8 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof publicEditor.decorateDesignerElement, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.icons?.decorateElement, 'function');
 	assert.equal(typeof publicEditor.createDesignerNavigation, 'function');
+	assert.equal(typeof publicEditor.createDesignerCanvasNavigation, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.canvasNavigation?.create, 'function');
 	assert.deepEqual(publicEditor.DESIGNER_PALETTE_ROLES, ['navigation', 'elements', 'layers']);
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.navigation?.create, 'function');
 	assert.deepEqual(window.cbCore?.designEditor?.shell?.paletteRoles, ['navigation', 'elements', 'layers']);
@@ -907,4 +909,49 @@ test('B2: public ESM and frozen browser facade expose typed Domain Selection wit
 	assert.throws(() => session.select([], null, { expectedEpoch: 9 }),
 		(error) => error.code === 'SELECTION_INVALID');
 	session.dispose();
+});
+
+test('CN-1 pan, fit and coordinates operate on transient viewport state', () => {
+	const events = new EventTarget();
+	const scene = {style: {transform: '', transformOrigin: ''}};
+	const doc = {defaultView: events};
+	const classes = new Set();
+	const viewport = new EventTarget();
+	Object.assign(viewport, {
+		ownerDocument: doc, clientWidth: 700, clientHeight: 500,
+		scrollLeft: 0, scrollTop: 0, isConnected: true,
+		contains: value => value === scene,
+		getBoundingClientRect: () => ({left: 100, top: 200, width: 700, height: 500}),
+		setPointerCapture() {}, hasPointerCapture: () => false,
+		classList: {add: key => classes.add(key), remove: key => classes.delete(key)},
+	});
+	const root = new EventTarget();
+	Object.assign(root, {
+		isConnected: true, contains: value => value === viewport,
+		getBoundingClientRect: () => ({left: 0, top: 0, width: 700, height: 500}),
+	});
+	let context = 'editor/1';
+	const controller = publicEditor.createDesignerCanvasNavigation({
+		root, viewport, scene, getContentBounds: () => ({x: 0, y: 0, width: 1400, height: 900}),
+		getContextKey: () => context, isReady: () => true,
+	});
+	const fitted = controller.getView();
+	assert.ok(fitted.scale > 0 && fitted.scale < 1);
+	const client = controller.canvasToClient({x: 132, y: 254});
+	const point = controller.clientToCanvas(client);
+	assert.ok(Math.abs(point.x - 132) < 1e-8);
+	assert.ok(Math.abs(point.y - 254) < 1e-8);
+	assert.equal(controller.panBy(40, -20), true);
+	assert.equal(controller.getView().x, fitted.x + 40);
+	assert.equal(controller.getView().y, fitted.y - 20);
+	controller.centerOnContent();
+	assert.notEqual(controller.getView().x, fitted.x + 40);
+	assert.equal(controller.fitToScreen({padding: 16}), true);
+	assert.ok(controller.getView().scale > fitted.scale);
+	context = 'editor/2';
+	assert.ok(controller.getView().scale > 0, 'context reset remains a valid fit');
+	controller.destroy();
+	assert.equal(scene.style.transform, '');
+	assert.equal(classes.size, 0);
+	assert.throws(() => controller.getView(), /DESTROYED/);
 });
