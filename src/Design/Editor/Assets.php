@@ -26,6 +26,8 @@ final class Assets {
 	public const SAVE_AUTHORITY_UI_API = 1;
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */
 	public const INSPECTOR_COMPOSITION_API = 1;
+	/** Optional shared graph-neutral canvas pan/fit controller. */
+	public const CANVAS_NAVIGATION_API = 1;
 	/** Public fail-closed Exit Guard, not an A2-06 receipt/recovery API. */
 	public const DESIGNER_EXIT_GUARD_API = 2;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
