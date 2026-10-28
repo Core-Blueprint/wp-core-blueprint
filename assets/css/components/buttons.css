@@ -622,3 +622,40 @@ dialog.cb-core-modal--core button.cb-core-button--remediation:focus {
 	color: var(--cb-surface-1);
 	box-shadow: 0 0 0 1px var(--cb-warning), 0 0 14px color-mix(in srgb, var(--cb-warning) 25%, transparent);
 }
+
+/* Shared branded Designer entry CTA. Admin pages and extension Designer Mode
+ * consume one Button Foundation style without loading an editor session. */
+.cb-core-design-launch-wrap {
+	display: flex;
+	justify-content: flex-start;
+	width: 100%;
+	margin: 0 0 var(--cb-space-4);
+}
+
+.cb-core-design-launch {
+	min-width: 320px;
+	min-height: 64px !important;
+	padding: var(--cb-space-3) var(--cb-space-5) !important;
+	gap: var(--cb-space-3) !important;
+	font-size: var(--cb-fs-md) !important;
+	letter-spacing: .01em;
+}
+
+.cb-core-design-launch__mark {
+	display: block;
+	flex: 0 0 28px;
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
+}
+
+.cb-core-design-launch__label {
+	font-weight: var(--cb-fw-semibold);
+}
+
+@media (max-width: 600px) {
+	.cb-core-design-launch {
+		width: 100%;
+		min-width: 0;
+	}
+}
