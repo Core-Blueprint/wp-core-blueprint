@@ -14,6 +14,8 @@ const inspectorValueSource = new URL('../../assets/js/design/shell/inspector-val
 const selectionControllerSource = new URL('../../assets/js/design/shell/selection-controller.js', import.meta.url);
 const launchSource = new URL('../../assets/js/features/designer-launch.js', import.meta.url);
 const shellCss = new URL('../../assets/css/design/editor-shell.css', import.meta.url);
+const buttonCss = new URL('../../assets/css/components/buttons.css', import.meta.url);
+const mailLaunchPage = new URL('../../src/Mail/Admin/Page.php', import.meta.url);
 let tempDirectory;
 let createDesignerShell;
 
@@ -540,4 +542,24 @@ test('fullscreen yields focus and Escape to the optional Base context menu', () 
 		document.querySelector = oldQuery;
 		shell.exitFullscreen();
 	}
+});
+
+test('Base Mail launch reuses the branded Designer CTA while preserving its GET navigation', async () => {
+	const [page, buttons, shell] = await Promise.all([
+		readFile(mailLaunchPage, 'utf8'),
+		readFile(buttonCss, 'utf8'),
+		readFile(shellCss, 'utf8'),
+	]);
+	assert.match(page, /use CoreBlueprint\\Core\\Brand\\CoreBlueprintMark;/);
+	assert.match(page, /type="submit" name="cb_designer" value="1" class="button button-primary cb-core-button cb-core-button--primary cb-core-design-launch"/);
+	assert.match(page, /CoreBlueprintMark::data_uri\(\)/);
+	assert.match(page, /cb-core-design-launch__mark/);
+	assert.match(page, /cb-core-design-launch__label/);
+	assert.match(page, /Design with Core Blueprint/);
+	assert.match(buttons, /\.cb-core-design-launch-wrap\s*\{/);
+	assert.match(buttons, /\.cb-core-design-launch\s*\{[\s\S]*min-height:\s*64px/);
+	assert.match(buttons, /\.cb-core-design-launch__mark\s*\{[\s\S]*object-fit:\s*contain/);
+	assert.match(buttons, /\.cb-core-design-launch__label\s*\{/);
+	assert.doesNotMatch(shell, /\.cb-core-design-launch__mark\s*\{/);
+	assert.doesNotMatch(page, /data-cb-design-launch-root/);
 });
