@@ -35,7 +35,9 @@ final class DocumentEditLease {
             return [ 'status' => 'unavailable' ];
         }
 
-        if ( ! self::transactional_store_available() ) {
+        // An accepted editor must have a usable Save transaction probe.
+        // This is a preflight only; owns_for_save() remains authoritative.
+        if ( ! self::transactional_store_available() || ! self::save_probe_available() ) {
             return [ 'status' => 'unavailable' ];
         }
 
@@ -203,6 +205,53 @@ final class DocumentEditLease {
             WHERE th.PROCESSLIST_ID = CONNECTION_ID() AND tx.STATE = 'ACTIVE' LIMIT 1"
         );
         return '1' === (string) $active && '' === (string) $wpdb->last_error;
+    }
+
+    /**
+     * Read-only admission preflight. MySQL transaction instrumentation can be
+     * disabled even while wp_options is InnoDB, making every Save fail closed.
+     * Do not START/COMMIT transactions here: Save still proves ownership inside
+     * the consumer's existing transaction through owns_for_save().
+     */
+    private static function save_probe_available(): bool {
+        global $wpdb;
+        $wpdb->last_error = '';
+        $server = $wpdb->get_var( 'SELECT VERSION()' );
+        if ( ! is_string( $server ) || '' !== (string) $wpdb->last_error ) {
+            return false;
+        }
+        if ( false !== stripos( $server, 'mariadb' ) ) {
+            $wpdb->last_error = '';
+            $active = $wpdb->get_var( 'SELECT @@session.in_transaction' );
+            return in_array( (string) $active, [ '0', '1' ], true )
+                && '' === (string) $wpdb->last_error;
+        }
+        if ( ! preg_match( '/\\A(?:8|9)\\.[0-9]+\\.[0-9]+/', $server ) ) {
+            return false;
+        }
+        // Current connection must be instrumented. All three consumer levels
+        // and the transaction instrument are required for the Save-time query.
+        // LEFT JOIN confirms read access to the same event table as Save.
+        $wpdb->last_error = '';
+        $ready = $wpdb->get_var(
+            "SELECT 1 FROM performance_schema.setup_instruments AS instrument
+            INNER JOIN performance_schema.threads AS th
+                ON th.PROCESSLIST_ID = CONNECTION_ID() AND th.INSTRUMENTED = 'YES'
+            LEFT JOIN performance_schema.events_transactions_current AS tx
+                ON tx.THREAD_ID = th.THREAD_ID
+            WHERE instrument.NAME = 'transaction' AND instrument.ENABLED = 'YES'
+                AND ( tx.THREAD_ID IS NULL OR tx.THREAD_ID = th.THREAD_ID )
+                AND (
+                    SELECT COUNT(*) FROM performance_schema.setup_consumers
+                    WHERE NAME IN (
+                        'global_instrumentation',
+                        'thread_instrumentation',
+                        'events_transactions_current'
+                    ) AND ENABLED = 'YES'
+                ) = 3
+            LIMIT 1"
+        );
+        return '1' === (string) $ready && '' === (string) $wpdb->last_error;
     }
 
     /** Editing locks must not admit a session that cannot perform safe Save. */
