@@ -77,6 +77,8 @@ test('public facade exposes stable session, shell, motion, commands and profile 
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.icons?.decorateElement, 'function');
 	assert.equal(typeof publicEditor.createDesignerNavigation, 'function');
 	assert.equal(typeof publicEditor.createDesignerCanvasNavigation, 'function');
+	assert.equal(typeof publicEditor.createDesignerContextMenu, 'function');
+	assert.equal(typeof window.cbCore?.designEditor?.shell?.contextMenu?.create, 'function');
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.canvasNavigation?.create, 'function');
 	assert.deepEqual(publicEditor.DESIGNER_PALETTE_ROLES, ['navigation', 'elements', 'layers']);
 	assert.equal(typeof window.cbCore?.designEditor?.shell?.navigation?.create, 'function');
@@ -954,4 +956,20 @@ test('CN-1 pan, fit and coordinates operate on transient viewport state', () => 
 	assert.equal(scene.style.transform, '');
 	assert.equal(classes.size, 0);
 	assert.throws(() => controller.getView(), /DESTROYED/);
+});
+
+test('CM-1 stays optional, flat and command-authority-neutral', async () => {
+	const source = await readFile(new URL('../../assets/js/design/shell/context-menu.js', import.meta.url), 'utf8');
+	const caps = await readFile(new URL('../../src/Design/Editor/Assets.php', import.meta.url), 'utf8');
+	assert.match(caps, /public const CANVAS_NAVIGATION_API = 1;/);
+	assert.match(caps, /public const DESIGNER_CONTEXT_MENU_API = 1;/);
+	assert.match(source, /item\.children !== undefined/);
+	assert.match(source, /currentContext\(\) === entry\.context/);
+	assert.match(source, /normalizedItems\(entry\.target\)\.find/);
+	assert.match(source, /canInvoke\(Object\.freeze\(\{actionId, target: entry\.target\}\)\) === true/);
+	assert.match(source, /menu\.setAttribute\('role', 'menu'\)/);
+	assert.match(source, /button\.setAttribute\('role', 'menuitem'\)/);
+	assert.match(source, /event\.key === 'Escape'/);
+	assert.match(source, /close\(\{restoreFocus: false\}\)/);
+	assert.match(source, /listeners\.splice\(0\)\.forEach\(off => off\(\)\)/);
 });
