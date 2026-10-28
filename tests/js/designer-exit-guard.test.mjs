@@ -185,12 +185,12 @@ test('EXIT-P0-03: UNKNOWN Save triggers native unload warning', () => {
 	assert.equal(prevented, true);
 	assert.equal(event.returnValue, '');
 });
-test('EXIT-P0-04: sticky P1 Save authorization and explicit UNKNOWN event handling', () => {
+test('EXIT-P0-04: live consumer Save authorization and explicit UNKNOWN event handling', () => {
 	const launch = read('assets/js/features/designer-launch.js');
-	assert.match(launch, /saveAuthorized/);
+	assert.match(launch, /const saveAuthorized = \(\) => save\?\.getAttribute\?\.\('data-cb-design-shell-save-authorized'\) !== 'false'/);
 	assert.match(launch, /cbDesignShellSaveOutcomeUnknown/);
 	assert.match(launch, /if \(state === 'unknown' \|\| event\.detail\?\.uncertain === true\)/);
-	assert.match(launch, /save\.disabled = !saveAuthorized \|\| busy/);
+	assert.match(launch, /save\.disabled = !saveAuthorized\(\) \|\| busy/);
 });
 test('EXIT-P0-05: context and fullscreen escape use synchronous Base refusal gates', () => {
 	const launch = read('assets/js/features/designer-launch.js');
