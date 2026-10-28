@@ -86,7 +86,7 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 
 	/** @return array<string,string> */
 	public function version_witness(): array {
-		$authority = (string) ( Authority::inspect()['status'] ?? 'blocked' );
+		$authority = (string) ( Authority::inspect( Repository::REPORTS )['status'] ?? 'blocked' );
 		if ( 'active' !== $authority ) {
 			throw new \RuntimeException( 'Reports Profile recovery_required: authority' );
 		}
@@ -110,7 +110,7 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 
 	/** Canonical active authority needs an intact read-only transaction witness. */
 	public function assert_apply_allowed(): void {
-		$authority = (string) ( Authority::inspect()['status'] ?? 'blocked' );
+		$authority = (string) ( Authority::inspect( Repository::REPORTS )['status'] ?? 'blocked' );
 		if ( 'active' === $authority ) {
 			$full = $this->version_witness();
 			$transaction = ReportsProfileTransaction::witness();
@@ -130,7 +130,7 @@ final class ReportsSection extends ExactSection implements VersionGuardedSection
 	public function apply_profile_guarded( array $incoming, string $actor, array $approved ): array {
 		unset( $actor );
 		if ( 'active' !== ( $approved['authority'] ?? null )
-			|| 'active' !== ( Authority::inspect()['status'] ?? null )
+			|| 'active' !== ( Authority::inspect( Repository::REPORTS )['status'] ?? null )
 			|| ! isset( $approved['settings_sha256'], $approved['document_revision'], $approved['document_sha256'] )
 			|| count( $approved ) !== 4 ) {
 			return [ 'status' => 'blocked', 'reason' => 'missing_engine_witness' ];
