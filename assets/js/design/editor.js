@@ -6,6 +6,7 @@ import { createRegistryView } from './platform/registry.js';
 import { createPersistedFields, canonicalSaveJSON } from './platform/persisted-fields.js';
 import { createSaveCoordinator as createCanonicalSaveCoordinator } from './platform/save-coordinator.js';
 import { createDesignerDragDropController } from './shell/drag-drop.js';
+import { createDesignerCanvasNavigation } from './shell/canvas-navigation.js';
 import { designerDropZoneId, resolveDesignerDropPlacement } from './shell/drop-placement.js';
 import {
 	CommandHistory,
@@ -1661,6 +1662,7 @@ export {
 	designerDropZoneId,
 	resolveDesignerDropPlacement,
 	createDesignerDragDropController,
+	createDesignerCanvasNavigation,
 	CommandHistory,
 	DESIGNER_ICON_NAMES,
 	DESIGNER_LAYER_ACTIONS,
@@ -1729,6 +1731,7 @@ const publicApi = Object.freeze({
 			createToggle: createDesignerInspectorToggle,
 			autosizeTextarea: enableDesignerTextareaAutosize,
 		}),
+		canvasNavigation: Object.freeze({ create: createDesignerCanvasNavigation }),
 		dragDrop: Object.freeze({
 			createController: createDesignerDragDropController,
 			zoneId: designerDropZoneId,
