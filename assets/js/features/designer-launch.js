@@ -37,6 +37,13 @@
 
 		root.dataset.cbDesignLaunchState = 'error';
 		root.dataset.cbDesignLaunchFailure = normalizedPhase;
+		// A terminal consumer admission refusal must also disable an existing
+		// launcher immediately, including a launch already waiting for SHELL_READY.
+		const launcher = root.querySelector('[data-cb-design-launch] button');
+		if (launcher) {
+			launcher.disabled = true;
+			launcher.removeAttribute('aria-busy');
+		}
 		if (shell) {
 			shell.dataset.cbDesignShellState = 'error';
 			shell.removeAttribute('aria-busy');
@@ -104,7 +111,7 @@
 	const bindSaveState = (shell, save) => {
 		// A Store/consumer-level Save prohibition is independent of transient
 		// request state. The shell must never re-enable a server-blocked Save.
-		const saveAuthorized = save?.getAttribute?.('data-cb-design-shell-save-authorized') !== 'false';
+		const saveAuthorized = () => save?.getAttribute?.('data-cb-design-shell-save-authorized') !== 'false';
 
 		shell.addEventListener(SAVE_EVENT, (event) => {
 			// The native verified Host has its own recovery-capable Save UI
@@ -137,7 +144,7 @@
 			shell.dataset.cbDesignShellSaveState = state;
 
 			if (save) {
-				save.disabled = !saveAuthorized || busy;
+				save.disabled = !saveAuthorized() || busy;
 				if (busy) save.setAttribute('aria-busy', 'true');
 				else save.removeAttribute('aria-busy');
 			}
@@ -594,13 +601,26 @@
 			shell.hidden = !active;
 		};
 
+		const denied = () => root.dataset.cbDesignLaunchState === 'error';
 		const clearPending = () => {
 			launchPending = false;
-			button.disabled = false;
+			button.disabled = denied();
 			button.removeAttribute('aria-busy');
 		};
+		// The failure event may arrive while awaiting SHELL_READY, or before
+		// launcher creation. In either ordering retain the explicit refusal.
+		root.addEventListener(FAILURE_EVENT, () => {
+			launchPending = false;
+			button.disabled = true;
+			button.removeAttribute('aria-busy');
+			if (fullscreen.getAttribute('aria-pressed') !== 'true') setDesignerMode(false);
+		});
 
 		const enterDesignerMode = () => {
+			if (denied()) {
+				clearPending();
+				return;
+			}
 			if (shell.dataset.cbDesignShellInitialized !== 'true') {
 				launchPending = true;
 				button.disabled = true;
@@ -635,6 +655,8 @@
 		wrapper.append(button);
 		context.insertAdjacentElement('afterend', wrapper);
 		setDesignerMode(false);
+		// Initial admission can be denied before this controller is mounted.
+		if (denied()) clearPending();
 	};
 
 	const boot = () => {
@@ -685,7 +707,7 @@
 			}
 
 			root.dataset.cbDesignLaunchInitialized = 'true';
-			root.dataset.cbDesignLaunchState = 'ready';
+			if (root.dataset.cbDesignLaunchState !== 'error') root.dataset.cbDesignLaunchState = 'ready';
 			// The later static ESM composition may observe or query this one
 			// existing launch surface; legacy consumers remain untouched.
 			root.dispatchEvent(new CustomEvent(LAUNCH_READY_EVENT, {
