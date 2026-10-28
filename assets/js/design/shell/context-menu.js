@@ -232,7 +232,8 @@ export const createDesignerContextMenu = ({
 			invoke(items[activeIndex]?.id);
 			return;
 		} else if (event.key === 'Tab') {
-			close({restoreFocus: false});
+			event.preventDefault();
+			close();
 			return;
 		} else return;
 		event.preventDefault();
