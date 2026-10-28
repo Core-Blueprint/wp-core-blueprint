@@ -115,6 +115,7 @@ assert_lease( ! Lease::owns_for_save( 'contracts.template', 'a', $first['token']
 $wpdb->in_transaction = true;
 assert_lease( Lease::owns_for_save( 'contracts.template', 'a', $first['token'], $allowed ), 'same-transaction save gate' );
 $wpdb->engine = 'MyISAM';
+assert_lease( 'unavailable' === Lease::claim( 'contracts.template', 'noninnodb', $allowed )['status'], 'non-InnoDB claim denied' );
 assert_lease( ! Lease::owns_for_save( 'contracts.template', 'a', $first['token'], $allowed ), 'nontransactional option store denied' );
 $wpdb->engine = 'InnoDB';
 $wpdb->in_transaction = false;
