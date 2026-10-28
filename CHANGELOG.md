@@ -10,6 +10,13 @@
 - Reconcile JavaScript public-session and PHP boundary regression tests while preserving the Base Navigation and existing Shell contracts. Certificates RC1.2 is an independently validated prospective consumer, not a merged dependency.
 - Evaluator P02 neutral state/history, browser field testing, CI/Actions, merges, WordPress.org resubmission and production deployment are separately gated and not part of this source candidate.
 
+## 1.0.1 — Release candidate (formal acceptance pending)
+
+- Present a consistent branded **Design with Core Blueprint** entry button for Mail Templates and Maintenance Reports without changing their existing navigation or permission boundaries.
+- Carry forward the accepted Base Designer Foundation improvements and compatible shared consumer APIs for release review.
+- Align the PHP version, WordPress stable tag and six reviewed translation-catalog version headers with the 1.0.1 candidate.
+- Final cumulative source diff, real WordPress Level 2, official Level 3 package, install/update FIELD and customer-release approval remain separate required gates.
+
 ## 1.0.0 — 2026-10-04
 
 ### Secret Protection Foundation v1
