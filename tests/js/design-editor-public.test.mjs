@@ -1040,6 +1040,9 @@ test('CM-1 refuses changed permissions, context and disabled actions with focus 
 		onInvoke: action => invocations.push(action),
 	});
 	const unregister = controller.registerTarget(node, {kind: 'node', id: 'n1'});
+	assert.equal(controller.open({target: {kind: 'node', id: 'n1'}, invoker: node}), true);
+	assert.equal(controller.close(), true);
+	assert.equal(controller.open({target: {kind: 'node', id: 'missing'}}), false);
 	const rightClick = () => {
 		const event = {type: 'contextmenu', target: node, clientX: 300, clientY: 200,
 			preventDefault() {this.prevented = true;}};
