@@ -7,6 +7,7 @@ import { createPersistedFields, canonicalSaveJSON } from './platform/persisted-f
 import { createSaveCoordinator as createCanonicalSaveCoordinator } from './platform/save-coordinator.js';
 import { createDesignerDragDropController } from './shell/drag-drop.js';
 import { createDesignerCanvasNavigation } from './shell/canvas-navigation.js';
+import { createDesignerContextMenu } from './shell/context-menu.js';
 import { designerDropZoneId, resolveDesignerDropPlacement } from './shell/drop-placement.js';
 import {
 	CommandHistory,
@@ -1663,6 +1664,7 @@ export {
 	resolveDesignerDropPlacement,
 	createDesignerDragDropController,
 	createDesignerCanvasNavigation,
+	createDesignerContextMenu,
 	CommandHistory,
 	DESIGNER_ICON_NAMES,
 	DESIGNER_LAYER_ACTIONS,
@@ -1732,6 +1734,7 @@ const publicApi = Object.freeze({
 			autosizeTextarea: enableDesignerTextareaAutosize,
 		}),
 		canvasNavigation: Object.freeze({ create: createDesignerCanvasNavigation }),
+		contextMenu: Object.freeze({ create: createDesignerContextMenu }),
 		dragDrop: Object.freeze({
 			createController: createDesignerDragDropController,
 			zoneId: designerDropZoneId,
