@@ -21,8 +21,11 @@ final class Authority {
 	private const SETTINGS_OPTION = 'cb_core_settings';
 
 	/** @return array{status:string} */
-	public static function inspect(): array {
+	public static function inspect( string $resource_type = Repository::MAIL ): array {
 		global $wpdb;
+		if ( ! in_array( $resource_type, [ Repository::MAIL, Repository::REPORTS ], true ) ) {
+			return [ 'status' => 'blocked' ];
+		}
 		if ( ! is_object( $wpdb ) || ! is_string( $wpdb->options ) || '' === $wpdb->options
 			|| (int) get_current_blog_id() <= 0 || ! Schema::healthy() ) {
 			return [ 'status' => 'blocked' ];
@@ -55,9 +58,13 @@ final class Authority {
 			$rows[$name] = $row;
 		}
 
-		// A2.2 markers/backups and even an empty historic Mail option mean
-		// an old or ambiguous source; never adopt it as clean native-v1.
+		// Global migration markers block both domains. A historic Mail override
+		// must never be mistaken for Reports data, but still blocks Mail.
 		foreach ( array_slice( $names, 0, 5 ) as $name ) {
+			if ( Repository::REPORTS === $resource_type
+				&& \CoreBlueprint\Core\Mail\Designer\TemplateRepository::OPTION === $name ) {
+				continue;
+			}
 			if ( null !== $rows[$name] ) {
 				return [ 'status' => 'blocked' ];
 			}
