@@ -775,3 +775,22 @@ The current Base native Host already registers palette sources and canvas/isolat
 **Explicitly excluded DF-D2:** moves of existing authored nodes across containers, identity/path remapping, cycle handling, cross-parent Selection and Undo/Redo are **not** implicitly enabled by DF-D1. These require separate proven domain capabilities and their own scoped approval. Existing same-parent reorder remains unchanged.
 
 **Acceptance boundary:** public ESM/global/PHP same-build contract, no-selection/root, container/child, leaf/sibling, wrong parent/stale/refusal with no fallback, click/drag candidate parity, invalid hover clearing, one-command History, native Mail + Maintenance Reports Save/Reopen, and product-specific consumer paired FIELD after their own approval. No schema, persistence, lease, public version or merge/release changes in this Base SOURCE candidate.
+
+
+## DF-D2 — Unified Element Movement (Base SOURCE candidate, 2026-10-29)
+
+**Scope:** Native Base Mail and Maintenance Reports plus the shared optional API for future consumers. This feature-branch contract is NOT a released/installed capability. Same-ZIP PHP + JavaScript verification and the product owner's FIELD acceptance remain mandatory. It does not authorize Contracts or the independent Reports extension to mutate their sources.
+
+- Public ESM: `resolveDesignerMovePlacement({project,source,zoneId,edge,allowedParentsByType,commandId,canMove?})`, `moveNodeCommand(fromPath,parentPath,index)`.
+- Global: `window.cbCore.designEditor.shell.placement.resolveMove` and `shell.dragDrop.resolveMove`; `commands.moveNode`.
+- Same-build PHP capability: `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_NODE_MOVE_API >= 1`.
+- `source` must be an existing authored node `{kind:'node', type, path}`. Valid semantic zone IDs come from `designerDropZoneId(path)`. Edges are `before`, `inside`, `after`.
+- Output is a frozen `{commandId,input:{fromPath,parentPath,index}}` or `null`. Both destination `parentPath` and `index` address the document **after logical source removal**. A consumer must NOT recompute the destination index using pre-removal siblings.
+- This resolver is a placement **candidate**, never command permission. Actual execution MUST resolve the current registered domain command and use its `validateInput`, `authorize`, `canApply` and one synchronous History execution, including current edit-lease/save gates where applicable.
+- Root moves, invalid paths, stale source type, source descendants, self-drops, no-ops and unapproved parent-child placements are refused; no ancestor/root fallback. Native domain commands also validate the full resulting project.
+- `moveNodeCommand` performs one stageable project transition using the existing CommandHistory and remaps selected references for the moved node, its descendants, and shifted siblings. No separate delete/insert History step, persistent node IDs, extra Selection authority or project schema changes.
+- Native Layers use `createDesignerLayerTree({sharedDragDrop:true})` and register sources/zones on the existing `createDesignerDragDropController`. Without this opt-in, the existing Layers same-parent drag behavior is unchanged for external consumers.
+- Native Mail's selected canvas nodes expose drag handles without hijacking inline editing. Native Maintenance Reports uses selected handle overlays and geometry-proxy dropzones in the parent document; iframe content cannot access Host, command or session objects. Bounded Flow regions can describe nested `rN.M` IDs, and old root-only `rN` region messages remain accepted for compatibility.
+- The native controller fences an active gesture by document context and current Project instance revision. Re-rendered/detached sources and zones are released. Elements-to-canvas DND retains its existing insertion route; authored node moves use `mail.move` or `reports.move` with one registered command execution.
+
+**FIELD acceptance remains OPEN:** verify Layers↔Layers, Canvas↔Canvas and both cross-surface directions on native Mail and Maintenance Reports, including subtree preservation, no invalid visual cues, keyboard, selection/Inspector, Undo/Redo single transition, Save/Reopen, light/dark and narrow viewport. Formal Level 2/3, Golden, merge and release remain HOLD.
