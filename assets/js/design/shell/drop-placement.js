@@ -1,3 +1,5 @@
+import { remapPathAfterRemoval } from '../core/tree.js';
+
 /**
  * Shared semantic placement projection for the active DesignProject.
  * Browser DOM paths are never authorizations. This pure helper resolves only
@@ -114,4 +116,46 @@ export const resolveDesignerInsertPlacement = ({
 		project, source: {kind: 'palette', type},
 		zoneId, edge, allowedParentsByType, commandId, canInsert,
 	});
+};
+
+/** Existing node movement: frozen candidate in post-removal coordinates only. */
+export const resolveDesignerMovePlacement=({
+ project,source,zoneId,edge,allowedParentsByType,commandId,canMove=null,
+}={})=>{
+ if(!project?.root||source?.kind!=='node'||!pathOK(source.path)||!source.path.length
+  ||typeof source.type!=='string'||at(project.root,source.path)?.type!==source.type
+  ||!(allowedParentsByType instanceof Map)||typeof commandId!=='string'||!commandId
+  ||(canMove!==null&&typeof canMove!=='function')
+  ||!['before','inside','after'].includes(edge))return null;
+ const path=decodeZone(zoneId);
+ if(!path)return null;
+ const node=at(project.root,path),from=source.path;
+ if(!node||!Array.isArray(node.children))return null;
+ if(path.length>=from.length&&from.every((v,i)=>path[i]===v))return null;
+ const allowed=allowedParentsByType.get(source.type);
+ if(!(allowed instanceof Set))return null;
+ const containers=new Set();
+ for(const parents of allowedParentsByType.values()){
+  if(!(parents instanceof Set))return null;
+  for(const type of parents)containers.add(type);
+ }
+ const inside=edge==='inside'&&allowed.has(node.type);
+ if(edge==='inside'&&path.length&&!inside&&containers.has(node.type))return null;
+ const targetParent=path.length===0||inside?path:path.slice(0,-1);
+ const parent=at(project.root,targetParent);
+ if(!parent||!Array.isArray(parent.children)||!allowed.has(parent.type))return null;
+ const beforeIndex=path.length===0||inside?parent.children.length
+  :path.at(-1)+(edge==='after'||edge==='inside'?1:0);
+ const destination=remapPathAfterRemoval(targetParent,from);
+ if(destination===null)return null;
+ const sameParent=targetParent.length===from.length-1
+  &&targetParent.every((v,i)=>from[i]===v);
+ const index=beforeIndex-(sameParent&&from.at(-1)<beforeIndex?1:0);
+ const final=[...destination,index];
+ if(final.length===from.length&&final.every((v,i)=>v===from[i]))return null;
+ try{if(canMove&&canMove(project,source,destination)!==true)return null;}
+ catch{return null;}
+ return Object.freeze({commandId,input:Object.freeze({
+  fromPath:Object.freeze([...from]),parentPath:Object.freeze([...destination]),index,
+ })});
 };

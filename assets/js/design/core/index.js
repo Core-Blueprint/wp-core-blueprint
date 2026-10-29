@@ -1,6 +1,7 @@
 export { EditorState } from './editor-state.js';
 export {
 	insertNodeCommand,
+	moveNodeCommand,
 	removeNodeCommand,
 	reorderNodeCommand,
 	setPropertyCommand,
@@ -22,6 +23,8 @@ export {
 	nodeAt,
 	normalizePath,
 	pathKey,
+	moveNode,
+	remapPathAfterMove,
 	removeNode,
 	reorderChild,
 	remapPathAfterInsertion,

@@ -1,4 +1,4 @@
-import {insertNodeCommand,removeNodeCommand,reorderNodeCommand,setPropertyCommand} from '../core/commands.js';
+import {insertNodeCommand,removeNodeCommand,reorderNodeCommand,moveNodeCommand,setPropertyCommand} from '../core/commands.js';
 import {nodeAt} from '../core/tree.js';
 import {sanitizeMailMarkup,createMailRichTextControls} from './rich-text-controls.js';
 const PROVIDER='core.blueprint', ROOT='core.blueprint.mail';
@@ -58,6 +58,8 @@ const inputOK=(d,i)=>{
  case 'mail.insert':return pathOK(i.parentPath)&&Number.isSafeInteger(i.index)&&i.index>=0&&PALETTE.includes(i.type)&&Object.keys(i).length===3;
  case 'mail.remove':return pathOK(i.path)&&i.path.length>0&&Object.keys(i).length===1;
  case 'mail.reorder':return pathOK(i.parentPath)&&Number.isSafeInteger(i.fromIndex)&&Number.isSafeInteger(i.toIndex)&&i.fromIndex>=0&&i.toIndex>=0&&Object.keys(i).length===3;
+ case 'mail.move':return pathOK(i.fromPath)&&i.fromPath.length>0&&pathOK(i.parentPath)
+  &&Number.isSafeInteger(i.index)&&i.index>=0&&Object.keys(i).length===3;
  case 'mail.set':return pathOK(i.path)&&typeof i.key==='string'&&Object.keys(i).length===3;
  default:return false;
  }};
@@ -78,6 +80,12 @@ const CMDS=Object.freeze({
   const at=nodeAt(p.root,i.parentPath);return !!at&&at.type!=='mail.columns'
    &&i.fromIndex<at.children.length&&i.toIndex<at.children.length;
  },(p,i)=>reorderNodeCommand(i.parentPath,i.fromIndex,i.toIndex).apply(p)),
+ 'mail.move':cmd('mail.move',(p,i)=>{
+  const moving=nodeAt(p.root,i.fromPath);
+  if(!moving||moving.type==='mail.column')return false;
+  try{validateProject(moveNodeCommand(i.fromPath,i.parentPath,i.index).apply(p).project);return true;}
+  catch{return false;}
+ },(p,i)=>moveNodeCommand(i.fromPath,i.parentPath,i.index).apply(p)),
  'mail.set':cmd('mail.set',(p,i)=>{
   const at=nodeAt(p.root,i.path);return !!at&&has(TYPES[at.type]?.controls,i.key)
    &&valueOK(i.value,TYPES[at.type].controls[i.key]);

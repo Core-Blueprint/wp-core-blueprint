@@ -1,6 +1,6 @@
 import {createFlowPreviewHost} from '../document/flow/preview-host.js';
 import {
-	insertNodeCommand, removeNodeCommand, reorderNodeCommand, setPropertyCommand,
+	insertNodeCommand, removeNodeCommand, reorderNodeCommand, moveNodeCommand, setPropertyCommand,
 } from '../core/commands.js';
 import {nodeAt} from '../core/tree.js';
 
@@ -85,6 +85,7 @@ const validateInput=(d,i)=>{
 	if(!exact(i,d.id==='reports.insert'?['parentPath','index','type']
 		:d.id==='reports.remove'?['path']
 		:d.id==='reports.reorder'?['parentPath','fromIndex','toIndex']
+		:d.id==='reports.move'?['fromPath','parentPath','index']
 		:d.id==='reports.set'?['path','key','value']:[]))return false;
 	if(d.id==='reports.insert')return validPath(i.parentPath)&&Number.isSafeInteger(i.index)
 		&&i.index>=0&&Object.hasOwn(defaults,i.type);
@@ -92,6 +93,8 @@ const validateInput=(d,i)=>{
 	if(d.id==='reports.reorder')return validPath(i.parentPath)
 		&&Number.isSafeInteger(i.fromIndex)&&i.fromIndex>=0
 		&&Number.isSafeInteger(i.toIndex)&&i.toIndex>=0;
+	if(d.id==='reports.move')return validPath(i.fromPath)&&i.fromPath.length>0&&validPath(i.parentPath)
+  &&Number.isSafeInteger(i.index)&&i.index>=0;
 	if(d.id==='reports.set')return validPath(i.path)&&typeof i.key==='string'&&typeof i.value==='string';
 	return false;
 };
@@ -140,6 +143,12 @@ const table=Object.freeze({
 			throw new TypeError('COMMAND_REFUSED');
 		return reorderNodeCommand(i.parentPath,i.fromIndex,i.toIndex).apply(p);
 	}),
+	'reports.move':command('reports.move',(p,i)=>{
+  const moving=nodeAt(p.root,i.fromPath);
+  if(!moving||['reports.header','reports.footer'].includes(moving.type))
+   throw new TypeError('COMMAND_REFUSED');
+  return moveNodeCommand(i.fromPath,i.parentPath,i.index).apply(p);
+ }),
 	'reports.set':command('reports.set',(p,i)=>{
 		const node=nodeAt(p.root,i.path);
 		if(!node||!Object.hasOwn(defs[node.type].values,i.key)

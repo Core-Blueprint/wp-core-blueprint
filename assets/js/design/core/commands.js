@@ -1,6 +1,8 @@
 import { cloneFrozen, cloneValue } from './value.js';
 import {
 	insertChild,
+	moveNode,
+	remapPathAfterMove,
 	normalizePath,
 	removeNode,
 	reorderChild,
@@ -46,6 +48,15 @@ export const reorderNodeCommand = (parentPath, fromIndex, toIndex) => {
 		project: withRoot(project, reorderChild(project.root, parent, fromIndex, toIndex)),
 		remapSelection: (path) => remapPathAfterReorder(path, parent, fromIndex, toIndex),
 	}));
+};
+
+/** One project and selection transition, never separate remove/insert commits. */
+export const moveNodeCommand = (fromPath, parentPath, index) => {
+ const from=normalizePath(fromPath), parent=normalizePath(parentPath);
+ return command('move-node', project=>({
+  project:withRoot(project,moveNode(project.root,from,parent,index)),
+  remapSelection:path=>remapPathAfterMove(path,from,parent,index),
+ }));
 };
 
 export const setPropertyCommand = (nodePath, propertyPath, value) => {

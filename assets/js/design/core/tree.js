@@ -144,3 +144,29 @@ export const remapPathAfterReorder = (path, parentPath, fromIndex, toIndex) => {
 	}
 	return target;
 };
+
+/** Atomic subtree move: destination is indexed in the tree AFTER removal. */
+export const moveNode = (root, fromPath, parentPath, index) => {
+ const from=normalizePath(fromPath), parent=normalizePath(parentPath);
+ if(!from.length || !nodeAt(root,from) || !Number.isSafeInteger(index) || index<0)
+  throw new RangeError('Invalid node move source or index.');
+ const next=cloneValue(root);
+ const [moving]=mutableNodeAt(next,from.slice(0,-1)).children.splice(from.at(-1),1);
+ const destination=nodeAt(next,parent);
+ if(!destination || index>destination.children.length)
+  throw new RangeError('Invalid node move destination.');
+ if(from.length===parent.length+1 && from.slice(0,-1).every((v,i)=>v===parent[i])
+   && from.at(-1)===index) throw new RangeError('Node move is a no-op.');
+ mutableNodeAt(next,parent).children.splice(index,0,moving);
+ return next;
+};
+/** Remap all selected paths, including the moved subtree's descendants. */
+export const remapPathAfterMove = (path, fromPath, parentPath, index) => {
+ const current=normalizePath(path),from=normalizePath(fromPath),parent=normalizePath(parentPath);
+ if(!from.length || !Number.isSafeInteger(index) || index<0)
+  throw new TypeError('Invalid move path mapping.');
+ if(current.length>=from.length && from.every((v,i)=>current[i]===v))
+  return [...parent,index,...current.slice(from.length)];
+ const removed=remapPathAfterRemoval(current,from);
+ return removed===null?null:remapPathAfterInsertion(removed,parent,index);
+};
