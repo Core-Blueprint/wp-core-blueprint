@@ -80,9 +80,11 @@ export const createDesignerInteractionPresentation = ({
 		if (!dragging && active && surface.contains(active)) {
 			const focus = nodes.filter(n => n === active || n.contains(active))
 				.sort((a, b) => JSON.parse(nodeKey(b)).length - JSON.parse(nodeKey(a)).length)[0];
-			if (focus) put(nodeKey(focus), focus,
-				active.closest?.('input,textarea,[contenteditable],[role="textbox"]') ? 'editing' : 'focus',
-				null, 2);
+			if (focus) {
+				const editing = active.closest?.('input,textarea,[contenteditable],[role="textbox"]');
+				put(nodeKey(focus), focus, editing ? 'editing' : 'focus',
+					null, editing ? 4 : 2);
+			}
 		}
 		if (selectedKey) {
 			const selectedNode = nodes.find(n => nodeKey(n) === selectedKey);
@@ -92,7 +94,7 @@ export const createDesignerInteractionPresentation = ({
 			for (const zone of surface.querySelectorAll('[data-cb-design-drop-active="true"]')) {
 				const id = zone.dataset.cbDesignDropZoneId;
 				const key = zoneKey(id) || 'drop:' + id;
-				put(key, zone, 'drop', zone.dataset.cbDesignDropEdge || 'inside', 4);
+				put(key, zone, 'drop', zone.dataset.cbDesignDropEdge || 'inside', 5);
 			}
 		}
 		const layerRect = layer.getBoundingClientRect();
