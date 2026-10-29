@@ -1,4 +1,13 @@
-import { remapPathAfterRemoval } from '../core/tree.js';
+// Keep the semantic placement module self-contained: existing public tests
+// and consumers also evaluate this pure helper through standalone ESM data URLs.
+const remapPathAfterRemoval = (path, removed) => {
+ const target = [...path];
+ if (target.length >= removed.length && removed.every((v,i)=>target[i]===v)) return null;
+ const parent = removed.slice(0,-1);
+ if (target.length > parent.length && parent.every((v,i)=>target[i]===v)
+   && target[parent.length] > removed.at(-1)) target[parent.length] -= 1;
+ return target;
+};
 
 /**
  * Shared semantic placement projection for the active DesignProject.
