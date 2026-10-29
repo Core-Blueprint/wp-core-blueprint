@@ -59,11 +59,13 @@ test('host rejects forged, missing, overdeep and hidden Reports selection target
 	assert.equal(previewPathForRegion('r1.0', p), null);
 });
 
-test('Regions retain root-only drag geometry and guarded Flow iframe ownership', async () => {
+test('Regions expose bounded nested proxy geometry and guarded Flow iframe ownership', async () => {
 	const adapter = await adapterSource();
 	const host = await readFile(new URL('../../assets/js/design/document/flow/preview-host.js', import.meta.url), 'utf8');
 	const compiler = await readFile(new URL('../../src/Reports/MaintenanceFlowCompiler.php', import.meta.url), 'utf8');
-	assert.match(adapter, /if \(!\/\^r\(\?:0\|\[1-9\]\[0-9\]\*\)\$\/\.test\(region\.id\)\) continue;/);
+	assert.match(adapter, /previewPathForRegion\(region\.id, lastProject\)/);
+	assert.match(adapter, /updateDragHandle\(\)/);
+	assert.match(adapter, /data-cb-design-node-drag-handle/);
 	assert.match(adapter, /container\.classList\.contains\('is-fetching'\)/);
 	assert.match(adapter, /editor\.select\(\[\{kind: 'node', path\}\], \{kind: 'node', path\}\)/);
 	assert.match(host, /event\.source !== iframe\.contentWindow/);
