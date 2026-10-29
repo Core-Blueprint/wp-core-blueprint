@@ -20,6 +20,36 @@ const activation = extract('\t\t\tconst activateInteractions = () => {',
 const publication = extract('\tconst publishCommitted = () => {',
   '\n\treturn Object.freeze({\n\t\tget root()');
 
+test('DF-D3 P0 registers the Host-facing shell facade, not the internal controller', () => {
+  const registration = extract('\t\t\tconst shellFacade = Object.freeze({',
+    '\n\t\t};\n\t\thost = createHost');
+  assert.match(registration, /stagedShells\.set\(stagedRoot, shellFacade\)/);
+  assert.match(registration, /return shellFacade;/);
+  assert.doesNotMatch(editor, /stagedShells\.set\(stagedRoot, controller\)/);
+  const stagedShells = new WeakMap(), stagedRoot = {};
+  let refreshed = 0, activation = 0;
+  const controller = {activatePlatformSession:()=>true, destroy(){}};
+  let interactions = {refresh:()=>{refreshed++},destroy(){}};
+  const facade = new Function(
+    'stagedShells','stagedRoot','controller','palette','dnd',
+    'activateInteractions','renderInteraction','releasePaletteSources',
+    'releaseNodeSources','interactions',
+    'return (() => {\n' + registration + '\n})();'
+  )(
+    stagedShells,stagedRoot,controller,{destroy(){}},{destroy(){}},
+    ()=>{activation++;return true},()=>{},()=>{},()=>{},interactions
+  );
+  assert.equal(stagedShells.get(stagedRoot),facade);
+  assert.notEqual(facade,controller,'The internal controller lacks the Host publication contract');
+  assert.equal(typeof facade.refreshInteraction,'function');
+  assert.equal(typeof facade.activateInteractions,'function');
+  assert.equal(facade.activatePlatformSession(),true);
+  facade.refreshInteraction();
+  facade.activateInteractions();
+  assert.equal(refreshed,1);
+  assert.equal(activation,1);
+});
+
 test('DF-D3 P0 keeps the RenderAdapter surface empty through Host staging', () => {
   assert.match(hostSource, /renderSurface\.isConnected \|\| renderSurface\.childNodes\.length/);
   const staging = extract('\t\tconst createShell = (',
