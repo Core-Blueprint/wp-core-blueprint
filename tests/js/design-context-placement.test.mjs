@@ -88,7 +88,7 @@ test('Base native palette uses public contextual resolver without ancestor trave
 	const nativeSource = await readFile(new URL('../../assets/js/design/editor.js', import.meta.url), 'utf8');
 	assert.match(nativeSource, /const insertionTarget = \(project, type\) => \{/);
 	assert.match(nativeSource, /return resolveDesignerInsertPlacement\(\{/);
-	assert.match(nativeSource, /selectedRef: editor\.selection\(\)\?\.primary \?\? null/);
+	assert.match(nativeSource, /const selectedRef = editor\.selection\(\)\?\.primary \?\? null/);
 	assert.doesNotMatch(nativeSource, /while \(parent && !admissible\.has\(parent\.type\)/);
 	assert.match(nativeSource, /resolveDesignerDropPlacement\(\{/);
 	assert.match(nativeSource, /forbiddenAfterFooter\(project, designerDropZoneId\(selectedRef\.path\), 'after'\)/);
