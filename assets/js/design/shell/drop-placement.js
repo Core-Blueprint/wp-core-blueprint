@@ -72,3 +72,46 @@ export const resolveDesignerDropPlacement = ({
 		}),
 	});
 };
+
+
+/**
+ * DF-C: canonical click-to-add placement for one active typed selection.
+ *
+ * Only a candidate for an already registered domain insertion command.
+ * A consumer must re-read the current selection/project, enforce its live
+ * authorization (including edit lease), then commit through its own History.
+ * This shares the exact geometry and domain checks with palette Drag & Drop.
+ *
+ * selectedRef=null means truly no selection. A stale/invalid selected ref is
+ * refused, NEVER silently interpreted as a request for the document root.
+ *
+ * @returns {{commandId:string,input:{parentPath:number[],index:number,type:string}}|null}
+ */
+export const resolveDesignerInsertPlacement = ({
+	project, selectedRef = null, type, allowedParentsByType, commandId,
+	canInsert = null,
+} = {}) => {
+	if (!project?.root || typeof type !== 'string' || !type
+		|| !(allowedParentsByType instanceof Map)
+		|| typeof commandId !== 'string' || !commandId) return null;
+	let zoneId = 'root';
+	let edge = 'inside';
+	if (selectedRef !== null) {
+		if (!selectedRef || selectedRef.kind !== 'node' || !pathOK(selectedRef.path)) return null;
+		const selected = at(project.root, selectedRef.path);
+		if (!selected || !Array.isArray(selected.children)) return null;
+		zoneId = designerDropZoneId(selectedRef.path);
+		// A container remains a container even when *this* child type is
+		// forbidden. Do not fall back to its parent or the document root.
+		const containerTypes = new Set();
+		for (const parents of allowedParentsByType.values()) {
+			if (!(parents instanceof Set)) return null;
+			for (const parentType of parents) containerTypes.add(parentType);
+		}
+		edge = containerTypes.has(selected.type) ? 'inside' : 'after';
+	}
+	return resolveDesignerDropPlacement({
+		project, source: {kind: 'palette', type},
+		zoneId, edge, allowedParentsByType, commandId, canInsert,
+	});
+};
