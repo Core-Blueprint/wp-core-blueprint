@@ -64,6 +64,8 @@ test('DF-D4A Reports geometry refresh never reactivates an independent proxy dur
     remove(){if(this.parent)this.parent.children=this.parent.children.filter(el=>el!==this);this.parent=null;}
     setAttribute(k,v){this.attrs[k]=String(v);}
     getAttribute(k){return this.attrs[k]??null;}
+    addEventListener(){}
+    removeEventListener(){}
     querySelectorAll(sel){
       if(sel==='[data-cb-design-drop-zone-id]')return this.children.filter(el=>el.dataset.cbDesignDropZoneId);
       if(sel==='[data-cb-reports-direct-region]')return this.children.filter(el=>el.dataset.cbReportsDirectRegion);
@@ -109,7 +111,7 @@ test('DF-D4A Reports geometry refresh never reactivates an independent proxy dur
 test('DF-D4A direct Reports node target handles valid move and palette insert exactly once; invalid drop is inert', () => {
   const doc = {createElement(){return new Element();},addEventListener(){},removeEventListener(){}};
   class Element {
-    constructor(){this.ownerDocument=doc;this.parent=null;this.children=[];this.attrs={};this.listeners={};this.isConnected=true;}
+    constructor(){this.ownerDocument=doc;this.parent=null;this.children=[];this.style={};this.attrs={};this.listeners={};this.isConnected=true;}
     append(child){child.parent=this;this.children.push(child);}
     remove(){if(this.parent)this.parent.children=this.parent.children.filter(el=>el!==this);
       this.parent=null;this.isConnected=false;}
@@ -190,7 +192,7 @@ test('DF-D4A shared Base overlay resolves direct node drop and selection to one 
     }
   }
   doc.createElement=()=>new Element();
-  doc.defaultView={requestAnimationFrame:()=>1,cancelAnimationFrame(){}};
+  doc.defaultView={requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener(){},removeEventListener(){}};
   const root=new Element(),surface=new Element(),hit=new Element();
   root.append(surface);surface.append(hit);
   hit.dataset.cbDesignNodePath='[1]';
