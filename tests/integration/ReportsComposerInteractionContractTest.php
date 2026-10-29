@@ -85,7 +85,7 @@ final class CB_Reports_Composer_Interaction_Contract_Test extends WP_UnitTestCas
 		self::assertStringNotContainsString( 'DesignDocumentAdapter::reset(', $handler );
 		self::assertStringContainsString( 'wp_send_json_error(', $handler );
 		self::assertStringContainsString( "return [ 'status' => 'blocked' ];", $adapter );
-		self::assertStringContainsString( 'Authority::inspect()', $adapter );
+		self::assertStringContainsString( 'Authority::inspect( Repository::REPORTS )', $adapter );
 		self::assertStringContainsString( 'render( ?array $native = null )', $preview );
 		self::assertStringContainsString( 'FlowRenderApi::preview_html(', $preview );
 	}
