@@ -347,6 +347,7 @@
 
 /* Dynamic Data is a labeled, full-width vertical list inside Elements.
  * This never changes the two-column grid of actual element cards. */
+.cb-core-design-shell__dynamic-grid,
 .cb-core-design-shell--native .cb-core-design-shell__dynamic-grid {
 	--cb-design-palette-columns: 1;
 	grid-template-columns: minmax(0, 1fr);
