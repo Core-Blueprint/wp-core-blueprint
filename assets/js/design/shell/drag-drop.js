@@ -48,6 +48,50 @@ export const createDesignerDragDropController = ({
 	let gesture = null;
 	let highlighted = null;
 	let destroyed = false;
+	let dragDot = null;
+	let dragDotFrame = null;
+	const clearDragDot = () => {
+		if (dragDotFrame !== null) doc.defaultView?.cancelAnimationFrame?.(dragDotFrame);
+		dragDotFrame = null;
+		dragDot?.remove();
+		dragDot = null;
+	};
+	// Native HTML DND already tracks the cursor. Replace its oversized browser
+	// ghost with one 12px accent-token dot, not a second pointer drag engine.
+	const setNativeDragDot = event => {
+		if (typeof event.dataTransfer?.setDragImage !== 'function') return;
+		clearDragDot();
+		const dot = doc.createElement('span');
+		dot.className = 'cb-core-design-drag-dot';
+		dot.setAttribute('aria-hidden', 'true');
+		const x = Number.isFinite(event.clientX) ? event.clientX : 0;
+		const y = Number.isFinite(event.clientY) ? event.clientY : 0;
+		Object.assign(dot.style, {
+			position: 'fixed', left: (x - 6) + 'px', top: (y - 6) + 'px',
+			width: '12px', height: '12px', borderRadius: '50%',
+			background: 'var(--cb-accent, #00a8e8)', pointerEvents: 'none',
+			zIndex: '2147483647',
+		});
+		root.append(dot);
+		dragDot = dot;
+		try {
+			event.dataTransfer.setDragImage(dot, 6, 6);
+		} catch (_) {
+			// A browser without a supported drag-image surface retains native
+			// transport and authorization; it never loses the gesture.
+			clearDragDot();
+			return;
+		}
+		// Keep the dot attached through the browser's dragstart snapshot, but
+		// never leave a duplicate on-screen marker during the active gesture.
+		const win = doc.defaultView;
+		if (typeof win?.requestAnimationFrame === 'function') {
+			dragDotFrame = win.requestAnimationFrame(() => {
+				dragDotFrame = null;
+				if (dragDot === dot) { dot.remove(); dragDot = null; }
+			});
+		}
+	};
 	const emit = (status, message) => {
 		live.textContent = message;
 		if (onStatus) onStatus(Object.freeze({status, message}));
@@ -67,6 +111,7 @@ export const createDesignerDragDropController = ({
 	};
 	const cancel = (reason = 'cancelled') => {
 		clearHighlight();
+		clearDragDot();
 		if (!gesture) return;
 		gesture = null;
 		emit(reason, reason === 'cancelled' ? 'Element placement cancelled.' : 'Element placement unavailable.');
@@ -121,6 +166,7 @@ export const createDesignerDragDropController = ({
 		const source = gesture.source;
 		gesture = null;
 		clearHighlight();
+		clearDragDot();
 		try {
 			const result = commit(Object.freeze({source, intent}));
 			if (!isSync(result)) throw new TypeError('DESIGNER_DND_ASYNC_COMMIT_REFUSED');
@@ -201,6 +247,7 @@ export const createDesignerDragDropController = ({
 			if (event.dataTransfer) {
 				event.dataTransfer.effectAllowed = kind === 'node' ? 'move' : 'copyMove';
 				event.dataTransfer.setData('text/plain', 'cb-designer-element');
+				setNativeDragDot(event);
 			}
 		};
 		const dragEnd = () => { if (gesture?.origin === element) cancel(); };
