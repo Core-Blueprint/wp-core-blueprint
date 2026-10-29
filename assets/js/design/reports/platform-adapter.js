@@ -296,7 +296,15 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			connectedObserver.observe(doc.documentElement, {childList: true, subtree: true});
 		}
 	};
+	const clearRegions = () => {
+		lastRegions = [];
+		dropLayer?.replaceChildren();
+		dropLayer?.dispatchEvent(new doc.defaultView.CustomEvent(
+			'cb:designer-dropzones-changed', {bubbles: true}
+		));
+	};
 	const showError = () => {
+		clearRegions();
 		const alreadyReported = container?.classList.contains('is-preview-error') === true;
 		stopObserver();
 		if (preview) preview.render('');
@@ -338,7 +346,8 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		const moving = path ? nodeAt(lastProject?.root, path) : null;
 		const region = path ? lastRegions.find(item => previewPathForRegion(item.id, lastProject)
 			?.join('.') === path.join('.')) : null;
-		if (moving && region && !['reports.header','reports.footer'].includes(moving.type)) {
+		if (moving && region && !container?.classList.contains('is-fetching')
+			&& !['reports.header','reports.footer'].includes(moving.type)) {
 			const handle = el('button', 'cb-reports-platform__drag-handle', '⋮⋮');
 			handle.type = 'button';
 			handle.dataset.cbDesignNodeDragHandle = JSON.stringify(path);
@@ -435,6 +444,8 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			const documentKey = JSON.stringify({project, fields});
 			preview.setSelection(selectedRegion(selection));
 			if (documentKey === lastDocumentKey) return;
+			// A prior iframe's geometry is never usable for a new project revision.
+			clearRegions();
 
 			request?.abort();
 			request = new AbortController();
