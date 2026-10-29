@@ -116,6 +116,16 @@ test('DF-D3 valid drop supersedes selected rectangle and invalid drop is not pai
   assert.equal(f.markers()[0].dataset.state,'drop');
   f.presentation.destroy();
 });
+test('DF-D3 disposed session refuses stale visual state without mutation',()=>{
+  const f=fixture('reports');
+  f.setSelection({kind:'node',path:[0,0]});
+  f.root.isConnected=false;
+  f.presentation.refresh();
+  f.root.isConnected=true;
+  f.presentation.refresh();
+  assert.equal(f.markers().length,1);
+  f.presentation.destroy();
+});
 test('DF-D3 is Base-owned opt-in and preserves sandbox and command authority',()=>{
   assert.match(assets,/DESIGNER_INTERACTION_API = 1/);
   assert.match(editor,/shell\/interaction-presentation\.js/);
