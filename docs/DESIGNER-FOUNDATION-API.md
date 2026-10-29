@@ -741,7 +741,7 @@ Same-Build PHP capability: `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNE
 // or null when there really is no selection. Re-read just before mutation.
 const candidate = resolveDesignerInsertPlacement({
   project: session.project(),
-  selectedRef: session.selection()?.primary ?? null,
+  selectedRef: session.selection()?.primaryRef ?? null, // createSession() typed ref; native Host uses .primary
   type: requestedType,
   allowedParentsByType: supportedParents, // Map<type, Set<parentType>>
   commandId: 'contracts.insert',
@@ -755,7 +755,7 @@ if (candidate && liveLeaseStillValid()
 
 A candidate has the same immutable structure as the existing `resolveDesignerDropPlacement` output:
 `{commandId, input:{parentPath:number[], index:number, type:string}}`.
-It does **not** execute commands, mutate a project or authorize Save. The typed selected ref is checked against the *current* document, never accepted from DOM attributes as authority. Outcomes:
+It does **not** execute commands, mutate a project or authorize Save. The typed selected ref is checked against the *current* document, never accepted from DOM attributes as authority. Note the existing API distinction: consumer `createSession().selection().primaryRef` is a typed ref, while native Platform Host `editor.selection().primary` already is a typed ref; the consumer session's legacy `.primary` is a bare path and must not be passed as `selectedRef`. Outcomes:
 
 - **No selection** or explicitly selected document root: append to root, if type and domain allow.
 - **Selected recognized container** (e.g. Section, Group, Column where actually declared): append as its last child if this element is supported there.
