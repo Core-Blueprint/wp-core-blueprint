@@ -27,7 +27,7 @@ final class Assets {
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */
 	public const INSPECTOR_COMPOSITION_API = 1;
 	/** Optional shared graph-neutral canvas pan/fit controller. */
-	public const CANVAS_NAVIGATION_API = 1;
+	public const CANVAS_NAVIGATION_API = 2;
 	/** Optional shared flat context menu presenter; no domain authority. */
 	public const DESIGNER_CONTEXT_MENU_API = 1;
 	/** Public fail-closed Exit Guard, not an A2-06 receipt/recovery API. */
