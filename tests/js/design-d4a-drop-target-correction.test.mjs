@@ -52,6 +52,40 @@ test('DF-D4A Reports native dragstart never exposes overlapping independent prox
   assert.equal(refreshes,4);
 });
 
+test('DF-D4A Reports register only semantic native drop-targets, not hidden keyboard duplicates', () => {
+  const start=editor.indexOf('\t\t\tconst syncDropZones = () => {');
+  const end=editor.indexOf('\n\t\t\t};',start);
+  assert.ok(start>=0 && end>start,'canonical Base zone registration exists');
+  const expression=editor.slice(start+'\t\t\tconst syncDropZones = '.length,
+    end+'\n\t\t\t}'.length);
+  const region={dataset:{cbDesignNodePath:'[1]'}};
+  const proxy={dataset:{cbDesignDropZoneId:'node/1'}};
+  const dropSurface={querySelectorAll(selector) {
+    if(selector==='[data-cb-design-drop-zone-id]')return [proxy];
+    if(selector==='[data-cb-design-node-path]')return [region];
+    return [];
+  }};
+  const tree={element:{querySelectorAll:()=>[]}};
+  const registrations=new Map();
+  const registeredZones=new Map();
+  const dnd={registerZone(element,{id}) {
+    registrations.set(element,id);
+    return ()=>registrations.delete(element);
+  }};
+  const registry={profileId:'base/reports'};
+  const sync=new Function('dropSurface','tree','registeredZones','dnd',
+    'designerDropZoneId','activeRegistry','return ('+expression+');'
+  )(dropSurface,tree,registeredZones,dnd,
+    path=>path.length?'node/'+path.join('.'):'root',registry);
+  sync();
+  assert.equal(registrations.size,2,'root and visible Reports interaction region only');
+  assert.equal(registrations.get(region),'node/1');
+  assert.equal(registrations.has(proxy),false,'hidden proxy cannot trap native or keyboard drop');
+  registry.profileId='base/mail';
+  sync();
+  assert.equal(registrations.get(proxy),'node/1','Mail keeps its existing explicit proxy targets');
+});
+
 test('DF-D4A Reports geometry refresh never reactivates an independent proxy during a drag', () => {
   const begin = reports.indexOf('\tconst syncInteractionSelection = () => {');
   const end = reports.indexOf('\n\treturn Object.freeze({',begin);
