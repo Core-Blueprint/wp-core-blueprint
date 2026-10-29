@@ -60,14 +60,20 @@ test('New Section stays before Footer and nested Heading stays in Section', () =
 	assert.equal(withHeading.root.children.at(-1).type, 'reports.footer');
 });
 
-test('Native palette uses singleton selection and canonical Inspector without changing Mail semantics', async () => {
+test('Native Reports and Mail share the public renderer with existing commands and one DND controller', async () => {
 	const source = await readFile(new URL('../../assets/js/design/editor.js', import.meta.url), 'utf8');
 	assert.match(source, /component\.singleton !== true/);
 	assert.match(source, /existingReportComponentPath\(project, component\)/);
-	assert.match(source, /button\.dataset\.cbDesignElementAction = action\.toLowerCase\(\)/);
-	assert.match(source, /button\.setAttribute\('aria-pressed', selected \? 'true' : 'false'\)/);
+	assert.match(source, /action: existingPath !== null \? 'edit' : 'add'/);
+	assert.match(source, /palette\.update\(\{elements: descriptors, dynamicData: nativeTokens\}\)/);
 	assert.match(source, /editor\.select\(\[ref\], ref\);\s*showSelectedInspector\(\);\s*return;/);
 	assert.match(source, /controller\.activatePanel\('inspector'\)/);
 	assert.match(source, /refreshElements\(project, selection\)/);
-	assert.match(source, /activeRegistry\.profileId === 'base\/reports'/);
+	assert.match(source, /activeRegistry\.profileId === 'base\\/reports'/);
+	assert.match(source, /elementsPanel\.replaceChildren\(palette\.element\)/);
+	assert.match(source, /releasePaletteSources\(\);\s*palette\.update/);
+	assert.match(source, /registeredPaletteSources\.set\(button, dnd\.registerSource/);
+	assert.equal((source.match(/createDesignerDragDropController\(\{/g) || []).length, 1);
+	assert.doesNotMatch(source, /componentGrid\.append\(button\)/);
+	assert.doesNotMatch(source, /dynamicGrid\.append\(dataButton\)/);
 });
