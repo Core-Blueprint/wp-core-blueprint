@@ -9,7 +9,7 @@ import { createDesignerDragDropController } from './shell/drag-drop.js';
 import { createDesignerCanvasNavigation } from './shell/canvas-navigation.js';
 import { createDesignerContextMenu } from './shell/context-menu.js';
 import { createDesignerElementsPalette } from './shell/elements-palette.js';
-import { designerDropZoneId, resolveDesignerDropPlacement } from './shell/drop-placement.js';
+import { designerDropZoneId, resolveDesignerDropPlacement, resolveDesignerInsertPlacement } from './shell/drop-placement.js';
 import {
 	CommandHistory,
 	EditorState,
@@ -1180,18 +1180,12 @@ export const attachTrustedDesignerHost = ({
 			// Palette state follows the live document and selection. A trusted profile
 			// can further restrict insertability (for example Reports singletons).
 			// The registered command still enforces all domain rules.
-			const insertionTarget = (project, type) => {
-				const primary = editor.selection()?.primary;
-				let parentPath = primary?.kind === 'node' ? [...primary.path] : [];
-				const admissible = allowedParentsByType.get(type);
-				if (!admissible || !admissible.size) throw new Error('REGISTRY_INVALID');
-				let parent = nodeAt(project.root, parentPath);
-				while (parent && !admissible.has(parent.type) && parentPath.length > 0) {
-					parentPath = parentPath.slice(0, -1);
-					parent = nodeAt(project.root, parentPath);
-				}
-				return parent && admissible.has(parent.type) ? {parentPath, parent} : null;
-			};
+			const insertionTarget = (project, type) => resolveDesignerInsertPlacement({
+				project, selectedRef: editor.selection()?.primary ?? null, type,
+				allowedParentsByType, commandId: prefix + '.insert',
+				canInsert: typeof profileModule.canInsert === 'function'
+					? profileModule.canInsert : null,
+			});
 
 			// One Base DND controller for both native profiles. The renderer
 			// supplies semantic node surfaces; no canvas mutation occurs here.
@@ -1280,8 +1274,10 @@ export const attachTrustedDesignerHost = ({
 			dropSurface.addEventListener('cb:designer-dropzones-changed', syncDropZones, {signal});
 			const canInsertComponent = (project, component) => {
 				const target = insertionTarget(project, component.type);
-				return !!target && (typeof profileModule.canInsert !== 'function'
-					|| profileModule.canInsert(project, component.type, target.parentPath) === true);
+				if (!target) return false;
+				try {
+					return profileModule.resolveCommand(target.commandId)?.canApply(project, target.input) === true;
+				} catch (_) { return false; }
 			};
 			// Reports singleton ownership remains a trusted domain decision.
 			const existingReportComponentPath = (project, component) => {
@@ -1335,14 +1331,17 @@ export const attachTrustedDesignerHost = ({
 					if (action !== 'add' || existingPath !== null || !canInsertComponent(project, component)) return;
 					const target = insertionTarget(project, component.type);
 					if (!target) return;
-					const {parentPath, parent} = target;
-					const index = parent.children.length;
-					editor.execute(prefix + '.insert', {parentPath, index, type: component.type});
-					// After inserting report content, focus its actual Inspector context.
-					// The fixed Footer remains the last root child in native Reports.
+					const {parentPath, index} = target.input;
+					const parent = nodeAt(project.root, parentPath);
+					if (!parent || profileModule.resolveCommand(target.commandId)
+						?.canApply(project, target.input) !== true) return;
+					editor.execute(target.commandId, target.input);
+					// Native Reports reserves its anchored Footer on root insertion;
+					// an explicit before/after index is otherwise preserved.
 					if (activeRegistry.profileId === 'base/reports') {
 						const siblings = nodeAt(editor.project().root, parentPath)?.children;
-						const actualIndex = parentPath.length === 0 ? index - 1 : index;
+						const actualIndex = parentPath.length === 0
+							? Math.min(index, parent.children.length - 1) : index;
 						if (siblings?.[actualIndex]?.type === component.type) {
 							const path = [...parentPath, actualIndex];
 							const ref = {kind: 'node', path};
@@ -1641,6 +1640,7 @@ export const commands = Object.freeze({
 export {
 	designerDropZoneId,
 	resolveDesignerDropPlacement,
+	resolveDesignerInsertPlacement,
 	createDesignerDragDropController,
 	createDesignerElementsPalette,
 	createDesignerCanvasNavigation,
@@ -1699,6 +1699,7 @@ const publicApi = Object.freeze({
 		sidebarRoles: DESIGNER_SIDEBAR_ROLES,
 		viewportOrder: DESIGNER_VIEWPORT_ORDER,
 		paletteRoles: DESIGNER_PALETTE_ROLES,
+		placement: Object.freeze({ resolveInsert: resolveDesignerInsertPlacement }),
 		elements: Object.freeze({ createPalette: createDesignerElementsPalette }),
 		navigation: Object.freeze({ create: createDesignerNavigation }),
 		icons: Object.freeze({
