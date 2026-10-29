@@ -102,7 +102,7 @@ test('native consumers share DND controller and preserve one command authority',
 	assert.match(editor,/sharedDragDrop:\s*true/);
 	assert.match(editor,/resolveDesignerMovePlacement/);
 	assert.match(editor,/registeredNodeSources/);
-	assert.match(editor,/prefix \+ '\\.move'/);
+	assert.ok(editor.includes("prefix + '.move'"));
 	assert.match(layers,/reorder && sharedDragDrop !== true/);
 	assert.match(mail,/'mail.move'/);
 	assert.match(reports,/'reports.move'/);
