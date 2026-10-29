@@ -124,7 +124,7 @@ export const createDesignerDragDropController = ({
 		try {
 			const result = commit(Object.freeze({source, intent}));
 			if (!isSync(result)) throw new TypeError('DESIGNER_DND_ASYNC_COMMIT_REFUSED');
-			emit('committed', 'Element placed.');
+			emit('committed', source.kind === 'node' ? 'Element moved.' : 'Element placed.');
 			return true;
 		} catch (_) {
 			emit('refused', 'Element could not be placed.');
@@ -223,7 +223,7 @@ export const createDesignerDragDropController = ({
 			if (!candidate(zone, edge)) {
 				// Never retain an old valid indicator after hovering an invalid
 				// edge or after a live domain authorization change.
-				if (highlighted?.element === element) clearHighlight();
+				clearHighlight();
 				return;
 			}
 			event.preventDefault();
@@ -237,7 +237,7 @@ export const createDesignerDragDropController = ({
 		const drop = event => {
 			if (gesture?.mode !== 'pointer') return;
 			const edge = edgeAt(zone, event);
-			if (!candidate(zone, edge)) return;
+			if (!candidate(zone, edge)) { clearHighlight(); return; }
 			event.preventDefault();
 			event.stopPropagation();
 			performDrop(zone, edge);
