@@ -53,10 +53,18 @@ export const createDesignerInteractionPresentation = ({
 		if (destroyed || !root.isConnected) return;
 		const nodes = [...surface.querySelectorAll('[data-cb-design-node-path]')]
 			.filter(n => validKey(nodeKey(n)) && bounds(n));
-		const selected = getSelection();
+		let selected, dragging;
+		try {
+			selected = getSelection();
+			dragging = isDragging() === true;
+		} catch (_) {
+			// A disposed/changed Host must never project stale selection or throw
+			// from a delayed render/drag callback during context teardown.
+			layer.replaceChildren();
+			return;
+		}
 		const selectedKey = selected?.kind === 'node' && Array.isArray(selected.path)
 			? JSON.stringify(selected.path) : null;
-		const dragging = isDragging() === true;
 		const active = doc.activeElement;
 		const state = new Map();
 		const put = (key, element, kind, edge = null, priority = 0) => {
