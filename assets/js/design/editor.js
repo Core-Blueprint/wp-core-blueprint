@@ -1282,6 +1282,44 @@ export const attachTrustedDesignerHost = ({
 					}
 				},
 			});
+			const releaseNodeSources = () => {
+				for (const release of registeredNodeSources.values()) release();
+				registeredNodeSources.clear();
+			};
+			const syncNodeSources = () => {
+				const next = new Map(), selected = editor.selection()?.primary;
+				for (const handle of stagedRoot.querySelectorAll('[data-cb-design-node-drag-handle]')) {
+					let path;
+					try { path = JSON.parse(handle.dataset.cbDesignNodeDragHandle); } catch (_) { continue; }
+					if (!Array.isArray(path) || handle.hidden || selected?.kind !== 'node'
+						|| JSON.stringify(path) !== JSON.stringify(selected.path)) continue;
+					const moving = nodeAt(editor.project().root, path);
+					if (!moving || moving.type !== handle.dataset.cbDesignNodeType) continue;
+					next.set(handle, {path, type: moving.type});
+				}
+				for (const row of tree.element.querySelectorAll('[data-cb-design-layer-key].is-selected')) {
+					let path;
+					try { path = JSON.parse(row.dataset.cbDesignLayerKey); } catch (_) { continue; }
+					if (!Array.isArray(path) || !path.length) continue;
+					const moving = nodeAt(editor.project().root, path);
+					if (!moving || (activeRegistry.profileId === 'base/mail' && moving.type === 'mail.column')
+						|| (activeRegistry.profileId === 'base/reports'
+							&& ['reports.header', 'reports.footer'].includes(moving.type))) continue;
+					const select = row.querySelector('[data-cb-design-layer-select]');
+					if (select) next.set(select, {path, type: moving.type});
+				}
+				for (const [element, release] of registeredNodeSources) {
+					if (next.has(element)) continue;
+					release();
+					registeredNodeSources.delete(element);
+				}
+				for (const [element, item] of next) if (!registeredNodeSources.has(element)) {
+					registeredNodeSources.set(element, dnd.registerSource(element, {
+						id: designerDropZoneId(item.path), type: item.type,
+						kind: 'node', path: item.path,
+					}));
+				}
+			};
 			const syncDropZones = () => {
 				const next = new Map([[dropSurface, 'root']]);
 				for (const element of dropSurface.querySelectorAll('[data-cb-design-drop-zone-id]')) {
@@ -1296,6 +1334,11 @@ export const attachTrustedDesignerHost = ({
 					try { next.set(element, designerDropZoneId(path)); }
 					catch (_) { /* renderer path is never authority */ }
 				}
+				for (const row of tree.element.querySelectorAll('[data-cb-design-layer-key]')) {
+					try {
+						next.set(row, designerDropZoneId(JSON.parse(row.dataset.cbDesignLayerKey)));
+					} catch (_) { /* DOM paths are not command authorization */ }
+				}
 				for (const [element, record] of registeredZones) {
 					if (next.get(element) === record.id) continue;
 					record.release();
@@ -1307,7 +1350,10 @@ export const attachTrustedDesignerHost = ({
 					}
 				}
 			};
-			dropSurface.addEventListener('cb:designer-dropzones-changed', syncDropZones, {signal});
+			dropSurface.addEventListener('cb:designer-dropzones-changed', () => {
+				syncDropZones();
+				syncNodeSources();
+			}, {signal});
 			const canInsertComponent = (project, component) => {
 				const target = insertionTarget(project, component.type);
 				if (!target) return false;
@@ -1495,6 +1541,7 @@ export const attachTrustedDesignerHost = ({
 						} : {}),
 					};
 				};
+			releaseNodeSources();
 			tree.render([walk(project.root, [])]);
 				const primary = selection?.primary;
 				const inspected = primary?.kind === 'node' ? nodeAt(project.root, primary.path) : null;
@@ -1563,6 +1610,7 @@ export const attachTrustedDesignerHost = ({
 				refreshSettings();
 				refreshElements(project, selection);
 				syncDropZones();
+				syncNodeSources();
 				// A field edit may dirty the joint Save without changing History.
 				// Refresh the ONE SaveCoordinator-derived button status after Host
 				// projection, never infer saved state from a toolbar event.
@@ -1572,6 +1620,7 @@ export const attachTrustedDesignerHost = ({
 			return Object.freeze({
 				destroy: () => {
 					releasePaletteSources();
+					releaseNodeSources();
 					palette.destroy();
 					dnd.destroy();
 					controller.destroy();
