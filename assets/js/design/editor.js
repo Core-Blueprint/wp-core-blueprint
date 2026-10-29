@@ -1180,12 +1180,25 @@ export const attachTrustedDesignerHost = ({
 			// Palette state follows the live document and selection. A trusted profile
 			// can further restrict insertability (for example Reports singletons).
 			// The registered command still enforces all domain rules.
-			const insertionTarget = (project, type) => resolveDesignerInsertPlacement({
-				project, selectedRef: editor.selection()?.primary ?? null, type,
-				allowedParentsByType, commandId: prefix + '.insert',
-				canInsert: typeof profileModule.canInsert === 'function'
-					? profileModule.canInsert : null,
-			});
+			// Reports has an anchored terminal Footer. A deliberate *after Footer*
+			// target is invalid; it cannot be silently clamped before the Footer.
+			// An unselected document-root append remains permitted by its domain.
+			const forbiddenAfterFooter = (project, zoneId, edge) =>
+				activeRegistry.profileId === 'base/reports' && edge === 'after'
+				&& project?.root?.children?.at(-1)?.type === 'reports.footer'
+				&& zoneId === designerDropZoneId([project.root.children.length - 1]);
+			const insertionTarget = (project, type) => {
+				const selectedRef = editor.selection()?.primary ?? null;
+				if (selectedRef?.kind === 'node' && Array.isArray(selectedRef.path)
+					&& selectedRef.path.length === 1
+					&& forbiddenAfterFooter(project, designerDropZoneId(selectedRef.path), 'after')) return null;
+				return resolveDesignerInsertPlacement({
+					project, selectedRef, type,
+					allowedParentsByType, commandId: prefix + '.insert',
+					canInsert: typeof profileModule.canInsert === 'function'
+						? profileModule.canInsert : null,
+				});
+			};
 
 			// One Base DND controller for both native profiles. The renderer
 			// supplies semantic node surfaces; no canvas mutation occurs here.
@@ -1198,12 +1211,16 @@ export const attachTrustedDesignerHost = ({
 					'host', context.siteId, context.actorId, context.resourceType,
 					context.resourceId, context.contextEpoch, activeRegistry.profileId,
 				].join(':'),
-				resolveIntent: ({source, zoneId, edge}) => resolveDesignerDropPlacement({
-					project: editor.project(), source, zoneId, edge,
-					allowedParentsByType, commandId: prefix + '.insert',
-					canInsert: typeof profileModule.canInsert === 'function'
-						? profileModule.canInsert : null,
-				}),
+				resolveIntent: ({source, zoneId, edge}) => {
+					const current = editor.project();
+					if (forbiddenAfterFooter(current, zoneId, edge)) return null;
+					return resolveDesignerDropPlacement({
+						project: current, source, zoneId, edge,
+						allowedParentsByType, commandId: prefix + '.insert',
+						canInsert: typeof profileModule.canInsert === 'function'
+							? profileModule.canInsert : null,
+					});
+				},
 				canDrop: ({intent}) => {
 					if (signal.aborted || host?.state !== 'READY'
 						|| intent?.commandId !== prefix + '.insert') return false;
