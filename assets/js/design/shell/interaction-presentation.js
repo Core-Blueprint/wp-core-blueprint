@@ -121,27 +121,40 @@ export const createDesignerInteractionPresentation = ({
 		if (destroyed || scheduled) return;
 		scheduled = win.requestAnimationFrame(() => { scheduled = 0; refresh(); });
 	};
-	listen(surface, 'pointermove', event => {
-		if (!finite(event.clientX) || !finite(event.clientY)) return;
-		pointer = {x:event.clientX, y:event.clientY};
-		schedule();
-	}, {passive:true});
-	listen(surface, 'pointerleave', () => { pointer = null; schedule(); });
-	listen(root, 'focusin', schedule);
-	listen(root, 'focusout', schedule);
-	listen(root, 'scroll', schedule, true);
-	listen(root, 'cb:design-canvas:navigationchange', schedule);
-	listen(root, 'cb:designer-dropzones-changed', schedule);
-	listen(win, 'resize', schedule, {passive:true});
-	const observer = typeof win.MutationObserver === 'function'
-		? new win.MutationObserver(mutations => {
-			if (mutations.some(m => m.target !== layer && !layer.contains(m.target))) schedule();
-		}) : null;
-	observer?.observe(surface, {
-		subtree:true, childList:true, attributes:true,
-		attributeFilter:['data-cb-design-drop-active','data-cb-design-drop-edge'],
-	});
-	refresh();
+	let observer = null;
+	try {
+		listen(surface, 'pointermove', event => {
+			if (!finite(event.clientX) || !finite(event.clientY)) return;
+			pointer = {x:event.clientX, y:event.clientY};
+			schedule();
+		}, {passive:true});
+		listen(surface, 'pointerleave', () => { pointer = null; schedule(); });
+		listen(root, 'focusin', schedule);
+		listen(root, 'focusout', schedule);
+		listen(root, 'scroll', schedule, true);
+		listen(root, 'cb:design-canvas:navigationchange', schedule);
+		listen(root, 'cb:designer-dropzones-changed', schedule);
+		listen(win, 'resize', schedule, {passive:true});
+		observer = typeof win.MutationObserver === 'function'
+			? new win.MutationObserver(mutations => {
+				if (mutations.some(m => m.target !== layer && !layer.contains(m.target))) schedule();
+			}) : null;
+		observer?.observe(surface, {
+			subtree:true, childList:true, attributes:true,
+			attributeFilter:['data-cb-design-drop-active','data-cb-design-drop-edge'],
+		});
+		refresh();
+	} catch (error) {
+		// Failure after DOM insertion must not leave a poisoned Host surface
+		// or orphan listeners when post-commit activation is retried.
+		if (scheduled) win.cancelAnimationFrame(scheduled);
+		observer?.disconnect();
+		listeners.splice(0).forEach(off => off());
+		layer.remove();
+		if (oldAttribute === null) root.removeAttribute('data-cb-design-interaction-overlay');
+		else root.setAttribute('data-cb-design-interaction-overlay', oldAttribute);
+		throw error;
+	}
 	return Object.freeze({
 		refresh,
 		destroy() {
