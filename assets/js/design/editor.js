@@ -1291,9 +1291,15 @@ export const attachTrustedDesignerHost = ({
 					for (const iframe of dropSurface.querySelectorAll('iframe[data-cb-core-flow-preview-host]')) {
 						iframe.style.pointerEvents = (active || activeRegistry.profileId === 'base/reports') ? 'none' : '';
 					}
+					// Reports' same-document node regions are already registered as
+					// native Base drop-targets via data-cb-design-node-path. Revealing
+					// their overlapping proxy zones during dragstart retargets the
+					// pointer away from the drag source and can end the browser drag.
+					// Keep Mail's existing proxy behavior unchanged.
+					const proxyActive = active && activeRegistry.profileId !== 'base/reports';
 					for (const proxy of dropSurface.querySelectorAll('[data-cb-design-drop-zone-id]')) {
-						proxy.style.pointerEvents = active ? 'auto' : 'none';
-						proxy.style.visibility = active ? 'visible' : 'hidden';
+						proxy.style.pointerEvents = proxyActive ? 'auto' : 'none';
+						proxy.style.visibility = proxyActive ? 'visible' : 'hidden';
 					}
 					interactions?.refresh();
 				},
