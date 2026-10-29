@@ -762,7 +762,7 @@ It does **not** execute commands, mutate a project or authorize Save. The typed 
 - **Selected leaf:** append immediately after the leaf in its immediate parent, if domain rules permit.
 - **Invalid/stale selection, forbidden selected container, unsupported parent/type, failed live policy:** return `null` with no ancestor/root fallback.
 
-Base native Mail and Maintenance Reports use this resolver for Elements clicks. The previous native ancestor search and the Reports command's implicit nested-Section-to-root redirection are prohibited for DF-C. Reports' anchored Footer still respects existing valid root insert positions. Base and consumers must check their *current* registered command authority again immediately before executing; palette button enabled-state is never an authorization.
+Base native Mail and Maintenance Reports use this resolver for Elements clicks. The previous native ancestor search and the Reports command's implicit nested-Section-to-root redirection are prohibited for DF-C. Reports' anchored Footer still respects valid unselected root-append requests, but an explicit click or drag **after** the terminal Footer is refused, not silently relocated before it. Base and consumers must check their *current* registered command authority again immediately before executing; palette button enabled-state is never an authorization.
 
 ### DF-D1: palette-source Drag & Drop (existing controller)
 
