@@ -12,9 +12,10 @@ const fake = () => {
   const doc = {defaultView:null, addEventListener(){}, removeEventListener(){}};
   const root = {
     isConnected:true, contains:child=>child===viewport,
+    getBoundingClientRect:()=>({left:0,top:0,width:1200,height:900}),
     addEventListener(){}, removeEventListener(){},
   };
-  const scene = {style:{transform:'',transformOrigin:''}};
+  const scene = {style:{transform:'',transformOrigin:''},addEventListener(){},getBoundingClientRect:()=>({left:0,top:0,width:1000,height:700})};
   const viewport = {
     ownerDocument:doc, style:{}, scrollLeft:0,scrollTop:0,
     clientWidth:1000,clientHeight:700,
