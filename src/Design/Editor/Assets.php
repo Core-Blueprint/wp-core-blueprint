@@ -463,6 +463,13 @@ final class Assets {
 					'navigation'   => __( 'Navigation', 'core-blueprint' ),
 					'elements'     => __( 'Elements', 'core-blueprint' ),
 					'layers'       => __( 'Layers', 'core-blueprint' ),
+					'dynamicData'  => __( 'Dynamic Data', 'core-blueprint' ),
+					'actions'      => [
+						'add'    => __( 'Add', 'core-blueprint' ),
+						'edit'   => __( 'Edit', 'core-blueprint' ),
+						'select' => __( 'Select', 'core-blueprint' ),
+						'copy'   => __( 'Copy', 'core-blueprint' ),
+					],
 				],
 				'layerActionLabels' => [
 					'moveUp'   => __( 'Move element up', 'core-blueprint' ),
