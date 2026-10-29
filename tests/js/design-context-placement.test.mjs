@@ -83,3 +83,12 @@ test('DF-C is a read-only candidate; consumer remains mutation authority', () =>
 	assert.equal(Object.isFrozen(one), true);
 	assert.equal(JSON.stringify(project), before);
 });
+
+test('Base native palette uses public contextual resolver without ancestor traversal', async () => {
+	const nativeSource = await readFile(new URL('../../assets/js/design/editor.js', import.meta.url), 'utf8');
+	assert.match(nativeSource, /const insertionTarget = \(project, type\) => resolveDesignerInsertPlacement\(\{/);
+	assert.match(nativeSource, /selectedRef: editor\.selection\(\)\?\.primary \?\? null/);
+	assert.doesNotMatch(nativeSource, /while \(parent && !admissible\.has\(parent\.type\)/);
+	assert.match(nativeSource, /resolveDesignerDropPlacement\(\{/);
+	assert.equal((nativeSource.match(/createDesignerDragDropController\(\{/g) || []).length, 1);
+});
