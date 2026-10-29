@@ -1191,6 +1191,7 @@ export const attachTrustedDesignerHost = ({
 				const selectedRef = editor.selection()?.primary ?? null;
 				if (selectedRef?.kind === 'node' && Array.isArray(selectedRef.path)
 					&& selectedRef.path.length === 1
+					&& Number.isSafeInteger(selectedRef.path[0]) && selectedRef.path[0] >= 0
 					&& forbiddenAfterFooter(project, designerDropZoneId(selectedRef.path), 'after')) return null;
 				return resolveDesignerInsertPlacement({
 					project, selectedRef, type,
