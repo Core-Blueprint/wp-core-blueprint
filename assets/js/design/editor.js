@@ -8,6 +8,7 @@ import { createSaveCoordinator as createCanonicalSaveCoordinator } from './platf
 import { createDesignerDragDropController } from './shell/drag-drop.js';
 import { createDesignerCanvasNavigation } from './shell/canvas-navigation.js';
 import { createDesignerContextMenu } from './shell/context-menu.js';
+import { createDesignerElementsPalette } from './shell/elements-palette.js';
 import { designerDropZoneId, resolveDesignerDropPlacement } from './shell/drop-placement.js';
 import {
 	CommandHistory,
@@ -1162,60 +1163,20 @@ export const attachTrustedDesignerHost = ({
 				if (!schema || typeof schema !== 'object') throw new Error('REGISTRY_INVALID');
 				return schema;
 			};
-			// Base owns the consistent two-section Elements tab for every profile.
-			// Domain-specific inserts still use the existing registered commands.
+			// Native Mail and Maintenance Reports share the exact public
+			// Elements renderer; only the registered profile owns commands.
 			const doc = stagedRoot.ownerDocument;
-			const section = (label) => {
-				const wrapper = doc.createElement('section');
-				wrapper.className = 'cb-core-design-shell__panel-section';
-				const heading = doc.createElement('h3');
-				heading.className = 'cb-core-design-shell__panel-section-title';
-				heading.textContent = label;
-				wrapper.append(heading);
-				return wrapper;
-			};
-			const componentSection = section('Elements');
-			const componentGrid = doc.createElement('div');
-			componentGrid.className = 'cb-core-design-shell__palette-grid';
-			componentSection.append(componentGrid);
-			const dynamicSection = section('Dynamic Data');
-			const dynamicGrid = doc.createElement('div');
-			dynamicGrid.className = 'cb-core-design-shell__palette-grid cb-core-design-shell__dynamic-grid';
-			dynamicSection.append(dynamicGrid);
-			elementsPanel.append(componentSection, dynamicSection);
-			// Native Mail's WordPress templates use only the known Base tokens.
-			// Keep them out of the stored project unless the user pastes the token.
 			const mailData = [
 				['Site name','site.name'], ['Site URL','site.url'],
 				['Admin email','site.admin_email'], ['Display name','user.display_name'],
 				['Username','user.login'], ['User email','user.email'],
 				['Action URL','action.url'],
 			];
-			if (activeRegistry.profileId === 'base/mail') {
-				for (const [label, key] of mailData) {
-					const dataButton = doc.createElement('button');
-					dataButton.type = 'button';
-					dataButton.className = 'button cb-core-design-shell__palette-item cb-core-design-shell__dynamic-item';
-					dataButton.textContent = label;
-					dataButton.title = 'Copy {{' + key + '}}';
-					dataButton.setAttribute('aria-label', 'Copy ' + label + ' dynamic data token');
-					dataButton.addEventListener('click', async () => {
-						if (signal.aborted || host.state !== 'READY') return;
-						try {
-							await doc.defaultView.navigator.clipboard.writeText('{{' + key + '}}');
-							if (!signal.aborted) dataButton.title = 'Copied {{' + key + '}}';
-						} catch {
-							dataButton.title = 'Copy unavailable: {{' + key + '}}';
-						}
-					}, {signal});
-					dynamicGrid.append(dataButton);
-				}
-			} else {
-				const description = doc.createElement('p');
-				description.className = 'cb-core-design-shell__panel-section-description';
-				description.textContent = 'Report data is populated when a report is generated.';
-				dynamicSection.append(description);
-			}
+			const nativeTokens = activeRegistry.profileId === 'base/mail'
+				? mailData.map(([label, key]) => ({
+					id: key, label, value: '{{' + key + '}}',
+					state: 'interactive', action: 'copy',
+				})) : [];
 			// Palette state follows the live document and selection. A trusted profile
 			// can further restrict insertability (for example Reports singletons).
 			// The registered command still enforces all domain rules.
@@ -1317,13 +1278,12 @@ export const attachTrustedDesignerHost = ({
 				}
 			};
 			dropSurface.addEventListener('cb:designer-dropzones-changed', syncDropZones, {signal});
-			const componentButtons = new Map();
 			const canInsertComponent = (project, component) => {
 				const target = insertionTarget(project, component.type);
 				return !!target && (typeof profileModule.canInsert !== 'function'
 					|| profileModule.canInsert(project, component.type, target.parentPath) === true);
 			};
-			// Reports advertises singleton ownership; Base never duplicates this type list.
+			// Reports singleton ownership remains a trusted domain decision.
 			const existingReportComponentPath = (project, component) => {
 				if (activeRegistry.profileId !== 'base/reports' || component.singleton !== true
 					|| !Array.isArray(project?.root?.children)) return null;
@@ -1336,56 +1296,40 @@ export const attachTrustedDesignerHost = ({
 					stagedRoot.querySelector('[data-cb-design-shell-drawer-toggle="right"]')?.click();
 				}
 			};
-			const refreshElements = (project, selection) => {
-				for (const component of components) {
-					const button = componentButtons.get(component.id);
-					if (!button) continue;
-					const existingPath = existingReportComponentPath(project, component);
-					const available = !signal.aborted && (existingPath !== null || canInsertComponent(project, component));
-					button.disabled = !available;
-					if (activeRegistry.profileId === 'base/reports') {
-						const label = platformFieldLabel(component.type, component.label);
-						const action = existingPath !== null ? 'Edit' : 'Add';
-						button.querySelector('.cb-core-design-shell__palette-item-label').textContent = action + ' ' + label;
-						button.setAttribute('aria-label', action + ' ' + label);
-						button.dataset.cbDesignElementAction = action.toLowerCase();
-						const selected = existingPath !== null && selection?.primary?.kind === 'node'
-							&& JSON.stringify(selection.primary.path) === JSON.stringify(existingPath);
-						button.classList.toggle('is-active', selected);
-						if (existingPath !== null) button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-						else button.removeAttribute('aria-pressed');
-						button.title = existingPath !== null ? 'Edit existing ' + label
-							: available ? 'Add ' + label : 'This element cannot be added in the current report context.';
-					} else {
-						button.title = available ? 'Add ' + component.label
-							: 'This element cannot be added in the current report context.';
+			const palette = createDesignerElementsPalette({
+				documentRef: doc,
+				elements: [],
+				dynamicData: nativeTokens,
+				labels: {
+					elements: 'Elements', dynamicData: 'Dynamic Data',
+					actions: {add: 'Add', edit: 'Edit', select: 'Select', copy: 'Copy'},
+				},
+				onIntent: ({source, id, action, value}) => {
+					if (signal.aborted || host?.state !== 'READY') return;
+					if (source === 'dynamic-data') {
+						if (activeRegistry.profileId !== 'base/mail'
+							|| action !== 'copy' || !nativeTokens.some(token => token.id === id && token.value === value)) return;
+						const clipboard = doc.defaultView?.navigator?.clipboard;
+						if (typeof clipboard?.writeText !== 'function') {
+							doc.defaultView?.cbCore?.toast?.error?.('Copy unavailable');
+							return;
+						}
+						return clipboard.writeText(value).catch(() => {
+							if (!signal.aborted) doc.defaultView?.cbCore?.toast?.error?.('Copy unavailable');
+						});
 					}
-				}
-			};
-			for (const component of components) {
-				const button = stagedRoot.ownerDocument.createElement('button');
-				button.type = 'button';
-				button.className = 'button cb-core-design-shell__palette-item';
-				button.textContent = platformFieldLabel(component.type, component.label);
-				button.dataset.cbDesignComponentId = component.id;
-				button.classList.add('cb-core-design-shell__palette-item--stacked');
-				decorateDesignerElement(button, component.type, {label: platformFieldLabel(component.type, component.label)});
-				const elementIcon = button.querySelector('[data-cb-design-shell-lucide-icon]');
-				const elementLabel = doc.createElement('span');
-				elementLabel.className = 'cb-core-design-shell__palette-item-label';
-				elementLabel.textContent = platformFieldLabel(component.type, component.label);
-				button.replaceChildren(...(elementIcon ? [elementIcon] : []), elementLabel);
-				button.addEventListener('click', () => {
-					if (signal.aborted || host.state !== 'READY') return;
+					if (source !== 'elements') return;
+					const component = components.find(item => item.id === id);
+					if (!component) return;
 					const project = editor.project();
 					const existingPath = existingReportComponentPath(project, component);
-					if (existingPath !== null) {
+					if (action === 'edit' && existingPath !== null) {
 						const ref = {kind: 'node', path: existingPath};
 						editor.select([ref], ref);
 						showSelectedInspector();
 						return;
 					}
-					if (!canInsertComponent(project, component)) return;
+					if (action !== 'add' || existingPath !== null || !canInsertComponent(project, component)) return;
 					const target = insertionTarget(project, component.type);
 					if (!target) return;
 					const {parentPath, parent} = target;
@@ -1403,11 +1347,41 @@ export const attachTrustedDesignerHost = ({
 							showSelectedInspector();
 						}
 					}
-				}, {signal});
-				componentButtons.set(component.id, button);
-				componentGrid.append(button);
-				dnd.registerSource(button, {id: component.id, type: component.type});
-			}
+				},
+			});
+			elementsPanel.replaceChildren(palette.element);
+			const registeredPaletteSources = new Map();
+			const releasePaletteSources = () => {
+				for (const release of registeredPaletteSources.values()) release();
+				registeredPaletteSources.clear();
+			};
+			const refreshElements = (project, selection) => {
+				const descriptors = components.map(component => {
+					const existingPath = existingReportComponentPath(project, component);
+					const available = !signal.aborted && (existingPath !== null || canInsertComponent(project, component));
+					const selected = existingPath !== null && selection?.primary?.kind === 'node'
+						&& JSON.stringify(selection.primary.path) === JSON.stringify(existingPath);
+					return {
+						id: component.id, type: component.type,
+						label: platformFieldLabel(component.type, component.label),
+						state: available ? 'interactive' : 'disabled',
+						action: existingPath !== null ? 'edit' : 'add',
+						selected,
+						disabledReason: 'This element cannot be added in the current report context.',
+					};
+				});
+				// Release existing DND source handles before replacing DOM cards.
+				releasePaletteSources();
+				palette.update({elements: descriptors, dynamicData: nativeTokens});
+				const byId = new Map(components.map(component => [component.id, component]));
+				for (const button of palette.element.querySelectorAll('[data-cb-design-element-source="elements"]')) {
+					const component = byId.get(button.dataset.cbDesignComponentId);
+					if (!component || button.disabled || button.dataset.cbDesignElementAction !== 'add') continue;
+					registeredPaletteSources.set(button, dnd.registerSource(button, {
+						id: component.id, type: component.type,
+					}));
+				}
+			};
 
 			const settingsPanel = stagedRoot.querySelector('[data-cb-platform-panel="settings"]');
 			if (!settingsPanel) throw new Error('HOST_CAPABILITY_UNAVAILABLE');
@@ -1559,6 +1533,8 @@ export const attachTrustedDesignerHost = ({
 			stagedShells.set(stagedRoot, controller);
 			return Object.freeze({
 				destroy: () => {
+					releasePaletteSources();
+					palette.destroy();
 					dnd.destroy();
 					controller.destroy();
 				},
@@ -1663,6 +1639,7 @@ export {
 	designerDropZoneId,
 	resolveDesignerDropPlacement,
 	createDesignerDragDropController,
+	createDesignerElementsPalette,
 	createDesignerCanvasNavigation,
 	createDesignerContextMenu,
 	CommandHistory,
@@ -1719,6 +1696,7 @@ const publicApi = Object.freeze({
 		sidebarRoles: DESIGNER_SIDEBAR_ROLES,
 		viewportOrder: DESIGNER_VIEWPORT_ORDER,
 		paletteRoles: DESIGNER_PALETTE_ROLES,
+		elements: Object.freeze({ createPalette: createDesignerElementsPalette }),
 		navigation: Object.freeze({ create: createDesignerNavigation }),
 		icons: Object.freeze({
 			names: DESIGNER_ICON_NAMES,
