@@ -26,6 +26,8 @@ final class Assets {
 	public const DESIGNER_ELEMENTS_PALETTE_API = 1;
 	/** DF-C public contextual placement candidate; no consumer domain command authority. */
 	public const DESIGNER_CONTEXT_PLACEMENT_API = 1;
+	/** DF-D2: shared authored-node move candidate and one DND controller. */
+	public const DESIGNER_NODE_MOVE_API = 1;
 	/** A consumer may authoritatively withhold Save without Base re-enabling it on idle/error. */
 	public const SAVE_AUTHORITY_UI_API = 1;
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */

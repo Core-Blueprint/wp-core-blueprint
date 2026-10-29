@@ -126,6 +126,17 @@ export function createRenderAdapter({root,document:doc,profileId}){
  const draw=(n,path)=>{
   const p=n.properties,e=el('div','cb-mail-platform__node');
   e.dataset.cbDesignNodePath=JSON.stringify(path);e.dataset.cbDesignNodeType=n.type;e.tabIndex=0;
+  e.style.position='relative';
+  if(path.length&&n.type!=='mail.column'){
+   const handle=el('button','cb-mail-platform__drag-handle','⋮⋮');
+   handle.type='button';handle.hidden=true;
+   handle.dataset.cbDesignNodeDragHandle=JSON.stringify(path);
+   handle.dataset.cbDesignNodeType=n.type;
+   handle.setAttribute('aria-label','Move '+n.type.replace('mail.','')+' element');
+   handle.addEventListener('click',ev=>ev.stopPropagation());
+   handle.addEventListener('dblclick',ev=>ev.stopPropagation());
+   e.prepend(handle);
+  }
   e.style.boxSizing='border-box';
   if(n.type==='mail.section'){e.classList.add('cb-mail-platform__section');e.style.background=p.background;e.style.padding=p.padding+'px';e.style.marginBottom=p.spacing+'px';}
   else if(n.type==='mail.columns'){e.classList.add('cb-mail-platform__columns');e.style.display='grid';
@@ -201,6 +212,8 @@ export function createRenderAdapter({root,document:doc,profileId}){
   for(const n of container?.querySelectorAll('[data-cb-design-node-path]')||[]){
    const active=n.dataset.cbDesignNodePath===key;n.classList.toggle('is-selected',active);
    n.setAttribute('aria-selected',active?'true':'false');
+   const handle=n.querySelector(':scope > [data-cb-design-node-drag-handle]');
+   if(handle)handle.hidden=!active;
   }
  };
  return Object.freeze({

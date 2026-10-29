@@ -394,6 +394,7 @@ export const createDesignerLayerTree = ({
 	ariaLabel = 'Layers',
 	emptyMessage = '',
 	onSelectItem = null,
+	sharedDragDrop = false,
 } = {}) => {
 	if (!documentRef?.createElement) {
 		throw new TypeError('Designer layer tree requires a DOM Document.');
@@ -760,7 +761,7 @@ export const createDesignerLayerTree = ({
 						returnFocus: layer.select, x: event.clientX, y: event.clientY });
 				});
 
-				if (reorder) {
+				if (reorder && sharedDragDrop !== true) {
 					row.draggable = true;
 					row.addEventListener('dragstart', (event) => {
 						dragRecord = { key, parentKey, reorder };
