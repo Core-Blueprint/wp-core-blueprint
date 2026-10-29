@@ -6,6 +6,7 @@ import { createRegistryView } from './platform/registry.js';
 import { createPersistedFields, canonicalSaveJSON } from './platform/persisted-fields.js';
 import { createSaveCoordinator as createCanonicalSaveCoordinator } from './platform/save-coordinator.js';
 import { createDesignerDragDropController } from './shell/drag-drop.js';
+import { createDesignerInteractionPresentation } from './shell/interaction-presentation.js';
 import { createDesignerCanvasNavigation } from './shell/canvas-navigation.js';
 import { createDesignerContextMenu } from './shell/context-menu.js';
 import { createDesignerElementsPalette } from './shell/elements-palette.js';
@@ -1209,6 +1210,7 @@ export const attachTrustedDesignerHost = ({
 			const registeredZones = new Map();
 			const registeredNodeSources = new Map();
 			let lastProject = null, projectToken = 0;
+			let interactions = null;
 			const dnd = createDesignerDragDropController({
 				root: stagedRoot,
 				isReady: () => !signal.aborted && host?.state === 'READY',
@@ -1293,7 +1295,15 @@ export const attachTrustedDesignerHost = ({
 						proxy.style.pointerEvents = active ? 'auto' : 'none';
 						proxy.style.visibility = active ? 'visible' : 'hidden';
 					}
+					interactions?.refresh();
 				},
+			});
+			// A single Base-owned visual projection for the native DOM and the
+			// sandboxed Reports renderer's read-only parent-document hit regions.
+			interactions = createDesignerInteractionPresentation({
+				root: stagedRoot, surface: dropSurface,
+				getSelection: () => editor.selection()?.primary,
+				isDragging: () => dnd.active,
 			});
 			const releaseNodeSources = () => {
 				for (const release of registeredNodeSources.values()) release();
@@ -1368,6 +1378,7 @@ export const attachTrustedDesignerHost = ({
 			dropSurface.addEventListener('cb:designer-dropzones-changed', () => {
 				syncDropZones();
 				syncNodeSources();
+				interactions.refresh();
 			}, {signal});
 			const canInsertComponent = (project, component) => {
 				const target = insertionTarget(project, component.type);
@@ -1626,6 +1637,7 @@ export const attachTrustedDesignerHost = ({
 				refreshElements(project, selection);
 				syncDropZones();
 				syncNodeSources();
+				interactions.refresh();
 				// A field edit may dirty the joint Save without changing History.
 				// Refresh the ONE SaveCoordinator-derived button status after Host
 				// projection, never infer saved state from a toolbar event.
@@ -1638,6 +1650,7 @@ export const attachTrustedDesignerHost = ({
 					releaseNodeSources();
 					palette.destroy();
 					dnd.destroy();
+					interactions.destroy();
 					controller.destroy();
 				},
 				activatePlatformSession: () => controller.activatePlatformSession(),
@@ -1744,6 +1757,7 @@ export {
 	resolveDesignerInsertPlacement,
 	resolveDesignerMovePlacement,
 	createDesignerDragDropController,
+	createDesignerInteractionPresentation,
 	createDesignerElementsPalette,
 	createDesignerCanvasNavigation,
 	createDesignerContextMenu,
@@ -1819,6 +1833,7 @@ const publicApi = Object.freeze({
 			autosizeTextarea: enableDesignerTextareaAutosize,
 		}),
 		canvasNavigation: Object.freeze({ create: createDesignerCanvasNavigation }),
+		interactions: Object.freeze({ createPresentation: createDesignerInteractionPresentation }),
 		contextMenu: Object.freeze({ create: createDesignerContextMenu }),
 		dragDrop: Object.freeze({
 			createController: createDesignerDragDropController,
