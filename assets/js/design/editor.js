@@ -1368,6 +1368,10 @@ export const attachTrustedDesignerHost = ({
 			const syncDropZones = () => {
 				const next = new Map([[dropSurface, 'root']]);
 				for (const element of dropSurface.querySelectorAll('[data-cb-design-drop-zone-id]')) {
+					// Reports' separate geometry proxies overlap the same semantic
+					// nodes already registered below. Never register these hidden
+					// duplicates as native OR keyboard drop-targets.
+					if (activeRegistry.profileId === 'base/reports') continue;
 					if (typeof element.dataset.cbDesignDropZoneId === 'string') {
 						next.set(element, element.dataset.cbDesignDropZoneId);
 					}
