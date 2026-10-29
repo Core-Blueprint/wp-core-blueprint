@@ -101,6 +101,17 @@ test('DF-D3 prioritizes selected over hover and deepest nested geometry',()=>{
   assert.equal(f.markers().filter(m=>m.dataset.state==='selected').length,1);
   f.presentation.destroy();
 });
+test('DF-D3 inline editing overrides selected without a duplicate outline',()=>{
+  const f=fixture('mail');
+  const field=f.element('input',f.rect(60,75,120,30));
+  field.closest=()=>field;
+  f.child.append(field);
+  f.doc.activeElement=field;
+  f.presentation.refresh();
+  assert.equal(f.markers().length,1);
+  assert.equal(f.markers()[0].dataset.state,'editing');
+  f.presentation.destroy();
+});
 test('DF-D3 valid drop supersedes selected rectangle and invalid drop is not painted',()=>{
   const f=fixture('reports');
   const zone=f.element('div',f.rect(50,70,150,60));
