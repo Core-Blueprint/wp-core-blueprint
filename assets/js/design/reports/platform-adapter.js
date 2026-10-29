@@ -353,7 +353,15 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 	const onRegions = (regions) => {
 		if (destroyed || activeSignal?.aborted || !dropLayer || !frame || !lastProject) return;
 		lastRegions = [...regions];
-		dropLayer.replaceChildren();
+		// Preserve parent-DOM proxy identity during geometry-only updates.
+		// Replacing every region aborts native HTML drag at the browser level,
+		// and Base correctly cancels a gesture whose source was detached.
+		// Semantic/document changes still clear regions via clearRegions().
+		const existingZones = new Map([...dropLayer.querySelectorAll('[data-cb-design-drop-zone-id]')]
+			.map(node => [node.dataset.cbDesignDropZoneId, node]));
+		const existingHits = new Map([...dropLayer.querySelectorAll('[data-cb-reports-direct-region]')]
+			.map(node => [node.dataset.cbReportsDirectRegion, node]));
+		const retained = new Set();
 		// Regions arrive as iframe viewport rectangles. Project them into the
 		// same parent-document CSS pixel space as the hit layer; offsetLeft/Top
 		// are offset-parent coordinates and are not interchangeable here.
@@ -376,8 +384,10 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			const path = previewPathForRegion(region.id, lastProject);
 			const node = path === null ? null : nodeAt(lastProject.root, path);
 			if (!node) continue;
-			const zone = el('div', 'cb-reports-platform__drop-region');
-			zone.dataset.cbDesignDropZoneId = 'node/' + path.join('.');
+			const zoneId = 'node/' + path.join('.');
+			const priorZone = existingZones.get(zoneId);
+			const zone = priorZone || el('div', 'cb-reports-platform__drop-region');
+			zone.dataset.cbDesignDropZoneId = zoneId;
 			zone.setAttribute('aria-label', 'Place report element near ' + node.type.replace('reports.', ''));
 			zone.style.position = 'absolute';
 			zone.style.boxSizing = 'border-box';
@@ -395,9 +405,14 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			zone.style.pointerEvents = 'none';
 			zone.style.visibility = 'hidden';
 			zone.style.zIndex = '2';
-			dropLayer.append(zone);
+			if (!priorZone) dropLayer.append(zone);
+			retained.add(zone);
 
-			const hit = el('div', 'cb-reports-platform__interaction-region');
+			const priorHit = existingHits.get(region.id);
+			// A changed node type is not a geometry refresh. Replace its proxy
+			// so stale drag handlers cannot retain a different semantic source.
+			const reuseHit = priorHit?.dataset.cbDesignNodeType === node.type;
+			const hit = reuseHit ? priorHit : el('div', 'cb-reports-platform__interaction-region');
 			hit.dataset.cbReportsDirectRegion = region.id;
 			hit.dataset.cbDesignNodePath = JSON.stringify(path);
 			hit.dataset.cbDesignNodeType = node.type;
@@ -415,18 +430,24 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			hit.style.height = zone.style.height;
 			hit.style.pointerEvents = 'auto';
 			hit.style.zIndex = '1';
-			hit.addEventListener('click', event => {
-				event.stopPropagation();
-				onActivate(region.id);
-			});
-			hit.addEventListener('keydown', event => {
-				if (event.key === 'Enter' || event.key === ' ') {
-					event.preventDefault();
+			if (!reuseHit) {
+				hit.addEventListener('click', event => {
 					event.stopPropagation();
 					onActivate(region.id);
-				}
-			});
-			dropLayer.append(hit);
+				});
+				hit.addEventListener('keydown', event => {
+					if (event.key === 'Enter' || event.key === ' ') {
+						event.preventDefault();
+						event.stopPropagation();
+						onActivate(region.id);
+					}
+				});
+				dropLayer.append(hit);
+			}
+			retained.add(hit);
+		}
+		for (const stale of [...existingZones.values(), ...existingHits.values()]) {
+			if (!retained.has(stale)) stale.remove();
 		}
 		if (container?.closest('[data-cb-design-dnd-active="true"]')) {
 			for (const zone of dropLayer.querySelectorAll('[data-cb-design-drop-zone-id]')) {
