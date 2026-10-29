@@ -449,12 +449,10 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		for (const stale of [...existingZones.values(), ...existingHits.values()]) {
 			if (!retained.has(stale)) stale.remove();
 		}
-		if (container?.closest('[data-cb-design-dnd-active="true"]')) {
-			for (const zone of dropLayer.querySelectorAll('[data-cb-design-drop-zone-id]')) {
-				zone.style.pointerEvents = 'auto';
-				zone.style.visibility = 'visible';
-			}
-		}
+		// Every direct interaction region is already a trusted Base drop-target
+		// through data-cb-design-node-path. Keep overlapping geometry proxy
+		// zones inert, including when regions update during an active gesture.
+		// Palette inserts, node moves and edge resolution use those regions.
 		syncInteractionSelection();
 		dropLayer.dispatchEvent(new doc.defaultView.CustomEvent(
 			'cb:designer-dropzones-changed', {bubbles: true}
