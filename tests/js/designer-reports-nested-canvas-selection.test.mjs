@@ -65,7 +65,8 @@ test('Regions expose bounded nested proxy geometry and guarded Flow iframe owner
 	const compiler = await readFile(new URL('../../src/Reports/MaintenanceFlowCompiler.php', import.meta.url), 'utf8');
 	assert.match(adapter, /previewPathForRegion\(region\.id, lastProject\)/);
 	assert.match(adapter, /syncInteractionSelection\(\)/);
-	assert.match(adapter, /data-cb-design-node-drag-source/);
+	// Reports creates the HTML data-cb-design-node-drag-source attribute through DOM dataset.
+	assert.match(adapter, /hit\.dataset\.cbDesignNodeDragSource = JSON\.stringify\(path\)/);
 	assert.match(adapter, /cb-reports-platform__interaction-region/);
 	assert.match(adapter, /hit\.addEventListener\('click', event => \{/);
 	assert.match(adapter, /onActivate\(region\.id\)/);
