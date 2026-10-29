@@ -220,7 +220,12 @@ export const createDesignerDragDropController = ({
 		const over = event => {
 			if (gesture?.mode !== 'pointer') return;
 			const edge = edgeAt(zone, event);
-			if (!candidate(zone, edge)) return;
+			if (!candidate(zone, edge)) {
+				// Never retain an old valid indicator after hovering an invalid
+				// edge or after a live domain authorization change.
+				if (highlighted?.element === element) clearHighlight();
+				return;
+			}
 			event.preventDefault();
 			event.stopPropagation();
 			if (event.dataTransfer) event.dataTransfer.dropEffect = gesture.source.kind === 'palette' ? 'copy' : 'move';
