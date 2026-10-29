@@ -1251,6 +1251,19 @@ export const attachTrustedDesignerHost = ({
 							?.canApply(editor.project(), intent.input) !== true)
 							throw new Error('COMMAND_REFUSED');
 						editor.execute(intent.commandId, intent.input);
+						// Direct canvas drag may start without a preceding selection:
+						// preserve Inspector focus on the actual moved node, not its
+						// old position. This is transient selection, not a History step.
+						const {parentPath, index} = intent.input;
+						const path = [...parentPath, index];
+						if (nodeAt(editor.project().root, path)) {
+							const ref = {kind: 'node', path};
+							const selected = editor.selection()?.primary;
+							if (selected?.kind !== 'node'
+								|| JSON.stringify(selected.path) !== JSON.stringify(path)) {
+								editor.select([ref], ref);
+							}
+						}
 						return;
 					}
 					const {parentPath, index, type} = intent.input;
@@ -1287,15 +1300,17 @@ export const attachTrustedDesignerHost = ({
 				registeredNodeSources.clear();
 			};
 			const syncNodeSources = () => {
-				const next = new Map(), selected = editor.selection()?.primary;
-				for (const handle of stagedRoot.querySelectorAll('[data-cb-design-node-drag-handle]')) {
+				const next = new Map();
+				for (const element of stagedRoot.querySelectorAll('[data-cb-design-node-drag-source]')) {
 					let path;
-					try { path = JSON.parse(handle.dataset.cbDesignNodeDragHandle); } catch (_) { continue; }
-					if (!Array.isArray(path) || handle.hidden || selected?.kind !== 'node'
-						|| JSON.stringify(path) !== JSON.stringify(selected.path)) continue;
+					try { path = JSON.parse(element.dataset.cbDesignNodeDragSource); } catch (_) { continue; }
+					if (!Array.isArray(path) || !path.length) continue;
 					const moving = nodeAt(editor.project().root, path);
-					if (!moving || moving.type !== handle.dataset.cbDesignNodeType) continue;
-					next.set(handle, {path, type: moving.type});
+					if (!moving || moving.type !== element.dataset.cbDesignNodeType
+						|| (activeRegistry.profileId === 'base/mail' && moving.type === 'mail.column')
+						|| (activeRegistry.profileId === 'base/reports'
+							&& ['reports.header', 'reports.footer'].includes(moving.type))) continue;
+					next.set(element, {path, type: moving.type, directCanvas: true});
 				}
 				for (const row of tree.element.querySelectorAll('[data-cb-design-layer-key].is-selected')) {
 					let path;
@@ -1316,7 +1331,7 @@ export const attachTrustedDesignerHost = ({
 				for (const [element, item] of next) if (!registeredNodeSources.has(element)) {
 					registeredNodeSources.set(element, dnd.registerSource(element, {
 						id: designerDropZoneId(item.path), type: item.type,
-						kind: 'node', path: item.path,
+						kind: 'node', path: item.path, directCanvas: item.directCanvas === true,
 					}));
 				}
 			};

@@ -159,11 +159,12 @@ export const createDesignerDragDropController = ({
 		zones.delete(element);
 		return true;
 	};
-	const registerSource = (element, {id, type, kind = 'palette', path = []} = {}) => {
+	const registerSource = (element, {id, type, kind = 'palette', path = [], directCanvas = false} = {}) => {
 		if (destroyed || !isElement(element, doc) || sources.has(element)
 			|| !root.contains(element) || !validId(id) || !validId(type)
 			|| !['palette', 'node'].includes(kind)
-			|| !validPath(path) || (kind === 'palette' && path.length !== 0)) {
+			|| !validPath(path) || (kind === 'palette' && path.length !== 0)
+			|| typeof directCanvas !== 'boolean' || (directCanvas && kind !== 'node')) {
 			throw new TypeError('DESIGNER_DND_SOURCE_INVALID');
 		}
 		const source = Object.freeze({id, type, kind, path: Object.freeze([...path])});
@@ -179,6 +180,17 @@ export const createDesignerDragDropController = ({
 			}
 		};
 		const dragStart = event => {
+			// HTML dragstart happens only after the browser's pointer movement
+			// threshold. A plain click never enters this path. Avoid swallowing
+			// text edits, links and controls inside an authored canvas node.
+			if (directCanvas && (event.target?.isContentEditable === true
+				|| event.target?.closest?.('textarea,input,select,button,a,[contenteditable],[role="textbox"]'))) {
+				event.preventDefault();
+				return;
+			}
+			// Nested canvas nodes can both be sources. The deepest authored node
+			// owns the drag; never let a parent source override its identity.
+			if (directCanvas) event.stopPropagation?.();
 			if (gesture) cancel();
 			if (!begin('pointer')) {
 				event.preventDefault();
@@ -187,7 +199,7 @@ export const createDesignerDragDropController = ({
 			// Transported text is a non-authoritative marker only. Actual source
 			// identity lives in the private gesture, never in DataTransfer.
 			if (event.dataTransfer) {
-				event.dataTransfer.effectAllowed = 'copyMove';
+				event.dataTransfer.effectAllowed = kind === 'node' ? 'move' : 'copyMove';
 				event.dataTransfer.setData('text/plain', 'cb-designer-element');
 			}
 		};
