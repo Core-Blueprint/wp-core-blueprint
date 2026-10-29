@@ -126,6 +126,23 @@ test('DF-D3 disposed session refuses stale visual state without mutation',()=>{
   assert.equal(f.markers().length,1);
   f.presentation.destroy();
 });
+test('DF-D3 Maps iframe regions across independent viewport and layer transforms',()=>{
+  const start=reports.indexOf('\t\tconst mapped = region => ({');
+  const end=reports.indexOf('\n\t\t});',start);
+  assert.ok(start>0 && end>start);
+  const snippet=reports.slice(start,end+6);
+  const frameRect={left:220,top:190,width:1200,height:900};
+  const layerRect={left:100,top:50,width:1800,height:1000};
+  const frame={clientLeft:2,clientTop:1};
+  const frameScaleX=2,frameScaleY=2,layerScaleX=2,layerScaleY=2;
+  const mapped=new Function('frameRect','layerRect','frame','frameScaleX',
+    'frameScaleY','layerScaleX','layerScaleY',
+    snippet+'\nreturn mapped;'
+  )(frameRect,layerRect,frame,frameScaleX,frameScaleY,layerScaleX,layerScaleY);
+  assert.deepEqual(mapped({left:20,top:30,width:100,height:50}),{
+    left:82,top:101,width:100,height:50,
+  });
+});
 test('DF-D3 is Base-owned opt-in and preserves sandbox and command authority',()=>{
   assert.match(assets,/DESIGNER_INTERACTION_API = 1/);
   assert.match(editor,/shell\/interaction-presentation\.js/);
