@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
-import {createDesignerCanvasNavigation} from '../../assets/js/design/shell/canvas-navigation.js';
+// Load standalone ESM directly: Base intentionally has no package.json type:module.
 
 const source = readFileSync(new URL('../../assets/js/design/shell/canvas-navigation.js',import.meta.url),'utf8');
+const {createDesignerCanvasNavigation} = await import('data:text/javascript;charset=utf-8,'+encodeURIComponent(source));
 const assets = readFileSync(new URL('../../src/Design/Editor/Assets.php',import.meta.url),'utf8');
 
 const fake = () => {
