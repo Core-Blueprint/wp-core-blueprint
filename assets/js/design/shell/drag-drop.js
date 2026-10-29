@@ -61,13 +61,13 @@ export const createDesignerDragDropController = ({
 	const setNativeDragDot = event => {
 		if (typeof event.dataTransfer?.setDragImage !== 'function') return;
 		clearDragDot();
-		const dot = doc.createElement('span');
+		const dot = doc.createElement('div');
 		dot.className = 'cb-core-design-drag-dot';
 		dot.setAttribute('aria-hidden', 'true');
 		const x = Number.isFinite(event.clientX) ? event.clientX : 0;
 		const y = Number.isFinite(event.clientY) ? event.clientY : 0;
 		Object.assign(dot.style, {
-			position: 'fixed', left: (x - 6) + 'px', top: (y - 6) + 'px',
+			display: 'block', position: 'fixed', left: (x - 6) + 'px', top: (y - 6) + 'px',
 			width: '12px', height: '12px', borderRadius: '50%',
 			background: 'var(--cb-accent, #00a8e8)', pointerEvents: 'none',
 			zIndex: '2147483647',
