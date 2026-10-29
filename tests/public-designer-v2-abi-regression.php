@@ -32,6 +32,16 @@ $require(str_contains($editor, 'createDesignerElementsPalette,'),
 $require(str_contains($editor, 'elements: Object.freeze({ createPalette: createDesignerElementsPalette })'),
     'DF-A1 global facade renderer parity');
 
+$placement = file_get_contents($root . '/assets/js/design/shell/drop-placement.js');
+$require(is_string($placement) && str_contains($placement, 'export const resolveDesignerInsertPlacement'),
+    'DF-C canonical public insertion candidate source');
+$require((bool) preg_match('/public const DESIGNER_CONTEXT_PLACEMENT_API\\s*=\\s*1\\s*;/', $assets),
+    'DF-C optional same-build PHP capability');
+$require(str_contains($editor, 'resolveDesignerInsertPlacement,'),
+    'DF-C named ESM insertion export');
+$require(str_contains($editor, 'placement: Object.freeze({ resolveInsert: resolveDesignerInsertPlacement })'),
+    'DF-C global facade insertion parity');
+
 $require(str_contains($assets, 'wp_enqueue_script_module(') && str_contains($assets, 'self::MODULE_ID'), 'WordPress module registration');
 $require(str_contains($assets, 'public static function enqueue_designer_mode('), 'Designer Mode boundary');
 foreach (['createSession', 'createDomainSession', 'createDesignerShell', 'createDesignerNavigation',
