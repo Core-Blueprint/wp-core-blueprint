@@ -124,9 +124,9 @@ export const createDesignerElementsPalette = ({
 				control.title = entry.disabledReason;
 				control.setAttribute('aria-description', entry.disabledReason);
 			}
-			if (source === 'elements' && entry.selected && (entry.action === 'edit' || entry.action === 'select')) {
-				control.classList.add('is-active');
-				control.setAttribute('aria-pressed', 'true');
+			if (source === 'elements' && (entry.action === 'edit' || entry.action === 'select')) {
+				if (entry.selected) control.classList.add('is-active');
+				control.setAttribute('aria-pressed', entry.selected ? 'true' : 'false');
 			}
 			if (entry.state === 'interactive') emit(control, entry, source, version);
 		}
