@@ -431,6 +431,14 @@
 	color: var(--cb-text-strong);
 }
 
+.cb-core-design-shell__palette-item--informational,
+.cb-core-design-shell__palette-item--informational:hover {
+	cursor: default;
+	border-color: var(--cb-border);
+	background: var(--cb-surface-1);
+	color: var(--cb-text-strong);
+}
+
 .cb-core-design-shell__palette-item.is-active,
 .cb-core-design-shell__palette-item[aria-pressed="true"] {
 	border-color: var(--cb-accent);
