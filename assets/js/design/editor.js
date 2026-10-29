@@ -1298,13 +1298,27 @@ export const attachTrustedDesignerHost = ({
 					interactions?.refresh();
 				},
 			});
-			// A single Base-owned visual projection for the native DOM and the
-			// sandboxed Reports renderer's read-only parent-document hit regions.
-			interactions = createDesignerInteractionPresentation({
-				root: stagedRoot, surface: dropSurface,
-				getSelection: () => editor.selection()?.primary,
-				isDragging: () => dnd.active,
-			});
+			// The Host requires an EMPTY render-surface through offscreen staging.
+			// Initialize the Base presentation only after its successful commit.
+			const activateInteractions = () => {
+				if (interactions) return true;
+				if (signal.aborted || host?.state !== 'READY' || !stagedRoot.isConnected) {
+					throw new Error('DESIGNER_INTERACTION_UNAVAILABLE');
+				}
+				const candidate = createDesignerInteractionPresentation({
+					root: stagedRoot, surface: dropSurface,
+					getSelection: () => editor.selection()?.primary,
+					isDragging: () => dnd.active,
+				});
+				try {
+					candidate.refresh();
+					interactions = candidate;
+					return true;
+				} catch (error) {
+					candidate.destroy();
+					throw error;
+				}
+			};
 			const releaseNodeSources = () => {
 				for (const release of registeredNodeSources.values()) release();
 				registeredNodeSources.clear();
@@ -1378,7 +1392,7 @@ export const attachTrustedDesignerHost = ({
 			dropSurface.addEventListener('cb:designer-dropzones-changed', () => {
 				syncDropZones();
 				syncNodeSources();
-				interactions.refresh();
+				interactions?.refresh();
 			}, {signal});
 			const canInsertComponent = (project, component) => {
 				const target = insertionTarget(project, component.type);
@@ -1637,7 +1651,7 @@ export const attachTrustedDesignerHost = ({
 				refreshElements(project, selection);
 				syncDropZones();
 				syncNodeSources();
-				interactions.refresh();
+				interactions?.refresh();
 				// A field edit may dirty the joint Save without changing History.
 				// Refresh the ONE SaveCoordinator-derived button status after Host
 				// projection, never infer saved state from a toolbar event.
@@ -1650,11 +1664,13 @@ export const attachTrustedDesignerHost = ({
 					releaseNodeSources();
 					palette.destroy();
 					dnd.destroy();
-					interactions.destroy();
+					interactions?.destroy();
+					interactions = null;
 					controller.destroy();
 				},
 				activatePlatformSession: () => controller.activatePlatformSession(),
-				refreshInteraction: () => interactions.refresh(),
+				activateInteractions,
+				refreshInteraction: () => interactions?.refresh(),
 				renderInteraction,
 			});
 		};
@@ -1701,6 +1717,24 @@ export const attachTrustedDesignerHost = ({
 		if (typeof unsubscribe !== 'function') throw new Error('HOST_CAPABILITY_UNAVAILABLE');
 		saveUI.signal.addEventListener('abort', unsubscribe, {once: true});
 		saveUI.syncSaveUI();
+		// Post-commit presentation is optional, but a failed activation must
+		// never make an already-READY Host look like a failed Host commit.
+		try {
+			shell.activateInteractions();
+		} catch (error) {
+			canvas.dataset.cbDesignInteractionStatus = 'unavailable';
+			// Keep Save/History/session authority intact, expose a visible
+			// non-silent degraded state and a machine-readable diagnostic.
+			const warning = canvas.ownerDocument.createElement('p');
+			warning.className = 'notice notice-error cb-core-design-shell__interaction-warning';
+			warning.setAttribute('role', 'alert');
+			warning.textContent = 'Designer interaction feedback is unavailable. Reload the Designer before editing.';
+			canvas.querySelector('[data-cb-design-shell-persistent-notice]')?.after(warning);
+			canvas.dispatchEvent(new CustomEvent('cb:design-shell:interaction-failure', {
+				bubbles: true, detail: Object.freeze({code: 'DESIGNER_INTERACTION_UNAVAILABLE'}),
+			}));
+			console.error('DESIGNER_INTERACTION_UNAVAILABLE', error);
+		}
 	};
 
 	return Object.freeze({
