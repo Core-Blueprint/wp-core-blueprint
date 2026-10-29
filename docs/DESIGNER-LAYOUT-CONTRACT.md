@@ -106,6 +106,20 @@ Tabbed consumers map these through `data-cb-design-shell-sidebar-role="inspector
 Selecting a Layer in the left rail keeps its Layers tab active and synchronizes the Inspector on the right and the canvas. Canvas selection and insertion may open Inspector as appropriate, without moving Layers to the sidebar.
 
 This canonical source layout supersedes historical first-party markup that placed Layers on the right or exposed Dynamic Data as a separate tab. Migrating an active consumer requires its own reviewed source change and new exact-SHA acceptance; merely changing these documents never proves consumer conformance.
+## DF-A0 — Elements / Dynamic Data presentation boundary (documentation proposal)
+
+**Status:** proposed API contract, no shipped renderer or new capability in Base v1.0.0. The exact descriptor, update/destroy, intent and same-ZIP gate proposal is in [Designer Foundation API](DESIGNER-FOUNDATION-API.md#df-a0--public-elements--dynamic-data-renderer-proposed-contract-documentation-only-2026-10-29).
+
+For DF-A1 and future consumers, the **contents** of the existing left `elements` panel become Base-rendered through one public `createDesignerElementsPalette()` controller. Consumers still choose what elements/tokens exist and how user intent is authorized and executed. They do not hand-build palette card HTML, icons, labels, focus behavior, informative/disabled states or Dynamic Data grids. No extra navigation role, panel, new shell or Layers component is introduced.
+
+- Elements have plain visible labels without `Add` / `Edit` prefixes; action-specific meaning lives in accessible names and intent callbacks.
+- Disabled actions are distinct from informational cards; the latter never look clickable. Dynamic Data appears only with usable copy tokens and stays one row per token with no horizontal overflow.
+- Contextual insert candidates follow root / selected container child / selected leaf next-sibling; invalid/stale paths refuse without walking to a different parent. Domain mutation is always consumer-owned through existing commands, History and Save.
+- Keep `createDesignerLayerTree()` and the existing single DND controller. Cross-parent moves remain outside DF-A. Native Mail and Maintenance Reports must consume the same renderer before any extension migration can claim conformance.
+- Capability is optional, detected from the **same installed Base build** using future `Assets::DESIGNER_ELEMENTS_PALETTE_API >= 1` plus the real ESM/global renderer. The constant/export do **not** exist merely because this contract is documented.
+
+The earlier instruction that consumers provide panel contents is narrowed **only for Elements/Dynamic Data presentation** by this proposed additive boundary; canvas content, Inspector semantics, domain tokens, authorization and document persistence remain consumer-owned. Contracts/Reports reviews and Overseer acceptance are pending before DF-A1 SOURCE GO.
+
 ## Ownership boundary
 
 Base owns:

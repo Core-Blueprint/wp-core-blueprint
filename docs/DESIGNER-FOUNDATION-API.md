@@ -576,6 +576,115 @@ Profile-specific rendering or document contracts remain governed by their corres
 
 The named ESM export `animateLayoutChange` is the supported Base-owned layout-motion helper. The equivalent global facade exposes it as `window.cbCore.designEditor.motion.animateLayoutChange`; `motion` is **not** an ESM named export. Consumers must not duplicate the shared Designer motion rules locally or import a private motion module.
 
+## DF-A0 — public Elements / Dynamic Data renderer (proposed contract; documentation only, 2026-10-29)
+
+**Status:** Overseer #64 architecture approved with conditions; this exact signature is a **DF-A0 proposal pending Contracts and Reports read-only review and Overseer acceptance**. It is **not an existing export, installed capability or DF-A1 SOURCE approval**. Base v1.0.0 and the current public ABI are unchanged.
+
+**Single presentation owner.** The proposed additive named ESM export is `createDesignerElementsPalette` from `@cb-core/design-editor`. On an accepted DF-A1 same-build implementation its global counterpart will be `window.cbCore.designEditor.shell.elements.createPalette`. The native Mail and Maintenance Reports Host must use this same renderer; first-party extensions must not reimplement its cards, labels, icons, keyboard focus or Dynamic Data layout. The old `projectDesignerElementsPalette` and `dispatchDesignerElementCreate` remain **platform command-model helpers**, not this generic DOM renderer. Existing `createDesignerShell`, `decorateDesignerElement`, `createDesignerLayerTree`, session, History and DND boundaries remain authoritative.
+
+### Proposed exact interface
+
+```js
+const palette = createDesignerElementsPalette({
+  documentRef: document,                  // optional; defaults to the current document
+  elements: [],                          // element descriptor snapshots
+  dynamicData: [],                       // token descriptor snapshots
+  labels: {                              // localized text, supplied by the caller
+    elements: 'Elements',
+    dynamicData: 'Dynamic Data',
+    actions: { add: 'Add', edit: 'Edit', select: 'Select', copy: 'Copy' },
+  },
+  onIntent: ({ source, id, action, value }) => {}, // consumer's single intent boundary
+});
+elementsPanel.replaceChildren(palette.element);
+palette.update({ elements: nextElements, dynamicData: nextTokens }); // full snapshot
+palette.destroy(); // idempotent; release DOM handlers; not a session dispose
+```
+
+The controller exposes only `element`, `update({elements, dynamicData})` and `destroy()`. `element` is a Base-created DOM subtree for the **existing** Elements shell panel, not an additional tab, shell or document model. `update` replaces the full presentation snapshot (never a partial patch), retains the same root and keeps keyboard focus on the same ID/action when still valid; removed or disabled targets cannot dispatch stale intents. A destroyed controller cannot be updated or activated and releases its listeners. The consumer owns controller disposal on document/context teardown; the renderer never disposes a session or saves.
+
+### Minimal descriptor schema
+
+```js
+// Elements: id and label are required. No HTML, commands or callbacks in descriptors.
+{
+  id: 'heading', label: 'Heading', type: 'heading', icon: 'heading-1',
+  state: 'interactive', action: 'add',
+  description: '', disabledReason: '', selected: false,
+}
+// state: 'interactive' | 'disabled' | 'informational'
+// action: 'add' | 'edit' | 'select' | 'copy' when actionable; null when informational
+
+// Dynamic Data: an actionable, human-readable copy candidate.
+{
+  id: 'user.email', label: 'User email', value: '{{user.email}}',
+  state: 'interactive', action: 'copy', disabledReason: '',
+}
+```
+
+All IDs are stable, nonempty and unique **within their own section**. Element `label`, `state` and `action` are required; `type` (semantic icon fallback), curated `icon`, `description`, `disabledReason` and `selected` are optional. Informational elements require `action: null` and render as **non-button text/cards**; a disabled actionable element renders a disabled control with an understandable reason; interactive elements render native buttons. `selected` only controls a relevant select/edit visual state, never domain selection. An invalid or unsupported descriptor is refused rather than interpreted as arbitrary markup or a command. Text is always inserted as text, never `innerHTML`.
+
+Token `id`, `label`, `value`, `state` and `action` are required. Only `action: 'copy'` is allowed for Dynamic Data. The section is **absent** if the incoming snapshot contains no **usable** token (nonblank literal `value` with interactive copy enabled). When at least one usable token exists, valid disabled copy tokens may also appear with a reason; empty/invalid entries never create a fake tab or informational token card. Tokens render one per row, clipped without horizontal scroll; the complete value is exposed through accessible text/title. No token is written to the project merely by displaying it.
+
+Visible element labels remain the unprefixed `label` (e.g. **Heading**, not **Add Heading** or **Edit Heading**); Base forms action-specific localized accessible names and tooltips (e.g. `Add Heading`) from `labels.actions`. Base owns existing curated icon mapping via `decorateDesignerElement` and safe fallback; Dynamic Data uses the canonical braces icon. Base owns focus, keyboard activation, ARIA state, disabled presentation, density and responsive grid. Domain-specific strings and action policy are supplied by the consumer, not hard-coded in Base.
+
+### Intent and responsibility boundary
+
+Only activating an **interactive** descriptor emits exactly one `onIntent(Object.freeze({source, id, action, value?}))` call. `source` is `'elements'` or `'dynamic-data'`; `value` exists only for Dynamic Data. The callback can return void or a Promise; the consumer owns authorization, refusal/error messaging, clipboard policy, editing lease, command execution, Selection, History and persistence. Base blocks repeat activation of an in-flight control, then restores its declarative state; it does not infer success, issue a Save, change the domain project or swallow consumer responsibility to report errors. Re-evaluate live document/lease/selection state at dispatch time: descriptors are affordances, **not authority**.
+
+For the *later* context-insertion contract, a Base candidate must resolve: no selection → root append; selected valid container → append last child; selected leaf → next sibling; invalid/unavailable/stale location → explicit refusal. **No parent/ancestor/root fallback** after a failed selected target. The consumer validates the candidate against its domain, executes its existing command at most once and records one History transition. This rule is **not** a new `createDesignerElementsPalette` responsibility or a request for a command/placement engine. In particular, the current native Host `insertionTarget()` walks ancestors; DF-A1 must not accidentally preserve that behavior for new context-insertion paths. Resolve any required native adapter change within separately authorized DF-A1, without changing the saved schema.
+
+Native DND source registration continues through the existing `createDesignerDragDropController`; the renderer must not create a second drag handler or disable native palette-to-canvas support. Mount/update/destroy integration must release outdated source registrations. `createDesignerLayerTree()` remains the only Layers renderer. Cross-parent moves, identity remapping and Undo/Redo expansion are outside DF-A.
+
+### Minimal adapters (illustrative, **not** new helpers or commands)
+
+```js
+// Base native Mail / Maintenance Reports: reuse the already registered profile commands.
+const nativePalette = createDesignerElementsPalette({
+  elements: nativeComponents.map(component => ({
+    id: component.id, label: component.label, type: component.type,
+    state: nativeCanActivate(component) ? 'interactive' : 'disabled',
+    action: nativeActionFor(component),  // 'add' or 'edit' from current state
+  })),
+  dynamicData: nativeMailTokens,          // [] for Maintenance Reports today
+  labels: localizedPaletteLabels,
+  onIntent: nativeHostHandleIntent,       // existing Mail/Reports profile adapter, not a new command
+});
+// Native Host calls nativePalette.update(...) after selection/project changes.
+
+// Contracts: its existing document-flow session and run(commands.*) remain authoritative.
+const contractsPalette = createDesignerElementsPalette({
+  elements: contractBlockTypes.map(({id, label}) => ({
+    id, label, type: id, state: canInsertNow(id) ? 'interactive' : 'disabled', action: 'add',
+  })),
+  dynamicData: currentBindings.map(({key}) => ({
+    id: key, label: key, value: '{{' + key + '}}', state: 'interactive', action: 'copy',
+  })),
+  labels: localizedPaletteLabels,
+  onIntent: contractsHandleIntent,       // existing commands.insertNode / clipboard policy
+});
+// Contracts adapter guards the Editing Lease and uses its existing document-flow History.
+
+// Reports: present capability only; informational cards never generate intent.
+const reportsPalette = createDesignerElementsPalette({
+  elements: ['Heading', 'Paragraph', 'Table'].map(label => ({
+    id: label.toLowerCase(), label, state: 'informational', action: null,
+  })),
+  dynamicData: [],
+  labels: localizedPaletteLabels,
+  onIntent: reportsHandleIntent,         // no call from today's informational cards
+});
+// Its createDomainSession(), typed Selection/History, local/persisted editing stay unchanged.
+```
+
+These adapters show **shape and ownership**, not guaranteed executable consumer code: `nativeHostHandleIntent`, `contractsHandleIntent`, `reportsHandleIntent`, `nativeCanActivate`, `nativeActionFor` and `canInsertNow` are consumer-owned adapter pseudonyms to be defined during each separately approved source stage. Contracts preserves D5-A Dynamic Data and Save/Editing Lease; Reports does not unlock R3-B/R3-C block insertion by adopting the visual renderer.
+
+### Same-build capability and review gate
+
+DF-A1 will add public PHP `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_ELEMENTS_PALETTE_API = 1` **only with** the actual named ESM export and global facade in the **same installed Base ZIP**. Consumers check `>= 1` in PHP **and** `typeof createDesignerElementsPalette === 'function'` from the WordPress-resolved module at runtime; global-only consumers check `typeof window.cbCore?.designEditor?.shell?.elements?.createPalette === 'function'`. If a gate fails, do not render an imitation palette or invent an alternative API: fail closed with a clear capability error. Current `DOMAIN_SESSION_API = 3` is unrelated and stays unchanged.
+
+**DF-A0 review requests (read-only):** Contracts confirms `document-flow`, D5-A token visibility, existing insert commands and zero Save/lease/storage impact; Reports confirms `createDomainSession()`, genuinely informational cards, typed Selection/History and no implicit R3-B/C enablement. Their independent sign-off is **PENDING**, not inferred from source inspection. DF-A1 requires an additional Overseer SOURCE GO and focused DOM/keyboard/ARIA/label/icon/empty-token tests plus native Mail/Reports regression and exact paired FIELD proof.
+
 ## Public boundary versus implementation exports
 
 The public module may export additional low-level classes or helpers because Base itself composes the Foundation from those pieces. Their presence as JavaScript exports does **not** make them a supported extension contract.
