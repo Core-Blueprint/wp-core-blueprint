@@ -723,3 +723,55 @@ shell.dispatchEvent(new CustomEvent('cb:design-shell:savechange', {
 ```
 
 Consumers that need preview failure notifications use the existing `window.cbCore.toast.error(message)` API, not toolbar text or private Toast imports. The Designer Mode asset helper enqueues Toast presentation. Other standalone screens explicitly enqueue `CoreBlueprint\\Core\\UI\\Assets::enqueue_toasts()` with the appropriate adapter and depend on `@cb-core/toast`. In Designer fullscreen, Toasts stack above the editor. Dirty state, Save progress, field validation and unrecoverable launch errors remain their own accessible persistent UI. See `docs/TOAST-FOUNDATION.md` for the full normative standard and adoption tests.
+
+
+## DF-C + DF-D1 — shared placement and new-element Drag & Drop (SOURCE candidate, 2026-10-29)
+
+**Scope and ownership.** Base owns a *pure placement candidate* and the existing gesture controller. An extension owns the current document model, allowed parent-child types, live edit permission/lease, actual command, Selection, History, Save and persistence. **Elements** is the only shared place to choose and add components; the canvas/Layers manages selection and position; the **Inspector** edits properties only. Do not create a second insert UI in Inspector. Unsupported containers or operations must not be exposed as enabled capabilities.
+
+### DF-C: public context insertion candidate
+
+The registered module `@cb-core/design-editor` exports
+`resolveDesignerInsertPlacement({project,selectedRef,type,allowedParentsByType,commandId,canInsert?})`.
+Global parity: `window.cbCore.designEditor.shell.placement.resolveInsert`.
+Same-Build PHP capability: `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_CONTEXT_PLACEMENT_API = 1`.
+
+```js
+// selectedRef is the current typed primary selection ({kind: 'node', path})
+// or null when there really is no selection. Re-read just before mutation.
+const candidate = resolveDesignerInsertPlacement({
+  project: session.project(),
+  selectedRef: session.selection()?.primary ?? null,
+  type: requestedType,
+  allowedParentsByType: supportedParents, // Map<type, Set<parentType>>
+  commandId: 'contracts.insert',
+  canInsert: (project, type, parentPath) => authorizedByCurrentDomainPolicy(project, type, parentPath),
+});
+if (candidate && liveLeaseStillValid()
+    && domainCommand.canApply(session.project(), candidate.input)) {
+  session.execute(existingInsertCommand(candidate.input)); // one History transition
+}
+```
+
+A candidate has the same immutable structure as the existing `resolveDesignerDropPlacement` output:
+`{commandId, input:{parentPath:number[], index:number, type:string}}`.
+It does **not** execute commands, mutate a project or authorize Save. The typed selected ref is checked against the *current* document, never accepted from DOM attributes as authority. Outcomes:
+
+- **No selection** or explicitly selected document root: append to root, if type and domain allow.
+- **Selected recognized container** (e.g. Section, Group, Column where actually declared): append as its last child if this element is supported there.
+- **Selected leaf:** append immediately after the leaf in its immediate parent, if domain rules permit.
+- **Invalid/stale selection, forbidden selected container, unsupported parent/type, failed live policy:** return `null` with no ancestor/root fallback.
+
+Base native Mail and Maintenance Reports use this resolver for Elements clicks. The previous native ancestor search and the Reports command's implicit nested-Section-to-root redirection are prohibited for DF-C. Reports' anchored Footer still respects existing valid root insert positions. Base and consumers must check their *current* registered command authority again immediately before executing; palette button enabled-state is never an authorization.
+
+### DF-D1: palette-source Drag & Drop (existing controller)
+
+Use the existing public `createDesignerDragDropController`, `designerDropZoneId(path)` and `resolveDesignerDropPlacement({project,source,zoneId,edge,allowedParentsByType,commandId,canInsert?})`, also available under global `shell.dragDrop`.
+
+The consumer registers the **same Base Elements cards** as `kind:'palette'` sources and real visible container/canvas targets (or positioned semantic proxy zones where the renderer is isolated) as zones; Base provides before/inside/after geometry, keyboard gesture support and live valid-target feedback. A center drop on an unsupported *container* is refused, not converted to a root sibling. Pure candidate resolution is followed by the consumer's live domain `canDrop` and exactly one existing synchronous command commit. Never derive command authority from `DataTransfer`, DOM paths or a CSS highlight. Release old source registrations before `palette.update()` replaces DOM; re-register the new nodes; release all zone/source handles on teardown. An invalid hover clears any previous green drop highlight.
+
+The current Base native Host already registers palette sources and canvas/isolated-preview proxy zones using this one controller. Consumers implement only their own registration/projection and domain command adapter; they do **not** create another gesture engine.
+
+**Explicitly excluded DF-D2:** moves of existing authored nodes across containers, identity/path remapping, cycle handling, cross-parent Selection and Undo/Redo are **not** implicitly enabled by DF-D1. These require separate proven domain capabilities and their own scoped approval. Existing same-parent reorder remains unchanged.
+
+**Acceptance boundary:** public ESM/global/PHP same-build contract, no-selection/root, container/child, leaf/sibling, wrong parent/stale/refusal with no fallback, click/drag candidate parity, invalid hover clearing, one-command History, native Mail + Maintenance Reports Save/Reopen, and product-specific consumer paired FIELD after their own approval. No schema, persistence, lease, public version or merge/release changes in this Base SOURCE candidate.
