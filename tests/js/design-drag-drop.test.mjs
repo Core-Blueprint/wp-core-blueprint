@@ -137,6 +137,19 @@ test('a domain policy rejection never prevents an invalid drop or dispatches a c
 	f.controller.destroy();
 });
 
+test('DF-D1 removes stale valid drop feedback when an edge becomes forbidden', () => {
+	const f = fixture(({intent}) => intent.input.edge === 'before');
+	f.source.fire('dragstart', {dataTransfer: transfer()});
+	assert.equal(f.zone.fire('dragover', {dataTransfer: transfer(), clientY: 105}), true);
+	assert.equal(f.zone.getAttribute('data-cb-design-drop-edge'), 'before');
+	assert.equal(f.zone.fire('dragover', {dataTransfer: transfer(), clientY: 215}), false);
+	assert.equal(f.zone.getAttribute('data-cb-design-drop-active'), null);
+	assert.equal(f.zone.getAttribute('data-cb-design-drop-edge'), null);
+	assert.equal(f.zone.fire('drop', {dataTransfer: transfer(), clientY: 215}), false);
+	assert.equal(f.commits.length, 0);
+	f.controller.destroy();
+});
+
 test('context changes and inactive sessions cancel drag before an outdated command', () => {
 	const f = fixture();
 	f.source.fire('dragstart', {dataTransfer: transfer()});
