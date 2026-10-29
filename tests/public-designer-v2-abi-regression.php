@@ -22,6 +22,16 @@ $require = static function (bool $condition, string $name): void {
 };
 $require((bool) preg_match('/public const DOMAIN_SESSION_API\s*=\s*3\s*;/', $assets), 'PHP v3 capability (v2 History/Save + B2 Shared Selection)');
 $require(str_contains($assets, "public const MODULE_ID = '@cb-core/design-editor'"), 'canonical module identifier');
+$renderer = file_get_contents($root . '/assets/js/design/shell/elements-palette.js');
+$require(is_string($renderer) && str_contains($renderer, 'export const createDesignerElementsPalette'),
+    'DF-A1 canonical public Elements renderer source');
+$require((bool) preg_match('/public const DESIGNER_ELEMENTS_PALETTE_API\\s*=\\s*1\\s*;/', $assets),
+    'DF-A1 optional same-build PHP capability');
+$require(str_contains($editor, 'createDesignerElementsPalette,'),
+    'DF-A1 named ESM renderer export');
+$require(str_contains($editor, 'elements: Object.freeze({ createPalette: createDesignerElementsPalette })'),
+    'DF-A1 global facade renderer parity');
+
 $require(str_contains($assets, 'wp_enqueue_script_module(') && str_contains($assets, 'self::MODULE_ID'), 'WordPress module registration');
 $require(str_contains($assets, 'public static function enqueue_designer_mode('), 'Designer Mode boundary');
 foreach (['createSession', 'createDomainSession', 'createDesignerShell', 'createDesignerNavigation',
