@@ -1654,6 +1654,7 @@ export const attachTrustedDesignerHost = ({
 					controller.destroy();
 				},
 				activatePlatformSession: () => controller.activatePlatformSession(),
+				refreshInteraction: () => interactions.refresh(),
 				renderInteraction,
 			});
 		};
@@ -1690,6 +1691,8 @@ export const attachTrustedDesignerHost = ({
 		if (!shell || canvas?.dataset?.cbDesignShellInitialized !== 'true') {
 			throw new Error('HOST_CAPABILITY_UNAVAILABLE');
 		}
+		// The Host mounts in a disconnected stage; paint only after commit.
+		shell.refreshInteraction();
 		const saveUI = stagedSaveUI.get(canvas);
 		if (!saveUI || saveUI.signal.aborted) throw new Error('SAVE_NOT_READY');
 		// Edit-state notifications refresh the button without altering Save
