@@ -39,8 +39,16 @@ $require((bool) preg_match('/public const DESIGNER_CONTEXT_PLACEMENT_API\\s*=\\s
     'DF-C optional same-build PHP capability');
 $require(str_contains($editor, 'resolveDesignerInsertPlacement,'),
     'DF-C named ESM insertion export');
-$require(str_contains($editor, 'placement: Object.freeze({ resolveInsert: resolveDesignerInsertPlacement })'),
+// DF-C guarantees the existing resolver, not an exact/frozen property count.
+// DF-D2 may extend the same public facade with additional supported resolvers.
+$require((bool) preg_match('/placement:\\s*Object\\.freeze\\(\\{\\s*resolveInsert:\\s*resolveDesignerInsertPlacement\\s*(?:,|\\})/', $editor),
     'DF-C global facade insertion parity');
+$require((bool) preg_match('/public const DESIGNER_NODE_MOVE_API\\s*=\\s*1\\s*;/', $assets),
+    'DF-D2 optional same-build PHP capability');
+$require(str_contains($editor, 'resolveDesignerMovePlacement,'),
+    'DF-D2 named ESM move export');
+$require(str_contains($editor, 'resolveMove: resolveDesignerMovePlacement'),
+    'DF-D2 global facade move parity');
 
 $require(str_contains($assets, 'wp_enqueue_script_module(') && str_contains($assets, 'self::MODULE_ID'), 'WordPress module registration');
 $require(str_contains($assets, 'public static function enqueue_designer_mode('), 'Designer Mode boundary');
