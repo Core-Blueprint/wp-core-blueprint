@@ -184,6 +184,62 @@ The global facade exposes the same capabilities under `window.cbCore.designEdito
 
 Navigation is available as `window.cbCore.designEditor.shell.navigation.create` and the frozen extension as `shell.paletteRoles`. Navigation remains distinct from Layers and is not an editor profile.
 
+### DF-D3 — Unified Designer Interaction Presentation (opt-in SOURCE candidate)
+
+**Owner:** Base. Native Mail and Maintenance Reports use the same Base-owned
+interaction presentation. This is an additive, transient v1 API, not a replacement
+for Selection, CommandHistory, the document renderer or the existing Drag & Drop
+controller. The SOURCE candidate is not installed FIELD acceptance.
+
+Capability: `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_INTERACTION_API >= 1`.
+ESM named export `createDesignerInteractionPresentation`; global public facade
+`window.cbCore.designEditor.shell.interactions.createPresentation`.
+Consumers must check both the PHP capability and the executable JS export in the
+**same installed Base package**. No consumer migration is authorized before native
+FIELD and the independent Overseer API gate.
+
+```js
+const presentation = createDesignerInteractionPresentation({
+  root: shellRoot, surface: canvasScrollSurface,
+  getSelection: () => session.selection()?.primary, // read-only typed node ref
+  isDragging: () => existingBaseDragController.active,
+});
+presentation.refresh(); // after a renderer projection or Host commit
+presentation.destroy(); // on context teardown
+```
+
+**Surface protocol:** existing DOM renderers annotate authored hit rectangles with
+`data-cb-design-node-path` (JSON child-index array). Sandboxed renderers supply
+validated, generation-bound geometry through their existing iframe bridge, then
+project semantic hit rectangles into the trusted parent DOM. Only the trusted
+parent owns interactions. A consumer must not synthesize Selection/History or
+grants of authority from a path or rectangle. Dropzones retain the existing
+`data-cb-design-drop-zone-id` / `data-cb-design-drop-active` protocol; the
+registered Base Drag & Drop controller still validates, commits once and owns
+keyboard drag. Selection is obtained read-only from the **existing Base session**.
+Consumers retain their registered domain commands and authorization.
+
+**Visual contract:** at most one Base-rendered outline per semantic node, with
+consistent geometry across hover, selected, focus, editing and valid-drop states.
+Selected wins over focus/hover; a valid drop indicator wins over selected.
+Invalid zones never display a valid drop. Presentation is `aria-hidden`, never
+receives pointer events, and never persists. Base style tokens own the result.
+Native Reports iframe receives no pointer events and is visually render-only in
+this Designer; it preserves its sandbox/CSP and verified message bridge. Other
+Flow previews keep their existing self-contained interactive preview behavior.
+
+**Lifecycle:** destroy on Host teardown, invalidate old iframe geometry on
+context switch, refresh on renderer change, scroll, resize and drop-state
+transitions. Current semantic paths are resolved afresh against the live DOM.
+This API does not grant consumers a second pointer, hover, selection, drag, or
+viewport engine. The same conventions are required by future CN-2 integration,
+which remains separately held.
+
+**Validation:** native Mail and Maintenance Reports must both pass the
+same visual and pointer/keyboard FIELD matrix (including scroll/nested sections,
+Undo/Redo, Save/Reopen and viewport changes). Level 1/source checks alone cannot
+establish FIELD PASS.
+
 ### Optional Canvas Navigation CN-1 (SOURCE candidate)
 
 The named public ESM export \`createDesignerCanvasNavigation\` is also available
