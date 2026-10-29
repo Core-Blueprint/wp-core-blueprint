@@ -22,6 +22,8 @@ final class Assets {
 	public const MODULE_ID = '@cb-core/design-editor';
 	/** Public Designer v2 session contract; release parity requires same-ZIP proof. */
 	public const DOMAIN_SESSION_API = 3;
+	/** Public shared Elements/Dynamic Data renderer, same-ZIP ESM and global parity. */
+	public const DESIGNER_ELEMENTS_PALETTE_API = 1;
 	/** A consumer may authoritatively withhold Save without Base re-enabling it on idle/error. */
 	public const SAVE_AUTHORITY_UI_API = 1;
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */
