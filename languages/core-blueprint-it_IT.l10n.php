@@ -17,6 +17,9 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        // Shared native Designer Elements palette (DF-A1).
+        'Add' => 'Aggiungi',
+        'Dynamic Data' => 'Dati dinamici',
         // Native Designer Save verification and recovery outcomes (P0).
         'Changes saved and verified.' => 'Modifiche salvate e verificate.',
         'This document changed elsewhere. Your changes were not confirmed as saved.' => 'Questo documento è stato modificato altrove. Il salvataggio delle modifiche non è stato confermato.',
