@@ -74,7 +74,12 @@ test('DF-D2E actual Reports proxy click selects nested node without a drag butto
  const previewPathForRegion = id => /^r[0-9]+(?:\.[0-9]+)?$/.test(id)
   ? id.slice(1).split('.').map(Number) : null;
  const layer = new FakeElement('layer');
- const frame = {offsetTop: 20, offsetLeft: 10, clientWidth: 800};
+ layer.offsetWidth = 800; layer.offsetHeight = 320;
+ layer.getBoundingClientRect = () => ({left:0,top:0,width:800,height:320});
+ const frame = {
+  offsetWidth:800, offsetHeight:320, clientWidth:800, clientLeft:0, clientTop:0,
+  getBoundingClientRect: () => ({left:10,top:20,width:800,height:320}),
+ };
  const container = new FakeElement('reports');
  container.classList = {contains: () => false};
  const selected = [];
