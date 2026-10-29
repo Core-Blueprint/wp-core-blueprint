@@ -1301,8 +1301,11 @@ export const attachTrustedDesignerHost = ({
 				elements: [],
 				dynamicData: nativeTokens,
 				labels: {
-					elements: 'Elements', dynamicData: 'Dynamic Data',
-					actions: {add: 'Add', edit: 'Edit', select: 'Select', copy: 'Copy'},
+					elements: window.cbCoreDesignerLaunch?.paletteLabels?.elements || 'Elements',
+					dynamicData: window.cbCoreDesignerLaunch?.paletteLabels?.dynamicData || 'Dynamic Data',
+					actions: window.cbCoreDesignerLaunch?.paletteLabels?.actions || {
+						add: 'Add', edit: 'Edit', select: 'Select', copy: 'Copy',
+					},
 				},
 				onIntent: ({source, id, action, value}) => {
 					if (signal.aborted || host?.state !== 'READY') return;
