@@ -64,8 +64,12 @@ test('Regions expose bounded nested proxy geometry and guarded Flow iframe owner
 	const host = await readFile(new URL('../../assets/js/design/document/flow/preview-host.js', import.meta.url), 'utf8');
 	const compiler = await readFile(new URL('../../src/Reports/MaintenanceFlowCompiler.php', import.meta.url), 'utf8');
 	assert.match(adapter, /previewPathForRegion\(region\.id, lastProject\)/);
-	assert.match(adapter, /updateDragHandle\(\)/);
-	assert.match(adapter, /data-cb-design-node-drag-handle/);
+	assert.match(adapter, /syncInteractionSelection\(\)/);
+	assert.match(adapter, /data-cb-design-node-drag-source/);
+	assert.match(adapter, /cb-reports-platform__interaction-region/);
+	assert.match(adapter, /hit\.addEventListener\('click', event => \{/);
+	assert.match(adapter, /onActivate\(region\.id\)/);
+	assert.doesNotMatch(adapter, /cb-reports-platform__drag-handle/);
 	assert.match(adapter, /container\.classList\.contains\('is-fetching'\)/);
 	assert.match(adapter, /editor\.select\(\[\{kind: 'node', path\}\], \{kind: 'node', path\}\)/);
 	assert.match(host, /event\.source !== iframe\.contentWindow/);

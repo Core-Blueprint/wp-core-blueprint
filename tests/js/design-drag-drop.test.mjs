@@ -216,3 +216,69 @@ test('async domain policy is never accepted as authorization', () => {
 	assert.equal(f.commits.length, 0);
 	f.controller.destroy();
 });
+
+test('DF-D2E direct canvas distinguishes click, interactive editors and a real drag gesture', () => {
+	const doc = new FakeDocument();
+	const root = doc.createElement('main');
+	doc.append(root);
+	const direct = doc.createElement('div');
+	const zone = doc.createElement('div');
+	root.append(direct);
+	root.append(zone);
+	const commits = [];
+	const controller = createDesignerDragDropController({
+		root,
+		isReady: () => true,
+		getContextKey: () => 'site:direct-canvas:1',
+		resolveIntent: ({source, zoneId}) => ({
+			commandId: 'fixture.move',
+			input: {fromPath: source.path, zoneId},
+		}),
+		canDrop: () => true,
+		commit: effect => { commits.push(effect); },
+	});
+	controller.registerSource(direct, {
+		id: 'node/0.1', type: 'fixture.heading', kind: 'node',
+		path: [0, 1], directCanvas: true,
+	});
+	controller.registerZone(zone, {id: 'node/1'});
+	assert.equal(direct.fire('click'), false);
+	assert.equal(controller.active, false, 'ordinary click does not start a move');
+
+	const editorTarget = {closest: selector => selector.includes('textarea')};
+	assert.equal(direct.fire('dragstart', {target: editorTarget}), true,
+		'editing controls refuse starting a node drag');
+	assert.equal(controller.active, false);
+
+	let bubbleCount = 0;
+	const payload = transfer();
+	direct.fire('dragstart', {
+		target: {closest: () => null},
+		stopPropagation() { bubbleCount++; },
+		dataTransfer: payload,
+	});
+	assert.equal(bubbleCount, 1, 'nested node must not re-trigger parent sources');
+	assert.equal(controller.active, true);
+	assert.equal(payload.effectAllowed, 'move');
+	assert.equal(zone.fire('dragover', {clientY: 105, dataTransfer: payload}), true);
+	assert.equal(zone.fire('drop', {clientY: 105, dataTransfer: payload}), true);
+	assert.equal(commits.length, 1);
+	assert.deepEqual(commits[0].source.path, [0, 1]);
+	controller.destroy();
+});
+
+test('DF-D2E canvas-only affordance refuses a non-node source', () => {
+	const doc = new FakeDocument();
+	const root = doc.createElement('main');
+	doc.append(root);
+	const element = doc.createElement('div');
+	root.append(element);
+	const controller = createDesignerDragDropController({
+		root, isReady: () => true, getContextKey: () => 'site:direct:2',
+		resolveIntent: () => null, canDrop: () => false, commit: () => {},
+	});
+	assert.throws(() => controller.registerSource(element, {
+		id: 'fixture/palette', type: 'fixture.heading', directCanvas: true,
+	}), /DESIGNER_DND_SOURCE_INVALID/);
+	controller.destroy();
+});
