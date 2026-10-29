@@ -578,7 +578,7 @@ The named ESM export `animateLayoutChange` is the supported Base-owned layout-mo
 
 ## DF-A0 — public Elements / Dynamic Data renderer (proposed contract; documentation only, 2026-10-29)
 
-**Status:** Overseer #64 approved DF-A0 with minor lifecycle clarifications after Contracts review #6494798897 and Reports review #6494783452. This is the **final DF-A0 documentation contract for DF-A1 review**, **not an existing export, installed capability or DF-A1 SOURCE approval**. Base v1.0.0 and the current public ABI are unchanged.
+**Status:** Overseer #64 accepted/closed DF-A0, then explicitly authorized DF-A1 SOURCE implementation. This section records the **DF-A0 contract**. DF-A1 is an **unreleased SOURCE candidate**, not an installed capability or customer-release acceptance. Base product version remains 1.0.0.
 
 **Single presentation owner.** The proposed additive named ESM export is `createDesignerElementsPalette` from `@cb-core/design-editor`. On an accepted DF-A1 same-build implementation its global counterpart will be `window.cbCore.designEditor.shell.elements.createPalette`. The native Mail and Maintenance Reports Host must use this same renderer; first-party extensions must not reimplement its cards, labels, icons, keyboard focus or Dynamic Data layout. The old `projectDesignerElementsPalette` and `dispatchDesignerElementCreate` remain **platform command-model helpers**, not this generic DOM renderer. Existing `createDesignerShell`, `decorateDesignerElement`, `createDesignerLayerTree`, session, History and DND boundaries remain authoritative.
 
