@@ -354,9 +354,24 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		if (destroyed || activeSignal?.aborted || !dropLayer || !frame || !lastProject) return;
 		lastRegions = [...regions];
 		dropLayer.replaceChildren();
-		const frameTop = frame.offsetTop;
-		const frameLeft = frame.offsetLeft;
-		if (!Number.isFinite(frameTop) || !Number.isFinite(frameLeft)) return;
+		// Regions arrive as iframe viewport rectangles. Project them into the
+		// same parent-document CSS pixel space as the hit layer; offsetLeft/Top
+		// are offset-parent coordinates and are not interchangeable here.
+		const frameRect = frame.getBoundingClientRect();
+		const layerRect = dropLayer.getBoundingClientRect();
+		const frameScaleX = frame.offsetWidth > 0 ? frameRect.width / frame.offsetWidth : 0;
+		const frameScaleY = frame.offsetHeight > 0 ? frameRect.height / frame.offsetHeight : 0;
+		const layerScaleX = dropLayer.offsetWidth > 0 ? layerRect.width / dropLayer.offsetWidth : 0;
+		const layerScaleY = dropLayer.offsetHeight > 0 ? layerRect.height / dropLayer.offsetHeight : 0;
+		if (![frameScaleX, frameScaleY, layerScaleX, layerScaleY].every(
+			n => Number.isFinite(n) && n > 0
+		)) return;
+		const mapped = region => ({
+			left: (frameRect.left - layerRect.left + (frame.clientLeft + region.left) * frameScaleX) / layerScaleX,
+			top: (frameRect.top - layerRect.top + (frame.clientTop + region.top) * frameScaleY) / layerScaleY,
+			width: region.width * frameScaleX / layerScaleX,
+			height: Math.max(8, region.height * frameScaleY / layerScaleY),
+		});
 		for (const region of regions) {
 			const path = previewPathForRegion(region.id, lastProject);
 			const node = path === null ? null : nodeAt(lastProject.root, path);
@@ -366,10 +381,17 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			zone.setAttribute('aria-label', 'Place report element near ' + node.type.replace('reports.', ''));
 			zone.style.position = 'absolute';
 			zone.style.boxSizing = 'border-box';
-			zone.style.left = (frameLeft + (Number.isFinite(region.left) ? region.left : 0)) + 'px';
-			zone.style.top = (frameTop + region.top) + 'px';
-			zone.style.width = (Number.isFinite(region.width) ? region.width : frame.clientWidth) + 'px';
-			zone.style.height = Math.max(8, region.height) + 'px';
+			const box = mapped({
+				left: Number.isFinite(region.left) ? region.left : 0,
+				top: region.top,
+				width: Number.isFinite(region.width) ? region.width : frame.clientWidth,
+				height: region.height,
+			});
+			if (!Object.values(box).every(Number.isFinite) || box.width <= 0) continue;
+			zone.style.left = box.left + 'px';
+			zone.style.top = box.top + 'px';
+			zone.style.width = box.width + 'px';
+			zone.style.height = box.height + 'px';
 			zone.style.pointerEvents = 'none';
 			zone.style.visibility = 'hidden';
 			zone.style.zIndex = '2';
@@ -377,6 +399,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 
 			const hit = el('div', 'cb-reports-platform__interaction-region');
 			hit.dataset.cbReportsDirectRegion = region.id;
+			hit.dataset.cbDesignNodePath = JSON.stringify(path);
 			hit.dataset.cbDesignNodeType = node.type;
 			if (!['reports.header', 'reports.footer'].includes(node.type)) {
 				hit.dataset.cbDesignNodeDragSource = JSON.stringify(path);
@@ -439,6 +462,10 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			note.dataset.cbReportsPreviewNote = '1';
 			frame = el('iframe', 'cb-reports-platform__preview-frame');
 			frame.setAttribute('title', 'Maintenance report preview');
+			// The native Designer's trusted parent hit regions own all hover and
+			// selection interaction; the sandboxed iframe remains render-only.
+			// Do not alter its sandbox, CSP or existing message verification.
+			frame.style.pointerEvents = 'none';
 			dropLayer = el('div', 'cb-reports-platform__drop-layer');
 			dropLayer.style.position = 'absolute';
 			dropLayer.style.inset = '0';
@@ -457,7 +484,9 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			lastSelection = selection;
 			const fields = editor.persistedFields();
 			const documentKey = JSON.stringify({project, fields});
-			preview.setSelection(selectedRegion(selection));
+			// Base paints selection in the parent overlay. Suppress the legacy
+			// iframe-only selection outline without changing other Flow previews.
+			preview.setSelection(null);
 			if (documentKey === lastDocumentKey) return;
 			// A prior iframe's geometry is never usable for a new project revision.
 			clearRegions();
@@ -503,7 +532,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			}
 		},
 		syncSelection({selection}) {
-			if (!destroyed) { lastSelection = selection; preview?.setSelection(selectedRegion(selection)); syncInteractionSelection(); }
+			if (!destroyed) { lastSelection = selection; preview?.setSelection(null); syncInteractionSelection(); }
 		},
 		captureFocus() { return null; },
 		restoreFocus() {},
