@@ -51,6 +51,11 @@ export const createDesignerElementsPalette = ({
 	root.className = 'cb-core-design-shell__elements-palette';
 	let disposed = false;
 	let generation = 0;
+	let listeners = [];
+	const releaseListeners = () => {
+		for (const [control, handler] of listeners) control.removeEventListener('click', handler);
+		listeners = [];
+	};
 	const makeSection = (title) => {
 		const section = documentRef.createElement('section');
 		section.className = 'cb-core-design-shell__panel-section';
@@ -63,7 +68,7 @@ export const createDesignerElementsPalette = ({
 	};
 	const emit = (control, descriptor, source, version) => {
 		let pending = false;
-		control.addEventListener('click', () => {
+		const handler = () => {
 			if (disposed || version !== generation || pending
 				|| descriptor.state !== 'interactive' || control.disabled) return;
 			pending = true;
@@ -92,7 +97,9 @@ export const createDesignerElementsPalette = ({
 				// event boundary must not leak an unhandled exception.
 				settle();
 			}
-		});
+		};
+		control.addEventListener('click', handler);
+		listeners.push([control, handler]);
 	};
 	const card = (entry, source, version) => {
 		const interactive = entry.state !== 'informational';
@@ -143,6 +150,7 @@ export const createDesignerElementsPalette = ({
 			? {source: active.dataset.cbDesignElementSource,
 				id: active.dataset.cbDesignComponentId, action: active.dataset.cbDesignElementAction}
 			: null;
+		releaseListeners();
 		const version = ++generation;
 		const section = makeSection(words.elements);
 		const grid = documentRef.createElement('div');
@@ -177,6 +185,7 @@ export const createDesignerElementsPalette = ({
 			if (disposed) return;
 			disposed = true;
 			generation += 1;
+			releaseListeners();
 			root.replaceChildren();
 		},
 	});
