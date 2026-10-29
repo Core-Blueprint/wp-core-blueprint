@@ -60,6 +60,21 @@ test('New Section stays before Footer and nested Heading stays in Section', () =
 	assert.equal(withHeading.root.children.at(-1).type, 'reports.footer');
 });
 
+test('DF-C: Reports refuses nested Section instead of redirecting to document root', () => {
+	const insert = resolveCommand('reports.insert');
+	const original = project();
+	const withSection = insert.apply(original, {
+		parentPath: [], index: original.root.children.length, type: 'reports.section',
+	}).project;
+	const sectionPath = [withSection.root.children.length - 2];
+	const before = JSON.stringify(withSection);
+	const attempted = {parentPath: sectionPath, index: 0, type: 'reports.section'};
+	assert.equal(canInsert(withSection, 'reports.section', sectionPath), false);
+	assert.equal(insert.canApply(withSection, attempted), false);
+	assert.throws(() => insert.apply(withSection, attempted), /COMMAND_REFUSED/);
+	assert.equal(JSON.stringify(withSection), before, 'no root-level or nested mutation');
+});
+
 test('Native Reports and Mail share the public renderer with existing commands and one DND controller', async () => {
 	const source = await readFile(new URL('../../assets/js/design/editor.js', import.meta.url), 'utf8');
 	assert.match(source, /component\.singleton !== true/);
