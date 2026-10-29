@@ -253,7 +253,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 	if (!root || !doc || profileId !== 'base/reports') throw new TypeError('HOST_MODULE_MISSING');
 	let editor = null, container = null, frame = null, preview = null, dropLayer = null, destroyed = false;
 	let activeSignal = null, request = null, connectedObserver = null;
-	let lastDocumentKey = '', lastProject = null, requestedSerial = 0;
+	let lastDocumentKey = '', lastProject = null, requestedSerial = 0, lastSelection = null, lastRegions = [];
 	const el = (tag, cls, value = '') => {
 		const node = doc.createElement(tag);
 		node.className = cls;
@@ -327,28 +327,57 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		schedulePreview(html);
 	};
 
+	// A selected node gets a real parent-document drag handle even though its
+	// preview pixels live inside an isolated iframe. No document authority is
+	// delegated to the iframe.
+	const updateDragHandle = () => {
+		if (!dropLayer || !frame) return;
+		for (const handle of dropLayer.querySelectorAll('[data-cb-design-node-drag-handle]'))
+			handle.remove();
+		const path = lastSelection?.primary?.kind === 'node' ? lastSelection.primary.path : null;
+		const moving = path ? nodeAt(lastProject?.root, path) : null;
+		const region = path ? lastRegions.find(item => previewPathForRegion(item.id, lastProject)
+			?.join('.') === path.join('.')) : null;
+		if (moving && region && !['reports.header','reports.footer'].includes(moving.type)) {
+			const handle = el('button', 'cb-reports-platform__drag-handle', '⋮⋮');
+			handle.type = 'button';
+			handle.dataset.cbDesignNodeDragHandle = JSON.stringify(path);
+			handle.dataset.cbDesignNodeType = moving.type;
+			handle.setAttribute('aria-label', 'Move ' + moving.type.replace('reports.', '') + ' element');
+			handle.style.left = (frame.offsetLeft + (Number.isFinite(region.left) ? region.left : 0)
+				+ (Number.isFinite(region.width) ? region.width : frame.clientWidth) - 30) + 'px';
+			handle.style.top = (frame.offsetTop + region.top) + 'px';
+			handle.style.right = 'auto';
+			handle.style.pointerEvents = 'auto';
+			dropLayer.append(handle);
+		}
+		dropLayer.dispatchEvent(new doc.defaultView.CustomEvent(
+			'cb:designer-dropzones-changed', {bubbles: true}
+		));
+	};
+
 	// The isolated renderer sends only bounded, generation-verified geometry.
 	// This adapter creates same-document proxy zones outside the iframe; the
 	// Base drag controller continues owning validation and command dispatch.
 	const onRegions = (regions) => {
 		if (destroyed || activeSignal?.aborted || !dropLayer || !frame || !lastProject) return;
+		lastRegions = [...regions];
 		dropLayer.replaceChildren();
 		const frameTop = frame.offsetTop;
 		const frameLeft = frame.offsetLeft;
 		if (!Number.isFinite(frameTop) || !Number.isFinite(frameLeft)) return;
 		for (const region of regions) {
-			if (!/^r(?:0|[1-9][0-9]*)$/.test(region.id)) continue;
-			const index = Number(region.id.slice(1));
-			const node = lastProject.root.children[index];
-			if (!Number.isSafeInteger(index) || !node) continue;
+			const path = previewPathForRegion(region.id, lastProject);
+			const node = path === null ? null : nodeAt(lastProject.root, path);
+			if (!node) continue;
 			const zone = el('div', 'cb-reports-platform__drop-region');
-			zone.dataset.cbDesignDropZoneId = 'node/' + index;
+			zone.dataset.cbDesignDropZoneId = 'node/' + path.join('.');
 			zone.setAttribute('aria-label', 'Place report element near ' + node.type.replace('reports.', ''));
 			zone.style.position = 'absolute';
 			zone.style.boxSizing = 'border-box';
-			zone.style.left = frameLeft + 'px';
+			zone.style.left = (frameLeft + (Number.isFinite(region.left) ? region.left : 0)) + 'px';
 			zone.style.top = (frameTop + region.top) + 'px';
-			zone.style.width = frame.clientWidth + 'px';
+			zone.style.width = (Number.isFinite(region.width) ? region.width : frame.clientWidth) + 'px';
 			zone.style.height = Math.max(8, region.height) + 'px';
 			zone.style.pointerEvents = 'none';
 			zone.style.visibility = 'hidden';
@@ -360,9 +389,8 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 				zone.style.visibility = 'visible';
 			}
 		}
-		dropLayer.dispatchEvent(new doc.defaultView.CustomEvent(
-			'cb:designer-dropzones-changed', {bubbles: true}
-		));
+
+		updateDragHandle();
 	};
 	const onActivate = (region) => {
 		if (destroyed || activeSignal?.aborted || !editor || !container?.isConnected
@@ -402,6 +430,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			}
 			validateProject(project);
 			lastProject = project;
+			lastSelection = selection;
 			const fields = editor.persistedFields();
 			const documentKey = JSON.stringify({project, fields});
 			preview.setSelection(selectedRegion(selection));
@@ -448,7 +477,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			}
 		},
 		syncSelection({selection}) {
-			if (!destroyed) preview?.setSelection(selectedRegion(selection));
+			if (!destroyed) { lastSelection = selection; preview?.setSelection(selectedRegion(selection)); updateDragHandle(); }
 		},
 		captureFocus() { return null; },
 		restoreFocus() {},
