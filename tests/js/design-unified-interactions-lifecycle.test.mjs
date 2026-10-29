@@ -73,7 +73,7 @@ test('DF-D3 P0 post-commit overlay failure is visible without rejecting READY', 
     querySelector:()=>({after:node=>alerts.push(node)}),
     dispatchEvent:event=>events.push(event),
   };
-  const shell={activateInteractions(){throw new Error('FAKE_OVERLAY_FAILURE')}};
+  const shell={refreshInteraction(){},activateInteractions(){throw new Error('FAKE_OVERLAY_FAILURE')}};
   const host={state:'READY',editor:{subscribe(){subscribed=true;return ()=>{}}}};
   const stagedShells=new Map([[canvas,shell]]);
   const stagedSaveUI=new Map([[canvas,{signal:{aborted:false,addEventListener(){}},syncSaveUI(){synced=true}}]]);
