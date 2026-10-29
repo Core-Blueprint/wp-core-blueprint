@@ -69,7 +69,7 @@ test('Native Reports and Mail share the public renderer with existing commands a
 	assert.match(source, /editor\.select\(\[ref\], ref\);\s*showSelectedInspector\(\);\s*return;/);
 	assert.match(source, /controller\.activatePanel\('inspector'\)/);
 	assert.match(source, /refreshElements\(project, selection\)/);
-	assert.match(source, /activeRegistry\.profileId === 'base\\/reports'/);
+	assert.match(source, /activeRegistry\.profileId === 'base\/reports'/);
 	assert.match(source, /elementsPanel\.replaceChildren\(palette\.element\)/);
 	assert.match(source, /releasePaletteSources\(\);\s*palette\.update/);
 	assert.match(source, /registeredPaletteSources\.set\(button, dnd\.registerSource/);
