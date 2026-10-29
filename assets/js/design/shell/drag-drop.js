@@ -224,6 +224,7 @@ export const createDesignerDragDropController = ({
 				// Never retain an old valid indicator after hovering an invalid
 				// edge or after a live domain authorization change.
 				clearHighlight();
+				event.stopPropagation(); // No implicit ancestor-zone fallback.
 				return;
 			}
 			event.preventDefault();
@@ -237,7 +238,7 @@ export const createDesignerDragDropController = ({
 		const drop = event => {
 			if (gesture?.mode !== 'pointer') return;
 			const edge = edgeAt(zone, event);
-			if (!candidate(zone, edge)) { clearHighlight(); return; }
+			if (!candidate(zone, edge)) { clearHighlight(); event.stopPropagation(); return; }
 			event.preventDefault();
 			event.stopPropagation();
 			performDrop(zone, edge);
