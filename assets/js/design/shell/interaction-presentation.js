@@ -93,7 +93,11 @@ export const createDesignerInteractionPresentation = ({
 		if (dragging) {
 			for (const zone of surface.querySelectorAll('[data-cb-design-drop-active="true"]')) {
 				const id = zone.dataset.cbDesignDropZoneId;
-				const key = zoneKey(id) || 'drop:' + id;
+				// Direct node drop-targets have a semantic node path, not a
+				// separate proxy-zone id. Resolve both to the same key so a
+				// selected/dragged node receives ONE canonical drop outline.
+				const key = zoneKey(id)
+					|| (validKey(nodeKey(zone)) ? nodeKey(zone) : 'drop:' + id);
 				put(key, zone, 'drop', zone.dataset.cbDesignDropEdge || 'inside', 5);
 			}
 		}
