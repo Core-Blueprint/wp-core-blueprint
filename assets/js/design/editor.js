@@ -1657,8 +1657,10 @@ export const attachTrustedDesignerHost = ({
 				// projection, never infer saved state from a toolbar event.
 				stagedSaveUI.get(stagedRoot)?.syncSaveUI();
 			};
-			stagedShells.set(stagedRoot, controller);
-			return Object.freeze({
+			// publishCommitted() must receive the Host-facing shell facade,
+			// never the internal createDesignerShell controller. The facade
+			// owns post-commit interaction activation and refresh.
+			const shellFacade = Object.freeze({
 				destroy: () => {
 					releasePaletteSources();
 					releaseNodeSources();
@@ -1673,6 +1675,8 @@ export const attachTrustedDesignerHost = ({
 				refreshInteraction: () => interactions?.refresh(),
 				renderInteraction,
 			});
+			stagedShells.set(stagedRoot, shellFacade);
+			return shellFacade;
 		};
 		host = createHost(Object.freeze({
 			root, canvasRoot, resolveRegistryView: registryFor,
