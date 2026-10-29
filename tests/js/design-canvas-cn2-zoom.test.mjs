@@ -8,7 +8,7 @@ const assets = readFileSync(new URL('../../src/Design/Editor/Assets.php',import.
 
 const fake = () => {
   const listeners = new Map();
-  const doc = {defaultView:null};
+  const doc = {defaultView:null, addEventListener(){}, removeEventListener(){}};
   const root = {
     isConnected:true, contains:child=>child===viewport,
     addEventListener(){}, removeEventListener(){},
