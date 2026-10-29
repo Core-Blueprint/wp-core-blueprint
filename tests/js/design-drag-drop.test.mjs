@@ -282,3 +282,60 @@ test('DF-D2E canvas-only affordance refuses a non-node source', () => {
 	}), /DESIGNER_DND_SOURCE_INVALID/);
 	controller.destroy();
 });
+
+test('DF-D4B native drag uses one centered 12px Base-accent dot, not a large node image', () => {
+  const f=fixture();
+  let snapshot=null,frame=null;
+  f.doc.defaultView={
+    requestAnimationFrame:fn=>{frame=fn;return 1;},
+    cancelAnimationFrame:()=>{frame=null;},
+  };
+  const nativeTransfer={
+    ...transfer(),
+    setDragImage(el,x,y){snapshot={el,x,y};},
+  };
+  f.source.fire('dragstart',{dataTransfer:nativeTransfer,clientX:220,clientY:150});
+  assert.equal(f.controller.active,true);
+  assert.ok(snapshot?.el,'native browser drag image is overridden');
+  assert.equal(snapshot.x,6);
+  assert.equal(snapshot.y,6);
+  assert.equal(snapshot.el.className,'cb-core-design-drag-dot');
+  assert.equal(snapshot.el.style.width,'12px');
+  assert.equal(snapshot.el.style.height,'12px');
+  assert.equal(snapshot.el.style.background,'var(--cb-accent, #00a8e8)');
+  assert.equal(snapshot.el.style.left,'214px');
+  assert.equal(snapshot.el.style.top,'144px');
+  assert.equal(f.root.contains(f.source),true,'original authored source stays in DOM');
+  assert.equal(f.root.contains(snapshot.el),true);
+  frame();
+  assert.equal(f.root.contains(snapshot.el),false,'snapshot marker is removed after native capture');
+  assert.equal(f.controller.active,true,'removing presentation does not invalidate gesture');
+  assert.equal(f.zone.fire('drop',{dataTransfer:nativeTransfer}),true);
+  assert.equal(f.commits.length,1);
+  f.controller.destroy();
+});
+
+test('DF-D4B cleans the native drag dot on Escape, stale context, and unsupported image API',()=>{
+  const f=fixture();
+  let canceled=0;
+  f.doc.defaultView={
+    requestAnimationFrame:()=>77,cancelAnimationFrame:()=>{canceled++;},
+  };
+  const native={...transfer(),setDragImage(el){this.image=el;}};
+  f.source.fire('dragstart',{dataTransfer:native,clientX:20,clientY:20});
+  assert.equal(f.root.contains(native.image),true);
+  f.doc.fire('keydown',{key:'Escape'});
+  assert.equal(f.root.contains(native.image),false);
+  assert.equal(f.controller.active,false);
+  assert.equal(canceled,1);
+  f.source.fire('dragstart',{dataTransfer:native,clientX:20,clientY:20});
+  const next=native.image;
+  f.setEpoch('site:2:report:1');
+  f.zone.fire('drop',{dataTransfer:native});
+  assert.equal(f.controller.active,false);
+  assert.equal(f.root.contains(next),false);
+  const transferWithoutImage=transfer();
+  f.source.fire('dragstart',{dataTransfer:transferWithoutImage});
+  assert.equal(f.controller.active,true,'unsupported setDragImage must not block DND');
+  f.controller.destroy();
+});
