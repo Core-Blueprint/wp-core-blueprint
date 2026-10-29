@@ -16,6 +16,7 @@ import {
 	createDomainSession,
 	createDesignerShell,
 	createDesignerLayerTree,
+	createDesignerElementsPalette,
 	createDesignerSelectionController,
 	createDesignerDragDropController,
 	createDesignerCanvasNavigation,
@@ -580,7 +581,7 @@ The named ESM export `animateLayoutChange` is the supported Base-owned layout-mo
 
 **Status:** Overseer #64 accepted/closed DF-A0, then explicitly authorized DF-A1 SOURCE implementation. This section records the **DF-A0 contract**. DF-A1 is an **unreleased SOURCE candidate**, not an installed capability or customer-release acceptance. Base product version remains 1.0.0.
 
-**Single presentation owner.** The proposed additive named ESM export is `createDesignerElementsPalette` from `@cb-core/design-editor`. On an accepted DF-A1 same-build implementation its global counterpart will be `window.cbCore.designEditor.shell.elements.createPalette`. The native Mail and Maintenance Reports Host must use this same renderer; first-party extensions must not reimplement its cards, labels, icons, keyboard focus or Dynamic Data layout. The old `projectDesignerElementsPalette` and `dispatchDesignerElementCreate` remain **platform command-model helpers**, not this generic DOM renderer. Existing `createDesignerShell`, `decorateDesignerElement`, `createDesignerLayerTree`, session, History and DND boundaries remain authoritative.
+**Single presentation owner.** The DF-A1 SOURCE implementation adds the named ESM export `createDesignerElementsPalette` from `@cb-core/design-editor`. Its same-build global counterpart is `window.cbCore.designEditor.shell.elements.createPalette`. The native Mail and Maintenance Reports Host must use this same renderer; first-party extensions must not reimplement its cards, labels, icons, keyboard focus or Dynamic Data layout. The old `projectDesignerElementsPalette` and `dispatchDesignerElementCreate` remain **platform command-model helpers**, not this generic DOM renderer. Existing `createDesignerShell`, `decorateDesignerElement`, `createDesignerLayerTree`, session, History and DND boundaries remain authoritative.
 
 ### Proposed exact interface
 
@@ -681,7 +682,7 @@ These adapters show **shape and ownership**, not guaranteed executable consumer 
 
 ### Same-build capability and review gate
 
-DF-A1 will add public PHP `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_ELEMENTS_PALETTE_API = 1` **only with** the actual named ESM export and global facade in the **same installed Base ZIP**. Consumers check `>= 1` in PHP **and** `typeof createDesignerElementsPalette === 'function'` from the WordPress-resolved module at runtime; global-only consumers check `typeof window.cbCore?.designEditor?.shell?.elements?.createPalette === 'function'`. If a gate fails, do not render an imitation palette or invent an alternative API: fail closed with a clear capability error. Current `DOMAIN_SESSION_API = 3` is unrelated and stays unchanged.
+DF-A1 SOURCE adds public PHP `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_ELEMENTS_PALETTE_API = 1` together with the named ESM export and global facade. Consumers must prove all three in the **same installed Base ZIP** before relying on the capability. Consumers check `>= 1` in PHP **and** `typeof createDesignerElementsPalette === 'function'` from the WordPress-resolved module at runtime; global-only consumers check `typeof window.cbCore?.designEditor?.shell?.elements?.createPalette === 'function'`. If a gate fails, do not render an imitation palette or invent an alternative API: fail closed with a clear capability error. Current `DOMAIN_SESSION_API = 3` is unrelated and stays unchanged.
 
 **DF-A0 consumer reviews accepted:** Contracts (#6494798897) confirms `document-flow`, D5-A token visibility, existing insert commands and zero Save/lease/storage redesign; Reports (#6494783452) confirms `createDomainSession()`, genuinely informational cards, typed Selection/History and no implicit R3-B/C enablement. Both reviews are **APPROVED WITH CONDITIONS**; the focus, async-intent and DND lifecycle clarifications above address the DF-A0 documentation requests. DF-A1 requires a separate Overseer SOURCE GO and focused DOM/keyboard/ARIA/label/icon/empty-token tests plus native Mail/Reports regression and exact paired FIELD proof.
 
