@@ -38,12 +38,15 @@ function fixture(profile='mail') {
       replaceChildren(...newChildren) {this.children=newChildren;for(const child of newChildren)child.parent=this;},
       remove() {if(this.parent)this.parent.children=this.parent.children.filter(n=>n!==this);},
       contains(child) {return this===child||this.children.some(n=>n.contains(child));},
+      querySelector(selector) {return this.querySelectorAll(selector)[0] || null;},
       querySelectorAll(selector) {
         const walk=n=>n.children.flatMap(c=>[c,...walk(c)]);
         return walk(this).filter(n=>selector==='[data-cb-design-node-path]'
           ? typeof n.dataset.cbDesignNodePath==='string'
           : selector==='[data-cb-design-drop-active="true"]'
-            ? n.dataset.cbDesignDropActive==='true':false);
+            ? n.dataset.cbDesignDropActive==='true'
+            : selector==='[data-cb-design-interaction-layer]'
+              ? n.dataset.cbDesignInteractionLayer==='1' : false);
       },
       addEventListener(type,callback) {listeners.set(type,callback);},
       removeEventListener(type) {listeners.delete(type);},
@@ -81,21 +84,20 @@ test('DF-D3 uses one selected outline and canonical geometry for native and prox
     assert.equal(indicator.style.width,'150px');
     assert.equal(indicator.style.height,'60px');
     f.presentation.destroy();
-    assert.equal(f.markers().length,0);
+    assert.equal(f.surface.querySelector('[data-cb-design-interaction-layer]'),null);
   }
 });
 test('DF-D3 prioritizes selected over hover and deepest nested geometry',()=>{
   const f=fixture('reports');
   f.surface.emit('pointermove',{clientX:75,clientY:80});
   f.flush();
-  assert.equal(f.markers().length,2);
-  assert.deepEqual(f.markers().map(m=>m.dataset.state).sort(),['hover','selected']);
+  assert.equal(f.markers().length,1); // same semantic node: one outline
   f.setSelection({kind:'node',path:[0]});
   f.presentation.refresh();
   assert.equal(f.markers().length,2);
   f.setSelection({kind:'node',path:[0,0]});
   f.presentation.refresh();
-  assert.equal(f.markers().length,2);
+  assert.equal(f.markers().length,1);
   assert.equal(f.markers().filter(m=>m.dataset.state==='selected').length,1);
   f.presentation.destroy();
 });
