@@ -9,7 +9,7 @@ import { createDesignerDragDropController } from './shell/drag-drop.js';
 import { createDesignerCanvasNavigation } from './shell/canvas-navigation.js';
 import { createDesignerContextMenu } from './shell/context-menu.js';
 import { createDesignerElementsPalette } from './shell/elements-palette.js';
-import { designerDropZoneId, resolveDesignerDropPlacement, resolveDesignerInsertPlacement } from './shell/drop-placement.js';
+import { designerDropZoneId, resolveDesignerDropPlacement, resolveDesignerInsertPlacement, resolveDesignerMovePlacement } from './shell/drop-placement.js';
 import {
 	CommandHistory,
 	EditorState,
@@ -17,6 +17,7 @@ import {
 	buildInspectorContext,
 	handleEditorShortcut,
 	insertNodeCommand,
+	moveNodeCommand,
 	nodeAt,
 	normalizePath,
 	removeNodeCommand,
@@ -1124,6 +1125,7 @@ export const attachTrustedDesignerHost = ({
 			const tree = createDesignerLayerTree({
 				documentRef: stagedRoot.ownerDocument,
 				ariaLabel: 'Design layers',
+				sharedDragDrop: true,
 				onSelectItem: (ref) => {
 					if (!signal.aborted && host.state === 'READY') editor.select([ref], ref);
 				},
@@ -1205,16 +1207,25 @@ export const attachTrustedDesignerHost = ({
 			// supplies semantic node surfaces; no canvas mutation occurs here.
 			const dropSurface = chrome.surface;
 			const registeredZones = new Map();
+			const registeredNodeSources = new Map();
+			let lastProject = null, projectToken = 0;
 			const dnd = createDesignerDragDropController({
 				root: stagedRoot,
 				isReady: () => !signal.aborted && host?.state === 'READY',
-				getContextKey: () => [
-					'host', context.siteId, context.actorId, context.resourceType,
-					context.resourceId, context.contextEpoch, activeRegistry.profileId,
-				].join(':'),
+				getContextKey: () => {
+					const current = editor.project();
+					if (current !== lastProject) { lastProject = current; projectToken += 1; }
+					return ['host', context.siteId, context.actorId, context.resourceType,
+						context.resourceId, context.contextEpoch, activeRegistry.profileId,
+						'p', projectToken].join(':');
+				},
 				resolveIntent: ({source, zoneId, edge}) => {
 					const current = editor.project();
 					if (forbiddenAfterFooter(current, zoneId, edge)) return null;
+					if (source.kind === 'node') return resolveDesignerMovePlacement({
+						project: current, source, zoneId, edge,
+						allowedParentsByType, commandId: prefix + '.move',
+					});
 					return resolveDesignerDropPlacement({
 						project: current, source, zoneId, edge,
 						allowedParentsByType, commandId: prefix + '.insert',
@@ -1224,7 +1235,7 @@ export const attachTrustedDesignerHost = ({
 				},
 				canDrop: ({intent}) => {
 					if (signal.aborted || host?.state !== 'READY'
-						|| intent?.commandId !== prefix + '.insert') return false;
+						|| ![prefix + '.insert', prefix + '.move'].includes(intent?.commandId)) return false;
 					const registered = profileModule.resolveCommand(intent.commandId);
 					try {
 						return registered?.canApply(editor.project(), intent.input) === true;
@@ -1232,8 +1243,15 @@ export const attachTrustedDesignerHost = ({
 				},
 				commit: ({intent}) => {
 					if (signal.aborted || host?.state !== 'READY'
-						|| intent?.commandId !== prefix + '.insert') {
+						|| ![prefix + '.insert', prefix + '.move'].includes(intent?.commandId)) {
 						throw new Error('HOST_CONTEXT_REFUSED');
+					}
+					if (intent.commandId === prefix + '.move') {
+						if (profileModule.resolveCommand(intent.commandId)
+							?.canApply(editor.project(), intent.input) !== true)
+							throw new Error('COMMAND_REFUSED');
+						editor.execute(intent.commandId, intent.input);
+						return;
 					}
 					const {parentPath, index, type} = intent.input;
 					const before = editor.project();
@@ -1651,6 +1669,7 @@ export const attachTrustedDesignerHost = ({
 export const profiles = PROFILE_APIS;
 export const commands = Object.freeze({
 	insertNode: insertNodeCommand,
+	moveNode: moveNodeCommand,
 	removeNode: removeNodeCommand,
 	reorderNode: reorderNodeCommand,
 	setProperty: setPropertyCommand,
@@ -1659,6 +1678,7 @@ export {
 	designerDropZoneId,
 	resolveDesignerDropPlacement,
 	resolveDesignerInsertPlacement,
+	resolveDesignerMovePlacement,
 	createDesignerDragDropController,
 	createDesignerElementsPalette,
 	createDesignerCanvasNavigation,
@@ -1693,6 +1713,7 @@ export {
 	decorateDesignerControl,
 	decorateDesignerElement,
 	insertNodeCommand,
+	moveNodeCommand,
 	removeNodeCommand,
 	reorderNodeCommand,
 	setPropertyCommand,
@@ -1717,7 +1738,7 @@ const publicApi = Object.freeze({
 		sidebarRoles: DESIGNER_SIDEBAR_ROLES,
 		viewportOrder: DESIGNER_VIEWPORT_ORDER,
 		paletteRoles: DESIGNER_PALETTE_ROLES,
-		placement: Object.freeze({ resolveInsert: resolveDesignerInsertPlacement }),
+		placement: Object.freeze({ resolveInsert: resolveDesignerInsertPlacement, resolveMove: resolveDesignerMovePlacement }),
 		elements: Object.freeze({ createPalette: createDesignerElementsPalette }),
 		navigation: Object.freeze({ create: createDesignerNavigation }),
 		icons: Object.freeze({
@@ -1739,6 +1760,7 @@ const publicApi = Object.freeze({
 			createController: createDesignerDragDropController,
 			zoneId: designerDropZoneId,
 			resolvePlacement: resolveDesignerDropPlacement,
+			resolveMove: resolveDesignerMovePlacement,
 		}),
 		layers: Object.freeze({
 			actions: DESIGNER_LAYER_ACTIONS,
