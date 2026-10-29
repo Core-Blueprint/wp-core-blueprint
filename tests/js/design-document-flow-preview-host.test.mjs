@@ -767,15 +767,25 @@ test('isolated Flow bridge publishes only bounded semantic geometry and preserve
 	const bridge = sizingBridge();
 	const sent = [];
 	class RegionElement {
-		getAttribute(name) { return name === 'data-cb-flow-preview-region' ? 'r1' : null; }
-		getBoundingClientRect() { return {top: 64, height: 48, bottom: 112}; }
+		constructor(id, box) { this.id = id; this.box = box; }
+		getAttribute(name) { return name === 'data-cb-flow-preview-region' ? this.id : null; }
+		getBoundingClientRect() { return this.box; }
 	}
-	const region = new RegionElement();
+	const region = new RegionElement('r1', {
+		top: 64, height: 48, bottom: 112, left: 24, width: 340, right: 364,
+	});
+	const nested = new RegionElement('r1.0', {
+		top: 72, height: 24, bottom: 96, left: 40, width: 308, right: 348,
+	});
+	const invalid = new RegionElement('r1.1', {
+		top: 96, height: 24, bottom: 120, left: 40, width: Number.NaN, right: 348,
+	});
 	const root = {
 		scrollHeight: 480, offsetHeight: 480,
 		getBoundingClientRect: () => ({height: 480}),
 		getAttribute: name => name === 'data-cb-flow-preview-root' ? '1' : null,
-		querySelectorAll: selector => selector === '[data-cb-flow-preview-region]' ? [region] : [],
+		querySelectorAll: selector => selector === '[data-cb-flow-preview-region]'
+			? [region, nested, invalid] : [],
 		addEventListener() {},
 	};
 	const documentObject = {
@@ -800,7 +810,10 @@ test('isolated Flow bridge publishes only bounded semantic geometry and preserve
 	});
 	assert.deepEqual(JSON.parse(JSON.stringify(sent)), [
 		{type: 'cb-core-flow-preview-regions', version: 1, generation: 7,
-			regions: [{id: 'r1', top: 64, height: 48}]},
+			regions: [
+				{id: 'r1', top: 64, height: 48, left: 24, width: 340},
+				{id: 'r1.0', top: 72, height: 24, left: 40, width: 308},
+			]},
 		{type: 'cb-core-flow-preview-size', version: 1, generation: 7, height: 480},
 	]);
 });
