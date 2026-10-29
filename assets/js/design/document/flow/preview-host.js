@@ -52,13 +52,21 @@ const isRegionMessage = (data) => {
 		|| !Array.isArray(data.regions) || data.regions.length > 100) return false;
 	const seen = new Set();
 	for (const region of data.regions) {
+		const shape = region && typeof region === 'object' && !Array.isArray(region)
+			? Object.keys(region).sort().join('|') : '';
+		const extended = shape === 'height|id|left|top|width';
 		if (!region || typeof region !== 'object' || Array.isArray(region)
-			|| Object.keys(region).sort().join('|') !== 'height|id|top'
-			|| typeof region.id !== 'string' || !/^r(?:0|[1-9][0-9]*)$/.test(region.id)
+			|| (!extended && shape !== 'height|id|top')
+			|| typeof region.id !== 'string'
+			|| !/^r(?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*))?$/.test(region.id)
+			|| (region.id.includes('.') && !extended)
 			|| seen.has(region.id) || !Number.isFinite(region.top)
 			|| !Number.isFinite(region.height) || region.height < 0
 			|| Math.abs(region.top) > 100000 || region.height > 100000
-			|| region.top + region.height > 100000) return false;
+			|| region.top + region.height > 100000
+			|| (extended && (!Number.isFinite(region.left) || Math.abs(region.left) > 100000
+				|| !Number.isFinite(region.width) || region.width <= 0
+				|| region.width > 100000 || region.left + region.width > 100000))) return false;
 		seen.add(region.id);
 	}
 	return true;
