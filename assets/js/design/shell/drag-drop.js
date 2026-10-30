@@ -130,6 +130,7 @@ export const createDesignerDragDropController = ({
 		clearInvalid();
 		clearDragDot();
 		if (!gesture) return;
+		gesture.origin.removeAttribute('data-cb-design-dnd-dragging');
 		gesture = null;
 		emit(reason, reason === 'cancelled' ? 'Element placement cancelled.' : 'Element placement unavailable.');
 	};
@@ -182,6 +183,7 @@ export const createDesignerDragDropController = ({
 		// Immediately invalidate the gesture. Nested drop events and duplicate
 		// event delivery cannot dispatch a second command.
 		const source = gesture.source;
+		gesture.origin.removeAttribute('data-cb-design-dnd-dragging');
 		gesture = null;
 		clearHighlight();
 		clearInvalid();
@@ -216,6 +218,10 @@ export const createDesignerDragDropController = ({
 		else element.setAttribute('draggable', record.draggable);
 		if (record.shortcuts === null) element.removeAttribute('aria-keyshortcuts');
 		else element.setAttribute('aria-keyshortcuts', record.shortcuts);
+		if (record.marker === null) element.removeAttribute('data-cb-design-dnd-source');
+		else element.setAttribute('data-cb-design-dnd-source', record.marker);
+		if (record.dragging === null) element.removeAttribute('data-cb-design-dnd-dragging');
+		else element.setAttribute('data-cb-design-dnd-dragging', record.dragging);
 		sources.delete(element);
 		return true;
 	};
@@ -243,6 +249,7 @@ export const createDesignerDragDropController = ({
 			if (!ready()) return false;
 			try {
 				gesture = {source, origin: element, mode, contextKey: context()};
+				element.setAttribute('data-cb-design-dnd-dragging', 'true');
 				emit('started', 'Move to a valid location, then drop. Press Escape to cancel.');
 				return true;
 			} catch (_) {
@@ -292,10 +299,13 @@ export const createDesignerDragDropController = ({
 		const listeners = [['dragstart', dragStart], ['dragend', dragEnd], ['keydown', keydown]];
 		const draggable = element.getAttribute('draggable');
 		const shortcuts = element.getAttribute('aria-keyshortcuts');
+		const marker = element.getAttribute('data-cb-design-dnd-source');
+		const dragging = element.getAttribute('data-cb-design-dnd-dragging');
 		element.setAttribute('draggable', 'true');
 		element.setAttribute('aria-keyshortcuts', 'Alt+ArrowDown');
+		element.setAttribute('data-cb-design-dnd-source', 'true');
 		listeners.forEach(([name, fn]) => element.addEventListener(name, fn));
-		sources.set(element, {listeners, draggable, shortcuts});
+		sources.set(element, {listeners, draggable, shortcuts, marker, dragging});
 		return () => releaseSource(element);
 	};
 	const registerZone = (element, {id, placementPolicy = 'hierarchical'} = {}) => {

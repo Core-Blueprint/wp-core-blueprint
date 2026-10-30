@@ -1142,3 +1142,18 @@
 	outline: 2px dashed var(--cb-danger);
 	outline-offset: -2px;
 }
+
+/* C1: Base controller identifies registered sources on any public Designer
+   surface. No extension-specific classes or native-only stylesheet required. */
+[data-cb-design-dnd-source="true"][draggable="true"],
+[data-cb-design-dnd-source="true"][draggable="true"] :not(
+	input, textarea, select, button, a, [contenteditable], [role="textbox"]
+) {
+	cursor: grab;
+}
+[data-cb-design-dnd-dragging="true"],
+[data-cb-design-dnd-dragging="true"] :not(
+	input, textarea, select, button, a, [contenteditable], [role="textbox"]
+) {
+	cursor: grabbing;
+}
