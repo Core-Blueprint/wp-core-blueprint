@@ -345,3 +345,60 @@ test('C1 managed Layers requires the shared controller and strict descriptor',()
 	const tree=createDesignerLayerTree({documentRef:document,sharedDragDrop:true});
 	assert.throws(()=>tree.bindDragDrop({controller:{},describe:()=>null}),/DND_CONFIG_INVALID/);
 });
+
+test('C1 external consumer fixture uses one real Base DND controller across Layers and Canvas',async()=>{
+	const dndCode=await readFile(new URL('../../assets/js/design/shell/drag-drop.js',import.meta.url),'utf8');
+	const {createDesignerDragDropController}=await import('data:text/javascript;charset=utf-8,'+encodeURIComponent(dndCode));
+	const doc=new FakeDocument();
+	doc.addEventListener=()=>{};
+	doc.removeEventListener=()=>{};
+	const root=doc.createElement('main');
+	root.isConnected=true;
+	const tree=createDesignerLayerTree({documentRef:doc,sharedDragDrop:true});
+	root.append(tree.element);
+	tree.element.isConnected=true;
+	const canvasSource=doc.createElement('div'),canvasZone=doc.createElement('div');
+	root.append(canvasSource,canvasZone);
+	const commits=[];
+	const dnd=createDesignerDragDropController({
+		root,isReady:()=>true,getContextKey:()=> 'fixture:context',
+		resolveIntent:({source,zoneId,edge})=>({sourceId:source.id,zoneId,edge}),
+		canDrop:()=>true,commit:({intent})=>{commits.push(intent);},
+	});
+	tree.bindDragDrop({controller:dnd,describe:({item})=>({
+		source:item.path?.length?{id:'node/'+item.path.join('.'),type:'section',kind:'node',path:item.path}:null,
+		zone:{id:'node/'+item.path.join('.'),placementPolicy:'sibling-only'},
+	})});
+	tree.render([{key:'[0]',path:[0],label:'Section',children:[]}]);
+	const layerRow=tree.row('[0]');
+	const layerSource=layerRow.children[1];
+	layerRow.getBoundingClientRect=()=>({top:100,height:100});
+	canvasZone.getBoundingClientRect=()=>({top:100,height:100});
+	assert.equal(layerSource.getAttribute('draggable'),'true');
+	assert.equal(layerRow.getAttribute('tabindex'),'0');
+	dnd.registerSource(canvasSource,{id:'node/1',type:'section',kind:'node',path:[1],directCanvas:true});
+	dnd.registerZone(canvasZone,{id:'node/1',placementPolicy:'sibling-only'});
+	const dragEvent=()=> {
+		const e=new Event('dragstart',{cancelable:true});
+		Object.defineProperty(e,'dataTransfer',{value:{setData(){} }});
+		return e;
+	};
+	const dropEvent=(y)=> {
+		const e=new Event('drop',{cancelable:true});
+		Object.defineProperty(e,'clientY',{value:y});
+		return e;
+	};
+	layerSource.dispatchEvent(dragEvent());
+	assert.equal(canvasZone.dispatchEvent(dropEvent(110)),false);
+	canvasSource.dispatchEvent(dragEvent());
+	assert.equal(layerRow.dispatchEvent(dropEvent(180)),false);
+	assert.deepEqual(commits,[
+		{sourceId:'node/0',zoneId:'node/1',edge:'before'},
+		{sourceId:'node/1',zoneId:'node/0',edge:'after'},
+	]);
+	assert.equal(dnd.active,false);
+	tree.destroy();
+	dnd.destroy();
+	assert.equal(layerSource.getAttribute('draggable'),null);
+	assert.equal(canvasSource.getAttribute('draggable'),null);
+});
