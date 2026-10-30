@@ -167,6 +167,8 @@ export const createFlowPreviewHost = (iframe, {
 	let pendingLoadHandler = null;
 	let lifecycle = 'idle';
 	let destroyed = false;
+	// Only a complete validated geometry set may become a trusted hit map.
+	let hasTrustedRegions = false;
 
 	const clearFirstSizeTimer = () => {
 		if (firstSizeTimer !== null) {
@@ -203,6 +205,10 @@ export const createFlowPreviewHost = (iframe, {
 	};
 
 	const failCurrentRender = () => {
+		if (hasTrustedRegions) {
+			hasTrustedRegions = false;
+			onRegions?.(Object.freeze([]));
+		}
 		awaitingFirstSize = false;
 		lastAppliedHeight = null;
 		clearFirstSizeTimer();
@@ -232,10 +238,14 @@ export const createFlowPreviewHost = (iframe, {
 			&& event.data.generation === activeGeneration
 			&& (lifecycle === 'loading' || lifecycle === 'ready')) {
 			if (!isRegionMessage(event.data)) {
-				onRegions?.(Object.freeze([]));
-				failCurrentRender();
+				// Preserve v1's harmless ignore-before-first-map behavior for
+				// malformed unsolicited messages. A bridge's explicit rejection
+				// (regions:null), or ANY invalid replacement of a trusted map,
+				// terminates the generation without retaining stale geometry.
+				if (event.data.regions === null || hasTrustedRegions) failCurrentRender();
 				return;
 			}
+			hasTrustedRegions = event.data.regions.length > 0;
 			onRegions?.(Object.freeze(event.data.regions.map(region => Object.freeze({...region}))));
 			return;
 		}
@@ -279,6 +289,7 @@ export const createFlowPreviewHost = (iframe, {
 		awaitingFirstSize = false;
 		clearFirstSizeTimer();
 		setState('loading');
+		hasTrustedRegions = false;
 		onRegions?.(Object.freeze([]));
 
 		if (!isCanonicalFlowPreviewHtml(html)) {
@@ -350,6 +361,7 @@ export const createFlowPreviewHost = (iframe, {
 		generation = nextGeneration(generation);
 		activeGeneration = generation;
 		selectedRegionId = null;
+		hasTrustedRegions = false;
 		onRegions?.(Object.freeze([]));
 		awaitingFirstSize = false;
 		clearFirstSizeTimer();
