@@ -30,6 +30,8 @@ final class Assets {
 	public const DESIGNER_NODE_MOVE_API = 1;
 	/** DF-D3 opt-in unified Designer interaction presentation (transient only). */
 	public const DESIGNER_INTERACTION_API = 1;
+	/** Public Flow-preview v1 extended compatibility: 8 numeric levels, 500 regions. */
+	public const FLOW_PREVIEW_NESTED_REGIONS_API = 1;
 	/** A consumer may authoritatively withhold Save without Base re-enabling it on idle/error. */
 	public const SAVE_AUTHORITY_UI_API = 1;
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */
