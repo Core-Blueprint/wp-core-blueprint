@@ -395,6 +395,7 @@ export const createDesignerLayerTree = ({
 	emptyMessage = '',
 	onSelectItem = null,
 	sharedDragDrop = false,
+	dragDrop = null,
 } = {}) => {
 	if (!documentRef?.createElement) {
 		throw new TypeError('Designer layer tree requires a DOM Document.');
@@ -403,6 +404,9 @@ export const createDesignerLayerTree = ({
 		throw new TypeError('Designer layer tree onSelectItem adapter must be a function or null.');
 	}
 
+	if (dragDrop !== null && sharedDragDrop !== true) {
+		throw new TypeError('DESIGNER_LAYERS_DND_CONFIG_INVALID');
+	}
 	const selectionAdapter = typeof onSelectItem === 'function' ? onSelectItem : null;
 	const element = documentRef.createElement('div');
 	element.className = 'cb-core-design-shell__layer-list cb-core-design-shell__layer-tree';
@@ -416,6 +420,9 @@ export const createDesignerLayerTree = ({
 	let focusedKey = '';
 	let dragRecord = null;
 	let activeMenu = null;
+	let managedDragDrop = null;
+	const managedRows = new Map();
+	let disposed = false;
 
 	// A single body-level menu avoids clipping by either scrolling Designer rail.
 	// No document edits originate from the menu itself.
@@ -600,6 +607,84 @@ export const createDesignerLayerTree = ({
 		return output;
 	};
 
+
+	// This is a binding to the existing public controller, NOT another
+	// drag engine. The consumer supplies only semantic source/zone descriptors.
+	const releaseManagedRows = () => {
+		for (const record of managedRows.values()) {
+			record.releaseSource?.();
+			record.releaseZone?.();
+		}
+		managedRows.clear();
+	};
+	const syncDragDrop = () => {
+		if (!managedDragDrop || disposed) return false;
+		// A detached tree can be rendered before its host mounts. Its first
+		// registration is deferred to the one-time post-mount syncDragDrop().
+		if (element.isConnected === false) return false;
+		const next = new Map();
+		for (const [key, record] of rowsByKey) {
+			const descriptor = managedDragDrop.describe(Object.freeze({key, item: record.item}));
+			if (descriptor === null || descriptor === undefined) continue;
+			if (!descriptor || typeof descriptor !== 'object' || Array.isArray(descriptor)
+				|| Object.keys(descriptor).some(field => !['source','zone'].includes(field))) {
+				throw new TypeError('DESIGNER_LAYERS_DND_DESCRIPTOR_INVALID');
+			}
+			const source = descriptor.source ?? null;
+			const zone = descriptor.zone ?? null;
+			if (source !== null && (source.kind !== 'node'
+				|| !Array.isArray(source.path) || source.directCanvas === true)) {
+				throw new TypeError('DESIGNER_LAYERS_DND_DESCRIPTOR_INVALID');
+			}
+			if (zone !== null && (typeof zone.id !== 'string'
+				|| (zone.placementPolicy !== undefined
+					&& !['hierarchical', 'sibling-only'].includes(zone.placementPolicy)))) {
+				throw new TypeError('DESIGNER_LAYERS_DND_DESCRIPTOR_INVALID');
+			}
+			const signature = JSON.stringify([source, zone]);
+			const previous = managedRows.get(key);
+			if (previous?.row === record.row && previous.signature === signature) {
+				next.set(key, previous);
+				continue;
+			}
+			next.set(key, {row:record.row, select:record.select, source, zone, signature});
+		}
+		for (const [key, previous] of managedRows) {
+			if (next.get(key) === previous) continue;
+			previous.releaseSource?.();
+			previous.releaseZone?.();
+			managedRows.delete(key);
+		}
+		for (const [key, record] of next) {
+			if (managedRows.has(key)) continue;
+			let releaseSource = null;
+			try {
+				if (record.source) {
+					releaseSource = managedDragDrop.controller.registerSource(record.select, record.source);
+				}
+				const releaseZone = record.zone
+					? managedDragDrop.controller.registerZone(record.row, record.zone) : null;
+				managedRows.set(key, {...record, releaseSource, releaseZone});
+			} catch (error) {
+				releaseSource?.();
+				throw error;
+			}
+		}
+		return true;
+	};
+	const bindDragDrop = binding => {
+		if (disposed || managedDragDrop || sharedDragDrop !== true) {
+			throw new TypeError('DESIGNER_LAYERS_DND_ALREADY_BOUND');
+		}
+		if (!binding || typeof binding !== 'object' || Array.isArray(binding)
+			|| typeof binding.describe !== 'function'
+			|| typeof binding.controller?.registerSource !== 'function'
+			|| typeof binding.controller?.registerZone !== 'function') {
+			throw new TypeError('DESIGNER_LAYERS_DND_CONFIG_INVALID');
+		}
+		managedDragDrop = binding;
+		return syncDragDrop();
+	};
 	const patch = (items) => {
 		const next = visibleItems(items);
 		const oldOrder = [...rowsByKey.keys()];
@@ -607,9 +692,11 @@ export const createDesignerLayerTree = ({
 			|| next.some(({ key, item }, index) => key !== oldOrder[index] || item.reorder || item.actions)) return false;
 		currentItems = normalizeTreeItems(items);
 		for (const { key, item } of next) {
-			const row = rowsByKey.get(key)?.row;
-			updateDesignerLayerRow(row, { label: item.label, selected: item.selected === true });
+			const record = rowsByKey.get(key);
+			updateDesignerLayerRow(record?.row, { label: item.label, selected: item.selected === true });
+			if (record) rowsByKey.set(key, Object.freeze({...record, item}));
 		}
+		syncDragDrop();
 		return true;
 	};
 
@@ -618,6 +705,9 @@ export const createDesignerLayerTree = ({
 		closeMenu();
 		const hadFocus = typeof element.contains === 'function' && element.contains(documentRef.activeElement);
 		const requestedFocus = String(focus || (hadFocus ? focusedKey : '') || '');
+		// render() genuinely replaces the rows; patch() does not. Release only
+		// these replaced handles, never due to unrelated DND DOM attributes.
+		releaseManagedRows();
 		rowsByKey.clear();
 		dragRecord = null;
 		element.replaceChildren();
@@ -686,6 +776,7 @@ export const createDesignerLayerTree = ({
 
 				const record = Object.freeze({
 					key,
+					item,
 					parentKey,
 					row,
 					select: layer.select,
@@ -761,7 +852,7 @@ export const createDesignerLayerTree = ({
 						returnFocus: layer.select, x: event.clientX, y: event.clientY });
 				});
 
-				if (reorder && sharedDragDrop !== true) {
+				if (reorder && sharedDragDrop !== true && !managedDragDrop) {
 					row.draggable = true;
 					row.addEventListener('dragstart', (event) => {
 						dragRecord = { key, parentKey, reorder };
@@ -830,13 +921,24 @@ export const createDesignerLayerTree = ({
 		}
 
 		if (requestedFocus) focusKey(requestedFocus);
+		syncDragDrop();
 		return element;
 	};
 
+	if (dragDrop !== null) bindDragDrop(dragDrop);
 	return Object.freeze({
 		element,
 		render,
 		patch,
+		bindDragDrop,
+		syncDragDrop,
+		destroy() {
+			if (disposed) return;
+			disposed = true;
+			releaseManagedRows();
+			closeMenu();
+			rowsByKey.clear();
+		},
 		row(key) {
 			return rowsByKey.get(String(key || ''))?.row ?? null;
 		},
