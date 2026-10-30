@@ -763,7 +763,7 @@ test('isolated Flow geometry messages are generation-bound, bounded, and never a
 });
 
 
-test('isolated Flow bridge publishes only bounded semantic geometry and preserves size messages', () => {
+test('isolated Flow bridge refuses an invalid geometry set instead of publishing partial interaction authority', () => {
 	const bridge = sizingBridge();
 	const sent = [];
 	class RegionElement {
@@ -808,12 +808,9 @@ test('isolated Flow bridge publishes only bounded semantic geometry and preserve
 		ResizeObserver: ResizeObserverStub, HTMLElement: RegionElement,
 		requestAnimationFrame: () => 1, Number, Math,
 	});
+	// The old v1 test expected valid-prefix truncation here. The bounded
+	// compatibility contract requires the entire set to fail instead.
 	assert.deepEqual(JSON.parse(JSON.stringify(sent)), [
-		{type: 'cb-core-flow-preview-regions', version: 1, generation: 7,
-			regions: [
-				{id: 'r1', top: 64, height: 48, left: 24, width: 340},
-				{id: 'r1.0', top: 72, height: 24, left: 40, width: 308},
-			]},
-		{type: 'cb-core-flow-preview-size', version: 1, generation: 7, height: 480},
+		{type: 'cb-core-flow-preview-regions', version: 1, generation: 7, regions: null},
 	]);
 });
