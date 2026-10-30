@@ -402,3 +402,16 @@ test('C1 external consumer fixture uses one real Base DND controller across Laye
 	assert.equal(layerSource.getAttribute('draggable'),null);
 	assert.equal(canvasSource.getAttribute('draggable'),null);
 });
+
+test('C1 modified arrow key is not intercepted by Layers keyboard navigation',()=>{
+	const tree=createDesignerLayerTree({documentRef:document});
+	tree.render(nestedItems());
+	const select=tree.row('[0]').children[1];
+	select.focus();
+	const event=new Event('keydown',{cancelable:true});
+	Object.defineProperty(event,'key',{value:'ArrowDown'});
+	Object.defineProperty(event,'altKey',{value:true});
+	select.dispatchEvent(event);
+	assert.equal(document.activeElement,select);
+	assert.equal(event.defaultPrevented,false);
+});

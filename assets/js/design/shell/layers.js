@@ -798,6 +798,9 @@ export const createDesignerLayerTree = ({
 						}
 						return;
 					}
+					// Alt+ArrowDown belongs to the single shared DND controller.
+					// Tree navigation must not steal or change focus first.
+					if (event.altKey || event.ctrlKey || event.metaKey) return;
 					const position = visibleKeys.indexOf(key);
 					if (event.key === 'ArrowDown' && position >= 0 && position < visibleKeys.length - 1) {
 						event.preventDefault();
