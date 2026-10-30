@@ -64,7 +64,7 @@ class FakeDocument extends FakeElement {
 	createElement(name) { return new FakeElement(this, name); }
 }
 
-const fixture = (policy = () => true) => {
+const fixture = (policy = () => true, commitHandler = null) => {
 	const doc = new FakeDocument();
 	const root = doc.createElement('main');
 	doc.append(root);
@@ -83,7 +83,10 @@ const fixture = (policy = () => true) => {
 		resolveIntent: ({source: dragged, zoneId, edge}) =>
 			({commandId: 'fixture.insert', input: {type: dragged.type, zoneId, edge}}),
 		canDrop: policy,
-		commit: ({source: dragged, intent}) => { commits.push({dragged, intent}); },
+		commit: ({source: dragged, intent}) => {
+			commits.push({dragged, intent});
+			return commitHandler?.({source: dragged, intent});
+		},
 		onStatus: status => statuses.push(status.status),
 	});
 	controller.registerSource(source, {id: 'fixture/heading', type: 'fixture.heading'});
@@ -338,4 +341,41 @@ test('DF-D4B cleans the native drag dot on Escape, stale context, and unsupporte
   f.source.fire('dragstart',{dataTransfer:transferWithoutImage});
   assert.equal(f.controller.active,true,'unsupported setDragImage must not block DND');
   f.controller.destroy();
+});
+
+test('DF-D4 contract: synchronous commit results and exact-once status', () => {
+  for (const [label, result, expected] of [
+    ['undefined', undefined, 'committed'], ['true', true, 'committed'],
+    ['false', false, 'refused'], ['legacy null', null, 'committed'],
+  ]) {
+    const f = fixture(() => true, () => result);
+    f.source.fire('dragstart', {dataTransfer: transfer()});
+    f.zone.fire('drop', {dataTransfer: transfer()});
+    assert.equal(f.statuses.at(-1), expected, label);
+    assert.equal(f.commits.length, 1, label);
+    assert.equal(f.controller.active, false);
+    f.zone.fire('drop', {dataTransfer: transfer()});
+    assert.equal(f.commits.length, 1, label + ' replay');
+    f.controller.destroy();
+  }
+  const f = fixture(() => true, () => { throw new Error('refused'); });
+  f.source.fire('dragstart', {dataTransfer: transfer()});
+  f.zone.fire('drop', {dataTransfer: transfer()});
+  assert.equal(f.statuses.at(-1), 'refused');
+  assert.equal(f.commits.length, 1);
+  f.zone.fire('drop', {dataTransfer: transfer()});
+  assert.equal(f.commits.length, 1);
+  f.controller.destroy();
+});
+test('DF-D4 contract: async Promise/thenable commit refuses and cannot replay', () => {
+  for (const result of [Promise.resolve(true), {then() {}}]) {
+    const f = fixture(() => true, () => result);
+    f.source.fire('dragstart', {dataTransfer: transfer()});
+    f.zone.fire('drop', {dataTransfer: transfer()});
+    assert.equal(f.statuses.at(-1), 'refused');
+    assert.equal(f.commits.length, 1);
+    f.zone.fire('drop', {dataTransfer: transfer()});
+    assert.equal(f.commits.length, 1);
+    f.controller.destroy();
+  }
 });
