@@ -10,6 +10,7 @@ define( 'ABSPATH', __DIR__ . '/' );
 $root = dirname( __DIR__ );
 foreach ( [
     'src/Design/Profile/Document/Flow/Contract.php',
+    'src/Design/Profile/Document/Flow/Hints.php',
     'src/Design/Profile/Document/Flow/Layout.php',
     'src/Design/Profile/Document/Flow/RenderBlock.php',
     'src/Design/Profile/Document/Flow/Presentation.php',
