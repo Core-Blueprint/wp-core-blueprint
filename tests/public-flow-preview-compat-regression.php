@@ -65,6 +65,12 @@ for ( $depth = 1; $depth < 9; $depth++ ) { $leaf = RenderBlock::container( [ $le
 $nestedBlocks = [ $leaf ];
 $eight = 'r0.0.0.0.0.0.0.0';
 $path = array_fill( 0, 8, 0 );
+foreach ( [ 1, 2, 3, 8 ] as $depth ) {
+    $id = 'r' . implode( '.', array_fill( 0, $depth, '0' ) );
+    $renderPath = array_fill( 0, $depth, 0 );
+    $mapping = $regionsMethod->invoke( $renderer, [ $id => [ $renderPath ] ], $nestedBlocks );
+    cb_flow_assert( count( $mapping ) === 1, $depth . '-level Flow preview ID accepted' );
+}
 $nested = $regionsMethod->invoke( $renderer, [ $eight => [ $path ] ], $nestedBlocks );
 cb_flow_assert( count( $nested ) === 1 && $nested['0.0.0.0.0.0.0.0'] === $eight, 'eight-level region accepted' );
 foreach ( [ 'r0.0.0.0.0.0.0.0.0', 'r01', 'r0..1', 'r0.01', 'r9007199254740992', 'r0.1.2.3.4.5.6.7.8' ] as $bad ) {
