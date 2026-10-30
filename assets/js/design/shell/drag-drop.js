@@ -169,6 +169,9 @@ export const createDesignerDragDropController = ({
 		clearDragDot();
 		try {
 			const result = commit(Object.freeze({source, intent}));
+			// A synchronous false is an explicit domain refusal. Other synchronous
+			// values remain tolerated by DND v1 for backward compatibility.
+			if (result === false) throw new Error('DESIGNER_DND_COMMIT_REFUSED');
 			if (!isSync(result)) throw new TypeError('DESIGNER_DND_ASYNC_COMMIT_REFUSED');
 			emit('committed', source.kind === 'node' ? 'Element moved.' : 'Element placed.');
 			return true;
