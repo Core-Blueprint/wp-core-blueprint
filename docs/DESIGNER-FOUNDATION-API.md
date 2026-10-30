@@ -385,7 +385,7 @@ consumer runtime paths pass. Existing Layers drag/reorder remains unchanged.
 
 ### DF-DND-C1 — Unified Layers, Canvas and cross-surface DND (opt-in)
 
-**Same-build gate:** `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_DND_UNIFIED_API >= 1`
+**Same-build gate:** `CoreBlueprint\Core\Design\Editor\Assets::DESIGNER_DND_UNIFIED_API >= 1`
 plus named `createDesignerDragDropController` and `createDesignerLayerTree`
 exports in the installed `@cb-core/design-editor` module. This contract is
 additive: DND-01 and legacy `sharedDragDrop:true` consumers remain supported.
@@ -413,7 +413,10 @@ never creates a write.
 
 **Base-owned Layers registrations:** create the tree with
 `{sharedDragDrop:true}`, then pass
-`tree.bindDragDrop({controller:dnd,describe:({key,item})=>({source?,zone?})})`.
+`tree.bindDragDrop({controller:dnd,describe:({item})=>({
+  source:item.moveSource ?? null,
+  zone:item.dropZone ?? null,
+})})`.
 Alternatively pass the same binding as constructor `dragDrop` when the
 controller is already available. Each source is a semantic
 `{id,type,kind:'node',path}`; each zone is
