@@ -405,7 +405,9 @@
 .cb-core-design-shell--native[data-cb-design-interaction-overlay="true"]
 	.cb-mail-platform__node,
 .cb-core-design-shell--native[data-cb-design-interaction-overlay="true"]
-	.cb-reports-platform__interaction-region
+	.cb-reports-platform__interaction-region {
+	outline: none !important;
+}
 .cb-core-design-shell--native[data-cb-design-interaction-overlay="true"]
 	.cb-mail-platform__node.is-selected {
 	box-shadow: none !important;

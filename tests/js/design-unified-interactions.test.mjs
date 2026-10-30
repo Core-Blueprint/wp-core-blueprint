@@ -196,4 +196,6 @@ test('DF-D3 shared interaction CSS is opted-in, pointer-inert and state-complete
   assert.match(css,/\.cb-core-platform-screen \.cb-core-design-shell--native \.cb-core-design-shell__canvas-workarea/);
   assert.match(css,/\.cb-mail-platform__node/);
   assert.match(css,/\.cb-reports-platform__interaction-region/);
+  assert.ok(css.includes('.cb-reports-platform__interaction-region {\n\toutline: none !important;\n}'));
+  assert.ok(css.includes('.cb-mail-platform__node.is-selected {\n\tbox-shadow: none !important;\n}'));
 });
