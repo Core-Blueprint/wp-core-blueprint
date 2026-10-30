@@ -29,6 +29,7 @@ for required in \
   tests/public-design-save-envelope-identity-regression.php \
   tests/public-design-mail-save-contract-regression.php \
   tests/public-design-document-native-authority-regression.php \
+  tests/public-flow-preview-compat-regression.php \
   tests/public-design-document-consumer-adoption-regression.php \
   tests/public-designer-v2-abi-regression.php \
   tests/public-settings-cas-regression.php \
@@ -65,6 +66,7 @@ php tests/public-design-mixed-charset-json-regression.php
 php tests/public-design-save-envelope-identity-regression.php
 php tests/public-design-mail-save-contract-regression.php
 php tests/public-design-document-native-authority-regression.php
+php tests/public-flow-preview-compat-regression.php
 php tests/public-design-document-consumer-adoption-regression.php
 php tests/public-designer-v2-abi-regression.php
 php tests/public-settings-cas-regression.php
