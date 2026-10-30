@@ -466,3 +466,15 @@ test('C1 invalid zone feedback is transient; invalid placement policy refuses re
 	assert.equal(f.commits.length,0);
 	f.controller.destroy();
 });
+
+test('C1 public same-source capability, ESM exports and native Base binding are present',async()=>{
+	const assets=await readFile(new URL('../../src/Design/Editor/Assets.php',import.meta.url),'utf8');
+	const editor=await readFile(new URL('../../assets/js/design/editor.js',import.meta.url),'utf8');
+	const layers=await readFile(new URL('../../assets/js/design/shell/layers.js',import.meta.url),'utf8');
+	assert.match(assets,/public const DESIGNER_DND_UNIFIED_API = 1;/);
+	assert.match(editor,/createDesignerDragDropController,\s*createDesignerInteractionPresentation/);
+	assert.match(editor,/createDesignerLayerTree,/);
+	assert.match(editor,/tree\.bindDragDrop\(\{/);
+	assert.match(layers,/bindDragDrop,\s*syncDragDrop,/);
+	assert.doesNotMatch(editor,/for \(const row of tree\.element\.querySelectorAll\('\[data-cb-design-layer-key\]/);
+});
