@@ -2,6 +2,12 @@ const PROTOCOL_VERSION = 1;
 const MIN_HEIGHT = 1;
 const MAX_HEIGHT = 100000;
 const SELECTION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
+const MAX_PREVIEW_REGIONS = 500;
+const FLOW_REGION_PATTERN = /^r(?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*)){0,7}$/;
+// Region path segments must remain losslessly representable as JS numbers.
+const isBoundedFlowRegionId = (id) => typeof id === 'string'
+	&& id.length <= 64 && FLOW_REGION_PATTERN.test(id)
+	&& id.slice(1).split('.').every(segment => Number.isSafeInteger(Number(segment)));
 const FIRST_SIZE_TIMEOUT_MS = 5000;
 const MEASURE_MESSAGE_TYPE = 'cb-core-flow-preview-measure';
 const SELECTION_MESSAGE_TYPE = 'cb-core-flow-preview-selection';
@@ -49,7 +55,7 @@ const isRegionMessage = (data) => {
 		|| Object.keys(data).sort().join('|') !== 'generation|regions|type|version'
 		|| data.type !== 'cb-core-flow-preview-regions' || data.version !== PROTOCOL_VERSION
 		|| !Number.isSafeInteger(data.generation) || data.generation < 1
-		|| !Array.isArray(data.regions) || data.regions.length > 100) return false;
+		|| !Array.isArray(data.regions) || data.regions.length > MAX_PREVIEW_REGIONS) return false;
 	const seen = new Set();
 	for (const region of data.regions) {
 		const shape = region && typeof region === 'object' && !Array.isArray(region)
@@ -58,7 +64,7 @@ const isRegionMessage = (data) => {
 		if (!region || typeof region !== 'object' || Array.isArray(region)
 			|| (!extended && shape !== 'height|id|top')
 			|| typeof region.id !== 'string'
-			|| !/^r(?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*))?$/.test(region.id)
+			|| !isBoundedFlowRegionId(region.id)
 			|| (region.id.includes('.') && !extended)
 			|| seen.has(region.id) || !Number.isFinite(region.top)
 			|| !Number.isFinite(region.height) || region.height < 0
@@ -219,11 +225,18 @@ export const createFlowPreviewHost = (iframe, {
 	const onMessage = (event) => {
 		if (destroyed || event.source !== iframe.contentWindow) return;
 
-		if (isRegionMessage(event.data)) {
-			if (event.data.generation === activeGeneration
-				&& (lifecycle === 'loading' || lifecycle === 'ready')) {
-				onRegions?.(Object.freeze(event.data.regions.map(region => Object.freeze({...region}))));
+		// A same-generation regions envelope is atomic: invalid or oversize
+		// geometry MUST clear the previous trusted hit map and fail the preview.
+		// Never accept a truncated prefix of regions as interaction authority.
+		if (event.data?.type === 'cb-core-flow-preview-regions'
+			&& event.data.generation === activeGeneration
+			&& (lifecycle === 'loading' || lifecycle === 'ready')) {
+			if (!isRegionMessage(event.data)) {
+				onRegions?.(Object.freeze([]));
+				failCurrentRender();
+				return;
 			}
+			onRegions?.(Object.freeze(event.data.regions.map(region => Object.freeze({...region}))));
 			return;
 		}
 		if (isActivationMessage(event.data)) {
