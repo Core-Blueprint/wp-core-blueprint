@@ -305,3 +305,43 @@ test('tree owns bounded sibling move controls while consumers provide only reord
 	second.dispatchEvent(new Event('drop', { cancelable: true }));
 	assert.equal(movedTo, 1);
 });
+
+test('C1 Base Layers lifecycle keeps unchanged rows and rebinds only real replacements',()=>{
+	const scope=document.createElement('main');
+	const calls={sources:[],zones:[],released:[]};
+	const controller={
+		registerSource(el,desc){calls.sources.push({el,desc});return ()=>calls.released.push(['source',el]);},
+		registerZone(el,desc){calls.zones.push({el,desc});return ()=>calls.released.push(['zone',el]);},
+	};
+	const tree=createDesignerLayerTree({documentRef:document,sharedDragDrop:true});
+	scope.append(tree.element);
+	const binding={controller,describe:({key,item})=>({
+		source:item.path?.length?{id:'node/'+item.path.join('.'),type:'heading',kind:'node',path:item.path}:null,
+		zone:{id:'zone/'+String(key).replace(/[^a-zA-Z0-9]+/g,'-'),placementPolicy:'sibling-only'},
+	})};
+	tree.bindDragDrop(binding);
+	tree.render(nestedItems());
+	const initial=calls.sources.length, zoneCount=calls.zones.length;
+	assert.equal(zoneCount,3);
+	assert.equal(initial,3);
+	const original=tree.row('[0,0]');
+	assert.equal(tree.syncDragDrop(),true);
+	assert.equal(calls.sources.length,initial);
+	assert.equal(calls.zones.length,zoneCount);
+	assert.equal(tree.patch(nestedItems()),true);
+	assert.equal(tree.row('[0,0]'),original);
+	assert.equal(calls.released.length,0);
+	tree.render(nestedItems());
+	assert.notEqual(tree.row('[0,0]'),original);
+	assert.equal(calls.released.length,initial+zoneCount);
+	const previouslyReleased=calls.released.length;
+	tree.destroy();
+	assert.equal(calls.released.length,previouslyReleased+initial+zoneCount);
+	tree.destroy();
+	assert.equal(calls.released.length,previouslyReleased+initial+zoneCount);
+});
+test('C1 managed Layers requires the shared controller and strict descriptor',()=>{
+	assert.throws(()=>createDesignerLayerTree({documentRef:document,sharedDragDrop:false,dragDrop:{}}),/DND_CONFIG_INVALID/);
+	const tree=createDesignerLayerTree({documentRef:document,sharedDragDrop:true});
+	assert.throws(()=>tree.bindDragDrop({controller:{},describe:()=>null}),/DND_CONFIG_INVALID/);
+});

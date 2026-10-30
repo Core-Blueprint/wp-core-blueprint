@@ -379,3 +379,88 @@ test('DF-D4 contract: async Promise/thenable commit refuses and cannot replay', 
     f.controller.destroy();
   }
 });
+
+test('C1 sibling-only pointer placement uses 50/50, refuses inside and commits once',()=>{
+	const doc=new FakeDocument(), root=doc.createElement('main');doc.append(root);
+	const source=doc.createElement('button'),zone=doc.createElement('div');
+	root.append(source);root.append(zone);
+	const committed=[], edges=[];
+	const dnd=createDesignerDragDropController({
+		root,isReady:()=>true,getContextKey:()=> 'c1:scope',
+		resolveIntent:({edge})=>{edges.push(edge);return {edge};},
+		canDrop:()=>true,commit:({intent})=>{committed.push(intent.edge);},
+	});
+	dnd.registerSource(source,{id:'node/0',type:'heading',kind:'node',path:[0]});
+	dnd.registerZone(zone,{id:'node/1',placementPolicy:'sibling-only'});
+	source.fire('dragstart',{dataTransfer:transfer()});
+	assert.equal(zone.fire('dragover',{clientY:145,dataTransfer:transfer()}),true);
+	assert.equal(zone.getAttribute('data-cb-design-drop-edge'),'before');
+	assert.equal(zone.fire('drop',{clientY:145,dataTransfer:transfer()}),true);
+	assert.equal(zone.fire('drop',{clientY:145,dataTransfer:transfer()}),false);
+	source.fire('dragstart',{dataTransfer:transfer()});
+	assert.equal(zone.fire('dragover',{clientY:175,dataTransfer:transfer()}),true);
+	assert.equal(zone.getAttribute('data-cb-design-drop-edge'),'after');
+	assert.equal(zone.fire('drop',{clientY:175,dataTransfer:transfer()}),true);
+	assert.deepEqual(committed,['before','after']);
+	assert.equal(edges.includes('inside'),false);
+	dnd.destroy();
+});
+test('C1 one controller handles pointer moves from Layers to Canvas and Canvas to Layers',()=>{
+	const doc=new FakeDocument(),root=doc.createElement('main');doc.append(root);
+	const layerSource=doc.createElement('button'),canvasSource=doc.createElement('button');
+	const layerZone=doc.createElement('div'),canvasZone=doc.createElement('div');
+	for(const item of [layerSource,canvasSource,layerZone,canvasZone])root.append(item);
+	const commits=[];
+	const dnd=createDesignerDragDropController({
+		root,isReady:()=>true,getContextKey:()=> 'c1:scope',
+		resolveIntent:({source,zoneId,edge})=>({sourceId:source.id,zoneId,edge}),
+		canDrop:()=>true,commit:({intent})=>{commits.push(intent);},
+	});
+	dnd.registerSource(layerSource,{id:'node/0',type:'heading',kind:'node',path:[0]});
+	dnd.registerSource(canvasSource,{id:'node/1',type:'heading',kind:'node',path:[1],directCanvas:true});
+	dnd.registerZone(layerZone,{id:'node/0',placementPolicy:'sibling-only'});
+	dnd.registerZone(canvasZone,{id:'node/1'});
+	layerSource.fire('dragstart',{dataTransfer:transfer()});
+	assert.equal(canvasZone.fire('drop',{clientY:110,dataTransfer:transfer()}),true);
+	canvasSource.fire('dragstart',{dataTransfer:transfer()});
+	assert.equal(layerZone.fire('drop',{clientY:185,dataTransfer:transfer()}),true);
+	assert.deepEqual(commits,[
+		{sourceId:'node/0',zoneId:'node/1',edge:'before'},
+		{sourceId:'node/1',zoneId:'node/0',edge:'after'},
+	]);
+	assert.equal(dnd.active,false);
+	dnd.destroy();
+});
+test('C1 sibling-only keyboard chooses a legal edge immediately',()=>{
+	const doc=new FakeDocument(),root=doc.createElement('main');doc.append(root);
+	const source=doc.createElement('button'),zone=doc.createElement('div');
+	root.append(source);root.append(zone);
+	const edges=[];
+	const dnd=createDesignerDragDropController({
+		root,isReady:()=>true,getContextKey:()=> 'c1:scope',
+		resolveIntent:({edge})=>({edge}),
+		canDrop:()=>true,commit:({intent})=>{edges.push(intent.edge);},
+	});
+	dnd.registerSource(source,{id:'node/0',type:'heading',kind:'node',path:[0]});
+	dnd.registerZone(zone,{id:'node/1',placementPolicy:'sibling-only'});
+	assert.equal(source.fire('keydown',{key:'ArrowDown',altKey:true}),true);
+	assert.equal(doc.activeElement,zone);
+	assert.equal(zone.getAttribute('data-cb-design-drop-edge'),'before');
+	assert.equal(zone.fire('keydown',{key:'ArrowDown'}),true);
+	assert.equal(zone.getAttribute('data-cb-design-drop-edge'),'after');
+	assert.equal(zone.fire('keydown',{key:'Enter'}),true);
+	assert.deepEqual(edges,['after']);
+	dnd.destroy();
+});
+test('C1 invalid zone feedback is transient; invalid placement policy refuses registration',()=>{
+	const f=fixture(()=>false);
+	const other=f.doc.createElement('div');f.root.append(other);
+	assert.throws(()=>f.controller.registerZone(other,{id:'node/3',placementPolicy:'unknown'}),/ZONE_INVALID/);
+	f.source.fire('dragstart',{dataTransfer:transfer()});
+	assert.equal(f.zone.fire('dragover',{clientY:160,dataTransfer:transfer()}),false);
+	assert.equal(f.zone.getAttribute('data-cb-design-drop-invalid'),'true');
+	f.doc.fire('keydown',{key:'Escape'});
+	assert.equal(f.zone.getAttribute('data-cb-design-drop-invalid'),null);
+	assert.equal(f.commits.length,0);
+	f.controller.destroy();
+});
