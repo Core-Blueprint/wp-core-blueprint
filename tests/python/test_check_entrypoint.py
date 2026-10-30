@@ -40,6 +40,7 @@ class CheckEntrypointTest(unittest.TestCase):
         write('tests/public-design-save-envelope-identity-regression.php')
         write('tests/public-design-mail-save-contract-regression.php')
         write('tests/public-design-document-native-authority-regression.php')
+        write('tests/public-flow-preview-compat-regression.php')
         write('tests/public-design-document-consumer-adoption-regression.php')
         write('tests/public-designer-v2-abi-regression.php')
         write('tests/public-settings-cas-regression.php')
@@ -95,6 +96,7 @@ class CheckEntrypointTest(unittest.TestCase):
                 'php|tests/public-design-save-envelope-identity-regression.php',
                 'php|tests/public-design-mail-save-contract-regression.php',
                 'php|tests/public-design-document-native-authority-regression.php',
+                'php|tests/public-flow-preview-compat-regression.php',
                 'php|tests/public-design-document-consumer-adoption-regression.php',
                 'php|tests/public-designer-v2-abi-regression.php',
                 'php|tests/public-settings-cas-regression.php',
@@ -200,6 +202,22 @@ class CheckEntrypointTest(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertIn('required source check missing', result.stderr)
         self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_missing_flow_preview_compat_regression_fails_closed(self):
+        (self.root / 'tests/public-flow-preview-compat-regression.php').unlink()
+        result = self.run_check()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            'required source check missing: tests/public-flow-preview-compat-regression.php',
+            result.stderr,
+        )
+        self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_flow_preview_compat_failure_stops_before_javascript(self):
+        result = self.run_check('php|tests/public-flow-preview-compat-regression.php')
+        self.assertEqual(23, result.returncode, result.stdout + result.stderr)
+        self.assertFalse(any(x.startswith('node|') for x in self.trace_lines()))
+        self.assertNotIn('Level 1 checks: PASS', result.stdout)
 
     def test_missing_native_authority_regression_fails_closed(self):
         (self.root / 'tests/public-design-document-native-authority-regression.php').unlink()
