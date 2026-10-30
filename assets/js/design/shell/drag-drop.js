@@ -19,6 +19,9 @@ const isElement = (element, doc) => !!element && element.ownerDocument === doc
 	&& typeof element.addEventListener === 'function'
 	&& typeof element.removeEventListener === 'function';
 const isSync = value => !value || typeof value.then !== 'function';
+const placementPolicies = Object.freeze(['hierarchical', 'sibling-only']);
+const edgesFor = zone => zone.placementPolicy === 'sibling-only'
+	? ['before', 'after'] : ['inside', 'before', 'after'];
 
 export const createDesignerDragDropController = ({
 	root, isReady, getContextKey, resolveIntent, canDrop, commit, onStatus = null,
@@ -47,6 +50,7 @@ export const createDesignerDragDropController = ({
 
 	let gesture = null;
 	let highlighted = null;
+	let invalidZone = null;
 	let destroyed = false;
 	let dragDot = null;
 	let dragDotFrame = null;
@@ -109,8 +113,21 @@ export const createDesignerDragDropController = ({
 		}
 		highlighted = null;
 	};
+	const clearInvalid = () => {
+		invalidZone?.removeAttribute('data-cb-design-drop-invalid');
+		invalidZone = null;
+	};
+	const showInvalid = zone => {
+		if (!gesture) return;
+		if (invalidZone !== zone.element) {
+			clearInvalid();
+			zone.element.setAttribute('data-cb-design-drop-invalid', 'true');
+			invalidZone = zone.element;
+		}
+	};
 	const cancel = (reason = 'cancelled') => {
 		clearHighlight();
+		clearInvalid();
 		clearDragDot();
 		if (!gesture) return;
 		gesture = null;
@@ -135,7 +152,7 @@ export const createDesignerDragDropController = ({
 	};
 	const candidate = (zone, edge) => {
 		if (!validGesture() || !root.contains(zone.element) || zones.get(zone.element) !== zone) return null;
-		if (!['before', 'inside', 'after'].includes(edge)) return null;
+		if (!edgesFor(zone).includes(edge)) return null;
 		try {
 			const proposed = resolveIntent(Object.freeze({
 				source: gesture.source, zoneId: zone.id, edge,
@@ -151,6 +168,7 @@ export const createDesignerDragDropController = ({
 		}
 	};
 	const highlight = (zone, edge) => {
+		clearInvalid();
 		if (highlighted?.element !== zone.element || highlighted.edge !== edge) {
 			clearHighlight();
 			zone.element.setAttribute('data-cb-design-drop-active', 'true');
@@ -166,6 +184,7 @@ export const createDesignerDragDropController = ({
 		const source = gesture.source;
 		gesture = null;
 		clearHighlight();
+		clearInvalid();
 		clearDragDot();
 		try {
 			const result = commit(Object.freeze({source, intent}));
@@ -182,8 +201,10 @@ export const createDesignerDragDropController = ({
 	};
 	const edgeAt = (zone, event) => {
 		const rect = zone.element.getBoundingClientRect();
-		if (!rect || !Number.isFinite(rect.height) || rect.height <= 0) return 'inside';
+		if (!rect || !Number.isFinite(rect.height) || rect.height <= 0)
+			return zone.placementPolicy === 'sibling-only' ? 'before' : 'inside';
 		const ratio = (event.clientY - rect.top) / rect.height;
+		if (zone.placementPolicy === 'sibling-only') return ratio < 0.5 ? 'before' : 'after';
 		return ratio < 0.25 ? 'before' : ratio > 0.75 ? 'after' : 'inside';
 	};
 	const releaseSource = (element) => {
@@ -202,6 +223,7 @@ export const createDesignerDragDropController = ({
 		const record = zones.get(element);
 		if (!record) return false;
 		if (highlighted?.element === element) clearHighlight();
+		if (invalidZone === element) clearInvalid();
 		for (const [event, listener] of record.listeners) element.removeEventListener(event, listener);
 		if (record.tabindex === null) element.removeAttribute('tabindex');
 		else element.setAttribute('tabindex', record.tabindex);
@@ -259,7 +281,11 @@ export const createDesignerDragDropController = ({
 				event.preventDefault();
 				if (gesture) cancel();
 				begin('keyboard');
-				const first = [...zones.values()].find(zone => candidate(zone, 'inside'));
+				const first = [...zones.values()].find(zone => {
+					const permitted = edgesFor(zone).find(edge => candidate(zone, edge));
+					if (permitted) zone.edge = permitted;
+					return permitted !== undefined;
+				});
 				first?.element.focus();
 			}
 		};
@@ -272,12 +298,14 @@ export const createDesignerDragDropController = ({
 		sources.set(element, {listeners, draggable, shortcuts});
 		return () => releaseSource(element);
 	};
-	const registerZone = (element, {id} = {}) => {
+	const registerZone = (element, {id, placementPolicy = 'hierarchical'} = {}) => {
 		if (destroyed || !isElement(element, doc) || zones.has(element)
-			|| !root.contains(element) || !validId(id)) {
+			|| !root.contains(element) || !validId(id)
+			|| !placementPolicies.includes(placementPolicy)) {
 			throw new TypeError('DESIGNER_DND_ZONE_INVALID');
 		}
-		const zone = {id, element, edge: 'inside', listeners: [],
+		const zone = {id, element, placementPolicy,
+			edge: placementPolicy === 'sibling-only' ? 'before' : 'inside', listeners: [],
 			tabindex: element.getAttribute('tabindex')};
 		const over = event => {
 			if (gesture?.mode !== 'pointer') return;
@@ -286,6 +314,7 @@ export const createDesignerDragDropController = ({
 				// Never retain an old valid indicator after hovering an invalid
 				// edge or after a live domain authorization change.
 				clearHighlight();
+				showInvalid(zone);
 				event.stopPropagation(); // No implicit ancestor-zone fallback.
 				return;
 			}
@@ -295,12 +324,15 @@ export const createDesignerDragDropController = ({
 			highlight(zone, edge);
 		};
 		const leave = event => {
-			if (highlighted?.element === element && !element.contains(event.relatedTarget)) clearHighlight();
+			if (!element.contains(event.relatedTarget)) {
+				if (highlighted?.element === element) clearHighlight();
+				if (invalidZone === element) clearInvalid();
+			}
 		};
 		const drop = event => {
 			if (gesture?.mode !== 'pointer') return;
 			const edge = edgeAt(zone, event);
-			if (!candidate(zone, edge)) { clearHighlight(); event.stopPropagation(); return; }
+			if (!candidate(zone, edge)) { clearHighlight(); showInvalid(zone); event.stopPropagation(); return; }
 			event.preventDefault();
 			event.stopPropagation();
 			performDrop(zone, edge);
@@ -311,14 +343,17 @@ export const createDesignerDragDropController = ({
 				event.preventDefault();
 				zone.edge = event.key === 'ArrowUp' ? 'before' : 'after';
 				if (candidate(zone, zone.edge)) highlight(zone, zone.edge);
-				else clearHighlight();
+				else { clearHighlight(); showInvalid(zone); }
 			} else if (event.key === 'Enter' || event.key === ' ') {
 				event.preventDefault();
 				if (candidate(zone, zone.edge)) performDrop(zone, zone.edge);
 			}
 		};
 		const focus = () => {
-			if (gesture?.mode === 'keyboard' && candidate(zone, zone.edge)) highlight(zone, zone.edge);
+			if (gesture?.mode !== 'keyboard') return;
+			const edge = edgesFor(zone).find(candidateEdge => candidate(zone, candidateEdge));
+			if (edge) { zone.edge = edge; highlight(zone, edge); }
+			else { clearHighlight(); showInvalid(zone); }
 		};
 		zone.listeners = [['dragover', over], ['dragleave', leave], ['drop', drop],
 			['keydown', keydown], ['focus', focus]];
