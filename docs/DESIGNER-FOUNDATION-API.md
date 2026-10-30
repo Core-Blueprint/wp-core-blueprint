@@ -383,6 +383,71 @@ polish. DND-03 adds touch/pointer-specific gestures, auto-scroll and complex
 moving/nesting flows. Do not mark installed functional acceptance until those
 consumer runtime paths pass. Existing Layers drag/reorder remains unchanged.
 
+### DF-DND-C1 — Unified Layers, Canvas and cross-surface DND (opt-in)
+
+**Same-build gate:** `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_DND_UNIFIED_API >= 1`
+plus named `createDesignerDragDropController` and `createDesignerLayerTree`
+exports in the installed `@cb-core/design-editor` module. This contract is
+additive: DND-01 and legacy `sharedDragDrop:true` consumers remain supported.
+
+**Single Base interaction engine:** instantiate one controller for the entire
+Designer root, not a controller per surface. Sources and zones can live in
+either the Layers Tree or the Canvas. The controller owns native pointer DND,
+keyboard DND, tokenized drag dot, hit geometry, valid/invalid feedback,
+cancellation and one synchronous authorized commit. A Layers source can drop
+on Canvas and a Canvas source can drop on Layers using the same gesture.
+No second transform, History, Save or event-routing implementation is allowed.
+
+**Optional per-zone placement policy:**
+`dnd.registerZone(element,{id,placementPolicy?})` accepts `hierarchical`
+(default, top 25% before / middle 50% inside / bottom 25% after), or
+`sibling-only` (top half before / bottom half after, never inside).
+Invalid policies throw `DESIGNER_DND_ZONE_INVALID`. Keyboard Alt+ArrowDown
+starts on a *domain-authorized edge* of a registered zone; it cannot require
+inside for sibling-only rows. Tab navigates focusable target zones, ArrowUp
+and ArrowDown choose before/after, Enter or Space commits, Escape cancels.
+Every pointer/keyboard placement must pass the existing consumer's
+`resolveIntent` and `canDrop` before calling `commit`. This domain command
+is the only authority to mutate the project/History; invalid target feedback
+never creates a write.
+
+**Base-owned Layers registrations:** create the tree with
+`{sharedDragDrop:true}`, then pass
+`tree.bindDragDrop({controller:dnd,describe:({key,item})=>({source?,zone?})})`.
+Alternatively pass the same binding as constructor `dragDrop` when the
+controller is already available. Each source is a semantic
+`{id,type,kind:'node',path}`; each zone is
+`{id,placementPolicy?}`. Return `null` for a nonparticipating row or
+provide `{zone}` for a static target. The consumer supplies only metadata.
+Base registers row select buttons as sources and rows as dropzones, handles
+replacement, preserves stable registrations, prevents duplicate event binding,
+and unregisters on `tree.destroy()`. Nonstructural `tree.patch()` retains
+the original row and active gesture. `tree.render()` replaces actual row DOM
+and therefore cancels a dragged source on genuine replacement; the consumer
+must not need a MutationObserver or custom row DND events.
+For trees rendered before they are mounted in the Designer, call
+`tree.syncDragDrop()` once after insertion to bind the rendered rows.
+Calls when the binding is unchanged do not release or re-register any row.
+
+**Canvas integration:** register the *same controller* against actual Canvas
+nodes or trusted parent-DOM geometry proxies through `registerSource` and
+`registerZone`. External consumers supply semantic `id/type/path` metadata,
+document model, rendering/geometry and authorized domain callbacks only;
+they do not implement dragstart, dragover, drop, keyboard or indicator logic.
+The existing Flow iframe sandbox/CSP must remain intact, with no parent
+iframe-DOM access or privileged message bridge.
+
+**Base presentation:** `data-cb-design-drop-active`,
+`data-cb-design-drop-edge` and `data-cb-design-drop-invalid` are canonical.
+Layers shows tokenized before/after lines and inside/invalid row states;
+Canvas shows the existing pointer-inert overlay, with bounded invalid feedback.
+Base owns grab/grabbing and keyboard focus indicators in the shared CSS,
+not native-only `platform-fullscreen.css`. The drag dot is unchanged.
+
+**Validation:** source tests, Base Level 1 and exact internal build are
+separate from native Mail/Maintenance Reports and external-consumer FIELD.
+A green SOURCE does not establish browser cross-surface acceptance.
+
 ### Native Save Authority and Base Toast presentation (P0 SOURCE candidate)
 
 The native WordPress Host uses the same Base Toast Foundation as legacy

@@ -28,6 +28,8 @@ final class Assets {
 	public const DESIGNER_CONTEXT_PLACEMENT_API = 1;
 	/** DF-D2: shared authored-node move candidate and one DND controller. */
 	public const DESIGNER_NODE_MOVE_API = 1;
+	/** C1 optional unified Layers/Canvas DND and placement-policy contract. */
+	public const DESIGNER_DND_UNIFIED_API = 1;
 	/** DF-D3 opt-in unified Designer interaction presentation (transient only). */
 	public const DESIGNER_INTERACTION_API = 1;
 	/** Public Flow-preview v1 extended compatibility: 8 numeric levels, 500 regions. */

@@ -655,9 +655,38 @@
 .cb-core-design-shell__layer-row[draggable="true"]:active {
 	cursor: grabbing;
 }
-.cb-core-design-shell__layer-row.is-drop-target {
+.cb-core-design-shell__layer-row.is-drop-target,
+.cb-core-design-shell__layer-row[data-cb-design-drop-active="true"][data-cb-design-drop-edge="inside"] {
 	border-color: var(--cb-accent);
 	box-shadow: inset 0 0 0 1px var(--cb-accent);
+}
+.cb-core-design-shell__layer-row[data-cb-design-drop-active="true"][data-cb-design-drop-edge="before"]::before,
+.cb-core-design-shell__layer-row[data-cb-design-drop-active="true"][data-cb-design-drop-edge="after"]::after {
+	content: "";
+	position: absolute;
+	inset-inline: 0;
+	height: 3px;
+	background: var(--cb-accent);
+	pointer-events: none;
+	z-index: 2;
+}
+.cb-core-design-shell__layer-row[data-cb-design-drop-active="true"][data-cb-design-drop-edge="before"]::before { top: 0; }
+.cb-core-design-shell__layer-row[data-cb-design-drop-active="true"][data-cb-design-drop-edge="after"]::after { bottom: 0; }
+.cb-core-design-shell__layer-row[data-cb-design-drop-invalid="true"] {
+	border-color: var(--cb-danger);
+	background: var(--cb-tint-danger);
+}
+.cb-core-design-shell__layer-select[draggable="true"],
+.cb-core-design-shell__layer-select[draggable="true"] .cb-core-design-shell__layer-label,
+[data-cb-design-node-drag-source][draggable="true"]:not([aria-disabled="true"]) {
+	cursor: grab;
+}
+.cb-core-design-shell__layer-select[draggable="true"]:active,
+[data-cb-design-node-drag-source][draggable="true"]:active { cursor: grabbing; }
+.cb-core-design-shell__layer-select:focus-visible,
+.cb-core-design-shell__layer-row:focus-visible {
+	outline: 2px solid var(--cb-interactive-focus);
+	outline-offset: 1px;
 }
 .cb-core-design-shell__layer-row[data-cb-design-layer-hidden="true"] .cb-core-design-shell__layer-label {
 	opacity: .55;
@@ -1102,6 +1131,14 @@
 	box-shadow: inset 0 -4px 0 var(--cb-accent, #00a8e8);
 }
 /* Active drop zones use the single Base indicator, not a second outline. */
-[data-cb-design-interaction-overlay="true"] [data-cb-design-drop-active="true"] {
+/* Canvas owns one overlay outline. Layers has its own before/after
+   markers and must never lose the only visible focus indicator. */
+[data-cb-design-interaction-overlay="true"] .cb-core-design-shell__canvas-workarea
+	[data-cb-design-drop-active="true"]:not(:focus-visible) {
 	outline: none !important;
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-shell__canvas-workarea
+	[data-cb-design-drop-invalid="true"] {
+	outline: 2px dashed var(--cb-danger);
+	outline-offset: -2px;
 }
