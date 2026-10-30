@@ -1304,6 +1304,24 @@ export const attachTrustedDesignerHost = ({
 					interactions?.refresh();
 				},
 			});
+			// Base owns Layers row registrations and their lifecycle.
+			tree.bindDragDrop({
+				controller: dnd,
+				describe: ({item}) => {
+					if (!Array.isArray(item.path)) return null;
+					const node = nodeAt(editor.project().root, item.path);
+					if (!node) return null;
+					const zone = {id: designerDropZoneId(item.path)};
+					if (!item.path.length
+						|| (activeRegistry.profileId === 'base/mail' && node.type === 'mail.column')
+						|| (activeRegistry.profileId === 'base/reports'
+							&& ['reports.header', 'reports.footer'].includes(node.type))) return {zone};
+					return {zone, source: {
+						id: designerDropZoneId(item.path), type: node.type,
+						kind: 'node', path: item.path,
+					}};
+				},
+			});
 			// The Host requires an EMPTY render-surface through offscreen staging.
 			// Initialize the Base presentation only after its successful commit.
 			const activateInteractions = () => {
@@ -1342,17 +1360,7 @@ export const attachTrustedDesignerHost = ({
 							&& ['reports.header', 'reports.footer'].includes(moving.type))) continue;
 					next.set(element, {path, type: moving.type, directCanvas: true});
 				}
-				for (const row of tree.element.querySelectorAll('[data-cb-design-layer-key].is-selected')) {
-					let path;
-					try { path = JSON.parse(row.dataset.cbDesignLayerKey); } catch (_) { continue; }
-					if (!Array.isArray(path) || !path.length) continue;
-					const moving = nodeAt(editor.project().root, path);
-					if (!moving || (activeRegistry.profileId === 'base/mail' && moving.type === 'mail.column')
-						|| (activeRegistry.profileId === 'base/reports'
-							&& ['reports.header', 'reports.footer'].includes(moving.type))) continue;
-					const select = row.querySelector('[data-cb-design-layer-select]');
-					if (select) next.set(select, {path, type: moving.type});
-				}
+				// Layer sources are now bound by the shared Base Layer Tree.
 				for (const [element, release] of registeredNodeSources) {
 					if (next.has(element)) continue;
 					release();
@@ -1383,11 +1391,7 @@ export const attachTrustedDesignerHost = ({
 					try { next.set(element, designerDropZoneId(path)); }
 					catch (_) { /* renderer path is never authority */ }
 				}
-				for (const row of tree.element.querySelectorAll('[data-cb-design-layer-key]')) {
-					try {
-						next.set(row, designerDropZoneId(JSON.parse(row.dataset.cbDesignLayerKey)));
-					} catch (_) { /* DOM paths are not command authorization */ }
-				}
+				// Layer zones are now bound by the shared Base Layer Tree.
 				for (const [element, record] of registeredZones) {
 					if (next.get(element) === record.id) continue;
 					record.release();
@@ -1674,6 +1678,7 @@ export const attachTrustedDesignerHost = ({
 				destroy: () => {
 					releasePaletteSources();
 					releaseNodeSources();
+					tree.destroy();
 					palette.destroy();
 					dnd.destroy();
 					interactions?.destroy();
