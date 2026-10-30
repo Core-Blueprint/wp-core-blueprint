@@ -395,59 +395,17 @@
 }
 
 
-/* DF-D3: one Base-owned geometry layer for every native canvas surface.
-   The overlay is presentation-only: only authored nodes/proxies receive input. */
+/* DF-D3: native canvas positioning; shared interaction presentation lives
+   in designer-composition.css for opted-in native and external consumers. */
 .cb-core-platform-screen .cb-core-design-shell--native .cb-core-design-shell__canvas-workarea {
 	position: relative;
-}
-.cb-core-design-shell--native .cb-core-design-interaction-layer {
-	position: absolute;
-	inset: 0;
-	z-index: 30;
-	pointer-events: none;
-	overflow: visible;
-	contain: layout style;
-}
-.cb-core-design-shell--native .cb-core-design-interaction-indicator {
-	position: absolute;
-	box-sizing: border-box;
-	pointer-events: none;
-	outline: 2px solid var(--cb-accent, #00a8e8);
-	outline-offset: -2px;
-	border-radius: 2px;
-}
-.cb-core-design-shell--native .cb-core-design-interaction-indicator[data-state="hover"] {
-	opacity: .55;
-}
-.cb-core-design-shell--native .cb-core-design-interaction-indicator[data-state="focus"] {
-	outline-style: dashed;
-}
-.cb-core-design-shell--native .cb-core-design-interaction-indicator[data-state="editing"] {
-	outline-style: dotted;
-}
-.cb-core-design-shell--native .cb-core-design-interaction-indicator[data-state="dragging"] {
-	opacity: .65;
-	outline-style: dashed;
-}
-.cb-core-design-shell--native .cb-core-design-interaction-indicator[data-state="drop"] {
-	background: color-mix(in srgb, var(--cb-accent, #00a8e8) 7%, transparent);
-}
-.cb-core-design-shell--native .cb-core-design-interaction-indicator[data-state="drop"][data-edge="before"] {
-	box-shadow: inset 0 4px 0 var(--cb-accent, #00a8e8);
-}
-.cb-core-design-shell--native .cb-core-design-interaction-indicator[data-state="drop"][data-edge="after"] {
-	box-shadow: inset 0 -4px 0 var(--cb-accent, #00a8e8);
 }
 /* The legacy renderer outlines cannot coexist with the canonical overlay.
    Do not affect focus indicators on toolbar buttons, Layers or edit controls. */
 .cb-core-design-shell--native[data-cb-design-interaction-overlay="true"]
 	.cb-mail-platform__node,
 .cb-core-design-shell--native[data-cb-design-interaction-overlay="true"]
-	.cb-reports-platform__interaction-region,
-.cb-core-design-shell--native[data-cb-design-interaction-overlay="true"]
-	[data-cb-design-drop-active="true"] {
-	outline: none !important;
-}
+	.cb-reports-platform__interaction-region
 .cb-core-design-shell--native[data-cb-design-interaction-overlay="true"]
 	.cb-mail-platform__node.is-selected {
 	box-shadow: none !important;

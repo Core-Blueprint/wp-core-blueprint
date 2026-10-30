@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 
 const source = readFileSync(new URL('../../assets/js/design/shell/interaction-presentation.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../../assets/css/design/platform-fullscreen.css', import.meta.url), 'utf8');
+const sharedCss = readFileSync(new URL('../../assets/css/design/designer-composition.css', import.meta.url), 'utf8');
 const editor = readFileSync(new URL('../../assets/js/design/editor.js', import.meta.url), 'utf8');
 const reports = readFileSync(new URL('../../assets/js/design/reports/platform-adapter.js', import.meta.url), 'utf8');
 const assets = readFileSync(new URL('../../src/Design/Editor/Assets.php', import.meta.url), 'utf8');
@@ -164,5 +165,35 @@ test('DF-D3 is Base-owned opt-in and preserves sandbox and command authority',()
   assert.match(reports,/frame\.getBoundingClientRect\(\)/);
   assert.match(reports,/dropLayer\.getBoundingClientRect\(\)/);
   assert.doesNotMatch(css,/\.cb-reports-platform__interaction-region\[draggable="true"\]:hover\s*\{\s*outline:/);
-  assert.match(css,/\.cb-core-design-interaction-indicator/);
+  assert.match(sharedCss,/\.cb-core-design-interaction-indicator/);
+});
+
+// Shared visual presentation must be available to non-native consumers without
+// changing the native Platform document, selection, or drag controllers.
+
+test('DF-D3 shared interaction CSS is opted-in, pointer-inert and state-complete',()=>{
+  assert.ok(assets.includes("CB_CORE_URL . 'assets/css/design/designer-composition.css'"));
+  const root='[data-cb-design-interaction-overlay="true"] ';
+  const rule = selector => {
+    const start=sharedCss.indexOf(selector+' {');
+    assert.ok(start!==-1,'Missing shared rule: '+selector);
+    return sharedCss.slice(start,sharedCss.indexOf('}',start)+1);
+  };
+  for(const element of ['.cb-core-design-interaction-layer','.cb-core-design-interaction-indicator']) {
+    assert.match(rule(root+element),/pointer-events:\s*none;/);
+    assert.match(rule(root+element),/position:\s*absolute;/);
+  }
+  for(const state of ['hover','focus','editing','dragging','drop']) {
+    assert.ok(sharedCss.includes('.cb-core-design-interaction-indicator[data-state="'+state+'"]'));
+  }
+  for(const edge of ['before','after']) {
+    assert.ok(sharedCss.includes('.cb-core-design-interaction-indicator[data-state="drop"][data-edge="'+edge+'"]'));
+  }
+  assert.match(rule(root+'.cb-core-design-interaction-indicator'),/var\(--cb-accent/);
+  assert.match(rule(root+'.cb-core-design-shell__canvas-workarea'),/position:\s*relative;/);
+  assert.match(rule(root+'[data-cb-design-drop-active="true"]'),/outline:\s*none !important;/);
+  assert.doesNotMatch(css,/\.cb-core-design-shell--native \.cb-core-design-interaction-(?:layer|indicator)/);
+  assert.match(css,/\.cb-core-platform-screen \.cb-core-design-shell--native \.cb-core-design-shell__canvas-workarea/);
+  assert.match(css,/\.cb-mail-platform__node/);
+  assert.match(css,/\.cb-reports-platform__interaction-region/);
 });

@@ -1055,3 +1055,53 @@
 		--cb-design-palette-columns: 1;
 	}
 }
+
+/* DF-D3: shared interaction presentation for consumers that mount the public
+ * controller. The controller sets the opt-in attribute on its root and owns
+ * the transient indicators; authored content remains the pointer target.
+ * Custom surfaces retain responsibility for their own geometry. */
+[data-cb-design-interaction-overlay="true"] .cb-core-design-shell__canvas-workarea {
+	position: relative;
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-interaction-layer {
+	position: absolute;
+	inset: 0;
+	z-index: 30;
+	pointer-events: none;
+	overflow: visible;
+	contain: layout style;
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-interaction-indicator {
+	position: absolute;
+	box-sizing: border-box;
+	pointer-events: none;
+	outline: 2px solid var(--cb-accent, #00a8e8);
+	outline-offset: -2px;
+	border-radius: 2px;
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-interaction-indicator[data-state="hover"] {
+	opacity: .55;
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-interaction-indicator[data-state="focus"] {
+	outline-style: dashed;
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-interaction-indicator[data-state="editing"] {
+	outline-style: dotted;
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-interaction-indicator[data-state="dragging"] {
+	opacity: .65;
+	outline-style: dashed;
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-interaction-indicator[data-state="drop"] {
+	background: color-mix(in srgb, var(--cb-accent, #00a8e8) 7%, transparent);
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-interaction-indicator[data-state="drop"][data-edge="before"] {
+	box-shadow: inset 0 4px 0 var(--cb-accent, #00a8e8);
+}
+[data-cb-design-interaction-overlay="true"] .cb-core-design-interaction-indicator[data-state="drop"][data-edge="after"] {
+	box-shadow: inset 0 -4px 0 var(--cb-accent, #00a8e8);
+}
+/* Active drop zones use the single Base indicator, not a second outline. */
+[data-cb-design-interaction-overlay="true"] [data-cb-design-drop-active="true"] {
+	outline: none !important;
+}
