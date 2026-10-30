@@ -190,6 +190,8 @@ test('cancel, unregister and destroy clean up listeners and DOM attributes', () 
 	f.controller.destroy();
 	assert.equal(f.source.getAttribute('draggable'), null);
 	assert.equal(f.source.getAttribute('aria-keyshortcuts'), null);
+	assert.equal(f.source.getAttribute('data-cb-design-dnd-source'), null);
+	assert.equal(f.source.getAttribute('data-cb-design-dnd-dragging'), null);
 	assert.equal(f.zone.getAttribute('tabindex'), null);
 	assert.equal(f.root.children.some(child => child.name === 'div'), false);
 	assert.equal(f.zone.fire('drop', {dataTransfer: transfer()}), false);

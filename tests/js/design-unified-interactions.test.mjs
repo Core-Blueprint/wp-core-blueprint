@@ -191,7 +191,11 @@ test('DF-D3 shared interaction CSS is opted-in, pointer-inert and state-complete
   }
   assert.match(rule(root+'.cb-core-design-interaction-indicator'),/var\(--cb-accent/);
   assert.match(rule(root+'.cb-core-design-shell__canvas-workarea'),/position:\s*relative;/);
-  assert.match(rule(root+'[data-cb-design-drop-active="true"]'),/outline:\s*none !important;/);
+  assert.match(sharedCss, /\.cb-core-design-shell__canvas-workarea\s+\[data-cb-design-drop-active="true"\]:not\(:focus-visible\)\s*\{\s*outline:\s*none !important;/);
+  assert.match(sharedCss, /\.cb-core-design-shell__layer-row\[data-cb-design-drop-active="true"\]\[data-cb-design-drop-edge="before"\]::before/);
+  assert.match(sharedCss, /\.cb-core-design-shell__layer-row\[data-cb-design-drop-active="true"\]\[data-cb-design-drop-edge="after"\]::after/);
+  assert.match(sharedCss, /\.cb-core-design-shell__layer-select:focus-visible/);
+  assert.match(sharedCss, /\.cb-core-design-shell__layer-row\[data-cb-design-drop-invalid="true"\]/);
   assert.doesNotMatch(css,/\.cb-core-design-shell--native \.cb-core-design-interaction-(?:layer|indicator)/);
   assert.match(css,/\.cb-core-platform-screen \.cb-core-design-shell--native \.cb-core-design-shell__canvas-workarea/);
   assert.match(css,/\.cb-mail-platform__node/);
