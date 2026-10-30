@@ -196,6 +196,16 @@ export function createRenderAdapter({root,document:doc,profileId}){
    e.addEventListener('dblclick',openEdit);
    e.addEventListener('keydown',ev=>{if(ev.key==='F2')openEdit(ev);});
   }
+  // Base owns Enter/Space drop confirmation during keyboard DND. The Host
+  // status is checked even when this listener runs before Base's listener.
+  e.addEventListener('keydown',ev=>{
+   if((ev.key!=='Enter'&&ev.key!==' ')||ev.defaultPrevented||ev.isComposing||ev.repeat
+    ||ev.altKey||ev.ctrlKey||ev.metaKey||ev.target!==e
+    ||root.closest?.('[data-cb-design-dnd-active="true"]'))return;
+   if(destroyed||!editor||!container?.isConnected)return;
+   ev.preventDefault();ev.stopPropagation();
+   editor.select([{kind:'node',path}],{kind:'node',path});
+  });
   n.children.forEach((c,i)=>e.append(draw(c,[...path,i])));
   e.addEventListener('click',ev=>{ev.stopPropagation();
    if(!destroyed&&editor&&container?.isConnected)editor.select([{kind:'node',path}],{kind:'node',path});});
