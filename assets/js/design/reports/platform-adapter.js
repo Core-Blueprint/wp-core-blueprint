@@ -436,7 +436,13 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 					onActivate(region.id);
 				});
 				hit.addEventListener('keydown', event => {
-					if (event.key === 'Enter' || event.key === ' ') {
+					// Adapter and DND listener registration order must not matter:
+					// pre-handler Host status and post-handler preventDefault both guard selection.
+					if ((event.key === 'Enter' || event.key === ' ')
+						&& !event.defaultPrevented && !event.isComposing && !event.repeat
+						&& !event.altKey && !event.ctrlKey && !event.metaKey
+						&& event.target === hit
+						&& !root.closest?.('[data-cb-design-dnd-active="true"]')) {
 						event.preventDefault();
 						event.stopPropagation();
 						onActivate(region.id);
