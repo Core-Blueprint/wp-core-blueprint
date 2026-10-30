@@ -982,7 +982,9 @@ test('CN-1 pan, fit and coordinates operate on transient viewport state', () => 
 test('CM-1 stays optional, flat and command-authority-neutral', async () => {
 	const source = await readFile(new URL('../../assets/js/design/shell/context-menu.js', import.meta.url), 'utf8');
 	const caps = await readFile(new URL('../../src/Design/Editor/Assets.php', import.meta.url), 'utf8');
-	assert.match(caps, /public const CANVAS_NAVIGATION_API = 1;/);
+	const navigationCapability = caps.match(/public const CANVAS_NAVIGATION_API = ([0-9]+);/);
+	assert.ok(navigationCapability, 'Canvas Navigation capability must stay declared');
+	assert.ok(Number(navigationCapability[1]) >= 1, 'CM-1 remains compatible with Canvas Navigation v1+');
 	assert.match(caps, /public const DESIGNER_CONTEXT_MENU_API = 1;/);
 	assert.match(source, /item\.children !== undefined/);
 	assert.match(source, /currentContext\(\) === entry\.context/);
