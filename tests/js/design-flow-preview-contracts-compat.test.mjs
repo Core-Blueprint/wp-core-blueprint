@@ -81,6 +81,17 @@ test('Flow Preview v1 accepts shallow and eight-level nested geometry, 100/101/5
   }
 });
 
+test('Flow Preview v1 accepts legacy 1/2/3 and maximum 8 numeric semantic levels',()=>{
+  const f=fixture();
+  assert.equal(f.host.render(canonical),true);
+  const list=['r0','r0.1','r0.1.2','r0.1.2.3.4.5.6.7'].map(id=>region(id));
+  f.message(packet(list));
+  assert.deepEqual(f.received.at(-1).map(item=>item.id),list.map(item=>item.id));
+  ready(f);
+  assert.equal(f.iframe.getAttribute('data-cb-core-flow-preview-state'),'ready');
+  f.host.destroy();
+});
+
 test('Flow Preview v1 rejects 501, bad depth, duplicated IDs and malformed geometry atomically',()=>{
   const failures=[
     regions(501),
