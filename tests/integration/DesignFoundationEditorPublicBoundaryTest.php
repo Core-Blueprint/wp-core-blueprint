@@ -46,7 +46,8 @@ final class CB_Design_Foundation_Editor_Public_Boundary_Test extends WP_UnitTest
 		$docs       = (string) file_get_contents( $root . '/docs/DESIGNER-FOUNDATION-API.md' );
 		$public_api = (string) file_get_contents( $root . '/docs/PUBLIC-API.md' );
 
-		self::assertStringContainsString( 'Designer Foundation v2 SOURCE contract', $docs );
+		self::assertStringContainsString( 'Current normative snapshot', $docs );
+		self::assertStringContainsString( 'Historical G1d-B v2 SOURCE candidate', $docs );
 		self::assertStringContainsString( 'installed ZIP acceptance pending', $docs );
 		self::assertSame( 3, DesignEditorAssets::DOMAIN_SESSION_API );
 		self::assertStringContainsString( "@cb-core/design-editor", $docs );
