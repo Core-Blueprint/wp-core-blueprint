@@ -6,12 +6,13 @@ import { runInNewContext } from 'node:vm';
 const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
 const source = read('assets/js/features/designer-exit-guard.js');
 
-const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, action = 'save', accept = true, busy = false, deferredModal = false, withAdapter = true, unknown = false, throwDirty = false, indeterminateDirty = false } = {}) => {
+const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, action = 'save', accept = true, busy = false, deferredModal = false, withAdapter = true, unknown = false, throwDirty = false, indeterminateDirty = false, discardOutcome = true, discardStaysDirty = false } = {}) => {
 	const events = new Map();
 	const toasts = [];
 	const modals = [];
 	let exits = 0;
 	let writes = 0;
+	let discards = 0;
 	let dirtyNow = dirty;
 	let busyNow = busy;
 	let confirmModal = null;
@@ -65,6 +66,12 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 			if (!changeDuringSave) dirtyNow = false;
 			return true;
 		},
+		discard: () => {
+			discards++;
+			if (discardOutcome !== true) return discardOutcome;
+			if (!discardStaysDirty) dirtyNow = false;
+			return true;
+		},
 	}) : null;
 	if (unknown) { shell.dataset.cbDesignShellSaveOutcomeUnknown = 'true'; shell.dataset.cbDesignShellSaveState = 'unknown'; }
 	const exit = () => { exits++; return true; };
@@ -79,11 +86,13 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 		replaceAdapter: () => window.cbCore.designerExitGuard.register(shell, {
 			isDirty: () => dirtyNow,
 			save: async () => { writes++; return true; },
+			discard: () => { discards++; dirtyNow = false; return true; },
 		}),
 		unregister: () => unregister?.(),
 		detach: () => { shell.isConnected = false; },
 		get exits() { return exits; },
 		get writes() { return writes; },
+		get discards() { return discards; },
 	};
 };
 
@@ -97,7 +106,7 @@ test('EXIT-A01: Base intercepts the canonical fullscreen lifecycle before exit',
 	assert.match(launch, /bindExitGuard\(shell, fullscreen\)/);
 	assert.match(launch, /event\.preventDefault\(\)/);
 	assert.match(launch, /api\(\)\?\.request\?\.\(shell/);
-	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 2/);
+	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 3/);
 	assert.match(assets, /enqueue_modals/);
 	assert.match(assets, /DESIGNER_EXIT_GUARD_SCRIPT/);
 });
@@ -256,7 +265,7 @@ test('B1-ABI: Base capture blocks unapproved event dispatch, while the shared co
 	assert.match(context, /control\.value = previousValue/);
 	assert.match(guard, /transitionDispatch\.add\(shell\)/);
 	assert.match(guard, /transitionDispatch\.delete\(shell\)/);
-	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 2/);
+	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 3/);
 	assert.match(assets, /DESIGNER_CONTEXT_SCRIPT/);
 });
 
@@ -404,4 +413,30 @@ test('B1-10: direct unapproved context event is rejected by capture', () => {
 	let rejected = 0;
 	callbacks.get('cb:design-shell:contextrequest')({target: root, stopImmediatePropagation() {rejected++;}});
 	assert.equal(rejected, 1);
+});
+
+
+test('DF-EXIT-01: Discard is synchronous, verified and never saves', async () => {
+	const ok = fixture({dirty:true, action:'discard'});
+	assert.equal(await ok.request(), true);
+	assert.equal(ok.discards, 1);
+	assert.equal(ok.exits, 1);
+	assert.equal(ok.writes, 0);
+	for (const outcome of [false, undefined, Promise.resolve(true)]) {
+		const failed = fixture({dirty:true, action:'discard', discardOutcome:outcome});
+		assert.equal(await failed.request(), false);
+		assert.equal(failed.discards, 1);
+		assert.equal(failed.exits, 0);
+	}
+	const stale = fixture({dirty:true, action:'discard', discardStaysDirty:true});
+	assert.equal(await stale.request(), false);
+	assert.equal(stale.exits, 0);
+});
+
+test('DF-EXIT-01: Cancel never discards, UNKNOWN remains blocked, and clean close never discards', async () => {
+	for (const input of [{dirty:true, accept:false}, {dirty:true, action:'discard', unknown:true}, {dirty:false}]) {
+		const f = fixture(input);
+		await f.request();
+		assert.equal(f.discards, 0);
+	}
 });
