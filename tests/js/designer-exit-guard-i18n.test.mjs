@@ -28,8 +28,9 @@ const phpKey = (key) => "'" + key.replaceAll("'", "\\'") + "'";
 
 test('EXIT-I18N-A01: Base localizes all shared Exit Guard defaults on their own early-loading script', () => {
   const begin = php.indexOf("'cbCoreDesignerExitGuardLabels'");
-  const end = php.indexOf('self::DESIGNER_MODE_SCRIPT', begin);
-  assert.ok(begin > 0 && end > begin, 'Exit Guard localization precedes Designer launch registration');
+  const end = php.indexOf('\n\t\t);', begin);
+  assert.ok(begin > 0 && end > begin, 'Exit Guard labels belong to the dedicated localization block');
+  assert.ok(php.indexOf('self::DESIGNER_MODE_SCRIPT', end) > end, 'Exit Guard localization precedes Designer launch registration');
   const snippet = php.slice(begin, end);
   assert.equal((snippet.match(/'core-blueprint' \)/g) || []).length, keys.length);
   for (const key of keys) assert.ok(snippet.includes("__(") && snippet.includes(phpKey(key)), key);
@@ -69,11 +70,11 @@ test('EXIT-I18N-A03: translated defaults reach the clean modal, with consumer ov
   const document = { querySelector: () => null };
   runInNewContext(js, { window, document, Element });
   const root = new Element();
-  window.cbCore.designerExitGuard.register(root, { isDirty: () => false });
+  window.cbCore.designerExitGuard.register(root, { isDirty: () => false, discard: () => true });
   assert.equal(await window.cbCore.designerExitGuard.request(root, () => true), false);
   assert.equal(shown[0].title, 'Designer sluiten?');
   assert.equal(shown[0].cancelLabel, 'Annuleren');
-  window.cbCore.designerExitGuard.register(root, { isDirty: () => false, labels: { cleanTitle: 'Notes Designer sluiten?' } });
+  window.cbCore.designerExitGuard.register(root, { isDirty: () => false, discard: () => true, labels: { cleanTitle: 'Notes Designer sluiten?' } });
   assert.equal(await window.cbCore.designerExitGuard.request(root, () => true), false);
   assert.equal(shown[1].title, 'Notes Designer sluiten?');
   assert.equal(shown[1].cancelLabel, 'Annuleren', 'unmodified labels still inherit translated Base defaults');
