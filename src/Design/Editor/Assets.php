@@ -226,6 +226,8 @@ final class Assets {
 	 */
 	public static function enqueue_platform(): void {
 		self::enqueue();
+		// Canonical shared Header Picker presentation.
+		\CoreBlueprint\Core\UI\Assets::enqueue_select_picker( \CoreBlueprint\Core\UI\Assets::SELECT_PICKER_PRESENTATION_CORE );
 		self::enqueue_exit_guard();
 		\CoreBlueprint\Core\UI\Assets::enqueue_modals( \CoreBlueprint\Core\UI\Assets::MODAL_PRESENTATION_CORE );
 		// Native hosts share the exact same branded lockup stylesheet as
@@ -310,7 +312,7 @@ final class Assets {
 		wp_enqueue_script_module(
 			'@cb-core/base-platform-v1',
 			CB_CORE_URL . 'assets/js/design/platform/wordpress-save-adapter.js',
-			[ self::MODULE_ID, '@cb-core/toast', '@cb-core/mail-platform', '@cb-core/reports-platform' ],
+			[ self::MODULE_ID, '@cb-core/toast', '@cb-core/mail-platform', '@cb-core/reports-platform', '@cb-core/select-picker' ],
 			self::asset_version( 'assets/js/design/platform/wordpress-save-adapter.js' )
 		);
 	}
@@ -381,6 +383,7 @@ final class Assets {
 	 */
 	public static function enqueue_designer_mode( string $title = '' ): void {
 		self::enqueue();
+		\CoreBlueprint\Core\UI\Assets::enqueue_select_picker( \CoreBlueprint\Core\UI\Assets::SELECT_PICKER_PRESENTATION_CORE );
 		CoreBlueprintLockup::enqueue_assets();
 		// Designer owns temporary operation feedback, including fullscreen.
 		// The Core presentation is explicit for this Base-themed surface.
