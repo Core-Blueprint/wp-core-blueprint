@@ -322,6 +322,8 @@ async function activate() {
 			if(exitGuard.modalIsOpen?.())return;
 			void exitGuard.request(root,()=>{
 				location.assign(close.href);
+				// A cancelled or blocked navigation must not leave approval sticky.
+				window.setTimeout(()=>exitGuard.resetApproval(root),0);
 				return true;
 			});
 		});
