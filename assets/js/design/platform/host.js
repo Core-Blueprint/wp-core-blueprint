@@ -158,7 +158,7 @@ export function createPlatformHost({
 			const save = required(await createSaveCoordinator(Object.freeze({
 				sessionBridge: bridge, identity, persistedFieldFacet: registry.persistedFieldFacet(registry.profileId),
 				initialFields: candidate.persistedFields, evidence: registry.evidence, signal: scope.signal,
-			})), ['save','status','transitionGate','subscribe','destroy'], 'HOST_CAPABILITY_UNAVAILABLE');
+			})), ['save','discard','status','transitionGate','subscribe','destroy'], 'HOST_CAPABILITY_UNAVAILABLE');
 			holder.save = save;
 			scope.own(() => save.destroy());
 			holder.editor = editorFacade(holder);
@@ -321,6 +321,18 @@ export function createPlatformHost({
 				}
 			})();
 			return pendingMount;
+		},
+		/** Canonical Native Host close Discard: no asynchronous gap or second controller. */
+		discard() {
+			if (state !== 'READY' || transition || pendingMount || unmountPromise) {
+				throw refusal('HOST_SWITCH_BUSY');
+			}
+			ensureGate('discard');
+			if (active.save.discard() !== true) throw refusal('SAVE_PENDING_CONTEXT_BLOCKED');
+			const status = active.save.status();
+			if (status?.dirty !== false || status?.blocked !== false
+				|| status?.state !== 'READY_CLEAN') throw refusal('SAVE_PENDING_CONTEXT_BLOCKED');
+			return true;
 		},
 		switchContext(nextContext, options = {}) {
 			if (state !== 'READY' || transition || pendingMount) return Promise.reject(refusal('HOST_SWITCH_BUSY'));
