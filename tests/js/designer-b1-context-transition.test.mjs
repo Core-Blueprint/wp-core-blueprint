@@ -93,6 +93,7 @@ const scenario = async (kind) => {
 		isDirty: () => (kind === 'dirty-save' || kind === 'cancel') && !saved,
 		isUncertain: () => false,
 		save: async () => { saved = true; return true; },
+		discard: () => true,
 	});
 	assert.ok(launchGate.includes('isTransitionDispatchAuthorized'));
 	runInNewContext(launchGate, {window, document});
