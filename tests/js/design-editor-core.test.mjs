@@ -296,3 +296,41 @@ test('undo and redo publish project changes with restored selection already acti
 	]);
 	history.dispose();
 });
+
+
+test('DF-EXIT-01: canonical History Discard restores baseline and invalidates prior save checkpoints', () => {
+	const state = new core.ProjectState(project());
+	const editor = new core.EditorState();
+	const history = new core.CommandHistory(state, editor);
+	const baseline = history.baselineSnapshot();
+	history.execute(core.insertNodeCommand([], 0, node('unsaved')));
+	const stale = history.captureSave();
+	assert.equal(history.canUndo, true);
+	assert.equal(history.discardToBaseline(), true);
+	assert.deepEqual(state.current(), baseline);
+	assert.equal(history.canUndo, false);
+	assert.equal(history.canRedo, false);
+	assert.deepEqual(history.baselineSnapshot(), baseline);
+	assert.throws(() => history.rebase({saveToken:stale.token, baselineProject:stale.submittedProject}), /checkpoint rejected/);
+	history.dispose();
+});
+
+test('DF-EXIT-01: adjunct commit failure restores History state without publishing partial state', () => {
+	const state = new core.ProjectState(project());
+	const editor = new core.EditorState();
+	const history = new core.CommandHistory(state, editor);
+	history.execute(core.insertNodeCommand([], 0, node('unsaved')));
+	const before = state.snapshot();
+	const beforeStatus = history.status();
+	let published = 0, adjunct = 'original';
+	state.subscribe(() => { published++; });
+	assert.throws(() => history.discardToBaseline({
+		commitAlongside() { adjunct = 'new'; throw new Error('adjunct commit refused'); },
+		rollbackAlongside() { adjunct = 'original'; },
+	}), /adjunct commit refused/);
+	assert.deepEqual(state.snapshot(), before);
+	assert.deepEqual(history.status(), beforeStatus);
+	assert.equal(adjunct, 'original');
+	assert.equal(published, 0);
+	history.dispose();
+});
