@@ -66,9 +66,13 @@
 		if (adapter.save !== undefined && typeof adapter.save !== 'function') {
 			throw new TypeError('Designer Exit Guard save must be a function.');
 		}
+		if (typeof adapter.discard !== 'function') {
+			throw new TypeError('Designer Exit Guard requires a synchronous discard() adapter.');
+		}
 		const record = Object.freeze({
 			isDirty: adapter.isDirty,
 			save: adapter.save || null,
+			discard: adapter.discard,
 			isUncertain: adapter.isUncertain || null,
 			labels: Object.freeze({ ...defaults, ...(adapter.labels || {}) }),
 		});
@@ -254,6 +258,14 @@
 				return false;
 			}
 			if (shell.isConnected === false || providers.get(shell) !== adapter) return false;
+			// The modal decision may be asynchronous, but restoration is not.
+			// No await is permitted between the final Save fence, Discard and exit.
+			if (dirty === true && action === 'discard') {
+				if (adapter.discard() !== true || unresolved(shell, adapter)
+					|| isBusy(shell) || adapter.isDirty() !== false) {
+					throw new Error(labels.unavailable);
+				}
+			}
 			approved.add(shell);
 			if (exit() !== true) {
 				approved.delete(shell);
