@@ -46,6 +46,7 @@ class NodeElement {
     this.checked = false;
     this.disabled = false;
   }
+  matches(selector) { return selector === '[data-cb-design-shell]' && this.hasAttribute('data-cb-design-shell'); }
   get isConnected() { return this.rootConnected || Boolean(this.parentNode?.isConnected); }
   contains(other) {
     for (let node = other; node; node = node.parentNode) if (node === this) return true;
@@ -92,6 +93,7 @@ before(async () => {
   await cp(new URL('../../assets/js/design/', import.meta.url), destination, { recursive: true });
   await convert(destination);
   globalThis.window = {};
+  globalThis.Element = NodeElement;
   const imported = await Promise.all([
     'editor.mjs',
     'platform/host.mjs',
@@ -109,6 +111,7 @@ before(async () => {
 });
 after(async () => {
   delete globalThis.window;
+  delete globalThis.Element;
   if (temporaryDirectory) await rm(temporaryDirectory, { recursive: true, force: true });
 });
 
@@ -122,7 +125,7 @@ const statusSummary = (value) => value
   ? { state: value.state, dirty: value.dirty, blocked: value.blocked }
   : null;
 
-async function createFixture() {
+async function createFixture({ unknownSave = false } = {}) {
   const { canonicalDigest, createRegistryView } = modules.registry;
   let rejectConfirmedBaseline = false;
   const command = Object.freeze({
@@ -217,6 +220,7 @@ async function createFixture() {
   document.createTextNode = text => ({ textContent: text, parentNode: null, remove() {} });
   document.querySelector = () => null;
   const root = new NodeElement(document, true);
+  root.setAttribute('data-cb-design-shell', '');
   const canvasRoot = new NodeElement(document);
   root.appendChild(canvasRoot);
   let realFields;
@@ -248,8 +252,18 @@ async function createFixture() {
       });
       const adapter = Object.freeze({
         canSave: () => true,
-        serialize: () => { throw new Error('Unexpected Save transport'); },
-        submit: () => { throw new Error('Unexpected Save transport'); },
+        serialize: checkpoint => {
+          if (!unknownSave) throw new Error('Unexpected Save transport');
+          return {
+            project: checkpoint.project, fields: checkpoint.fields,
+            operationId: checkpoint.operationId,
+            expectedStoreRevision: checkpoint.expectedStoreRevision,
+          };
+        },
+        submit: async () => {
+          if (!unknownSave) throw new Error('Unexpected Save transport');
+          return { status: 'unknown', reason: 'SAVE_TX_STATE_UNVERIFIED' };
+        },
         lookupOperation: () => { throw new Error('Unexpected Save recovery'); },
         verifyReceipt: () => false,
         destroy: () => {},
@@ -278,17 +292,33 @@ async function createFixture() {
   });
   await host.mount({ bootstrap, project: baselineProject(), persistedFields: baselineFields() });
   assert.equal(host.state, 'READY', 'The real Native Host must mount before diagnosis');
-  return { host, root, document, bridge: () => realBridge,
+  // Exercise the same public facade the WordPress Native adapter receives.
+  // Its createHost seam returns our *already mounted real Host*, preserving
+  // real History/Fields/SaveCoordinator while avoiding unrelated chrome DOM.
+  const publicHost = modules.editor.attachTrustedDesignerHost({
+    root, canvasRoot, bootstrap,
+    runtimeModules: new Map([[moduleId, profileModule]]),
+    createHost: () => host,
+    createSaveAdapter: () => { throw new Error('Unexpected Save adapter creation'); },
+    loadReceipt: async () => { throw new Error('Unexpected Save receipt read'); },
+  });
+  assert.equal(typeof publicHost.discard, 'function', 'Native public Host must expose Discard');
+  return { host, publicHost: () => publicHost, root, document, bridge: () => realBridge,
     fields: () => realFields, coordinator: () => realCoordinator,
     rejectBaseline: () => { rejectConfirmedBaseline = true; } };
 }
 
-async function runScenario(name, { projectDirty = false, fieldDirty = false, rejectRestore = false } = {}) {
-  const instance = await createFixture();
-  const { host, root, document } = instance;
+async function runScenario(name, { projectDirty = false, fieldDirty = false, rejectRestore = false, unknownSave = false } = {}) {
+  const instance = await createFixture({ unknownSave });
+  const { root, document } = instance;
+  const host = instance.publicHost();
   if (projectDirty) host.editor.execute('fixture.set-title', { value: 'unsaved' });
   if (fieldDirty) host.editor.setPersistedField('preheader', 'unsaved');
   if (rejectRestore) instance.rejectBaseline();
+  if (unknownSave) {
+    const result = await host.editor.save();
+    assert.equal(result.status, 'unknown', 'UNKNOWN must originate in real SaveCoordinator');
+  }
   const originalDirty = host.editor.saveStatus().dirty;
   const coordinatorBefore = statusSummary(instance.coordinator().status());
   const historyBefore = instance.bridge().historyStatus();
@@ -357,6 +387,7 @@ for (const [name, variant] of [
     const result = await runScenario(name, variant);
     assert.equal(result.originalDirty, true);
     assert.equal(result.discardOutcome, true);
+    assert.equal(typeof result.discardOutcome, 'boolean', 'Discard must be synchronous');
     assert.equal(result.historyRestored, true);
     assert.equal(result.fieldsRestored, true);
     assert.equal(result.finalDirty, false);
@@ -377,4 +408,17 @@ test('D failed restoration preserves fail-closed Exit Guard', async () => {
   assert.equal(result.exitCount, 0);
   assert.ok(result.exception, 'Original exception must remain observable at adapter boundary');
   assert.equal(result.finalDirty, true);
+});
+
+
+test('E UNKNOWN Save remains blocked across public Native Host and Exit Guard', async () => {
+  const result = await runScenario('E UNKNOWN Save', { fieldDirty: true, unknownSave: true });
+  assert.equal(result.originalDirty, true);
+  assert.equal(result.coordinatorBefore.state, 'UNKNOWN');
+  assert.equal(result.coordinatorBefore.blocked, true);
+  assert.equal(result.discardOutcome, null, 'Exit Guard must refuse before invoking Discard');
+  assert.equal(result.exitAllowed, false);
+  assert.equal(result.exitCount, 0);
+  assert.equal(result.finalDirty, true);
+  assert.equal(result.coordinatorAfter.state, 'UNKNOWN');
 });
