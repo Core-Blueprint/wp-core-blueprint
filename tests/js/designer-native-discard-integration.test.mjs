@@ -315,9 +315,14 @@ async function runScenario(name, { projectDirty = false, fieldDirty = false, rej
   if (projectDirty) host.editor.execute('fixture.set-title', { value: 'unsaved' });
   if (fieldDirty) host.editor.setPersistedField('preheader', 'unsaved');
   if (rejectRestore) instance.rejectBaseline();
+  let directUnknownRefusal = null;
   if (unknownSave) {
     const result = await host.editor.save();
     assert.equal(result.status, 'unknown', 'UNKNOWN must originate in real SaveCoordinator');
+    try { host.discard(); }
+    catch (error) {
+      directUnknownRefusal = { name: error?.name ?? null, code: error?.code ?? null };
+    }
   }
   const originalDirty = host.editor.saveStatus().dirty;
   const coordinatorBefore = statusSummary(instance.coordinator().status());
@@ -369,7 +374,7 @@ async function runScenario(name, { projectDirty = false, fieldDirty = false, rej
   const finalDirty = host.editor.saveStatus().dirty;
   const report = {
     scenario: name, originalDirty, coordinatorBefore,
-    historyBefore, exception, discardOutcome,
+    historyBefore, exception, discardOutcome, directUnknownRefusal,
     historyRestored, fieldsRestored, coordinatorAfter,
     finalDirty, exitAllowed, exitCount, toasts,
     component: exception?.site ?? null,
@@ -417,6 +422,9 @@ test('E UNKNOWN Save remains blocked across public Native Host and Exit Guard', 
   assert.equal(result.coordinatorBefore.state, 'UNKNOWN');
   assert.equal(result.coordinatorBefore.blocked, true);
   assert.equal(result.discardOutcome, null, 'Exit Guard must refuse before invoking Discard');
+  assert.deepEqual(result.directUnknownRefusal, {
+    name: 'Error', code: 'SAVE_PENDING_CONTEXT_BLOCKED',
+  }, 'Public Host Discard must enforce UNKNOWN Save gate');
   assert.equal(result.exitAllowed, false);
   assert.equal(result.exitCount, 0);
   assert.equal(result.finalDirty, true);
