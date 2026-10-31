@@ -1107,3 +1107,20 @@ test('CM-1 refuses changed permissions, context and disabled actions with focus 
 	assert.equal(documentRef.body.children.length, 0);
 	assert.throws(() => controller.open(), /DESTROYED/);
 });
+
+
+test('DF-EXIT-01: both public session factories expose synchronous baseline restoration', () => {
+	const domain = publicEditor.createDomainSession({project:flowProject()});
+	const initial = domain.snapshot();
+	const stale = domain.captureSave();
+	domain.execute({label:'change', apply(project) { return {project:{...project, root:{...project.root, properties:{...project.root.properties, draft:true}}}}; }});
+	assert.equal(domain.discardToBaseline(), true);
+	assert.deepEqual(domain.snapshot(), initial);
+	assert.equal(domain.historyStatus().canUndo, false);
+	assert.throws(() => domain.rebase({saveToken:stale.token, baselineProject:initial}), /checkpoint rejected/);
+	domain.dispose();
+	const profile = publicEditor.createSession({profile:'document-flow',project:flowProject()});
+	assert.equal(typeof profile.discardToBaseline, 'function');
+	assert.equal(profile.discardToBaseline(), true);
+	profile.dispose();
+});
