@@ -966,6 +966,7 @@ export const attachTrustedDesignerHost = ({
 				},
 				captureSave: () => sessionBridge.captureSave(),
 				rebase: (options) => sessionBridge.rebase(options),
+				discardToBaseline: (options) => sessionBridge.discardToBaseline(options),
 				validateAcceptedProject: (project) => sessionBridge.validateAcceptedProject(project),
 				isProjectDirty: () => sessionBridge.isProjectDirty(),
 			});
