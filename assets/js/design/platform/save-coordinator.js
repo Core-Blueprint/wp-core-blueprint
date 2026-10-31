@@ -92,7 +92,7 @@ function correlation(receipt, evidence) {
  */
 export function createSaveCoordinator({ host, fields, adapter }) {
 	if (!host || !fields || !adapter
-		|| ['saveContext', 'captureSave', 'rebase', 'validateAcceptedProject', 'isProjectDirty']
+		|| ['saveContext', 'captureSave', 'rebase', 'discardToBaseline', 'validateAcceptedProject', 'isProjectDirty']
 			.some((key) => typeof host[key] !== 'function')
 		|| ['serialize', 'submit', 'lookupOperation', 'verifyReceipt', 'canSave', 'destroy']
 			.some((key) => typeof adapter[key] !== 'function')) {
@@ -332,8 +332,31 @@ export function createSaveCoordinator({ host, fields, adapter }) {
 			}
 		},
 		status() { return lifecycle(); },
+		/** Synchronous joint project and persisted-field Discard; never a Save. */
+		discard() {
+			if (destroyed || blocksContextTransition() || flight || pending) {
+				throw new Error('SAVE_PENDING_CONTEXT_BLOCKED');
+			}
+			if (typeof fields.prepareDiscard !== 'function') throw new Error('SAVE_INVALID');
+			// Capture the active Save origin, and stage every field validation first.
+			const origin = host.saveContext();
+			if (!origin || origin.ready !== true) throw new Error('SAVE_CONTEXT_CHANGED');
+			const prepared = fields.prepareDiscard();
+			const restored = host.discardToBaseline({
+				commitAlongside: prepared.commit,
+				rollbackAlongside: prepared.rollback,
+			});
+			if (restored !== true || host.isProjectDirty() || fields.snapshot().dirty) {
+				// An unverifiable postcommit state is never reported as clean.
+				// Freeze further writes until a fresh verified document load.
+				notify('PERSISTED_UNSYNCHRONIZED');
+				throw new Error('SAVE_CONTEXT_CHANGED');
+			}
+			notify('READY_CLEAN');
+			return true;
+		},
 		transitionGate(action) {
-			if (action !== 'switch' && action !== 'unmount') {
+			if (action !== 'switch' && action !== 'unmount' && action !== 'discard') {
 				return Object.freeze({ allowed: false, state, code: 'SAVE_PENDING_CONTEXT_BLOCKED' });
 			}
 			if (blocksContextTransition() || flight || pending) {
