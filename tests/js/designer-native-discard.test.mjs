@@ -7,12 +7,17 @@ const source = path => readFileSync(new URL('../../' + path, import.meta.url), '
 test('DF-EXIT-01: Native Mail and Maintenance Reports share one Host and canonical Exit Guard', () => {
   const native = source('assets/js/design/platform/wordpress-save-adapter.js');
   const host = source('assets/js/design/platform/host.js');
+  const facade = source('assets/js/design/editor.js');
   const assets = source('src/Design/Editor/Assets.php');
   assert.match(native, /const exitGuard=window\.cbCore\?\.designerExitGuard;/);
   assert.match(native, /discard:\(\)=>host\.discard\(\)/);
   assert.match(native, /void exitGuard\.request\(root,/);
   assert.doesNotMatch(native, /window\.addEventListener\('beforeunload'/);
   assert.match(host, /active\.save\.discard\(\) !== true/);
+  // WordPress receives attachTrustedDesignerHost(), not createPlatformHost().
+  // Its capability assertion and synchronous delegation must remain present.
+  assert.match(facade, /typeof host\.discard !== 'function'/);
+  assert.match(facade, /discard\(\) \{\s*assertActive\(\);\s*return host\.discard\(\);\s*\}/);
   assert.match(assets, /DESIGNER_EXIT_GUARD_API = 3/);
   assert.match(assets, /self::enqueue_exit_guard\(\)/);
   assert.match(assets, /enqueue_modals/);
