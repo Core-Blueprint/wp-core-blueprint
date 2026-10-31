@@ -356,6 +356,41 @@
 		});
 	};
 
+
+	// A context select is consumer-owned; Base enhances only its presentation.
+	// No new context request, Save or navigation authority is introduced.
+	const enhanceHeaderContext = (context) => {
+		const picker = window.cbCore?.selectPicker;
+		if (!context || typeof picker?.enhance !== 'function') return;
+		const selects = context instanceof HTMLSelectElement
+			? [context] : Array.from(context.querySelectorAll('select'));
+		if (selects.length !== 1) return;
+		const select = selects[0];
+		if (!(select instanceof HTMLSelectElement) || select.multiple
+			|| select.dataset.cbCoreSelectPickerReady === '1') return;
+		try {
+			picker.enhance(select, { variant: 'header' });
+		} catch (_error) {
+			// Presentation errors must never prevent consumer context control.
+			const wrapper = select.closest('.cb-core-select-picker--header');
+			if (wrapper) { wrapper.before(select); wrapper.remove(); }
+			select.hidden = false;
+			select.removeAttribute('aria-hidden');
+			if (select.tabIndex === -1) select.removeAttribute('tabindex');
+			delete select.dataset.cbCoreSelectPickerReady;
+		}
+	};
+
+	// The classic launch script can run before or after the Picker module.
+	// This scanner is invoked only on explicit module readiness, not polled.
+	const enhanceReadyDesignerContexts = () => {
+		document.querySelectorAll('[data-cb-design-launch-root]').forEach((root) => {
+			const toolbar = root.querySelector('[data-cb-design-shell] .cb-core-design-shell__toolbar--designer');
+			if (toolbar?.dataset.cbDesignShellHeader !== 'true') return;
+			enhanceHeaderContext(toolbar.querySelector('[data-cb-design-shell-context]'));
+		});
+	};
+
 	const composeHeader = (root, shell, shellApi, { direct = false, exitUrl = '' } = {}) => {
 		const toolbar = shell.querySelector('.cb-core-design-shell__toolbar');
 		if (!toolbar || toolbar.dataset.cbDesignShellHeader === 'true') return;
@@ -471,6 +506,7 @@
 		toolbar.classList.add('cb-core-design-shell__toolbar--designer');
 		toolbar.dataset.cbDesignShellHeader = 'true';
 		toolbar.replaceChildren(start, center, end);
+		enhanceHeaderContext(contextSwitcher);
 	};
 
 	const syncFullscreenIcon = (fullscreen, active, shellApi) => {
@@ -780,6 +816,9 @@
 		attemptBoot();
 	};
 
+	// Register listener first, then check the facade: both load orders work.
+	document.addEventListener('cb:select-picker:ready', enhanceReadyDesignerContexts);
+	enhanceReadyDesignerContexts();
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
 	else start();
 })();

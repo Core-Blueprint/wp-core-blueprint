@@ -1,5 +1,7 @@
 import { attachTrustedDesignerHost, decorateDesignerControl } from '@cb-core/design-editor';
 import { toast as baseToast } from '@cb-core/toast';
+// Static WordPress module dependency: Picker readiness precedes Host activation.
+import '@cb-core/select-picker';
 import * as mailProfile from '@cb-core/mail-platform';
 import * as reportsProfile from '@cb-core/reports-platform';
 
@@ -302,12 +304,34 @@ async function activate() {
 			selected.addEventListener('change',()=>{
 				if(!transitionSafe()){
 					selected.value=resourceKey;
+					// Presentation only: never dispatch another native change/navigation.
+					if(selected.dataset.cbCoreSelectPickerReady==='1')
+						selected.dispatchEvent(new Event('cb:select-picker-sync'));
 					return;
 				}
 				const url=new URL(location.href);
 				url.searchParams.set('template',selected.value);
 				location.assign(url.href);
 			});
+			// The trusted Mail select is in its final header slot and the
+			// original authorization listener is already attached.
+			if(selected instanceof HTMLSelectElement && !selected.multiple) {
+				const picker=window.cbCore?.selectPicker;
+				if(typeof picker?.enhance==='function') {
+					try {
+						picker.enhance(selected,{variant:'header'});
+					} catch(_error) {
+						// Progressive enhancement must not break native Mail
+						// navigation on an unavailable browser/UI capability.
+						const wrapper=selected.closest('.cb-core-select-picker--header');
+						if(wrapper){wrapper.before(selected);wrapper.remove();}
+						selected.hidden=false;
+						selected.removeAttribute('aria-hidden');
+						selected.removeAttribute('tabindex');
+						delete selected.dataset.cbCoreSelectPickerReady;
+					}
+				}
+			}
 		}
 	} catch(error) {
 		failStartup(String(error?.code||error?.message||'HOST_CONTEXT_REFUSED'));

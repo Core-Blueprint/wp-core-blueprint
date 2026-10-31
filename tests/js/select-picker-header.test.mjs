@@ -66,6 +66,7 @@ test('SP-H04: header stays labeled and uses one tokenized styling and native ada
 // Small synthetic DOM exercising the real controller, Popover API, focus, frames and events.
 const pickerFixture = ({ variant = 'header', count = 3, selected = 'v2', disabled = [], popover = true, search } = {}) => {
   const frames = new Map();
+  const observers = [];
   let nextFrame = 0;
   const doc = {
     readyState: 'loading', activeElement: null, listeners: new Map(),
@@ -151,7 +152,7 @@ const pickerFixture = ({ variant = 'header', count = 3, selected = 'v2', disable
   new Script(js).runInNewContext({
     document: doc, window: win, HTMLElement: El, HTMLSelectElement: NativeSelect,
     HTMLOptGroupElement: NativeGroup, HTMLOptionElement: NativeOption,
-    MutationObserver: class { observe() {} }, CSS: { escape: (s) => s },
+    MutationObserver: class { constructor(callback) { observers.push(callback); } observe() {} }, CSS: { escape: (s) => s },
     Event: class { constructor(type, options) { this.type = type; this.bubbles = options?.bubbles || false; } },
   });
   const parent = new El();
@@ -167,7 +168,8 @@ const pickerFixture = ({ variant = 'header', count = 3, selected = 'v2', disable
   };
   const buttons = () => api?.panel.querySelectorAll('.cb-core-select-picker__option:not(:disabled)') || [];
   const listening = (target, type) => target.listeners.get(type)?.size ?? 0;
-  return { doc, win, frames, api, parent, select, flush, buttons, listening };
+  const notifyDisabledMutation = () => observers.forEach((callback) => callback([{ attributeName: 'disabled' }]));
+  return { doc, win, frames, api, parent, select, flush, buttons, listening, notifyDisabledMutation };
 };
 
 test('SP-H05: Header mouse/keyboard focus selected enabled or first available', () => {
@@ -244,4 +246,55 @@ test('SP-H09: WP-native Header has scoped, tokenized, viewport-bounded states', 
   assert.match(native, /\.cb-core-select-picker--header \.cb-core-select-picker__option\.is-selected::after/);
   assert.match(native, /max-width:\s*calc\(100vw - 16px\)/);
   assert.match(native, /var\(--cb-core-picker-accent\)/);
+});
+
+
+test('SP-H10: disabling an open Header closes it and rejects stale option clicks', () => {
+  const f = pickerFixture();
+  let changes = 0;
+  f.select.addEventListener('change', () => { changes++; });
+  f.api.open();
+  f.flush();
+  const oldOption = f.buttons().find((button) => button.dataset.value === 'v3');
+  assert.equal(f.api.panel.hidden, false);
+  f.select.disabled = true;
+  oldOption.dispatchEvent({ type: 'click' }); // Click before MutationObserver delivery.
+  assert.equal(changes, 0, 'disabled native select cannot commit a choice');
+  assert.equal(f.select.value, 'v2');
+  f.notifyDisabledMutation();
+  assert.equal(f.api.panel.hidden, true, 'disabled attribute observer closes open popover');
+  assert.equal(f.api.toggle.disabled, true);
+  oldOption.dispatchEvent({ type: 'click' }); // Stale DOM reference after close.
+  assert.equal(f.select.value, 'v2');
+  f.api.close({ focus: true });
+  assert.notEqual(f.doc.activeElement, f.api.toggle, 'disabled trigger never refocused');
+  assert.equal(changes, 0);
+  f.select.disabled = false;
+  f.select.dispatchEvent({ type: 'cb:select-picker-sync' });
+  assert.equal(f.api.toggle.disabled, false);
+  f.api.open();
+  f.buttons().find((button) => button.dataset.value === 'v3').dispatchEvent({ type: 'click' });
+  assert.equal(f.select.value, 'v3');
+  assert.equal(changes, 1);
+});
+
+test('SP-H11: module readiness is dispatched only after public Picker registration', () => {
+  let type = null;
+  let exposedOnEvent = false;
+  const window = { cbCore: {} };
+  const document = {
+    readyState: 'loading',
+    getElementById() { return null; },
+    addEventListener() {},
+    dispatchEvent(event) {
+      type = event.type;
+      exposedOnEvent = typeof window.cbCore?.selectPicker?.enhance === 'function';
+    },
+  };
+  runInNewContext(js, {
+    window, document,
+    CustomEvent: class { constructor(eventType) { this.type = eventType; } },
+  });
+  assert.equal(type, 'cb:select-picker:ready');
+  assert.equal(exposedOnEvent, true);
 });

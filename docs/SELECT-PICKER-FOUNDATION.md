@@ -90,3 +90,15 @@ Opening Header by mouse or keyboard schedules focus to the selected **enabled re
 Choosing a different option changes the original select and dispatches exactly one bubbling `change` event. Choosing the currently selected option only closes the popover. Programmatic native changes can trigger `cb:select-picker-sync` as described above. Consumers retain domain state, permissions, Save/History and Exit Guard authority.
 
 Before release, verify Core and WP-native presentation in light/dark themes, keyboard and mouse, narrow viewports and native fallback.
+
+## Shared Designer header integration (BASE-BRA-04B)
+
+The Designer Foundation enhances an existing single native select under the public `data-cb-design-shell-context` contract, after composing the canonical header. It does not enhance unrelated controls, multi-selects or other context components. Consumers continue to own option data, native selection value and all domain actions.
+
+Designer Mode uses `cb:select-picker:ready` plus an immediate API check so either script/module load order works. The readiness event is an availability notification, not an authorization. Native Mail statically imports the WordPress Script Module and enhances its original template select only after Trusted Host READY and final toolbar insertion. Reports receives no artificial context selector.
+
+Both Designer routes request `CoreBlueprint\Core\UI\Assets::SELECT_PICKER_PRESENTATION_CORE` via `enqueue_select_picker()`. Ordinary standalone wp-admin screens may instead request the WP-native presentation.
+
+Designer Mode retains its original capture-phase Exit Guard and async context transition. For immediate rollback, disabled/busy, accepted targets, failed loads and transition completion, it dispatches `cb:select-picker-sync` on the native select to refresh presentation only. No extra `change`, context request, Save or History event is created. Native Mail retains `transitionSafe()` and existing template URL navigation; a blocked change restores the native value and sends a paint-only sync.
+
+If a select becomes disabled while its Header popover is open, the popover closes, stale option clicks are rejected and no focus is placed on a disabled trigger. Re-enabling permits normal use. Popover-unavailable browsers keep the native select.

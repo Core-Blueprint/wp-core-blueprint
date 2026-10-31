@@ -66,6 +66,13 @@
 		}, delay);
 	};
 
+	// Repaint only: this custom event never triggers another context request.
+	const syncPicker = (control) => {
+		if (control.dataset.cbCoreSelectPickerReady === '1') {
+			control.dispatchEvent(new Event('cb:select-picker-sync'));
+		}
+	};
+
 	const bindControl = (control) => {
 		if (!(control instanceof HTMLSelectElement) || boundControls.has(control)) return;
 		boundControls.add(control);
@@ -93,6 +100,7 @@
 		const previousValue = String(control.dataset.cbDesignShellContextValue ?? '');
 		const value = String(control.value || '');
 		control.value = previousValue; // Never display an unapplied target as current.
+		syncPicker(control);
 		if (value === previousValue || activeRoots.has(root)) return;
 
 		const guard = window.cbCore?.designerExitGuard;
@@ -103,6 +111,7 @@
 
 		activeRoots.add(root); // Synchronous lock, including modal and loading.
 		control.disabled = true;
+		syncPicker(control); // Closes an open popover before asynchronous authorization.
 		let generation = 0;
 		let transition = null;
 		let wasInert = false;
@@ -142,6 +151,7 @@
 			if (outcome?.status === 'applied') {
 				control.value = value;
 				control.dataset.cbDesignShellContextValue = value;
+				syncPicker(control);
 				if (transition) {
 					setTransition(shell, 'ready', label('ready', 'Ready'));
 					hideTransition(shell, transition, generation, 120);
@@ -152,6 +162,7 @@
 				}));
 			} else {
 				control.value = previousValue;
+				syncPicker(control);
 				if (transition) hideTransition(shell, transition, generation, 0);
 				if (outcome?.status === 'blocked' || outcome?.status === 'failed') {
 					// Never surface raw consumer errors, URLs, form values or REST payloads.
@@ -162,6 +173,7 @@
 			}
 		}).catch(() => {
 			control.value = previousValue;
+			syncPicker(control);
 			if (transition) hideTransition(shell, transition, generation, 0);
 			window.cbCore?.toast?.error?.(label('error', 'Could not load selection.'));
 		}).finally(() => {
@@ -171,6 +183,7 @@
 				else shell.setAttribute('aria-busy', previousBusy);
 			}
 			control.disabled = false;
+			syncPicker(control);
 			activeRoots.delete(root);
 		});
 	}, true);

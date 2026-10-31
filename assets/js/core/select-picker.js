@@ -160,6 +160,7 @@ const enhance = (select, options = {}) => {
 		meta.textContent = group;
 		meta.hidden = !group;
 		toggle.disabled = select.disabled;
+		if (select.disabled && !panel.hidden) close();
 		if (header && externalLabel) {
 			toggle.setAttribute('aria-label', externalLabel + ': ' + title.textContent);
 		}
@@ -205,7 +206,7 @@ const enhance = (select, options = {}) => {
 		toggle.setAttribute('aria-expanded', 'false');
 		root.classList.remove('is-open');
 		if (search) search.value = '';
-		if (focus) toggle.focus();
+		if (focus && !select.disabled) toggle.focus();
 	};
 
 	const render = (query = '') => {
@@ -239,6 +240,8 @@ const enhance = (select, options = {}) => {
 				button.dataset.value = option.value;
 				button.textContent = option.textContent?.trim() || option.value;
 				button.addEventListener('click', () => {
+					// A Save/context transition may disable the native authority while open.
+					if (select.disabled || panel.hidden || (header && !panel.matches(':popover-open'))) return;
 					if (select.value === option.value) {
 						close({ focus: true });
 						return;
@@ -378,3 +381,8 @@ if (document.readyState === 'loading') {
 
 window.cbCore = window.cbCore || {};
 window.cbCore.selectPicker = Object.freeze({ init, enhance });
+// Availability only, never an authorization signal. Classic Designer scripts
+// listen before checking the facade to handle either module load order.
+if (typeof CustomEvent === 'function') {
+	document.dispatchEvent(new CustomEvent('cb:select-picker:ready'));
+}

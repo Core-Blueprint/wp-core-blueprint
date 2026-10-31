@@ -16,6 +16,7 @@ const launchGate = launchSource.slice(
 const scenario = async (kind) => {
 	const handlers = new Map(), toasts = [];
 	let saved = false, modalCount = 0, contextChanges = 0, loads = 0;
+	const painted = [];
 	class Element {
 		constructor() {
 			this.dataset = {};
@@ -38,6 +39,11 @@ const scenario = async (kind) => {
 			this.value = 'next';
 			this.dataset.cbDesignShellContextValue = 'original';
 			this.disabled = false;
+			this.dataset.cbCoreSelectPickerReady = '1';
+		}
+		dispatchEvent(event) {
+			if (event.type === 'cb:select-picker-sync') painted.push({value:this.value, disabled:this.disabled});
+			return true;
 		}
 		closest(selector) {
 			return selector === '[data-cb-design-shell-context]' ? context
@@ -87,6 +93,7 @@ const scenario = async (kind) => {
 		stopImmediatePropagation() { this.stopped = true; }
 	}
 	class MutationObserver { observe() {} }
+	class Event { constructor(type) { this.type = type; } }
 
 	runInNewContext(guardSource, {window, document, Element});
 	window.cbCore.designerExitGuard.register(shell, {
@@ -112,7 +119,7 @@ const scenario = async (kind) => {
 		return true;
 	};
 	runInNewContext(contextSource, {
-		window, document, Element, HTMLSelectElement, MutationObserver, CustomEvent,
+		window, document, Element, HTMLSelectElement, MutationObserver, CustomEvent, Event,
 	});
 
 	const event = {
@@ -125,7 +132,8 @@ const scenario = async (kind) => {
 	}
 	for (let turn = 0; turn < 35; turn++) await Promise.resolve();
 	return {contextChanges, loads, modalCount, toasts, value: control.value,
-		stored: control.dataset.cbDesignShellContextValue, disabled: control.disabled, saved};
+		stored: control.dataset.cbDesignShellContextValue, disabled: control.disabled, saved,
+		painted, visible: painted.at(-1)?.value};
 };
 
 test('B1 context capture commits only applied targets and never replays a context request', async () => {
@@ -137,6 +145,9 @@ test('B1 context capture commits only applied targets and never replays a contex
 		assert.equal(actual.stored, success ? 'next' : 'original', kind);
 		assert.equal(actual.value, success ? 'next' : 'original', kind);
 		assert.equal(actual.disabled, false, kind);
+		assert.equal(actual.visible, success ? 'next' : 'original', kind + ' visual rollback');
+		assert.ok(actual.painted.some((frame) => frame.disabled === true), kind + ' busy paint');
+		assert.equal(actual.painted.at(-1)?.disabled, false, kind + ' ready paint');
 		assert.equal(actual.modalCount, ['cancel', 'dirty-save'].includes(kind) ? 1 : 0, kind);
 		assert.equal(actual.toasts.length, ['reject', 'false'].includes(kind) ? 1 : 0, kind);
 		if (kind === 'reject') {
@@ -154,4 +165,80 @@ test('B1 native Mail/Reports still use their Host-specific transport', () => {
 	assert.match(assets, /@cb-core\/reports-platform/);
 	assert.match(native, /attachTrustedDesignerHost/);
 	assert.match(native, /transitionSafe/);
+});
+
+
+test('B1 Header Picker readiness handles both module and classic-first orders exactly once', () => {
+  const start = launchSource.indexOf('\tconst enhanceHeaderContext =');
+  const end = launchSource.indexOf('\n\tconst composeHeader =', start);
+  assert.ok(start > 0 && end > start, 'shared header enhancement helpers are present');
+  const helpers = launchSource.slice(start, end);
+  const expression = '(() => { ' + helpers +
+    "\n document.addEventListener('cb:select-picker:ready', enhanceReadyDesignerContexts);" +
+    "\n enhanceReadyDesignerContexts();" +
+    "\n return { enhanceReadyDesignerContexts, enhanceHeaderContext }; })()";
+  for (const moduleFirst of [true, false]) {
+    class HTMLSelectElement {
+      constructor() { this.multiple = false; this.dataset = {}; }
+    }
+    const select = new HTMLSelectElement();
+    const context = { querySelectorAll: () => [select] };
+    const toolbar = {
+      dataset: { cbDesignShellHeader: 'true' },
+      querySelector: () => context,
+    };
+    const root = { querySelector: () => toolbar };
+    const listeners = new Map();
+    const document = {
+      querySelectorAll: () => [root],
+      addEventListener(type, fn) { listeners.set(type, fn); },
+    };
+    let count = 0;
+    const picker = { enhance(target, options) {
+      assert.equal(target, select);
+      assert.equal(options.variant, 'header');
+      count++;
+      select.dataset.cbCoreSelectPickerReady = '1';
+    } };
+    const window = { cbCore: moduleFirst ? {selectPicker:picker} : {} };
+    const api = runInNewContext(expression, {document, window, HTMLSelectElement});
+    if (!moduleFirst) {
+      window.cbCore.selectPicker = picker;
+      listeners.get('cb:select-picker:ready')();
+    }
+    api.enhanceReadyDesignerContexts();
+    assert.equal(count, 1, moduleFirst ? 'module-first' : 'classic-first');
+  }
+});
+
+test('B1 Native Mail imports one Picker module and restores blocked selection paint', () => {
+  const native = read('assets/js/design/platform/wordpress-save-adapter.js');
+  const php = read('src/Design/Editor/Assets.php');
+  assert.match(php, /enqueue_select_picker\( \\CoreBlueprint\\Core\\UI\\Assets::SELECT_PICKER_PRESENTATION_CORE \)/);
+  assert.match(native, /import '@cb-core\/select-picker';/);
+  assert.match(php, /'@cb-core\/reports-platform', '@cb-core\/select-picker'/);
+  assert.ok(native.indexOf('await host.mount(') < native.indexOf('contextSlot.append(contextControl);'));
+  assert.ok(native.indexOf('contextSlot.append(contextControl);') < native.indexOf("picker.enhance(selected,{variant:'header'});"));
+
+  const start = native.indexOf("selected.addEventListener('change',()=>{");
+  const end = native.indexOf("\n\t\t\t});", start);
+  assert.ok(start > 0 && end > start, 'native change handler is present');
+  let onChange = null, paints = 0, navigation = 0;
+  const selected = {
+    value: 'next', dataset: {cbCoreSelectPickerReady:'1'},
+    addEventListener(type, cb) { if (type === 'change') onChange = cb; },
+    dispatchEvent(event) { if (event.type === 'cb:select-picker-sync') paints++; return true; },
+  };
+  const resourceKey = 'original';
+  const transitionSafe = () => false;
+  const location = {href:'https://example.test/?template=original', assign(){navigation++;}};
+  runInNewContext(native.slice(start, end + 7), {
+    selected, resourceKey, transitionSafe, location,
+    Event: class {constructor(type){this.type=type;}},
+  });
+  assert.equal(typeof onChange, 'function');
+  onChange();
+  assert.equal(selected.value, 'original');
+  assert.equal(paints, 1);
+  assert.equal(navigation, 0);
 });

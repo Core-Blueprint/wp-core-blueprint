@@ -959,3 +959,13 @@ The current Base native Host already registers palette sources and canvas/isolat
 - **Non-native adopters:** existing `createDesignerLayerTree` default and palette source APIs are unchanged. `registerSource({directCanvas:true})` is an optional node-source affordance in the original DND controller, not a replacement controller.
 
 **No formal acceptance implied.** Run Base Level 1 + one dev ZIP build, and request a distinct WordPress FIELD authorization for the exact resulting ZIP before treating this as stable.
+
+### Shared Designer Header Select Picker (BASE-BRA-04B)
+
+A consumer supplying exactly one suitable single native select within `data-cb-design-shell-context` receives the shared Base Header Picker presentation automatically after the Designer header is composed. Other context widgets and unrelated form controls are unaffected. The consumer owns labels, values, context loading and authorization; the original native select remains authoritative.
+
+The classic Designer Mode observes `cb:select-picker:ready` and checks the existing `window.cbCore.selectPicker.enhance` facade. The event communicates availability only. The native Designer Platform instead uses a static WordPress Script Module dependency and enhances the existing Mail template select after Trusted Host READY and final toolbar placement. Both surfaces explicitly use the Core Picker presentation; standalone WordPress admin pages may use the separate WP-native stylesheet.
+
+The capture-phase Designer Mode context handler and Exit Guard continue to own Save/Discard/Cancel and async transitions. The existing `cb:select-picker-sync` is emitted on native-select rollback, applied updates and disabled/busy changes solely to repaint the shared Picker, without a second `change`, Save, context request or History command. Native Mail retains its original `transitionSafe()` authorization and navigates only when safe. Reports has no artificial dropdown.
+
+Disabling the native select closes its open Header Picker and blocks stale option clicks without changing the authorized value. Unsupported browser top-layer APIs retain the unenhanced native select. Consumers must not install a second Picker/controller for an existing Designer context control.
