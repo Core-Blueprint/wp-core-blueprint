@@ -61,3 +61,32 @@ Auto mode uses the Core presentation below the Core Blueprint parent menu and th
 ## Scope
 
 Select Picker is intended for larger, searchable or grouped option sets. Small controls such as a two- or three-option priority selector should normally remain a native `<select>`.
+
+## Header presentation (public v1)
+
+The Header Picker uses the same public Select Picker controller and the same native single `<select>` as the Field variant. The select remains the authoritative form value, validation target and non-JavaScript fallback.
+
+Declarative initialization:
+```html
+<select name="stage" aria-label="Workflow stage"
+        data-cb-core-select-picker
+        data-cb-core-select-picker-variant="header">
+    <option value="questions">Questions</option>
+    <option value="rules">Rules</option>
+</select>
+```
+
+Programmatic initialization, after `CoreBlueprint\Core\UI\Assets::enqueue_select_picker()`:
+```js
+window.cbCore.selectPicker.enhance(select, { variant: 'header' });
+```
+
+Supported variants: `field` (default) and `header`. An unknown variant returns `null` before altering the native select. Field retains its existing grouped options, automatic/explicit search, focus and outside-click behavior. Header is a compact text/chevron selector with **no search input**, even if search is requested. Header is a selection control, not an action menu.
+
+Header uses a manual HTML Popover in the browser top layer, with viewport-bounded fixed positioning, resize/ancestor-scroll repositioning and upward flip when needed. If `showPopover()` or `hidePopover()` is missing, the original native select stays visible and functional. Header-specific styling uses the existing Core or WordPress-native Picker presentation and theme tokens.
+
+Opening Header by mouse or keyboard schedules focus to the selected **enabled rendered** option, or the first available option if there is no selectable match. No option is focused if all options are disabled. A pending focus callback is invalidated when the popover closes and cannot refocus an older or newly reopened popover. Arrow Up/Down, Home and End navigate options. Escape closes Header and restores trigger focus; outside click or focus closes it and removes temporary viewport/focus listeners.
+
+Choosing a different option changes the original select and dispatches exactly one bubbling `change` event. Choosing the currently selected option only closes the popover. Programmatic native changes can trigger `cb:select-picker-sync` as described above. Consumers retain domain state, permissions, Save/History and Exit Guard authority.
+
+Before release, verify Core and WP-native presentation in light/dark themes, keyboard and mouse, narrow viewports and native fallback.

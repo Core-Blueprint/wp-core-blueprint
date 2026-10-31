@@ -22,10 +22,12 @@ const enhance = (select, options = {}) => {
 		return null;
 	}
 
-	const searchMode = options.search ?? select.dataset.cbCoreSelectPickerSearch ?? 'auto';
+	const variant = options.variant ?? select.dataset.cbCoreSelectPickerVariant ?? 'field';
+	if (variant !== 'field' && variant !== 'header') return null;
+	const header = variant === 'header';
+	const searchMode = header ? 'false' : (options.search ?? select.dataset.cbCoreSelectPickerSearch ?? 'auto');
 	const threshold = Number.parseInt(options.searchThreshold ?? select.dataset.cbCoreSelectPickerSearchThreshold ?? '8', 10) || 8;
 	const searchable = searchMode === 'auto' ? optionCount(select) >= threshold : truthy(searchMode);
-	const header = (options.variant ?? select.dataset.cbCoreSelectPickerVariant ?? '') === 'header';
 	// Header pickers live inside sticky, clipped Designer panels. Without
 	// a top-layer Popover API, retain the fully working native select.
 	if (header && (typeof HTMLElement.prototype.showPopover !== 'function'
@@ -110,6 +112,22 @@ const enhance = (select, options = {}) => {
 		buttons[safeIndex].focus();
 	};
 
+	// Header focus is a single scheduled action tied to the current open cycle.
+	// A stale frame must never move focus into a closed or reopened popover.
+	let headerFocusFrame = null;
+	let headerFocusEpoch = 0;
+	const focusHeaderSelection = () => {
+		const epoch = ++headerFocusEpoch;
+		if (headerFocusFrame !== null) window.cancelAnimationFrame(headerFocusFrame);
+		headerFocusFrame = window.requestAnimationFrame(() => {
+			headerFocusFrame = null;
+			if (epoch !== headerFocusEpoch || panel.hidden || !panel.matches(':popover-open') || !root.isConnected) return;
+			const buttons = optionButtons();
+			const index = buttons.findIndex((button) => button.dataset.value === select.value);
+			if (buttons.length) focusOption(index >= 0 ? index : 0);
+		});
+	};
+
 	const groups = () => {
 		const output = [];
 		Array.from(select.children).forEach((child) => {
@@ -172,6 +190,11 @@ const enhance = (select, options = {}) => {
 	};
 	const close = ({ focus = false } = {}) => {
 		if (header) {
+			++headerFocusEpoch;
+			if (headerFocusFrame !== null) {
+				window.cancelAnimationFrame(headerFocusFrame);
+				headerFocusFrame = null;
+			}
 			window.removeEventListener('resize', onHeaderViewportChange);
 			window.removeEventListener('scroll', onHeaderViewportChange, true);
 			document.removeEventListener('focusin', onHeaderFocusOutside);
@@ -251,6 +274,7 @@ const enhance = (select, options = {}) => {
 			window.addEventListener('scroll', onHeaderViewportChange, { capture: true, passive: true });
 			document.addEventListener('focusin', onHeaderFocusOutside);
 			document.addEventListener('click', onDocumentClick);
+			focusHeaderSelection();
 		}
 		toggle.setAttribute('aria-expanded', 'true');
 		root.classList.add('is-open');
@@ -263,6 +287,11 @@ const enhance = (select, options = {}) => {
 	toggle.addEventListener('keydown', (event) => {
 		if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
 		event.preventDefault();
+		if (header) {
+			if (panel.hidden) open();
+			else focusHeaderSelection();
+			return;
+		}
 		if (panel.hidden) open();
 		window.requestAnimationFrame(() => {
 			if (search) {
