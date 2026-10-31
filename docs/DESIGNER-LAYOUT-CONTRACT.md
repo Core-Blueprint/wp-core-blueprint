@@ -2,6 +2,8 @@
 
 Status: **Canonical Base Designer Layout/Sidebar Standard v1 implemented on current `main`.** Scoped native DF-EXIT-01R, DND-C1 and Header Picker acceptance exists; no blanket independent consumer FIELD, complete Level 2 or Foundation Freeze acceptance is implied.
 
+**Historical milestone note (not the current native acceptance status):** installed ZIP/browser acceptance pending. This described the original Layout SOURCE checkpoint; the subsequently accepted native scopes are listed above. External consumer layout/browser validation still requires its own exact installed Base and consumer artifacts.
+
 This is the authoritative first-party **layout** contract together with `DESIGNER-FOUNDATION-API.md`. Base Mail is the source reference. A source contract does not certify an installed Base ZIP, a consumer ZIP or browser functionality. Where an older paragraph in another document disagrees with this sidebar placement, this contract's canonical layout governs new first-party source integrations; release acceptance still requires exact artifact/runtime proof.
 
 The Designer structure is not product UI. Base owns the shell composition so Mail, Commerce, Reports and future Designer consumers cannot drift into different editor layouts.
