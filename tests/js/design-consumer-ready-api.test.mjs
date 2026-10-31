@@ -11,7 +11,7 @@ test('v3 Domain Selection and shared Layers/DnD/Toast entrypoints are exported t
   assert.match(assets, /public const MODULE_ID = '@cb-core\/design-editor';/);
   assert.match(assets, /public const DOMAIN_SESSION_API = 3;/);
   assert.match(assets, /public const SAVE_AUTHORITY_UI_API = 1;/);
-  assert.match(assets, /public const DESIGNER_EXIT_GUARD_API = 2;/);
+  assert.match(assets, /public const DESIGNER_EXIT_GUARD_API = 3;/);
   for (const declaration of ['export const createSession =', 'export const createDomainSession =',
     'createDesignerShell,', 'createDesignerLayerTree,', 'createDesignerDragDropController,',
     'createDesignerNavigation,', 'createDesignerSelectionController,',
