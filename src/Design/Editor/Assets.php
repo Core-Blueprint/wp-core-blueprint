@@ -251,10 +251,24 @@ final class Assets {
 			[ self::DESIGNER_MODE_STYLE, self::FORM_CONTROL_STYLE ],
 			self::asset_version( 'assets/css/design/designer-composition.css' )
 		);
+		// Native Hosts share the Designer Mode context + toolbar presentation.
+		// The Exit Guard radio layout lives in the toolbar stylesheet.
+		wp_enqueue_style(
+			self::DESIGNER_CONTEXT_STYLE,
+			CB_CORE_URL . 'assets/css/design/designer-context.css',
+			[ self::DESIGNER_COMPOSITION_STYLE ],
+			self::asset_version( 'assets/css/design/designer-context.css' )
+		);
+		wp_enqueue_style(
+			self::DESIGNER_TOOLBAR_STYLE,
+			CB_CORE_URL . 'assets/css/design/designer-toolbar.css',
+			[ self::DESIGNER_CONTEXT_STYLE, self::BUTTON_STYLE ],
+			self::asset_version( 'assets/css/design/designer-toolbar.css' )
+		);
 		wp_enqueue_style(
 			'cb-core-designer-platform-fullscreen',
 			CB_CORE_URL . 'assets/css/design/platform-fullscreen.css',
-			[ self::DESIGNER_COMPOSITION_STYLE ],
+			[ self::DESIGNER_TOOLBAR_STYLE ],
 			self::asset_version( 'assets/css/design/platform-fullscreen.css' )
 		);
 		// The fullscreen Host must use the same coloured gradient mark as
