@@ -506,7 +506,7 @@
 		toolbar.classList.add('cb-core-design-shell__toolbar--designer');
 		toolbar.dataset.cbDesignShellHeader = 'true';
 		toolbar.replaceChildren(start, center, end);
-		enhanceHeaderContext(contextSwitcher);
+		if (contextSwitcher) enhanceHeaderContext(contextSwitcher);
 	};
 
 	const syncFullscreenIcon = (fullscreen, active, shellApi) => {
