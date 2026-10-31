@@ -6,7 +6,10 @@ import { runInNewContext } from 'node:vm';
 const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
 const source = read('assets/js/features/designer-exit-guard.js');
 
-const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, action = 'save', accept = true, busy = false, deferredModal = false, withAdapter = true, unknown = false, throwDirty = false, indeterminateDirty = false, discardOutcome = true, discardStaysDirty = false } = {}) => {
+const fixture = (options = {}) => {
+	const { dirty = false, receipt = true, changeDuringSave = false, action = 'save', accept = true, busy = false, deferredModal = false, withAdapter = true, unknown = false, throwDirty = false, indeterminateDirty = false, discardOutcome, discardStaysDirty = false } = options;
+	// Distinguish an explicitly undefined return from an omitted fixture override.
+	const restoredOutcome = Object.hasOwn(options, 'discardOutcome') ? discardOutcome : true;
 	const events = new Map();
 	const toasts = [];
 	const modals = [];
@@ -68,7 +71,7 @@ const fixture = ({ dirty = false, receipt = true, changeDuringSave = false, acti
 		},
 		discard: () => {
 			discards++;
-			if (discardOutcome !== true) return discardOutcome;
+			if (restoredOutcome !== true) return restoredOutcome;
 			if (!discardStaysDirty) dirtyNow = false;
 			return true;
 		},
