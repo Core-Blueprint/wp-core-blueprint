@@ -70,3 +70,23 @@ test('DF-EXIT-01: Native SaveCoordinator enforces UNKNOWN and unsynchronized fen
   assert.match(coordinator, /notify\('PERSISTED_UNSYNCHRONIZED'\)/);
   assert.match(coordinator, /notify\('READY_CLEAN'\)/);
 });
+
+test('DF-EXIT-01R: Native Platform loads canonical context and toolbar CSS in order', () => {
+  const assets = source('src/Design/Editor/Assets.php');
+  const start = assets.indexOf('public static function enqueue_platform(): void {');
+  const end = assets.indexOf('public static function enqueue_mail_rich_text_controls(): void {', start);
+  assert.ok(start >= 0 && end > start, 'Native Platform enqueue boundary exists');
+  const platform = assets.slice(start, end);
+  assert.match(platform, /self::DESIGNER_CONTEXT_STYLE,\s*CB_CORE_URL \.[^\n]*designer-context\.css'/);
+  assert.match(platform, /self::DESIGNER_TOOLBAR_STYLE,\s*CB_CORE_URL \.[^\n]*designer-toolbar\.css'/);
+  assert.match(platform, /\[ self::DESIGNER_COMPOSITION_STYLE \]/);
+  assert.match(platform, /\[ self::DESIGNER_CONTEXT_STYLE, self::BUTTON_STYLE \]/);
+  assert.match(platform, /'cb-core-designer-platform-fullscreen',[\s\S]*?\[ self::DESIGNER_TOOLBAR_STYLE \]/);
+  assert.ok(
+    platform.indexOf('self::DESIGNER_CONTEXT_STYLE,') < platform.indexOf('self::DESIGNER_TOOLBAR_STYLE,'),
+    'Context stylesheet must enqueue before Toolbar stylesheet'
+  );
+  const toolbar = source('assets/css/design/designer-toolbar.css');
+  assert.match(toolbar, /\.cb-core-designer-exit-choices\s*\{[^}]*display:\s*grid/s);
+  assert.match(toolbar, /\.cb-core-designer-exit-choice\s*\{[^}]*display:\s*flex/s);
+});
