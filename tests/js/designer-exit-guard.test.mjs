@@ -440,3 +440,15 @@ test('DF-EXIT-01: Cancel never discards, UNKNOWN remains blocked, and clean clos
 		assert.equal(f.discards, 0);
 	}
 });
+
+
+test('DF-EXIT-01: pending modal suppresses shell interactions and restores them after Cancel', async () => {
+	const f = fixture({dirty:true, action:'discard', accept:false, deferredModal:true});
+	const pending = f.request();
+	assert.equal(f.shell.inert, true);
+	f.releaseModal();
+	assert.equal(await pending, false);
+	assert.equal(f.shell.inert, false);
+	assert.equal(f.discards, 0);
+	assert.equal(f.exits, 0);
+});
