@@ -206,6 +206,7 @@ export class CommandHistory {
 	#commit({
 		nextProject, nextEditor, undo, redo, action, source,
 		forceSelection = false, baseline = null, acknowledge = false, contextReset = false,
+		preserveAcknowledgement = false, commitAlongside = null, rollbackAlongside = null,
 		selectionSource = source, selectionAction = action,
 	}) {
 		// Clone/validate before even entering the synchronous, silent commit.
@@ -238,13 +239,20 @@ export class CommandHistory {
 			if (nextBaseline !== null) this.#baseline = nextBaseline;
 			if (contextReset) {
 				this.#contextEpoch = nextContextEpoch;
-				this.#baselineAcknowledged = false;
+				if (!preserveAcknowledgement) this.#baselineAcknowledged = false;
 			}
 			if (acknowledge) this.#baselineAcknowledged = true;
 			this.#historyRevision += 1;
+			// Coordinated Host-only field commit, before any observer runs.
+			// A failure rolls back both field and History commits.
+			if (commitAlongside) commitAlongside();
 		} catch (error) {
 			// No observer has run. If even silent restoration fails, permanently
-			// disable the session instead of presenting half-committed state.
+			// disable the session instead of publishing an uncertain partial state.
+			let rollbackFailure = false;
+			try { rollbackAlongside?.(); } catch (_) { rollbackFailure = true; }
+			// Restoration continues with the canonical private History state.
+			// Roll back canonical History state even if the adjunct rollback failed.
 			try {
 				this.#projectState.restoreCommitted(previous.project, previous.revision);
 				this.#editorState.restoreCommitted(previous.editor, previous.selectionRevision);
@@ -254,7 +262,8 @@ export class CommandHistory {
 				this.#baselineAcknowledged = previous.acknowledged;
 				this.#historyRevision = previous.historyRevision;
 				this.#contextEpoch = previous.contextEpoch;
-			} catch (_) {
+			} catch (_) { rollbackFailure = true; }
+			if (rollbackFailure) {
 				this.#disposed = true;
 				this.#historyListeners.clear();
 				this.#diagnosticListeners.clear();
@@ -437,6 +446,32 @@ export class CommandHistory {
 	baselineSnapshot() {
 		this.#assertActive();
 		return cloneFrozen(this.#baseline);
+	}
+
+	/** Reset only local edits; retain the server-acknowledged baseline itself. */
+	discardToBaseline({ commitAlongside = null, rollbackAlongside = null } = {}) {
+		return this.#run(() => {
+			if ((commitAlongside !== null && typeof commitAlongside !== 'function')
+				|| (rollbackAlongside !== null && typeof rollbackAlongside !== 'function')
+				|| (commitAlongside !== null && rollbackAlongside === null)) {
+				throw new TypeError('Designer discard adjunct must provide commit and rollback.');
+			}
+			const baseline = this.#projectState.stage(this.#baseline);
+			const editor = this.#stageEditor();
+			editor.selection.clear();
+			editor.reconcile(baseline.root, { project: baseline });
+			this.#commit({
+				nextProject: baseline, nextEditor: editor.snapshot(), undo: [], redo: [],
+				action: 'discard', source: 'discard', contextReset: true,
+				preserveAcknowledgement: true,
+				selectionSource: 'discard', selectionAction: 'discard',
+				commitAlongside, rollbackAlongside,
+			});
+			// A token from an earlier local project epoch is not reusable.
+			this.#savepoints = new WeakMap();
+			return sameValue(this.#projectState.current(), this.#baseline)
+				&& this.#undo.length === 0 && this.#redo.length === 0;
+		});
 	}
 
 	captureSave() {
