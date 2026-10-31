@@ -278,8 +278,8 @@ async function activate() {
 		const contextControl=selected||screen.querySelector('[data-cb-platform-header-context]');
 		if(!contextSlot||!closeSlot||!close||!contextControl)throw issue('HOST_CAPABILITY_UNAVAILABLE');
 		contextSlot.append(contextControl);
-		// Keep the same server-provided close URL and beforeunload guard;
-		// replace only its visible text with the shared Base close glyph.
+		// Keep the server-provided close URL; Base Exit Guard owns the
+		// one confirmed navigation and its beforeunload authorization.
 		decorateDesignerControl(close, 'x', {iconOnly: true, label: 'Close Designer'});
 		closeSlot.append(close);
 		if(loadingContext)loadingContext.hidden=true;
@@ -292,12 +292,40 @@ async function activate() {
 			return status?.dirty===false&&status?.blocked===false
 				&&status?.state==='READY_CLEAN';
 		};
-		window.addEventListener('beforeunload',(event)=>{
-			if(!transitionSafe()){
-				event.preventDefault();
-				event.returnValue='';
-			}
+		// Native Mail and Maintenance Reports use the same synchronous
+		// Discard contract as external Designers. Never add a second unload guard.
+		const exitGuard=window.cbCore?.designerExitGuard;
+		if(typeof exitGuard?.register!=='function'||typeof exitGuard?.request!=='function')
+			throw issue('HOST_CAPABILITY_UNAVAILABLE');
+		const unregisterExit=exitGuard.register(root,{
+			isDirty:()=>{
+				if(host.state!=='READY')throw issue('HOST_CONTEXT_REFUSED');
+				const status=host.editor.saveStatus();
+				if(typeof status?.dirty!=='boolean')throw issue('SAVE_NOT_READY');
+				return status.dirty;
+			},
+			isUncertain:()=>{
+				if(host.state!=='READY')return true;
+				const status=host.editor.saveStatus();
+				return status?.blocked!==false||!['READY_CLEAN','READY_DIRTY'].includes(status?.state);
+			},
+			save:async()=>{
+				const outcome=await host.editor.save();
+				const status=host.editor.saveStatus();
+				return outcome?.status==='committed'&&outcome?.dirty===false
+					&&status?.state==='READY_CLEAN'&&status?.dirty===false&&status?.blocked===false;
+			},
+			discard:()=>host.discard(),
 		});
+		close.addEventListener('click',(event)=>{
+			event.preventDefault();
+			if(exitGuard.modalIsOpen?.())return;
+			void exitGuard.request(root,()=>{
+				location.assign(close.href);
+				return true;
+			});
+		});
+		window.addEventListener('pagehide',()=>unregisterExit(),{once:true});
 		if(selected){
 			selected.addEventListener('change',()=>{
 				if(!transitionSafe()){
