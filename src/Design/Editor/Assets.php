@@ -43,7 +43,7 @@ final class Assets {
 	/** Optional shared flat context menu presenter; no domain authority. */
 	public const DESIGNER_CONTEXT_MENU_API = 1;
 	/** Public fail-closed Exit Guard, not an A2-06 receipt/recovery API. */
-	public const DESIGNER_EXIT_GUARD_API = 2;
+	public const DESIGNER_EXIT_GUARD_API = 3;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
 	public const MAIL_RICH_TEXT_STYLE = 'cb-core-design-mail-rich-text';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
@@ -226,6 +226,8 @@ final class Assets {
 	 */
 	public static function enqueue_platform(): void {
 		self::enqueue();
+		self::enqueue_exit_guard();
+		\CoreBlueprint\Core\UI\Assets::enqueue_modals( \CoreBlueprint\Core\UI\Assets::MODAL_PRESENTATION_CORE );
 		// Native hosts share the exact same branded lockup stylesheet as
 		// consumer Designers; no additional font request or logo copy.
 		CoreBlueprintLockup::enqueue_assets();
@@ -313,6 +315,43 @@ final class Assets {
 		);
 	}
 
+	/** Shared, translated Exit Guard for manual, direct and native Host Designers. */
+	private static function enqueue_exit_guard(): void {
+		wp_enqueue_script(
+			self::DESIGNER_EXIT_GUARD_SCRIPT,
+			CB_CORE_URL . 'assets/js/features/designer-exit-guard.js',
+			[],
+			self::asset_version( 'assets/js/features/designer-exit-guard.js' ),
+			true
+		);
+
+		// Localize the Exit Guard on its own earlier-loading script, not on the
+		// Designer launch handle. This ensures translated defaults are present
+		// before the shared guard initializes and consumers register adapters.
+		wp_localize_script(
+			self::DESIGNER_EXIT_GUARD_SCRIPT,
+			'cbCoreDesignerExitGuardLabels',
+			[
+				'cleanTitle' => __( 'Close Designer?', 'core-blueprint' ),
+				'cleanDescription' => __( 'Return to the previous page?', 'core-blueprint' ),
+				'unknownDescription' => __( 'Changes may not be saved. Close Designer?', 'core-blueprint' ),
+				'dirtyTitle' => __( 'Unsaved changes', 'core-blueprint' ),
+				'dirtyDescription' => __( 'Save or discard your changes before closing the Designer.', 'core-blueprint' ),
+				'choiceTitle' => __( 'What should happen to your changes?', 'core-blueprint' ),
+				'save' => __( 'Save changes', 'core-blueprint' ),
+				'discard' => __( 'Discard changes', 'core-blueprint' ),
+				'transitionConfirm' => __( 'Switch design', 'core-blueprint' ),
+				'transitionDirtyDescription' => __( 'Save or discard your changes before switching designs.', 'core-blueprint' ),
+				'close' => __( 'Close Designer', 'core-blueprint' ),
+				'cancel' => __( 'Cancel', 'core-blueprint' ),
+				'busy' => __( 'Wait for the current save to finish.', 'core-blueprint' ),
+				'unavailable' => __( 'The Designer cannot be closed safely. Try again.', 'core-blueprint' ),
+				'saveFailure' => __( 'Your changes could not be verified as saved. The Designer remains open.', 'core-blueprint' ),
+			]
+		);
+
+	}
+
 	/**
 	 * Enqueue the canonical Core Blueprint Designer Mode around a consumer shell.
 	 *
@@ -381,38 +420,7 @@ final class Assets {
 			self::asset_version( 'assets/css/design/designer-toolbar.css' )
 		);
 
-		wp_enqueue_script(
-			self::DESIGNER_EXIT_GUARD_SCRIPT,
-			CB_CORE_URL . 'assets/js/features/designer-exit-guard.js',
-			[],
-			self::asset_version( 'assets/js/features/designer-exit-guard.js' ),
-			true
-		);
-
-		// Localize the Exit Guard on its own earlier-loading script, not on the
-		// Designer launch handle. This ensures translated defaults are present
-		// before the shared guard initializes and consumers register adapters.
-		wp_localize_script(
-			self::DESIGNER_EXIT_GUARD_SCRIPT,
-			'cbCoreDesignerExitGuardLabels',
-			[
-				'cleanTitle' => __( 'Close Designer?', 'core-blueprint' ),
-				'cleanDescription' => __( 'Return to the previous page?', 'core-blueprint' ),
-				'unknownDescription' => __( 'Changes may not be saved. Close Designer?', 'core-blueprint' ),
-				'dirtyTitle' => __( 'Unsaved changes', 'core-blueprint' ),
-				'dirtyDescription' => __( 'Save or discard your changes before closing the Designer.', 'core-blueprint' ),
-				'choiceTitle' => __( 'What should happen to your changes?', 'core-blueprint' ),
-				'save' => __( 'Save changes', 'core-blueprint' ),
-				'discard' => __( 'Discard changes', 'core-blueprint' ),
-				'transitionConfirm' => __( 'Switch design', 'core-blueprint' ),
-				'transitionDirtyDescription' => __( 'Save or discard your changes before switching designs.', 'core-blueprint' ),
-				'close' => __( 'Close Designer', 'core-blueprint' ),
-				'cancel' => __( 'Cancel', 'core-blueprint' ),
-				'busy' => __( 'Wait for the current save to finish.', 'core-blueprint' ),
-				'unavailable' => __( 'The Designer cannot be closed safely. Try again.', 'core-blueprint' ),
-				'saveFailure' => __( 'Your changes could not be verified as saved. The Designer remains open.', 'core-blueprint' ),
-			]
-		);
+		self::enqueue_exit_guard();
 
 		wp_enqueue_script(
 			self::DESIGNER_MODE_SCRIPT,
