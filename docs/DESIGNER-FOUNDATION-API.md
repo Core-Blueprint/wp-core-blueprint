@@ -27,7 +27,7 @@
 
 ---
 
-**Historical G1d-B v2 SOURCE checkpoint (not a current release/acceptance claim):** transactional history, `captureSave()` and `rebase()` are implemented in both session factories and PHP `Assets::DOMAIN_SESSION_API` declares `3` on this B2 candidate branch. This is a source capability, not acceptance of a built, installed artifact. Consumers must require the *same installed Base package* to provide PHP capability `>= 3`, executable WordPress-resolved ESM exports and consumer-specific integration acceptance. No deprecated selection authority or compatibility shim is provided. No consumer may import a low-level history engine as a substitute.
+**Historical G1d-B v2 SOURCE candidate (at that checkpoint: installed ZIP acceptance pending; not a current release/acceptance claim):** transactional history, `captureSave()` and `rebase()` are implemented in both session factories and PHP `Assets::DOMAIN_SESSION_API` declares `3` on this B2 candidate branch. This is a source capability, not acceptance of a built, installed artifact. Consumers must require the *same installed Base package* to provide PHP capability `>= 3`, executable WordPress-resolved ESM exports and consumer-specific integration acceptance. No deprecated selection authority or compatibility shim is provided. No consumer may import a low-level history engine as a substitute.
 
 The Designer Foundation is the Base-owned editor engine and shell boundary for Core Blueprint designers. Consumers own domain semantics, persistence, validation and domain rendering. Base owns editor/session mechanics, shared shell behavior and the public integration boundary.
 
