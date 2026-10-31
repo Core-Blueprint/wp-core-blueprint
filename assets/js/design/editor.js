@@ -252,6 +252,10 @@ export const createSession = ({
 			assertActive();
 			return history.baselineSnapshot();
 		},
+		discardToBaseline() {
+			assertActive();
+			return history.discardToBaseline();
+		},
 		rebase(options) {
 			assertActive();
 			return history.rebase(options);
@@ -392,6 +396,7 @@ export const createDomainSession = ({
 		subscribeDiagnostics(listener) { assertActive(); return history.subscribeDiagnostics(listener); },
 		captureSave() { assertActive(); return history.captureSave(); },
 		baselineSnapshot() { assertActive(); return history.baselineSnapshot(); },
+		discardToBaseline() { assertActive(); return history.discardToBaseline(); },
 		rebase(options) { assertActive(); return history.rebase(options); },
 		dispose() {
 			if (disposed) return;
@@ -506,6 +511,8 @@ export const createPlatformSessionBridge = ({
 		captureSave() { active(); return history.captureSave(); },
 		rebase(options) { active(); return history.rebase(options); },
 		baselineSnapshot() { active(); return history.baselineSnapshot(); },
+		// Host-private coordinated project/fields restoration.
+		discardToBaseline(options = {}) { active(); return history.discardToBaseline(options); },
 		validateAcceptedProject(project) {
 			active();
 			validatePlatformProject(project);
