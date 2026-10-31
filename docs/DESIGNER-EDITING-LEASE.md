@@ -1,6 +1,6 @@
 # Core Blueprint — Document Editing Lease v1
 
-**Current SOURCE status:** optional `DocumentEditLease::API_VERSION = 1` is implemented on Base `main@349ea530b89a632c960a6acf6ffd05f60fd5e97c` and `tests/public-designer-edit-lease-regression.php` exists. This is not evidence of stand-alone BUILD, native FIELD, consumer FIELD or release acceptance. Editing Lease is not mandatory for every Designer or Native Host. **Historical origin:**
+**Current SOURCE status:** optional `DocumentEditLease::API_VERSION = 1` is implemented against the verified Base runtime baseline `349ea530b89a632c960a6acf6ffd05f60fd5e97c` (`main` at the 31 October 2026 documentation audit) and `tests/public-designer-edit-lease-regression.php` exists. This is not evidence of stand-alone BUILD, native FIELD, consumer FIELD or release acceptance. Editing Lease is not mandatory for every Designer or Native Host. **Historical origin:**
 **Scope:** exclusive **editing**, not live collaboration. One editable browser session per persisted document. Source branch `feature/base-document-edit-lease-v1-20261028` from Base `16653229556a7e0a5b0e04c69dd257f1dd153f49`.
 
 ## Public PHP contract

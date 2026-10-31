@@ -1,6 +1,6 @@
 # Base Designer Exit Guard v3
 
-Status (Base `main@349ea530b89a632c960a6acf6ffd05f60fd5e97c`): **Exit Guard API 3 implemented; DF-EXIT-01R SOURCE, BUILD and native Mail/Maintenance Reports FIELD accepted.** External consumer FIELD, Foundation Level 2, Freeze and public release remain pending. No external Native Trusted Host admission is implied.
+Status (verified Base runtime baseline `349ea530b89a632c960a6acf6ffd05f60fd5e97c`, corresponding to `main` at the 31 October 2026 documentation audit): **Exit Guard API 3 implemented; DF-EXIT-01R SOURCE, BUILD and native Mail/Maintenance Reports FIELD accepted.** External consumer FIELD, Foundation Level 2, Freeze and public release remain pending. No external Native Trusted Host admission is implied.
 
 ## Ownership and lifecycle
 

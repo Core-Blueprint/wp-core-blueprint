@@ -1,6 +1,6 @@
 # Select Picker Foundation
 
-**Current status (31 October 2026):** `CoreBlueprint\Core\UI\Assets::SELECT_PICKER_HEADER_API = 1` is implemented on Base `main@349ea530b89a632c960a6acf6ffd05f60fd5e97c`. BASE-BRA-04B SOURCE, BUILD and native Mail FIELD were accepted. External consumer FIELD, Foundation Freeze and public release remain pending. Header remains an optional variant of the native-select-based Foundation.
+**Current status (31 October 2026):** `CoreBlueprint\Core\UI\Assets::SELECT_PICKER_HEADER_API = 1` is implemented against the verified Base runtime baseline `349ea530b89a632c960a6acf6ffd05f60fd5e97c` (`main` at the 31 October 2026 documentation audit). BASE-BRA-04B SOURCE, BUILD and native Mail FIELD were accepted. External consumer FIELD, Foundation Freeze and public release remain pending. Header remains an optional variant of the native-select-based Foundation.
 
 Select Picker is the shared Base primitive for progressively enhancing a real native single `<select>` when a larger or grouped option set benefits from stronger navigation and search.
 
