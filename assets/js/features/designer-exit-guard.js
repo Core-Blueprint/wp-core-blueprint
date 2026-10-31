@@ -213,6 +213,9 @@
 			return false;
 		}
 		pending.add(shell);
+		// The modal lives outside the shell: suppress conflicting UI edits.
+		const wasInert = shell.inert === true;
+		shell.inert = true;
 		try {
 			let dirty = null;
 			if (adapter) {
@@ -266,6 +269,9 @@
 					throw new Error(labels.unavailable);
 				}
 			}
+			// The final exit dispatch is synchronous and must allow the
+			// authorized fullscreen control to receive its programmatic click.
+			if (!wasInert) shell.inert = false;
 			approved.add(shell);
 			if (exit() !== true) {
 				approved.delete(shell);
@@ -278,6 +284,7 @@
 			notify('error', labels.unavailable);
 			return false;
 		} finally {
+			if (!wasInert) shell.inert = false;
 			pending.delete(shell);
 		}
 	};
@@ -295,6 +302,8 @@
 		const adapter = providers.get(shell);
 		if (!adapter || shell.isConnected === false) return Object.freeze({ status: 'blocked' });
 		pending.add(shell);
+		const wasInert = shell.inert === true;
+		shell.inert = true;
 		try {
 			if (unresolved(shell, adapter) || isBusy(shell)) return Object.freeze({ status: 'blocked' });
 			const initialDirty = adapter.isDirty();
@@ -333,6 +342,7 @@
 		} catch (error) {
 			return Object.freeze({ status: 'failed', error });
 		} finally {
+			if (!wasInert) shell.inert = false;
 			pending.delete(shell);
 		}
 	};
