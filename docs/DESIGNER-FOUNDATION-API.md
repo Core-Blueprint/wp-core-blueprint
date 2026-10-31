@@ -156,9 +156,21 @@ Do not send the token over HTTP, persist it, or accept a caller-supplied `curren
 
 Historical source exports such as `ProjectState`, `EditorState`, `CommandHistory` and direct command functions **remain present pending a first-party import impact ledger and separate removal approval**. Their presence does not create public support, and their removal is not part of G1c. Base Mail and Reports preserve their present persistence and preview paths until owner-reviewed v2 save adapters are accepted; this source-capability work does not rewrite subject, email HTML, report snapshots, or server write policy.
 
-### Designer Exit Guard v1 (SOURCE candidate)
+### Canonical Discard restoration (DF-EXIT-01 SOURCE candidate)
 
-`enqueue_designer_mode()` supplies the Base-owned `window.cbCore.designerExitGuard.register(shell, { isDirty, save, labels })` interface on same-build capability `DESIGNER_EXIT_GUARD_API >= 1`. Base owns all close/ESC/fullscreen confirmation, modal, single-flight and browser unload guarding; consumer Save must prove persistence and must not supply an alternate exit handler. See [Designer Exit Guard](DESIGNER-EXIT-GUARD.md). Installed acceptance is pending.
+`createSession()` and `createDomainSession()` expose `discardToBaseline()`.
+The Base-owned synchronous transaction restores project, Undo/Redo and
+transient selection, increments the context epoch and invalidates old Save
+tokens while retaining the acknowledged baseline. The Native Host coordinates
+this operation with persisted fields under the existing SaveCoordinator.
+UNKNOWN and PERSISTED_UNSYNCHRONIZED states prohibit Discard. Consumers
+must restore nonproject fields and verify their render projection before
+returning primitive `true`. No legacy adapters or post-exit restoration
+controllers are supported.
+
+### Designer Exit Guard v3 (DF-EXIT-01 SOURCE candidate)
+
+`enqueue_designer_mode()` supplies `window.cbCore.designerExitGuard.register(shell, { isDirty, isUncertain, save, discard, labels })` with same-build `DESIGNER_EXIT_GUARD_API >= 3`. `discard()` is mandatory, synchronous and returns only primitive `true` after consumer data and UI projection have been restored to the accepted baseline. A Promise cannot authorize exit. Base retains close/ESC/fullscreen, modal, single-flight and unload guarding; consumer Save must verify persistence. Native Mail and Maintenance Reports use the same Guard through the Host. Context switches retain the target-first transaction boundary. See [Designer Exit Guard](DESIGNER-EXIT-GUARD.md). Installed acceptance is pending.
 
 ### Shell
 
