@@ -423,7 +423,7 @@ test('F02-T12: public module and PHP SOURCE capability gates remain unchanged', 
   assert.equal(typeof window.cbCore?.designEditor?.createDomainSession, 'function');
   const assets = await readFile(new URL('../../src/Design/Editor/Assets.php', import.meta.url), 'utf8');
   assert.match(assets, /public const DOMAIN_SESSION_API\s*=\s*3\s*;/);
-  assert.match(assets, /public const DESIGNER_EXIT_GUARD_API\s*=\s*2\s*;/);
+  assert.match(assets, /public const DESIGNER_EXIT_GUARD_API\s*=\s*3\s*;/);
   assert.match(assets, /public const MODULE_ID\s*=\s*'@cb-core\/design-editor'/);
 });
 
