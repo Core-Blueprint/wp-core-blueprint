@@ -1713,6 +1713,7 @@ export const attachTrustedDesignerHost = ({
 			|| typeof host.mount !== 'function'
 			|| typeof host.switchContext !== 'function'
 			|| typeof host.refresh !== 'function'
+			|| typeof host.discard !== 'function'
 			|| typeof host.unmount !== 'function') {
 			throw new TypeError('Designer Host does not satisfy the A1 lifecycle interface.');
 		}
@@ -1785,6 +1786,11 @@ export const attachTrustedDesignerHost = ({
 		refresh(reason) {
 			assertActive();
 			return host.refresh(reason);
+		},
+		/** Native Exit Guard v3 requires the canonical synchronous Host Discard. */
+		discard() {
+			assertActive();
+			return host.discard();
 		},
 		async unmount() {
 			if (closed) return true;
