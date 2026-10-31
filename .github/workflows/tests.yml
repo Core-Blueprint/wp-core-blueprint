@@ -41,7 +41,7 @@ jobs:
         run: node --test tests/js/reorder.test.mjs
 
       - name: Design Editor JavaScript contract
-        run: node --test tests/js/design-editor-core.test.mjs tests/js/design-editor-boundary.test.mjs tests/js/design-shell-fullscreen.test.mjs tests/js/design-shell-profile-proof.test.mjs
+        run: node --test tests/js/design-editor-core.test.mjs tests/js/design-editor-boundary.test.mjs tests/js/design-shell-fullscreen.test.mjs tests/js/design-shell-profile-proof.test.mjs tests/js/design-canvas-cn2-zoom.test.mjs
 
       - name: Document Fixed JavaScript contract
         run: node --test tests/js/design-document-fixed.test.mjs tests/js/design-document-fixed-boundary.test.mjs

@@ -6,6 +6,10 @@ const controllers = new WeakMap();
 const INTERACTIVE = 'button, a, input, textarea, select, [contenteditable], [draggable], [data-cb-design-canvas-object], [data-cb-design-canvas-interactive]';
 const EDITABLE = 'input, textarea, select, [contenteditable]';
 const finite = value => typeof value === 'number' && Number.isFinite(value);
+// CN-2 explicit user zoom limits. Auto-fit may choose a smaller scale for
+// exceptionally large content; explicit zoom never mutates graph coordinates.
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 4;
 const validElement = value => value && typeof value.addEventListener === 'function'
 	&& typeof value.getBoundingClientRect === 'function';
 
@@ -141,6 +145,42 @@ export const createDesignerCanvasNavigation = ({
 		publish();
 		return true;
 	};
+	// Zoom around a client-space anchor, preserving its unscaled canvas point.
+	// This is transient presentation only: no graph, History, Save or storage.
+	const zoomAt = ({scale, clientX = null, clientY = null} = {}) => {
+		if (!check()) return false;
+		if (!finite(scale) || scale <= 0
+			|| (clientX !== null && !finite(clientX))
+			|| (clientY !== null && !finite(clientY))) {
+			throw new TypeError('DESIGNER_CANVAS_NAVIGATION_ZOOM_INVALID');
+		}
+		const {rect, sx, sy} = scaledRect();
+		if (clientX === null) clientX = rect.left + rect.width / 2;
+		if (clientY === null) clientY = rect.top + rect.height / 2;
+		const atX = (clientX - rect.left) / (sx || 1) + (viewport.scrollLeft || 0);
+		const atY = (clientY - rect.top) / (sy || 1) + (viewport.scrollTop || 0);
+		const worldX = (atX - view.x) / view.scale;
+		const worldY = (atY - view.y) / view.scale;
+		const nextScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale));
+		if (Math.abs(nextScale - view.scale) <= 1e-9) return false;
+		view.scale = nextScale;
+		view.x = atX - worldX * nextScale;
+		view.y = atY - worldY * nextScale;
+		autoFit = false;
+		publish();
+		return true;
+	};
+	const zoomBy = ({factor, clientX = null, clientY = null} = {}) => {
+		// Reset to the current authorized context BEFORE deriving relative scale.
+		if (!check()) return false;
+		if (!finite(factor) || factor <= 0) {
+			throw new TypeError('DESIGNER_CANVAS_NAVIGATION_ZOOM_INVALID');
+		}
+		// Valid finite factors can still overflow/underflow their product.
+		// Clamp that product before forwarding to zoomAt's absolute contract.
+		const scale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, view.scale * factor));
+		return zoomAt({scale, clientX, clientY});
+	};
 	const onDown = event => {
 		if (!available() || gesture || (event.pointerType && event.pointerType !== 'mouse')) return;
 		resetContext();
@@ -212,6 +252,8 @@ export const createDesignerCanvasNavigation = ({
 	onResize();
 	return Object.freeze({
 		panBy,
+		zoomAt,
+		zoomBy,
 		fitToScreen(options) {
 			if (!check()) return false;
 			autoFit = true;

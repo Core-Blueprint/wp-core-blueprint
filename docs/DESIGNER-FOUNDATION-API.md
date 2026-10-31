@@ -273,6 +273,31 @@ observes view changes. No project, Save, Selection or History writes occur.
 The consumer owns Fit/Center buttons, node coordinate conversion, graph
 semantics and persistence.
 
+### Optional Canvas Navigation CN-2 — additive zoom (SOURCE candidate)
+
+`Assets::CANVAS_NAVIGATION_API >= 2` adds two methods to the existing
+`createDesignerCanvasNavigation` controller. CN-1 methods and runtime
+behavior remain stable; consumers must probe the capability version from
+the **same installed Base ZIP** and fail closed if the methods are missing.
+
+- `zoomAt({scale,clientX?,clientY?})`: absolute explicit zoom around a
+  viewport client-space point. If the point is omitted, it uses the viewport
+  center. Explicit zoom clamps to 0.1–4.0 (10–400%); invalid values throw.
+- `zoomBy({factor,clientX?,clientY?})`: relative zoom using the same anchor
+  and bounds; factor must be positive and finite.
+- Both return `true` after a change, `false` when unchanged/unavailable,
+  and publish the existing read-only `getView()` snapshot and
+  `cb:design-canvas:navigationchange` signal. Cursor-world position is
+  invariant through a successful zoom, including scrolled/transformed
+  viewports. A resize after manual zoom does not trigger auto-fit.
+- `fitToScreen()` retains its v1 behavior for very large documents and may
+  select a scale below 10% to fit all content. Its behavior is intentionally
+  not narrowed by the explicit zoom bounds.
+- Base does **not** intercept Ctrl/Cmd+wheel, browser zoom or button events;
+  consumers implement their own scoped user interaction using this public
+  zoom surface. There is no second scene transform/history engine, no
+  graph coordinate mutation, no serialized camera state.
+
 ### Optional Designer Context Menu CM-1 (SOURCE candidate)
 
 The named ESM export \`createDesignerContextMenu\` is also available at
