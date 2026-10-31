@@ -193,6 +193,32 @@ export function createPersistedFields({
 			baseline = accepted;
 			return canonicalSaveJSON(current) !== canonicalSaveJSON(baseline);
 		},
+		/** Stage a field-only rollback witness before the canonical History commit. */
+		prepareDiscard() {
+			active();
+			const accepted = normalize(baseline, '/acceptedFields');
+			const previous = current;
+			const previousRevision = fieldRevision;
+			if (fieldRevision >= Number.MAX_SAFE_INTEGER) throw new RangeError('SCHEMA_LIMIT_EXCEEDED');
+			let committed = false;
+			return Object.freeze({
+				commit() {
+					active();
+					if (committed || fieldRevision !== previousRevision || current !== previous) {
+						throw new Error('SAVE_CONTEXT_CHANGED');
+					}
+					current = accepted;
+					fieldRevision += 1;
+					committed = true;
+				},
+				rollback() {
+					if (!committed) return;
+					current = previous;
+					fieldRevision = previousRevision;
+					committed = false;
+				},
+			});
+		},
 		destroy() { destroyed = true; },
 	});
 }
