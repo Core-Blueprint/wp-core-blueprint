@@ -3,7 +3,7 @@
 Date: 2026-10-24  
 Scope: Base-owned context transition authorization for external Domain Session consumers  
 Parent: `feature/designer-foundation-v2-polish-20261023@f847b4b6d2e88b5057b208498e18b4099d78bf82`  
-Release state: SOURCE candidate; installed WordPress and exact-artifact gates remain open.
+**Historical B1 checkpoint, not a current normative contract.** At this October 24 SOURCE milestone, Exit Guard API was 2 and B2 Typed Selection was proposed. Current Exit Guard API is **3**; Typed Domain Selection is SOURCE-implemented with Domain Session API **3**. Use [Designer Foundation API](DESIGNER-FOUNDATION-API.md) and [Exit Guard](DESIGNER-EXIT-GUARD.md) for active requirements; external consumer FIELD remains pending.
 
 ## Ownership and public interface
 

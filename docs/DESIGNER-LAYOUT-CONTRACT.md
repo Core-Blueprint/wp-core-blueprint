@@ -1,6 +1,6 @@
 # Core Blueprint Designer Layout Contract
 
-Status: **canonical Base Designer Sidebar Standard v1 (SOURCE contract); installed ZIP/browser acceptance pending**.
+Status: **Canonical Base Designer Layout/Sidebar Standard v1 implemented on current `main`.** Scoped native DF-EXIT-01R, DND-C1 and Header Picker acceptance exists; no blanket independent consumer FIELD, complete Level 2 or Foundation Freeze acceptance is implied.
 
 This is the authoritative first-party **layout** contract together with `DESIGNER-FOUNDATION-API.md`. Base Mail is the source reference. A source contract does not certify an installed Base ZIP, a consumer ZIP or browser functionality. Where an older paragraph in another document disagrees with this sidebar placement, this contract's canonical layout governs new first-party source integrations; release acceptance still requires exact artifact/runtime proof.
 
@@ -48,9 +48,9 @@ The selector remains visible even when there is only one available target. A sin
 
 Consumers must not position or align this selector with product CSS or product JavaScript.
 
-## Context switching without page reload
+## Context switching: in-place sessions and authorized native navigation
 
-Changing the active file/template/document is a Designer session transition, not a page navigation. Base owns the switch lifecycle so every consumer keeps the same Designer shell open while domain data changes behind it.
+For in-place consumer context switching, Base owns the guarded lifecycle and keeps the same Designer shell open while the consumer validates and atomically replaces its domain state. Native Mail also retains a distinct authorized template URL navigation path after its existing Host `transitionSafe()` and Exit Guard checks. Neither route may bypass Save/Discard/Cancel, busy/UNKNOWN refusal or validated context authorization.
 
 For a `<select>` inside `data-cb-design-shell-context`, Base intercepts the change and dispatches:
 
@@ -58,7 +58,7 @@ For a `<select>` inside `data-cb-design-shell-context`, Base intercepts the chan
 cb:design-shell:contextrequest
 ```
 
-The event detail exposes the requested `value`, the `previousValue`, the `control`, and a `respondWith(promise)` callback. A consumer handles only its domain loading and applies its new project/context, then resolves that Promise. It must not navigate the browser, close Designer Mode, build its own loader overlay or replace the Base shell.
+The event detail exposes the requested `value`, the `previousValue`, the `control`, and a `respondWith(promise)` callback. A consumer handles only its domain loading and applies its new project/context, then resolves that Promise. For the in-place session route it must not navigate the browser, close Designer Mode, build its own loader overlay or replace the Base shell.
 
 Example consumer pattern:
 
@@ -80,7 +80,7 @@ During the Promise Base owns the canvas/main-area transition:
 
 The consumer remains responsible for fetching/validating the requested domain context and replacing its editor project/state safely. A context switch should clear history that belongs to the previous document/template; it must not make edits from one target undoable inside another target.
 
-Normal URL state may be updated with the History API after a successful switch, but a full page reload is not part of the Designer context contract.
+For in-place consumers, URL state may be updated with the History API after success; a reload is not part of that route. Native Mail's separately authorized template navigation above is an explicit existing exception, never a consumer-owned guard bypass.
 
 ## Left rail
 
@@ -108,7 +108,7 @@ Selecting a Layer in the left rail keeps its Layers tab active and synchronizes 
 This canonical source layout supersedes historical first-party markup that placed Layers on the right or exposed Dynamic Data as a separate tab. Migrating an active consumer requires its own reviewed source change and new exact-SHA acceptance; merely changing these documents never proves consumer conformance.
 ## DF-A0 — Elements / Dynamic Data presentation boundary (documentation proposal)
 
-**Status:** proposed API contract, no shipped renderer or new capability in Base v1.0.0. The exact descriptor, update/destroy, intent and same-ZIP gate proposal is in [Designer Foundation API](DESIGNER-FOUNDATION-API.md#df-a0--public-elements--dynamic-data-renderer-proposed-contract-documentation-only-2026-10-29).
+**Status:** Historical DF-A0 proposal; the optional `DESIGNER_ELEMENTS_PALETTE_API = 1` and `createDesignerElementsPalette()` are implemented in current Base SOURCE. External consumer FIELD remains pending. The descriptor, update/destroy, intent and same-ZIP gates are in [Designer Foundation API](DESIGNER-FOUNDATION-API.md#df-a0--public-elements--dynamic-data-renderer-historical-proposal-2026-10-29).
 
 For DF-A1 and future consumers, the **contents** of the existing left `elements` panel become Base-rendered through one public `createDesignerElementsPalette()` controller. Consumers still choose what elements/tokens exist and how user intent is authorized and executed. They do not hand-build palette card HTML, icons, labels, focus behavior, informative/disabled states or Dynamic Data grids. No extra navigation role, panel, new shell or Layers component is introduced.
 
@@ -116,9 +116,9 @@ For DF-A1 and future consumers, the **contents** of the existing left `elements`
 - Disabled actions are distinct from informational cards; the latter never look clickable. Dynamic Data appears only with usable copy tokens and stays one row per token with no horizontal overflow.
 - Contextual insert candidates follow root / selected container child / selected leaf next-sibling; invalid/stale paths refuse without walking to a different parent. Domain mutation is always consumer-owned through existing commands, History and Save.
 - Keep `createDesignerLayerTree()` and the existing single DND controller. Cross-parent moves remain outside DF-A. Native Mail and Maintenance Reports must consume the same renderer before any extension migration can claim conformance.
-- Capability is optional, detected from the **same installed Base build** using future `Assets::DESIGNER_ELEMENTS_PALETTE_API >= 1` plus the real ESM/global renderer. The constant/export do **not** exist merely because this contract is documented.
+- Capability is optional, detected from the **same installed Base build** using implemented `Assets::DESIGNER_ELEMENTS_PALETTE_API >= 1` plus the real ESM/global renderer from the same installed Base ZIP. SOURCE presence does not establish external-consumer FIELD.
 
-The earlier instruction that consumers provide panel contents is narrowed **only for Elements/Dynamic Data presentation** by this proposed additive boundary; canvas content, Inspector semantics, domain tokens, authorization and document persistence remain consumer-owned. Contracts/Reports reviews and Overseer acceptance are pending before DF-A1 SOURCE GO.
+The earlier instruction that consumers provide panel contents is narrowed **only for Elements/Dynamic Data presentation** by this proposed additive boundary; canvas content, Inspector semantics, domain tokens, authorization and document persistence remain consumer-owned. The historical DF-A1 SOURCE phase has been completed; Contracts/Reports integrations still require individual approval and exact paired FIELD evidence.
 
 ## Ownership boundary
 

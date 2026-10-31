@@ -72,7 +72,7 @@ Direct mode rules:
 - Base gives the server-rendered shell fullscreen viewport composition from first paint; consumers must not add overlays, body masks, programmatic launch-button clicks or their own fullscreen geometry.
 - Base does not create the **Design with Core Blueprint** manual launch control in direct mode.
 - Base hydrates the existing Designer Shell fullscreen controller and keeps the direct route visually fullscreen throughout entry and exit.
-- Closing fullscreen, including Escape when no responsive drawer or compact toolbar disclosure is open, navigates directly to the declared exit URL. The underlying WordPress admin page is not an intermediate visual state.
+- Only **after** Exit Guard v3 authorizes closing (including Escape when no drawer or toolbar disclosure is open) does direct mode navigate to its same-origin exit URL. Dirty/UNKNOWN/busy states must satisfy shared Save/Discard/Cancel and verification; consumers must not navigate around the Guard. The WordPress admin page is not an intermediate visual state.
 - Consumer Designer Shell roots remain geometrically neutral. Outer margins, fixed positioning, viewport height and fullscreen transitions belong to Base.
 
 Direct mode is transient UI state. It does not change the consumer's document/workflow model and must not be persisted as domain data.
@@ -426,6 +426,8 @@ A Designer Mode consumer must not:
 If a reusable Designer behavior is missing, stop and extend the Base Foundation contract deliberately instead of adding a product-local workaround.
 
 ## External-consumer conformance
+
+**Acceptance boundary:** scoped native Save/Discard/Exit, DND-C1 and Header Picker FIELD acceptance does not certify any external consumer. Consumers must validate the same installed Base ZIP, their own domain authorization/persistence, responsive shell, toolbar and context lifecycle. External Native Trusted Host Admission (CA-FUTURE-01) is deferred and outside this Foundation Freeze. See [Designer Foundation API](DESIGNER-FOUNDATION-API.md).
 
 The public Designer contract must remain usable by a standalone extension that is not inside `.cb-core-wrap` and does not receive incidental Core Admin assets.
 

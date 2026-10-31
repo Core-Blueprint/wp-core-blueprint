@@ -1,6 +1,6 @@
 # Designer Foundation Contract Checkpoint — DF-D3 / DF-D4
 
-**Status:** SOURCE candidate only; FIELD, Foundation Contract Acceptance and Golden remain **HOLD**.  
+**Historical DF-D3/DF-D4 checkpoint:** SOURCE-only at its recorded commit. The current `main` incorporates DND-C1 and scoped native FIELD acceptance, but does not thereby certify external consumer FIELD, all separate D2/D2E cases, full Level 2, Foundation Freeze or public release. Current authority: [Designer Foundation API](DESIGNER-FOUNDATION-API.md).  
 **Baseline:** `47ef53bb4e57e99c30e1e47cf62abea253a01ca5`  
 **Product:** Core Blueprint Base 1.0.0.
 

@@ -1,8 +1,33 @@
 # Core Blueprint Designer Foundation API
 
-Status: **Designer Foundation v2 SOURCE contract; B2 Shared Selection Foundation under independent SOURCE validation. Installed ZIP acceptance pending**.
+**Current normative snapshot: 31 October 2026, Base `main@349ea530b89a632c960a6acf6ffd05f60fd5e97c`.** This document is the primary current Designer Foundation contract. Historical milestone titles and SOURCE-candidate paragraphs below describe their original **development checkpoints**, not the present acceptance status. The current source implementation does not by itself prove an installed artifact, independent FIELD acceptance, external consumer compatibility, Foundation Freeze or public release. Verify the exact same installed Base PHP capability, WordPress-resolved ESM/global API and styles before adopting an optional contract.
 
-**G1d-B v2 SOURCE candidate, installed ZIP acceptance pending:** transactional history, `captureSave()` and `rebase()` are implemented in both session factories and PHP `Assets::DOMAIN_SESSION_API` declares `3` on this B2 candidate branch. This is a source capability, not acceptance of a built, installed artifact. Consumers must require the *same installed Base package* to provide PHP capability `>= 3`, executable WordPress-resolved ESM exports and consumer-specific integration acceptance. No deprecated selection authority or compatibility shim is provided. No consumer may import a low-level history engine as a substitute.
+**Status vocabulary:** *Implemented* = present at this SOURCE; *SOURCE accepted* = reviewed and accepted implementation; *BUILD accepted* = accepted exact development artifact; *native FIELD accepted* = owner-accepted scope in Base Mail/Maintenance Reports; *consumer FIELD pending* = external extension still requires separate installed integration and owner acceptance. *Deferred* and *out of scope* grant no present capability. All unspecified BUILD and FIELD evidence remains **unverified**, not implicitly accepted.
+
+| Contract | Public API / version at this SOURCE | SOURCE / BUILD evidence | Native FIELD | External consumer FIELD | Adoption and remaining gate |
+| --- | --- | --- | --- | --- | --- |
+| Shared Designer Shell, responsive Mode and adaptive Toolbar | `@cb-core/design-editor`; `enqueue_designer_mode()`; documented shell/toolbar roles | Implemented; layout/toolbar regressions present | Native integrations exercised; not a blanket contract sign-off | Pending | Shared presentation with optional roles; verify paired DOM, keyboard and visual behavior |
+| Domain Sessions, canonical History and Save checkpoints | `Assets::DOMAIN_SESSION_API = 3`; `createDomainSession()`, `createSession()`, `captureSave()`, `rebase()` | Implemented; public, B2 and Save regressions present | Native Host has its own authorized Save flow | Pending | Optional sessions per domain; consumers own CAS, validation and persistence |
+| Typed Domain Selection and History-final view | `DOMAIN_SESSION_API = 3`; `createDesignerSelectionController()` | Implemented; B2/F02 tests present | Native Selection in use; no independent blanket acceptance | Pending | Optional; no second Selection or History authority |
+| Elements / Dynamic Data Palette | `DESIGNER_ELEMENTS_PALETTE_API = 1`; `createDesignerElementsPalette()` | Implemented; palette tests present; no independent BUILD acceptance cited here | Specific independent FIELD evidence not established | Pending | Optional Elements role; intents remain consumer-authorized |
+| Context insertion and node movement | `DESIGNER_CONTEXT_PLACEMENT_API = 1`; `DESIGNER_NODE_MOVE_API = 1` | Implemented; placement/move regressions present | DND-C1 acceptance does not prove every separate D2/D2E scenario | Pending | Optional pure candidate resolvers; one domain command authority |
+| Unified DND | `DESIGNER_DND_UNIFIED_API = 1`; `createDesignerDragDropController()` | **SOURCE/BUILD accepted for DF-DND-C1**; DND regressions present | **Accepted for native DND-C1 scope** | Pending | Optional movement; one shared controller; per-domain policy |
+| Interaction Presentation | `DESIGNER_INTERACTION_API = 1`; `createDesignerInteractionPresentation()` | Implemented; presentation/CSS regressions present | Included in accepted native DND-C1 scope, not wider FIELD | Pending | Optional pointer-inert visual layer; no authority |
+| Canvas Navigation CN-1/CN-2 | `CANVAS_NAVIGATION_API = 2`; `createDesignerCanvasNavigation()` | Implemented; 7 CN-2 tests and BRA-05 reconciliation | No independent FIELD established | Pending | Optional zoom/pan; never mutates domain project |
+| Context Menu CM-1 | `DESIGNER_CONTEXT_MENU_API = 1`; `createDesignerContextMenu()` | Implemented; BRA-05 reconciliation | No independent FIELD established | Pending | Optional; menu does not authorize commands |
+| Exit Guard v3 / canonical Discard | `DESIGNER_EXIT_GUARD_API = 3`; `window.cbCore.designerExitGuard`, `discardToBaseline()` | **SOURCE/BUILD accepted DF-EXIT-01R**; regressions present | **Accepted for native Mail and Maintenance Reports** | Pending | Shared exit contract; synchronous verified Discard, UNKNOWN fails closed |
+| Native Save authority and feedback | `SAVE_AUTHORITY_UI_API = 1` plus trusted native Host/SaveCoordinator | Implemented; native Save/Discard accepted under DF-EXIT-01R | **Accepted for native Mail and Maintenance Reports** | Not transferable | Native-only Save authority; external persistence remains consumer-owned |
+| Shared Inspector and Flow preview | `INSPECTOR_COMPOSITION_API = 1`; `FLOW_PREVIEW_NESTED_REGIONS_API = 1` | Implemented; source/integration regressions present | No separate whole-contract FIELD recorded | Pending | Optional presentation; iframe remains sandboxed/read-only |
+| Header Select Picker | `UI\\Assets::SELECT_PICKER_HEADER_API = 1`; `window.cbCore.selectPicker.enhance()` | **SOURCE/BUILD accepted BASE-BRA-04B**; header tests present | **Accepted in native Mail** | Pending | Optional; native `<select>` retains value, validation and fallback |
+| Document Editing Lease | `DocumentEditLease::API_VERSION = 1` | PHP implementation and public regression present; no stand-alone BUILD proof | Not a mandatory Native Host component | Pending | Optional PHP lease; consumers own auth, nonce, endpoints and Save binding |
+| Native Trusted Designer Host | Existing verified native Mail/Maintenance Reports Host | Implemented for two native Base profiles | **Native Save/Discard/Exit scope accepted** | No external admission | Does not admit external profiles |
+| CA-FUTURE-01 External Native Host Admission | **No current public admission API** | Historical CA-P1 unmerged; CA-01 requires redesign; CA-P2 deferred | N/A | N/A | **Deferred / outside current Foundation Freeze** |
+
+**Acceptance boundary.** Native SOURCE/BUILD/FIELD acceptance of DF-EXIT-01R, BASE-BRA-04B and the DF-DND-C1 scope is not blanket acceptance of CN-2, CM-1, Palette, Editing Lease, all D2/D2E edges or external consumers. Exact-SOURCE Level 1/2, artifact identity, integrated regression and an explicit Foundation Freeze decision remain **HOLD**. External consumers use the supported Shared Designer Foundation and their own domain authorization/persistence; they do **not** gain External Native Trusted Host admission. See [Exit Guard](DESIGNER-EXIT-GUARD.md), [Select Picker](SELECT-PICKER-FOUNDATION.md), [Layout](DESIGNER-LAYOUT-CONTRACT.md) and [Mode](DESIGNER-MODE.md).
+
+---
+
+**Historical G1d-B v2 SOURCE checkpoint (not a current release/acceptance claim):** transactional history, `captureSave()` and `rebase()` are implemented in both session factories and PHP `Assets::DOMAIN_SESSION_API` declares `3` on this B2 candidate branch. This is a source capability, not acceptance of a built, installed artifact. Consumers must require the *same installed Base package* to provide PHP capability `>= 3`, executable WordPress-resolved ESM exports and consumer-specific integration acceptance. No deprecated selection authority or compatibility shim is provided. No consumer may import a low-level history engine as a substitute.
 
 The Designer Foundation is the Base-owned editor engine and shell boundary for Core Blueprint designers. Consumers own domain semantics, persistence, validation and domain rendering. Base owns editor/session mechanics, shared shell behavior and the public integration boundary.
 
@@ -123,7 +148,7 @@ Commit notifications may be Project → marked Selection → History; Project �
 **History-only presentation / explicit refresh.** A History-only view flush reads current frozen Project and Selection without changing Selection, epoch, dirty state, History, panel activation or Undo steps. Base never treats adapter execution as a successful consumer view acknowledgement; consumers must preserve actual focus/ARIA/scroll/controls and explicitly witness failures before enabling Save. `controller.refresh()` is a synchronous **independent, known-stable presentation** operation. It rejects a refresh when its own observed commit is pending. Consumers MUST NOT call it inside an in-flight Project, Selection or History observer, even if their callback runs before the controller has learned of the pending commit due to registration order; `refresh()` may not simulate a final History flush or successful consumer acknowledgement. Native Host (`typed:true`) and profile-bound Selection ABI are unchanged. Capability gates remain `DOMAIN_SESSION_API = 3` / `DESIGNER_EXIT_GUARD_API = 2`, but the corrected source and installed artifact must be paired by exact SHA/receipt.
 **History and disposal.** Selection is not portable project data, a Save payload, a second command engine, or an independent dirty/Undo step. Commands restore/reconcile typed refs using existing staged EditorState, with rollback restoring both epoch projections. Observers read committed project/Selection/History in project → Selection → History order. Dispose the controller before the session; `destroy()` and unsubscribe are idempotent, and disposed sessions reject new Selection operations. Native Host profile and render adapter lifecycle are unchanged.
 
-Capability: `Assets::DOMAIN_SESSION_API = 3` is authorized **only after** this complete source contract and its B2/R1/R2/R3 tests pass. `DESIGNER_EXIT_GUARD_API = 2` remains unchanged.
+Capability: `Assets::DOMAIN_SESSION_API = 3` is authorized **only after** this complete source contract and its B2/R1/R2/R3 tests pass. At that B2 checkpoint `DESIGNER_EXIT_GUARD_API` was 2; current Base API is **3** (see the normative matrix).
 
 ### Designer v2 SOURCE candidate: shared sessions, immutable history and guarded saves (G1d-B)
 
@@ -168,9 +193,9 @@ must restore nonproject fields and verify their render projection before
 returning primitive `true`. No legacy adapters or post-exit restoration
 controllers are supported.
 
-### Designer Exit Guard v3 (DF-EXIT-01 SOURCE candidate)
+### Designer Exit Guard v3 (historical DF-EXIT-01 milestone; native accepted)
 
-`enqueue_designer_mode()` supplies `window.cbCore.designerExitGuard.register(shell, { isDirty, isUncertain, save, discard, labels })` with same-build `DESIGNER_EXIT_GUARD_API >= 3`. `discard()` is mandatory, synchronous and returns only primitive `true` after consumer data and UI projection have been restored to the accepted baseline. A Promise cannot authorize exit. Base retains close/ESC/fullscreen, modal, single-flight and unload guarding; consumer Save must verify persistence. Native Mail and Maintenance Reports use the same Guard through the Host. Context switches retain the target-first transaction boundary. See [Designer Exit Guard](DESIGNER-EXIT-GUARD.md). Installed acceptance is pending.
+`enqueue_designer_mode()` supplies `window.cbCore.designerExitGuard.register(shell, { isDirty, isUncertain, save, discard, labels })` with same-build `DESIGNER_EXIT_GUARD_API >= 3`. `discard()` is mandatory, synchronous and returns only primitive `true` after consumer data and UI projection have been restored to the accepted baseline. A Promise cannot authorize exit. Base retains close/ESC/fullscreen, modal, single-flight and unload guarding; consumer Save must verify persistence. Native Mail and Maintenance Reports use the same Guard through the Host. Context switches retain the target-first transaction boundary. See [Designer Exit Guard](DESIGNER-EXIT-GUARD.md). DF-EXIT-01R SOURCE/BUILD/native Mail and Maintenance Reports FIELD are accepted; external consumer FIELD remains pending.
 
 ### Shell
 
@@ -201,7 +226,7 @@ Navigation is available as `window.cbCore.designEditor.shell.navigation.create` 
 **Owner:** Base. Native Mail and Maintenance Reports use the same Base-owned
 interaction presentation. This is an additive, transient v1 API, not a replacement
 for Selection, CommandHistory, the document renderer or the existing Drag & Drop
-controller. The SOURCE candidate is not installed FIELD acceptance.
+controller. The historical D3 SOURCE candidate alone was not installed FIELD acceptance; the integrated native DND-C1 interaction scope was subsequently accepted. External consumer FIELD remains pending.
 
 Capability: `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_INTERACTION_API >= 1`.
 ESM named export `createDesignerInteractionPresentation`; global public facade
@@ -244,8 +269,7 @@ Flow previews keep their existing self-contained interactive preview behavior.
 context switch, refresh on renderer change, scroll, resize and drop-state
 transitions. Current semantic paths are resolved afresh against the live DOM.
 This API does not grant consumers a second pointer, hover, selection, drag, or
-viewport engine. The same conventions are required by future CN-2 integration,
-which remains separately held.
+viewport engine. The same conventions are required by the integrated CN-2 API 2; independent consumer FIELD is still pending.
 
 **Validation:** native Mail and Maintenance Reports must both pass the
 same visual and pointer/keyboard FIELD matrix (including scroll/nested sections,
@@ -413,8 +437,7 @@ Host context, not merely after hovering/selection.
 focusable zones, ArrowUp/ArrowDown chooses before/after, Enter or Space commits,
 and Escape cancels. Ordinary palette Enter activation is preserved.
 
-**Status:** DND-01 makes the core API available to public consumers; it does
-not yet wire native Mail/Reports palette buttons to their canvases. DND-02
+**Status:** DND-01 makes the core API available to public consumers; it did not yet wire native Mail/Reports palette buttons to their canvases **at the historical DND-01 checkpoint**. Current `main` includes the native DND-C1 route, accepted for its scoped FIELD matrix. DND-02
 provides their DOM/isolated-preview adapters, dropzone geometry and visual
 polish. DND-03 adds touch/pointer-specific gestures, auto-scroll and complex
 moving/nesting flows. Do not mark installed functional acceptance until those
@@ -607,12 +630,10 @@ remains authoritative, with no second Save, History or document mutation engine.
   generation. Drag gestures cannot mutate old Host contexts, and disabled
   palette elements cannot become drag sources.
 
-**Limits:** This SOURCE candidate covers palette-to-canvas insertion using
+**Historical DND-02 limits:** the original candidate covered palette-to-canvas insertion using
 native HTML drag and keyboard modes. Touch/pointer polyfill, repositioning of
 existing nodes across parents, auto-scroll and arbitrary nested report-preview
-selection remain DND-03 follow-ups. This is not yet a WordPress browser PASS:
-the installed dev ZIP, native Mail/Reports acceptance, Save/Reopen and
-independent consumer verification remain required. The 17 existing legacy
+selection remain DND-03 follow-ups. This historical DND-02 passage is not an up-to-date acceptance summary: the native DND-C1 scope was subsequently accepted. Exact-build consumer FIELD, Foundation Freeze and release remain separate. The 17 existing legacy
 public editor/Layer test failures must not be relabeled as DND-02 successes.
 
 ### Shared Layers interactions (Mail, Reports and future profiles)
@@ -738,9 +759,9 @@ Profile-specific rendering or document contracts remain governed by their corres
 
 The named ESM export `animateLayoutChange` is the supported Base-owned layout-motion helper. The equivalent global facade exposes it as `window.cbCore.designEditor.motion.animateLayoutChange`; `motion` is **not** an ESM named export. Consumers must not duplicate the shared Designer motion rules locally or import a private motion module.
 
-## DF-A0 — public Elements / Dynamic Data renderer (proposed contract; documentation only, 2026-10-29)
+## DF-A0 — public Elements / Dynamic Data renderer (historical proposal, 2026-10-29)
 
-**Status:** Overseer #64 accepted/closed DF-A0, then explicitly authorized DF-A1 SOURCE implementation. This section records the **DF-A0 contract**. DF-A1 is an **unreleased SOURCE candidate**, not an installed capability or customer-release acceptance. Base product version remains 1.0.0.
+**Status:** This section records the historical DF-A0 proposal. DF-A1 has since been implemented on current `main`: `DESIGNER_ELEMENTS_PALETTE_API = 1`, named ESM export and global facade exist. This does **not** imply separate native/consumer FIELD or release acceptance. The illustrative examples remain consumer-owned adaptations.
 
 **Single presentation owner.** The DF-A1 SOURCE implementation adds the named ESM export `createDesignerElementsPalette` from `@cb-core/design-editor`. Its same-build global counterpart is `window.cbCore.designEditor.shell.elements.createPalette`. The native Mail and Maintenance Reports Host must use this same renderer; first-party extensions must not reimplement its cards, labels, icons, keyboard focus or Dynamic Data layout. The old `projectDesignerElementsPalette` and `dispatchDesignerElementCreate` remain **platform command-model helpers**, not this generic DOM renderer. Existing `createDesignerShell`, `decorateDesignerElement`, `createDesignerLayerTree`, session, History and DND boundaries remain authoritative.
 
@@ -843,9 +864,9 @@ These adapters show **shape and ownership**, not guaranteed executable consumer 
 
 ### Same-build capability and review gate
 
-DF-A1 SOURCE adds public PHP `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_ELEMENTS_PALETTE_API = 1` together with the named ESM export and global facade. Consumers must prove all three in the **same installed Base ZIP** before relying on the capability. Consumers check `>= 1` in PHP **and** `typeof createDesignerElementsPalette === 'function'` from the WordPress-resolved module at runtime; global-only consumers check `typeof window.cbCore?.designEditor?.shell?.elements?.createPalette === 'function'`. If a gate fails, do not render an imitation palette or invent an alternative API: fail closed with a clear capability error. Current `DOMAIN_SESSION_API = 3` is unrelated and stays unchanged.
+Current Base SOURCE includes public PHP `CoreBlueprint\\Core\\Design\\Editor\\Assets::DESIGNER_ELEMENTS_PALETTE_API = 1` together with the named ESM export and global facade. Consumers must prove all three in the **same installed Base ZIP** before relying on the capability. Consumers check `>= 1` in PHP **and** `typeof createDesignerElementsPalette === 'function'` from the WordPress-resolved module at runtime; global-only consumers check `typeof window.cbCore?.designEditor?.shell?.elements?.createPalette === 'function'`. If a gate fails, do not render an imitation palette or invent an alternative API: fail closed with a clear capability error. Current `DOMAIN_SESSION_API = 3` is unrelated and stays unchanged.
 
-**DF-A0 consumer reviews accepted:** Contracts (#6494798897) confirms `document-flow`, D5-A token visibility, existing insert commands and zero Save/lease/storage redesign; Reports (#6494783452) confirms `createDomainSession()`, genuinely informational cards, typed Selection/History and no implicit R3-B/C enablement. Both reviews are **APPROVED WITH CONDITIONS**; the focus, async-intent and DND lifecycle clarifications above address the DF-A0 documentation requests. DF-A1 requires a separate Overseer SOURCE GO and focused DOM/keyboard/ARIA/label/icon/empty-token tests plus native Mail/Reports regression and exact paired FIELD proof.
+**DF-A0 consumer reviews accepted:** Contracts (#6494798897) confirms `document-flow`, D5-A token visibility, existing insert commands and zero Save/lease/storage redesign; Reports (#6494783452) confirms `createDomainSession()`, genuinely informational cards, typed Selection/History and no implicit R3-B/C enablement. Both reviews are **APPROVED WITH CONDITIONS**; the focus, async-intent and DND lifecycle clarifications above address the DF-A0 documentation requests. The historical DF-A1 SOURCE GO no longer describes pending implementation: the API and focused tests exist on `main`. Consumer adoption and exact paired FIELD proof remain separate.
 
 ## Public boundary versus implementation exports
 
@@ -940,7 +961,7 @@ The current Base native Host already registers palette sources and canvas/isolat
 
 ## DF-D2 — Unified Element Movement (Base SOURCE candidate, 2026-10-29)
 
-**Scope:** Native Base Mail and Maintenance Reports plus the shared optional API for future consumers. This feature-branch contract is NOT a released/installed capability. Same-ZIP PHP + JavaScript verification and the product owner's FIELD acceptance remain mandatory. It does not authorize Contracts or the independent Reports extension to mutate their sources.
+**Scope:** Native Base Mail and Maintenance Reports plus the shared optional API for future consumers. This originated as a feature-branch contract and is now SOURCE-implemented on `main`; that alone is not an installed or released consumer acceptance. Same-ZIP PHP + JavaScript verification and the product owner's FIELD acceptance remain mandatory. It does not authorize Contracts or the independent Reports extension to mutate their sources.
 
 - Public ESM: `resolveDesignerMovePlacement({project,source,zoneId,edge,allowedParentsByType,commandId,canMove?})`, `moveNodeCommand(fromPath,parentPath,index)`.
 - Global: `window.cbCore.designEditor.shell.placement.resolveMove` and `shell.dragDrop.resolveMove`; `commands.moveNode`.
@@ -954,10 +975,10 @@ The current Base native Host already registers palette sources and canvas/isolat
 - Native Mail and Maintenance Reports canvas interactions are extended by DF-D2E (below). The DF-D2 baseline used selected floating drag handles; these are replaced by direct source hit surfaces under the DF-D2E opt-in. The iframe cannot access Host, command or session objects. Bounded Flow regions describe nested `rN.M` IDs, with older root-only `rN` geometry still accepted.
 - The native controller fences an active gesture by document context and current Project instance revision. Re-rendered/detached sources and zones are released. Elements-to-canvas DND retains its existing insertion route; authored node moves use `mail.move` or `reports.move` with one registered command execution.
 
-**FIELD acceptance remains OPEN:** verify Layers↔Layers, Canvas↔Canvas and both cross-surface directions on native Mail and Maintenance Reports, including subtree preservation, no invalid visual cues, keyboard, selection/Inspector, Undo/Redo single transition, Save/Reopen, light/dark and narrow viewport. Formal Level 2/3, Golden, merge and release remain HOLD.
+**Independent D2/D2E FIELD coverage remains to be reconciled with evidence beyond the accepted native DND-C1 scope:** verify Layers↔Layers, Canvas↔Canvas and both cross-surface directions on native Mail and Maintenance Reports, including subtree preservation, no invalid visual cues, keyboard, selection/Inspector, Undo/Redo single transition, Save/Reopen, light/dark and narrow viewport. Formal Level 2/3, Golden, merge and release remain HOLD.
 
 
-## DF-D2E — Direct Canvas Dragging (SOURCE candidate, 2026-10-29)
+## DF-D2E — Direct Canvas Dragging (historical SOURCE milestone; implemented, 2026-10-29)
 
 **Optional UX evolution on the accepted DF-D2 source baseline**, not a new engine, document schema, persisted node identity or new command route. Existing `mail.move`, `reports.move`, selection reconciliation, context invalidation, keyboard `Alt+ArrowDown` and the same `createDesignerDragDropController` are retained.
 
