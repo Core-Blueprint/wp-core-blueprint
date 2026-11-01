@@ -345,6 +345,22 @@ test('CX02D-P0: Save checkpoint generation change alone invalidates clean decisi
 	assert.equal(f.binding.current.session.project().root.props.count,1);
 });
 
+test('CX02D-P0: Save-status callback directly after clean decision cannot alter source',async()=>{
+	let f;
+	let calls=0;
+	f=fixture({onSaveStatus:()=>{
+		calls++;
+		if(calls===2) f.binding.current.session.execute(increment());
+		return 'IDLE';
+	}});
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(calls,2);
+	assert.equal(result.code,'DESIGNER_SOURCE_CHANGED');
+	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.equal(f.binding.current.session.project().root.props.count,1);
+	assert.ok(mounted(f,'source'));
+});
+
 test('CX02D-P0: final Save-status callback mutation invalidates clean decision',async()=>{
 	let f;
 	let called=0;
