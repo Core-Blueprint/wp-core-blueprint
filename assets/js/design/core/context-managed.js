@@ -59,3 +59,23 @@ export const createManagedContextCoordinator = ({binding, ...options} = {}) => {
 	}
 };
 
+
+
+/**
+ * Base-only retirement when the registered Designer is permanently unmounted.
+ * The caller must have settled every coordinator operation first. An unknown
+ * recovery state must instead be preserved for operator intervention.
+ */
+export const revokeManagedContextBinding = (binding) => {
+	const internals = managedContextInternals.get(binding);
+	if (!internals) return false;
+	const current = internals.current;
+	if (current?.status === 'ACTIVE' || current?.status === 'LOCKED') {
+		internals.authority.invalidate(current);
+	}
+	if (current?.status === 'INVALID' || current?.status === 'RETIRED') {
+		internals.authority.dispose(current);
+	}
+	managedContextInternals.delete(binding);
+	return true;
+};
