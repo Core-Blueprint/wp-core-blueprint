@@ -275,8 +275,10 @@ export const createManagedContextTransaction = ({
 				return Object.freeze({status:'recovery_required', code:'RECOVERY_REQUIRED'});
 			}
 			const failures = [];
-			if (view) try { view.rollback(); } catch (e) { failures.push(e); }
+			// Restore source mount nodes BEFORE reprojecting its Selection/Inspector.
+			// Otherwise rollback would render into the discarded target's panels.
 			if (mounts) try { mounts.rollback(); } catch (e) { failures.push(e); }
+			if (view) try { view.rollback(); } catch (e) { failures.push(e); }
 			if (swapped) try {
 				if (attempt.target.status === 'LOCKED') authority.unlock(attempt.target);
 				authority.rollback(source,attempt.target);
