@@ -5,7 +5,7 @@ import {join} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {before, after, test} from 'node:test';
 
-let editor, shellModule, selectionModule;
+let editor, managedModule, shellModule, selectionModule;
 let temporary;
 async function convert(dir) {
 	for (const entry of await readdir(dir, {withFileTypes:true})) {
@@ -72,8 +72,8 @@ before(async()=>{
 	globalThis.CustomEvent=FakeEvent;
 	globalThis.window={cbCore:{designerExitGuard:{canTransition:()=>true}},matchMedia:()=>({matches:false})};
 	const module=(file)=>import(pathToFileURL(join(dest,file)).href);
-	[editor,shellModule,selectionModule]=await Promise.all([
-		module('editor.mjs'),module('shell/index.mjs'),module('shell/selection-controller.mjs'),
+	[editor,managedModule,shellModule,selectionModule]=await Promise.all([
+		module('editor.mjs'),module('core/context-managed.mjs'),module('shell/index.mjs'),module('shell/selection-controller.mjs'),
 	]);
 });
 after(async()=>{
@@ -103,8 +103,8 @@ const deferred=()=>{
 };
 const denied=(call)=>assert.throws(call,error=>error?.code==='DESIGNER_CONTEXT_NOT_WRITABLE');
 const fixture=({decision='discard', onLoad=null, onSave=null, onVerify=null,
-	onAuthorize=null, onRevalidate=null, onCleanup=null}={})=>{
-	const binding=editor.createManagedContextBinding({initial:spec('source')});
+	onAuthorize=null, onRevalidate=null, onCleanup=null, onSaveStatus=null}={})=>{
+	const binding=managedModule.createManagedContextBinding({initial:spec('source')});
 	const root=new FakeElement();
 	root.isConnected=true;
 	root.undo=new FakeButton('undo');
@@ -123,7 +123,7 @@ const fixture=({decision='discard', onLoad=null, onSave=null, onVerify=null,
 	}));
 	const events={saves:[],loads:[],revalidations:0,verified:0,late:[]};
 	const nodes=(name)=>Object.fromEntries(names.map(k=>[k,[new FakeElement(name+'-'+k)]]));
-	const coordinator=editor.createManagedContextCoordinator({
+	const coordinator=managedModule.createManagedContextCoordinator({
 		binding,shell,selection,slots,
 		authorize:async (args)=>onAuthorize?onAuthorize(args):true,
 		revalidate:(args)=>{events.revalidations++;return onRevalidate?onRevalidate(args):true;},
@@ -132,7 +132,7 @@ const fixture=({decision='discard', onLoad=null, onSave=null, onVerify=null,
 			return onLoad?onLoad(args):{spec:spec(args.targetId),nodes:nodes(args.targetId)};
 		},
 		decide:async ()=>decision,
-		saveStatus:()=> 'IDLE',
+		saveStatus:(handle)=>onSaveStatus?onSaveStatus(handle):'IDLE',
 		save:async (args)=>{events.saves.push(args);return onSave?onSave(args):{status:'committed',verified:true,sourceId:args.sourceId,
 			generation:args.generation,revision:args.revision,baselineProject:args.submittedProject};},
 		verify:(args)=>{events.verified++;return onVerify?onVerify(args):true;},
@@ -159,7 +159,7 @@ test('CX02D: synchronous authority commit, five mounts, Shell, History, Selectio
 	// must deny both writes and reads, not merely reject writes by authority.
 	assert.throws(()=>oldSession.execute(increment()), /Domain editor session has been disposed\./);
 	assert.throws(()=>oldSession.project(), /Domain editor session has been disposed\./);
-	assert.throws(()=>editor.createManagedContextCoordinator({binding:f.binding}),/AUTHORITY_REFUSED/);
+	assert.throws(()=>managedModule.createManagedContextCoordinator({binding:f.binding}),/AUTHORITY_REFUSED/);
 	const current=f.binding.current.session;
 	current.execute(increment());
 	assert.equal(f.root.undo.disabled,false);
