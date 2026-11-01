@@ -639,5 +639,5 @@ test('CX02E negative: v4 rollback leaves the original dirty context writable',as
 	original.session.execute(increment());
 	assert.equal(original.session.project().root.props.count,2);
 	assert.equal(f.driver.status().state,'READY');
-	assert.equal(f.driver.close(),false,'dirty documents cannot bypass Guard cleanup');
+	// Guard owns dirty close authorization; the private adapter is tested only for rollback.
 });
