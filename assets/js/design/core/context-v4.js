@@ -1,6 +1,6 @@
 import '../editor.js';
 import { sameValue } from './value.js';
-import { createManagedContextBinding, createManagedContextCoordinator } from './context-managed.js';
+import { createManagedContextBinding, createManagedContextCoordinator, revokeManagedContextBinding } from './context-managed.js';
 import { createDesignerShell } from '../shell/index.js';
 import { createDesignerSelectionController } from '../shell/selection-controller.js';
 
@@ -74,10 +74,29 @@ export const createManagedV4Context = ({
 		verify:({targetId,session}) => live() && Boolean(targetId && session),
 		cleanup:typeof context.cleanup === 'function' ? (receipt) => context.cleanup(receipt) : null,
 	});
+	let closed = false;
+	let inFlight = 0;
+	const finish = () => {
+		if (closed && inFlight === 0 && coordinator.status().state === 'READY') {
+			revokeManagedContextBinding(binding);
+		}
+	};
 	return Object.freeze({
-		current:() => binding.current,
-		transition:(targetId) => coordinator.transition({targetId}),
+		current:() => closed ? null : binding.current,
+		transition:async (targetId) => {
+			if (closed) return Object.freeze({status:'refused',code:'DESIGNER_V4_CLOSED'});
+			inFlight++;
+			try { return await coordinator.transition({targetId}); }
+			finally { inFlight--; finish(); }
+		},
 		cancelPending:() => coordinator.cancelPending(),
+		close:() => {
+			if (closed) return true;
+			closed = true;
+			coordinator.cancelPending();
+			finish();
+			return true;
+		},
 		status:() => coordinator.status(),
 	});
 };
