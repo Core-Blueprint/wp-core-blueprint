@@ -52,6 +52,10 @@ export const prepareDesignerViewRebinding = ({
 		return true;
 	};
 	return Object.freeze({
+		verify() {
+			return phase === 'COMMITTED' && shellReceipt.verify() === true
+				&& (selectionReceipt === null || selectionReceipt.verify() === true);
+		},
 		commit() {
 			if (phase !== 'PREPARED') throw new Error('DESIGNER_VIEW_REBIND_REFUSED');
 			try {
