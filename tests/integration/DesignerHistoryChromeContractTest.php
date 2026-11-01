@@ -10,8 +10,11 @@ final class CB_Designer_History_Chrome_Contract_Test extends WP_UnitTestCase {
 	public function test_shell_uses_only_postcommit_public_history_contract(): void {
 		$shell = $this->source( 'assets/js/design/shell/index.js' );
 
-		self::assertStringContainsString( 'session.subscribeHistory(syncHistory)', $shell );
-		self::assertStringContainsString( 'session.subscribeDiagnostics(onDiagnostic)', $shell );
+		// CX-02D guards subscriptions by the bound session generation.
+		self::assertStringContainsString( 'const subscribeSession = (candidate, generation) => {', $shell );
+		self::assertStringContainsString( 'candidate.subscribeHistory(() => { if (stillBound()) syncHistory(); });', $shell );
+		self::assertStringContainsString( '(event) => { if (stillBound()) onDiagnostic(event); },', $shell );
+		self::assertStringContainsString( 'const next = subscribeSession(nextSession, generation);', $shell );
 		self::assertStringContainsString( 'session.historyStatus()', $shell );
 		self::assertStringContainsString( 'unsubscribeHistory?.();', $shell );
 		self::assertStringContainsString( 'unsubscribeDiagnostics?.();', $shell );
