@@ -256,6 +256,113 @@ test('CX02D: unknown Save outcome locks the source instead of assuming no write 
 	denied(()=>f.binding.current.session.execute(increment()));
 });
 
+test('CX02D-P0: initially clean decision cannot retire source after revalidate mutates project',async()=>{
+	let f;
+	f=fixture({onRevalidate:()=>{
+		f.binding.current.session.execute(increment());
+		return true;
+	}});
+	const source=f.binding.current;
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.status,'refused');
+	assert.equal(result.code,'DESIGNER_SOURCE_CHANGED');
+	assert.equal(source.status,'ACTIVE');
+	assert.equal(source.session.project().root.props.count,1);
+	assert.ok(mounted(f,'source'));
+	source.session.execute(increment());
+	assert.equal(source.session.project().root.props.count,2);
+});
+
+test('CX02D-P0: dirty Discard decision cannot retire source after later project edit',async()=>{
+	let f;
+	f=fixture({decision:'discard',onRevalidate:()=>{
+		f.binding.current.session.execute(increment());
+		return true;
+	}});
+	f.binding.current.session.execute(increment());
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.code,'DESIGNER_SOURCE_CHANGED');
+	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.equal(f.binding.current.session.project().root.props.count,2);
+	assert.ok(mounted(f,'source'));
+});
+
+test('CX02D-P0: dirty Save decision cannot retire source after further edit',async()=>{
+	let f;
+	f=fixture({decision:'save',onRevalidate:()=>{
+		f.binding.current.session.execute(increment());
+		return true;
+	}});
+	f.binding.current.session.execute(increment());
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.code,'DESIGNER_SOURCE_CHANGED');
+	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.equal(f.binding.current.session.project().root.props.count,2);
+	assert.equal(f.binding.current.session.baselineSnapshot().root.props.count,1);
+	assert.ok(mounted(f,'source'));
+});
+
+test('CX02D-P0: History-only change invalidates dirty Discard despite identical project',async()=>{
+	let f;
+	f=fixture({onRevalidate:()=>{
+		f.binding.current.session.clearHistory();
+		return true;
+	}});
+	f.binding.current.session.execute(increment());
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.code,'DESIGNER_SOURCE_CHANGED');
+	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.equal(f.binding.current.session.project().root.props.count,1);
+	assert.equal(f.binding.current.session.historyStatus().canUndo,false);
+});
+
+test('CX02D-P0: Selection-only change invalidates clean decision',async()=>{
+	let f;
+	f=fixture({onRevalidate:()=>{
+		f.binding.current.session.select(
+			[{kind:'node',path:[]}],{kind:'node',path:[]},{expectedEpoch:0},
+		);
+		return true;
+	}});
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.code,'DESIGNER_SOURCE_CHANGED');
+	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.equal(f.binding.current.session.selection().primary.kind,'node');
+	assert.ok(mounted(f,'source'));
+});
+
+test('CX02D-P0: final Save-status callback mutation invalidates clean decision',async()=>{
+	let f;
+	let called=0;
+	f=fixture({onSaveStatus:()=>{
+		called++;
+		if(called===4) f.binding.current.session.execute(increment());
+		return 'IDLE';
+	}});
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(called,4);
+	assert.equal(result.code,'DESIGNER_SOURCE_CHANGED');
+	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.equal(f.binding.current.session.project().root.props.count,1);
+});
+
+test('CX02D-P0: mutation during in-flight Save requires recovery rather than stale rebase',async()=>{
+	let f;
+	f=fixture({decision:'save',onSave:async args=>{
+		f.binding.current.session.select(
+			[{kind:'node',path:[]}],{kind:'node',path:[]},{expectedEpoch:0},
+		);
+		return {status:'committed',verified:true,sourceId:args.sourceId,
+			generation:args.generation,revision:args.revision,baselineProject:args.submittedProject};
+	}});
+	f.binding.current.session.execute(increment());
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.status,'recovery_required');
+	assert.equal(f.binding.current.status,'LOCKED');
+	assert.equal(f.binding.current.session.selection().primary.kind,'node');
+	denied(()=>f.binding.current.session.execute(increment()));
+});
+
 test('CX02D: failed target load and rejected authorization never disturb original dirty context',async()=>{
 	const f=fixture({onLoad:async()=>{throw new Error('TARGET_LOAD_FAILED');}});
 	f.binding.current.session.execute(increment());
