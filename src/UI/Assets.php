@@ -41,6 +41,8 @@ final class Assets {
 	public const SELECT_PICKER_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const REORDER_PRESENTATION_CORE = 'core';
 	public const REORDER_PRESENTATION_WP_NATIVE = 'wp-native';
+	public const BUTTON_PRESENTATION_CORE = 'core';
+	public const BUTTON_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const ICON_CONTROL_PRESENTATION_CORE = 'core';
 	public const ICON_CONTROL_PRESENTATION_WP_NATIVE = 'wp-native';
 	public const STATUS_PRESENTATION_CORE = 'core';
@@ -697,6 +699,50 @@ final class Assets {
 	}
 
 
+
+	/**
+	 * Enqueue the shared semantic Button Foundation.
+	 *
+	 * Core Admin uses the established token-backed presentation. Standalone
+	 * wp-admin extension screens use a narrow, token-optional native adapter;
+	 * generic WordPress buttons are never targeted by that adapter.
+	 *
+	 * @param string|null $presentation `wp-native`, `core`, or null for auto.
+	 */
+	public static function enqueue_buttons( ?string $presentation = null ): void {
+		if ( null === $presentation ) {
+			$presentation = self::is_core_admin_screen()
+				? self::BUTTON_PRESENTATION_CORE
+				: self::BUTTON_PRESENTATION_WP_NATIVE;
+		} elseif ( ! in_array( $presentation, [ self::BUTTON_PRESENTATION_WP_NATIVE, self::BUTTON_PRESENTATION_CORE ], true ) ) {
+			$presentation = self::BUTTON_PRESENTATION_WP_NATIVE;
+		}
+
+		// Do not downgrade a Core Admin screen when a sibling requests native.
+		if ( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) ) {
+			$presentation = self::BUTTON_PRESENTATION_CORE;
+		}
+
+		if ( self::BUTTON_PRESENTATION_CORE === $presentation ) {
+			if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
+			}
+			wp_enqueue_style(
+				'cb-core-css-buttons',
+				CB_CORE_URL . 'assets/css/components/buttons.css',
+				[ 'cb-core-css-tokens' ],
+				CB_CORE_VERSION
+			);
+			return;
+		}
+
+		wp_enqueue_style(
+			'cb-core-css-buttons-native',
+			CB_CORE_URL . 'assets/css/components/buttons-native.css',
+			[],
+			self::asset_revision( 'assets/css/components/buttons-native.css' )
+		);
+	}
 
 	/**
 	 * Enqueue the shared Icon Control Foundation.

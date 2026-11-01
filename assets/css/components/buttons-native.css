@@ -1,0 +1,168 @@
+/**
+ * Standalone WordPress-admin presentation for the public Button Foundation.
+ * Opt in with Assets::enqueue_buttons(); never styles generic WP buttons.
+ * Tokens are optional; WordPress admin palette supplies the fallback.
+ */
+body.wp-admin .cb-core-button {
+	--cb-button-native-accent: var(--cb-accent, var(--wp-admin-theme-color, #2271b1));
+	--cb-button-native-accent-hover: var(--cb-accent-strong, var(--wp-admin-theme-color-darker-10, #135e96));
+	--cb-button-native-danger: var(--cb-danger, #b32d2e);
+	--cb-button-native-warning: var(--cb-warning, #996800);
+	--cb-button-native-text: var(--cb-text-strong, #1d2327);
+	--cb-button-native-border: var(--cb-border, #8c8f94);
+	--cb-button-native-surface: var(--cb-surface-1, #fff);
+	--cb-button-native-hover: var(--cb-interactive-hover, #f0f0f1);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	box-sizing: border-box;
+	min-height: 32px;
+	padding: 5px 12px;
+	border: 1px solid var(--cb-button-native-border);
+	border-radius: 3px;
+	background: var(--cb-button-native-surface);
+	color: var(--cb-button-native-text);
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.3;
+	text-align: center;
+	text-decoration: none;
+	text-shadow: none;
+	vertical-align: middle;
+	white-space: normal;
+	box-shadow: none;
+	cursor: pointer;
+	transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+body.wp-admin .cb-core-button:hover:not(:disabled):not([aria-disabled="true"]) {
+	background: var(--cb-button-native-hover);
+	text-decoration: none;
+}
+
+body.wp-admin .cb-core-button:focus-visible {
+	outline: 2px solid var(--cb-button-native-accent);
+	outline-offset: 2px;
+	text-decoration: none;
+}
+
+body.wp-admin .cb-core-button,
+body.wp-admin .cb-core-button:hover,
+body.wp-admin .cb-core-button:focus,
+body.wp-admin .cb-core-button .cb-core-button__icon,
+body.wp-admin .cb-core-button .cb-core-button__label,
+body.wp-admin .cb-core-button > .dashicons {
+	text-decoration: none;
+}
+
+body.wp-admin .cb-core-button--primary {
+	border-color: var(--cb-button-native-accent);
+	background: var(--cb-button-native-accent);
+	color: #fff;
+}
+body.wp-admin .cb-core-button--primary:hover:not(:disabled):not([aria-disabled="true"]) {
+	border-color: var(--cb-button-native-accent-hover);
+	background: var(--cb-button-native-accent-hover);
+	color: #fff;
+}
+
+body.wp-admin .cb-core-button--secondary {
+	border-color: var(--cb-button-native-border);
+	background: var(--cb-button-native-surface);
+	color: var(--cb-button-native-text);
+}
+body.wp-admin .cb-core-button--secondary:hover:not(:disabled):not([aria-disabled="true"]) {
+	border-color: var(--cb-button-native-accent);
+	background: var(--cb-button-native-hover);
+	color: var(--cb-button-native-text);
+}
+
+body.wp-admin .cb-core-button--remediation {
+	border-color: var(--cb-button-native-warning);
+	background: var(--cb-button-native-surface);
+	color: var(--cb-button-native-warning);
+}
+body.wp-admin .cb-core-button--remediation:hover:not(:disabled):not([aria-disabled="true"]) {
+	border-color: var(--cb-button-native-warning);
+	background: var(--cb-button-native-warning);
+	color: #fff;
+}
+
+body.wp-admin .cb-core-button--danger {
+	border-color: var(--cb-button-native-danger);
+	background: var(--cb-button-native-surface);
+	color: var(--cb-button-native-danger);
+}
+body.wp-admin .cb-core-button--danger:hover:not(:disabled):not([aria-disabled="true"]) {
+	border-color: var(--cb-button-native-danger);
+	background: var(--cb-button-native-danger);
+	color: var(--cb-on-danger, #fff);
+}
+
+body.wp-admin .cb-core-button--compact {
+	min-height: 28px;
+	padding: 3px 9px;
+	font-size: 12px;
+}
+body.wp-admin .cb-core-button--icon-only {
+	flex: 0 0 auto;
+	width: 32px;
+	min-width: 32px;
+	padding-inline: 0;
+}
+body.wp-admin .cb-core-button--compact.cb-core-button--icon-only {
+	width: 28px;
+	min-width: 28px;
+	padding-inline: 0;
+}
+
+body.wp-admin .cb-core-button__icon,
+body.wp-admin .cb-core-button > svg,
+body.wp-admin .cb-core-button > .dashicons {
+	flex: 0 0 18px;
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	font-size: 18px;
+	line-height: 1;
+	text-decoration: none;
+}
+body.wp-admin .cb-core-button--compact .cb-core-button__icon,
+body.wp-admin .cb-core-button--compact > svg,
+body.wp-admin .cb-core-button--compact > .dashicons {
+	flex-basis: 16px;
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+body.wp-admin .cb-core-button__label {
+	min-width: 0;
+	text-decoration: none;
+}
+
+body.wp-admin .cb-core-button:disabled,
+body.wp-admin .cb-core-button[disabled],
+body.wp-admin .cb-core-button[aria-disabled="true"] {
+	border-color: var(--cb-button-native-border);
+	background: var(--cb-button-native-surface);
+	color: var(--cb-text-muted, #646970);
+	box-shadow: none;
+	cursor: not-allowed;
+	opacity: .55;
+}
+body.wp-admin .cb-core-button[aria-disabled="true"] {
+	pointer-events: none;
+}
+body.wp-admin .cb-core-button[aria-busy="true"] {
+	cursor: progress;
+	pointer-events: none;
+	opacity: .72;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	body.wp-admin .cb-core-button {
+		transition: none;
+	}
+}

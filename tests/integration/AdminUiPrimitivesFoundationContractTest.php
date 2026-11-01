@@ -10,6 +10,8 @@ final class CB_Admin_UI_Primitives_Foundation_Contract_Test extends WP_UnitTestC
 		parent::set_up();
 
 		foreach ( [
+			'cb-core-css-buttons',
+			'cb-core-css-buttons-native',
 			'cb-core-css-icon-controls',
 			'cb-core-css-icon-controls-native',
 			'cb-core-css-status-indicators',
@@ -124,4 +126,78 @@ final class CB_Admin_UI_Primitives_Foundation_Contract_Test extends WP_UnitTestC
 		self::assertStringNotContainsString( 'docs', strtolower( $icon_css ) );
 		self::assertStringNotContainsString( 'lms', strtolower( $icon_css ) );
 	}
+
+	public function test_buttons_have_public_presentation_api_and_existing_registry_semantics(): void {
+		self::assertTrue( method_exists( Assets::class, 'enqueue_buttons' ) );
+		self::assertSame( 'core', Assets::BUTTON_PRESENTATION_CORE );
+		self::assertSame( 'wp-native', Assets::BUTTON_PRESENTATION_WP_NATIVE );
+		self::assertSame(
+			[ 'foundations' => [], 'components' => [ 'buttons' ] ],
+			PageRegistry::normalize_semantic_requirements(
+				[ 'components' => [ 'buttons' ] ],
+				'button-foundation-contract-test'
+			)
+		);
+	}
+
+	public function test_wordpress_native_buttons_are_opt_in_and_token_independent(): void {
+		$tokens_before = wp_style_is( 'cb-core-css-tokens', 'enqueued' );
+
+		Assets::enqueue_buttons( Assets::BUTTON_PRESENTATION_WP_NATIVE );
+
+		self::assertTrue( wp_style_is( 'cb-core-css-buttons-native', 'enqueued' ) );
+		self::assertFalse( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) );
+		self::assertSame( $tokens_before, wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+		self::assertSame( [], wp_styles()->registered['cb-core-css-buttons-native']->deps );
+	}
+
+	public function test_core_buttons_keep_token_backed_presentation(): void {
+		Assets::enqueue_buttons( Assets::BUTTON_PRESENTATION_CORE );
+
+		self::assertTrue( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+		self::assertTrue( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) );
+		self::assertFalse( wp_style_is( 'cb-core-css-buttons-native', 'enqueued' ) );
+		self::assertSame( [ 'cb-core-css-tokens' ], wp_styles()->registered['cb-core-css-buttons']->deps );
+	}
+
+	public function test_button_native_css_only_targets_explicit_component_classes(): void {
+		$native = file_get_contents( dirname( __DIR__, 2 ) . '/assets/css/components/buttons-native.css' );
+		$core = file_get_contents( dirname( __DIR__, 2 ) . '/assets/css/components/buttons.css' );
+		self::assertIsString( $native );
+		self::assertIsString( $core );
+
+		foreach ( [ '--primary', '--secondary', '--remediation', '--danger', '--compact', '--icon-only' ] as $variant ) {
+			self::assertStringContainsString( '.cb-core-button' . $variant, $native );
+		}
+		foreach ( [ ':hover', ':focus-visible', ':disabled', '[aria-disabled="true"]', '[aria-busy="true"]' ] as $state ) {
+			self::assertStringContainsString( $state, $native );
+		}
+		self::assertStringContainsString( 'text-decoration: none;', $native );
+		self::assertStringContainsString( 'var(--cb-danger, #b32d2e)', $native );
+		self::assertStringContainsString( '.cb-core-button--danger', $core );
+		self::assertStringContainsString( '.cb-core-button--compact.cb-core-button--icon-only', $core );
+		self::assertStringNotContainsString( '@import', $native );
+		self::assertDoesNotMatchRegularExpression( '/(?m)^\\s*(?:body\\.wp-admin\\s+)?\\.button(?:[\\s:{.#]|$)/', $native );
+	}
+
+	public function test_outlined_icon_and_native_details_are_opt_in_and_motion_safe(): void {
+		foreach ( [ 'icon-controls.css', 'icon-controls-native.css' ] as $name ) {
+			$css = file_get_contents( dirname( __DIR__, 2 ) . '/assets/css/components/' . $name );
+			self::assertIsString( $css );
+			self::assertStringContainsString( '.cb-core-icon-control--outlined', $css );
+			self::assertStringContainsString( 'width: 30px;', $css );
+			self::assertStringContainsString( '.cb-core-details > summary:focus-visible', $css );
+			self::assertStringContainsString( '.cb-core-details__chevron::before', $css );
+			self::assertStringContainsString( '.cb-core-details[open] > summary .cb-core-details__chevron', $css );
+			self::assertStringContainsString( 'rotate(180deg)', $css );
+			self::assertStringContainsString( '@media (prefers-reduced-motion: reduce)', $css );
+			self::assertStringContainsString( '.cb-core-disclosure-toggle[aria-expanded="true"]', $css );
+		}
+
+		$assets = file_get_contents( dirname( __DIR__, 2 ) . '/src/UI/Assets.php' );
+		self::assertIsString( $assets );
+		self::assertStringNotContainsString( 'enqueue_details_script', $assets );
+		self::assertStringContainsString( 'enqueue_icon_controls', $assets );
+	}
+
 }

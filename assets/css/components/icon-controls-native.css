@@ -92,9 +92,61 @@
 	transform: rotate(90deg);
 }
 
+
+/* Optional outlined icon control; default transparent controls remain unchanged. */
+.cb-core-icon-control--outlined {
+	background: var(--cb-surface-1, #fff);
+	border-color: var(--cb-border, #8c8f94);
+}
+
+/* Native details: one summary interaction, CSS-only chevron presentation. */
+.cb-core-details > summary {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	list-style: none;
+	border-radius: var(--cb-radius-sm, 3px);
+	cursor: pointer;
+}
+.cb-core-details > summary::-webkit-details-marker {
+	display: none;
+}
+.cb-core-details > summary::marker {
+	content: "";
+}
+.cb-core-details > summary:focus-visible {
+	outline: 2px solid var(--cb-interactive-focus, #2271b1);
+	outline-offset: 2px;
+}
+.cb-core-details__chevron {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 12px;
+	width: 12px;
+	height: 12px;
+	color: var(--cb-text-muted, #50575e);
+	transform: rotate(0deg);
+	transition: transform 140ms ease;
+}
+.cb-core-details__chevron::before {
+	content: "";
+	width: 7px;
+	height: 7px;
+	border-right: 2px solid currentColor;
+	border-bottom: 2px solid currentColor;
+	transform: translateY(-2px) rotate(45deg);
+}
+.cb-core-details[open] > summary .cb-core-details__chevron {
+	transform: rotate(180deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.cb-core-disclosure-toggle > .dashicons,
 	.cb-core-disclosure-toggle > .cb-core-icon {
+		transition: none;
+	}
+	.cb-core-details__chevron {
 		transition: none;
 	}
 }
