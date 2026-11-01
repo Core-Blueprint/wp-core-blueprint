@@ -109,16 +109,16 @@ export const createManagedContextTransaction = ({
 		authority.invalidate(target);
 		authority.dispose(target);
 	};
-	const markRecovery = () => {
+	const markRecovery = (attempt = pending) => {
 		recoveryRequired = true;
-		pending = null;
-		// Preserve source data while preventing any write into a possibly
-		// inconsistent presentation. Never silently unlock the source.
-		for (const handle of [state.current, pending?.target]) {
+		// Preserve data and revoke write authority even when the rollback failed
+		// after the target was activated but before state.current changed.
+		for (const handle of [state.current, attempt?.source, attempt?.target]) {
 			if (handle?.status === 'ACTIVE') {
-				try { authority.lock(handle); } catch (_) { /* Already fail-closed externally. */ }
+				try { authority.lock(handle); } catch (_) { /* Record remains under recovery. */ }
 			}
 		}
+		pending = null;
 	};
 	const assertIdentity = (attempt) => {
 		if (!isCurrent(attempt) || attempt.source.status !== 'ACTIVE'
@@ -139,7 +139,7 @@ export const createManagedContextTransaction = ({
 		// A staged target is never exposed or write-authorized.
 		if (attempt.target?.status === 'STAGED') {
 			try { invalidate(attempt.target); }
-			catch (_) { recoveryRequired = true; }
+			catch (_) { markRecovery(attempt); }
 		}
 		return true;
 	};
@@ -193,7 +193,7 @@ export const createManagedContextTransaction = ({
 				signal:attempt.controller.signal, isCurrent:()=>isCurrent(attempt),
 			})) : 'clean';
 			assertIdentity(attempt);
-			if (choice === 'cancel') return Object.freeze({status:'cancelled'});
+			if (choice === 'cancel') throw failure('DESIGNER_TRANSITION_CANCELLED');
 			if (!['clean','save','discard'].includes(choice) || (dirty && choice === 'clean')) {
 				throw failure('DESIGNER_DIRTY_DECISION_INVALID');
 			}
@@ -266,7 +266,7 @@ export const createManagedContextTransaction = ({
 			return Object.freeze({status:'committed', id:target.id, generation:target.generation});
 		} catch (error) {
 			if (retired) {
-				markRecovery();
+				markRecovery(attempt);
 				return Object.freeze({status:'recovery_required', code:'RECOVERY_REQUIRED'});
 			}
 			const failures = [];
@@ -279,9 +279,11 @@ export const createManagedContextTransaction = ({
 			}
 			if (failures.length || error?.code === 'RECOVERY_REQUIRED'
 				|| error?.code === 'DESIGNER_SAVE_REBASE_UNVERIFIED') {
-				markRecovery();
+				markRecovery(attempt);
 				return Object.freeze({status:'recovery_required',code:'RECOVERY_REQUIRED'});
 			}
+			if (error?.code === 'DESIGNER_TRANSITION_CANCELLED'
+				|| attempt.controller.signal.aborted) return Object.freeze({status:'cancelled'});
 			return Object.freeze({status:'refused',code:error?.code || 'DESIGNER_TRANSITION_FAILED'});
 		} finally {
 			if (pending === attempt) pending = null;
