@@ -1,6 +1,5 @@
 import { bindRegisteredCommand, bindRegisteredBatch } from './core/commands.js';
-import { createManagedContextAuthority } from './core/context-authority.js';
-import { createManagedContextTransaction } from './core/context-transaction.js';
+import { registerManagedContextFactories } from './core/context-managed.js';
 import { validateStableProjectV1 } from './core/stable-schema.js';
 import { sameValue } from './core/value.js';
 import { createPlatformHost } from './platform/host.js';
@@ -451,48 +450,11 @@ const createDomainSessionInternal = ({
 
 export const createDomainSession = (options = {}) => createDomainSessionInternal(options);
 
-/**
- * CX-02B: canonical Base-only managed session binding. The consumer-facing
- * surface cannot activate, retire, unlock or otherwise mutate context authority.
- * Later coordinator slices own transaction actions within this module.
- */
-const managedContextInternals = new WeakMap();
-export const createManagedContextBinding = ({ initial } = {}) => {
-	const authority = createManagedContextAuthority({
-		createProfileSession: createSessionInternal,
-		createDomainSession: createDomainSessionInternal,
-	});
-	const initialHandle = authority.stage(initial);
-	authority.activateInitial(initialHandle);
-	const binding = Object.freeze({
-		get current() { return managedContextInternals.get(binding)?.current ?? null; },
-		stageContext(spec) { return authority.stage(spec); },
-		isCurrent(handle) { return authority.isCurrent(handle); },
-	});
-	managedContextInternals.set(binding, { authority, current: initialHandle, coordinatorAttached: false });
-	return binding;
-};
-
-/**
- * Base-only construction of the canonical context coordinator.
- * This named ESM export is deliberately absent from window.cbCore.designEditor.
- * No consumer can reach the private authority through its public ContextHandle.
- */
-export const createManagedContextCoordinator = ({binding, ...options} = {}) => {
-	const internals = managedContextInternals.get(binding);
-	if (!internals || internals.coordinatorAttached) {
-		throw new Error('DESIGNER_TRANSACTION_AUTHORITY_REFUSED');
-	}
-	internals.coordinatorAttached = true;
-	try {
-		return createManagedContextTransaction({
-			...options, authority:internals.authority, state:internals,
-		});
-	} catch (error) {
-		internals.coordinatorAttached = false;
-		throw error;
-	}
-};
+// Only the internal Base module owns managed transaction constructors.
+registerManagedContextFactories({
+	createProfileSession: createSessionInternal,
+	createDomainSession: createDomainSessionInternal,
+});
 
 /**
  * Single Host-owned command, selection and History authority for a staged
