@@ -186,8 +186,7 @@ callbacks still serve the fullscreen Exit Guard, not context authority.
 Base internally owns the one managed DomainSession, Shell, History, Selection,
 five mount slots, transaction coordinator, write fences, rollback and
 retirement. `unregister.current()` exposes only the current gated
-ContextHandle, never Base-private lifecycle methods. `unregister()` refuses
-to revoke a dirty, busy or uncertain managed context. Registration of another
+ContextHandle, never Base-private lifecycle methods. `await unregister()` returns a boolean and refuses to revoke a dirty, busy or uncertain managed context. Unlike legacy fullscreen-only registration, managed teardown must first dispose the Base Shell and Selection while the safety guard remains registered. Registration of another
 managed authority on the same active shell is refused. No consumer may build
 its own parallel Shell, History or Selection engine for the same context.
 
