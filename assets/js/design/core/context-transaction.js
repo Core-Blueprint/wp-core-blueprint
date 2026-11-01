@@ -220,7 +220,11 @@ export const createManagedContextTransaction = ({
 					signal:attempt.controller.signal, isCurrent:()=>isCurrent(attempt),
 				}));
 				assertIdentity(attempt);
-				if (result?.status !== 'committed' || !result.baselineProject) {
+				// Never accept a receipt for another document, session generation,
+				// or checkpoint. Only the Base-owned Save adapter can attest it.
+				if (result?.status !== 'committed' || result.verified !== true
+					|| result.sourceId !== source.id || result.generation !== source.generation
+					|| result.revision !== checkpoint.revision || !result.baselineProject) {
 					throw failure('DESIGNER_SAVE_NOT_VERIFIED');
 				}
 				try {
