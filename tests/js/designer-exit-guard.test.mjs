@@ -81,7 +81,7 @@ const fixture = (options = {}) => {
 	return {
 		shell, events, modals, toasts,
 		request: () => window.cbCore.designerExitGuard.request(shell, exit),
-		transition: (apply) => window.cbCore.designerExitGuard.requestTransition(shell, apply),
+		transition: (apply) => window.cbCore.designerExitGuard.transition(shell, {targetId: apply}),
 		setDirty: (value) => { dirtyNow = value; },
 		beginSaving: () => { busyNow = true; shell.dataset.cbDesignShellSaveState = 'saving'; },
 		releaseModal: () => { if (!confirmModal) throw new Error('Modal is not pending'); confirmModal(); },
@@ -109,7 +109,7 @@ test('EXIT-A01: Base intercepts the canonical fullscreen lifecycle before exit',
 	assert.match(launch, /bindExitGuard\(shell, fullscreen\)/);
 	assert.match(launch, /event\.preventDefault\(\)/);
 	assert.match(launch, /api\(\)\?\.request\?\.\(shell/);
-	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 3/);
+	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 4/);
 	assert.match(assets, /enqueue_modals/);
 	assert.match(assets, /DESIGNER_EXIT_GUARD_SCRIPT/);
 });
@@ -207,8 +207,8 @@ test('EXIT-P0-04: live consumer Save authorization and explicit UNKNOWN event ha
 test('EXIT-P0-05: context and fullscreen escape use synchronous Base refusal gates', () => {
 	const launch = read('assets/js/features/designer-launch.js');
 	const shell = read('assets/js/design/shell/index.js');
-	assert.match(launch, /cb:design-shell:contextrequest/);
-	assert.match(launch, /isTransitionDispatchAuthorized/);
+	assert.doesNotMatch(launch, /cb:design-shell:contextrequest/);
+	assert.doesNotMatch(launch, /isTransitionDispatchAuthorized/);
 	assert.match(shell, /cb:design-shell:beforeexit/);
 	assert.match(shell, /cancelable: true/);
 });
@@ -253,25 +253,6 @@ test('EXIT-P0-09: detached and unregistered shell does not cause stale unload wa
 });
 
 
-test('B1-ABI: Base capture blocks unapproved event dispatch, while the shared context controller owns authorization', () => {
-	const launch = read('assets/js/features/designer-launch.js');
-	const context = read('assets/js/features/designer-context.js');
-	const guard = read('assets/js/features/designer-exit-guard.js');
-	const assets = read('src/Design/Editor/Assets.php');
-	assert.doesNotMatch(launch, /const blockContextChange\s*=/);
-	assert.match(launch, /isTransitionDispatchAuthorized\?\.\(shell\)/);
-	assert.match(launch, /cb:design-shell:contextrequest/);
-	assert.match(context, /guard\.requestTransition\(shell, apply\)/);
-	assert.match(context, /activeRoots\.add\(root\)/);
-	assert.match(context, /root\.dispatchEvent\(new CustomEvent\(REQUEST_EVENT/);
-	assert.match(context, /status === 'applied'/);
-	assert.match(context, /control\.value = previousValue/);
-	assert.match(guard, /transitionDispatch\.add\(shell\)/);
-	assert.match(guard, /transitionDispatch\.delete\(shell\)/);
-	assert.match(assets, /DESIGNER_EXIT_GUARD_API = 3/);
-	assert.match(assets, /DESIGNER_CONTEXT_SCRIPT/);
-});
-
 test('G2-S T09: modal opened before a newer edit, active Save and adapter replacement must not close', async () => {
   const dirty = fixture({ dirty: false, deferredModal: true });
   const pendingDirty = dirty.request();
@@ -300,124 +281,19 @@ test('G2-S T09: modal opened before a newer edit, active Save and adapter replac
 });
 
 
-test('B1-01: clean transition commits without modal or Save', async () => {
-	const f = fixture({dirty: false});
-	let loads = 0;
-	const result = await f.transition(() => { loads++; return Promise.resolve('loaded'); });
-	assert.equal(result.status, 'applied');
-	assert.equal(result.result, 'loaded');
-	assert.equal(loads, 1);
-	assert.equal(f.modals.length, 0);
-	assert.equal(f.writes, 0);
-	assert.equal(f.toasts.length, 0);
-});
-
-test('B1-02: dirty Save requires verified receipt and a clean recheck', async () => {
-	const f = fixture({dirty: true});
-	let loads = 0;
-	const result = await f.transition(() => { loads++; return true; });
-	assert.equal(result.status, 'applied');
-	assert.equal(loads, 1);
-	assert.equal(f.writes, 1);
-	assert.equal(f.modals.length, 1);
-	assert.equal(f.modals[0].confirmLabel, 'Switch design');
-	assert.equal(f.toasts.length, 0, 'the consumer alone owns Save feedback');
-	const unverified = fixture({dirty: true, receipt: false});
-	const refused = await unverified.transition(() => { throw new Error('Must not apply'); });
-	assert.notEqual(refused.status, 'applied');
-	assert.equal(unverified.writes, 1);
-});
-
-test('B1-03: explicit dirty Discard authorizes without a write', async () => {
-	const f = fixture({dirty: true, action: 'discard'});
-	let calls = 0;
-	assert.equal((await f.transition(() => { calls++; return true; })).status, 'applied');
-	assert.equal(calls, 1);
-	assert.equal(f.writes, 0);
-	assert.equal(f.modals.length, 1);
-});
-
-test('B1-04: Cancel never dispatches a context request', async () => {
-	const f = fixture({dirty: true, accept: false});
-	let calls = 0;
-	assert.equal((await f.transition(() => { calls++; return true; })).status, 'cancelled');
-	assert.equal(calls, 0);
-	assert.equal(f.writes, 0);
-});
-
-test('B1-05: UNKNOWN and in-flight Save always block, including Discard', async () => {
-	for (const f of [fixture({dirty: true, unknown: true, action: 'discard'}), fixture({dirty: true, busy: true})]) {
-		let calls = 0;
-		assert.equal((await f.transition(() => { calls++; })).status, 'blocked');
-		assert.equal(calls, 0);
-		assert.equal(f.modals.length, 0);
-	}
-});
-
-test('B1-06: late edits during Save forbid context replacement', async () => {
-	const f = fixture({dirty: true, changeDuringSave: true});
-	let calls = 0;
-	const result = await f.transition(() => { calls++; return true; });
-	assert.notEqual(result.status, 'applied');
-	assert.equal(calls, 0);
-	assert.equal(f.writes, 1);
-});
-
-test('B1-07: modal pending, duplicate requests and exit requests are single-flight', async () => {
-	const f = fixture({dirty: true, deferredModal: true});
-	let calls = 0;
-	const first = f.transition(() => { calls++; return Promise.resolve(true); });
-	assert.equal(f.modals.length, 1);
-	assert.equal((await f.transition(() => { calls++; })).status, 'blocked');
-	assert.equal(await f.request(), false, 'Exit Guard must share its lock with transition');
-	assert.equal(f.modals.length, 1);
-	f.releaseModal();
-	assert.equal((await first).status, 'applied');
-	assert.equal(calls, 1);
-});
-
-test('B1-08: rejected target does not announce an applied switch', async () => {
-	const f = fixture();
-	const result = await f.transition(() => Promise.reject(new Error('Target read failed')));
-	assert.equal(result.status, 'failed');
-	assert.match(result.error.message, /Target read failed/);
-	assert.equal(f.modals.length, 0);
-});
-
-test('B1-09: a late Save or adapter replacement prevents dispatch after modal', async () => {
-	const saving = fixture({dirty: true, deferredModal: true, action: 'discard'});
-	let calls = 0;
-	const request = saving.transition(() => { calls++; return true; });
-	saving.beginSaving();
-	saving.releaseModal();
-	assert.notEqual((await request).status, 'applied');
-	assert.equal(calls, 0);
-	const replaced = fixture({dirty: true, deferredModal: true, action: 'discard'});
-	let replacedCalls = 0;
-	const replacement = replaced.transition(() => { replacedCalls++; return true; });
-	replaced.replaceAdapter();
-	replaced.releaseModal();
-	assert.notEqual((await replacement).status, 'applied');
-	assert.equal(replacedCalls, 0);
-});
-
-test('B1-10: direct unapproved context event is rejected by capture', () => {
+test('CX02E: v4 replaces B1 while retaining fullscreen Exit Guard', async () => {
+	const f = fixture({dirty:false});
+	assert.equal((await f.transition('different')).status,'blocked');
+	const guard = read('assets/js/features/designer-exit-guard.js');
+	const picker = read('assets/js/features/designer-context.js');
 	const launch = read('assets/js/features/designer-launch.js');
-	const begin = launch.indexOf("document.addEventListener('cb:design-shell:contextrequest'");
-	const end = launch.indexOf('\n\tconst panelToggleLabel', begin);
-	assert.ok(begin >= 0 && end > begin);
-	const callbacks = new Map();
-	const shell = {};
-	const root = {querySelector: () => shell};
-	runInNewContext(launch.slice(begin, end), {
-		document: {addEventListener: (name, callback) => callbacks.set(name, callback)},
-		window: {cbCore: {designerExitGuard: {isTransitionDispatchAuthorized: () => false}}},
-	});
-	let rejected = 0;
-	callbacks.get('cb:design-shell:contextrequest')({target: root, stopImmediatePropagation() {rejected++;}});
-	assert.equal(rejected, 1);
+	assert.match(guard,/contractVersion:4/);
+	assert.match(picker,/guard\.transition\(shell, \{targetId: value\}\)/);
+	assert.doesNotMatch(guard+picker+launch,
+		/requestTransition|isTransitionDispatchAuthorized|cb:design-shell:contextrequest|cb:design-shell:contextchanged/);
+	assert.match(guard,/const request = async/);
+	assert.match(launch,/bindExitGuard\(shell, fullscreen\)/);
 });
-
 
 test('DF-EXIT-01: Discard is synchronous, verified and never saves', async () => {
 	const ok = fixture({dirty:true, action:'discard'});
