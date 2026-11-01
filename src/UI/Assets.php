@@ -773,7 +773,7 @@ final class Assets {
 				'cb-core-css-icon-controls',
 				CB_CORE_URL . 'assets/css/components/icon-controls.css',
 				[ 'cb-core-css-tokens', 'dashicons' ],
-				CB_CORE_VERSION
+				self::asset_revision( 'assets/css/components/icon-controls.css' )
 			);
 			return;
 		}
@@ -782,7 +782,7 @@ final class Assets {
 			'cb-core-css-icon-controls-native',
 			CB_CORE_URL . 'assets/css/components/icon-controls-native.css',
 			[ 'dashicons' ],
-			CB_CORE_VERSION
+			self::asset_revision( 'assets/css/components/icon-controls-native.css' )
 		);
 	}
 

@@ -203,4 +203,78 @@ final class CB_Admin_UI_Primitives_Foundation_Contract_Test extends WP_UnitTestC
 		self::assertStringContainsString( 'enqueue_icon_controls', $assets );
 	}
 
+	/**
+	 * Verify that the public auto-mode resolves actual WP_Screen identity,
+	 * not the accidental presence of tokens enqueued by sibling Foundations.
+	 */
+	public function test_auto_button_presentation_uses_core_parent_screen(): void {
+		$previous = $GLOBALS['current_screen'] ?? null;
+		try {
+			$GLOBALS['current_screen'] = \WP_Screen::get( 'toplevel_page_' . CB_CORE_PARENT_MENU );
+			Assets::enqueue_buttons();
+
+			self::assertTrue( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) );
+			self::assertTrue( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+			self::assertFalse( wp_style_is( 'cb-core-css-buttons-native', 'enqueued' ) );
+		} finally {
+			if ( null === $previous ) {
+				unset( $GLOBALS['current_screen'] );
+			} else {
+				$GLOBALS['current_screen'] = $previous;
+			}
+		}
+	}
+
+	public function test_auto_button_presentation_uses_native_for_standalone_screen(): void {
+		$previous = $GLOBALS['current_screen'] ?? null;
+		try {
+			$GLOBALS['current_screen'] = \WP_Screen::get( 'toplevel_page_cb-bookings' );
+			Assets::enqueue_buttons();
+
+			self::assertTrue( wp_style_is( 'cb-core-css-buttons-native', 'enqueued' ) );
+			self::assertFalse( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) );
+			self::assertFalse( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+		} finally {
+			if ( null === $previous ) {
+				unset( $GLOBALS['current_screen'] );
+			} else {
+				$GLOBALS['current_screen'] = $previous;
+			}
+		}
+	}
+
+	public function test_native_buttons_coexist_with_icon_controls_and_modals(): void {
+		Assets::enqueue_icon_controls( Assets::ICON_CONTROL_PRESENTATION_WP_NATIVE );
+		Assets::enqueue_modals( Assets::MODAL_PRESENTATION_WP_NATIVE );
+		Assets::enqueue_buttons( Assets::BUTTON_PRESENTATION_WP_NATIVE );
+
+		self::assertTrue( wp_style_is( 'cb-core-css-buttons-native', 'enqueued' ) );
+		self::assertTrue( wp_style_is( 'cb-core-css-icon-controls-native', 'enqueued' ) );
+		self::assertTrue( wp_style_is( 'cb-core-css-modals-native', 'enqueued' ) );
+		self::assertFalse( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) );
+		self::assertFalse( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+	}
+
+	public function test_public_button_method_is_loaded_from_canonical_base_file(): void {
+		$method = new \ReflectionMethod( Assets::class, 'enqueue_buttons' );
+		self::assertTrue( $method->isPublic() );
+		self::assertTrue( $method->isStatic() );
+		self::assertSame(
+			realpath( CB_CORE_DIR . 'src/UI/Assets.php' ),
+			realpath( $method->getFileName() )
+		);
+	}
+
+	public function test_icon_control_css_versions_are_content_addressed(): void {
+		$assets = file_get_contents( CB_CORE_DIR . 'src/UI/Assets.php' );
+		self::assertIsString( $assets );
+		foreach ( [ 'icon-controls.css', 'icon-controls-native.css' ] as $file ) {
+			self::assertStringContainsString(
+				"self::asset_revision( 'assets/css/components/" . $file . "' )",
+				$assets
+			);
+		}
+	}
+
+
 }

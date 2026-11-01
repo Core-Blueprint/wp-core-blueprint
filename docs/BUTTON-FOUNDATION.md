@@ -67,3 +67,36 @@ An `aria-disabled` element still needs consumer-side action prevention.
 This contract introduces no JavaScript behavior or dependency on Designer
 Foundation. The existing Modal Foundation is a separate opt-in API for
 confirmation flows.
+
+## Installed Base compatibility
+
+The WordPress plugin header is currently `1.0.0` across multiple internal
+development builds. Therefore that version number **does not prove** that a
+site has the Button Foundation. The consumer must check the public
+capabilities at runtime before calling them:
+
+```php
+$assets = \\CoreBlueprint\\Core\\UI\\Assets::class;
+$ready = class_exists( $assets )
+    && is_callable( [ $assets, 'enqueue_buttons' ] )
+    && is_callable( [ $assets, 'enqueue_icon_controls' ] )
+    && is_callable( [ $assets, 'enqueue_modals' ] )
+    && defined( $assets . '::BUTTON_PRESENTATION_WP_NATIVE' );
+```
+
+When these checks fail, extensions should omit dependent controls and show a
+capability-gated admin notice asking the site operator to install an accepted
+Base build. Never call an unavailable method, silently substitute local
+Foundation CSS, or rely on the `1.0.0` header as a compatibility gate.
+
+The canonical Base packager includes `src/UI/Assets.php` and the native
+component stylesheets. For an observed `undefined method` error, confirm
+the actual installed class file and its declaring path with
+`ReflectionMethod` in the active WordPress runtime. Check that the installed
+file matches the exact tested ZIP before blaming the autoloader. The duplicate
+load guard intentionally retains the **first** Base bootstrap; it cannot
+upgrade an already-loaded class from a later plugin copy. Webserver OPcache may
+also retain stale PHP definitions across replacement operations.
+
+Do not bump Base's public version or introduce a second autoloader merely
+to mask an unverified installation/cache mismatch.

@@ -109,3 +109,11 @@ is required, and no extra button belongs in `summary`. The `summary`
 element is the single keyboard and screen-reader-accessible toggle.
 This does not change `cb-core-disclosure-toggle`, which remains a separate
 button plus `aria-expanded` contract. No disclosure JavaScript is enqueued.
+
+## Cache and release candidate identity
+
+Both icon-control presentation adapters use a content-derived stylesheet
+revision rather than the unchanged `1.0.0` plugin header. This ensures a
+new URL when the CSS content changes during internal acceptance, without
+changing the public plugin version. The existing default control and
+`cb-core-disclosure-toggle` remain compatible.
