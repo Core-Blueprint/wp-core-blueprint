@@ -130,8 +130,17 @@ export const createManagedContextAuthority = ({ createProfileSession, createDoma
 		// from a session. The coordinator retains its own handle reference.
 		return active?.id ?? null;
 	};
+	const dispose = (handle) => {
+		const record = recordFor(handle);
+		if (record.status !== 'RETIRED' && record.status !== 'INVALID') throw refused();
+		if (record.session === null) return false;
+		const session = record.session;
+		record.session = null;
+		session.dispose();
+		return true;
+	};
 	return Object.freeze({
 		stage, activateInitial, lock, unlock, switchTo, rollback, retire,
-		invalidate, isCurrent, current,
+		invalidate, isCurrent, current, dispose,
 	});
 };
