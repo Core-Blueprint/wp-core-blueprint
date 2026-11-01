@@ -220,3 +220,131 @@ test('CX02B: profile sessions expose only read-only validation context during st
 	denied(() => quote.session.validate());
 	assert.deepEqual(quote.session.baselineSnapshot(), flowProject());
 });
+
+const diagnostic = (message = 'Initial warning') => ({
+	code: 'CX02B_VALIDATION', message, location: 'root',
+});
+const deleteKey = () => {
+	let prevented = 0;
+	return {
+		key: 'Delete', ctrlKey: false, metaKey: false, altKey: false,
+		shiftKey: false, target: null,
+		preventDefault() { prevented += 1; },
+		get prevented() { return prevented; },
+	};
+};
+
+test('CX02B-01: staged profile Delete and Undo cannot invoke consumer callbacks or mutate state', () => {
+	let activeDeletes = 0, stagedDeletes = 0, initialValidations = 0;
+	const binding = editorModule.createManagedContextBinding({
+		initial: { id: 'invoice', kind: 'profile', sessionOptions: {
+			project: flowProject(), profile: 'document-flow',
+		} },
+	});
+	const event = deleteKey();
+	assert.equal(binding.current.session.handleShortcut(event, { onDelete() {
+		activeDeletes += 1;
+		return true;
+	} }), true);
+	assert.equal(activeDeletes, 1);
+	assert.equal(event.prevented, 1);
+	const staged = binding.stageContext({
+		id: 'quote', kind: 'profile', sessionOptions: {
+			project: flowProject(), profile: 'document-flow',
+			validate(_project, context) {
+				initialValidations += 1;
+				assert.equal(context.editorState.snapshot().validation.length, 0);
+				return [diagnostic()];
+			},
+		},
+	});
+	assert.equal(initialValidations, 1, 'staged diagnostics initialized once');
+	assert.equal(staged.session.handleShortcut({ key: 'a', target: null }, {
+		onDelete() { stagedDeletes++; return true; },
+	}), false, 'non-mutating key remains a no-op');
+	const before = staged.session.snapshot();
+	const stagedKey = deleteKey();
+	denied(() => staged.session.handleShortcut(stagedKey, {
+		onDelete() { stagedDeletes++; return true; },
+	}));
+	denied(() => staged.session.handleShortcut({ key: 'z', ctrlKey: true, target: null }));
+	assert.equal(stagedDeletes, 0);
+	assert.equal(stagedKey.prevented, 0);
+	assert.deepEqual(staged.session.snapshot(), before);
+	assert.equal(initialValidations, 1, 'blocked shortcuts do not revalidate');
+});
+
+test('CX02B-02: nested Inspector and Validation writes are fenced before side effects', () => {
+	const { authority, stage, raw } = createRawFixture();
+	const first = stage('invoice');
+	const nested = raw.get('invoice').editorState;
+	const initialSnapshot = nested.snapshot();
+	denied(() => nested.inspector.setActiveSection('secret'));
+	denied(() => nested.inspector.setExpanded('general', true));
+	denied(() => nested.inspector.restore({ activeSection: 'other', expanded: ['general'] }));
+	denied(() => nested.validation.replace([diagnostic('Changed')]));
+	denied(() => nested.validation.append(diagnostic('Changed')));
+	denied(() => nested.validation.clear());
+	assert.deepEqual(nested.snapshot(), initialSnapshot);
+	assert.throws(() => { nested.inspector = new nested.inspector.constructor(); }, TypeError);
+	assert.throws(() => { nested.validation = new nested.validation.constructor(); }, TypeError);
+	assert.throws(() => { nested.selection = new nested.selection.constructor(); }, TypeError);
+	authority.activateInitial(first);
+	nested.inspector.setActiveSection('general');
+	nested.inspector.setExpanded('general', true);
+	assert.equal(nested.validation.append(diagnostic()), true);
+	assert.equal(nested.snapshot().inspector.activeSection, 'general');
+	assert.equal(nested.snapshot().validation.length, 1);
+	authority.lock(first);
+	const locked = nested.snapshot();
+	denied(() => nested.inspector.setExpanded('general', false));
+	denied(() => nested.validation.replace([]));
+	assert.deepEqual(nested.snapshot(), locked);
+	authority.unlock(first);
+	nested.inspector.restore({ activeSection: 'other', expanded: [] });
+	nested.validation.clear();
+	assert.equal(nested.snapshot().validation.length, 0);
+});
+
+test('CX02B-02: retired and invalid nested state cannot be mutated through retained references', () => {
+	const { authority, stage, raw } = createRawFixture();
+	const source = stage('invoice');
+	authority.activateInitial(source);
+	const nestedSource = raw.get('invoice').editorState;
+	const target = stage('quote');
+	const nestedTarget = raw.get('quote').editorState;
+	authority.lock(source);
+	authority.switchTo(source, target);
+	authority.retire(source, target);
+	const beforeRetired = nestedSource.snapshot();
+	denied(() => nestedSource.inspector.setActiveSection('stale'));
+	denied(() => nestedSource.validation.append(diagnostic()));
+	assert.deepEqual(nestedSource.snapshot(), beforeRetired);
+	authority.invalidate(target);
+	denied(() => nestedTarget.inspector.restore({ activeSection: 'stale' }));
+	denied(() => nestedTarget.validation.clear());
+	assert.equal(source.status, 'RETIRED');
+	assert.equal(target.status, 'INVALID');
+});
+
+test('CX02B-02: constructor-only validation does not bypass managed authority', () => {
+	let allowedDuringConstruction = false;
+	const { authority, stage, raw } = createRawFixture();
+	const pending = stage('invoice');
+	const original = raw.get('invoice').editorState;
+	assert.equal(pending.status, 'STAGED');
+	const guarded = new editorStateModule.EditorState({
+		writeGuard: () => { throw Object.assign(new Error('write denied'), { code: 'DESIGNER_CONTEXT_NOT_WRITABLE' }); },
+		initializeValidation(state) {
+			assert.deepEqual(state.snapshot().validation, []);
+			allowedDuringConstruction = true;
+			return [diagnostic()];
+		},
+	});
+	assert.equal(allowedDuringConstruction, true);
+	assert.deepEqual(guarded.validation.all(), [diagnostic()]);
+	denied(() => guarded.validation.replace([]));
+	denied(() => guarded.inspector.setActiveSection('hidden'));
+	denied(() => original.validation.append(diagnostic('bypass')));
+	assert.equal(authority.isCurrent(pending), false);
+});
