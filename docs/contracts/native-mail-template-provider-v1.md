@@ -19,7 +19,7 @@ Required properties of a template definition:
 | `description` | Optional human-facing description. |
 | `document` | Complete native v1 Mail document with exactly `project` and `fields`. |
 
-Base reserves the `wordpress.*` namespace for its exact built-in IDs and canonical defaults (provider `core`, group `wordpress`); third parties cannot register alternate WordPress templates. A duplicate ID or malformed registration is refused with `false`; the first valid registration is not replaced.
+Base reserves the `wordpress.*` namespace for its exact built-in IDs and canonical defaults (provider `core`, group `wordpress`); third parties cannot register alternate WordPress templates. The `core` provider namespace is likewise reserved for built-in Base resources. A duplicate ID or malformed registration is refused with `false`; the first valid registration is not replaced.
 
 The `document` envelope is exact, not a legacy conversion:
 
@@ -57,4 +57,12 @@ The `document` envelope is exact, not a legacy conversion:
 
 The provider owns template wording, event-to-template mapping, safe binding previews and notification context. Base owns validation, native nodes, editor context, rendering, document persistence, revisions and Save authorization. Registering a definition does **not** itself authorize a user to open or save it: authenticated REST nonce checks, WordPress capabilities, registered resource identity, active provider policy and native document gates are separately enforced by the Designer Platform transport.
 
-For MAIL-EXT-01A, extension resources remain excluded by the existing Base admin picker and transport identity policy until MAIL-EXT-01B. No migration or change to existing saved documents is performed.
+## Native Designer admission (MAIL-EXT-01B)
+
+The existing Core Blueprint → Mail → Templates landing selector and fullscreen Header Picker use the **same active** registered-template catalog. Both render native `<optgroup>` labels per provider (WordPress first, other providers alphabetically). Neither creates a new toolbar or editor. The canonical native JavaScript context host, Save/Discard flow and Exit Guard are unchanged.
+
+The existing `base/mail` REST Designer profile permits only resource keys with a current, validated `TemplateRegistry::get( $key )` entry and a valid native document. **Both** `manage_options` authorization and the existing Mail Designer enabled state remain mandatory; REST CSRF nonce/session checks, native Save Authority, fingerprint, revision, identity and existing-document gates are unchanged. An unregistered, deactivated or malformed provider resource is denied; a disabled provider's **saved Base document row is not deleted**. Reactivation with the same ID resumes access to that row without restoring from a default or migrating it.
+
+This shared contract is intentionally provider-neutral: official first-party integrations dogfood the same public registry rather than a private Bookings-only allowlist. Registration happens from executable WordPress plugin PHP through the documented hook; it is not a user permission grant. Trusted installed plugin code is part of the host's WordPress trust boundary, so provider registration is not a sandbox for arbitrary untrusted PHP.
+
+No migration or change to existing persisted documents is performed. Browser and installed WordPress acceptance still must verify native Save, re-open, revision integrity, recovery, Save/Discard, Exit Guard and cross-product rendering; source-only tests are insufficient.
