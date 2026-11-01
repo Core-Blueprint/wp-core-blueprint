@@ -302,10 +302,9 @@ export const createDesignerSelectionController = ({
 		},
 		destroy() {
 			if (destroyed) return;
+			// Only the Base coordinator may settle a prepared/committed binding.
+			if (pendingReceipt) throw new Error('DESIGNER_SELECTION_REBIND_PENDING');
 			destroyed = true;
-			if (pendingReceipt) {
-				try { pendingReceipt.rollback(); } catch (_) { /* Cleanup still continues. */ }
-			}
 			currentSubscription.unsubscribe();
 			selectionSessionRebinding.delete(controller);
 		},
