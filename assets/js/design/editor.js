@@ -122,17 +122,32 @@ const createSessionInternal = ({
 		validate: (candidate) => validateProfileProject(profileContext, candidate),
 		writeGuard,
 	});
-	const editorState = new EditorState({ writeGuard });
+	const readonlyStateOf = (state) => Object.freeze({
+		snapshot: () => state.snapshot(),
+		selection: Object.freeze({ snapshot: () => state.selection.snapshot() }),
+		validation: Object.freeze({ all: () => state.validation.all() }),
+	});
+	const editorState = new EditorState({
+		writeGuard,
+		initializeValidation: writeGuard ? (initialState) => {
+			if (typeof validate !== 'function') return [];
+			const diagnostics = validate(projectState.current(), Object.freeze({
+				profile: profileContext,
+				event: null,
+				editorState: readonlyStateOf(initialState),
+			}));
+			if (!Array.isArray(diagnostics)) {
+				throw new TypeError('Design editor validate() must return an array of diagnostics.');
+			}
+			return diagnostics;
+		} : null,
+	});
 	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase, writeGuard });
 	let disposed = false;
 
 	// Managed consumers must never receive mutable internal EditorState through
 	// their validation callback, even before a staged context is activated.
-	const readonlyEditorState = Object.freeze({
-		snapshot: () => editorState.snapshot(),
-		selection: Object.freeze({ snapshot: () => editorState.selection.snapshot() }),
-		validation: Object.freeze({ all: () => editorState.validation.all() }),
-	});
+	const readonlyEditorState = readonlyStateOf(editorState);
 	const validationContext = (event = null) => Object.freeze({
 		profile: profileContext,
 		event,
@@ -146,7 +161,9 @@ const createSessionInternal = ({
 		editorState,
 	);
 
-	validateCurrent();
+	// Managed initial validation was seeded only in EditorState construction.
+	// Its normal mutators remain fenced until the context becomes ACTIVE.
+	if (!writeGuard) validateCurrent();
 
 	const unsubscribeProject = projectState.subscribe((event, currentProject) => {
 		const diagnostics = validateCurrent(event);
@@ -317,6 +334,8 @@ const createSessionInternal = ({
 		},
 		handleShortcut(event, { onDelete = null } = {}) {
 			assertActive();
+			// Authorize before invoking a consumer-owned delete callback.
+			history.assertWritable();
 			return handleEditorShortcut(event, { history, onDelete });
 		},
 		dispose() {
