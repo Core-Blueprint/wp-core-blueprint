@@ -35,6 +35,7 @@ class FakeElement {
 	querySelector(selector) {
 		if (selector === '[data-cb-design-shell-undo]') return this.undoButton;
 		if (selector === '[data-cb-design-shell-redo]') return this.redoButton;
+		if (selector === '[data-cb-design-shell-fullscreen]') return this.fullscreenButton;
 		return null;
 	}
 	querySelectorAll() {return [];}
@@ -71,7 +72,13 @@ before(async () => {
 		activeElement: null,
 		documentElement: {classList: {add() {}, remove() {}}},
 		querySelector() {return null;},
-		addEventListener() {}, removeEventListener() {},
+		listeners: new Map(),
+		addEventListener(type, callback) {
+			if (!this.listeners.has(type)) this.listeners.set(type, new Set());
+			this.listeners.get(type).add(callback);
+		},
+		removeEventListener(type, callback) {this.listeners.get(type)?.delete(callback);},
+		fire(type, event) {for (const callback of this.listeners.get(type) || []) callback(event);},
 	};
 	globalThis.Element = FakeElement;
 	globalThis.HTMLButtonElement = FakeButton;
@@ -140,6 +147,7 @@ const fixtureShell = (session) => {
 	const root = new FakeElement();
 	root.undoButton = new FakeButton();
 	root.redoButton = new FakeButton();
+	root.fullscreenButton = new FakeButton();
 	return {root, shell: shellModule.createDesignerShell(root, {session})};
 };
 const fixtureSelection = (session, shell, records, renderInspector = null) =>
@@ -206,6 +214,34 @@ test('CX02C: rollback restores original subscriptions, selection and Undo/Redo w
 	assert.equal(root.undoButton.disabled, false);
 	assert.equal(shellModule.createDesignerShell(root, {session: source}), shell);
 	selection.destroy();
+	shell.destroy();
+});
+
+test('CX02C: fullscreen, focus and keyboard lifecycle survive context rebinding', () => {
+	const source = fixture('source');
+	const target = fixture('target');
+	const {root, shell} = fixtureShell(source);
+	const renders = [];
+	const controller = fixtureSelection(source, shell, renders);
+	assert.equal(shell.enterFullscreen(), true);
+	assert.equal(shell.isFullscreen(), true);
+	assert.equal(globalThis.document.activeElement, root);
+	const keyboardListeners = globalThis.document.listeners.get('keydown')?.size ?? 0;
+	const fullscreenListeners = root.fullscreenButton.handlers.get('click')?.length ?? 0;
+	const receipt = prepare(shell, controller, source, target);
+	receipt.commit();
+	receipt.finalize();
+	assert.equal(shell.isFullscreen(), true);
+	assert.equal(globalThis.document.listeners.get('keydown')?.size ?? 0, keyboardListeners);
+	assert.equal(root.fullscreenButton.handlers.get('click')?.length ?? 0, fullscreenListeners);
+	let prevented = false;
+	globalThis.document.fire('keydown', {
+		key: 'Escape', defaultPrevented: false,
+		preventDefault() {prevented = true;},
+	});
+	assert.equal(prevented, true);
+	assert.equal(shell.isFullscreen(), false);
+	controller.destroy();
 	shell.destroy();
 });
 
