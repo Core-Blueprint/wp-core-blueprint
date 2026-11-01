@@ -1,4 +1,5 @@
 import { bindRegisteredCommand, bindRegisteredBatch } from './core/commands.js';
+import { createManagedContextAuthority } from './core/context-authority.js';
 import { validateStableProjectV1 } from './core/stable-schema.js';
 import { sameValue } from './core/value.js';
 import { createPlatformHost } from './platform/host.js';
@@ -104,7 +105,7 @@ const runValidation = (validate, project, context, editorState) => {
  * Consumers own their domain model, persistence, validation policy and rendered
  * editor UI. Profiles own their output-specific project validation.
  */
-export const createSession = ({
+const createSessionInternal = ({
 	project,
 	profile,
 	validate = null,
@@ -113,19 +114,27 @@ export const createSession = ({
 	allowCommand = null,
 	historyLimit = 100,
 	verifyRebase = null,
-} = {}) => {
+} = {}, writeGuard = null) => {
 	const profileContext = resolveProfile(profile);
 	const projectState = new ProjectState(project, {
 		validate: (candidate) => validateProfileProject(profileContext, candidate),
+		writeGuard,
 	});
-	const editorState = new EditorState();
-	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase });
+	const editorState = new EditorState({ writeGuard });
+	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase, writeGuard });
 	let disposed = false;
 
+	// Managed consumers must never receive mutable internal EditorState through
+	// their validation callback, even before a staged context is activated.
+	const readonlyEditorState = Object.freeze({
+		snapshot: () => editorState.snapshot(),
+		selection: Object.freeze({ snapshot: () => editorState.selection.snapshot() }),
+		validation: Object.freeze({ all: () => editorState.validation.all() }),
+	});
 	const validationContext = (event = null) => Object.freeze({
 		profile: profileContext,
 		event,
-		editorState,
+		editorState: writeGuard ? readonlyEditorState : editorState,
 	});
 
 	const validateCurrent = (event = null) => runValidation(
@@ -193,9 +202,8 @@ export const createSession = ({
 
 	return Object.freeze({
 		profile: profileContext,
-		projectState,
-		editorState,
-		history,
+		// Never leak raw mutable stores from a managed ContextHandle.
+		...(writeGuard ? {} : { projectState, editorState, history }),
 		project() { assertActive(); return projectState.current(); },
 		snapshot() { assertActive(); return projectState.snapshot(); },
 		replace(nextProject, options = {}) {
@@ -279,6 +287,7 @@ export const createSession = ({
 		subscribeSelection(listener, options = {}) {
 			assertActive();
 			if (typeof listener !== 'function') throw new TypeError('Design editor selection listener must be a function.');
+			if (writeGuard && options?.emitCurrent === true) writeGuard();
 			return subscribeSelection(listener, options);
 		},
 		execute,
@@ -292,6 +301,7 @@ export const createSession = ({
 		},
 		validate() {
 			assertActive();
+			writeGuard?.();
 			return validateCurrent();
 		},
 		inspector() {
@@ -317,10 +327,13 @@ export const createSession = ({
 };
 
 /**
+export const createSession = (options = {}) => createSessionInternal(options);
+
+/**
  * The single domain-neutral session backed by Base's canonical transaction
  * engine. Consumers retain authority over domain schema and persistence.
  */
-export const createDomainSession = ({
+const createDomainSessionInternal = ({
 	project,
 	validateProject = null,
 	allowCommand = null,
@@ -328,15 +341,15 @@ export const createDomainSession = ({
 	verifyRebase = null,
 	resolveSelectionEntity = null,
 	historyLimit = 100,
-} = {}) => {
+} = {}, writeGuard = null) => {
 	for (const [name, candidate] of Object.entries({ validateProject, allowCommand, onChange, verifyRebase, resolveSelectionEntity })) {
 		if (candidate !== null && typeof candidate !== 'function') {
 			throw new TypeError('Domain session ' + name + ' must be a function or null.');
 		}
 	}
-	const projectState = new ProjectState(project, { validate: validateProject });
-	const editorState = new EditorState();
-	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase });
+	const projectState = new ProjectState(project, { validate: validateProject, writeGuard });
+	const editorState = new EditorState({ writeGuard });
+	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase, writeGuard });
 	editorState.selection.configureDomain({ resolveEntity: resolveSelectionEntity, contextEpoch: history.contextEpoch });
 	let disposed = false;
 	const assertActive = () => {
@@ -368,6 +381,7 @@ export const createDomainSession = ({
 		subscribeSelection(listener, { emitCurrent = false } = {}) {
 			assertActive();
 			if (typeof listener !== 'function') throw new TypeError('Domain Selection listener must be a function.');
+			if (writeGuard && emitCurrent) writeGuard();
 			return editorState.selection.subscribe(
 				(event) => listener(editorState.selection.typedSnapshot(), Object.freeze({
 					event, projectRevision: projectState.revision,
@@ -405,6 +419,30 @@ export const createDomainSession = ({
 			history.dispose();
 		},
 	});
+};
+
+export const createDomainSession = (options = {}) => createDomainSessionInternal(options);
+
+/**
+ * CX-02B: canonical Base-only managed session binding. The consumer-facing
+ * surface cannot activate, retire, unlock or otherwise mutate context authority.
+ * Later coordinator slices own transaction actions within this module.
+ */
+const managedContextInternals = new WeakMap();
+export const createManagedContextBinding = ({ initial } = {}) => {
+	const authority = createManagedContextAuthority({
+		createProfileSession: createSessionInternal,
+		createDomainSession: createDomainSessionInternal,
+	});
+	const initialHandle = authority.stage(initial);
+	authority.activateInitial(initialHandle);
+	const binding = Object.freeze({
+		get current() { return managedContextInternals.get(binding)?.current ?? null; },
+		stageContext(spec) { return authority.stage(spec); },
+		isCurrent(handle) { return authority.isCurrent(handle); },
+	});
+	managedContextInternals.set(binding, { authority, current: initialHandle });
+	return binding;
 };
 
 /**
