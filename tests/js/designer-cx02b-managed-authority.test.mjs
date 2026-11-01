@@ -181,3 +181,42 @@ test('CX02B: ordinary unmanaged domain sessions retain existing mutation behavio
 	assert.equal(session.project().root.props.revision, 1);
 	session.dispose();
 });
+
+const flowProject = () => ({
+	schema_version: 0, design_type: 'fixture.cx02b.flow',
+	root: {
+		type: 'document', provider: 'fixture.cx02b', children: [], properties: {
+			layout: {
+				mode: 'flow', units: 'mm',
+				page: { width: 210, height: 297 },
+				margins: { top: 15, right: 15, bottom: 15, left: 15 },
+			},
+		},
+	},
+});
+
+test('CX02B: profile sessions expose only read-only validation context during staging', () => {
+	let exposed = null;
+	const binding = editorModule.createManagedContextBinding({
+		initial: {
+			id: 'invoice', kind: 'profile', sessionOptions: {
+				project: flowProject(), profile: 'document-flow',
+				validate(_project, context) { exposed = context.editorState; return []; },
+			},
+		},
+	});
+	assert.equal(binding.current.status, 'ACTIVE');
+	assert.equal(typeof exposed.snapshot, 'function');
+	assert.equal(exposed.selection.set, undefined);
+	assert.equal(exposed.validation.replace, undefined);
+	assert.equal(binding.current.session.projectState, undefined);
+	assert.deepEqual(binding.current.session.validate(), []);
+	const quote = binding.stageContext({
+		id: 'quote', kind: 'profile', sessionOptions: {
+			project: flowProject(), profile: 'document-flow',
+		},
+	});
+	denied(() => quote.session.setSelection([]));
+	denied(() => quote.session.validate());
+	assert.deepEqual(quote.session.baselineSnapshot(), flowProject());
+});
