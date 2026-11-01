@@ -10,6 +10,7 @@
 	const pending = new WeakSet();
 	// Managed v4 coordinators stay outside the public Guard API.
 	const managed = new WeakMap();
+	const managedDriver = new WeakMap();
 	const internalUrl = document.currentScript?.src
 		? new URL('../design/core/context-v4.js', document.currentScript.src).href : null;
 	const defaults = Object.freeze({
@@ -50,11 +51,16 @@
 	};
 	const isBusy = (shell) => shell.hasAttribute('aria-busy')
 		|| shell.dataset.cbDesignShellSaveState === 'saving';
+	const managedSettled = (record) => {
+		if (!record?.context) return true;
+		try { return managedDriver.get(record)?.status()?.state === 'READY'; }
+		catch (_) { return false; }
+	};
 	const canTransition = (shell) => {
 		if (!(shell instanceof Element) || pending.has(shell)) return false;
 		if (isBusy(shell)) return false;
 		const adapter = providers.get(shell);
-		if (!adapter) return false;
+		if (!adapter || !managedSettled(adapter)) return false;
 		try { return !unresolved(shell, adapter) && adapter.isDirty() === false; }
 		catch (_error) { return false; }
 	};
@@ -92,8 +98,15 @@
 		observe(shell);
 		providers.set(shell,record);
 		registered.add(shell);
-		if (record.context) managed.set(record,initializeManaged(shell,record));
+		if (record.context) {
+			const ready = initializeManaged(shell,record).then((driver) => {
+				if (driver && providers.get(shell) === record) managedDriver.set(record,driver);
+				return driver;
+			});
+			managed.set(record,ready);
+		}
 		const forget = () => {
+			managedDriver.delete(record);
 			providers.delete(shell);
 			registered.delete(shell);
 			if (shell.isConnected === false) {
@@ -105,6 +118,7 @@
 		const unregister = () => {
 			if (providers.get(shell) !== record) return false;
 			if (!record.context) return forget();
+			if (!managedSettled(record)) return Promise.resolve(false);
 			try {
 				if (pending.has(shell) || unresolved(shell,record) || isBusy(shell)
 					|| record.isDirty() !== false) return Promise.resolve(false);
@@ -112,7 +126,8 @@
 			// The Shell must be destroyed before the Guard registration is
 			// removed, otherwise its canonical Save safety gate denies teardown.
 			return managed.get(record).then((driver) => {
-				if (!driver || providers.get(shell) !== record || pending.has(shell)) return false;
+				if (!driver || providers.get(shell) !== record || pending.has(shell)
+					|| !managedSettled(record)) return false;
 				try {
 					if (unresolved(shell,record) || isBusy(shell)
 						|| record.isDirty() !== false || driver.close() !== true) return false;
@@ -144,6 +159,11 @@
 				continue;
 			}
 			const provider = providers.get(shell);
+			if (!managedSettled(provider)) {
+				event.preventDefault();
+				event.returnValue = '';
+				return;
+			}
 			try {
 				if (approved.has(shell) && !unresolved(shell, provider)) continue;
 				if (provider && !unresolved(shell, provider) && provider.isDirty() === false) continue;
@@ -241,7 +261,7 @@
 		const adapter = providers.get(shell) || null;
 		const labels = adapter?.labels || defaults;
 		// Missing authority or an ambiguous write cannot be authorized by a modal.
-		if (!adapter) { notify('error', labels.unavailable); return false; }
+		if (!adapter || !managedSettled(adapter)) { notify('error', labels.unavailable); return false; }
 		try { if (unresolved(shell, adapter)) { notify('error', labels.saveFailure); return false; } }
 		catch (_error) { notify('error', labels.unavailable); return false; }
 		if (shell.hasAttribute('aria-busy') || shell.dataset.cbDesignShellSaveState === 'saving') {
@@ -368,7 +388,7 @@
 			return Object.freeze({status:'blocked'});
 		}
 		const record = providers.get(shell);
-		if (!record?.context || shell.isConnected === false
+		if (!record?.context || !managedSettled(record) || shell.isConnected === false
 			|| typeof targetId !== 'string' || !targetId.trim()) {
 			return Object.freeze({status:'blocked'});
 		}
