@@ -115,7 +115,7 @@ test('B1 Native Mail imports one Picker module and restores blocked selection pa
   assert.equal(navigation, 0);
 });
 
-test('B1 reconciled native adapter retains canonical Exit Guard v3 without a second unload authority', () => {
+test('Native adapter retains canonical fullscreen Exit Guard v4 without a second unload authority', () => {
   const native = read('assets/js/design/platform/wordpress-save-adapter.js');
   const php = read('src/Design/Editor/Assets.php');
   assert.match(php, /public const DESIGNER_EXIT_GUARD_API = 4;/);
