@@ -216,7 +216,7 @@ export const createManagedContextTransaction = ({
 				// Only Base consumes its verified response and rebases History.
 				const result = await save(Object.freeze({
 					sourceId:source.id, generation:source.generation, targetId,
-					submittedProject:checkpoint.submittedProject,
+					revision:checkpoint.revision, submittedProject:checkpoint.submittedProject,
 					signal:attempt.controller.signal, isCurrent:()=>isCurrent(attempt),
 				}));
 				assertIdentity(attempt);
