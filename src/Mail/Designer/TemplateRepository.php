@@ -38,7 +38,7 @@ final class TemplateRepository {
 		} elseif ( 'missing' === $status ) {
 			// The same per-resource native default must be used by the context
 			// loader for a missing row. Never create or overwrite a row here.
-			$document = WordPressTemplates::default_document( $template_id );
+			$document = TemplateRegistry::default_document( $template_id );
 			$revision = '0';
 		} else {
 			throw new DocumentUnavailable( in_array( $status, [ 'corrupt', 'unsupported', 'unavailable', 'invalid', 'error' ], true )

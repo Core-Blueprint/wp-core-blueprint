@@ -39,6 +39,8 @@ class CheckEntrypointTest(unittest.TestCase):
         write('tests/public-design-mixed-charset-json-regression.php')
         write('tests/public-design-save-envelope-identity-regression.php')
         write('tests/public-design-mail-save-contract-regression.php')
+        write('tests/public-mail-template-provider-contract-regression.php')
+        write('tests/public-mail-extension-designer-regression.php')
         write('tests/public-design-document-native-authority-regression.php')
         write('tests/public-flow-preview-compat-regression.php')
         write('tests/public-design-document-consumer-adoption-regression.php')
@@ -95,6 +97,8 @@ class CheckEntrypointTest(unittest.TestCase):
                 'php|tests/public-design-mixed-charset-json-regression.php',
                 'php|tests/public-design-save-envelope-identity-regression.php',
                 'php|tests/public-design-mail-save-contract-regression.php',
+                'php|tests/public-mail-template-provider-contract-regression.php',
+                'php|tests/public-mail-extension-designer-regression.php',
                 'php|tests/public-design-document-native-authority-regression.php',
                 'php|tests/public-flow-preview-compat-regression.php',
                 'php|tests/public-design-document-consumer-adoption-regression.php',
@@ -137,6 +141,38 @@ class CheckEntrypointTest(unittest.TestCase):
         result = self.run_check('node|--test')
         self.assertEqual(23, result.returncode)
         self.assertFalse(any(x.startswith('python3|') for x in self.trace_lines()))
+
+    def test_missing_mail_template_provider_regression_fails_closed(self):
+        (self.root / 'tests/public-mail-template-provider-contract-regression.php').unlink()
+        result = self.run_check()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            'required source check missing: tests/public-mail-template-provider-contract-regression.php',
+            result.stderr,
+        )
+        self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_mail_template_provider_regression_failure_stops_before_javascript(self):
+        result = self.run_check('php|tests/public-mail-template-provider-contract-regression.php')
+        self.assertEqual(23, result.returncode, result.stdout + result.stderr)
+        self.assertFalse(any(x.startswith('node|') for x in self.trace_lines()))
+        self.assertNotIn('Level 1 checks: PASS', result.stdout)
+
+    def test_missing_mail_extension_designer_regression_fails_closed(self):
+        (self.root / 'tests/public-mail-extension-designer-regression.php').unlink()
+        result = self.run_check()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            'required source check missing: tests/public-mail-extension-designer-regression.php',
+            result.stderr,
+        )
+        self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_mail_extension_designer_failure_stops_before_javascript(self):
+        result = self.run_check('php|tests/public-mail-extension-designer-regression.php')
+        self.assertEqual(23, result.returncode, result.stdout + result.stderr)
+        self.assertFalse(any(x.startswith('node|') for x in self.trace_lines()))
+        self.assertNotIn('Level 1 checks: PASS', result.stdout)
 
     def test_missing_designer_v2_regression_fails_closed(self):
         (self.root / 'tests/public-designer-v2-abi-regression.php').unlink()

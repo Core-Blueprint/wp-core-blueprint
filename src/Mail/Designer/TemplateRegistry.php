@@ -12,7 +12,8 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Mail\Designer;
 
-use CoreBlueprint\Core\Design\Profile\Mail\Validator;
+use CoreBlueprint\Core\Design\Document\Repository;
+use CoreBlueprint\Core\Design\Editor\PlatformTransport;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -35,30 +36,45 @@ final class TemplateRegistry {
 	}
 
 	/**
-	 * @param array{id:string,provider:string,group:string,label:string,description?:string,subject:string,project:array<string,mixed>} $definition
+	 * Register a provider-owned native v1 default. WordPress and extensions
+	 * use the exact same document contract; no legacy project-only fallback.
+	 *
+	 * Provider namespaces own their resource IDs (e.g. bookings.*). The
+	 * wordpress.* namespace is reserved for Base's built-in catalog.
+	 *
+	 * @param array{id:string,provider:string,group:string,label:string,description?:string,document:array<string,mixed>} $definition
 	 */
 	public static function register( array $definition ): bool {
-		$id = isset( $definition['id'] ) ? trim( (string) $definition['id'] ) : '';
-		$provider = isset( $definition['provider'] ) ? sanitize_key( (string) $definition['provider'] ) : '';
-		$group = isset( $definition['group'] ) ? sanitize_key( (string) $definition['group'] ) : '';
-		$label = isset( $definition['label'] ) ? sanitize_text_field( (string) $definition['label'] ) : '';
-		$description = isset( $definition['description'] ) ? sanitize_text_field( (string) $definition['description'] ) : '';
-		$subject = isset( $definition['subject'] ) ? sanitize_text_field( (string) $definition['subject'] ) : '';
-		$project = $definition['project'] ?? null;
+		$id = $definition['id'] ?? null;
+		$provider = $definition['provider'] ?? null;
+		$group = $definition['group'] ?? null;
+		$label = $definition['label'] ?? null;
+		$description = $definition['description'] ?? '';
+		$document = $definition['document'] ?? null;
 
-		if (
-			1 !== preg_match( '/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$/', $id )
-			|| '' === $provider
-			|| '' === $group
-			|| '' === $label
-			|| ! is_array( $project )
-			|| isset( self::$definitions[ $id ] )
-		) {
+		if ( ! is_string( $id ) || ! Repository::valid_identity( Repository::MAIL, $id )
+			|| ! is_string( $provider ) || ! preg_match( '/^[a-z][a-z0-9_-]*$/D', $provider )
+			|| ! is_string( $group ) || ! preg_match( '/^[a-z][a-z0-9_-]*$/D', $group )
+			|| ! is_string( $label ) || '' === trim( $label )
+			|| ! is_string( $description )
+			|| ! is_array( $document )
+			|| isset( self::$definitions[ $id ] ) ) {
 			return false;
 		}
 
-		$diagnostics = ( new Validator() )->validate( $project );
-		if ( $diagnostics->has_errors() ) {
+		$namespace = explode( '.', $id, 2 )[0];
+		if ( 'wordpress' === $namespace ) {
+			// Reserve both ID and exact built-in wording against early hook
+			// squatters. No third-party wordpress.* resource authorization.
+			if ( 'core' !== $provider || 'wordpress' !== $group
+				|| $document !== WordPressTemplates::default_document( $id ) ) return false;
+		} elseif ( 'core' === $provider || $namespace !== $provider ) {
+			return false;
+		}
+
+		// Exactly the same PHP native-v1 admission as a persisted Mail row.
+		// A malformed default is refused at registration, not normalized.
+		if ( ! PlatformTransport::valid_native_document( Repository::MAIL, $document ) ) {
 			return false;
 		}
 
@@ -66,12 +82,22 @@ final class TemplateRegistry {
 			'id'          => $id,
 			'provider'    => $provider,
 			'group'       => $group,
-			'label'       => $label,
-			'description' => $description,
-			'subject'     => $subject,
-			'project'     => $project,
+			'label'       => sanitize_text_field( $label ),
+			'description' => sanitize_text_field( $description ),
+			'document'    => $document,
+			// Compatibility read fields; document remains the sole default.
+			'project'     => $document['project'],
+			'fields'      => $document['fields'],
+			'subject'     => $document['fields']['subject'],
+			'preheader'   => $document['fields']['preheader'],
 		];
 		return true;
+	}
+
+	/** Read-only default used by BOTH editor context and runtime renderer. */
+	public static function default_document( string $id ): ?array {
+		$definition = self::get( $id );
+		return is_array( $definition ) ? $definition['document'] : null;
 	}
 
 	/** @return array<string,mixed>|null */

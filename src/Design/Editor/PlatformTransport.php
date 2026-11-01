@@ -52,14 +52,15 @@ final class PlatformTransport {
 	private static function identity( string $profile, string $resource ): ?array {
 		if ( Mail::PROFILE === $profile
 			&& Repository::valid_identity( Repository::MAIL, $resource )
-			&& str_starts_with( $resource, 'wordpress.' )
 			&& \CoreBlueprint\Core\Mail\DesignerState::is_enabled()
 			&& current_user_can( 'manage_options' ) ) {
-			// The first Base-only package has NO independently approved
-			// extension consumer identity. Allow only built-in WordPress templates.
+			// Only active, strictly validated registrations are eligible.
+			// Registration is discovery, not permission: every request still
+			// requires nonce, capability, resource and native Save checks.
 			$definition = \CoreBlueprint\Core\Mail\Designer\TemplateRegistry::get( $resource );
-			if ( ! is_array( $definition ) || 'core' !== ( $definition['provider'] ?? null )
-				|| 'wordpress' !== ( $definition['group'] ?? null ) ) {
+			if ( ! is_array( $definition )
+				|| ! is_array( $definition['document'] ?? null )
+				|| ! self::valid_native_document( Repository::MAIL, $definition['document'] ) ) {
 				return null;
 			}
 			return [ 'type' => Repository::MAIL, 'key' => $resource ];
