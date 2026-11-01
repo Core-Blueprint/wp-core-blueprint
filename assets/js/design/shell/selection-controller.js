@@ -57,6 +57,7 @@ export const createDesignerSelectionController = ({
 	const panelId = String(inspectorPanel || 'inspector').trim() || 'inspector';
 	let destroyed = false;
 	let activeGeneration = 0;
+	let nextSessionGeneration = 0;
 	let pendingReceipt = null;
 
 	const activateInspector = () => {
@@ -203,13 +204,13 @@ export const createDesignerSelectionController = ({
 			throw new Error('DESIGNER_SELECTION_REBIND_REFUSED');
 		}
 		assertSessionInterface(nextSession);
-		if (!Number.isSafeInteger(activeGeneration + 1)) {
+		if (!Number.isSafeInteger(nextSessionGeneration + 1)) {
 			throw new RangeError('Designer Selection binding generation exhausted.');
 		}
 		const previousSession = session;
 		const previousGeneration = activeGeneration;
 		const previousSubscription = currentSubscription;
-		const nextGeneration = activeGeneration + 1;
+		const nextGeneration = ++nextSessionGeneration;
 		const nextSubscription = attach(nextSession, nextGeneration);
 		try {
 			nextSession.project();
