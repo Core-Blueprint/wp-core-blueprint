@@ -25,6 +25,9 @@ export const createManagedContextAuthority = ({ createProfileSession, createDoma
 		if (!record) throw refused('DESIGNER_CONTEXT_INVALID');
 		return record;
 	};
+	const readable = (record) => {
+		if (record.status === 'RETIRED' || record.status === 'INVALID') throw refused('DESIGNER_CONTEXT_INVALID');
+	};
 	const writable = (record) => {
 		if (active !== record || record.status !== 'ACTIVE') throw refused();
 	};
@@ -40,16 +43,24 @@ export const createManagedContextAuthority = ({ createProfileSession, createDoma
 		}
 		const record = { id, status: 'STAGED', generation: ++nextGeneration, session: null };
 		// Base alone owns this closure. Every low-level mutable store captures it.
-		const session = factory(sessionOptions, () => writable(record));
+		const session = factory(sessionOptions, Object.freeze({
+			read: () => readable(record),
+			write: () => writable(record),
+		}));
 		if (!session || typeof session.dispose !== 'function') {
 			throw refused('DESIGNER_CONTEXT_INVALID');
 		}
 		record.session = session;
+		// No consumer-owned dispose() or raw internal state handles. Retirement
+		// and cleanup remain exclusively controlled by the Base coordinator.
+		const publicSession = Object.freeze(Object.fromEntries(
+			Object.entries(session).filter(([key]) => key !== 'dispose'),
+		));
 		const handle = Object.freeze({
 			id,
 			generation: record.generation,
 			document: document === null ? null : Object.freeze({ ...document }),
-			session,
+			session: publicSession,
 			get status() { return record.status; },
 		});
 		records.set(handle, record);
