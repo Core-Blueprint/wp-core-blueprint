@@ -1,8 +1,8 @@
 # Native Mail Template Provider Contract v1
 
 **Owner:** Core Blueprint Base Mail Designer  
-**Status:** MAIL-EXT-01A SOURCE implementation (sandbox/release acceptance pending)  
-**Scope:** Provider-owned defaults, discovery and read-only document retrieval. Editor resource authorization is a separate MAIL-EXT-01B change.
+**Status:** MAIL-EXT-01A + 01B SOURCE implementation (local runtime validation and sandbox acceptance pending)  
+**Scope:** Provider-owned native defaults, discovery, shared runtime/editor retrieval, native selector and REST resource admission.
 
 ## Registration
 
