@@ -45,8 +45,11 @@ export class CommandHistory {
 	#acceptedSequence = 0;
 	#contextEpoch = 0;
 	#verifyRebase;
+	#writeGuard;
 
-	constructor(projectState, editorState, { limit = 100, verifyRebase = null } = {}) {
+	constructor(projectState, editorState, { limit = 100, verifyRebase = null, writeGuard = null } = {}) {
+		if (writeGuard !== null && typeof writeGuard !== 'function') throw new TypeError('CommandHistory write guard must be a function.');
+		this.#writeGuard = writeGuard;
 		if (!projectState?.current || !projectState?.stage || !projectState?.commitStaged) {
 			throw new TypeError('CommandHistory requires a stageable ProjectState.');
 		}
@@ -82,6 +85,7 @@ export class CommandHistory {
 
 	assertWritable() {
 		this.#assertActive();
+		this.#writeGuard?.();
 		if (this.#busy) {
 			const error = new Error('Designer session does not allow nested mutations.');
 			error.code = 'DESIGNER_REENTRANT';
