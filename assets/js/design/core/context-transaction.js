@@ -95,13 +95,16 @@ export const prepareManagedMountSlots = (slots, nodes) => {
  */
 export const createManagedContextTransaction = ({
 	authority, state, shell, selection, slots,
-	authorize, revalidate, load, decide, save, saveStatus, verify,
+	authorize, revalidate, load, decide, save, saveStatus, verify, cleanup = null,
 } = {}) => {
 	for (const [name, callback] of Object.entries({authorize, revalidate, load, decide, saveStatus, verify})) {
 		if (typeof callback !== 'function') throw new TypeError('Designer transaction requires Base ' + name + ' callback.');
 	}
 	if (save !== null && save !== undefined && typeof save !== 'function') {
 		throw new TypeError('Designer transaction save callback must be a function or null.');
+	}
+	if (cleanup !== null && typeof cleanup !== 'function') {
+		throw new TypeError('Designer transaction cleanup callback must be a function or null.');
 	}
 	if (!authority || !state || !shell || !selection || !slots) throw failure('DESIGNER_TRANSACTION_INVALID');
 	let pending = null;
@@ -283,6 +286,12 @@ export const createManagedContextTransaction = ({
 			view.finalize();
 			mounts.finalize();
 			authority.dispose(source);
+			if (cleanup && synchronous(cleanup(Object.freeze({
+				sourceId:source.id, sourceGeneration:source.generation,
+				targetId:target.id, targetGeneration:target.generation,
+			})), 'DESIGNER_CLEANUP_ASYNC') !== true) {
+				throw failure('DESIGNER_CLEANUP_UNVERIFIED');
+			}
 			return Object.freeze({status:'committed', id:target.id, generation:target.generation});
 		} catch (error) {
 			if (retired) {
