@@ -57,62 +57,62 @@ body.wp-admin .cb-core-button:not(dialog.cb-core-modal .cb-core-button) > .dashi
 	text-decoration: none;
 }
 
-body.wp-admin .cb-core-button--primary:not(dialog.cb-core-modal .cb-core-button) {
+body.wp-admin .cb-core-button.cb-core-button--primary:not(dialog.cb-core-modal .cb-core-button) {
 	border-color: var(--cb-button-native-accent);
 	background: var(--cb-button-native-accent);
 	color: #fff;
 }
-body.wp-admin .cb-core-button--primary:not(dialog.cb-core-modal .cb-core-button):hover:not(:disabled):not([aria-disabled="true"]) {
+body.wp-admin .cb-core-button.cb-core-button--primary:not(dialog.cb-core-modal .cb-core-button):hover:not(:disabled):not([aria-disabled="true"]) {
 	border-color: var(--cb-button-native-accent-hover);
 	background: var(--cb-button-native-accent-hover);
 	color: #fff;
 }
 
-body.wp-admin .cb-core-button--secondary:not(dialog.cb-core-modal .cb-core-button) {
+body.wp-admin .cb-core-button.cb-core-button--secondary:not(dialog.cb-core-modal .cb-core-button) {
 	border-color: var(--cb-button-native-border);
 	background: var(--cb-button-native-surface);
 	color: var(--cb-button-native-text);
 }
-body.wp-admin .cb-core-button--secondary:not(dialog.cb-core-modal .cb-core-button):hover:not(:disabled):not([aria-disabled="true"]) {
+body.wp-admin .cb-core-button.cb-core-button--secondary:not(dialog.cb-core-modal .cb-core-button):hover:not(:disabled):not([aria-disabled="true"]) {
 	border-color: var(--cb-button-native-accent);
 	background: var(--cb-button-native-hover);
 	color: var(--cb-button-native-text);
 }
 
-body.wp-admin .cb-core-button--remediation:not(dialog.cb-core-modal .cb-core-button) {
+body.wp-admin .cb-core-button.cb-core-button--remediation:not(dialog.cb-core-modal .cb-core-button) {
 	border-color: var(--cb-button-native-warning);
 	background: var(--cb-button-native-surface);
 	color: var(--cb-button-native-warning);
 }
-body.wp-admin .cb-core-button--remediation:not(dialog.cb-core-modal .cb-core-button):hover:not(:disabled):not([aria-disabled="true"]) {
+body.wp-admin .cb-core-button.cb-core-button--remediation:not(dialog.cb-core-modal .cb-core-button):hover:not(:disabled):not([aria-disabled="true"]) {
 	border-color: var(--cb-button-native-warning);
 	background: var(--cb-button-native-warning);
 	color: #fff;
 }
 
-body.wp-admin .cb-core-button--danger:not(dialog.cb-core-modal .cb-core-button) {
+body.wp-admin .cb-core-button.cb-core-button--danger:not(dialog.cb-core-modal .cb-core-button) {
 	border-color: var(--cb-button-native-danger);
 	background: var(--cb-button-native-surface);
 	color: var(--cb-button-native-danger);
 }
-body.wp-admin .cb-core-button--danger:not(dialog.cb-core-modal .cb-core-button):hover:not(:disabled):not([aria-disabled="true"]) {
+body.wp-admin .cb-core-button.cb-core-button--danger:not(dialog.cb-core-modal .cb-core-button):hover:not(:disabled):not([aria-disabled="true"]) {
 	border-color: var(--cb-button-native-danger);
 	background: var(--cb-button-native-danger);
 	color: var(--cb-on-danger, #fff);
 }
 
-body.wp-admin .cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button) {
+body.wp-admin .cb-core-button.cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button) {
 	min-height: 28px;
 	padding: 3px 9px;
 	font-size: 12px;
 }
-body.wp-admin .cb-core-button--icon-only:not(dialog.cb-core-modal .cb-core-button) {
+body.wp-admin .cb-core-button.cb-core-button--icon-only:not(dialog.cb-core-modal .cb-core-button) {
 	flex: 0 0 auto;
 	width: 32px;
 	min-width: 32px;
 	padding-inline: 0;
 }
-body.wp-admin .cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button).cb-core-button--icon-only {
+body.wp-admin .cb-core-button.cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button).cb-core-button--icon-only {
 	width: 28px;
 	min-width: 28px;
 	padding-inline: 0;
@@ -129,9 +129,9 @@ body.wp-admin .cb-core-button:not(dialog.cb-core-modal .cb-core-button) > .dashi
 	line-height: 1;
 	text-decoration: none;
 }
-body.wp-admin .cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button) .cb-core-button__icon,
-body.wp-admin .cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button) > svg,
-body.wp-admin .cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button) > .dashicons {
+body.wp-admin .cb-core-button.cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button) .cb-core-button__icon,
+body.wp-admin .cb-core-button.cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button) > svg,
+body.wp-admin .cb-core-button.cb-core-button--compact:not(dialog.cb-core-modal .cb-core-button) > .dashicons {
 	flex-basis: 16px;
 	width: 16px;
 	height: 16px;
