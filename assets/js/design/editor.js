@@ -142,7 +142,17 @@ const createSessionInternal = ({
 			return diagnostics;
 		} : null,
 	});
-	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase, writeGuard });
+	let inspectHistory = null;
+	const history = new CommandHistory(projectState, editorState, {
+		limit: historyLimit, verifyRebase, writeGuard,
+		registerInspection: gates?.registerInspection
+			? (inspect) => { inspectHistory = inspect; } : null,
+	});
+	gates?.registerInspection?.(() => Object.freeze({
+		projectRevision: projectState.revision,
+		selectionRevision: editorState.selection.revision,
+		...inspectHistory(),
+	}));
 	let disposed = false;
 
 	// Managed consumers must never receive mutable internal EditorState through
@@ -375,7 +385,17 @@ const createDomainSessionInternal = ({
 	}
 	const projectState = new ProjectState(project, { validate: validateProject, writeGuard });
 	const editorState = new EditorState({ writeGuard });
-	const history = new CommandHistory(projectState, editorState, { limit: historyLimit, verifyRebase, writeGuard });
+	let inspectHistory = null;
+	const history = new CommandHistory(projectState, editorState, {
+		limit: historyLimit, verifyRebase, writeGuard,
+		registerInspection: gates?.registerInspection
+			? (inspect) => { inspectHistory = inspect; } : null,
+	});
+	gates?.registerInspection?.(() => Object.freeze({
+		projectRevision: projectState.revision,
+		selectionRevision: editorState.selection.revision,
+		...inspectHistory(),
+	}));
 	editorState.selection.configureDomain({ resolveEntity: resolveSelectionEntity, contextEpoch: history.contextEpoch });
 	let disposed = false;
 	const assertActive = () => {
