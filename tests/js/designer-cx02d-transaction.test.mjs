@@ -169,6 +169,20 @@ test('CX02D: synchronous authority commit, five mounts, Shell, History, Selectio
 	f.selection.destroy();f.shell.destroy();
 });
 
+test('CX02D: target cannot mutate during synchronous view verification',async()=>{
+	let fenced=false;
+	const f=fixture({onVerify:({session})=>{
+		denied(()=>session.execute(increment()));
+		fenced=true;
+		return true;
+	}});
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.status,'committed');
+	assert.equal(fenced,true);
+	f.binding.current.session.execute(increment());
+	assert.equal(f.binding.current.session.project().root.props.count,1);
+});
+
 test('CX02D: dirty Discard leaves source unchanged until verified retirement',async()=>{
 	let originalCount;
 	const f=fixture({onVerify:()=>{
