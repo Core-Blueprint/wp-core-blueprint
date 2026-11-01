@@ -48,6 +48,29 @@ test('CX02E refuses malformed managed declaration and never grants a fallback',a
 	assert.equal((await api.transition(root,{targetId:'two'})).status,'blocked');
 });
 
+test('CX02E unavailable managed authority blocks fullscreen, unload and teardown',async()=>{
+	const {api,Element,listeners}=runGuard();
+	const root=new Element();
+	const release=api.register(root,{
+		isDirty:()=>false,discard:()=>true,
+		context:{
+			initial:{id:'first',kind:'domain',sessionOptions:{project:{}}},
+			mountSlot:{canvas:{},layers:{},inspector:{},controls:{},preview:{}},
+			prepare:async()=>({}),
+		},
+	});
+	assert.equal(await release.ready,false,'missing Base ESM must fail closed');
+	assert.equal(api.canTransition(root),false);
+	assert.equal((await api.transition(root,{targetId:'next'})).status,'blocked');
+	assert.equal(await api.request(root,()=>true),false);
+	let prevented=false;
+	listeners.get('beforeunload')({
+		preventDefault(){prevented=true;},returnValue:undefined,
+	});
+	assert.equal(prevented,true,'an unverified managed context cannot unload silently');
+	assert.equal(await release(),false,'uncertain managed authority cannot be revoked');
+});
+
 test('CX02E private ESM and PHP capabilities are aligned with the v4-only public boundary',()=>{
 	const php=source('src/Design/Editor/Assets.php');
 	const editor=source('assets/js/design/editor.js');
