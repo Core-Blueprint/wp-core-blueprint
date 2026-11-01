@@ -375,8 +375,8 @@ final class Assets {
 	 * `data-cb-design-*` shell contracts and domain callbacks. Base owns launch/
 	 * focus chrome, brand, shared labels, canonical composition primitives,
 	 * async context-switch lifecycle/transition and the private Designer Mode
-	 * source path. Consumers prepare inactive targets for Base-managed transactions via v4.
-	 * context callback; they do not navigate or apply target DOM themselves.
+	 * source path. Consumers prepare inactive targets through the v4
+	 * context callback; Base owns the commit and DOM mount transaction.
 	 * Designer Mode also owns the narrow shared Button and Form Control
 	 * presentation required by the Base chrome and panel grammar it composes;
 	 * consumers do not need the full Core Admin theme.
