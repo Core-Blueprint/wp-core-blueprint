@@ -230,6 +230,10 @@ export const createDesignerSelectionController = ({
 			previousSubscription.refresh();
 		};
 		const receipt = Object.freeze({
+			verify() {
+				return phase === 'COMMITTED' && !destroyed && session === nextSession
+					&& activeGeneration === nextGeneration && currentSubscription === nextSubscription;
+			},
 			commit() {
 				if (phase !== 'PREPARED' || destroyed) throw new Error('DESIGNER_SELECTION_REBIND_REFUSED');
 				session = nextSession;
