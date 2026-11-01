@@ -331,6 +331,20 @@ test('CX02D-P0: Selection-only change invalidates clean decision',async()=>{
 	assert.ok(mounted(f,'source'));
 });
 
+test('CX02D-P0: Save checkpoint generation change alone invalidates clean decision',async()=>{
+	let f;
+	f=fixture({onRevalidate:()=>{
+		f.binding.current.session.captureSave();
+		return true;
+	}});
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.code,'DESIGNER_SOURCE_CHANGED');
+	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.ok(mounted(f,'source'));
+	f.binding.current.session.execute(increment());
+	assert.equal(f.binding.current.session.project().root.props.count,1);
+});
+
 test('CX02D-P0: final Save-status callback mutation invalidates clean decision',async()=>{
 	let f;
 	let called=0;
