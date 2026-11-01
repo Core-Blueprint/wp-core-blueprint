@@ -68,6 +68,14 @@ export const prepareDesignerViewRebinding = ({
 					recovery.rollbackError = rollbackError;
 					throw recovery;
 				}
+				// An adapter may have failed while repainting the original view.
+				// Returning the first error would conceal a failed rollback.
+				if (error?.rollbackError) {
+					const recovery = new Error('DESIGNER_VIEW_RECOVERY_REQUIRED', {cause: error});
+					recovery.code = 'RECOVERY_REQUIRED';
+					recovery.rollbackError = error.rollbackError;
+					throw recovery;
+				}
 				throw error;
 			}
 		},
