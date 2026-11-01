@@ -184,7 +184,11 @@ export const createManagedContextTransaction = ({
 			assertIdentity(attempt);
 			if (targetId === source.id) throw failure('DESIGNER_TARGET_SAME_DOCUMENT');
 			original = source.session.snapshot();
+			const initialGenerations = authority.inspect(source);
 			assertSaveStable(source);
+			if (!sameValue(initialGenerations, authority.inspect(source))) {
+				throw failure('DESIGNER_SOURCE_CHANGED');
+			}
 			const initialDirty = !sameValue(source.session.project(), source.session.baselineSnapshot());
 			const allowed = await authorize(Object.freeze({
 				sourceId:source.id, sourceGeneration:source.generation, targetId, dirty:initialDirty,
@@ -206,7 +210,10 @@ export const createManagedContextTransaction = ({
 			if (target.status !== 'STAGED' || target.id !== targetId || target.generation <= source.generation) {
 				throw failure('DESIGNER_TARGET_IDENTITY_INVALID');
 			}
-			if (!sameValue(original, source.session.snapshot())) throw failure('DESIGNER_SOURCE_CHANGED');
+			if (!sameValue(original, source.session.snapshot())
+				|| !sameValue(initialGenerations, authority.inspect(source))) {
+				throw failure('DESIGNER_SOURCE_CHANGED');
+			}
 			const dirty = !sameValue(source.session.project(), source.session.baselineSnapshot());
 			const choice = dirty ? await decide(Object.freeze({
 				sourceId:source.id, sourceGeneration:source.generation, targetId, dirty:true,
@@ -217,10 +224,14 @@ export const createManagedContextTransaction = ({
 			if (!['clean','save','discard'].includes(choice) || (dirty && choice === 'clean')) {
 				throw failure('DESIGNER_DIRTY_DECISION_INVALID');
 			}
-			if (!sameValue(original, source.session.snapshot())) throw failure('DESIGNER_SOURCE_CHANGED');
+			if (!sameValue(original, source.session.snapshot())
+				|| !sameValue(initialGenerations, authority.inspect(source))) {
+				throw failure('DESIGNER_SOURCE_CHANGED');
+			}
 			if (dirty && choice === 'save') {
 				if (!save) throw failure('DESIGNER_SAVE_UNAVAILABLE');
 				const checkpoint = source.session.captureSave();
+				const saveGenerations = authority.inspect(source);
 				// No session/authority is provided to asynchronous persistence.
 				// Only Base consumes its verified response and rebases History.
 				attempt.saveStarted = true;
@@ -235,6 +246,9 @@ export const createManagedContextTransaction = ({
 					throw failure('DESIGNER_SAVE_OUTCOME_UNCERTAIN', error);
 				}
 				assertIdentity(attempt);
+				if (!sameValue(saveGenerations, authority.inspect(source))) {
+					throw failure('DESIGNER_SAVE_REBASE_UNVERIFIED');
+				}
 				if (result?.status === 'refused') throw failure('DESIGNER_SAVE_REFUSED');
 				if (result?.status !== 'committed') throw failure('DESIGNER_SAVE_OUTCOME_UNCERTAIN');
 				// Never accept a receipt for another document, session generation,
@@ -259,6 +273,9 @@ export const createManagedContextTransaction = ({
 				throw failure('DESIGNER_SOURCE_CHANGED');
 			}
 			assertSaveStable(source);
+			// This is the approved Save/Discard/clean decision generation.
+			// Revalidation callbacks must not alter this stamp.
+			const approvedGenerations = authority.inspect(source);
 			// Full contract preflight occurs while source remains ACTIVE.
 			mounts = prepareManagedMountSlots(slots, loaded.nodes);
 			view = prepareDesignerViewRebinding({
@@ -272,6 +289,17 @@ export const createManagedContextTransaction = ({
 			assertIdentity(attempt);
 			if (accepted !== true) throw failure('DESIGNER_REVALIDATION_REFUSED');
 			assertSaveStable(source);
+			// Last synchronous fence: check project, History, Selection, Save and
+			// context generations AFTER both revalidate() and saveStatus().
+			// No consumer callback may execute between this fence and lock().
+			if (!sameValue(approvedGenerations, authority.inspect(source))) {
+				throw failure('DESIGNER_SOURCE_CHANGED');
+			}
+			const finalDirty = !sameValue(source.session.project(), source.session.baselineSnapshot());
+			if ((choice === 'clean' || choice === 'save') && finalDirty !== false
+				|| choice === 'discard' && finalDirty !== true) {
+				throw failure('DESIGNER_DIRTY_DECISION_INVALID');
+			}
 			// Everything after this point runs synchronously, without awaits.
 			attempt.phase = 'COMMITTING';
 			authority.lock(source);
