@@ -46,7 +46,8 @@ final class CB_Design_Foundation_Editor_Public_Boundary_Test extends WP_UnitTest
 		$docs       = (string) file_get_contents( $root . '/docs/DESIGNER-FOUNDATION-API.md' );
 		$public_api = (string) file_get_contents( $root . '/docs/PUBLIC-API.md' );
 
-		self::assertStringContainsString( 'Current normative snapshot', $docs );
+		self::assertStringContainsString( 'Exit Guard v4 replaces the old B1 event-based context switch.', $docs );
+		self::assertStringContainsString( 'DESIGNER_EXIT_GUARD_API = 4', $docs );
 		self::assertStringContainsString( 'Historical G1d-B v2 SOURCE candidate', $docs );
 		self::assertStringContainsString( 'does not by itself prove an installed artifact', $docs );
 		self::assertSame( 3, DesignEditorAssets::DOMAIN_SESSION_API );
