@@ -5,7 +5,7 @@ import {join} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {before, after, test} from 'node:test';
 
-let editor, managedModule, shellModule, selectionModule;
+let editor, managedModule, shellModule, selectionModule, managedV4;
 let temporary;
 async function convert(dir) {
 	for (const entry of await readdir(dir, {withFileTypes:true})) {
@@ -16,6 +16,9 @@ async function convert(dir) {
 			.replaceAll(/(['"])(\.\.?\/[^'"]+)\.js\1/g, '$1$2.mjs$1');
 		if (entry.name === 'editor.js') {
 			source = source.replace("'@cb-core/design-motion'", "'./core/motion.mjs'");
+		}
+		if (entry.name === 'context-v4.js') {
+			source = source.replace("'@cb-core/design-editor'", "'../editor.mjs'");
 		}
 		await writeFile(file.replace(/\.js$/, '.mjs'), source);
 	}
@@ -72,8 +75,8 @@ before(async()=>{
 	globalThis.CustomEvent=FakeEvent;
 	globalThis.window={cbCore:{designerExitGuard:{canTransition:()=>true}},matchMedia:()=>({matches:false})};
 	const module=(file)=>import(pathToFileURL(join(dest,file)).href);
-	[editor,managedModule,shellModule,selectionModule]=await Promise.all([
-		module('editor.mjs'),module('core/context-managed.mjs'),module('shell/index.mjs'),module('shell/selection-controller.mjs'),
+	[editor,managedModule,shellModule,selectionModule,managedV4]=await Promise.all([
+		module('editor.mjs'),module('core/context-managed.mjs'),module('shell/index.mjs'),module('shell/selection-controller.mjs'),module('core/context-v4.mjs'),
 	]);
 });
 after(async()=>{
@@ -521,4 +524,120 @@ test('CX02D: overlapping and rapid successive switches enforce a single active g
 	assert.ok(b.generation>a.generation);
 	assert.ok(mounted(f,'third'));
 	assert.equal(f.layers.at(-1),'third');
+});
+
+
+/**
+ * CX02E positive adapter integration. The v4 implementation must orchestrate
+ * the real managed CX02B/C/D coordinator, not just advertise an API shape.
+ * The test rewrites only the WordPress module ID to the same ESM editor
+ * instance used by the existing Node fixture.
+ */
+const v4Fixture=({ decision='discard', load=null, save=null, cleanup=null }={})=>{
+	const shell=new FakeElement('v4-shell');
+	shell.isConnected=true;
+	shell.undo=new FakeButton('undo');
+	shell.redo=new FakeButton('redo');
+	const slots=Object.fromEntries(names.map(name=>{
+		const host=new FakeElement(name);
+		host.isConnected=true;
+		host.replaceChildren(new FakeElement('source-'+name));
+		return [name,host];
+	}));
+	const nodes=(id)=>Object.fromEntries(names.map(name=>[name,[new FakeElement(id+'-'+name)]]));
+	const seen={loads:[],decisions:0,saves:[],layers:[]};
+	let driver=null;
+	const context={
+		initial:spec('source'),
+		mountSlot:slots,
+		renderLayers:({project})=>seen.layers.push(project.root.props.name),
+		prepare:async args=>{
+			seen.loads.push(args);
+			return load ? load(args,{nodes}) : {spec:spec(args.targetId),nodes:nodes(args.targetId)};
+		},
+		...(save ? {save:async args=>{seen.saves.push(args);return save(args);}} : {}),
+		...(cleanup ? {cleanup} : {}),
+	};
+	driver=managedV4.createManagedV4Context({
+		shell,context,
+		isRegistered:()=>true,isSettled:()=>true,
+		isDirty:()=>{
+			const session=driver.current().session;
+			return JSON.stringify(session.project())!==JSON.stringify(session.baselineSnapshot());
+		},
+		decide:async ()=>{seen.decisions++;return decision;},
+	});
+	return {shell,slots,nodes,driver,seen};
+};
+const v4Mounted=(f,id)=>names.every(name=>f.slots[name].childNodes[0]?.name===id+'-'+name);
+
+test('CX02E positive: private v4 adapter commits clean context with one Shell, History and five slots',async()=>{
+	const f=v4Fixture();
+	const original=f.driver.current();
+	assert.equal(f.driver.status().state,'READY');
+	const result=await f.driver.transition('second');
+	assert.equal(result.status,'committed');
+	assert.equal(f.driver.current().id,'second');
+	assert.equal(original.status,'RETIRED');
+	assert.ok(v4Mounted(f,'second'));
+	assert.equal(f.seen.decisions,0);
+	assert.equal(f.seen.loads.length,1);
+	assert.equal(f.seen.layers.at(-1),'second');
+	assert.equal(f.driver.status().state,'READY');
+	f.driver.current().session.execute(increment());
+	assert.equal(f.shell.undo.disabled,false);
+	f.shell.undo.fire('click');
+	assert.equal(f.driver.current().session.project().root.props.count,0);
+	assert.equal(f.driver.close(),true);
+	assert.equal(f.driver.current(),null);
+	assert.equal(f.driver.close(),false);
+});
+
+test('CX02E positive: v4 dirty Discard defers irreversible retirement until verified transfer',async()=>{
+	const f=v4Fixture({decision:'discard'});
+	const original=f.driver.current();
+	original.session.execute(increment());
+	assert.equal(f.shell.undo.disabled,false);
+	const result=await f.driver.transition('second');
+	assert.equal(result.status,'committed');
+	assert.equal(f.seen.decisions,1);
+	assert.equal(f.seen.saves.length,0);
+	assert.ok(v4Mounted(f,'second'));
+	assert.equal(original.status,'RETIRED');
+	assert.equal(f.driver.current().session.project().root.props.count,0);
+	assert.equal(f.driver.close(),true);
+});
+
+test('CX02E positive: verified Save receipt rebases dirty v4 source before retirement',async()=>{
+	const f=v4Fixture({decision:'save',save:async args=>({
+		status:'committed',verified:true,sourceId:args.sourceId,
+		generation:args.generation,revision:args.revision,
+		baselineProject:args.submittedProject,
+	})});
+	f.driver.current().session.execute(increment());
+	const result=await f.driver.transition('saved');
+	assert.equal(result.status,'committed');
+	assert.equal(f.seen.saves.length,1);
+	assert.ok(v4Mounted(f,'saved'));
+	assert.equal(f.driver.current().id,'saved');
+	assert.equal(f.driver.close(),true);
+});
+
+test('CX02E negative: v4 rollback leaves the original dirty context writable',async()=>{
+	const f=v4Fixture({load:(args,{nodes})=>{
+		const incoming=nodes(args.targetId);
+		incoming.preview=[f.slots.canvas.childNodes[0]];
+		return {spec:spec(args.targetId),nodes:incoming};
+	}});
+	const original=f.driver.current();
+	original.session.execute(increment());
+	const result=await f.driver.transition('invalid');
+	assert.equal(result.status,'refused');
+	assert.equal(f.driver.current(),original);
+	assert.equal(original.status,'ACTIVE');
+	assert.ok(v4Mounted(f,'source'));
+	original.session.execute(increment());
+	assert.equal(original.session.project().root.props.count,2);
+	assert.equal(f.driver.status().state,'READY');
+	assert.equal(f.driver.close(),false,'dirty documents cannot bypass Guard cleanup');
 });
