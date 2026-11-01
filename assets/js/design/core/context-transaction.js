@@ -25,15 +25,26 @@ export const prepareManagedMountSlots = (slots, nodes) => {
 	}
 	const records = [];
 	const used = new Set();
+	const hosts = new Set();
 	for (const key of SLOT_NAMES) {
 		const host = slots[key];
 		const incoming = nodes[key];
 		if (!host || typeof host.replaceChildren !== 'function' || !host.childNodes
-			|| !Array.isArray(incoming)) throw failure('DESIGNER_MOUNT_CONTRACT_INVALID');
+			|| !Array.isArray(incoming) || hosts.has(host)) {
+			throw failure('DESIGNER_MOUNT_CONTRACT_INVALID');
+		}
+		for (const prior of hosts) {
+			if (host.contains?.(prior) || prior.contains?.(host)) {
+				throw failure('DESIGNER_MOUNT_CONTRACT_INVALID');
+			}
+		}
+		hosts.add(host);
 		const original = Array.from(host.childNodes);
 		for (const item of incoming) {
+			// A detached staging container may still be a parent. Reject live
+			// nodes and any reuse of the existing source slot instead.
 			if (!item || typeof item !== 'object' || used.has(item)
-				|| item.isConnected === true || item.parentNode != null
+				|| item.isConnected === true
 				|| original.includes(item)) throw failure('DESIGNER_MOUNT_CONTRACT_INVALID');
 			used.add(item);
 		}
