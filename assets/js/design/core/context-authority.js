@@ -12,7 +12,6 @@ export const createManagedContextAuthority = ({ createProfileSession, createDoma
 	}
 
 	const records = new WeakMap();
-	const usedIds = new Set();
 	let active = null;
 	let nextGeneration = 0;
 
@@ -31,7 +30,7 @@ export const createManagedContextAuthority = ({ createProfileSession, createDoma
 	};
 
 	const stage = ({ id, kind = 'profile', sessionOptions, document = null } = {}) => {
-		if (typeof id !== 'string' || !id.trim() || usedIds.has(id) || nextGeneration === Number.MAX_SAFE_INTEGER) {
+		if (typeof id !== 'string' || !id.trim() || nextGeneration === Number.MAX_SAFE_INTEGER) {
 			throw refused('DESIGNER_CONTEXT_INVALID');
 		}
 		const factory = kind === 'profile' ? createProfileSession
@@ -54,7 +53,6 @@ export const createManagedContextAuthority = ({ createProfileSession, createDoma
 			get status() { return record.status; },
 		});
 		records.set(handle, record);
-		usedIds.add(id);
 		return handle;
 	};
 
