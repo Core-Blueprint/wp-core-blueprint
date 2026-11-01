@@ -3,7 +3,7 @@
 Date: 2026-10-24  
 Scope: Base-owned context transition authorization for external Domain Session consumers  
 Parent: `feature/designer-foundation-v2-polish-20261023@f847b4b6d2e88b5057b208498e18b4099d78bf82`  
-**Historical B1 checkpoint, not a current normative contract.** At this October 24 SOURCE milestone, Exit Guard API was 2 and B2 Typed Selection was proposed. Current Exit Guard API is **3**; Typed Domain Selection is SOURCE-implemented with Domain Session API **3**. Use [Designer Foundation API](DESIGNER-FOUNDATION-API.md) and [Exit Guard](DESIGNER-EXIT-GUARD.md) for active requirements; external consumer FIELD remains pending.
+**SUPERSEDED (CX-02E): B1 is historical only.** Its `requestTransition`, `contextrequest` and `respondWith` contracts have been removed from the active public API. The normative replacement is [Exit Guard v4](DESIGNER-EXIT-GUARD.md). **Historical B1 checkpoint, not a current normative contract.** At this October 24 SOURCE milestone, Exit Guard API was 2 and B2 Typed Selection was proposed. Current Exit Guard API is **3**; Typed Domain Selection is SOURCE-implemented with Domain Session API **3**. Use [Designer Foundation API](DESIGNER-FOUNDATION-API.md) and [Exit Guard](DESIGNER-EXIT-GUARD.md) for active requirements; external consumer FIELD remains pending.
 
 ## Ownership and public interface
 
