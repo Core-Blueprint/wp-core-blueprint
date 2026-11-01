@@ -93,21 +93,32 @@
 		providers.set(shell,record);
 		registered.add(shell);
 		if (record.context) managed.set(record,initializeManaged(shell,record));
-		const unregister = () => {
-			if (providers.get(shell) !== record) return false;
-			if (record.context) {
-				// A dirty/UNKNOWN context cannot be silently revoked.
-				if (pending.has(shell) || unresolved(shell,record) || isBusy(shell)
-					|| record.isDirty() !== false) return false;
-			}
+		const forget = () => {
 			providers.delete(shell);
 			registered.delete(shell);
-			void managed.get(record)?.then((driver) => driver?.close());
 			if (shell.isConnected === false) {
 				observed.delete(shell);
 				approved.delete(shell);
 			}
 			return true;
+		};
+		const unregister = () => {
+			if (providers.get(shell) !== record) return false;
+			if (!record.context) return forget();
+			try {
+				if (pending.has(shell) || unresolved(shell,record) || isBusy(shell)
+					|| record.isDirty() !== false) return Promise.resolve(false);
+			} catch (_) { return Promise.resolve(false); }
+			// The Shell must be destroyed before the Guard registration is
+			// removed, otherwise its canonical Save safety gate denies teardown.
+			return managed.get(record).then((driver) => {
+				if (!driver || providers.get(shell) !== record || pending.has(shell)) return false;
+				try {
+					if (unresolved(shell,record) || isBusy(shell)
+						|| record.isDirty() !== false || driver.close() !== true) return false;
+				} catch (_) { return false; }
+				return forget();
+			}).catch(() => false);
 		};
 		unregister.ready = record.context
 			? managed.get(record).then((driver) => driver !== null) : Promise.resolve(true);
