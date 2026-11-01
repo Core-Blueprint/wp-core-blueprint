@@ -12,6 +12,8 @@ final class CB_Admin_UI_Primitives_Foundation_Contract_Test extends WP_UnitTestC
 		foreach ( [
 			'cb-core-css-buttons',
 			'cb-core-css-buttons-native',
+			'cb-core-css-modals',
+			'cb-core-css-modals-native',
 			'cb-core-css-icon-controls',
 			'cb-core-css-icon-controls-native',
 			'cb-core-css-status-indicators',
@@ -253,6 +255,16 @@ final class CB_Admin_UI_Primitives_Foundation_Contract_Test extends WP_UnitTestC
 		self::assertTrue( wp_style_is( 'cb-core-css-modals-native', 'enqueued' ) );
 		self::assertFalse( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) );
 		self::assertFalse( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+	}
+
+
+	public function test_native_button_request_cannot_downgrade_existing_core_buttons(): void {
+		Assets::enqueue_buttons( Assets::BUTTON_PRESENTATION_CORE );
+		Assets::enqueue_buttons( Assets::BUTTON_PRESENTATION_WP_NATIVE );
+
+		self::assertTrue( wp_style_is( 'cb-core-css-buttons', 'enqueued' ) );
+		self::assertTrue( wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+		self::assertFalse( wp_style_is( 'cb-core-css-buttons-native', 'enqueued' ) );
 	}
 
 	public function test_public_button_method_is_loaded_from_canonical_base_file(): void {
