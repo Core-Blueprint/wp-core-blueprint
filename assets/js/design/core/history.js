@@ -47,7 +47,7 @@ export class CommandHistory {
 	#verifyRebase;
 	#writeGuard;
 
-	constructor(projectState, editorState, { limit = 100, verifyRebase = null, writeGuard = null } = {}) {
+	constructor(projectState, editorState, { limit = 100, verifyRebase = null, writeGuard = null, registerInspection = null } = {}) {
 		if (writeGuard !== null && typeof writeGuard !== 'function') throw new TypeError('CommandHistory write guard must be a function.');
 		this.#writeGuard = writeGuard;
 		if (!projectState?.current || !projectState?.stage || !projectState?.commitStaged) {
@@ -64,6 +64,18 @@ export class CommandHistory {
 		this.#limit = normalizeLimit(limit);
 		this.#verifyRebase = verifyRebase;
 		this.#baseline = cloneFrozen(projectState.current());
+		// Base-only managed authority receives a private read-only inspection
+		// closure. No public History generation accessor is introduced.
+		if (registerInspection !== null) {
+			if (typeof registerInspection !== 'function') throw new TypeError('History inspection registrar must be a function.');
+			registerInspection(() => Object.freeze({
+				historyRevision: this.#historyRevision,
+				contextEpoch: this.#contextEpoch,
+				saveSequence: this.#saveSequence,
+				acceptedSequence: this.#acceptedSequence,
+				entrySequence: this.#nextEntryId,
+			}));
+		}
 		// Only direct low-level ProjectState writes use this private bridge.
 		// Session mutations never use ProjectState.replace(), so subscribers
 		// cannot observe an intermediate stack during public session actions.
