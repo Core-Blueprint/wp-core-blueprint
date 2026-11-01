@@ -80,6 +80,12 @@ export class SelectionState {
 	#domain = false;
 	#listeners = new Set();
 	#batchDepth = 0;
+	#writeGuard;
+
+	constructor({ writeGuard = null } = {}) {
+		if (writeGuard !== null && typeof writeGuard !== 'function') throw new TypeError('SelectionState write guard must be a function.');
+		this.#writeGuard = writeGuard;
+	}
 
 	get isDomain() { return this.#domain; }
 	get revision() { return this.#revision; }
@@ -143,6 +149,7 @@ export class SelectionState {
 	}
 
 	#publish(refs, primary, metadata) {
+		this.#writeGuard?.();
 		const next = { refs, primary };
 		if (sameRefs({ refs: this.#refs, primary: this.#primary }, next) && metadata.force !== true) return false;
 		this.#refs = [...refs];
@@ -242,6 +249,7 @@ export class SelectionState {
 	}
 
 	batch(metadata, callback) {
+		this.#writeGuard?.();
 		if (typeof callback !== 'function') throw new TypeError('Selection batch requires a callback.');
 		const before = this.snapshot();
 		const revision = this.#revision;
@@ -289,6 +297,7 @@ export class SelectionState {
 	}
 
 	commitSnapshot(snapshot, metadata = {}) {
+		this.#writeGuard?.();
 		const next = normalizeSnapshot(snapshot);
 		const nextEpoch = this.#domain ? metadata.contextEpoch : this.#contextEpoch;
 		if (this.#domain && (!Number.isSafeInteger(nextEpoch) || nextEpoch < this.#contextEpoch)) throw new TypeError('Committed Selection context generation cannot move backwards.');
@@ -305,6 +314,7 @@ export class SelectionState {
 	}
 
 	restoreCommitted(snapshot, revision) {
+		this.#writeGuard?.();
 		const next = normalizeSnapshot(snapshot);
 		this.#refs = [...next.refs];
 		this.#primary = next.primary;
@@ -316,6 +326,7 @@ export class SelectionState {
 	}
 
 	notify(event, onObserverFailure = null) {
+		this.#writeGuard?.();
 		for (const listener of [...this.#listeners]) {
 			if (!this.#listeners.has(listener)) continue;
 			try { listener(event, this.snapshot()); }
