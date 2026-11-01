@@ -43,7 +43,7 @@ final class Assets {
 	/** Optional shared flat context menu presenter; no domain authority. */
 	public const DESIGNER_CONTEXT_MENU_API = 1;
 	/** Public fail-closed Exit Guard, not an A2-06 receipt/recovery API. */
-	public const DESIGNER_EXIT_GUARD_API = 3;
+	public const DESIGNER_EXIT_GUARD_API = 4;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
 	public const MAIL_RICH_TEXT_STYLE = 'cb-core-design-mail-rich-text';
 	public const DESIGNER_MODE_STYLE = 'cb-core-designer-mode';
@@ -375,7 +375,7 @@ final class Assets {
 	 * `data-cb-design-*` shell contracts and domain callbacks. Base owns launch/
 	 * focus chrome, brand, shared labels, canonical composition primitives,
 	 * async context-switch lifecycle/transition and the private Designer Mode
-	 * source path. Consumers load/apply their domain context through the public
+	 * source path. Consumers prepare inactive targets for Base-managed transactions via v4.
 	 * context request event; they do not navigate or build product loaders.
 	 * Designer Mode also owns the narrow shared Button and Form Control
 	 * presentation required by the Base chrome and panel grammar it composes;
