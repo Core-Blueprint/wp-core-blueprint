@@ -155,8 +155,10 @@ test('CX02D: synchronous authority commit, five mounts, Shell, History, Selectio
 	assert.ok(mounted(f,'target'));
 	assert.equal(f.layers.at(-1),'target');
 	assert.equal(f.root.undo.disabled,true);
-	denied(()=>oldSession.execute(increment()));
-	assert.throws(()=>oldSession.project(),error=>error?.code==='DESIGNER_CONTEXT_INVALID');
+	// Successful retirement disposes the source session: its retained facade
+	// must deny both writes and reads, not merely reject writes by authority.
+	assert.throws(()=>oldSession.execute(increment()), /Domain editor session has been disposed\./);
+	assert.throws(()=>oldSession.project(), /Domain editor session has been disposed\./);
 	assert.throws(()=>editor.createManagedContextCoordinator({binding:f.binding}),/AUTHORITY_REFUSED/);
 	const current=f.binding.current.session;
 	current.execute(increment());
