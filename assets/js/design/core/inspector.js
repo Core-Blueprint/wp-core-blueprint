@@ -4,10 +4,20 @@ import { locationForPath, nodeAt } from './tree.js';
 export class InspectorState {
 	#activeSection = null;
 	#expanded = new Set();
+	#writeGuard;
+
+	constructor({ writeGuard = null } = {}) {
+		if (writeGuard !== null && typeof writeGuard !== 'function') throw new TypeError('InspectorState write guard must be a function.');
+		this.#writeGuard = writeGuard;
+	}
 
 	activeSection() { return this.#activeSection; }
-	setActiveSection(section) { this.#activeSection = section === null ? null : String(section || '').trim() || null; }
+	setActiveSection(section) {
+		this.#writeGuard?.();
+		this.#activeSection = section === null ? null : String(section || '').trim() || null;
+	}
 	setExpanded(section, expanded) {
+		this.#writeGuard?.();
 		const id = String(section || '').trim();
 		if (!id) return false;
 		if (expanded) this.#expanded.add(id);
@@ -17,6 +27,7 @@ export class InspectorState {
 	isExpanded(section) { return this.#expanded.has(String(section || '').trim()); }
 	snapshot() { return { activeSection: this.#activeSection, expanded: [...this.#expanded] }; }
 	restore(snapshot) {
+		this.#writeGuard?.();
 		if (!snapshot || typeof snapshot !== 'object') throw new TypeError('Invalid inspector snapshot.');
 		this.#activeSection = typeof snapshot.activeSection === 'string' && snapshot.activeSection ? snapshot.activeSection : null;
 		this.#expanded = new Set(Array.isArray(snapshot.expanded) ? snapshot.expanded.filter((item) => typeof item === 'string' && item) : []);
