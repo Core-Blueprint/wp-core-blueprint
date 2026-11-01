@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { before, after, test } from 'node:test';
 
-let editorModule, authorityModule, projectModule, editorStateModule, historyModule;
+let editorModule, managedModule, authorityModule, projectModule, editorStateModule, historyModule;
 let temp;
 async function convert(dir) {
 	for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -27,8 +27,8 @@ before(async () => {
 	await convert(dest);
 	globalThis.window = {};
 	const module = (path) => import(pathToFileURL(join(dest, path)).href);
-	[editorModule, authorityModule, projectModule, editorStateModule, historyModule] = await Promise.all([
-		module('editor.mjs'), module('core/context-authority.mjs'),
+	[editorModule, managedModule, authorityModule, projectModule, editorStateModule, historyModule] = await Promise.all([
+		module('editor.mjs'), module('core/context-managed.mjs'), module('core/context-authority.mjs'),
 		module('core/project-state.mjs'), module('core/editor-state.mjs'), module('core/history.mjs'),
 	]);
 });
@@ -76,7 +76,7 @@ const createRawFixture = () => {
 };
 
 test('CX02B: initial managed domain session writable; public handle hides mutable stores and teardown', () => {
-	const binding = editorModule.createManagedContextBinding({
+	const binding = managedModule.createManagedContextBinding({
 		initial: { id: 'invoice', kind: 'domain', sessionOptions: { project: project() } },
 	});
 	const session = binding.current.session;
@@ -197,7 +197,7 @@ const flowProject = () => ({
 
 test('CX02B: profile sessions expose only read-only validation context during staging', () => {
 	let exposed = null;
-	const binding = editorModule.createManagedContextBinding({
+	const binding = managedModule.createManagedContextBinding({
 		initial: {
 			id: 'invoice', kind: 'profile', sessionOptions: {
 				project: flowProject(), profile: 'document-flow',
@@ -236,7 +236,7 @@ const deleteKey = () => {
 
 test('CX02B-01: staged profile Delete and Undo cannot invoke consumer callbacks or mutate state', () => {
 	let activeDeletes = 0, stagedDeletes = 0, initialValidations = 0;
-	const binding = editorModule.createManagedContextBinding({
+	const binding = managedModule.createManagedContextBinding({
 		initial: { id: 'invoice', kind: 'profile', sessionOptions: {
 			project: flowProject(), profile: 'document-flow',
 		} },
