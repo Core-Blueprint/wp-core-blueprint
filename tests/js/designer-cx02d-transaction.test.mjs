@@ -133,7 +133,8 @@ const fixture=({decision='discard', onLoad=null, onSave=null, onVerify=null,
 		},
 		decide:async ()=>decision,
 		saveStatus:()=> 'IDLE',
-		save:async (args)=>{events.saves.push(args);return onSave?onSave(args):{status:'committed',baselineProject:args.submittedProject};},
+		save:async (args)=>{events.saves.push(args);return onSave?onSave(args):{status:'committed',verified:true,sourceId:args.sourceId,
+			generation:args.generation,revision:args.revision,baselineProject:args.submittedProject};},
 		verify:(args)=>{events.verified++;return onVerify?onVerify(args):true;},
 	});
 	return {binding,root,shell,selection,coordinator,slots,layers,events,nodes};
@@ -199,7 +200,8 @@ test('CX02D: dirty Save performs Base-owned checkpoint/rebase before switching',
 	let savedBaseline, snapshotAtVerify;
 	const f=fixture({decision:'save',onSave:async args=>{
 		savedBaseline=args.submittedProject;
-		return {status:'committed',baselineProject:savedBaseline};
+		return {status:'committed',verified:true,sourceId:args.sourceId,
+			generation:args.generation,revision:args.revision,baselineProject:savedBaseline};
 	},onVerify:()=>{
 		snapshotAtVerify=f.binding.current.session.baselineSnapshot();
 		return true;
@@ -209,6 +211,19 @@ test('CX02D: dirty Save performs Base-owned checkpoint/rebase before switching',
 	assert.equal(result.status,'committed');
 	assert.equal(f.events.saves.length,1);
 	assert.deepEqual(snapshotAtVerify,savedBaseline);
+});
+
+test('CX02D: Save receipt from another context generation cannot rebase History',async()=>{
+	const f=fixture({decision:'save',onSave:async args=>({
+		status:'committed',verified:true,sourceId:args.sourceId,
+		generation:args.generation+1,revision:args.revision,
+		baselineProject:args.submittedProject,
+	})});
+	f.binding.current.session.execute(increment());
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.code,'DESIGNER_SAVE_NOT_VERIFIED');
+	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.equal(f.binding.current.session.project().root.props.count,1);
 });
 
 test('CX02D: Cancel and rejected Save leave original dirty context editable',async()=>{
@@ -316,7 +331,9 @@ test('CX02D: stale Save cannot rebase a later context after cancellation',async(
 	for(let i=0;i<12&&!f.events.saves.length;i++)await Promise.resolve();
 	assert.equal(f.events.saves.length,1);
 	assert.equal(f.coordinator.cancelPending(),true);
-	gate.resolve({status:'committed',baselineProject:f.events.saves[0].submittedProject});
+	gate.resolve({status:'committed',verified:true,sourceId:f.events.saves[0].sourceId,
+		generation:f.events.saves[0].generation,revision:f.events.saves[0].revision,
+		baselineProject:f.events.saves[0].submittedProject});
 	assert.equal((await first).status,'cancelled');
 	assert.equal(f.binding.current.status,'ACTIVE');
 	assert.equal(f.binding.current.session.project().root.props.count,1);
