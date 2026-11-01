@@ -48,7 +48,7 @@ final class CB_Design_Foundation_Editor_Public_Boundary_Test extends WP_UnitTest
 
 		self::assertStringContainsString( 'Current normative snapshot', $docs );
 		self::assertStringContainsString( 'Historical G1d-B v2 SOURCE candidate', $docs );
-		self::assertStringContainsString( 'installed ZIP acceptance pending', $docs );
+		self::assertStringContainsString( 'does not by itself prove an installed artifact', $docs );
 		self::assertSame( 3, DesignEditorAssets::DOMAIN_SESSION_API );
 		self::assertStringContainsString( "@cb-core/design-editor", $docs );
 		self::assertStringContainsString( 'createSession(options)', $docs );
