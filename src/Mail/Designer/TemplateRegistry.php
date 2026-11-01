@@ -68,7 +68,7 @@ final class TemplateRegistry {
 			// squatters. No third-party wordpress.* resource authorization.
 			if ( 'core' !== $provider || 'wordpress' !== $group
 				|| $document !== WordPressTemplates::default_document( $id ) ) return false;
-		} elseif ( $namespace !== $provider ) {
+		} elseif ( 'core' === $provider || $namespace !== $provider ) {
 			return false;
 		}
 
