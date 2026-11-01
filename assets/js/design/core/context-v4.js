@@ -78,8 +78,11 @@ export const createManagedV4Context = ({
 	let inFlight = 0;
 	const finish = () => {
 		if (closed && inFlight === 0 && coordinator.status().state === 'READY') {
-			revokeManagedContextBinding(binding);
+			if (shellController.destroy() === false) return false;
+			selectionController.destroy();
+			return revokeManagedContextBinding(binding);
 		}
+		return false;
 	};
 	return Object.freeze({
 		current:() => closed ? null : binding.current,
@@ -91,11 +94,19 @@ export const createManagedV4Context = ({
 		},
 		cancelPending:() => coordinator.cancelPending(),
 		close:() => {
-			if (closed) return true;
-			closed = true;
+			if (closed) return false;
+			if (inFlight !== 0 || coordinator.status().state !== 'READY') return false;
 			coordinator.cancelPending();
-			finish();
-			return true;
+			try {
+				if (shellController.destroy() === false) return false;
+				selectionController.destroy();
+				if (revokeManagedContextBinding(binding) !== true) return false;
+				closed = true;
+				return true;
+			} catch (_) {
+				// A failed teardown must never be reported as a closed lifecycle.
+				return false;
+			}
 		},
 		status:() => coordinator.status(),
 	});
