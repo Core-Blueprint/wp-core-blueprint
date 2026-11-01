@@ -149,6 +149,12 @@ export const createManagedContextTransaction = ({
 		if (!pending || pending.phase !== 'PREPARE') return false;
 		const attempt = pending;
 		attempt.controller.abort();
+		if (attempt.saveStarted) {
+			// A dispatched Save can have reached persistent storage even if the
+			// transport is cancelled. Never treat its outcome as a safe Discard.
+			markRecovery(attempt);
+			return true;
+		}
 		pending = null;
 		// A staged target is never exposed or write-authorized.
 		if (attempt.target?.status === 'STAGED') {
@@ -217,12 +223,20 @@ export const createManagedContextTransaction = ({
 				const checkpoint = source.session.captureSave();
 				// No session/authority is provided to asynchronous persistence.
 				// Only Base consumes its verified response and rebases History.
-				const result = await save(Object.freeze({
-					sourceId:source.id, generation:source.generation, targetId,
-					revision:checkpoint.revision, submittedProject:checkpoint.submittedProject,
-					signal:attempt.controller.signal, isCurrent:()=>isCurrent(attempt),
-				}));
+				attempt.saveStarted = true;
+				let result;
+				try {
+					result = await save(Object.freeze({
+						sourceId:source.id, generation:source.generation, targetId,
+						revision:checkpoint.revision, submittedProject:checkpoint.submittedProject,
+						signal:attempt.controller.signal, isCurrent:()=>isCurrent(attempt),
+					}));
+				} catch (error) {
+					throw failure('DESIGNER_SAVE_OUTCOME_UNCERTAIN', error);
+				}
 				assertIdentity(attempt);
+				if (result?.status === 'refused') throw failure('DESIGNER_SAVE_REFUSED');
+				if (result?.status !== 'committed') throw failure('DESIGNER_SAVE_OUTCOME_UNCERTAIN');
 				// Never accept a receipt for another document, session generation,
 				// or checkpoint. Only the Base-owned Save adapter can attest it.
 				if (result?.status !== 'committed' || result.verified !== true
@@ -238,6 +252,7 @@ export const createManagedContextTransaction = ({
 				if (!sameValue(source.session.project(),source.session.baselineSnapshot())) {
 					throw failure('DESIGNER_SAVE_UNSETTLED');
 				}
+				attempt.saveStarted = false;
 			}
 			assertIdentity(attempt);
 			if (choice !== 'save' && !sameValue(original, source.session.snapshot())) {
@@ -312,7 +327,9 @@ export const createManagedContextTransaction = ({
 				try { invalidate(attempt.target); } catch (e) { failures.push(e); }
 			}
 			if (recoveryRequired || failures.length || error?.code === 'RECOVERY_REQUIRED'
-				|| error?.code === 'DESIGNER_SAVE_REBASE_UNVERIFIED') {
+				|| error?.code === 'DESIGNER_SAVE_REBASE_UNVERIFIED'
+				|| error?.code === 'DESIGNER_SAVE_OUTCOME_UNCERTAIN'
+				|| error?.code === 'DESIGNER_SAVE_NOT_VERIFIED') {
 				markRecovery(attempt);
 				return Object.freeze({status:'recovery_required',code:'RECOVERY_REQUIRED'});
 			}
