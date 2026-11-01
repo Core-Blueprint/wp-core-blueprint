@@ -103,7 +103,7 @@ const deferred=()=>{
 };
 const denied=(call)=>assert.throws(call,error=>error?.code==='DESIGNER_CONTEXT_NOT_WRITABLE');
 const fixture=({decision='discard', onLoad=null, onSave=null, onVerify=null,
-	onAuthorize=null, onRevalidate=null}={})=>{
+	onAuthorize=null, onRevalidate=null, onCleanup=null}={})=>{
 	const binding=editor.createManagedContextBinding({initial:spec('source')});
 	const root=new FakeElement();
 	root.isConnected=true;
@@ -136,6 +136,7 @@ const fixture=({decision='discard', onLoad=null, onSave=null, onVerify=null,
 		save:async (args)=>{events.saves.push(args);return onSave?onSave(args):{status:'committed',verified:true,sourceId:args.sourceId,
 			generation:args.generation,revision:args.revision,baselineProject:args.submittedProject};},
 		verify:(args)=>{events.verified++;return onVerify?onVerify(args):true;},
+		cleanup:onCleanup,
 	});
 	return {binding,root,shell,selection,coordinator,slots,layers,events,nodes};
 };
@@ -303,6 +304,18 @@ test('CX02D: broken rollback locks original context and reports recovery require
 	assert.equal(f.binding.current.status,'LOCKED');
 	denied(()=>f.binding.current.session.execute(increment()));
 	assert.equal((await f.coordinator.transition({targetId:'other'})).status,'recovery_required');
+});
+
+test('CX02D: cleanup failure after irreversible retirement locks target and signals recovery',async()=>{
+	const f=fixture({onCleanup:()=>{throw new Error('INJECTED_CLEANUP_FAILURE');}});
+	const source=f.binding.current;
+	const r=await f.coordinator.transition({targetId:'target'});
+	assert.equal(r.status,'recovery_required');
+	assert.equal(source.status,'RETIRED');
+	assert.equal(f.binding.current.id,'target');
+	assert.equal(f.binding.current.status,'LOCKED');
+	denied(()=>f.binding.current.session.execute(increment()));
+	assert.equal(f.coordinator.status().state,'RECOVERY_REQUIRED');
 });
 
 test('CX02D: stale document load after cancel cannot overwrite a later context',async()=>{
