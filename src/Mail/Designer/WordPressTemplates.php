@@ -14,7 +14,7 @@ final class WordPressTemplates {
 			TemplateRegistry::register( [
 				'id' => $id, 'provider' => 'core', 'group' => 'wordpress',
 				'label' => $template['label'], 'description' => $template['description'],
-				'subject' => $template['subject'], 'project' => self::build( $template )['project'],
+				'document' => self::build( $template ),
 			] );
 		}
 	}
