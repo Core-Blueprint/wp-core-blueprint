@@ -85,7 +85,7 @@ after(async()=>{
 const names=['canvas','layers','inspector','controls','preview'];
 const project=(name, count=0)=>({
 	schema_version:0,design_type:'fixture.cx02d',
-	root:{type:'fixture',props:{name,count},children:[]},
+	root:{type:'fixture',provider:'fixture.cx02d',properties:{},props:{name,count},children:[]},
 });
 const spec=(name)=>({id:name,kind:'domain',sessionOptions:{project:project(name)}});
 const increment=()=>Object.freeze({
