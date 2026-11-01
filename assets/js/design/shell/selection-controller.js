@@ -1,3 +1,11 @@
+// Internal to Base; the public controller cannot rebind itself.
+const selectionSessionRebinding = new WeakMap();
+export const prepareDesignerSelectionRebinding = (controller, nextSession, expectedSession) => {
+	const prepare = selectionSessionRebinding.get(controller);
+	if (!prepare) throw new Error('DESIGNER_SELECTION_REBIND_REFUSED');
+	return prepare(nextSession, expectedSession);
+};
+
 const optionalCallback = (callback, label) => {
 	if (callback === null || callback === undefined) return null;
 	if (typeof callback !== 'function') {
@@ -48,6 +56,8 @@ export const createDesignerSelectionController = ({
 	const invalidate = optionalCallback(requestInvalidation, 'Host invalidation');
 	const panelId = String(inspectorPanel || 'inspector').trim() || 'inspector';
 	let destroyed = false;
+	let activeGeneration = 0;
+	let pendingReceipt = null;
 
 	const activateInspector = () => {
 		if (typeof shell?.activatePanel === 'function') shell.activatePanel(panelId);
@@ -87,79 +97,177 @@ export const createDesignerSelectionController = ({
 	};
 
 
-	const unsubscribers = [];
-	let domainCommitPending = () => false;
-	if (nativeHost) {
-		unsubscribers.push(session.subscribe((event) => synchronize(session.selection(), { event })));
-		synchronize(session.selection(), {
-			event: Object.freeze({ source: 'controller', action: 'sync' }),
-		});
-	} else if (typedDomain) {
-		// Canonical History dispatches Project, commit-marked Selection and
-		// finally History. A same-project context reset has no Project event.
-		// The History revision marker, never consumer-supplied source labels,
-		// separates commit Selection from independent select/clear.
-		let pendingProject = false;
-		let pendingEvent = null;
-		let pendingRevision = null;
-		let pendingInvalid = false;
-		let lastHistoryRevision = null;
-		domainCommitPending = () => pendingProject || pendingRevision !== null || pendingInvalid;
-		unsubscribers.push(session.subscribe((_project, event) => {
-			pendingProject = true;
-			pendingEvent = event;
-		}));
-		unsubscribers.push(session.subscribeSelection((snapshot, context) => {
-			const event = context.event;
-			if (Object.hasOwn(event, 'historyRevision')) {
-				const revision = event.historyRevision;
-				if (!Number.isSafeInteger(revision) || revision < 1
-					|| pendingRevision !== null
-					|| (lastHistoryRevision !== null && revision <= lastHistoryRevision)) {
-					pendingInvalid = true;
+	// Each context generation has independent subscriptions and correlation state.
+	// Observers retained or invoked late after rebinding are inert.
+	const attach = (candidate, generation) => {
+		const off = [];
+		const live = () => !destroyed && generation === activeGeneration && candidate === session;
+		const publish = (snapshot, context = {}) => { if (live()) synchronize(snapshot, context); };
+		let pending = () => false;
+		try {
+			if (nativeHost) {
+				off.push(candidate.subscribe((event) => {
+					if (live()) publish(candidate.selection(), {event});
+				}));
+			} else if (typedDomain) {
+				let pendingProject = false;
+				let pendingEvent = null;
+				let pendingRevision = null;
+				let pendingInvalid = false;
+				let lastHistoryRevision = null;
+				pending = () => pendingProject || pendingRevision !== null || pendingInvalid;
+				off.push(candidate.subscribe((_project, event) => {
+					if (!live()) return;
+					pendingProject = true;
+					pendingEvent = event;
+				}));
+				off.push(candidate.subscribeSelection((snapshot, context) => {
+					if (!live()) return;
+					const event = context.event;
+					if (Object.hasOwn(event, 'historyRevision')) {
+						const revision = event.historyRevision;
+						if (!Number.isSafeInteger(revision) || revision < 1
+							|| pendingRevision !== null
+							|| (lastHistoryRevision !== null && revision <= lastHistoryRevision)) {
+							pendingInvalid = true;
+						}
+						pendingRevision = revision;
+						pendingEvent = event;
+						return;
+					}
+					if (pendingProject || pendingRevision !== null || pendingInvalid) {
+						pendingInvalid = true;
+						return;
+					}
+					publish(snapshot, {event});
+				}));
+				off.push(candidate.subscribeHistory((historyEvent) => {
+					if (!live()) return;
+					const revision = historyEvent.historyRevision;
+					const correlated = Number.isSafeInteger(revision) && revision > 0
+						&& (lastHistoryRevision === null || revision > lastHistoryRevision)
+						&& !pendingInvalid
+						&& (pendingRevision === null || pendingRevision === revision);
+					const event = pendingEvent ?? historyEvent;
+					pendingProject = false;
+					pendingEvent = null;
+					pendingRevision = null;
+					pendingInvalid = false;
+					if (!correlated) throw new Error('Designer Selection History correlation failed.');
+					lastHistoryRevision = revision;
+					publish(candidate.selection(), {event});
+				}));
+			} else {
+				// Prepare must not render a STAGED selection via emitCurrent.
+				off.push(candidate.subscribeSelection((snapshot, context) => {
+					publish(snapshot, context);
+				}, {emitCurrent: false}));
+			}
+		} catch (error) {
+			for (const release of off.splice(0)) release();
+			throw error;
+		}
+		return Object.freeze({
+			unsubscribe() { for (const release of off.splice(0)) release(); },
+			refresh(action = 'refresh') {
+				if (!live()) throw new Error('DESIGNER_SELECTION_REBIND_REFUSED');
+				if (typedDomain && pending()) {
+					throw new Error('Designer Selection view synchronization is pending History.');
 				}
-				pendingRevision = revision;
-				pendingEvent = event;
-				return;
-			}
-			if (pendingProject || pendingRevision !== null || pendingInvalid) {
-				// Unmarked Selection within a pending commit has no proof of
-				// matching History. Never publish an unverified final view.
-				pendingInvalid = true;
-				return;
-			}
-			// Independent select/clear has no History event and renders now.
-			synchronize(snapshot, { event });
-		}));
-		unsubscribers.push(session.subscribeHistory((historyEvent) => {
-			const revision = historyEvent.historyRevision;
-			const correlated = Number.isSafeInteger(revision) && revision > 0
-				&& (lastHistoryRevision === null || revision > lastHistoryRevision)
-				&& !pendingInvalid
-				&& (pendingRevision === null || pendingRevision === revision);
-			const event = pendingEvent ?? historyEvent;
-			// Clear BEFORE invoking adapters: an exception is a diagnostic, not
-			// a stale pending view or justification to repeat a committed edit.
-			pendingProject = false;
-			pendingEvent = null;
-			pendingRevision = null;
-			pendingInvalid = false;
-			if (!correlated) {
-				throw new Error('Designer Selection History correlation failed.');
-			}
-			lastHistoryRevision = revision;
-			// History-only clear/rebase also requires exactly one final view.
-			synchronize(session.selection(), { event });
-		}));
-		synchronize(session.selection(), {
-			event: Object.freeze({ source: 'controller', action: 'sync' }),
+				publish(candidate.selection(), {
+					event: Object.freeze({source: 'controller', action}),
+					profile: candidate.profile,
+					inspector: typeof candidate.inspector === 'function' ? candidate.inspector() : null,
+				});
+			},
 		});
-	} else {
-		unsubscribers.push(session.subscribeSelection(synchronize, { emitCurrent: true }));
-	}
-	const unsubscribe = () => { for (const release of unsubscribers.splice(0)) release(); };
+	};
+	const assertSessionInterface = (candidate) => {
+		if (!candidate || typeof candidate.select !== 'function'
+			|| typeof candidate.selection !== 'function'
+			|| typeof candidate.project !== 'function'
+			|| (!nativeHost && typeof candidate.subscribeSelection !== 'function')
+			|| (!nativeHost && !typedDomain && (typeof candidate.clearSelection !== 'function'
+				|| typeof candidate.inspector !== 'function'))
+			|| (nativeHost && typeof candidate.subscribe !== 'function')
+			|| (typedDomain && (typeof candidate.subscribe !== 'function'
+				|| typeof candidate.subscribeHistory !== 'function'))) {
+			throw new TypeError('Designer selection controller requires a Design Foundation session.');
+		}
+	};
+	let currentSubscription = attach(session, activeGeneration);
+	currentSubscription.refresh('sync');
 
-	return Object.freeze({
+	const prepareRebinding = (nextSession, expectedSession) => {
+		if (destroyed || pendingReceipt || nextSession === session || session !== expectedSession) {
+			throw new Error('DESIGNER_SELECTION_REBIND_REFUSED');
+		}
+		assertSessionInterface(nextSession);
+		if (!Number.isSafeInteger(activeGeneration + 1)) {
+			throw new RangeError('Designer Selection binding generation exhausted.');
+		}
+		const previousSession = session;
+		const previousGeneration = activeGeneration;
+		const previousSubscription = currentSubscription;
+		const nextGeneration = activeGeneration + 1;
+		const nextSubscription = attach(nextSession, nextGeneration);
+		try {
+			nextSession.project();
+			nextSession.selection();
+		} catch (error) {
+			nextSubscription.unsubscribe();
+			throw error;
+		}
+		let phase = 'PREPARED';
+		const restore = () => {
+			session = previousSession;
+			activeGeneration = previousGeneration;
+			currentSubscription = previousSubscription;
+			nextSubscription.unsubscribe();
+			phase = 'ROLLED_BACK';
+			pendingReceipt = null;
+			previousSubscription.refresh();
+		};
+		const receipt = Object.freeze({
+			commit() {
+				if (phase !== 'PREPARED' || destroyed) throw new Error('DESIGNER_SELECTION_REBIND_REFUSED');
+				session = nextSession;
+				activeGeneration = nextGeneration;
+				currentSubscription = nextSubscription;
+				phase = 'COMMITTED';
+				try { nextSubscription.refresh(); }
+				catch (error) {
+					try { restore(); }
+					catch (rollbackError) { error.rollbackError = rollbackError; }
+					throw error;
+				}
+				return true;
+			},
+			rollback() {
+				if (phase === 'ROLLED_BACK') return true;
+				if (phase === 'FINALIZED') throw new Error('DESIGNER_SELECTION_REBIND_FINALIZED');
+				if (phase === 'PREPARED') {
+					nextSubscription.unsubscribe();
+					phase = 'ROLLED_BACK';
+					pendingReceipt = null;
+					return true;
+				}
+				restore();
+				return true;
+			},
+			finalize() {
+				if (phase !== 'COMMITTED') throw new Error('DESIGNER_SELECTION_REBIND_REFUSED');
+				previousSubscription.unsubscribe();
+				phase = 'FINALIZED';
+				pendingReceipt = null;
+				return true;
+			},
+		});
+		pendingReceipt = receipt;
+		return receipt;
+	};
+
+	const controller = Object.freeze({
 		select(path, {
 			additive = false,
 			openInspector = true,
@@ -189,19 +297,18 @@ export const createDesignerSelectionController = ({
 		},
 		refresh() {
 			if (destroyed) throw new Error('Designer selection controller has been destroyed.');
-			if (typedDomain && domainCommitPending()) {
-				throw new Error('Designer Selection view synchronization is pending History.');
-			}
-			synchronize(session.selection(), {
-				event: Object.freeze({ source: 'controller', action: 'refresh' }),
-				profile: session.profile,
-				inspector: typeof session.inspector === 'function' ? session.inspector() : null,
-			});
+			currentSubscription.refresh();
 		},
 		destroy() {
 			if (destroyed) return;
 			destroyed = true;
-			unsubscribe();
+			if (pendingReceipt) {
+				try { pendingReceipt.rollback(); } catch (_) { /* Cleanup still continues. */ }
+			}
+			currentSubscription.unsubscribe();
+			selectionSessionRebinding.delete(controller);
 		},
 	});
+	selectionSessionRebinding.set(controller, prepareRebinding);
+	return controller;
 };
