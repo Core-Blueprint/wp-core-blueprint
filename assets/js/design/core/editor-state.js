@@ -9,12 +9,21 @@ export class EditorState {
 	validation;
 	#writeGuard;
 
-	constructor({ writeGuard = null } = {}) {
+	constructor({ writeGuard = null, initializeValidation = null } = {}) {
 		if (writeGuard !== null && typeof writeGuard !== 'function') throw new TypeError('EditorState write guard must be a function.');
+		if (initializeValidation !== null && typeof initializeValidation !== 'function') throw new TypeError('EditorState initialization must be a function.');
 		this.#writeGuard = writeGuard;
 		this.selection = new SelectionState({ writeGuard });
-		this.inspector = new InspectorState();
-		this.validation = new ValidationFeedback();
+		this.inspector = new InspectorState({ writeGuard });
+		this.validation = new ValidationFeedback({ writeGuard });
+		// Trusted constructor-only initialization can read the initial editor
+		// snapshot. No public setter or ongoing bypass is retained.
+		if (initializeValidation !== null) {
+			const diagnostics = initializeValidation(this);
+			this.validation = new ValidationFeedback({ writeGuard, initialDiagnostics: diagnostics });
+		}
+		// Prevent replacing guarded nested state with a writable instance.
+		if (writeGuard) Object.freeze(this);
 	}
 
 	fork() {
