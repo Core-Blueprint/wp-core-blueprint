@@ -16,6 +16,7 @@ use CoreBlueprint\Core\Mail\Designer\WordPressTemplates;
 
 function __( string $text, string $domain = '' ): string { return $text; }
 function sanitize_text_field( string $text ): string { return trim( strip_tags( $text ) ); }
+function wp_json_encode( mixed $value, int $flags = 0 ): string|false { return json_encode( $value, $flags ); }
 function do_action( string $name ): void {
 	if ( 'core_blueprint_register_mail_templates' === $name ) {
 		$GLOBALS['cb_mail_ext_registrations']++;
