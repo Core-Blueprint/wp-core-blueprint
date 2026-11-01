@@ -67,13 +67,3 @@ An `aria-disabled` element still needs consumer-side action prevention.
 This contract introduces no JavaScript behavior or dependency on Designer
 Foundation. The existing Modal Foundation is a separate opt-in API for
 confirmation flows.
-
-## Manual FIELD acceptance (staging only)
-
-The optional WordPress plugin at `tests/fixtures/base-ui-p53-field.php`
-exercises the public enqueue APIs with normal WP buttons, every semantic
-button variant, icon-only geometry, outlined icon controls and native
-`<details>`. It is deliberately excluded from the canonical release package
-by the runtime allowlist. Install it temporarily on staging, open
-**Tools → Base UI P53 Fixture**, and remove it after acceptance. The two
-presentation links let testers compare native and Core adapters.
