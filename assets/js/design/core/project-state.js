@@ -30,13 +30,16 @@ export class ProjectState {
 	#stableSchema;
 	#approvedStages = new WeakSet();
 	#knownSnapshots = new WeakSet();
+	#writeGuard;
 
 	/**
 	 * The optional stableSchema context is supplied ONLY by the verified
 	 * installed Host bootstrap; it is not embedded in project JSON.
 	 * Historical experimental generation 0 remains on the existing path.
 	 */
-	constructor(project, { validate = null, stableSchema = null } = {}) {
+	constructor(project, { validate = null, stableSchema = null, writeGuard = null } = {}) {
+		if (writeGuard !== null && typeof writeGuard !== 'function') throw new TypeError('ProjectState write guard must be a function.');
+		this.#writeGuard = writeGuard;
 		if (null !== validate && typeof validate !== 'function') {
 			throw new TypeError('ProjectState validate must be a function or null.');
 		}
@@ -64,6 +67,7 @@ export class ProjectState {
 
 	/** Commit an already validated frozen project without invoking observers. */
 	commitStaged(next, { source = 'editor' } = {}) {
+		this.#writeGuard?.();
 		if (!next || typeof next !== 'object' || !this.#approvedStages.has(next)) {
 			throw new TypeError('Only a validated ProjectState.stage() result may be committed.');
 		}
@@ -76,6 +80,7 @@ export class ProjectState {
 
 	/** Internal failure-path restoration before any public transaction event. */
 	restoreCommitted(snapshot, revision) {
+		this.#writeGuard?.();
 		if (!snapshot || typeof snapshot !== 'object' || !this.#knownSnapshots.has(snapshot)
 			|| !Number.isSafeInteger(revision) || revision < 0) {
 			throw new TypeError('Only a previously validated project snapshot may be restored.');
@@ -86,6 +91,7 @@ export class ProjectState {
 
 	/** Notify only after all cooperating editor stores have been committed. */
 	notify(event, onObserverFailure = null) {
+		this.#writeGuard?.();
 		for (const listener of [...this.#listeners]) {
 			if (!this.#listeners.has(listener)) continue;
 			try {
@@ -97,6 +103,7 @@ export class ProjectState {
 	}
 
 	replace(project, { source = 'editor' } = {}) {
+		this.#writeGuard?.();
 		const event = this.commitStaged(this.stage(project), { source });
 		this.notify(event);
 		return this.#project;
