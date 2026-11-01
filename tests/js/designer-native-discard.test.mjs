@@ -18,7 +18,7 @@ test('DF-EXIT-01: Native Mail and Maintenance Reports share one Host and canonic
   // Its capability assertion and synchronous delegation must remain present.
   assert.match(facade, /typeof host\.discard !== 'function'/);
   assert.match(facade, /discard\(\) \{\s*assertActive\(\);\s*return host\.discard\(\);\s*\}/);
-  assert.match(assets, /DESIGNER_EXIT_GUARD_API = 3/);
+  assert.match(assets, /DESIGNER_EXIT_GUARD_API = 4/);
   assert.match(assets, /self::enqueue_exit_guard\(\)/);
   assert.match(assets, /enqueue_modals/);
 });
