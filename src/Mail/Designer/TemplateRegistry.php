@@ -64,7 +64,10 @@ final class TemplateRegistry {
 
 		$namespace = explode( '.', $id, 2 )[0];
 		if ( 'wordpress' === $namespace ) {
-			if ( 'core' !== $provider || 'wordpress' !== $group ) return false;
+			// Reserve both ID and exact built-in wording against early hook
+			// squatters. No third-party wordpress.* resource authorization.
+			if ( 'core' !== $provider || 'wordpress' !== $group
+				|| $document !== WordPressTemplates::default_document( $id ) ) return false;
 		} elseif ( $namespace !== $provider ) {
 			return false;
 		}
