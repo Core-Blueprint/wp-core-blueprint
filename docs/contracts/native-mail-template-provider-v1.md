@@ -19,7 +19,7 @@ Required properties of a template definition:
 | `description` | Optional human-facing description. |
 | `document` | Complete native v1 Mail document with exactly `project` and `fields`. |
 
-Base reserves the `wordpress.*` namespace for built-in templates (provider `core`, group `wordpress`). A duplicate ID or malformed registration is refused with `false`; the first valid registration is not replaced.
+Base reserves the `wordpress.*` namespace for its exact built-in IDs and canonical defaults (provider `core`, group `wordpress`); third parties cannot register alternate WordPress templates. A duplicate ID or malformed registration is refused with `false`; the first valid registration is not replaced.
 
 The `document` envelope is exact, not a legacy conversion:
 
