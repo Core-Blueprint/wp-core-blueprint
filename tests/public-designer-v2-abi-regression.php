@@ -62,7 +62,15 @@ foreach (['captureSave()', 'rebase(options)', 'subscribeHistory(listener)',
     $require(str_contains($editor, $method), "session surface: {$method}");
 }
 $require(str_contains($editor, 'window.cbCore.designEditor = publicApi'), 'global facade');
-$require(str_contains($shell, 'session.subscribeHistory(syncHistory)'), 'Shell postcommit history');
+// CX-02C keeps the v2 History API while rebinding the existing Shell to the
+// canonical active session. Old-generation observers must never publish.
+$require((bool) preg_match(
+    '/candidate\\.subscribeHistory\\s*\\(\\s*\\(\\)\\s*=>\\s*\\{\\s*if\\s*\\(\\s*stillBound\\(\\)\\s*\\)\\s*syncHistory\\(\\)\\s*;\\s*\\}\\s*\\)/',
+    $shell
+), 'Shell generation-fenced postcommit history');
+$require(str_contains($shell, 'previousHistory?.();')
+    && str_contains($shell, 'previousDiagnostics?.();'),
+    'Shell stale History and diagnostics subscriptions released after verification');
 $require(str_contains($document, 'v2 SOURCE candidate'), 'documentation source state');
 $require(str_contains($document, 'installed ZIP acceptance pending'), 'documented packaging gate');
 echo "Base Designer G1d-B v2 History/Save + B2 v3 Shared Selection SOURCE regression: PASS\n";
