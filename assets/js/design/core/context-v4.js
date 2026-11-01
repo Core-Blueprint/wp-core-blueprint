@@ -1,4 +1,4 @@
-import '../editor.js';
+import '@cb-core/design-editor';
 import { sameValue } from './value.js';
 import { createManagedContextBinding, createManagedContextCoordinator, revokeManagedContextBinding } from './context-managed.js';
 import { createDesignerShell } from '../shell/index.js';
