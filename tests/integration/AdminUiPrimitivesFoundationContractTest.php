@@ -127,6 +127,15 @@ final class CB_Admin_UI_Primitives_Foundation_Contract_Test extends WP_UnitTestC
 		self::assertStringNotContainsString( 'lms', strtolower( $icon_css ) );
 	}
 
+	public function test_optional_field_fixture_uses_public_asset_helpers(): void {
+		$fixture = file_get_contents( dirname( __DIR__, 2 ) . '/tests/fixtures/base-ui-p53-field.php' );
+		self::assertIsString( $fixture );
+		self::assertStringContainsString( 'Assets::enqueue_buttons( $presentation )', $fixture );
+		self::assertStringContainsString( 'Assets::enqueue_icon_controls( $presentation )', $fixture );
+		self::assertStringContainsString( 'cb-core-details__chevron', $fixture );
+		self::assertStringContainsString( 'aria-hidden="true"', $fixture );
+	}
+
 	public function test_buttons_have_public_presentation_api_and_existing_registry_semantics(): void {
 		self::assertTrue( method_exists( Assets::class, 'enqueue_buttons' ) );
 		self::assertSame( 'core', Assets::BUTTON_PRESENTATION_CORE );
