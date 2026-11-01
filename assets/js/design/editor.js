@@ -114,7 +114,9 @@ const createSessionInternal = ({
 	allowCommand = null,
 	historyLimit = 100,
 	verifyRebase = null,
-} = {}, writeGuard = null) => {
+} = {}, gates = null) => {
+	const readGuard = gates?.read ?? null;
+	const writeGuard = gates?.write ?? null;
 	const profileContext = resolveProfile(profile);
 	const projectState = new ProjectState(project, {
 		validate: (candidate) => validateProfileProject(profileContext, candidate),
@@ -179,6 +181,7 @@ const createSessionInternal = ({
 
 	const assertActive = () => {
 		if (disposed) throw new Error('Design editor session has been disposed.');
+		readGuard?.();
 	};
 
 	const execute = (editorCommand) => {
@@ -190,7 +193,7 @@ const createSessionInternal = ({
 		if (typeof allowCommand === 'function') {
 			const allowed = history.guardPolicy(() => allowCommand(editorCommand, Object.freeze({
 				project: projectState.current(),
-				editorState,
+				editorState: writeGuard ? readonlyEditorState : editorState,
 				profile: profileContext,
 			})));
 			if (allowed === false) {
@@ -340,7 +343,9 @@ const createDomainSessionInternal = ({
 	verifyRebase = null,
 	resolveSelectionEntity = null,
 	historyLimit = 100,
-} = {}, writeGuard = null) => {
+} = {}, gates = null) => {
+	const readGuard = gates?.read ?? null;
+	const writeGuard = gates?.write ?? null;
 	for (const [name, candidate] of Object.entries({ validateProject, allowCommand, onChange, verifyRebase, resolveSelectionEntity })) {
 		if (candidate !== null && typeof candidate !== 'function') {
 			throw new TypeError('Domain session ' + name + ' must be a function or null.');
@@ -353,6 +358,7 @@ const createDomainSessionInternal = ({
 	let disposed = false;
 	const assertActive = () => {
 		if (disposed) throw new Error('Domain editor session has been disposed.');
+		readGuard?.();
 	};
 	const subscribe = (listener) => {
 		assertActive();
