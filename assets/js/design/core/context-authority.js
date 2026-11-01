@@ -41,11 +41,15 @@ export const createManagedContextAuthority = ({ createProfileSession, createDoma
 		if (!factory || !sessionOptions || typeof sessionOptions !== 'object') {
 			throw refused('DESIGNER_CONTEXT_INVALID');
 		}
-		const record = { id, status: 'STAGED', generation: ++nextGeneration, session: null };
+		const record = { id, status: 'STAGED', generation: ++nextGeneration, session: null, inspect: null };
 		// Base alone owns this closure. Every low-level mutable store captures it.
 		const session = factory(sessionOptions, Object.freeze({
 			read: () => readable(record),
 			write: () => writable(record),
+			registerInspection: (inspect) => {
+				if (record.inspect !== null || typeof inspect !== 'function') throw refused('DESIGNER_CONTEXT_INVALID');
+				record.inspect = inspect;
+			},
 		}));
 		if (!session || typeof session.dispose !== 'function') {
 			throw refused('DESIGNER_CONTEXT_INVALID');
@@ -130,6 +134,12 @@ export const createManagedContextAuthority = ({ createProfileSession, createDoma
 		// from a session. The coordinator retains its own handle reference.
 		return active?.id ?? null;
 	};
+	const inspect = (handle) => {
+		const record = recordFor(handle);
+		readable(record);
+		if (record.inspect === null) throw refused('DESIGNER_CONTEXT_INVALID');
+		return record.inspect();
+	};
 	const dispose = (handle) => {
 		const record = recordFor(handle);
 		if (record.status !== 'RETIRED' && record.status !== 'INVALID') throw refused();
@@ -141,6 +151,6 @@ export const createManagedContextAuthority = ({ createProfileSession, createDoma
 	};
 	return Object.freeze({
 		stage, activateInitial, lock, unlock, switchTo, rollback, retire,
-		invalidate, isCurrent, current, dispose,
+		invalidate, isCurrent, current, dispose, inspect,
 	});
 };
