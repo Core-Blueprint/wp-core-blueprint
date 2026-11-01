@@ -8,13 +8,24 @@ const normalizeDiagnostic = (diagnostic) => {
 
 export class ValidationFeedback {
 	#items = [];
+	#writeGuard;
+
+	constructor({ writeGuard = null, initialDiagnostics = [] } = {}) {
+		if (writeGuard !== null && typeof writeGuard !== 'function') throw new TypeError('ValidationFeedback write guard must be a function.');
+		if (!Array.isArray(initialDiagnostics)) throw new TypeError('Initial validation diagnostics must be an array.');
+		this.#writeGuard = writeGuard;
+		// Constructor-only bootstrap: no public mutation bypass after creation.
+		this.#items = initialDiagnostics.map(normalizeDiagnostic).filter(Boolean);
+	}
 
 	replace(diagnostics) {
+		this.#writeGuard?.();
 		if (!Array.isArray(diagnostics)) throw new TypeError('Validation diagnostics must be an array.');
 		this.#items = diagnostics.map(normalizeDiagnostic).filter(Boolean);
 	}
 
 	append(diagnostic) {
+		this.#writeGuard?.();
 		const normalized = normalizeDiagnostic(diagnostic);
 		if (!normalized) return false;
 		this.#items.push(normalized);
@@ -22,6 +33,7 @@ export class ValidationFeedback {
 	}
 
 	clear() {
+		this.#writeGuard?.();
 		this.#items = [];
 	}
 
