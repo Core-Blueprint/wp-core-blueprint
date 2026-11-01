@@ -245,9 +245,12 @@ export const createManagedContextTransaction = ({
 			locked = true;
 			authority.switchTo(source,target);
 			swapped = true;
+			// A render adapter can execute synchronously during view.commit().
+			// The target is readable but MUST remain non-writable until verified.
+			authority.lock(target);
 			mounts.commit();
 			view.commit();
-			if (!authority.isCurrent(target) || source.status !== 'LOCKED'
+			if (target.status !== 'LOCKED' || source.status !== 'LOCKED'
 				|| view.verify() !== true || mounts.verify() !== true
 				|| synchronous(verify(Object.freeze({
 					sourceId:source.id, sourceGeneration:source.generation,
@@ -256,6 +259,8 @@ export const createManagedContextTransaction = ({
 				})), 'DESIGNER_VERIFICATION_ASYNC') !== true) {
 				throw failure('DESIGNER_CONTEXT_VERIFICATION_FAILED');
 			}
+			authority.unlock(target);
+			if (!authority.isCurrent(target)) throw failure('DESIGNER_CONTEXT_VERIFICATION_FAILED');
 			authority.retire(source,target);
 			retired = true;
 			state.current = target;
@@ -272,12 +277,15 @@ export const createManagedContextTransaction = ({
 			const failures = [];
 			if (view) try { view.rollback(); } catch (e) { failures.push(e); }
 			if (mounts) try { mounts.rollback(); } catch (e) { failures.push(e); }
-			if (swapped) try { authority.rollback(source,attempt.target); } catch (e) { failures.push(e); }
+			if (swapped) try {
+				if (attempt.target.status === 'LOCKED') authority.unlock(attempt.target);
+				authority.rollback(source,attempt.target);
+			} catch (e) { failures.push(e); }
 			else if (locked) try { authority.unlock(source); } catch (e) { failures.push(e); }
 			if (attempt.target?.status === 'STAGED' || attempt.target?.status === 'INVALID') {
 				try { invalidate(attempt.target); } catch (e) { failures.push(e); }
 			}
-			if (failures.length || error?.code === 'RECOVERY_REQUIRED'
+			if (recoveryRequired || failures.length || error?.code === 'RECOVERY_REQUIRED'
 				|| error?.code === 'DESIGNER_SAVE_REBASE_UNVERIFIED') {
 				markRecovery(attempt);
 				return Object.freeze({status:'recovery_required',code:'RECOVERY_REQUIRED'});
