@@ -823,6 +823,10 @@ export const createDesignerShell = (root, {
 			syncHistory();
 		};
 		return Object.freeze({
+			verify() {
+				return phase === 'COMMITTED' && !destroyed && session === nextSession
+					&& sessionGeneration === generation && shellSessions.get(root) === nextSession;
+			},
 			commit() {
 				if (phase !== 'PREPARED' || destroyed) throw new Error('DESIGNER_SHELL_REBIND_REFUSED');
 				session = nextSession;
