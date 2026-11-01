@@ -156,15 +156,6 @@
 		});
 	};
 
-	// The shared context controller owns the single capture-phase change path.
-	// Keep the earlier-loading capture guard for direct/forged context events.
-	// The Guard grants a one-dispatch synchronous window only AFTER user approval.
-	document.addEventListener('cb:design-shell:contextrequest', (event) => {
-		const shell = event.target?.querySelector?.('[data-cb-design-shell]');
-		if (shell && window.cbCore?.designerExitGuard?.isTransitionDispatchAuthorized?.(shell) === true) return;
-		event.stopImmediatePropagation();
-	}, true);
-
 	const panelToggleLabel = (panel, collapsed) => {
 		const verb = String(collapsed ? config.panelLabels?.expand : config.panelLabels?.collapse || '').trim();
 		const panelLabel = String(panel?.getAttribute('aria-label') || '').trim();
