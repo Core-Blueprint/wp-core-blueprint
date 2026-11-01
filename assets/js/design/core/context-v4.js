@@ -76,21 +76,13 @@ export const createManagedV4Context = ({
 	});
 	let closed = false;
 	let inFlight = 0;
-	const finish = () => {
-		if (closed && inFlight === 0 && coordinator.status().state === 'READY') {
-			if (shellController.destroy() === false) return false;
-			selectionController.destroy();
-			return revokeManagedContextBinding(binding);
-		}
-		return false;
-	};
 	return Object.freeze({
 		current:() => closed ? null : binding.current,
 		transition:async (targetId) => {
 			if (closed) return Object.freeze({status:'refused',code:'DESIGNER_V4_CLOSED'});
 			inFlight++;
 			try { return await coordinator.transition({targetId}); }
-			finally { inFlight--; finish(); }
+			finally { inFlight--; }
 		},
 		cancelPending:() => coordinator.cancelPending(),
 		close:() => {
