@@ -641,3 +641,161 @@ test('CX02E negative: v4 rollback leaves the original dirty context writable',as
 	assert.equal(f.driver.status().state,'READY');
 	// Guard owns dirty close authorization; the private adapter is tested only for rollback.
 });
+
+
+
+/**
+ * CX02E public-path integration: run the actual classic Exit Guard and import
+ * the actual managed ESM adapter. No mocked coordinator or public dispatch
+ * substitute. The existing temporary ESM fixture rewrites only WordPress's
+ * bare editor import to its already loaded canonical test module.
+ */
+const publicV4Guard = async ({choice='discard'}={}) => {
+	const listeners = new Map();
+	const modals = [];
+	const makeModalNode = (tag) => ({
+		tag,children:[],checked:false,hidden:false,
+		append(...children){this.children.push(...children);},
+		setAttribute(){},
+	});
+	globalThis.document.createElement = makeModalNode;
+	globalThis.document.createTextNode = (value) => ({textContent:value});
+	globalThis.document.currentScript = {
+		src:pathToFileURL(join(temporary,'features','designer-exit-guard.js')).href,
+	};
+	globalThis.window.addEventListener=(name,fn)=>listeners.set(name,fn);
+	globalThis.window.cbCore.toast={warning(){},error(){}};
+	globalThis.window.cbCore.modal={
+		show:async (options)=>{
+			modals.push(options);
+			if(choice==='cancel')return false;
+			const visit=(node)=>[node,...(node?.children??[]).flatMap(visit)];
+			for(const node of visit(options.body)){
+				if(node?.tag==='input')node.checked=node.value===choice;
+			}
+			return options.onConfirm?await options.onConfirm():true;
+		},
+	};
+	const raw=await readFile(new URL('../../assets/js/features/designer-exit-guard.js',import.meta.url),'utf8');
+	// Only the test URL suffix differs; production resolves the real .js ESM.
+	const source=raw.replace("context-v4.js', document.currentScript.src)",
+		"context-v4.mjs', document.currentScript.src)");
+	if(source===raw)throw new Error('CX02E_PUBLIC_GUARD_MODULE_ANCHOR_MISSING');
+	// Evaluate as a real classic script in the Node global, so its dynamic
+	// import uses Node's native ESM loader without experimental VM flags.
+	new Function(source)();
+	const guard=window.cbCore.designerExitGuard;
+	assert.equal(guard.contractVersion,4);
+	return {guard,modals,listeners};
+};
+const publicV4Fixture = async ({choice='discard', prepare=null, save=null}={}) => {
+	const {guard,modals}=await publicV4Guard({choice});
+	const shell=new FakeElement('public-v4-shell');
+	shell.isConnected=true;
+	shell.undo=new FakeButton('undo');
+	shell.redo=new FakeButton('redo');
+	const slots=Object.fromEntries(names.map(name=>{
+		const slot=new FakeElement(name);
+		slot.isConnected=true;
+		slot.replaceChildren(new FakeElement('source-'+name));
+		return [name,slot];
+	}));
+	const nodes=(id)=>Object.fromEntries(names.map(name=>[name,[new FakeElement(id+'-'+name)]]));
+	const witnessed={prepared:0,saved:0,fullscreenSaved:0,discarded:0,layers:[]};
+	let unregister=null;
+	unregister=guard.register(shell,{
+		isDirty:()=>{
+			const handle=unregister?.current?.();
+			return handle?JSON.stringify(handle.session.project())!==JSON.stringify(handle.session.baselineSnapshot()):false;
+		},
+		discard:()=>{witnessed.discarded++;return true;},
+		save:async()=>{witnessed.fullscreenSaved++;return true;},
+		context:{
+			initial:spec('source'),
+			mountSlot:slots,
+			prepare:async (args)=>{
+				witnessed.prepared++;
+				return prepare?prepare(args,{slots,nodes}):{spec:spec(args.targetId),nodes:nodes(args.targetId)};
+			},
+			...(save?{save:async (checkpoint)=>{witnessed.saved++;return save(checkpoint);}}:{}),
+			renderLayers:({project})=>witnessed.layers.push(project.root.props.name),
+		},
+	});
+	assert.equal(await unregister.ready,true,'Managed registration must create its canonical Base authority');
+	const first=unregister.current();
+	assert.equal(first.id,'source');
+	return {guard,shell,slots,nodes,unregister,first,witnessed,modals};
+};
+const publicMounted=(f,id)=>names.every(name=>f.slots[name].childNodes[0]?.name===id+'-'+name);
+
+test('CX02E public v4: register, clean transition, five mounted views, History and guarded unregister',async()=>{
+	const f=await publicV4Fixture();
+	const outcome=await f.guard.transition(f.shell,{targetId:'new-context'});
+	assert.equal(outcome.status,'applied');
+	assert.equal(outcome.id,'new-context');
+	assert.equal(f.unregister.current().id,'new-context');
+	assert.equal(f.first.status,'RETIRED');
+	assert.equal(f.witnessed.prepared,1);
+	assert.equal(f.modals.length,0);
+	assert.ok(publicMounted(f,'new-context'));
+	assert.equal(f.witnessed.layers.at(-1),'new-context');
+	f.unregister.current().session.execute(increment());
+	assert.equal(f.shell.undo.disabled,false);
+	f.shell.undo.fire('click');
+	assert.equal(f.unregister.current().session.project().root.props.count,0);
+	assert.equal(await f.unregister(),true);
+	assert.equal(f.unregister.current(),null);
+});
+
+test('CX02E public v4: dirty Discard uses one modal but never consumer fullscreen Discard',async()=>{
+	const f=await publicV4Fixture({choice:'discard'});
+	f.first.session.execute(increment());
+	const outcome=await f.guard.transition(f.shell,{targetId:'discarded'});
+	assert.equal(outcome.status,'applied');
+	assert.equal(f.modals.length,1);
+	assert.equal(f.witnessed.saved,0);
+	assert.equal(f.witnessed.discarded,0);
+	assert.equal(f.first.status,'RETIRED');
+	assert.ok(publicMounted(f,'discarded'));
+	assert.equal(await f.unregister(),true);
+});
+
+test('CX02E public v4: dirty Save uses verified coordinator receipt, not fullscreen Save',async()=>{
+	const f=await publicV4Fixture({choice:'save',save:async checkpoint=>({
+		status:'committed',verified:true,sourceId:checkpoint.sourceId,
+		generation:checkpoint.generation,revision:checkpoint.revision,
+		baselineProject:checkpoint.submittedProject,
+	})});
+	f.first.session.execute(increment());
+	const outcome=await f.guard.transition(f.shell,{targetId:'saved'});
+	assert.equal(outcome.status,'applied');
+	assert.equal(f.modals.length,1);
+	assert.equal(f.witnessed.saved,1);
+	assert.equal(f.witnessed.fullscreenSaved,0);
+	assert.ok(publicMounted(f,'saved'));
+	assert.equal(await f.unregister(),true);
+});
+
+test('CX02E public v4: Cancel and rejected target preserve source write authority and all mounts',async()=>{
+	const cancelled=await publicV4Fixture({choice:'cancel'});
+	cancelled.first.session.execute(increment());
+	const first=await cancelled.guard.transition(cancelled.shell,{targetId:'ignored'});
+	assert.equal(first.status,'cancelled');
+	assert.equal(cancelled.unregister.current(),cancelled.first);
+	assert.equal(cancelled.first.status,'ACTIVE');
+	assert.ok(publicMounted(cancelled,'source'));
+	cancelled.first.session.execute(increment());
+	assert.equal(cancelled.first.session.project().root.props.count,2);
+	assert.equal(await cancelled.unregister(),false,'dirty managed context cannot be torn down');
+	const rejected=await publicV4Fixture({prepare:(args,{slots,nodes})=>{
+		const staged=nodes(args.targetId);
+		staged.preview=[slots.canvas.childNodes[0]];
+		return {spec:spec(args.targetId),nodes:staged};
+	}});
+	const failed=await rejected.guard.transition(rejected.shell,{targetId:'invalid'});
+	assert.equal(failed.status,'failed');
+	assert.equal(rejected.unregister.current(),rejected.first);
+	assert.equal(rejected.first.status,'ACTIVE');
+	assert.ok(publicMounted(rejected,'source'));
+	assert.equal(await rejected.unregister(),true);
+});
