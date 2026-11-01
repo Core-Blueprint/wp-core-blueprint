@@ -272,10 +272,14 @@ export const createManagedContextTransaction = ({
 			if (choice !== 'save' && !sameValue(original, source.session.snapshot())) {
 				throw failure('DESIGNER_SOURCE_CHANGED');
 			}
-			assertSaveStable(source);
-			// This is the approved Save/Discard/clean decision generation.
-			// Revalidation callbacks must not alter this stamp.
+			// This generation belongs to the already-made Save/Discard/clean
+			// decision. saveStatus() itself is a caller-controlled callback and
+			// must never silently advance it.
 			const approvedGenerations = authority.inspect(source);
+			assertSaveStable(source);
+			if (!sameValue(approvedGenerations, authority.inspect(source))) {
+				throw failure('DESIGNER_SOURCE_CHANGED');
+			}
 			// Full contract preflight occurs while source remains ACTIVE.
 			mounts = prepareManagedMountSlots(slots, loaded.nodes);
 			view = prepareDesignerViewRebinding({
