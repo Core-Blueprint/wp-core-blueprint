@@ -8,8 +8,10 @@
 	const observed = new Set();
 	const approved = new WeakSet();
 	const pending = new WeakSet();
-	// Only the synchronous, authorized consumer event dispatch is admitted.
-	const transitionDispatch = new WeakSet();
+	// Managed v4 coordinators stay outside the public Guard API.
+	const managed = new WeakMap();
+	const internalUrl = document.currentScript?.src
+		? new URL('../design/core/context-v4.js', document.currentScript.src).href : null;
 	const defaults = Object.freeze({
 		cleanTitle: 'Close Designer?',
 		cleanDescription: 'Return to the previous page?',
@@ -69,28 +71,56 @@
 		if (typeof adapter.discard !== 'function') {
 			throw new TypeError('Designer Exit Guard requires a synchronous discard() adapter.');
 		}
+		// A managed Shell can only have one live registration and authority.
+		if (providers.get(shell)?.context) throw new Error('DESIGNER_V4_ALREADY_REGISTERED');
+		const context = adapter.context === undefined ? null : adapter.context;
+		if (context !== null && (typeof context !== 'object'
+			|| context.initial?.kind !== 'domain' || !context.mountSlot
+			|| typeof context.prepare !== 'function'
+			|| (context.save !== undefined && typeof context.save !== 'function')
+			|| (context.cleanup !== undefined && typeof context.cleanup !== 'function'))) {
+			throw new TypeError('Designer v4 context requires a domain initial, mountSlot and prepare.');
+		}
 		const record = Object.freeze({
 			isDirty: adapter.isDirty,
 			save: adapter.save || null,
 			discard: adapter.discard,
 			isUncertain: adapter.isUncertain || null,
-			labels: Object.freeze({ ...defaults, ...(adapter.labels || {}) }),
+			labels: Object.freeze({...defaults,...(adapter.labels || {})}),
+			context: context === null ? null : Object.freeze({...context}),
 		});
 		observe(shell);
-		providers.set(shell, record);
+		providers.set(shell,record);
 		registered.add(shell);
-		return () => {
-			if (providers.get(shell) !== record) return;
+		if (record.context) managed.set(record,initializeManaged(shell,record));
+		const unregister = () => {
+			if (providers.get(shell) !== record) return false;
+			if (record.context) {
+				// A dirty/UNKNOWN context cannot be silently revoked.
+				if (pending.has(shell) || unresolved(shell,record) || isBusy(shell)
+					|| record.isDirty() !== false) return false;
+			}
 			providers.delete(shell);
 			registered.delete(shell);
-			// A detached registered shell must not keep a strong unload witness.
-			// A still-connected shell without a dirty adapter stays observed
-			// and fails closed until a new adapter is registered.
+			void managed.get(record)?.then((driver) => driver?.close());
 			if (shell.isConnected === false) {
 				observed.delete(shell);
 				approved.delete(shell);
 			}
+			return true;
 		};
+		unregister.ready = record.context
+			? managed.get(record).then((driver) => driver !== null) : Promise.resolve(true);
+		unregister.current = () => null;
+		if (record.context) {
+			void managed.get(record).then((driver) => {
+				if (driver && providers.get(shell) === record) {
+					unregister.current = () => providers.get(shell) === record
+						? driver.current() : null;
+				}
+			});
+		}
+		return unregister;
 	};
 
 	window.addEventListener('beforeunload', (event) => {
@@ -155,7 +185,7 @@
 	 * One shared Save/Discard/Cancel decision for exit and context changes.
 	 * Consumers confirm persistence; Base alone decides whether to proceed.
 	 */
-	const confirmDirty = async (shell, adapter, labels, confirmLabel) => {
+	const confirmDirty = async (shell, adapter, labels, confirmLabel, {deferSave = false} = {}) => {
 		const modal = window.cbCore?.modal?.show;
 		if (typeof modal !== 'function') return { confirmed: false, action: null };
 		const { body, choices, error } = buildDirtyBody(labels, Boolean(adapter.save));
@@ -173,7 +203,7 @@
 				confirming = true;
 				choices.forEach((input) => { input.disabled = true; });
 				try {
-					if (choice === 'save') {
+					if (choice === 'save' && !deferSave) {
 						// Consumer true means verified persisted receipt, not HTTP 200.
 						if (!adapter.save || await adapter.save() !== true
 							|| unresolved(shell, adapter) || adapter.isDirty() !== false || isBusy(shell)) {
@@ -290,64 +320,82 @@
 	};
 
 
+
 	/**
-	 * B1 context transition. The callback is invoked once, synchronously
-	 * after authorization; the single-flight lock survives until it settles.
-	 * Consumers alone load and apply their target context.
+	 * The Base-only managed factory performs authoritative context preparation,
+	 * Save receipts, atomic view rebinding and retirement. No consumer callback
+	 * can call commit or receive private lifecycle authority.
 	 */
-	const requestTransition = async (shell, apply) => {
-		if (!(shell instanceof Element) || typeof apply !== 'function' || pending.has(shell)) {
-			return Object.freeze({ status: 'blocked' });
+	const initializeManaged = (shell, record) => {
+		if (!internalUrl) return Promise.resolve(null);
+		return import(internalUrl).then(({createManagedV4Context}) => createManagedV4Context({
+			shell,context:record.context,
+			isRegistered:() => providers.get(shell) === record && shell.isConnected !== false,
+			isSettled:() => {
+				try { return !unresolved(shell,record) && !isBusy(shell); }
+				catch (_) { return false; }
+			},
+			isDirty:() => record.isDirty(),
+			decide:async () => {
+				if (providers.get(shell) !== record) return 'cancel';
+				const labels = {
+					...record.labels,
+					dirtyDescription:record.labels.transitionDirtyDescription,
+				};
+				const choice = await confirmDirty(shell, {
+					...record,
+					save:typeof record.context.save === 'function' ? record.context.save : null,
+				},labels,labels.transitionConfirm,{deferSave:true});
+				return choice.confirmed ? choice.action : 'cancel';
+			},
+		})).catch(() => null);
+	};
+
+	// Public v4 action. The coordinator holds the only transition authority.
+	const transition = async (shell, {targetId} = {}) => {
+		if (!(shell instanceof Element) || pending.has(shell)) {
+			return Object.freeze({status:'blocked'});
 		}
-		const adapter = providers.get(shell);
-		if (!adapter || shell.isConnected === false) return Object.freeze({ status: 'blocked' });
+		const record = providers.get(shell);
+		if (!record?.context || shell.isConnected === false
+			|| typeof targetId !== 'string' || !targetId.trim()) {
+			return Object.freeze({status:'blocked'});
+		}
+		try { if (unresolved(shell,record) || isBusy(shell)) return Object.freeze({status:'blocked'}); }
+		catch (_) { return Object.freeze({status:'blocked'}); }
 		pending.add(shell);
 		const wasInert = shell.inert === true;
 		shell.inert = true;
 		try {
-			if (unresolved(shell, adapter) || isBusy(shell)) return Object.freeze({ status: 'blocked' });
-			const initialDirty = adapter.isDirty();
-			if (typeof initialDirty !== 'boolean') return Object.freeze({ status: 'blocked' });
-			let action = null;
-			if (initialDirty) {
-				const labels = {
-					...adapter.labels,
-					dirtyDescription: adapter.labels.transitionDirtyDescription,
-				};
-				const choice = await confirmDirty(shell, adapter, labels, adapter.labels.transitionConfirm);
-				if (!choice.confirmed) return Object.freeze({ status: 'cancelled' });
-				action = choice.action;
-				if (action !== 'save' && action !== 'discard') return Object.freeze({ status: 'blocked' });
+			const driver = await managed.get(record);
+			if (!driver || providers.get(shell) !== record || shell.isConnected === false
+				|| unresolved(shell,record) || isBusy(shell)) {
+				return Object.freeze({status:'blocked'});
 			}
-			// No await between final checks and the authorized target dispatch.
-			if (providers.get(shell) !== adapter || shell.isConnected === false
-				|| unresolved(shell, adapter) || isBusy(shell)) {
-				return Object.freeze({ status: 'blocked' });
+			const outcome = await driver.transition(targetId);
+			if (outcome?.status === 'committed') {
+				return Object.freeze({status:'applied',id:outcome.id,generation:outcome.generation});
 			}
-			const dirtyNow = adapter.isDirty();
-			if (typeof dirtyNow !== 'boolean'
-				|| ((!initialDirty || action === 'save') && dirtyNow)) {
-				return Object.freeze({ status: 'blocked' });
+			if (outcome?.status === 'cancelled') return Object.freeze({status:'cancelled'});
+			if (outcome?.status === 'recovery_required') {
+				return Object.freeze({status:'recovery-required',code:'RECOVERY_REQUIRED'});
 			}
-			let target;
-			transitionDispatch.add(shell);
-			try {
-				target = apply();
-			} finally {
-				transitionDispatch.delete(shell);
+			if (outcome?.status === 'refused') {
+				const codes = ['DESIGNER_TRANSITION_BUSY','DESIGNER_SOURCE_CHANGED',
+					'DESIGNER_SAVE_UNSETTLED','DESIGNER_TRANSITION_UNAUTHORIZED',
+					'DESIGNER_DIRTY_DECISION_INVALID','DESIGNER_V4_CLOSED'];
+				return Object.freeze({
+					status:codes.includes(outcome.code) ? 'blocked' : 'failed',code:outcome.code,
+				});
 			}
-			const result = await target;
-			if (result === false) throw new Error('CONTEXT_CHANGE_FAILED');
-			return Object.freeze({ status: 'applied', result });
-		} catch (error) {
-			return Object.freeze({ status: 'failed', error });
+			return Object.freeze({status:'failed',code:'DESIGNER_TRANSITION_FAILED'});
+		} catch (_) {
+			return Object.freeze({status:'failed',code:'DESIGNER_TRANSITION_FAILED'});
 		} finally {
 			if (!wasInert) shell.inert = false;
 			pending.delete(shell);
 		}
 	};
-	// Read-only gate for the existing Base capture listener.
-	const isTransitionDispatchAuthorized = (shell) => transitionDispatch.has(shell);
 
 	// Escape is intercepted by the Base launch capture listener before
 	// the low-level fullscreen engine; an active modal owns its own Escape.
@@ -360,5 +408,5 @@
 	const resetApproval = (shell) => approved.delete(shell);
 
 	window.cbCore = window.cbCore || {};
-	window.cbCore.designerExitGuard = Object.freeze({ observe, register, request, requestTransition, canTransition, isTransitionDispatchAuthorized, modalIsOpen, isApproved, resetApproval });
+	window.cbCore.designerExitGuard = Object.freeze({contractVersion:4,observe,register,request,transition,canTransition,modalIsOpen,isApproved,resetApproval});
 })();
