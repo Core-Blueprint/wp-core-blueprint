@@ -7,9 +7,12 @@ export class EditorState {
 	selection;
 	inspector;
 	validation;
+	#writeGuard;
 
-	constructor() {
-		this.selection = new SelectionState();
+	constructor({ writeGuard = null } = {}) {
+		if (writeGuard !== null && typeof writeGuard !== 'function') throw new TypeError('EditorState write guard must be a function.');
+		this.#writeGuard = writeGuard;
+		this.selection = new SelectionState({ writeGuard });
 		this.inspector = new InspectorState();
 		this.validation = new ValidationFeedback();
 	}
@@ -31,6 +34,7 @@ export class EditorState {
 	}
 
 	restore(snapshot, selectionEvent = {}) {
+		this.#writeGuard?.();
 		if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
 			throw new TypeError('Invalid editor state snapshot.');
 		}
@@ -40,6 +44,7 @@ export class EditorState {
 	}
 
 	commitSnapshot(snapshot, metadata = {}) {
+		this.#writeGuard?.();
 		if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
 			throw new TypeError('Invalid staged editor snapshot.');
 		}
@@ -51,6 +56,7 @@ export class EditorState {
 	}
 
 	restoreCommitted(snapshot, selectionRevision) {
+		this.#writeGuard?.();
 		this.inspector.restore(snapshot.inspector ?? { activeSection: null, expanded: [] });
 		this.validation.replace(Array.isArray(snapshot.validation) ? snapshot.validation : []);
 		this.selection.restoreCommitted(
@@ -59,6 +65,7 @@ export class EditorState {
 	}
 
 	reconcile(root, options = {}) {
+		this.#writeGuard?.();
 		return this.selection.reconcile(root, options);
 	}
 
