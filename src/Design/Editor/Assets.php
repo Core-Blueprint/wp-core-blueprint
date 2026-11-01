@@ -376,7 +376,7 @@ final class Assets {
 	 * focus chrome, brand, shared labels, canonical composition primitives,
 	 * async context-switch lifecycle/transition and the private Designer Mode
 	 * source path. Consumers prepare inactive targets for Base-managed transactions via v4.
-	 * context request event; they do not navigate or build product loaders.
+	 * context callback; they do not navigate or apply target DOM themselves.
 	 * Designer Mode also owns the narrow shared Button and Form Control
 	 * presentation required by the Base chrome and panel grammar it composes;
 	 * consumers do not need the full Core Admin theme.
