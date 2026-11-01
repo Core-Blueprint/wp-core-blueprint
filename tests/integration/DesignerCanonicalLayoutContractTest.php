@@ -92,12 +92,17 @@ final class CB_Designer_Canonical_Layout_Contract_Test extends WP_UnitTestCase {
 		$runtime = $this->source( 'assets/js/features/designer-context.js' );
 		$css     = $this->source( 'assets/css/design/designer-context.css' );
 
-		self::assertStringContainsString( "const REQUEST_EVENT = 'cb:design-shell:contextrequest';", $runtime );
-		self::assertStringContainsString( "const CHANGED_EVENT = 'cb:design-shell:contextchanged';", $runtime );
+		// CX-02E replaces B1's public event dispatch with the canonical v4 Guard.
+		self::assertStringNotContainsString( "const REQUEST_EVENT = 'cb:design-shell:contextrequest';", $runtime );
+		self::assertStringNotContainsString( "const CHANGED_EVENT = 'cb:design-shell:contextchanged';", $runtime );
+		self::assertStringContainsString( 'const guard = window.cbCore?.designerExitGuard;', $runtime );
+		self::assertStringContainsString( 'guard?.contractVersion !== 4', $runtime );
+		self::assertStringContainsString( 'guard.transition(shell, {targetId: value})', $runtime );
+		self::assertStringContainsString( "outcome?.status === 'applied'", $runtime );
 		self::assertStringContainsString( 'const transitionGenerations = new WeakMap();', $runtime );
 		self::assertStringContainsString( 'transitionGenerations.set(shell, generation);', $runtime );
 		self::assertStringContainsString( 'transitionGenerations.get(shell) !== generation', $runtime );
-		self::assertStringContainsString( 'respondWith', $runtime );
+		self::assertStringNotContainsString( 'respondWith', $runtime );
 		self::assertStringContainsString( "document.addEventListener('change'", $runtime );
 		self::assertStringContainsString( 'event.stopImmediatePropagation();', $runtime );
 		self::assertStringContainsString( "setTransition(shell, 'loading'", $runtime );
