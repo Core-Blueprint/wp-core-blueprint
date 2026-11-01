@@ -60,6 +60,8 @@ const SIDEBAR_ROLE_ICONS = Object.freeze({
 let activeFullscreenExit = null;
 const shellControllers = new WeakMap();
 const shellSessions = new WeakMap();
+// CX-02C: transaction preparation stays Base-internal, outside public Shell controllers.
+const shellSessionRebinding = new WeakMap();
 const pendingSidebarConfigs = new WeakMap();
 // Exclusive Host ownership of the EXISTING shell. No second state or renderer.
 const platformRootLeases = new WeakMap();
@@ -211,6 +213,8 @@ export const createDesignerShell = (root, {
 	let sidebarDefaultPanel = null;
 	let destroyed = false;
 	let platformActivated = false;
+	let sessionGeneration = 0;
+	let rebindingPending = false;
 
 	const assertActive = () => {
 		if (destroyed) throw new Error('Designer shell has been destroyed.');
@@ -239,11 +243,12 @@ export const createDesignerShell = (root, {
 	const requiredSessionMethods = platformStaged
 		? ['historyStatus', 'subscribe', 'undo', 'redo']
 		: ['historyStatus', 'subscribeHistory', 'subscribeDiagnostics', 'undo', 'redo'];
-	if (session !== null && requiredSessionMethods.some(
-		(method) => typeof session?.[method] !== 'function'
-	)) {
-		throw new TypeError('Designer Shell requires its canonical session interface.');
-	}
+	const assertSessionInterface = (candidate) => {
+		if (!candidate || requiredSessionMethods.some(
+			(method) => typeof candidate?.[method] !== 'function'
+		)) throw new TypeError('Designer Shell requires its canonical session interface.');
+	};
+	if (session !== null) assertSessionInterface(session);
 	const syncHistory = () => {
 		if (destroyed || session === null) return;
 		const status = session.historyStatus();
@@ -305,12 +310,32 @@ export const createDesignerShell = (root, {
 	};
 	// The Host owns project events. Subscribing to EditorFacade during
 	// offscreen staging is forbidden by Host's assertReady() gate.
-	let unsubscribeHistory = session === null || platformStaged
-		? null
-		: session.subscribeHistory(syncHistory);
-	const unsubscribeDiagnostics = session === null || platformStaged
-		? null
-		: session.subscribeDiagnostics(onDiagnostic);
+	// A captured generation prevents queued or maliciously retained observers from
+	// publishing a previous context into the current Shell after commit.
+	const subscribeSession = (candidate, generation) => {
+		if (platformStaged && !platformActivated) return { history: null, diagnostics: null };
+		const stillBound = () => !destroyed && session === candidate && sessionGeneration === generation;
+		let history = null;
+		let diagnostics = null;
+		try {
+			history = platformStaged
+				? candidate.subscribe(() => { if (stillBound()) syncHistory(); })
+				: candidate.subscribeHistory(() => { if (stillBound()) syncHistory(); });
+			if (!platformStaged) diagnostics = candidate.subscribeDiagnostics(
+				(event) => { if (stillBound()) onDiagnostic(event); },
+			);
+		} catch (error) {
+			history?.();
+			diagnostics?.();
+			throw error;
+		}
+		return { history, diagnostics };
+	};
+	const initialSubscriptions = session === null || platformStaged
+		? { history: null, diagnostics: null }
+		: subscribeSession(session, sessionGeneration);
+	let unsubscribeHistory = initialSubscriptions.history;
+	let unsubscribeDiagnostics = initialSubscriptions.diagnostics;
 
 	const syncFullscreenControl = () => {
 		if (!fullscreen) return;
@@ -687,8 +712,10 @@ export const createDesignerShell = (root, {
 	const activatePlatformSession = () => {
 		if (!platformStaged || destroyed || !root.isConnected) return false;
 		if (platformActivated) return true;
-		unsubscribeHistory = session.subscribe(syncHistory);
+		// The initial Host subscription becomes active only after READY.
 		platformActivated = true;
+		try { unsubscribeHistory = subscribeSession(session, sessionGeneration).history; }
+		catch (error) { platformActivated = false; throw error; }
 		syncHistory();
 		root.dataset.cbDesignShellInitialized = 'true';
 		root.dispatchEvent(new CustomEvent(SHELL_READY_EVENT, {
@@ -724,6 +751,7 @@ export const createDesignerShell = (root, {
 		unsubscribeDiagnostics?.();
 		diagnosticNode?.remove?.();
 		pendingSidebarConfigs.delete(root);
+		shellSessionRebinding.delete(controller);
 		shellControllers.delete(root);
 		shellSessions.delete(root);
 		delete root.dataset.cbDesignShellInitialized;
@@ -751,6 +779,86 @@ export const createDesignerShell = (root, {
 			return group(groupId).panels.find((candidate) => candidate.dataset.cbDesignShellPanel === String(id || '')) ?? null;
 		},
 	});
+	// The reversible receipt owns both subscription generations until the
+	// outer coordinator verifies the new context or requests rollback.
+	shellSessionRebinding.set(controller, (nextSession, expectedSession) => {
+		assertActive();
+		if (rebindingPending || nextSession === session || session !== expectedSession) {
+			throw new Error('DESIGNER_SHELL_REBIND_REFUSED');
+		}
+		assertSessionInterface(nextSession);
+		if (!Number.isSafeInteger(sessionGeneration + 1)) throw new RangeError('Designer Shell binding generation exhausted.');
+		const generation = sessionGeneration + 1;
+		const previousSession = session;
+		const previousGeneration = sessionGeneration;
+		const previousHistory = unsubscribeHistory;
+		const previousDiagnostics = unsubscribeDiagnostics;
+		// All target observers are inert during prepare, including callbacks that
+		// run synchronously inside subscribe(). No presentation changes yet.
+		const next = subscribeSession(nextSession, generation);
+		try {
+			const status = nextSession.historyStatus();
+			if (!status || typeof status.canUndo !== 'boolean' || typeof status.canRedo !== 'boolean') {
+				throw new Error('DESIGNER_SHELL_REBIND_REFUSED');
+			}
+		} catch (error) {
+			next.history?.();
+			next.diagnostics?.();
+			throw error;
+		}
+		rebindingPending = true;
+		let phase = 'PREPARED';
+		const disposeNext = () => { next.history?.(); next.diagnostics?.(); };
+		const restore = () => {
+			session = previousSession;
+			sessionGeneration = previousGeneration;
+			unsubscribeHistory = previousHistory;
+			unsubscribeDiagnostics = previousDiagnostics;
+			shellSessions.set(root, previousSession);
+			disposeNext();
+			phase = 'ROLLED_BACK';
+			rebindingPending = false;
+			syncHistory();
+		};
+		return Object.freeze({
+			commit() {
+				if (phase !== 'PREPARED' || destroyed) throw new Error('DESIGNER_SHELL_REBIND_REFUSED');
+				session = nextSession;
+				sessionGeneration = generation;
+				unsubscribeHistory = next.history;
+				unsubscribeDiagnostics = next.diagnostics;
+				shellSessions.set(root, nextSession);
+				phase = 'COMMITTED';
+				try { syncHistory(); }
+				catch (error) {
+					try { restore(); }
+					catch (rollbackError) { error.rollbackError = rollbackError; }
+					throw error;
+				}
+				return true;
+			},
+			rollback() {
+				if (phase === 'ROLLED_BACK') return true;
+				if (phase === 'FINALIZED') throw new Error('DESIGNER_SHELL_REBIND_FINALIZED');
+				if (phase === 'PREPARED') {
+					disposeNext();
+					phase = 'ROLLED_BACK';
+					rebindingPending = false;
+					return true;
+				}
+				restore();
+				return true;
+			},
+			finalize() {
+				if (phase !== 'COMMITTED') throw new Error('DESIGNER_SHELL_REBIND_REFUSED');
+				previousHistory?.();
+				previousDiagnostics?.();
+				phase = 'FINALIZED';
+				rebindingPending = false;
+				return true;
+			},
+		});
+	});
 	shellControllers.set(root, controller);
 	shellSessions.set(root, session);
 	// Offscreen candidates remain unpublished until explicit Host READY.
@@ -762,6 +870,13 @@ export const createDesignerShell = (root, {
 		}));
 	}
 	return controller;
+};
+
+/** Internal Base-only context view coordinator hook, never part of window.cbCore. */
+export const prepareDesignerShellRebinding = (controller, nextSession, expectedSession) => {
+	const prepare = shellSessionRebinding.get(controller);
+	if (!prepare) throw new Error('DESIGNER_SHELL_REBIND_REFUSED');
+	return prepare(nextSession, expectedSession);
 };
 
 export {
