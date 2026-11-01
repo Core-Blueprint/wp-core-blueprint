@@ -222,8 +222,9 @@ test('CX02D: Save receipt from another context generation cannot rebase History'
 	})});
 	f.binding.current.session.execute(increment());
 	const result=await f.coordinator.transition({targetId:'target'});
-	assert.equal(result.code,'DESIGNER_SAVE_NOT_VERIFIED');
-	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.equal(result.status,'recovery_required');
+	assert.equal(f.binding.current.status,'LOCKED');
+	denied(()=>f.binding.current.session.execute(increment()));
 	assert.equal(f.binding.current.session.project().root.props.count,1);
 });
 
@@ -234,13 +235,23 @@ test('CX02D: Cancel and rejected Save leave original dirty context editable',asy
 	assert.equal(cancel.binding.current.status,'ACTIVE');
 	assert.equal(cancel.binding.current.session.project().root.props.count,1);
 	cancel.binding.current.session.execute(increment());
-	const fail=fixture({decision:'save',onSave:async()=>({status:'unknown'})});
+	const fail=fixture({decision:'save',onSave:async()=>({status:'refused'})});
 	fail.binding.current.session.execute(increment());
 	const result=await fail.coordinator.transition({targetId:'target'});
 	assert.equal(result.status,'refused');
-	assert.equal(result.code,'DESIGNER_SAVE_NOT_VERIFIED');
+	assert.equal(result.code,'DESIGNER_SAVE_REFUSED');
 	assert.equal(fail.binding.current.status,'ACTIVE');
 	assert.equal(fail.binding.current.session.project().root.props.count,1);
+});
+
+test('CX02D: unknown Save outcome locks the source instead of assuming no write occurred',async()=>{
+	const f=fixture({decision:'save',onSave:async()=>({status:'unknown'})});
+	f.binding.current.session.execute(increment());
+	const result=await f.coordinator.transition({targetId:'target'});
+	assert.equal(result.status,'recovery_required');
+	assert.equal(f.binding.current.status,'LOCKED');
+	assert.equal(f.binding.current.session.project().root.props.count,1);
+	denied(()=>f.binding.current.session.execute(increment()));
 });
 
 test('CX02D: failed target load and rejected authorization never disturb original dirty context',async()=>{
@@ -347,9 +358,10 @@ test('CX02D: stale Save cannot rebase a later context after cancellation',async(
 	gate.resolve({status:'committed',verified:true,sourceId:f.events.saves[0].sourceId,
 		generation:f.events.saves[0].generation,revision:f.events.saves[0].revision,
 		baselineProject:f.events.saves[0].submittedProject});
-	assert.equal((await first).status,'cancelled');
-	assert.equal(f.binding.current.status,'ACTIVE');
+	assert.equal((await first).status,'recovery_required');
+	assert.equal(f.binding.current.status,'LOCKED');
 	assert.equal(f.binding.current.session.project().root.props.count,1);
+	denied(()=>f.binding.current.session.execute(increment()));
 	assert.equal(f.events.saves[0].isCurrent(),false);
 });
 
