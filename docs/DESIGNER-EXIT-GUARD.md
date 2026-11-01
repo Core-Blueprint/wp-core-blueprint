@@ -124,8 +124,8 @@ and pass joint FIELD validation before Foundation acceptance.
 ## Exit Guard API v4 | Managed context transition (CX-02E)
 
 The supported public contract is
-\`window.cbCore.designerExitGuard.contractVersion === 4\`, paired with
-\`CoreBlueprint\Core\Design\Editor\Assets::DESIGNER_EXIT_GUARD_API = 4\`
+`window.cbCore.designerExitGuard.contractVersion === 4`, paired with
+`CoreBlueprint\Core\Design\Editor\Assets::DESIGNER_EXIT_GUARD_API = 4`
 in the **same installed Base artifact**. No old-generation compatibility is
 provided.
 
@@ -157,44 +157,44 @@ const current = unregister.current(); // Read/write-fenced ContextHandle
 const result = await window.cbCore.designerExitGuard.transition(shell, {targetId});
 ~~~
 
-The **only** supported v4 public context action is \`transition(shell,{targetId})\`.
-It resolves to a frozen \`{status:'applied',id,generation}\`,
-\`{status:'cancelled'}\`, \`{status:'blocked'}\`,
-\`{status:'failed',code}\` or
-\`{status:'recovery-required',code:'RECOVERY_REQUIRED'}\`.
-The Context Picker updates its selected value **only** for \`applied\`;
+The **only** supported v4 public context action is `transition(shell,{targetId})`.
+It resolves to a frozen `{status:'applied',id,generation}`,
+`{status:'cancelled'}`, `{status:'blocked'}`,
+`{status:'failed',code}` or
+`{status:'recovery-required',code:'RECOVERY_REQUIRED'}`.
+The Context Picker updates its selected value **only** for `applied`;
 all other outcomes restore the previously committed value.
 
-The \`initial\` object is a declarative managed DomainSession specification,
-not a consumer-created authority. \`mountSlot\` contains five existing,
-distinct DOM hosts. \`prepare\` receives the target identity, source identity,
-source generation (as \`sourceEpoch\`) and an AbortSignal, and returns the
-declarative \`{spec,nodes}\` package for an inactive target. Each of the five
-\`nodes\` values is an array of detached DOM nodes. It must not mutate the
+The `initial` object is a declarative managed DomainSession specification,
+not a consumer-created authority. `mountSlot` contains five existing,
+distinct DOM hosts. `prepare` receives the target identity, source identity,
+source generation (as `sourceEpoch`) and an AbortSignal, and returns the
+declarative `{spec,nodes}` package for an inactive target. Each of the five
+`nodes` values is an array of detached DOM nodes. It must not mutate the
 source context, its History, Selection, live DOM, or persistence.
 The target becomes writable only after Base's full synchronous verification.
 
 Dirty context transitions use the **Base-owned** Save/Discard/Cancel Modal.
-The optional \`context.save(checkpoint)\` must yield a verified, matching
-coordinator receipt: \`{status:'committed',verified:true,sourceId,generation,
-revision,baselineProject}\`; no network 2xx or unverified response counts as
+The optional `context.save(checkpoint)` must yield a verified, matching
+coordinator receipt: `{status:'committed',verified:true,sourceId,generation,
+revision,baselineProject}`; no network 2xx or unverified response counts as
 Save. Ambiguous Save or failed rollback leads to RECOVERY_REQUIRED. Without a
-\`context.save\` callback, only Discard or Cancel is offered for dirty context
-switching. The separate top-level \`save\` and synchronous \`discard\`
+`context.save` callback, only Discard or Cancel is offered for dirty context
+switching. The separate top-level `save` and synchronous `discard`
 callbacks still serve the fullscreen Exit Guard, not context authority.
 
 Base internally owns the one managed DomainSession, Shell, History, Selection,
 five mount slots, transaction coordinator, write fences, rollback and
-retirement. \`unregister.current()\` exposes only the current gated
-ContextHandle, never Base-private lifecycle methods. \`unregister()\` refuses
+retirement. `unregister.current()` exposes only the current gated
+ContextHandle, never Base-private lifecycle methods. `unregister()` refuses
 to revoke a dirty, busy or uncertain managed context. Registration of another
 managed authority on the same active shell is refused. No consumer may build
 its own parallel Shell, History or Selection engine for the same context.
 
-**Mandatory external-consumer migration:** remove \`requestTransition()\`,
-\`isTransitionDispatchAuthorized()\`, \`cb:design-shell:contextrequest\`,
-\`respondWith()\`, manual contextchange dispatch and any local second switch
-modal or commit path. Use \`context.prepare\` for the target and the returned
+**Mandatory external-consumer migration:** remove `requestTransition()`,
+`isTransitionDispatchAuthorized()`, `cb:design-shell:contextrequest`,
+`respondWith()`, manual contextchange dispatch and any local second switch
+modal or commit path. Use `context.prepare` for the target and the returned
 gated session for editing. Existing consumers are not automatically
 compatible. Native Trusted Host remains private to Base. Native Mail and
 Maintenance Reports keep their separate accepted Host flows.
