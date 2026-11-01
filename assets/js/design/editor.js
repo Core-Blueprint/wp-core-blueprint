@@ -334,9 +334,12 @@ const createSessionInternal = ({
 		},
 		handleShortcut(event, { onDelete = null } = {}) {
 			assertActive();
-			// Authorize before invoking a consumer-owned delete callback.
-			history.assertWritable();
-			return handleEditorShortcut(event, { history, onDelete });
+			// Undo/Redo already check canonical History authority. Only a
+			// genuine Delete shortcut may invoke the consumer callback.
+			const guardedDelete = typeof onDelete === 'function'
+				? () => { history.assertWritable(); return onDelete(); }
+				: onDelete;
+			return handleEditorShortcut(event, { history, onDelete: guardedDelete });
 		},
 		dispose() {
 			if (disposed) return;
