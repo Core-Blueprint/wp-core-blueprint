@@ -43,6 +43,40 @@ final class Page extends PageBase {
 	public function position(): ?int { return 29; }
 	public function capability(): string { return 'manage_options'; }
 
+	/**
+	 * Build native, escaped optgroups for the existing landing and Header Picker.
+	 * Only active validated registry entries are present. No parallel selector.
+	 *
+	 * @param array<string,array<string,mixed>> $templates
+	 */
+	private static function template_options( array $templates, string $selected ): string {
+		$groups = [];
+		foreach ( $templates as $id => $definition ) {
+			$provider = (string) $definition['provider'];
+			if ( ! isset( $groups[ $provider ] ) ) {
+				$groups[ $provider ] = [
+					'label' => 'core' === $provider ? __( 'WordPress', 'core-blueprint' )
+						: ucwords( str_replace( [ '-', '_' ], ' ', $provider ) ),
+					'templates' => [],
+				];
+			}
+			$groups[ $provider ]['templates'][ $id ] = $definition;
+		}
+		uksort( $groups, static fn ( string $a, string $b ): int =>
+			'core' === $a ? -1 : ( 'core' === $b ? 1 : strcmp( $a, $b ) ) );
+		$html = '';
+		foreach ( $groups as $group ) {
+			$html .= '<optgroup label="' . esc_attr( (string) $group['label'] ) . '">';
+			foreach ( $group['templates'] as $id => $definition ) {
+				$html .= '<option value="' . esc_attr( (string) $id ) . '"'
+					. selected( $id, $selected, false ) . '>'
+					. esc_html( (string) $definition['label'] ) . '</option>';
+			}
+			$html .= '</optgroup>';
+		}
+		return $html;
+	}
+
 	public function render(): void {
 		$this->guard();
 
@@ -125,19 +159,13 @@ final class Page extends PageBase {
 			// Platform v1 owns the ONE Mail editor and Save authority. The
 			// provider catalog is used only for trusted resource identities:
 			// never read an old stored project or PHP-render an older canvas.
-			$templates = array_filter(
-				TemplateRegistry::all(),
-				static fn ( array $definition, string $id ): bool =>
-					str_starts_with( $id, 'wordpress.' )
-					&& 'core' === ( $definition['provider'] ?? null )
-					&& 'wordpress' === ( $definition['group'] ?? null ),
-				ARRAY_FILTER_USE_BOTH
-			);
+			$templates = TemplateRegistry::all();
 			$template_ids = array_keys( $templates );
 			$template_id = isset( $_GET['template'] ) ? sanitize_text_field( wp_unslash( $_GET['template'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only selector.
 			if ( ! isset( $templates[ $template_id ] ) ) {
 				$template_id = (string) ( $template_ids[0] ?? '' );
 			}
+			$options_html = self::template_options( $templates, $template_id );
 			if ( ! $designer_enabled || '' === $template_id ) {
 				echo '<div class="wrap cb-core-wrap"><section class="cb-core-panel"><h2>' . esc_html__( 'Mail Designer unavailable', 'core-blueprint' ) . '</h2><p>' . esc_html__( 'Enable Mail Designer and register at least one template before editing.', 'core-blueprint' ) . '</p></section></div>';
 			} else {
@@ -156,9 +184,7 @@ final class Page extends PageBase {
 									<input type="hidden" name="tab" value="templates">
 									<label class="cb-core-field__label" for="cb-mail-platform-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
 									<select id="cb-mail-platform-template" name="template" required>
-										<?php foreach ( $templates as $id => $definition ) : ?>
-											<option value="<?php echo esc_attr( (string) $id ); ?>" <?php selected( $id, $template_id ); ?>><?php echo esc_html( (string) $definition['label'] ); ?></option>
-										<?php endforeach; ?>
+										<?php echo $options_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- options escaped during composition. ?>
 									</select>
 									<div class="cb-core-design-launch-wrap">
 										<button type="submit" name="cb_designer" value="1" class="button button-primary cb-core-button cb-core-button--primary cb-core-design-launch" aria-label="<?php esc_attr_e( 'Open Designer Mode', 'core-blueprint' ); ?>">
@@ -176,9 +202,7 @@ final class Page extends PageBase {
 							<strong><?php esc_html_e( 'Mail Designer', 'core-blueprint' ); ?></strong>
 							<label class="screen-reader-text" for="cb-mail-platform-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
 							<select id="cb-mail-platform-template" class="cb-core-platform-screen__subtitle" data-cb-mail-template-select aria-label="<?php esc_attr_e( 'Template', 'core-blueprint' ); ?>">
-								<?php foreach ( $templates as $id => $definition ) : ?>
-									<option value="<?php echo esc_attr( (string) $id ); ?>" <?php selected( $id, $template_id ); ?>><?php echo esc_html( (string) $definition['label'] ); ?></option>
-								<?php endforeach; ?>
+								<?php echo $options_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- options escaped during composition. ?>
 							</select>
 							<a class="button cb-core-button cb-core-platform-screen__close" data-cb-platform-header-close href="<?php echo esc_url( $landing_url ); ?>">
 								<?php esc_html_e( 'Close Designer', 'core-blueprint' ); ?>
