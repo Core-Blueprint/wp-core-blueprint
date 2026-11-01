@@ -326,7 +326,6 @@ const createSessionInternal = ({
 	});
 };
 
-/**
 export const createSession = (options = {}) => createSessionInternal(options);
 
 /**
