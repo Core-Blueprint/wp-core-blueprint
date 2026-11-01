@@ -80,6 +80,8 @@ test('CX02E private ESM and PHP capabilities are aligned with the v4-only public
 	const launch=source('assets/js/features/designer-launch.js');
 	assert.match(php,/public const DESIGNER_EXIT_GUARD_API = 4;/);
 	assert.match(adapter,/createManagedContextCoordinator/);
+	assert.match(adapter,/import '@cb-core\/design-editor';/, 'v4 must use the versioned WordPress module ID to avoid double initialization');
+	assert.doesNotMatch(adapter,/import ['"]\.\.\/editor\.js['"]/, 'relative editor import creates a second ESM identity');
 	assert.match(adapter,/createManagedContextBinding/);
 	assert.match(adapter,/context\.prepare/);
 	assert.match(adapter,/unchanged\(before,slots\)/);
