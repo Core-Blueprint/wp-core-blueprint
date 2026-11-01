@@ -8,154 +8,20 @@ const guardSource = read('assets/js/features/designer-exit-guard.js');
 const launchSource = read('assets/js/features/designer-launch.js');
 const contextSource = read('assets/js/features/designer-context.js');
 
-const launchGate = launchSource.slice(
-	launchSource.indexOf("document.addEventListener('cb:design-shell:contextrequest'"),
-	launchSource.indexOf('\n\tconst panelToggleLabel'),
-);
-
-const scenario = async (kind) => {
-	const handlers = new Map(), toasts = [];
-	let saved = false, modalCount = 0, contextChanges = 0, loads = 0;
-	const painted = [];
-	class Element {
-		constructor() {
-			this.dataset = {};
-			this.attributes = new Map();
-			this.children = [];
-			this.classList = {add() {}, remove() {}};
-			this.isConnected = true;
-			this.hidden = false;
-		}
-		setAttribute(key, value) { this.attributes.set(key, String(value)); }
-		getAttribute(key) { return this.attributes.has(key) ? this.attributes.get(key) : null; }
-		hasAttribute(key) { return this.attributes.has(key); }
-		removeAttribute(key) { this.attributes.delete(key); }
-		append(...nodes) { this.children.push(...nodes); }
-		querySelector() { return null; }
-	}
-	class HTMLSelectElement extends Element {
-		constructor() {
-			super();
-			this.value = 'next';
-			this.dataset.cbDesignShellContextValue = 'original';
-			this.disabled = false;
-			this.dataset.cbCoreSelectPickerReady = '1';
-		}
-		dispatchEvent(event) {
-			if (event.type === 'cb:select-picker-sync') painted.push({value:this.value, disabled:this.disabled});
-			return true;
-		}
-		closest(selector) {
-			return selector === '[data-cb-design-shell-context]' ? context
-				: selector === '[data-cb-design-launch-root]' ? root : null;
-		}
-	}
-	const shell = new Element();
-	const context = new Element();
-	const root = new Element();
-	const control = new HTMLSelectElement();
-	context.closest = selector => selector === '[data-cb-design-launch-root]' ? root : null;
-	root.querySelector = selector => selector === '[data-cb-design-shell]' ? shell : null;
-	const on = (name, listener) => {
-		if (!handlers.has(name)) handlers.set(name, []);
-		handlers.get(name).push(listener);
-	};
-	const document = {
-		readyState: 'complete',
-		documentElement: new Element(),
-		createElement(tag) { const node = new Element(); node.tag = tag; return node; },
-		createTextNode: text => ({text}),
-		querySelectorAll: () => [],
-		querySelector: () => null,
-		addEventListener: on,
-	};
-	const window = {
-		addEventListener: on,
-		requestAnimationFrame: callback => callback(),
-		setTimeout: callback => { Promise.resolve().then(callback); return 1; },
-		cbCore: {
-			toast: {error: message => toasts.push(message)},
-			modal: {
-				show: async options => {
-					modalCount++;
-					if (kind === 'cancel') return false;
-					const walk = node => [node, ...(node.children || []).flatMap(walk)];
-					for (const node of walk(options.body)) {
-						if (node.tag === 'input') node.checked = node.value === 'save';
-					}
-					return options.onConfirm ? Boolean(await options.onConfirm()) : true;
-				},
-			},
-		},
-	};
-	class CustomEvent {
-		constructor(type, options) { this.type = type; this.detail = options.detail; }
-		stopImmediatePropagation() { this.stopped = true; }
-	}
-	class MutationObserver { observe() {} }
-	class Event { constructor(type) { this.type = type; } }
-
-	runInNewContext(guardSource, {window, document, Element});
-	window.cbCore.designerExitGuard.register(shell, {
-		isDirty: () => (kind === 'dirty-save' || kind === 'cancel') && !saved,
-		isUncertain: () => false,
-		save: async () => { saved = true; return true; },
-		discard: () => true,
-	});
-	assert.ok(launchGate.includes('isTransitionDispatchAuthorized'));
-	runInNewContext(launchGate, {window, document});
-	root.dispatchEvent = event => {
-		if (event.type === 'cb:design-shell:contextrequest') {
-			event.target = root;
-			handlers.get(event.type)?.forEach(listener => listener(event));
-			assert.equal(event.stopped, undefined, 'unapproved event must be blocked');
-			loads++;
-			const response = kind === 'reject'
-				? Promise.reject(new Error('backend secret must not be toasted'))
-				: Promise.resolve(kind === 'false' ? false : {id: 'next'});
-			event.detail.respondWith(response);
-		} else if (event.type === 'cb:design-shell:contextchanged') {
-			contextChanges++;
-		}
-		return true;
-	};
-	runInNewContext(contextSource, {
-		window, document, Element, HTMLSelectElement, MutationObserver, CustomEvent, Event,
-	});
-
-	const event = {
-		target: control, preventDefault() {}, stopPropagation() {}, stopImmediatePropagation() {},
-	};
-	handlers.get('change').forEach(listener => listener(event));
-	if (kind === 'duplicate') {
-		control.value = 'next';
-		handlers.get('change').forEach(listener => listener(event));
-	}
-	for (let turn = 0; turn < 35; turn++) await Promise.resolve();
-	return {contextChanges, loads, modalCount, toasts, value: control.value,
-		stored: control.dataset.cbDesignShellContextValue, disabled: control.disabled, saved,
-		painted, visible: painted.at(-1)?.value};
-};
-
-test('B1 context capture commits only applied targets and never replays a context request', async () => {
-	for (const kind of ['ok', 'reject', 'false', 'cancel', 'dirty-save', 'duplicate']) {
-		const actual = await scenario(kind);
-		const success = !['reject', 'false', 'cancel'].includes(kind);
-		assert.equal(actual.contextChanges, success ? 1 : 0, kind);
-		assert.equal(actual.loads, kind === 'cancel' ? 0 : 1, kind);
-		assert.equal(actual.stored, success ? 'next' : 'original', kind);
-		assert.equal(actual.value, success ? 'next' : 'original', kind);
-		assert.equal(actual.disabled, false, kind);
-		assert.equal(actual.visible, success ? 'next' : 'original', kind + ' visual rollback');
-		assert.ok(actual.painted.some((frame) => frame.disabled === true), kind + ' busy paint');
-		assert.equal(actual.painted.at(-1)?.disabled, false, kind + ' ready paint');
-		assert.equal(actual.modalCount, ['cancel', 'dirty-save'].includes(kind) ? 1 : 0, kind);
-		assert.equal(actual.toasts.length, ['reject', 'false'].includes(kind) ? 1 : 0, kind);
-		if (kind === 'reject') {
-			assert.doesNotMatch(actual.toasts.join(' '), /backend secret/);
-		}
-		if (kind === 'dirty-save') assert.equal(actual.saved, true);
-	}
+test('CX02E: Context Picker calls only the public managed v4 transaction', () => {
+	const guard = read('assets/js/features/designer-exit-guard.js');
+	const launch = read('assets/js/features/designer-launch.js');
+	const picker = read('assets/js/features/designer-context.js');
+	const php = read('src/Design/Editor/Assets.php');
+	assert.match(guard,/contractVersion:4/);
+	assert.match(php,/public const DESIGNER_EXIT_GUARD_API = 4;/);
+	assert.match(picker,/guard\.transition\(shell, \{targetId: value\}\)/);
+	assert.match(picker,/activeRoots\.add\(root\)/);
+	assert.match(picker,/control\.value = previousValue/);
+	assert.match(picker,/outcome\?\.status === 'applied'/);
+	assert.doesNotMatch(guard+picker+launch,
+		/requestTransition|isTransitionDispatchAuthorized|contextrequest|respondWith/);
+	assert.match(launch,/bindExitGuard\(shell, fullscreen\)/);
 });
 
 test('B1 native Mail/Reports still use their Host-specific transport', () => {
@@ -252,7 +118,7 @@ test('B1 Native Mail imports one Picker module and restores blocked selection pa
 test('B1 reconciled native adapter retains canonical Exit Guard v3 without a second unload authority', () => {
   const native = read('assets/js/design/platform/wordpress-save-adapter.js');
   const php = read('src/Design/Editor/Assets.php');
-  assert.match(php, /public const DESIGNER_EXIT_GUARD_API = 3;/);
+  assert.match(php, /public const DESIGNER_EXIT_GUARD_API = 4;/);
   assert.match(native, /discard:\(\)=>host\.discard\(\)/);
   assert.match(native, /exitGuard\.request\(root,/);
   assert.match(native, /window\.addEventListener\('pagehide'/);
