@@ -173,6 +173,7 @@ final class CB_Admin_UI_Primitives_Foundation_Contract_Test extends WP_UnitTestC
 			self::assertStringContainsString( $state, $native );
 		}
 		self::assertStringContainsString( 'text-decoration: none;', $native );
+		self::assertStringContainsString( ':not(dialog.cb-core-modal .cb-core-button)', $native );
 		self::assertStringContainsString( 'var(--cb-danger, #b32d2e)', $native );
 		self::assertStringContainsString( '.cb-core-button--danger', $core );
 		self::assertStringContainsString( '.cb-core-button--compact.cb-core-button--icon-only', $core );

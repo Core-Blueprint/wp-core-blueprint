@@ -21,7 +21,9 @@ Core Admin uses the established `buttons.css` with Base tokens; standalone
 WordPress admin uses the narrow `buttons-native.css` adapter with optional
 semantic tokens and WordPress fallbacks. The native adapter does not import
 Core Admin dark mode, layouts or typography, and never styles generic WP
-`.button` elements without `.cb-core-button`. CSS filenames and asset handles
+`.button` elements without `.cb-core-button`.
+It deliberately excludes buttons within the existing Base modal dialog; the
+Modal Foundation retains ownership of its own action-button presentation. CSS filenames and asset handles
 are private; consumers call the public helper instead.
 
 On a registered Core Admin page, the existing `PageRegistry` semantic
