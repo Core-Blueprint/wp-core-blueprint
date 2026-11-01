@@ -214,6 +214,7 @@ export const createDesignerShell = (root, {
 	let destroyed = false;
 	let platformActivated = false;
 	let sessionGeneration = 0;
+	let nextSessionGeneration = 0;
 	let rebindingPending = false;
 
 	const assertActive = () => {
@@ -727,6 +728,7 @@ export const createDesignerShell = (root, {
 
 	const destroy = () => {
 		if (destroyed) return;
+		if (rebindingPending) throw new Error('DESIGNER_SHELL_REBIND_PENDING');
 		// Ordinary programmatic teardown cannot bypass an unresolved Save or
 		// unverified domain authority. Forced page unload is outside browser control.
 		// Detached Host canvas cleanup is allowed only after its Host scope
@@ -787,8 +789,8 @@ export const createDesignerShell = (root, {
 			throw new Error('DESIGNER_SHELL_REBIND_REFUSED');
 		}
 		assertSessionInterface(nextSession);
-		if (!Number.isSafeInteger(sessionGeneration + 1)) throw new RangeError('Designer Shell binding generation exhausted.');
-		const generation = sessionGeneration + 1;
+		if (!Number.isSafeInteger(nextSessionGeneration + 1)) throw new RangeError('Designer Shell binding generation exhausted.');
+		const generation = ++nextSessionGeneration;
 		const previousSession = session;
 		const previousGeneration = sessionGeneration;
 		const previousHistory = unsubscribeHistory;
