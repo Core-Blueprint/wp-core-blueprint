@@ -92,7 +92,7 @@
 			save: adapter.save || null,
 			discard: adapter.discard,
 			isUncertain: adapter.isUncertain || null,
-			labels: Object.freeze({...defaults,...(adapter.labels || {})}),
+			labels: Object.freeze({ ...defaults, ...(adapter.labels || {}) }),
 			context: context === null ? null : Object.freeze({...context}),
 		});
 		observe(shell);
