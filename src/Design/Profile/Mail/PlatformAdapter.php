@@ -108,7 +108,7 @@ final class PlatformAdapter {
 	 * "Untitled email" document.
 	 */
 	public static function default_for_resource( string $resource_id ): ?array {
-		return \CoreBlueprint\Core\Mail\Designer\WordPressTemplates::default_document( $resource_id );
+		return \CoreBlueprint\Core\Mail\Designer\TemplateRegistry::default_document( $resource_id );
 	}
 
 	private function __construct() {}
