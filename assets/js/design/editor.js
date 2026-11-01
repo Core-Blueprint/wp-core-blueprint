@@ -1,5 +1,6 @@
 import { bindRegisteredCommand, bindRegisteredBatch } from './core/commands.js';
 import { createManagedContextAuthority } from './core/context-authority.js';
+import { createManagedContextTransaction } from './core/context-transaction.js';
 import { validateStableProjectV1 } from './core/stable-schema.js';
 import { sameValue } from './core/value.js';
 import { createPlatformHost } from './platform/host.js';
@@ -468,8 +469,29 @@ export const createManagedContextBinding = ({ initial } = {}) => {
 		stageContext(spec) { return authority.stage(spec); },
 		isCurrent(handle) { return authority.isCurrent(handle); },
 	});
-	managedContextInternals.set(binding, { authority, current: initialHandle });
+	managedContextInternals.set(binding, { authority, current: initialHandle, coordinatorAttached: false });
 	return binding;
+};
+
+/**
+ * Base-only construction of the canonical context coordinator.
+ * This named ESM export is deliberately absent from window.cbCore.designEditor.
+ * No consumer can reach the private authority through its public ContextHandle.
+ */
+export const createManagedContextCoordinator = ({binding, ...options} = {}) => {
+	const internals = managedContextInternals.get(binding);
+	if (!internals || internals.coordinatorAttached) {
+		throw new Error('DESIGNER_TRANSACTION_AUTHORITY_REFUSED');
+	}
+	internals.coordinatorAttached = true;
+	try {
+		return createManagedContextTransaction({
+			...options, authority:internals.authority, state:internals,
+		});
+	} catch (error) {
+		internals.coordinatorAttached = false;
+		throw error;
+	}
 };
 
 /**
