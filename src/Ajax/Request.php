@@ -76,6 +76,13 @@ final class Request {
 	 *                                 value must be one of these strings.
 	 */
 	public static function sanitize_key( string $field, ?array $allowed = null ): string {
+		if ( isset( $_POST[ $field ] ) && ! is_scalar( $_POST[ $field ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- the handler owns its nonce check.
+			wp_send_json_error( [
+				/* translators: %s: form field name that received an invalid value. */
+				'message' => sprintf( __( 'Invalid value for %s.', 'core-blueprint' ), $field ),
+			], 400 );
+		}
+
 		$val = isset( $_POST[ $field ] )
 			? sanitize_key( wp_unslash( $_POST[ $field ] ) )
 			: ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -109,6 +116,12 @@ final class Request {
 	public static function text( string $field, string $default = '' ): string {
 		if ( ! isset( $_POST[ $field ] ) ) {
 			return $default;
+		}
+		if ( ! is_scalar( $_POST[ $field ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- the handler owns its nonce check.
+			wp_send_json_error( [
+				/* translators: %s: form field name that received an invalid value. */
+				'message' => sprintf( __( 'Invalid value for %s.', 'core-blueprint' ), $field ),
+			], 400 );
 		}
 		return sanitize_text_field( wp_unslash( $_POST[ $field ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	}
