@@ -90,5 +90,4 @@ in metadata results; no vendor network access.
 - Automations owner-only save/apply and disabled-workflow E2E after its adapter.
 - No merge, CI or deployment without separate explicit GO.
 
-T3A now offers optional owner-delegated Preview/Manage navigation in the global browser (see docs/TEMPLATE-MANAGEMENT-CONSUMER.md), but T3B still owns consumer-side personal/site save, duplicate, export and deletion; T4 owns declarative offline pack
-import, and T7 optional explicitly configured Updates network distribution.
+T3A now offers optional owner-delegated Preview/Manage navigation in the global browser (see docs/TEMPLATE-MANAGEMENT-CONSUMER.md). T3B still owns consumer-side personal/site save, duplicate and deletion. **Offline template export/import is a required product capability** for local backups and transfer to another WordPress site; T4 defines the shared portable package contract and consumers own authorized export/import execution. The requirement must be designed before Foundation Freeze and accepted before each relevant consumer's stable release. T7 online distribution remains deferred and is not required for offline portability. See docs/TEMPLATE-OFFLINE-PORTABILITY-REQUIREMENT.md.

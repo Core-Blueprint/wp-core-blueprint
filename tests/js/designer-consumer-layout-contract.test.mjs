@@ -78,6 +78,24 @@ test('Base contract documents agree on canonical first-party source roles', asyn
   assert.match(layout, /installed ZIP\/browser acceptance pending/);
 });
 
+test('External consumer fixture and normative context layout follow one Base v4 contract', async () => {
+  const [fixture, layout, guard] = await Promise.all([
+    source('tests/fixtures/designer-external-consumer.html'),
+    source('docs/DESIGNER-LAYOUT-CONTRACT.md'),
+    source('docs/DESIGNER-EXIT-GUARD.md'),
+  ]);
+  assert.deepEqual(auditDesignerLayout(fixture), []);
+  assert.match(fixture, /data-cb-design-shell-palette-role="layers"/);
+  assert.doesNotMatch(fixture, /data-cb-design-shell-sidebar-role="layers"/);
+  const broken = fixture.replace('data-cb-design-shell-palette-role="layers"',
+    'data-cb-design-shell-sidebar-role="layers"');
+  rejects(broken, 'Palette tab missing semantic role');
+  assert.match(layout, /designerExitGuard\.transition\(shell/);
+  assert.match(guard, /contractVersion === 4/);
+  assert.match(layout, /The former .cb:design-shell:contextrequest./);
+  assert.match(layout, /are \*\*retired\*\*/);
+});
+
 test('Reusable gate CLI accepts exact Base Mail source without claiming browser PASS', () => {
   const base = fileURLToPath(new URL('../../', import.meta.url));
   const result = spawnSync(process.execPath,

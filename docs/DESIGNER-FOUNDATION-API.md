@@ -447,8 +447,10 @@ consumer runtime paths pass. Existing Layers drag/reorder remains unchanged.
 
 **Same-build gate:** `CoreBlueprint\Core\Design\Editor\Assets::DESIGNER_DND_UNIFIED_API >= 1`
 plus named `createDesignerDragDropController` and `createDesignerLayerTree`
-exports in the installed `@cb-core/design-editor` module. This contract is
-additive: DND-01 and legacy `sharedDragDrop:true` consumers remain supported.
+exports in the installed `@cb-core/design-editor` module. This is the current unified DND capability; older DND-01 and
+`sharedDragDrop:true` milestone behavior is not a supported first-party
+compatibility contract. Removal of superseded runtime paths requires a
+separate dependency-inspected patch.
 
 **Single Base interaction engine:** instantiate one controller for the entire
 Designer root, not a controller per surface. Sources and zones can live in
@@ -888,11 +890,21 @@ See `DESIGNER-MODE.md` for the launch, responsive shell, toolbar and composition
 
 Designer Mode uses bounded readiness retries. Exhausting those retries is an explicit error state: Base must keep the failure visible and must not silently mark an incomplete launch or toolbar as initialized.
 
-## Compatibility rule
+## Pre-stable canonical public contract (no legacy)
 
-This document is the v1 compatibility boundary. Existing members listed above may be fixed internally without changing consumer code. Removing or changing their consumer-visible semantics requires an explicit future API-version decision.
+The current Base contract governs all first-party consumers. The WordPress
+Suite is pre-stable; consumers must adopt the final accepted Base API, not
+request fallback adapters, parallel API generations or preservation of
+development-era integration semantics. Breaking changes require an explicit
+reviewed patch and exact-version acceptance, not a backwards-compatibility
+promise. Historical descriptions in this document record milestones and must
+not override the current Exit Guard v4 contract, the canonical Designer layout
+or the approved Engineering Handbook no-legacy policy.
 
-New additive APIs may be introduced during the v1 lifecycle, but they are not part of the frozen contract until documented here and covered by public-boundary regression tests.
+Any retained low-level exports require a dependency inventory before
+controlled removal. Their presence is not an authorization to import private
+`assets/js/design/` internals or construct a second History, Selection or
+context-switch engine.
 
 ## Base Designer notification contract (shared Toast presentation)
 

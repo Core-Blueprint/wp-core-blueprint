@@ -58,3 +58,15 @@ Registry cursor is opaque, HMAC authenticated with the local WordPress auth salt
 6. Source and WordPress integration tests, PHP/JS static checks, 6 locales when new UI strings arrive, reproducible release ZIP + checksum, installed WordPress role/functional acceptance.
 
 **T2 implementation:** The central Admin page, shared @cb-core/template-browser module, bounded read-only REST routes, and workspace modal are now included in this feature candidate. They require actual WordPress, browser and source/package acceptance before being called released. T3A adds guarded links to owning Designer management screens; T3B consumer-owned Save/Duplicate/Export/Delete still remains to be implemented. T4 defines bounded declarative packs and offline import. T5 is Automations' first consumer after browser acceptance. T7 (optional Updates distribution) is separately audited and opt-in per vendor; entirely outside this Foundation.
+
+
+**Required offline portability (T4):** User-initiated template export and import
+must support local backups and transfer to another WordPress site. This is a
+**required consumer product capability**, not online distribution, and it is
+not implemented by the present T0–T3A metadata-only endpoints. Base must
+reconcile a shared portable package contract before Foundation Freeze; each
+consumer remains responsible for its document schema, permissions, secrets
+exclusion, import preflight and authorized persistence. The actual import/export
+implementation and FIELD acceptance are a separate workstream required before
+relevant consumer products are declared complete. See
+[TEMPLATE-OFFLINE-PORTABILITY-REQUIREMENT.md](TEMPLATE-OFFLINE-PORTABILITY-REQUIREMENT.md).

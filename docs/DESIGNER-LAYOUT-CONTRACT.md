@@ -50,39 +50,44 @@ The selector remains visible even when there is only one available target. A sin
 
 Consumers must not position or align this selector with product CSS or product JavaScript.
 
-## Context switching: in-place sessions and authorized native navigation
+## Context switching: canonical Exit Guard v4
 
-For in-place consumer context switching, Base owns the guarded lifecycle and keeps the same Designer shell open while the consumer validates and atomically replaces its domain state. Native Mail also retains a distinct authorized template URL navigation path after its existing Host `transitionSafe()` and Exit Guard checks. Neither route may bypass Save/Discard/Cancel, busy/UNKNOWN refusal or validated context authorization.
+**Current normative contract:** a consumer must register one managed Designer
+context with `window.cbCore.designerExitGuard.register(shell, { ..., context })`
+and wait for `unregister.ready` to resolve successfully before enabling
+context changes. The consumer supplies declarative DomainSession specifications,
+five mount slots (`canvas`, `layers`, `inspector`, `controls`, `preview`),
+an asynchronous `context.prepare({ targetId, sourceId, sourceEpoch, signal })`
+callback returning an inactive `{ spec, nodes }` package, and a verified
+`context.save(checkpoint)` callback when saving dirty contexts is supported.
+The consumer does not create a second History, Selection, Shell or transition
+authority.
 
-For a `<select>` inside `data-cb-design-shell-context`, Base intercepts the change and dispatches:
-
-```text
-cb:design-shell:contextrequest
-```
-
-The event detail exposes the requested `value`, the `previousValue`, the `control`, and a `respondWith(promise)` callback. A consumer handles only its domain loading and applies its new project/context, then resolves that Promise. For the in-place session route it must not navigate the browser, close Designer Mode, build its own loader overlay or replace the Base shell.
-
-Example consumer pattern:
+For a `<select>` inside `data-cb-design-shell-context`, Base intercepts
+the change and calls its sole public managed transition entrypoint:
 
 ```js
-root.addEventListener('cb:design-shell:contextrequest', (event) => {
-    if (!event.detail?.respondWith) return;
-    event.detail.respondWith(loadDomainContext(event.detail.value));
+const outcome = await window.cbCore.designerExitGuard.transition(shell, {
+    targetId: requestedDocumentId,
 });
 ```
 
-During the Promise Base owns the canvas/main-area transition:
+Base maintains the old context while preparing the target, owns the
+Save/Discard/Cancel decision, verifies the authoritative Save receipt, fences
+stale writes, atomically rebinds all five slots and rolls back on refusal or
+failure. Only `outcome.status === 'applied'` updates the active context
+selector. A cancelled, blocked, failed or recovery-required transition never
+presents an uncommitted target as active. Uncertain persistence always blocks
+unsafe continuation.
 
-- the current canvas remains mounted;
-- the work area is marked busy;
-- Base shows the canonical loading transition;
-- the context selector is temporarily disabled;
-- success emits `cb:design-shell:contextchanged` and fades the transition away;
-- failure restores the previous selector value, keeps the existing design intact and shows the canonical error transition.
+The former `cb:design-shell:contextrequest`/`respondWith()` protocol and
+`requestTransition()` are **retired**; they are not alternate consumer APIs
+or compatibility paths. See [Designer Exit Guard v4](DESIGNER-EXIT-GUARD.md)
+for the exact registration, lifecycle and receipt contract.
 
-The consumer remains responsible for fetching/validating the requested domain context and replacing its editor project/state safely. A context switch should clear history that belongs to the previous document/template; it must not make edits from one target undoable inside another target.
-
-For in-place consumers, URL state may be updated with the History API after success; a reload is not part of that route. Native Mail's separately authorized template navigation above is an explicit existing exception, never a consumer-owned guard bypass.
+Native Mail also has its separately authorized same-product template URL
+navigation path, guarded by its existing Trusted Host/Exit Guard checks. This
+does not grant an external consumer access to Base-private Host authority.
 
 ## Left rail
 
@@ -138,8 +143,8 @@ Base owns:
 
 Consumers own:
 
-- loading and validating the requested domain context behind `respondWith()`;
-- replacing their domain project/editor state after a successful context fetch;
+- authorizing and preparing the requested target via managed `context.prepare()` without mutating the active document;
+- providing domain session specifications and detached render nodes for Base-owned atomic rebinding;
 - element definitions;
 - dynamic-data definitions;
 - Inspector fields and validation;
