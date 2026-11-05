@@ -97,6 +97,10 @@ JSON is the full-fidelity machine transport. The v1 envelope is exact and self-d
 
 `format_version` belongs to Base. `schema_version` belongs to the provider entity. Unknown Base format versions fail closed. Providers explicitly declare which of their own schema versions remain importable.
 
+For the shared asset-free **Template Portability** record contract, identity rules and
+copy-only import plan, see [TEMPLATE-PORTABILITY-JSON-CONTRACT.md](TEMPLATE-PORTABILITY-JSON-CONTRACT.md).
+This does not change the Base JSON envelope, provider interfaces or import engine.
+
 ## CSV transport
 
 CSV is the human/spreadsheet transport. It remains self-describing instead of relying on a filename or UI selection.

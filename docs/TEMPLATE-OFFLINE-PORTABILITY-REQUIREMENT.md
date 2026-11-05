@@ -1,7 +1,7 @@
 # Template Library — Offline Portability Requirement (T4)
 
 **Owner decision:** 5 November 2026  
-**Status:** Required product capability; DESIGN/IMPLEMENTATION PENDING  
+**Status:** Required product capability; FRG-T4-01A asset-free JSON contract candidate; consumer implementation PENDING  
 **Scope:** Core Blueprint WordPress Suite Template Library and first-party Designer consumers.
 
 ## Outcome
@@ -19,10 +19,11 @@ T7 online distribution remains out of scope and must not delay offline use.
 
 ## Ownership and architectural boundary
 
-- **Base** owns the shared template discovery/browser and must settle a single
-  offline portable-pack envelope / manifest and validation boundary as part
-  of the Foundation contract reconciliation, without gaining domain mutation
-  authority.
+- **Base** owns the shared template discovery/browser and reuses the existing
+  Data Exchange JSON envelope for asset-free template portability; see
+  [TEMPLATE-PORTABILITY-JSON-CONTRACT.md](TEMPLATE-PORTABILITY-JSON-CONTRACT.md).
+  A binary resource-package format remains subject to FRG-T4-01B evidence.
+  Base does not gain domain mutation authority.
 - **Consumers** own their template schemas, document payload serialization,
   per-item access checks, export/import UI entrypoints, server-side schema
   validation, conflict decisions and authorized storage. Consumers must never
@@ -39,9 +40,10 @@ T7 online distribution remains out of scope and must not delay offline use.
 1. Export must be a complete, explicitly initiated local artifact that can
    restore the template on a fresh compatible WordPress site; no hidden remote
    dependencies.
-2. A future package specification must identify its owner extension, exact
-   Designer/document type, current schema/format identity and resource manifest
-   so the importer can refuse unsupported or ambiguous inputs.
+2. Canonical asset-free JSON declares the owner extension, entity, exact
+   Designer/document type, current schema/format identity and an empty resource
+   list within its single template record. A future package specification must
+   additionally bind any necessary resources to the authorized import preview.
 3. Never export credentials, access tokens, privileged principals, personal
    secrets, environment-specific authorization state or executable code.
    Domain-specific sanitization and safe resource handling are mandatory.
