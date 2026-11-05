@@ -6,6 +6,7 @@ use CoreBlueprint\Core\DataExchange\EntityInterface;
 use CoreBlueprint\Core\DataExchange\Foundation;
 use CoreBlueprint\Core\ExtensionRegistry;
 use CoreBlueprint\Core\Interoperability\Registry;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
 
 /**
@@ -155,7 +156,11 @@ final class CB_T4_Template_Portability_Contract_Test extends WP_UnitTestCase {
 		CB_T4_Portable_Template_Fixture::$store = [];
 		CB_T4_Portable_Template_Fixture::$authorized = true;
 		$this->operator = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$operator = get_userdata( $this->operator );
+		self::assertInstanceOf( WP_User::class, $operator );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $operator, 0, 'template_portability_test_fixture' ) );
 		wp_set_current_user( $this->operator );
+		self::assertTrue( current_user_can( 'manage_options' ), 'The fixture administrator must have explicit approved privileged access.' );
 		add_action( 'core_blueprint_register_extensions', [ $this, 'register_extension' ] );
 		add_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_entity' ] );
 	}
@@ -242,7 +247,11 @@ final class CB_T4_Template_Portability_Contract_Test extends WP_UnitTestCase {
 		self::assertWPError( $changed_destination );
 		self::assertSame( 'cb_core_data_exchange_stale_plan', $changed_destination->get_error_code() );
 		$other = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$other_user = get_userdata( $other );
+		self::assertInstanceOf( WP_User::class, $other_user );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $other_user, 0, 'template_portability_test_fixture' ) );
 		wp_set_current_user( $other );
+		self::assertTrue( current_user_can( 'manage_options' ), 'The second actor must be approved to isolate fingerprint actor binding.' );
 		$other_actor = Engine::apply_json( $json, Foundation::MODE_CREATE_ONLY, $preview['fingerprint'], $context );
 		self::assertWPError( $other_actor );
 		self::assertSame( 'cb_core_data_exchange_stale_plan', $other_actor->get_error_code() );
