@@ -45,11 +45,15 @@ Before any package API or format freeze, define and test these minimum invariant
 
 Do **not** place raw binary bytes into Data Exchange import plan payloads or inflate the existing 10 MiB JSON transport bound. An eventual package adapter may validate the package and supply an authorized, bounded **resource digest/rebinding projection** to a consumer EntityInterface through explicit import context, while Data Exchange remains the only preview/apply orchestrator. Its implementation/API and data binding require a separate SOURCE design and tests; existing generic `array $context` alone is not proof of safe end-to-end storage.
 
+## Contract-level binding proof
+
+The minimal candidate grammar, proposed resource limits and verified-plan binding obligations are documented in [TEMPLATE-PORTABILITY-RESOURCE-PACKAGE-CONTRACT.md](TEMPLATE-PORTABILITY-RESOURCE-PACKAGE-CONTRACT.md). The paired **test-only** Reports/Certificates fixture exercises the existing Data Exchange fingerprint using an in-memory verified-resource projection. It does not implement ZIP parsing, byte hashing, import storage or a public package API; these remain separate implementation gates.
+
 ## FRG-T4-01B exit gates and sequencing
 
 **Already evidenced:** six consumer source inventories, exact Base Data Exchange v1 boundary, two real media-bearing domains (Reports and Certificates), no binary requirement proven for other current schemas.
 
-**Must settle before FRG-04 Foundation Freeze:** compact package envelope/manifest and validation ownership, integrity/fingerprint binding design, asset limits/allowed types, cross-site dependency/rebinding contract, rejection/recovery rules and a test-provider fixture for resource-bearing package intake. If any of these remain undecided, hold that resource-package contract as an explicit separate gate; do not claim full offline restore for media-bearing templates.
+**Must settle before FRG-04 Foundation Freeze:** compact package envelope/manifest and validation ownership, integrity/fingerprint binding design, asset limits/allowed types, cross-site dependency/rebinding contract, rejection/recovery rules and a test-provider fixture for resource-bearing package plan binding. The actual archive verifier and consumer media ingest still require independent runtime evidence. If any of these remain undecided, hold that resource-package contract as an explicit separate gate; do not claim full offline restore for media-bearing templates.
 
 **Consumer modernization remains HOLD** until Base Foundation Freeze. Later consumers implement their own providers/endpoints and execute true site-A-to-site-B artifact round trips: Contracts external reference rebinding; Reports logo; Automations disabled workflow; Evaluator draft and safe links; Certificates image/artwork; Invoice & Quotes template-only copy. Respect the no-legacy/no-historical-test-data-migration policy.
 
