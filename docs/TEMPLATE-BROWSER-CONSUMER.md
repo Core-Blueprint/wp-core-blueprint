@@ -9,7 +9,7 @@ template downloads or outbound vendor calls.
 
 PHP: CoreBlueprint\Core\TemplateLibrary\TemplateSourceInterface,
 TemplateSourceRegistry, TemplateQuery, TemplatePage, TemplateMetadata,
-DesignerScope::issue(), Assets::enqueue().
+TemplateDesignerAuthorityInterface, DesignerScope::issue(), Assets::enqueue().
 
 ES module: **@cb-core/template-browser**, named export open() and
 createBrowser(), or window.cbCore.templateBrowser.
@@ -33,10 +33,14 @@ Global discovery is restricted to manage_options and source-level authorization.
 3. On the existing authenticated wp-admin Designer screen, enqueue
    Assets::enqueue() (or the semantic PageRegistry requirement). Render the
    Browse templates action only when server-side
-   DesignerScope::issue('core-blueprint-automations', 'workflow') returns
-   a non-null token. Replace 'workflow' with the exact Designer identity.
-   Place the escaped token in a private data attribute on the action button;
-   do not put it in a URL, logger or browser storage.
+   its registered source implements TemplateDesignerAuthorityInterface. It must
+   authorize the current admin launch screen and current actor/resource separately.
+   After the server resolves the actual workflow resource, call
+   DesignerScope::issue('automations-template-source', 'workflow', $workflow_id)
+   with the registered source ID, validated resource type and server-resolved key.
+   An unauthorized launch or unavailable resource returns null. Place the escaped
+   token in a private data attribute on the action button; never put it in a URL,
+   logger or browser storage. Tokens must be issued per authorized resource.
 4. In Automations' registered JS module, declare @cb-core/template-browser
    as a WordPress script-module dependency and import the named open export:
 
@@ -63,6 +67,30 @@ Global discovery is restricted to manage_options and source-level authorization.
    own source registry and persistent workflow service. This Base adapter is
    discovery/presentation only. Separate Automations M2 acceptance stays intact.
 
+## Trusted consumer Designer authority (scope v2)
+
+A source may implement `TemplateDesignerAuthorityInterface` alongside its existing
+source contract. This is required for contextual tokens; global browsing does
+not require it. The source implements two independent server-side checks:
+
+- `can_launch_designer(resource_type, resource_key, user_id)` confirms the
+  real authorized wp-admin launch context. Base calls it only at token issuance.
+- `can_access_designer_resource(resource_type, resource_key, user_id)` confirms
+  current actor permission and resource existence. Base checks it on issuance
+  and **every** scoped REST request, including after revocation or deletion.
+
+No consumer may derive resource authority from a browser-selected template,
+registered source, generic role or JavaScript epoch. Scope v2 accepts one
+registered source ID and one server-resolved Designer resource at issuance;
+the source itself supplies extension/Designer identity. The native Mail/Reports
+Trusted Host remains unchanged and does not admit external consumers.
+
+Closing a browser tab does not guarantee server-side revocation; tokens expire
+after 15 minutes and are denied when the WP session or consumer's current
+resource authorization fails. Independently authorized concurrent tabs remain
+valid. A consumer that supports explicit server-side context revocation must
+reflect it in `can_access_designer_resource()`.
+
 ## Contractual security boundary
 
 REST GET endpoints:
@@ -71,9 +99,11 @@ REST GET endpoints:
 
 Browser cookie auth uses the standard X-WP-Nonce. Contextual requests also
 send X-CB-Designer-Scope; token is HMAC authenticated, expires after 15 minutes,
-and is bound to WordPress user ID, logged-in session, source authorization and
-the exact extension/Designer type. Supplying client-chosen extension/designer
-parameters cannot broaden it. Global browsing requires manage_options.
+and is bound to WordPress user ID, verified nonempty live session, site,
+registered source, extension, Designer type and exact resource. The consumer's
+can_access_designer_resource() is rechecked on every scoped request. Supplying
+client-chosen extension/designer parameters cannot broaden the scope. Global
+browsing requires manage_options.
 All metadata is rechecked using source can_browse and per-item can_view.
 
 Base does not expose a preview/apply/write endpoint. The shared browser uses

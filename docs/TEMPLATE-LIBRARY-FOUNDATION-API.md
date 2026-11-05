@@ -24,6 +24,29 @@ Consumers attach to `core_blueprint_register_template_sources` during plugin loa
 
 Provider implementations must be local-only, no outbound calls. Return `TemplateMetadata` records with source/extension/designer matching the registered source. No secrets, workflow principals, body HTML, credentials, customer content or serialized domain documents are permitted in metadata.
 
+### Contextual Designer Scope Authority (v2)
+
+The existing T1 source registration is discovery, **not** proof of permission
+to open a Designer resource. A source that supports contextual browsing must
+also implement `TemplateDesignerAuthorityInterface`; ordinary global sources
+may remain read-only without this optional interface.
+
+`DesignerScope::issue(source_id, resource_type, resource_key)` is invoked only
+by trusted PHP on the authorized wp-admin Designer launch. Base resolves the
+extension and Designer from the registered source, never client parameters.
+The source must independently approve the current launch context using
+`can_launch_designer()` and prove current actor/resource authorization and
+existence using `can_access_designer_resource()`. Verification rechecks the
+latter and source browse permissions on **every** scoped REST request.
+
+Scope v2 binds the site, current user, validated WordPress login session,
+source, extension, Designer type, resource type/key and expiry to its signed
+token. A missing/empty/revoked WordPress session or unavailable consumer
+authority fails closed. The Base native Trusted Host is **not** a generic
+resource authority for external consumers. Tab-close revocation is not
+guaranteed; authority revocation and resource deletion are effective at the
+next scoped request. No browser epoch creates server-side authority.
+
 ### Optional category facet contract
 
 Sources may optionally implement `TemplateCategorySourceInterface::categories(int $user_id): array`

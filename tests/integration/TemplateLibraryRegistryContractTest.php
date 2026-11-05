@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
+use CoreBlueprint\Core\TemplateLibrary\DesignerScope;
 use CoreBlueprint\Core\TemplateLibrary\TemplateMetadata;
 use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
@@ -150,4 +151,25 @@ final class CB_Template_Library_Registry_Contract_Test extends WP_UnitTestCase {
 		$this->expectException( \InvalidArgumentException::class );
 		new TemplateQuery( limit: 49 );
 	}
+	public function test_registered_source_alone_is_not_designer_authority(): void {
+		// This source has valid read permission but does not implement the
+		// optional Designer Authority interface.
+		self::assertArrayHasKey( 'core-blueprint-fixture-workflow', TemplateSourceRegistry::sources() );
+		$had_cookie = array_key_exists( LOGGED_IN_COOKIE, $_COOKIE );
+		$previous_cookie = $_COOKIE[ LOGGED_IN_COOKIE ] ?? null;
+		$expires = time() + HOUR_IN_SECONDS;
+		$session = WP_Session_Tokens::get_instance( $this->operator )->create( $expires );
+		$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $this->operator, $expires, 'logged_in', $session );
+		set_current_screen( 'core-blueprint-test-workflow' );
+		try {
+			self::assertSame( $session, wp_get_session_token() );
+			self::assertTrue( WP_Session_Tokens::get_instance( $this->operator )->verify( $session ) );
+			self::assertNull( DesignerScope::issue( 'core-blueprint-fixture-workflow', 'workflow', 'example-0002' ) );
+		} finally {
+			set_current_screen( 'front' );
+			if ( $had_cookie ) { $_COOKIE[ LOGGED_IN_COOKIE ] = $previous_cookie; }
+			else { unset( $_COOKIE[ LOGGED_IN_COOKIE ] ); }
+		}
+	}
+
 }

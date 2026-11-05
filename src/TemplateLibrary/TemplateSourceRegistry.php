@@ -53,6 +53,33 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
+	 * Resolve a registered source and the consumer's current Designer authority.
+	 * Source registration and browse permission are not launch authority.
+	 *
+	 * @return array{extension:string,designer:string}|null
+	 */
+	public static function authorized_designer_scope(
+		string $source_id, string $resource_type, string $resource_key, bool $launch
+	): ?array {
+		self::collect_if_ready();
+		$source = self::$sources[ $source_id ] ?? null;
+		$user = get_current_user_id();
+		if ( $user < 1 || ! $source instanceof TemplateDesignerAuthorityInterface
+			|| ! self::allowed( $source ) ) {
+			return null;
+		}
+		try {
+			if ( ! $source->can_access_designer_resource( $resource_type, $resource_key, $user )
+				|| ( $launch && ! $source->can_launch_designer( $resource_type, $resource_key, $user ) ) ) {
+				return null;
+			}
+			return [ 'extension' => $source->extension_id(), 'designer' => $source->designer_type() ];
+		} catch ( \Throwable ) {
+			return null;
+		}
+	}
+
+	/**
 	 * Bounded, capability-gated category facets. Does not enumerate template
 	 * documents or require pagination to discover categories.
 	 *
