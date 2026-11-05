@@ -97,6 +97,38 @@ final class CB_Template_Library_Browser_Contract_Test extends WP_UnitTestCase {
 		self::assertSame( 'manage_options', ( new \CoreBlueprint\Core\TemplateLibrary\AdminPage() )->capability() );
 	}
 
+
+	/**
+	 * Exercise the registered REST permission_callback, not only its PHP method.
+	 * The actor remains a logged-in administrator while the Designer session is
+	 * revoked, so a denial must come from the Designer authorization boundary.
+	 */
+	public function test_registered_rest_route_checks_live_designer_scope_authority(): void {
+		$route = '/core-blueprint/v1/template-library/templates';
+		self::assertArrayHasKey( $route, rest_get_server()->get_routes(), 'The actual Template Library REST route must be registered.' );
+		$token = DesignerScope::issue( 'core-blueprint-test-workflow', 'workflow', 'fixture-workflow' );
+		self::assertIsString( $token );
+
+		$request = new WP_REST_Request( 'GET', $route );
+		$request->set_header( 'X-CB-Designer-Scope', $token );
+		$allowed = rest_do_request( $request );
+		self::assertSame( 200, $allowed->get_status(), 'The registered route must authorize a valid Designer scope.' );
+		self::assertCount( 1, $allowed->get_data()['items'] );
+		self::assertSame( 'workflow', $allowed->get_data()['items'][0]['designer'] );
+
+		$request->set_header( 'X-CB-Designer-Scope', 'invalid' );
+		$invalid = rest_do_request( $request );
+		self::assertSame( 403, $invalid->get_status(), 'The registered permission callback must deny malformed scope tokens.' );
+		self::assertSame( 'rest_forbidden', $invalid->get_data()['code'] );
+
+		$request->set_header( 'X-CB-Designer-Scope', $token );
+		WP_Session_Tokens::get_instance( $this->admin_id )->destroy( wp_get_session_token() );
+		self::assertTrue( is_user_logged_in(), 'Keep the current WordPress actor authenticated to isolate the Designer scope check.' );
+		$revoked = rest_do_request( $request );
+		self::assertSame( 403, $revoked->get_status(), 'A revoked session must fail at the registered REST permission callback.' );
+		self::assertSame( 'rest_forbidden', $revoked->get_data()['code'] );
+	}
+
 	public function test_scope_is_bound_to_authenticated_user_and_exact_designer(): void {
 		$token = DesignerScope::issue( 'core-blueprint-test-workflow', 'workflow', 'fixture-workflow' );
 		self::assertIsString( $token );

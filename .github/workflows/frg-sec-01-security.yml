@@ -1,0 +1,148 @@
+name: FRG-SEC-01 Targeted Security Acceptance
+
+# Label-only: no push, PR-open, release or full-matrix execution.
+on:
+  pull_request:
+    types: [labeled]
+    branches: [main]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  security:
+    if: >-
+      github.event.label.name == 'run-frg-sec-01'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && github.event.pull_request.head.ref == 'feature/frg-sec-01-designer-scope-authority-20261105'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    services:
+      mariadb:
+        image: mariadb:10.11.19
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: cb_frg_sec_01
+        ports:
+          - 127.0.0.1:3307:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      WP_DB_NAME: cb_frg_sec_01
+      WP_DB_USER: root
+      WP_DB_PASSWORD: root
+      WP_DB_HOST: 127.0.0.1:3307
+
+    steps:
+      - name: Checkout exact pull request HEAD
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Assert canonical SOURCE identity
+        run: |
+          ACTUAL="$(git rev-parse HEAD)"
+          EXPECTED="${{ github.event.pull_request.head.sha }}"
+          printf 'SOURCE_SHA=%s\n' "$ACTUAL"
+          test "$ACTUAL" = "$EXPECTED"
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.37.2
+        with:
+          php-version: '8.4'
+          extensions: dom, mbstring, mysqli, sodium, xml, xmlwriter
+          tools: composer:2.10.2
+          coverage: none
+
+      - name: Install locked development dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Configure isolated runner paths
+        run: |
+          ROOT="$RUNNER_TEMP/frg-sec-01"
+          test ! -e "$ROOT" && test ! -L "$ROOT"
+          printf 'WP_CORE_DIR=%s\n' "$ROOT/wordpress" >> "$GITHUB_ENV"
+          printf 'WP_TESTS_DIR=%s\n' "$ROOT/wp-tests" >> "$GITHUB_ENV"
+          printf 'CB_PLUGIN_FILE=%s\n' "$ROOT/wordpress/wp-content/plugins/core-blueprint/core-blueprint.php" >> "$GITHUB_ENV"
+
+      - name: Install pinned WordPress 7.0 test environment
+        run: |
+          test ! -e "$WP_CORE_DIR" && test ! -L "$WP_CORE_DIR"
+          test ! -e "$WP_TESTS_DIR" && test ! -L "$WP_TESTS_DIR"
+          bash tests/bin/install-wp-tests.sh 7.0
+
+      - name: Run only the three Template Library security classes
+        run: |
+          mkdir -p "$RUNNER_TEMP/frg-sec-results"
+          vendor/bin/phpunit \
+            --testsuite integration \
+            --filter 'CB_Template_Library_(Browser|Management|Registry)_Contract_Test' \
+            --log-junit "$RUNNER_TEMP/frg-sec-results/junit.xml" \
+            2>&1 | tee "$RUNNER_TEMP/frg-sec-results/phpunit.log"
+
+      - name: Verify JUnit covers all selected security tests
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import re
+          import sys
+          import xml.etree.ElementTree as ET
+
+          files = {
+              'CB_Template_Library_Browser_Contract_Test': 'tests/integration/TemplateLibraryBrowserContractTest.php',
+              'CB_Template_Library_Management_Contract_Test': 'tests/integration/TemplateLibraryManagementContractTest.php',
+              'CB_Template_Library_Registry_Contract_Test': 'tests/integration/TemplateLibraryRegistryContractTest.php',
+          }
+          expected = set()
+          for cls, path in files.items():
+              methods = re.findall(r'public\s+function\s+(test_[A-Za-z0-9_]+)\s*\(', Path(path).read_text())
+              if not methods:
+                  sys.exit(f'BLOCKED: no security tests declared in {path}')
+              expected.update((cls, name) for name in methods)
+
+          rest_test = ('CB_Template_Library_Browser_Contract_Test',
+                       'test_registered_rest_route_checks_live_designer_scope_authority')
+          if rest_test not in expected:
+              sys.exit('BLOCKED: required REST permission-boundary test not present in SOURCE')
+
+          report = Path(os.environ['RUNNER_TEMP']) / 'frg-sec-results/junit.xml'
+          if not report.is_file():
+              sys.exit('BLOCKED: PHPUnit JUnit evidence missing')
+          root = ET.parse(report).getroot()
+          cases = root.findall('.//testcase')
+          executed = []
+          for case in cases:
+              cls = (case.get('class') or case.get('classname') or '').rsplit('\\', 1)[-1]
+              name = case.get('name', '')
+              executed.append((cls, name))
+              if any(case.find(tag) is not None for tag in ('error', 'failure', 'skipped')):
+                  sys.exit(f'FAIL: failed or skipped security test: {cls}::{name}')
+
+          if set(executed) != expected or len(executed) != len(expected):
+              missing = sorted(expected - set(executed))
+              unexpected = sorted(set(executed) - expected)
+              sys.exit(f'BLOCKED: incomplete security coverage; missing={missing}, unexpected={unexpected}')
+          print(f'SECURITY TESTS PASS: {len(executed)} executed; 0 failed; 0 skipped')
+          print('Classes: ' + ', '.join(sorted(files)))
+          print('Registered REST permission-boundary test: PASS')
+          PY
+
+      - name: Preserve targeted security evidence
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: frg-sec-01-security-evidence
+          path: ${{ runner.temp }}/frg-sec-results/
+          if-no-files-found: warn
+          retention-days: 30
