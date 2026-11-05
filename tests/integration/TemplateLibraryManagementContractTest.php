@@ -4,6 +4,7 @@ declare(strict_types=1);
 use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\TemplateLibrary\BrowserController;
 use CoreBlueprint\Core\TemplateLibrary\DesignerScope;
+use CoreBlueprint\Core\TemplateLibrary\TemplateDesignerAuthorityInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateManagementSourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateMetadata;
 use CoreBlueprint\Core\TemplateLibrary\TemplateNavigation;
@@ -13,6 +14,8 @@ use CoreBlueprint\Core\TemplateLibrary\TemplateSourceRegistry;
 
 final class CB_Template_Library_Management_Contract_Test extends WP_UnitTestCase {
 	private int $operator;
+	private bool $had_login_cookie = false;
+	private mixed $previous_login_cookie = null;
 
 	public function set_up(): void {
 		parent::set_up();
@@ -20,9 +23,14 @@ final class CB_Template_Library_Management_Contract_Test extends WP_UnitTestCase
 		$operator = get_userdata( $this->operator );
 		self::assertInstanceOf( WP_User::class, $operator );
 		self::assertTrue( PrivilegedAccessRegistry::approve( $operator, 0, 'template_library_test_fixture' ) );
+		$this->had_login_cookie = array_key_exists( LOGGED_IN_COOKIE, $_COOKIE );
+		$this->previous_login_cookie = $_COOKIE[ LOGGED_IN_COOKIE ] ?? null;
 		wp_set_current_user( $this->operator );
+		$expiry = time() + HOUR_IN_SECONDS;
+		$session = WP_Session_Tokens::get_instance( $this->operator )->create( $expiry );
+		$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $this->operator, $expiry, 'logged_in', $session );
 		self::assertTrue( current_user_can( 'manage_options' ), 'The management fixture must use an explicitly approved administrator.' );
-		set_current_screen( 'core-blueprint_page_core-blueprint-template-library' );
+		set_current_screen( 'core-blueprint-test-workflow' );
 		TemplateSourceRegistry::_reset_for_testing();
 		add_action( 'core_blueprint_register_template_sources', [ $this, 'register_source' ] );
 	}
@@ -31,17 +39,27 @@ final class CB_Template_Library_Management_Contract_Test extends WP_UnitTestCase
 		remove_action( 'core_blueprint_register_template_sources', [ $this, 'register_source' ] );
 		TemplateSourceRegistry::_reset_for_testing();
 		set_current_screen( 'front' );
+		if ( $this->had_login_cookie ) { $_COOKIE[ LOGGED_IN_COOKIE ] = $this->previous_login_cookie; }
+		else { unset( $_COOKIE[ LOGGED_IN_COOKIE ] ); }
 		wp_set_current_user( 0 );
 		parent::tear_down();
 	}
 
 	public function register_source(): void {
-		TemplateSourceRegistry::register( new class implements TemplateManagementSourceInterface {
+		TemplateSourceRegistry::register( new class implements TemplateManagementSourceInterface, TemplateDesignerAuthorityInterface {
 			public function source_id(): string { return 'core-blueprint-managed-fixture'; }
 			public function extension_id(): string { return 'core-blueprint'; }
 			public function designer_type(): string { return 'workflow'; }
 			public function can_browse( int $user_id ): bool {
 				return user_can( $user_id, 'manage_options' );
+			}
+			public function can_launch_designer( string $resource_type, string $resource_key, int $user_id ): bool {
+				$screen = get_current_screen();
+				return $screen && 'core-blueprint-test-workflow' === $screen->id
+					&& $this->can_access_designer_resource( $resource_type, $resource_key, $user_id );
+			}
+			public function can_access_designer_resource( string $resource_type, string $resource_key, int $user_id ): bool {
+				return 'workflow' === $resource_type && 'fixture-workflow' === $resource_key && $this->can_browse( $user_id );
 			}
 			public function can_view( string $template_id, int $user_id ): bool {
 				return in_array( $template_id, [ 'personal-one', 'site-one', 'built-in-one' ], true )
@@ -97,7 +115,7 @@ final class CB_Template_Library_Management_Contract_Test extends WP_UnitTestCase
 	}
 
 	public function test_designer_scope_never_exposes_management_actions(): void {
-		$token = DesignerScope::issue( 'core-blueprint', 'workflow' );
+		$token = DesignerScope::issue( 'core-blueprint-managed-fixture', 'workflow', 'fixture-workflow' );
 		self::assertIsString( $token );
 		$request = new WP_REST_Request( 'GET', '/core-blueprint/v1/template-library/templates' );
 		$request->set_header( 'X-CB-Designer-Scope', $token );
