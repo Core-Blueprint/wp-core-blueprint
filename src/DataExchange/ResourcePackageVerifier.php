@@ -26,7 +26,7 @@ final class ResourcePackageVerifier {
 	 * @return array<string,mixed>|WP_Error
 	 */
 	public static function verify_file( string $path ): array|WP_Error {
-		if ( ! function_exists( 'gzinflate' ) || '' === $path || is_link( $path ) || ! is_file( $path ) || ! is_readable( $path ) ) {
+		if ( ! function_exists( 'gzinflate' ) || ! function_exists( 'inflate_get_read_len' ) || '' === $path || is_link( $path ) || ! is_file( $path ) || ! is_readable( $path ) ) {
 			return self::refuse();
 		}
 		$size = filesize( $path );
@@ -130,7 +130,7 @@ final class ResourcePackageVerifier {
 		$footer = unpack( 'vdisk/vcdisk/ventries_disk/ventries/Vbytes/Voffset/vcomment', substr( $raw, $end + 4, 18 ) );
 		if ( 0 !== $footer['disk'] || 0 !== $footer['cdisk'] || $footer['entries_disk'] !== $footer['entries']
 			|| $footer['entries'] < 2 || $footer['entries'] > self::MAX_RESOURCES + 2
-			|| $footer['offset'] + $footer['bytes'] !== $end || $end + 22 + $footer['comment'] !== $length ) {
+			|| 0 !== $footer['comment'] || $footer['offset'] + $footer['bytes'] !== $end || $end + 22 !== $length ) {
 			return null;
 		}
 		$cursor = $footer['offset'];
@@ -177,7 +177,8 @@ final class ResourcePackageVerifier {
 				return null;
 			}
 			$l = unpack( 'vneed/vflags/vmethod/vtime/vdate/Vcrc/Vcompressed/Vuncompressed/vname_length/vextra', substr( $raw, $start + 4, 26 ) );
-			if ( $l['flags'] !== $c['flags'] || $l['method'] !== $c['method'] || $l['crc'] !== $c['crc']
+			if ( $l['need'] !== $c['need'] || $l['time'] !== $c['time'] || $l['date'] !== $c['date']
+				|| $l['flags'] !== $c['flags'] || $l['method'] !== $c['method'] || $l['crc'] !== $c['crc']
 				|| $l['compressed'] !== $c['compressed'] || $l['uncompressed'] !== $c['uncompressed']
 				|| $l['name_length'] !== $c['name_length'] || 0 !== $l['extra']
 				|| substr( $raw, $start + 30, $l['name_length'] ) !== $name ) {
@@ -192,6 +193,15 @@ final class ResourcePackageVerifier {
 			$bytes = 0 === $c['method'] ? $compressed : @gzinflate( $compressed, $limit + 1 );
 			if ( ! is_string( $bytes ) || strlen( $bytes ) !== $c['uncompressed'] || crc32( $bytes ) !== $c['crc'] ) {
 				return null;
+			}
+			if ( 8 === $c['method'] ) {
+				// gzinflate has a hard output cap. Recheck full compressed-byte
+				// consumption so a valid prefix cannot conceal trailing data.
+				$inflater = inflate_init( ZLIB_ENCODING_RAW );
+				$decoded = @inflate_add( $inflater, $compressed, ZLIB_FINISH );
+				if ( $decoded !== $bytes || inflate_get_read_len( $inflater ) !== $c['compressed'] ) {
+					return null;
+				}
 			}
 			$files[ $name ] = $bytes;
 			$regions[] = [ $start, $data_end ];
