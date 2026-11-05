@@ -15,9 +15,6 @@ final class ResourcePackageVerifier {
 	private const MAX_RESOURCE = 5 * 1024 * 1024;
 	private const MAX_RESOURCES = 16;
 	private const MAX_RESOURCE_TOTAL = 20 * 1024 * 1024;
-	private const EOCD = "PK\x05\x06";
-	private const CENTRAL = "PK\x01\x02";
-	private const LOCAL = "PK\x03\x04";
 
 	/**
 	 * Checks one regular local file; performs no extraction, staging, writes or imports.
@@ -26,19 +23,23 @@ final class ResourcePackageVerifier {
 	 * @return array<string,mixed>|WP_Error
 	 */
 	public static function verify_file( string $path ): array|WP_Error {
-		if ( ! function_exists( 'gzinflate' ) || ! function_exists( 'inflate_get_read_len' ) || '' === $path || is_link( $path ) || ! is_file( $path ) || ! is_readable( $path ) ) {
+		if ( ! class_exists( \ZipArchive::class, false ) ) {
+			return new WP_Error( 'cb_core_resource_package_unavailable', 'ZIP package verification requires PHP ZipArchive.' );
+		}
+		if ( '' === $path || is_link( $path ) || ! is_file( $path ) || ! is_readable( $path ) ) {
 			return self::refuse();
 		}
 		$size = filesize( $path );
 		if ( ! is_int( $size ) || $size < 22 || $size > self::MAX_PACKAGE ) {
 			return self::refuse();
 		}
-		$raw = file_get_contents( $path, false, null, 0, self::MAX_PACKAGE + 1 );
-		if ( ! is_string( $raw ) || strlen( $raw ) !== $size ) {
+		$before = hash_file( 'sha256', $path );
+		if ( ! is_string( $before ) ) {
 			return self::refuse();
 		}
-		$files = self::read_archive( $raw );
-		if ( null === $files ) {
+		$files = self::read_archive( $path );
+		$after = hash_file( 'sha256', $path );
+		if ( null === $files || ! is_string( $after ) || ! hash_equals( $before, $after ) ) {
 			return self::refuse();
 		}
 		try {
@@ -111,7 +112,7 @@ final class ResourcePackageVerifier {
 		}
 		// Do not treat this result as authority at apply time; verify immutable bytes again.
 		return [
-			'package_sha256' => hash( 'sha256', $raw ),
+			'package_sha256' => $before,
 			'document_sha256' => $manifest['document']['sha256'],
 			'document_json' => $files['data-exchange.json'],
 			'extension_id' => $manifest['extension_id'],
@@ -121,103 +122,71 @@ final class ResourcePackageVerifier {
 	}
 
 	/** @return array<string,string>|null */
-	private static function read_archive( string $raw ): ?array {
-		$length = strlen( $raw );
-		$end = strrpos( $raw, self::EOCD, max( 0, $length - 65557 ) );
-		if ( false === $end || $end + 22 > $length ) {
+	private static function read_archive( string $path ): ?array {
+		$zip = new \ZipArchive();
+		if ( true !== $zip->open( $path, \ZipArchive::CHECKCONS ) ) {
 			return null;
 		}
-		$footer = unpack( 'vdisk/vcdisk/ventries_disk/ventries/Vbytes/Voffset/vcomment', substr( $raw, $end + 4, 18 ) );
-		if ( 0 !== $footer['disk'] || 0 !== $footer['cdisk'] || $footer['entries_disk'] !== $footer['entries']
-			|| $footer['entries'] < 2 || $footer['entries'] > self::MAX_RESOURCES + 2
-			|| 0 !== $footer['comment'] || $footer['offset'] + $footer['bytes'] !== $end || $end + 22 !== $length ) {
-			return null;
-		}
-		$cursor = $footer['offset'];
-		$files = [];
-		$regions = [];
-		$total_resource = 0;
-		for ( $i = 0; $i < $footer['entries']; ++$i ) {
-			if ( $cursor + 46 > $end || substr( $raw, $cursor, 4 ) !== self::CENTRAL ) {
+
+		try {
+			if ( $zip->numFiles < 2 || $zip->numFiles > self::MAX_RESOURCES + 2
+				|| ! in_array( $zip->getArchiveComment(), [ '', false ], true ) ) {
 				return null;
 			}
-			$c = unpack( 'vmade/vneed/vflags/vmethod/vtime/vdate/Vcrc/Vcompressed/Vuncompressed/vname_length/vextra/vcomment/vdisk/vinternal/Vexternal/Voffset', substr( $raw, $cursor + 4, 42 ) );
-			$cursor += 46;
-			if ( ! in_array( $c['flags'], [ 0, 2048 ], true ) || ! in_array( $c['method'], [ 0, 8 ], true )
-				|| $c['need'] > 20 || 0 !== $c['extra'] || 0 !== $c['comment'] || 0 !== $c['disk']
-				|| $c['compressed'] === 0xffffffff || $c['uncompressed'] === 0xffffffff || $c['offset'] === 0xffffffff
-				|| $c['name_length'] < 1 || $cursor + $c['name_length'] > $end ) {
-				return null;
-			}
-			$name = substr( $raw, $cursor, $c['name_length'] );
-			$cursor += $c['name_length'];
-			if ( ! in_array( $name, [ 'manifest.json', 'data-exchange.json' ], true )
-				&& 1 !== preg_match( '#^resources/sha256/[a-f0-9]{64}$#D', $name ) ) {
-				return null;
-			}
-			if ( isset( $files[ $name ] ) || ( $c['external'] & 16 ) !== 0 ) {
-				return null;
-			}
-			$unix_mode = $c['made'] >> 8 === 3 ? ( $c['external'] >> 16 ) & 0xffff : 0;
-			if ( 0 !== ( $unix_mode & 0170000 ) && ( $unix_mode & 0170000 ) !== 0100000 ) {
-				return null;
-			}
-			$limit = 'manifest.json' === $name ? self::MAX_MANIFEST : ( 'data-exchange.json' === $name ? Foundation::MAX_INPUT_BYTES : self::MAX_RESOURCE );
-			if ( $c['uncompressed'] > $limit || $c['compressed'] > self::MAX_PACKAGE ) {
-				return null;
-			}
-			if ( str_starts_with( $name, 'resources/' ) ) {
-				$total_resource += $c['uncompressed'];
-				if ( $total_resource > self::MAX_RESOURCE_TOTAL ) {
+			$files = [];
+			$total_resource = 0;
+			for ( $index = 0; $index < $zip->numFiles; ++$index ) {
+				$stat = $zip->statIndex( $index );
+				if ( false === $stat || ! is_string( $stat['name'] ?? null )
+					|| ! is_int( $stat['size'] ?? null ) || ! is_int( $stat['comp_size'] ?? null )
+					|| ! is_int( $stat['comp_method'] ?? null ) || ! is_int( $stat['crc'] ?? null ) ) {
 					return null;
 				}
-			}
-			$start = $c['offset'];
-			if ( $start + 30 > $footer['offset'] || substr( $raw, $start, 4 ) !== self::LOCAL ) {
-				return null;
-			}
-			$l = unpack( 'vneed/vflags/vmethod/vtime/vdate/Vcrc/Vcompressed/Vuncompressed/vname_length/vextra', substr( $raw, $start + 4, 26 ) );
-			if ( $l['need'] !== $c['need'] || $l['time'] !== $c['time'] || $l['date'] !== $c['date']
-				|| $l['flags'] !== $c['flags'] || $l['method'] !== $c['method'] || $l['crc'] !== $c['crc']
-				|| $l['compressed'] !== $c['compressed'] || $l['uncompressed'] !== $c['uncompressed']
-				|| $l['name_length'] !== $c['name_length'] || 0 !== $l['extra']
-				|| substr( $raw, $start + 30, $l['name_length'] ) !== $name ) {
-				return null;
-			}
-			$data_start = $start + 30 + $l['name_length'];
-			$data_end = $data_start + $c['compressed'];
-			if ( $data_end > $footer['offset'] ) {
-				return null;
-			}
-			$compressed = substr( $raw, $data_start, $c['compressed'] );
-			$bytes = 0 === $c['method'] ? $compressed : @gzinflate( $compressed, $limit + 1 );
-			if ( ! is_string( $bytes ) || strlen( $bytes ) !== $c['uncompressed'] || crc32( $bytes ) !== $c['crc'] ) {
-				return null;
-			}
-			if ( 8 === $c['method'] ) {
-				// gzinflate has a hard output cap. Recheck full compressed-byte
-				// consumption so a valid prefix cannot conceal trailing data.
-				$inflater = inflate_init( ZLIB_ENCODING_RAW );
-				$decoded = @inflate_add( $inflater, $compressed, ZLIB_FINISH );
-				if ( $decoded !== $bytes || inflate_get_read_len( $inflater ) !== $c['compressed'] ) {
+				$name = $stat['name'];
+				if ( ! in_array( $name, [ 'manifest.json', 'data-exchange.json' ], true )
+					&& 1 !== preg_match( '#^resources/sha256/[a-f0-9]{64}$#D', $name ) ) {
 					return null;
 				}
+				if ( array_key_exists( $name, $files )
+					|| ! in_array( $stat['comp_method'], [ \ZipArchive::CM_STORE, \ZipArchive::CM_DEFLATE ], true )
+					|| $stat['comp_size'] > self::MAX_PACKAGE
+					|| ! in_array( $zip->getCommentIndex( $index ), [ '', false ], true ) ) {
+					return null;
+				}
+				$opsys = 0;
+				$attributes = 0;
+				if ( ! $zip->getExternalAttributesIndex( $index, $opsys, $attributes ) ) {
+					return null;
+				}
+				$mode = \ZipArchive::OPSYS_UNIX === $opsys ? ( ( $attributes >> 16 ) & 0xffff ) : 0;
+				if ( 0 !== ( $mode & 0170000 ) && 0100000 !== ( $mode & 0170000 ) ) {
+					return null; // Reject symlinks and non-regular archive members.
+				}
+				$limit = 'manifest.json' === $name
+					? self::MAX_MANIFEST
+					: ( 'data-exchange.json' === $name ? Foundation::MAX_INPUT_BYTES : self::MAX_RESOURCE );
+				if ( $stat['size'] > $limit ) {
+					return null;
+				}
+				if ( str_starts_with( $name, 'resources/' ) ) {
+					$total_resource += $stat['size'];
+					if ( $total_resource > self::MAX_RESOURCE_TOTAL ) {
+						return null;
+					}
+				}
+				// Bound decompressed bytes even if ZIP metadata understates actual size.
+				$bytes = $zip->getFromIndex( $index, $limit + 1 );
+				if ( ! is_string( $bytes ) || strlen( $bytes ) !== $stat['size']
+					|| crc32( $bytes ) !== $stat['crc'] ) {
+					return null;
+				}
+				$files[ $name ] = $bytes;
 			}
-			$files[ $name ] = $bytes;
-			$regions[] = [ $start, $data_end ];
+
+			return isset( $files['manifest.json'], $files['data-exchange.json'] ) ? $files : null;
+		} finally {
+			$zip->close();
 		}
-		if ( $cursor !== $end ) {
-			return null;
-		}
-		sort( $regions );
-		$next = 0;
-		foreach ( $regions as [ $start, $finish ] ) {
-			if ( $start !== $next ) {
-				return null; // No overlaps, prefixes, gaps or hidden local records.
-			}
-			$next = $finish;
-		}
-		return $next === $footer['offset'] && isset( $files['manifest.json'], $files['data-exchange.json'] ) ? $files : null;
 	}
 
 	private static function valid_image( string $bytes, string $mime ): bool {
