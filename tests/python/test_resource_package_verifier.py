@@ -13,6 +13,8 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9gZyC9sAAAAASUVORK5CYII=")
+WEBP = base64.b64decode("UklGRjoAAABXRUJQVlA4IC4AAACQAQCdASoBAAEAAUAmJaACdLoAA5gA/vtV4/+lwf/S4P/pcH/pcH8bss4bpAAA")
+JPEG = base64.b64decode("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDxyiiiv3E8w//Z")
 
 PHP_DRIVER = r'''<?php
 namespace {
@@ -90,6 +92,14 @@ class ResourcePackageVerifierTest(unittest.TestCase):
         self.assertNotIn("/tmp", json.dumps(out["result"]))
         self.assertNotIn("resource_bytes", out["result"])
 
+    def test_valid_webp(self):
+        self.package(resource=WEBP, mime="image/webp")
+        self.assertTrue(self.verify()["valid"])
+
+    def test_valid_jpeg(self):
+        self.package(resource=JPEG, mime="image/jpeg")
+        self.assertTrue(self.verify()["valid"])
+
     def test_valid_stored_zip(self):
         self.package(method=zipfile.ZIP_STORED)
         self.assertTrue(self.verify()["valid"])
@@ -166,6 +176,19 @@ class ResourcePackageVerifierTest(unittest.TestCase):
         content = bytearray(self.path.read_bytes())
         content[6] |= 1  # local header general purpose flags
         self.path.write_bytes(content)
+        self.deny()
+
+    def test_zip64_central_metadata_refuses(self):
+        self.package()
+        content = bytearray(self.path.read_bytes())
+        offset = content.index(b"PK\x01\x02")
+        content[offset + 24: offset + 28] = b"\xff" * 4  # central declared size
+        self.path.write_bytes(content)
+        self.deny()
+
+    def test_zip_trailing_bytes_refuses(self):
+        self.package()
+        self.path.write_bytes(self.path.read_bytes() + b"trailing")
         self.deny()
 
     def test_symlinked_package_path_refuses(self):
