@@ -112,6 +112,60 @@ final class CB_Base_Privileged_Request_Contract_Test extends WP_UnitTestCase {
         self::assertSame( 'fallback', Request::text( 'value', 'fallback' ) );
     }
 
+    /**
+     * SEC-02: Password re-confirmation must reject arrays before either
+     * destructive Failsafe action changes persistent security state.
+     *
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function test_sec02_failsafe_password_reconfirm_rejects_array_without_mutation(): void {
+        \CoreBlueprint\Core\Ajax\Handlers\Failsafe::init();
+
+        foreach ( [ 'cb_core_rotate_token', 'cb_core_panic_activate' ] as $action ) {
+            self::assertFalse( has_action( 'wp_ajax_nopriv_' . $action ), 'Privileged Failsafe action exposed an anonymous route.' );
+        }
+
+        $admin = self::factory()->user->create( [ 'role' => 'administrator' ] );
+        wp_set_current_user( $admin );
+
+        $token_before     = get_option( CB_CORE_BYPASS_TOK, false );
+        $emergency_before = get_option( CB_CORE_BYPASS_OPT, false );
+        $rotation_audit   = $this->audit_count( 'failsafe.token_rotated' );
+        $emergency_audit  = $this->audit_count( 'failsafe.emergency_activated' );
+
+        foreach ( [ [ 'unexpected' ], [ 'nested' => [ 'unexpected' ] ] ] as $password ) {
+            foreach ( [ 'cb_core_rotate_token', 'cb_core_panic_activate' ] as $action ) {
+                $this->set_post( [
+                    'nonce'    => wp_create_nonce( 'cb_core_admin' ),
+                    'password' => $password,
+                ] );
+                $result = $this->capture_termination(
+                    static fn() => do_action( 'wp_ajax_' . $action ),
+                    true
+                );
+                self::assertSame( 400, $this->response_code( $result['termination'] ), $action . ' accepted a non-scalar password shape.' );
+                self::assertFalse( $this->json_payload( $result['output'] )['success'] );
+                self::assertSame( $token_before, get_option( CB_CORE_BYPASS_TOK, false ), $action . ' rotated the token on malformed input.' );
+                self::assertSame( $emergency_before, get_option( CB_CORE_BYPASS_OPT, false ), $action . ' changed emergency bypass on malformed input.' );
+            }
+        }
+
+        $this->set_post( [
+            'nonce'    => wp_create_nonce( 'cb_core_admin' ),
+            'password' => 'incorrect-sec02-password',
+        ] );
+        $invalid_password = $this->capture_termination(
+            static fn() => do_action( 'wp_ajax_cb_core_rotate_token' ),
+            true
+        );
+        self::assertSame( 401, $this->response_code( $invalid_password['termination'] ), 'Scalar wrong-password rejection changed.' );
+        self::assertSame( $token_before, get_option( CB_CORE_BYPASS_TOK, false ) );
+        self::assertSame( $emergency_before, get_option( CB_CORE_BYPASS_OPT, false ) );
+        self::assertSame( $rotation_audit, $this->audit_count( 'failsafe.token_rotated' ) );
+        self::assertSame( $emergency_audit, $this->audit_count( 'failsafe.emergency_activated' ) );
+    }
+
     public function test_c1_typed_integer_request_rejects_non_scalar_shapes_without_changing_scalar_casts(): void {
         $this->set_post( [ 'report_id' => [ 'unexpected' ] ] );
         self::assertSame( 7, Request::int( 'report_id', 7 ) );
