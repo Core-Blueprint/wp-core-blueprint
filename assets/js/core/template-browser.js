@@ -108,22 +108,12 @@ function createBrowser( root, options = {} ) {
     search.setAttribute( 'aria-label', label( 'search', 'Search templates' ) );
     search.maxLength = 120;
 
-    const filterDefaults = {
-        source: [ 'allSources', 'All sources' ],
-        extension: [ 'allPlugins', 'All plugins' ],
-        designer: [ 'allDesignerTypes', 'All designer types' ],
-        category: [ 'allCategories', 'All categories' ],
-    };
-    function emptyOption( name ) {
-        const [ key, fallback ] = filterDefaults[name] || [ 'all', 'All templates' ];
-        return option( '', label( key, fallback ) );
-    }
     function addSelect( name, translationKey, fallback, choices = [] ) {
         const wrapper = el( 'label', 'cb-template-browser__field' );
         wrapper.append( el( 'span', '', label( translationKey, fallback ) ) );
         const select = el( 'select' );
         select.dataset.filter = name;
-        select.append( emptyOption( name ) );
+        select.append( option( '', label( 'all', 'All templates' ) ) );
         choices.forEach( ( [ value, title ] ) => select.append( option( value, title ) ) );
         select.addEventListener( 'change', () => {
             state.filters[name] = select.value;
@@ -154,7 +144,7 @@ function createBrowser( root, options = {} ) {
                 if ( !available.has( category.id ) ) available.set( category.id, category.label );
             }
         }
-        categorySelect.replaceChildren( emptyOption( 'category' ) );
+        categorySelect.replaceChildren( option( '', label( 'all', 'All templates' ) ) );
         [ ...available.entries() ].sort( ( a, b ) => a[1].localeCompare( b[1] ) )
             .forEach( ( [ id, title ] ) => categorySelect.append( option( id, title ) ) );
         categorySelect.disabled = available.size === 0;
@@ -260,7 +250,7 @@ function createBrowser( root, options = {} ) {
             } );
             state.cursor = payload.next_cursor;
             message.textContent = ( state.entries.length || state.cursor ) ? '' : label( 'noResults', 'No templates found.' );
-            summary.textContent = label( 'resultsShown', 'Templates shown' ) + ': ' + String( state.entries.length );
+            summary.textContent = String( state.entries.length );
             more.hidden = !state.cursor;
         } catch ( error ) {
             if ( !controller.signal.aborted && !state.destroyed && generation === state.requestGeneration ) {
