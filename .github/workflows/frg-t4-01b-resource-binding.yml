@@ -1,0 +1,137 @@
+name: FRG-T4-01B Targeted Resource Binding Acceptance
+
+# Label-only: no push, PR-open, release or full-matrix execution.
+on:
+  pull_request:
+    types: [labeled]
+    branches: [main]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  resource-binding:
+    if: >-
+      github.event.label.name == 'run-frg-t4-01b'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && github.event.pull_request.head.ref == 'feature/frg-t4-01b-resource-reconciliation-20261105'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    services:
+      mariadb:
+        image: mariadb:10.11.19
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: cb_frg_t4_01b
+        ports:
+          - 127.0.0.1:3307:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      WP_DB_NAME: cb_frg_t4_01b
+      WP_DB_USER: root
+      WP_DB_PASSWORD: root
+      WP_DB_HOST: 127.0.0.1:3307
+
+    steps:
+      - name: Checkout exact pull request HEAD
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Assert canonical SOURCE identity
+        run: |
+          ACTUAL="$(git rev-parse HEAD)"
+          EXPECTED="${{ github.event.pull_request.head.sha }}"
+          printf 'SOURCE_SHA=%s\n' "$ACTUAL"
+          test "$ACTUAL" = "$EXPECTED"
+          mkdir -p "$RUNNER_TEMP/frg-t4-01b-results"
+          printf '%s\n' "$ACTUAL" > "$RUNNER_TEMP/frg-t4-01b-results/source-sha.txt"
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.37.2
+        with:
+          php-version: '8.4'
+          extensions: dom, mbstring, mysqli, sodium, xml, xmlwriter
+          tools: composer:2.10.2
+          coverage: none
+
+      - name: Install locked development dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Configure isolated runner paths
+        run: |
+          ROOT="$RUNNER_TEMP/frg-t4-01b"
+          test ! -e "$ROOT" && test ! -L "$ROOT"
+          printf 'WP_CORE_DIR=%s\n' "$ROOT/wordpress" >> "$GITHUB_ENV"
+          printf 'WP_TESTS_DIR=%s\n' "$ROOT/wp-tests" >> "$GITHUB_ENV"
+          printf 'CB_PLUGIN_FILE=%s\n' "$ROOT/wordpress/wp-content/plugins/core-blueprint/core-blueprint.php" >> "$GITHUB_ENV"
+
+      - name: Install pinned WordPress 7.0 test environment
+        run: |
+          test ! -e "$WP_CORE_DIR" && test ! -L "$WP_CORE_DIR"
+          test ! -e "$WP_TESTS_DIR" && test ! -L "$WP_TESTS_DIR"
+          bash tests/bin/install-wp-tests.sh 7.0
+
+      - name: Lint selected test source
+        run: php -l tests/integration/TemplatePortabilityResourceBindingContractTest.php
+
+      - name: Run only the five resource binding tests
+        run: |
+          mkdir -p "$RUNNER_TEMP/frg-t4-01b-results"
+          vendor/bin/phpunit \
+            --testsuite integration \
+            --filter 'CB_T4_Template_Resource_Binding_Contract_Test' \
+            --log-junit "$RUNNER_TEMP/frg-t4-01b-results/junit.xml" \
+            2>&1 | tee "$RUNNER_TEMP/frg-t4-01b-results/phpunit.log"
+
+      - name: Verify JUnit covers exactly five resource binding tests
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+          import sys
+          import xml.etree.ElementTree as ET
+
+          cls = 'CB_T4_Template_Resource_Binding_Contract_Test'
+          source = Path('tests/integration/TemplatePortabilityResourceBindingContractTest.php').read_text()
+          methods = re.findall(r'public\s+function\s+(test_[A-Za-z0-9_]+)\s*\(', source)
+          if len(methods) != 5 or len(set(methods)) != 5:
+              sys.exit(f'BLOCKED: expected five distinct source tests, found {len(methods)}')
+          expected = {(cls, name) for name in methods}
+
+          report = Path(os.environ['RUNNER_TEMP']) / 'frg-t4-01b-results/junit.xml'
+          if not report.is_file():
+              sys.exit('BLOCKED: JUnit report absent')
+          cases = ET.parse(report).getroot().findall('.//testcase')
+          actual = []
+          for case in cases:
+              case_cls = (case.get('class') or case.get('classname') or '').rsplit('\\', 1)[-1]
+              name = case.get('name', '')
+              actual.append((case_cls, name))
+              if any(case.find(tag) is not None for tag in ('error', 'failure', 'skipped')):
+                  sys.exit(f'FAIL: failed or skipped test: {case_cls}::{name}')
+          if len(actual) != 5 or set(actual) != expected:
+              sys.exit(f'BLOCKED: unexpected JUnit coverage; missing={sorted(expected-set(actual))}, extra={sorted(set(actual)-expected)}')
+          print('FRG-T4-01B RESOURCE BINDING: 5/5 PASS, 0 failures, 0 errors, 0 skipped')
+          PY
+
+      - name: Preserve targeted resource binding evidence
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: frg-t4-01b-resource-binding-evidence
+          path: ${{ runner.temp }}/frg-t4-01b-results/
+          if-no-files-found: warn
+          retention-days: 30
