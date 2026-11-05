@@ -196,7 +196,7 @@ final class ResourcePackageStage {
 		}
 		foreach ( [ ABSPATH, defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : '', $_SERVER['DOCUMENT_ROOT'] ?? '' ] as $public ) {
 			$public_real = '' !== $public ? realpath( $public ) : false;
-			if ( false !== $public_real && ( $real === $public_real || str_starts_with( $real, rtrim( $public_real, '/' ) . '/' ) ) {
+			if ( false !== $public_real && ( $real === $public_real || str_starts_with( $real, rtrim( $public_real, '/' ) . '/' ) ) ) {
 				return null;
 			}
 		}
