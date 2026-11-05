@@ -44,7 +44,7 @@ trait Guards {
 		// The handler has verified its nonce and capability. Reject malformed
 		// input before unslashing or casting a credential.
 		if ( isset( $_POST['password'] ) && ! is_scalar( $_POST['password'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			wp_send_json_error( [ 'message' => __( 'Invalid password confirmation.', 'core-blueprint' ) ], 400 );
+			wp_send_json_error( [ 'message' => sprintf( __( 'Invalid value for %s.', 'core-blueprint' ), 'password' ) ], 400 );
 		}
 
 		$password = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
