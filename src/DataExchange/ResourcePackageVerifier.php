@@ -139,7 +139,9 @@ final class ResourcePackageVerifier {
 				$stat = $zip->statIndex( $index );
 				if ( false === $stat || ! is_string( $stat['name'] ?? null )
 					|| ! is_int( $stat['size'] ?? null ) || ! is_int( $stat['comp_size'] ?? null )
-					|| ! is_int( $stat['comp_method'] ?? null ) || ! is_int( $stat['crc'] ?? null ) ) {
+					|| ! is_int( $stat['comp_method'] ?? null ) || ! is_int( $stat['crc'] ?? null )
+					|| ! is_int( $stat['encryption_method'] ?? null )
+					|| \ZipArchive::EM_NONE !== $stat['encryption_method'] ) {
 					return null;
 				}
 				$name = $stat['name'];

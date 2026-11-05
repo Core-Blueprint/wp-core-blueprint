@@ -182,6 +182,8 @@ class ResourcePackageVerifierTest(unittest.TestCase):
         self.package()
         content = bytearray(self.path.read_bytes())
         content[6] |= 1  # local header general purpose flags
+        central = content.index(b"PK\x01\x02")
+        content[central + 8] |= 1  # central directory general purpose flags
         self.path.write_bytes(content)
         self.deny()
 
