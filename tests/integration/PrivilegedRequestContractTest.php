@@ -166,6 +166,34 @@ final class CB_Base_Privileged_Request_Contract_Test extends WP_UnitTestCase {
         self::assertSame( $emergency_audit, $this->audit_count( 'failsafe.emergency_activated' ) );
     }
 
+    /**
+     * SEC-02: the same password guard protects trusted-operator 2FA policy.
+     *
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function test_sec02_two_factor_policy_password_array_fails_closed(): void {
+        \CoreBlueprint\Core\Ajax\Handlers\TwoFactorPolicy::init();
+        self::assertFalse( has_action( 'wp_ajax_nopriv_cb_core_set_two_factor_policy' ) );
+
+        $operator = $this->create_operator( true );
+        wp_set_current_user( (int) $operator->ID );
+        $mode_before = \CoreBlueprint\Core\Security\TwoFactor\Policy::mode();
+
+        $this->set_post( [
+            'nonce'    => wp_create_nonce( 'cb_core_admin' ),
+            'password' => [ 'unexpected' ],
+            'mode'     => \CoreBlueprint\Core\Security\TwoFactor\Policy::MODE_ENFORCE,
+        ] );
+        $result = $this->capture_termination(
+            static fn() => do_action( 'wp_ajax_cb_core_set_two_factor_policy' ),
+            true
+        );
+        self::assertSame( 400, $this->response_code( $result['termination'] ) );
+        self::assertFalse( $this->json_payload( $result['output'] )['success'] );
+        self::assertSame( $mode_before, \CoreBlueprint\Core\Security\TwoFactor\Policy::mode(), 'Malformed password changed the site-wide 2FA policy.' );
+    }
+
     public function test_c1_typed_integer_request_rejects_non_scalar_shapes_without_changing_scalar_casts(): void {
         $this->set_post( [ 'report_id' => [ 'unexpected' ] ] );
         self::assertSame( 7, Request::int( 'report_id', 7 ) );
