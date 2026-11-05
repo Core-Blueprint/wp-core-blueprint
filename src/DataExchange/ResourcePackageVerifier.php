@@ -26,7 +26,7 @@ final class ResourcePackageVerifier {
 	 * @return array<string,mixed>|WP_Error
 	 */
 	public static function verify_file( string $path ): array|WP_Error {
-		if ( '' === $path || is_link( $path ) || ! is_file( $path ) || ! is_readable( $path ) ) {
+		if ( ! function_exists( 'gzinflate' ) || '' === $path || is_link( $path ) || ! is_file( $path ) || ! is_readable( $path ) ) {
 			return self::refuse();
 		}
 		$size = filesize( $path );
