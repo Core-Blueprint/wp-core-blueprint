@@ -83,6 +83,8 @@ The Data Exchange size and depth bounds apply; this contract does not introduce 
 
 ## Resource boundary — FRG-T4-01B
 
+The six-consumer source audit is documented in [TEMPLATE-PORTABILITY-RESOURCE-RECONCILIATION.md](TEMPLATE-PORTABILITY-RESOURCE-RECONCILIATION.md). A narrow resource package candidate and test-only fingerprint proof are in [TEMPLATE-PORTABILITY-RESOURCE-PACKAGE-CONTRACT.md](TEMPLATE-PORTABILITY-RESOURCE-PACKAGE-CONTRACT.md). Reports and Certificates have verified source-level media dependencies; this does not approve a ZIP API, add resource ingestion, or change `resources: []` for FRG-T4-01A.
+
 Before designing a ZIP transport, classify **portable embedded resources**, **installation-bound dependencies requiring user rebinding**, and **temporary preview data** for each of the six consumers. The current JSON record supports no dependent binary resources. A package is warranted only by a verified resource requirement. If needed, document bytes, required resource digests and selected import decisions must be bound to the *same* validated preview/fingerprint; distinguish integrity, consistency and failure recovery. Do not promise universal atomicity or implement another transaction engine.
 
 ## Verification and release boundary
