@@ -397,15 +397,14 @@ class ExecutionSafetyTest(unittest.TestCase):
         self.assertEqual((124, "inactivity"), result)
         self.assertTrue(marker.is_file())
         child_pid = int(marker.read_text())
+        # A terminated child may already be reaped, or remain a zombie.
+        # Checking its PID separately races with removal of /proc/<pid>/stat.
         try:
-            os.kill(child_pid, 0)
-        except ProcessLookupError:
+            stat = (Path("/proc") / str(child_pid) / "stat").read_text()
+        except FileNotFoundError:
             pass
         else:
-            # An orphaned terminated child can remain a zombie until reaped.
-            self.assertEqual(
-                "Z", (Path("/proc") / str(child_pid) / "stat").read_text().split()[2]
-            )
+            self.assertEqual("Z", stat.split()[2])
 
     def test_cli_execute_remains_blocked_without_any_changes(self):
         result = subprocess.run(
