@@ -89,6 +89,29 @@ final class CB_Base_Privileged_Request_Contract_Test extends WP_UnitTestCase {
         self::assertFalse( Request::bool( 'enabled' ) );
     }
 
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function test_c1_ajax_slug_and_text_reject_non_scalar_request_values(): void {
+        $this->set_post( [ 'mode' => [ 'unexpected' ] ] );
+        $slug_result = $this->capture_termination( static fn() => Request::sanitize_key( 'mode' ), true );
+        self::assertSame( 400, $this->response_code( $slug_result['termination'] ) );
+        self::assertFalse( $this->json_payload( $slug_result['output'] )['success'] );
+
+        $this->set_post( [ 'value' => [ 'unexpected' ] ] );
+        $text_result = $this->capture_termination( static fn() => Request::text( 'value' ), true );
+        self::assertSame( 400, $this->response_code( $text_result['termination'] ) );
+        self::assertFalse( $this->json_payload( $text_result['output'] )['success'] );
+
+        $this->set_post( [ 'mode' => 'valid_mode', 'value' => 'Valid label' ] );
+        self::assertSame( 'valid_mode', Request::sanitize_key( 'mode' ) );
+        self::assertSame( 'Valid label', Request::text( 'value' ) );
+
+        $this->set_post( [] );
+        self::assertSame( 'fallback', Request::text( 'value', 'fallback' ) );
+    }
+
     public function test_c1_typed_integer_request_rejects_non_scalar_shapes_without_changing_scalar_casts(): void {
         $this->set_post( [ 'report_id' => [ 'unexpected' ] ] );
         self::assertSame( 7, Request::int( 'report_id', 7 ) );
