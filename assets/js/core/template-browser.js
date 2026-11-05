@@ -64,7 +64,8 @@ function createBrowser( root, options = {} ) {
         requestGeneration: 0, controller: null, timer: null, destroyed: false,
     };
     const shell = el( 'section', 'cb-template-browser' );
-    const sidebar = el( 'nav', 'cb-template-browser__sidebar' );
+    const sidebar = el( 'div', 'cb-template-browser__sidebar' );
+    sidebar.setAttribute( 'role', 'group' );
     sidebar.setAttribute( 'aria-label', label( 'origin', 'Origin' ) );
     const content = el( 'div', 'cb-template-browser__content' );
     const toolbar = el( 'div', 'cb-template-browser__toolbar' );
@@ -93,13 +94,13 @@ function createBrowser( root, options = {} ) {
         button.addEventListener( 'click', () => {
             state.filters.origin = value;
             updateCategoryOptions();
-            originButtons.forEach( ( item ) => item.setAttribute( 'aria-current', String( item === button ) ) );
+            originButtons.forEach( ( item ) => item.setAttribute( 'aria-pressed', String( item === button ) ) );
             refresh();
         } );
         sidebar.append( button );
         return button;
     } );
-    originButtons[0].setAttribute( 'aria-current', 'true' );
+    originButtons[0].setAttribute( 'aria-pressed', 'true' );
 
     const search = el( 'input', 'cb-template-browser__search' );
     search.type = 'search';
@@ -107,12 +108,22 @@ function createBrowser( root, options = {} ) {
     search.setAttribute( 'aria-label', label( 'search', 'Search templates' ) );
     search.maxLength = 120;
 
+    const filterDefaults = {
+        source: [ 'allSources', 'All sources' ],
+        extension: [ 'allPlugins', 'All plugins' ],
+        designer: [ 'allDesignerTypes', 'All designer types' ],
+        category: [ 'allCategories', 'All categories' ],
+    };
+    function emptyOption( name ) {
+        const [ key, fallback ] = filterDefaults[name] || [ 'all', 'All templates' ];
+        return option( '', label( key, fallback ) );
+    }
     function addSelect( name, translationKey, fallback, choices = [] ) {
         const wrapper = el( 'label', 'cb-template-browser__field' );
         wrapper.append( el( 'span', '', label( translationKey, fallback ) ) );
         const select = el( 'select' );
         select.dataset.filter = name;
-        select.append( option( '', label( 'all', 'All templates' ) ) );
+        select.append( emptyOption( name ) );
         choices.forEach( ( [ value, title ] ) => select.append( option( value, title ) ) );
         select.addEventListener( 'change', () => {
             state.filters[name] = select.value;
@@ -143,7 +154,7 @@ function createBrowser( root, options = {} ) {
                 if ( !available.has( category.id ) ) available.set( category.id, category.label );
             }
         }
-        categorySelect.replaceChildren( option( '', label( 'all', 'All templates' ) ) );
+        categorySelect.replaceChildren( emptyOption( 'category' ) );
         [ ...available.entries() ].sort( ( a, b ) => a[1].localeCompare( b[1] ) )
             .forEach( ( [ id, title ] ) => categorySelect.append( option( id, title ) ) );
         categorySelect.disabled = available.size === 0;
@@ -192,7 +203,7 @@ function createBrowser( root, options = {} ) {
             item.compatible ? 'cb-template-browser__status' : 'cb-template-browser__status cb-template-browser__status--blocked',
             item.compatible ? label( 'compatible', 'Compatible' ) : label( 'incompatible', 'Not compatible' )
         );
-        body.append( stateBadge );
+        if ( contextual || !item.compatible ) body.append( stateBadge );
         article.append( body );
         // T3: management is navigation to the owning extension, never a
         // Base-owned write/export/delete request. Contextual Designer selection
@@ -249,7 +260,7 @@ function createBrowser( root, options = {} ) {
             } );
             state.cursor = payload.next_cursor;
             message.textContent = ( state.entries.length || state.cursor ) ? '' : label( 'noResults', 'No templates found.' );
-            summary.textContent = String( state.entries.length );
+            summary.textContent = label( 'resultsShown', 'Templates shown' ) + ': ' + String( state.entries.length );
             more.hidden = !state.cursor;
         } catch ( error ) {
             if ( !controller.signal.aborted && !state.destroyed && generation === state.requestGeneration ) {
