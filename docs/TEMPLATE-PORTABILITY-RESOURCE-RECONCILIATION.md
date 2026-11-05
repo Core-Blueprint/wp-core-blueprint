@@ -1,8 +1,8 @@
 # Template Library — FRG-T4-01B Resource Portability Reconciliation
 
-**Date:** 2026-11-05  
-**Status:** SOURCE audit and proposed Base/consumer boundary — **not** package implementation or FRG-04 contract freeze.  
-**Baseline:** Base `6f82a7f4a2eba30f9257785aa94cdc85cbce0214`, after FRG-T4-01A merge.  
+**Date:** 2026-11-05
+**Status:** SOURCE audit and proposed Base/consumer boundary — **not** package implementation or FRG-04 contract freeze.
+**Baseline:** Base `6f82a7f4a2eba30f9257785aa94cdc85cbce0214`, after FRG-T4-01A merge.
 **Scope:** six approved Designer consumers: Contracts, Reports, Automations, Evaluator, Certificates, Invoice & Quotes.
 
 ## Decision basis
