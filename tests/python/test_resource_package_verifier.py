@@ -32,6 +32,13 @@ namespace {
 '''
 
 
+HAS_ZIP = subprocess.run(
+    ["php", "-r", "exit(class_exists('ZipArchive', false) ? 0 : 1);"],
+    check=False, capture_output=True,
+).returncode == 0
+
+
+@unittest.skipUnless(HAS_ZIP, "PHP ZipArchive optional extension unavailable")
 class ResourcePackageVerifierTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -186,9 +193,8 @@ class ResourcePackageVerifierTest(unittest.TestCase):
         self.path.write_bytes(content)
         self.deny()
 
-    def test_zip_trailing_bytes_refuses(self):
-        self.package()
-        self.path.write_bytes(self.path.read_bytes() + b"trailing")
+    def test_unsupported_compression_refuses(self):
+        self.package(method=zipfile.ZIP_BZIP2)
         self.deny()
 
     def test_symlinked_package_path_refuses(self):
@@ -201,6 +207,23 @@ class ResourcePackageVerifierTest(unittest.TestCase):
     def test_oversized_archive_refuses(self):
         self.path.write_bytes(b"X" * (24 * 1024 * 1024 + 1))
         self.deny()
+
+
+class ResourcePackageUnavailableTest(unittest.TestCase):
+    def test_no_zip_extension_fails_closed_without_filesystem_access(self):
+        with tempfile.TemporaryDirectory() as area:
+            driver = Path(area) / "verify.php"
+            driver.write_text(PHP_DRIVER)
+            missing_file = Path(area) / "never-created.zip"
+            result = subprocess.run(
+                ["php", "-n", str(driver), str(ROOT), str(missing_file)],
+                check=False, capture_output=True, text=True,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(
+                {"valid": False, "error": "cb_core_resource_package_unavailable"},
+                json.loads(result.stdout),
+            )
 
 
 if __name__ == "__main__":
