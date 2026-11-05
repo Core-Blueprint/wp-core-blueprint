@@ -72,9 +72,11 @@ final class CB_T4_Portable_Template_Fixture implements EntityInterface {
 			|| 'operations' !== $record['category']
 			|| [] !== $record['resources']
 			|| ! is_array( $record['document'] )
-			|| array_keys( $record['document'] ) !== [ 'steps', 'layout' ]
+			|| [] !== array_diff( [ 'steps', 'layout' ], array_keys( $record['document'] ) )
+			|| [] !== array_diff( array_keys( $record['document'] ), [ 'steps', 'layout' ] )
 			|| ! is_array( $record['document']['steps'] )
 			|| ! array_is_list( $record['document']['steps'] )
+			|| [] !== $record['document']['steps']
 			|| ! is_array( $record['document']['layout'] )
 			|| [ 'columns' => 1 ] !== $record['document']['layout'] ) {
 			return new WP_Error( 'fixture_invalid_portable_template', 'Template does not match the current portable document contract.' );
@@ -366,7 +368,7 @@ final class CB_T4_Template_Portability_Contract_Test extends WP_UnitTestCase {
 	private function create_fixture(): void {
 		$directory = WP_PLUGIN_DIR . '/' . self::PROVIDER;
 		self::assertTrue( wp_mkdir_p( $directory ) );
-		$php = "<?php\n/**\n * Plugin Name: Acme T4 Portability\n * Version: 1.0.0\n */\ndefined( 'ABSPATH' ) || exit;\n";
+		$php = "<?php\n/**\n * Plugin Name: Acme T4 Portability\n * Author: Acme Labs\n * Version: 1.0.0\n */\ndefined( 'ABSPATH' ) || exit;\n";
 		self::assertNotFalse( file_put_contents( $directory . '/' . self::PROVIDER . '.php', $php ) );
 	}
 
