@@ -17,12 +17,18 @@
 		</div>
 
 		<div class="cb-core-design-shell__workspace">
-			<aside class="cb-core-design-shell__palette" aria-label="Elements">Palette</aside>
+			<section class="cb-core-design-shell__palette cb-core-design-shell__palette--composed" aria-label="Elements and Layers">
+				<div class="cb-core-design-shell__palette-tabs">
+					<button type="button" data-cb-design-shell-group="palette" data-cb-design-shell-palette-role="elements" data-cb-design-shell-tab="elements">Elements</button>
+					<button type="button" data-cb-design-shell-group="palette" data-cb-design-shell-palette-role="layers" data-cb-design-shell-tab="layers">Layers</button>
+				</div>
+				<div data-cb-design-shell-panel="elements">Element choices</div>
+				<div data-cb-design-shell-panel="layers" hidden>Layers content</div>
+			</section>
 			<main class="cb-core-design-shell__canvas">Canvas</main>
-			<aside class="cb-core-design-shell__sidebar" aria-label="Properties">
+			<aside class="cb-core-design-shell__sidebar cb-core-design-shell__sidebar--composed" aria-label="Properties">
 				<div class="cb-core-design-shell__sidebar-tabs">
 					<button type="button" class="cb-core-design-shell__sidebar-tab" data-cb-design-shell-tab="inspector" data-cb-design-shell-sidebar-role="inspector">Inspector</button>
-					<button type="button" class="cb-core-design-shell__sidebar-tab" data-cb-design-shell-tab="layers" data-cb-design-shell-sidebar-role="layers">Layers</button>
 					<button type="button" class="cb-core-design-shell__sidebar-tab" data-cb-design-shell-tab="settings" data-cb-design-shell-sidebar-role="settings">Settings</button>
 				</div>
 				<div class="cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="inspector">
@@ -36,7 +42,6 @@
 						</label>
 					</div>
 				</div>
-				<div class="cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="layers" hidden>Layers content</div>
 				<div class="cb-core-design-shell__sidebar-panel" data-cb-design-shell-panel="settings" hidden>Settings content</div>
 			</aside>
 		</div>

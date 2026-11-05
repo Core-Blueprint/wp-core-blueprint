@@ -9,8 +9,9 @@ No consumer documents or credentials are saved by Core Blueprint Base.
 Base global Library can display an optional **Preview** and **Manage**
 navigation link on a template card supplied by an authorized provider.
 The Designer-locked picker remains selection-only; it never exposes
-cross-Designer management actions. Legacy TemplateSourceInterface consumers
-remain fully compatible and simply show no management links.
+cross-Designer management actions. Sources that do not implement the optional management interface simply
+expose no management links. This is a current capability boundary, not a
+promise to preserve deprecated provider interfaces.
 
 Only a registered source implementing
 CoreBlueprint\Core\TemplateLibrary\TemplateManagementSourceInterface
@@ -72,11 +73,15 @@ Provider exceptions fail closed and never expose document payloads.
   WordPress site-network cross-boundary escalation.
 - No Marketplace/Repository/Updates online request.
 
-**Future T3B** delivers the actual Save as template, scoped owner storage,
-duplicate, safe export/delete and independent instance creation in the
-**Automations consumer**, and the appropriate provider-specific operations
-in other Designers. T4 defines offline ZIP manifest/import; it is not part
-of this T3A candidate.
+**Future T3B** delivers Save as template, scoped owner storage, duplicate,
+delete and independent instance creation in the **Automations consumer**, and
+corresponding provider-specific actions in other Designers. **Offline export
+and import are required** for user backups and WordPress-site portability.
+T4 defines a shared portable package contract, with per-consumer authorized
+export/import; this is separate from the T3A navigation candidate and must be
+accepted before the relevant products are called complete. Online distribution
+is explicitly not a prerequisite. See
+[TEMPLATE-OFFLINE-PORTABILITY-REQUIREMENT.md](TEMPLATE-OFFLINE-PORTABILITY-REQUIREMENT.md).
 
 ## Tests and evidence
 

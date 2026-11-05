@@ -32,6 +32,7 @@ test('browser is metadata-only and uses inert DOM presentation', () => {
   assert.doesNotMatch(browser, /localStorage/);
   assert.match(browser, /await onChoose\( \{ \.\.\.selected \} \)/);
   assert.doesNotMatch(browser, /create[_-]workflow|activate[_-]workflow/i);
+  assert.match(browser, /if \( contextual \|\| !item\.compatible \) body\.append\( stateBadge \)/);
 });
 
 test('Load more carries the signed page cursor through the GET query and keeps filters', () => {
@@ -52,7 +53,7 @@ test('T3 global management stays delegated to local owner screens', () => {
   assert.doesNotMatch(browser, /onDelete|deleteTemplate|exportTemplate/);
 });
 
-test('standalone Template Library uses viewport-filling flex without changing Designer modal layout', () => {
+test('standalone Template Library fills the page without stretching card grid rows', () => {
   assert.match(styles, /\.cb-template-browser\s*\{\s*display: grid;/);
   assert.match(styles, /\.cb-template-library-page\s*\{[^}]*max-width: none;/);
   assert.doesNotMatch(styles, /\.cb-template-library-page\s*\{[^}]*max-width:\s*1440px;/);
@@ -60,7 +61,13 @@ test('standalone Template Library uses viewport-filling flex without changing De
   assert.match(styles, /\.cb-template-library-page > \[data-cb-template-library-global\]\s*\{[^}]*display: flex;[^}]*flex: 1 1 auto;/);
   assert.match(styles, /\.cb-template-library-page \.cb-template-browser\s*\{[^}]*display: flex;[^}]*flex: 1 1 auto;/);
   assert.match(styles, /\.cb-template-library-page \.cb-template-browser__sidebar\s*\{[^}]*flex: 0 0 clamp\(160px, 19%, 236px\);/);
-  assert.match(styles, /\.cb-template-library-page \.cb-template-browser__grid\s*\{[^}]*flex: 1 1 auto;/);
+  assert.match(styles, /\.cb-template-library-page \.cb-template-browser__grid\s*\{[^}]*flex: 0 0 auto;/);
+  assert.match(styles, /\.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: 1fr;/);
+  assert.match(styles, /\.cb-template-browser__grid\s*\{[^}]*align-content: start;/);
+  assert.match(styles, /\.cb-template-browser__card\s*\{[^}]*display: flex;[^}]*flex-direction: column;/);
+  assert.match(styles, /\.cb-template-browser__card-body\s*\{[^}]*flex: 1 1 auto;/);
+  assert.doesNotMatch(styles, /\.cb-template-browser__card-body\s*\{[^}]*height: 100%;/);
+  assert.match(styles, /\.cb-template-browser__actions\s*\{[^}]*border-block-start:/);
   assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?\.cb-template-library-page \.cb-template-browser\s*\{ flex-direction: column; \}/);
 });
 
@@ -146,7 +153,11 @@ test('filter interaction is safe while the source metadata response is pending',
   context.window.cbCore.templateBrowser.createBrowser(root);
   const sidebar = root.children[0].children[0];
   const builtIn = sidebar.children[1];
+  assert.equal(sidebar.role, 'group', 'Origin buttons are a filter group, not page navigation');
+  assert.equal(sidebar.children[0]['aria-pressed'], 'true');
   assert.doesNotThrow(() => builtIn.events.get('click')());
+  assert.equal(builtIn['aria-pressed'], 'true', 'The active origin is conveyed as pressed');
+  assert.equal(sidebar.children[0]['aria-pressed'], 'false', 'The previously active origin is not pressed');
   assert.equal(
     calls.filter((url) => url.includes('/templates?') && new URL(url, 'https://example.test').searchParams.get('origin') === 'built-in').length,
     1,
