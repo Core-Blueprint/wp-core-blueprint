@@ -5,7 +5,7 @@ final class CB_Base_Internal_History_Language_Contract_Test extends WP_UnitTestC
 
 	public function test_stale_pre_v1_history_language_does_not_return(): void {
 		$console    = file_get_contents( CB_CORE_DIR . 'src/Console/Rest/RunController.php' );
-		$foundation = file_get_contents( CB_CORE_DIR . 'docs/foundation-v1-contract.md' );
+		$foundation = file_get_contents( dirname( __DIR__, 2 ) . '/docs/foundation-v1-contract.md' );
 		$changelog  = file_get_contents( CB_CORE_DIR . 'CHANGELOG.md' );
 
 		self::assertIsString( $console );

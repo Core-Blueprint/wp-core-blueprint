@@ -4,11 +4,11 @@ declare(strict_types=1);
 final class CB_Base_Core_Api_Documentation_Contract_Test extends WP_UnitTestCase {
 
 	public function test_core_api_1_2_is_canonical_across_runtime_and_documentation(): void {
-		$public_api = file_get_contents( CB_CORE_DIR . 'docs/PUBLIC-API.md' );
-		$reorder    = file_get_contents( CB_CORE_DIR . 'docs/REORDER-FOUNDATION.md' );
-		$secrets    = file_get_contents( CB_CORE_DIR . 'docs/SECRET-PROTECTION-FOUNDATION.md' );
+		$public_api = file_get_contents( dirname( __DIR__, 2 ) . '/docs/PUBLIC-API.md' );
+		$reorder    = file_get_contents( dirname( __DIR__, 2 ) . '/docs/REORDER-FOUNDATION.md' );
+		$secrets    = file_get_contents( dirname( __DIR__, 2 ) . '/docs/SECRET-PROTECTION-FOUNDATION.md' );
 		$changelog  = file_get_contents( CB_CORE_DIR . 'CHANGELOG.md' );
-		$history    = file_get_contents( CB_CORE_DIR . 'CHANGELOG-HISTORY.md' );
+		$history    = file_get_contents( dirname( __DIR__, 2 ) . '/CHANGELOG-HISTORY.md' );
 		$extensions = file_get_contents( CB_CORE_DIR . 'src/Extensions.php' );
 
 		self::assertSame( '1.2', CB_CORE_API_VERSION );
@@ -41,7 +41,7 @@ final class CB_Base_Core_Api_Documentation_Contract_Test extends WP_UnitTestCase
 	}
 
 	public function test_public_admin_ui_requirement_vocabulary_matches_documented_boundary(): void {
-		$public_api = (string) file_get_contents( CB_CORE_DIR . 'docs/PUBLIC-API.md' );
+		$public_api = (string) file_get_contents( dirname( __DIR__, 2 ) . '/docs/PUBLIC-API.md' );
 		$registry   = new ReflectionClass( \CoreBlueprint\Core\Admin\PageRegistry::class );
 
 		$foundations = $registry->getConstant( 'FOUNDATION_REQUIREMENTS' );

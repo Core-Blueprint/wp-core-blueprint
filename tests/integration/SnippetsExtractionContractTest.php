@@ -42,7 +42,7 @@ final class CB_Base_Snippets_Extraction_Contract_Test extends WP_UnitTestCase {
 	public function test_public_documentation_does_not_claim_snippets_as_base_runtime(): void {
 		$readme    = (string) file_get_contents( CB_CORE_DIR . 'readme.txt' );
 		$readme_md = (string) file_get_contents( CB_CORE_DIR . 'README.md' );
-		$dashboard = (string) file_get_contents( CB_CORE_DIR . 'docs/DASHBOARD-CARD-API.md' );
+		$dashboard = (string) file_get_contents( dirname( __DIR__, 2 ) . '/docs/DASHBOARD-CARD-API.md' );
 
 		self::assertStringNotContainsString( '= Managed Snippets =', $readme );
 		self::assertStringNotContainsString( 'managed snippets', strtolower( $readme ) );

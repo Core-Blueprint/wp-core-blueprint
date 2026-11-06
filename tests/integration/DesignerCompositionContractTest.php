@@ -4,7 +4,11 @@ declare(strict_types=1);
 final class CB_Designer_Composition_Contract_Test extends WP_UnitTestCase {
 
 	private function source( string $relative_path ): string {
-		$path = CB_CORE_DIR . $relative_path;
+		// Docs are repository-only contracts; runtime assets must be tested
+		// against the installed, manifest-verified WordPress package.
+		$path = str_starts_with( $relative_path, 'docs/' )
+			? dirname( __DIR__, 2 ) . '/' . $relative_path
+			: CB_CORE_DIR . $relative_path;
 		self::assertFileExists( $path );
 		$source = file_get_contents( $path );
 		self::assertIsString( $source );

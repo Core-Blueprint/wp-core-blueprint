@@ -169,7 +169,7 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 
 	public function test_public_security_reporting_path_is_current(): void {
 		$readme_md = file_get_contents( CB_CORE_DIR . 'README.md' );
-		$security  = file_get_contents( CB_CORE_DIR . 'SECURITY.md' );
+		$security  = file_get_contents( dirname( __DIR__, 2 ) . '/SECURITY.md' );
 		self::assertIsString( $readme_md );
 		self::assertIsString( $security );
 		self::assertStringContainsString(
@@ -184,7 +184,7 @@ final class CB_Base_WordPress_Org_Submission_Contract_Test extends WP_UnitTestCa
 	}
 
 	public function test_release_builder_requires_directory_readme(): void {
-		$builder = file_get_contents( CB_CORE_DIR . 'tools/build-release' );
+		$builder = file_get_contents( dirname( __DIR__, 2 ) . '/tools/build-release' );
 		self::assertIsString( $builder );
 		self::assertStringContainsString( '"readme.txt"', $builder );
 	}
