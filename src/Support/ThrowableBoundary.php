@@ -33,6 +33,25 @@ final class ThrowableBoundary {
 		];
 	}
 
+
+	/**
+	 * Preserve only explicitly enumerated, operator-safe domain messages.
+	 *
+	 * A Throwable's raw message is never returned to the caller. An unexpected
+	 * provider/storage exception must receive the fixed fallback instead.
+	 *
+	 * @param list<string> $known_messages
+	 */
+	public static function known_message( Throwable $throwable, array $known_messages, string $fallback ): string {
+		$candidate = $throwable->getMessage();
+		foreach ( $known_messages as $known ) {
+			if ( is_string( $known ) && '' !== $known && hash_equals( $known, $candidate ) ) {
+				return $known;
+			}
+		}
+		return $fallback;
+	}
+
 	/**
 	 * Return a non-secret diagnostic identity for last-resort debug logging.
 	 */
