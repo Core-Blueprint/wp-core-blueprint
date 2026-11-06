@@ -85,7 +85,11 @@ final class Reports {
 		} catch ( \InvalidArgumentException $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ], 400 );
 		} catch ( \Throwable $e ) {
-			AuditLog::log( 'reports.generation_failed', 'warning', ThrowableBoundary::context( $e, 'generation_failed' ) );
+			try {
+				AuditLog::log( 'reports.generation_failed', 'warning', ThrowableBoundary::context( $e, 'generation_failed' ) );
+			} catch ( \Throwable $ignored ) {
+				// Audit storage failures must not change the safe outward response.
+			}
 			wp_send_json_error( [
 				'message' => __( 'Generation failed - see audit log for details.', 'core-blueprint' ),
 				'code'   => 'reports_generation_failed',
