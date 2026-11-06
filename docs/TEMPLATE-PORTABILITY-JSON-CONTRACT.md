@@ -1,6 +1,6 @@
 # Canonical Template Portability — JSON Contract (FRG-T4-01A)
 
-**Status:** Base contract candidate — SOURCE implementation; WordPress integration and FRG-T4-01 acceptance pending.  
+**FRG-04 reconciled status (6 November 2026):** Base asset-free JSON v1 contract is implemented on `main@18023119473f27a95eac3215b25fcc30d115641f`, backed by the existing Data Exchange Engine and test-only portability provider. FRG-T4-01E real-resource ZIP → staging → Data Exchange integration was operator-reported 8/8 PASS at the accepted feature HEAD and is now merged; that does not prove a real asset-free or resource-bearing consumer site-to-site import. Consumer endpoints, ownership/ACL, export selection, actual persistence and FIELD acceptance remain pending. **Historical checkpoint:** SOURCE-only implementation and integration were pending when this contract was originally authored.  
 **Foundation:** `CoreBlueprint\Core\DataExchange\Engine` v1.  
 **Scope:** offline **asset-free, single-template JSON** exchange; no consumer endpoint is implemented by this document.
 
