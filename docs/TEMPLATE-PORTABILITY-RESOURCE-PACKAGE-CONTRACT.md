@@ -1,6 +1,6 @@
 # FRG-T4-01B — Minimal Resource Package Contract Candidate
 
-**Status:** Contract + test-only planning proof; archive transport, resource storage and public API **NOT IMPLEMENTED**.
+**FRG-04 reconciled status (6 November 2026):** Internal Base resource package verification (`ResourcePackageVerifier`), private staging (`ResourcePackageStage`), scoped canonical Data Exchange preview/apply binding (`ResourcePackageImport`) and real-ZIP-to-test-consumer integration regression are **implemented and merged** at `main@18023119473f27a95eac3215b25fcc30d115641f`. Chris reported 8/8 ZIP-enabled end-to-end tests, Level 1 and dev ZIP/checksum PASS at the accepted FRG-T4-01E feature HEAD `4a01194ee097cc54310b0a859f1d5d896bb3cac6`; exact terminal logs were not independently supplied. **Not implemented:** consumer HTTP upload/export routes, actual Reports/Certificates asset import, image decode/re-encode, storage/recovery, and two-site FIELD transfer. This candidate manifest is a supported internal verifier grammar, **not** a frozen public consumer package API or product-complete offline import. Historical development-status paragraphs below describe their individual implementation checkpoints.
 **Baseline:** Base Data Exchange Foundation v1 after merge `6f82a7f4a2eba30f9257785aa94cdc85cbce0214`.
 **Related:** [FRG-T4-01B Consumer Audit](TEMPLATE-PORTABILITY-RESOURCE-RECONCILIATION.md) and [Asset-Free JSON Contract](TEMPLATE-PORTABILITY-JSON-CONTRACT.md).
 
