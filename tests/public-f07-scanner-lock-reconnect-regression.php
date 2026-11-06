@@ -199,6 +199,19 @@ $rejects( static function () use ( $key, $db, &$ran ): void {
 }, 'nested operation rejects lost lock' );
 $check( ! $ran && 0 === $db->releases, 'stale worker never runs or releases' );
 
+// Same PHP mysqli handle, different server session: successor's lock is not released.
+$GLOBALS['wpdb'] = $db = new CB_F07_Fake_Database();
+$rejects( static function () use ( $key, $db ): void {
+	ChunkedOptionStore::with_lock( $key, static function () use ( $db ): void {
+		$db->session_id++; // In-place server-session replacement.
+		$db->lock_owner = $db->session_id; // Simulated successor ownership.
+	} );
+}, 'in-place session change must fail before RELEASE_LOCK' );
+$check(
+	0 === $db->releases && $db->lock_owner === $db->session_id,
+	'in-place reconnect never releases successor mutex'
+);
+
 $GLOBALS['wpdb'] = $db = new CB_F07_Fake_Database();
 $rejects( static function () use ( $key, $db ): void {
 	ChunkedOptionStore::with_lock( $key, static function () use ( $db ): void {
