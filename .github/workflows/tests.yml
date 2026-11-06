@@ -119,6 +119,11 @@ jobs:
       - name: Install pinned WordPress test environment
         run: bash tests/bin/install-wp-tests.sh "${{ matrix.wordpress }}"
 
+      - name: Stage exact canonical internal package in ephemeral CI WordPress
+        run: |
+          python3 tools/build-dev
+          python3 tests/bin/stage-ci-package.py
+
       - name: Run integration suite
         run: vendor/bin/phpunit --testsuite integration
 
@@ -262,6 +267,11 @@ jobs:
 
       - name: Install pinned WordPress test environment
         run: bash tests/bin/install-wp-tests.sh 7.0
+
+      - name: Stage exact canonical internal package in ephemeral CI WordPress
+        run: |
+          python3 tools/build-dev
+          python3 tests/bin/stage-ci-package.py
 
       - name: Build candidate production ZIP
         run: python3 tools/build-release --output-dir "$RUNNER_TEMP/cb-release-candidate"
