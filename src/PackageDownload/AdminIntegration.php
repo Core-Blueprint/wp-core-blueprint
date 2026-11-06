@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\PackageDownload;
 
 use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use CoreBlueprint\Core\UI\Icon;
 use CoreBlueprint\Core\UI\Notice;
 
@@ -139,8 +140,7 @@ final class AdminIntegration {
 			self::audit_safely( 'package.download_failed', 'warning', [
 				'type'      => $type,
 				'package'   => $id,
-				'exception' => get_class( $e ),
-				'message'   => $e->getMessage(),
+				'diagnostic'=> ThrowableBoundary::context( $e, 'package_download_failed' ),
 			] );
 
 			// If streaming had already started, emitting wp_die() would corrupt the
@@ -150,7 +150,7 @@ final class AdminIntegration {
 			}
 
 			wp_die(
-				esc_html( $e->getMessage() ),
+				esc_html__( 'Package download failed', 'core-blueprint' ),
 				esc_html__( 'Package download failed', 'core-blueprint' ),
 				[ 'response' => 500 ]
 			);
@@ -281,7 +281,7 @@ final class AdminIntegration {
 			AuditLog::log( $event, $severity, $context );
 		} catch ( \Throwable $e ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'Core Blueprint package-download audit failure: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-only fallback after AuditLog itself failed.
+				error_log( 'Core Blueprint package-download audit failure: ' . ThrowableBoundary::diagnostic( $e ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-only fallback after AuditLog itself failed.
 			}
 		}
 	}
