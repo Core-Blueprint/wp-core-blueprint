@@ -192,7 +192,7 @@ namespace {
 
 def make_package(path: Path, *, scenario: str = "happy") -> None:
     digest = hashlib.sha256(PNG).hexdigest()
-    resource = {"key": "brand-logo", "media_type": "image/png", "size": len(PNG), "sha256": digest}
+    resource = {"key": "brand-logo", "sha256": digest, "size": len(PNG), "media_type": "image/png"}
     record = {
         "portable_id": "report-a",
         "resources": [resource],
