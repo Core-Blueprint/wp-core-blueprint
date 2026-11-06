@@ -38,6 +38,7 @@ use CoreBlueprint\Core\Console\CommandInterface;
 use CoreBlueprint\Core\Console\Registry;
 use CoreBlueprint\Core\Console\Result;
 use CoreBlueprint\Core\Log\AuditLog;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -284,9 +285,15 @@ final class RunController {
 		try {
 			$result = $instance->execute( $normalised );
 		} catch ( \Throwable $t ) {
+			// Exception messages can contain secrets, file paths or provider data.
+			// Log bounded failure metadata; never send raw exception text to REST.
+			AuditLog::log( 'console.command_exception', 'warning',
+				ThrowableBoundary::context( $t, 'command_execution_failed' ) + [
+					'command_id' => $cmd['id'],
+				]
+			);
 			$result = Result::error(
-				__( 'Command threw an exception: ', 'core-blueprint' ) . $t->getMessage(),
-				[ $t->getMessage() ]
+				__( 'The command could not be completed. Review the audit log.', 'core-blueprint' )
 			);
 		}
 		$duration_ms = (int) round( ( microtime( true ) - $started ) * 1000 );

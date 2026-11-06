@@ -27,7 +27,6 @@ final class ChallengeStore {
 	private const VERSION          = 2;
 	private const TRANSIENT_PREFIX = 'cb_core_2fa_ch_';
 	private const LOCK_PREFIX      = 'cb_core_2fa_ch_lock_';
-	private const LOCK_STALE_AFTER = 30;
 
 	/**
 	 * @return string 64-character random bearer token.
@@ -89,21 +88,23 @@ final class ChallengeStore {
 
 		$hash = hash( 'sha256', $token );
 		$lock = self::LOCK_PREFIX . $hash;
-		if ( ! self::acquire_lock( $lock ) ) {
+		$owner = self::acquire_lock( $lock );
+		if ( null === $owner ) {
 			return null;
 		}
 
 		try {
-			$key   = self::TRANSIENT_PREFIX . $hash;
-			$state = get_transient( $key );
-			delete_transient( $key );
+			$key     = self::TRANSIENT_PREFIX . $hash;
+			$state   = get_transient( $key );
+			$deleted = delete_transient( $key );
 
-			if ( ! is_array( $state ) ) {
+			// Never authenticate against a state that may still be stored.
+			if ( ! $deleted || ! is_array( $state ) ) {
 				return null;
 			}
 			return self::normalize_state( $state );
 		} finally {
-			delete_option( $lock );
+			self::release_lock_exact( $lock, $owner );
 		}
 	}
 
@@ -266,17 +267,42 @@ final class ChallengeStore {
 		return 64 === strlen( $token ) && 1 === preg_match( '/^[a-f0-9]{64}$/', $token );
 	}
 
-	private static function acquire_lock( string $lock ): bool {
-		if ( add_option( $lock, time(), '', false ) ) {
-			return true;
-		}
+	/**
+	 * Claim this one-time token without ever taking over an occupied lock.
+	 * Challenges expire independently; a crashed worker must not allow a
+	 * second request to consume the same password-authenticated state.
+	 *
+	 * @return array{token:string,acquired_at:int}|null
+	 */
+	private static function acquire_lock( string $lock ): ?array {
+		$owner = [
+			'token'       => bin2hex( random_bytes( 16 ) ),
+			'acquired_at' => time(),
+		];
+		return add_option( $lock, $owner, '', false ) ? $owner : null;
+	}
 
-		$created = (int) get_option( $lock, 0 );
-		if ( $created <= 0 || $created > time() - self::LOCK_STALE_AFTER ) {
-			return false;
+	/**
+	 * Delete only the exact option value that this request originally claimed.
+	 * A concurrent replacement must never be deleted by an older worker.
+	 *
+	 * @param array{token:string,acquired_at:int} $owner
+	 */
+	private static function release_lock_exact( string $lock, array $owner ): void {
+		global $wpdb;
+		try {
+			$deleted = $wpdb->query( $wpdb->prepare(
+				"DELETE FROM {$wpdb->options} WHERE option_name = %s AND BINARY option_value = BINARY %s",
+				$lock,
+				maybe_serialize( $owner )
+			) );
+		} finally {
+			wp_cache_delete( $lock, 'options' );
+			wp_cache_delete( 'notoptions', 'options' );
+			wp_cache_delete( 'alloptions', 'options' );
 		}
-
-		delete_option( $lock );
-		return (bool) add_option( $lock, time(), '', false );
+		if ( false === $deleted ) {
+			throw new RuntimeException( 'Could not release the two-factor challenge lock.' );
+		}
 	}
 }

@@ -17,6 +17,7 @@ use CoreBlueprint\Core\Integrity\Support\Audit;
 use CoreBlueprint\Core\Integrity\Support\ResultFormatter;
 use CoreBlueprint\Core\Integrity\Support\Summary;
 use CoreBlueprint\Core\Settings;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use Throwable;
 use WP_Error;
 use WP_REST_Request;
@@ -748,7 +749,7 @@ final class ScanController {
 			);
 			return new WP_REST_Response( [ 'item' => QuarantineService::public_item( $item ), 'open_count' => QuarantineRepository::open_count() ], 201 );
 		} catch ( Throwable $throwable ) {
-			return new WP_Error( 'cb_integrity_quarantine_failed', $throwable->getMessage(), [ 'status' => 409 ] );
+			return $this->unexpected_quarantine_error( $throwable, 'cb_integrity_quarantine_failed', 'quarantine_action_failed', 409 );
 		}
 	}
 
@@ -759,7 +760,7 @@ final class ScanController {
 				sanitize_text_field( (string) $request->get_param( 'file' ) )
 			), 200 );
 		} catch ( Throwable $throwable ) {
-			return new WP_Error( 'cb_integrity_quarantine_inspect_failed', $throwable->getMessage(), [ 'status' => 409 ] );
+			return $this->unexpected_quarantine_error( $throwable, 'cb_integrity_quarantine_inspect_failed', 'quarantine_inspection_failed', 409 );
 		}
 	}
 
@@ -783,7 +784,7 @@ final class ScanController {
 			$item = QuarantineService::restore( $id );
 			return new WP_REST_Response( [ 'item' => QuarantineService::public_item( $item ), 'open_count' => QuarantineRepository::open_count() ], 200 );
 		} catch ( Throwable $throwable ) {
-			return new WP_Error( 'cb_integrity_quarantine_restore_failed', $throwable->getMessage(), [ 'status' => 409 ] );
+			return $this->unexpected_quarantine_error( $throwable, 'cb_integrity_quarantine_restore_failed', 'quarantine_restore_failed', 409 );
 		}
 	}
 
@@ -795,7 +796,7 @@ final class ScanController {
 			$item = QuarantineService::delete_permanently( sanitize_key( (string) $request['id'] ) );
 			return new WP_REST_Response( [ 'item' => QuarantineService::public_item( $item ), 'open_count' => QuarantineRepository::open_count() ], 200 );
 		} catch ( Throwable $throwable ) {
-			return new WP_Error( 'cb_integrity_quarantine_delete_failed', $throwable->getMessage(), [ 'status' => 409 ] );
+			return $this->unexpected_quarantine_error( $throwable, 'cb_integrity_quarantine_delete_failed', 'quarantine_delete_failed', 409 );
 		}
 	}
 
@@ -804,7 +805,7 @@ final class ScanController {
 			$item = QuarantineService::add_note( sanitize_key( (string) $request['id'] ), (string) $request->get_param( 'note' ) );
 			return new WP_REST_Response( [ 'item' => QuarantineService::public_item( $item ) ], 200 );
 		} catch ( Throwable $throwable ) {
-			return new WP_Error( 'cb_integrity_quarantine_note_failed', $throwable->getMessage(), [ 'status' => 400 ] );
+			return $this->unexpected_quarantine_error( $throwable, 'cb_integrity_quarantine_note_failed', 'quarantine_note_failed', 400 );
 		}
 	}
 
@@ -813,7 +814,7 @@ final class ScanController {
 			$item = QuarantineService::set_review_state( sanitize_key( (string) $request['id'] ), sanitize_key( (string) $request->get_param( 'state' ) ) );
 			return new WP_REST_Response( [ 'item' => QuarantineService::public_item( $item ), 'open_count' => QuarantineRepository::open_count() ], 200 );
 		} catch ( Throwable $throwable ) {
-			return new WP_Error( 'cb_integrity_quarantine_state_failed', $throwable->getMessage(), [ 'status' => 400 ] );
+			return $this->unexpected_quarantine_error( $throwable, 'cb_integrity_quarantine_state_failed', 'quarantine_review_failed', 400 );
 		}
 	}
 
@@ -908,6 +909,21 @@ final class ScanController {
 		);
 
 		return $result;
+	}
+
+	/**
+	 * Unexpected Quarantine exceptions must never cross REST with their raw
+	 * messages; approved validation failures retain their separate endpoints.
+	 */
+	private function unexpected_quarantine_error( Throwable $throwable, string $code, string $reason, int $status ): WP_Error {
+		$this->audit( 'integrity.quarantine.unexpected_failure', 'warning',
+			ThrowableBoundary::context( $throwable, $reason )
+		);
+		return new WP_Error(
+			$code,
+			__( 'The quarantine action could not be completed. Review the audit log.', 'core-blueprint' ),
+			[ 'status' => $status ]
+		);
 	}
 
 	private function audit_failure( string $message ): void {

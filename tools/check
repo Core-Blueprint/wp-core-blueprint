@@ -50,6 +50,17 @@ if [[ -d "$ROOT/src/Profiles" ]]; then
   [[ -f "$ROOT/tests/public-reports-profile-a24-s3-regression.php" ]] \
     || fail 'S3 Reports Profile source regression is missing'
 fi
+# F07: reconnect-fencing regression is mandatory when the Scanner store exists.
+if [[ -f "$ROOT/src/Integrity/Storage/ChunkedOptionStore.php" ]]; then
+  [[ -f "$ROOT/tests/public-f07-scanner-lock-reconnect-regression.php" ]] \
+    || fail 'F07 Scanner reconnect regression is missing'
+fi
+# F08: full Base sources must keep the standalone exception-output contract.
+# Isolated orchestration fixtures can omit the Base production PHP tree.
+if [[ -f "$ROOT/src/Support/ThrowableBoundary.php" ]]; then
+  [[ -f "$ROOT/tests/public-f08-throwable-boundary-regression.php" ]] \
+    || fail 'F08 security exception regression is missing'
+fi
 [[ -d "$ROOT/tests/python" ]] || fail 'Python source-regression directory is missing'
 
 printf '== Composer metadata ==\n'
@@ -76,6 +87,12 @@ php tests/public-designer-v2-abi-regression.php
 php tests/public-settings-cas-regression.php
 php tests/public-settings-consumer-regression.php
 php tests/public-settings-six-consumer-regression.php
+if [[ -f "$ROOT/src/Integrity/Storage/ChunkedOptionStore.php" ]]; then
+  php tests/public-f07-scanner-lock-reconnect-regression.php
+fi
+if [[ -f "$ROOT/src/Support/ThrowableBoundary.php" ]]; then
+  php tests/public-f08-throwable-boundary-regression.php
+fi
 if [[ -d "$ROOT/src/Profiles" ]]; then
   php tests/public-reports-profile-a24-regression.php
   php tests/public-reports-profile-a24-s3-regression.php

@@ -71,7 +71,13 @@ final class ResultRepository {
 
 	public static function getLatest(): ?array {
 		$result = ChunkedOptionStore::get( self::OPTION_LATEST, null );
-		return StorageSchema::is_scan_result( $result ) ? $result : null;
+		if ( null === $result ) {
+			return null;
+		}
+		if ( ! StorageSchema::is_scan_result( $result ) ) {
+			throw new \RuntimeException( 'Core Scanner stored result has an invalid schema.' );
+		}
+		return $result;
 	}
 
 	public static function clear(): void {
@@ -166,6 +172,12 @@ final class ResultRepository {
 	// ─── Approved baseline ────────────────────────────────────────────────
 
 	public static function saveBaseline( array $result ): array {
+		return ChunkedOptionStore::with_lock( self::OPTION_BASELINE, static function () use ( $result ): array {
+			return self::saveBaseline_locked( $result );
+		} );
+	}
+
+	private static function saveBaseline_locked( array $result ): array {
 		$existing_baseline = self::getBaseline();
 		$existing_entries  = is_array( $existing_baseline['entries'] ?? null ) ? $existing_baseline['entries'] : [];
 		$candidate_entries = [];
@@ -250,6 +262,12 @@ final class ResultRepository {
 	}
 
 	public static function saveBaselineComponent( array $result, string $type, string $slug ): array {
+		return ChunkedOptionStore::with_lock( self::OPTION_BASELINE, static function () use ( $result, $type, $slug ): array {
+			return self::saveBaselineComponent_locked( $result, $type, $slug );
+		} );
+	}
+
+	private static function saveBaselineComponent_locked( array $result, string $type, string $slug ): array {
 		$type     = sanitize_key( $type );
 		$slug     = sanitize_key( $slug );
 		$baseline = self::getBaseline();
@@ -333,6 +351,12 @@ final class ResultRepository {
 	 * of approving the entire baseline anew.
 	 */
 	public static function removeBaselineComponent( string $type, string $slug ): ?array {
+		return ChunkedOptionStore::with_lock( self::OPTION_BASELINE, static function () use ( $type, $slug ): ?array {
+			return self::removeBaselineComponent_locked( $type, $slug );
+		} );
+	}
+
+	private static function removeBaselineComponent_locked( string $type, string $slug ): ?array {
 		$type     = sanitize_key( $type );
 		$slug     = sanitize_key( $slug );
 		$baseline = self::getBaseline();
@@ -439,7 +463,13 @@ final class ResultRepository {
 
 	public static function getBaseline(): ?array {
 		$baseline = ChunkedOptionStore::get( self::OPTION_BASELINE, null );
-		return StorageSchema::is_baseline( $baseline ) ? $baseline : null;
+		if ( null === $baseline ) {
+			return null;
+		}
+		if ( ! StorageSchema::is_baseline( $baseline ) ) {
+			throw new \RuntimeException( 'Core Scanner stored baseline has an invalid schema.' );
+		}
+		return $baseline;
 	}
 
 	public static function hasBaseline(): bool {

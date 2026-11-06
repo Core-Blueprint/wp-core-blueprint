@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Ajax\Handlers;
 
 use CoreBlueprint\Core\Ajax\Guards;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use CoreBlueprint\Core\Ajax\Request;
 use CoreBlueprint\Core\Permissions\PrivilegedAccessGuard;
 use CoreBlueprint\Core\Security\TwoFactor\Policy;
@@ -48,7 +49,14 @@ final class TwoFactorPolicy {
 			PolicyMutation::set_mode( $mode, $user, 'safeguards' );
 		} catch ( Throwable $error ) {
 			wp_send_json_error( [
-				'message' => $error->getMessage(),
+				'message' => ThrowableBoundary::known_message( $error, [
+				__( 'Two-factor enforcement cannot be enabled while Failsafe bypass is active.', 'core-blueprint' ),
+				__( 'Could not persist the two-factor policy.', 'core-blueprint' ),
+				__( 'Two-factor policy changed during rollback and was not overwritten.', 'core-blueprint' ),
+				__( 'Invalid two-factor policy mode.', 'core-blueprint' ),
+				__( 'Two-factor policy changes require a trusted CB Operator.', 'core-blueprint' ),
+				__( 'Two-factor enforcement requires the acting CB Operator to be enrolled in Base two-factor authentication.', 'core-blueprint' ),
+				], __( 'An error occurred.', 'core-blueprint' ) ),
 				'mode'    => Policy::mode(),
 			], 409 );
 		}

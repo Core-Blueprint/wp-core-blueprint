@@ -53,7 +53,7 @@ final class Actions {
 			echo CanonicalJson::encode( $document, JSON_PRETTY_PRINT ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON download body.
 			exit;
 		} catch ( \Throwable $error ) {
-			self::redirect_with_notice( 'error', $error->getMessage() );
+			self::redirect_with_notice( 'error', __( 'An error occurred.', 'core-blueprint' ) );
 		}
 	}
 
@@ -90,7 +90,7 @@ final class Actions {
 			wp_safe_redirect( add_query_arg( 'preview', rawurlencode( $token ), self::page_url() ) );
 			exit;
 		} catch ( \Throwable $error ) {
-			self::redirect_with_notice( 'error', $error->getMessage() );
+			self::redirect_with_notice( 'error', __( 'An error occurred.', 'core-blueprint' ) );
 		}
 	}
 
@@ -140,7 +140,7 @@ final class Actions {
 			) );
 		} catch ( \Throwable $error ) {
 			PreviewStore::delete( $user_id, $token );
-			self::redirect_with_notice( 'error', $error->getMessage() );
+			self::redirect_with_notice( 'error', __( 'An error occurred.', 'core-blueprint' ) );
 		}
 	}
 

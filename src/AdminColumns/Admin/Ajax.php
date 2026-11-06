@@ -53,7 +53,7 @@ final class Ajax {
 		} catch ( \JsonException | \InvalidArgumentException $error ) {
 			wp_send_json_error( [ 'message' => $error->getMessage() ], 400 );
 		} catch ( \RuntimeException $error ) {
-			wp_send_json_error( [ 'message' => $error->getMessage() ], 500 );
+			wp_send_json_error( [ 'message' => __( 'An error occurred.', 'core-blueprint' ) ], 500 );
 		}
 	}
 
