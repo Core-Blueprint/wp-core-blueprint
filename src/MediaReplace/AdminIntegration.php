@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\MediaReplace;
 
 use CoreBlueprint\Core\Admin\MutationAcknowledgement;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use CoreBlueprint\Core\Log\AuditLog;
 use CoreBlueprint\Core\MediaReplace\Admin\Page as MediaReplacePage;
 use CoreBlueprint\Core\MediaReplace\Strategy\PreserveFilenameStrategy;
@@ -325,8 +326,7 @@ final class AdminIntegration {
 			];
 			$previous = $e->getPrevious();
 			if ( $previous instanceof \Throwable ) {
-				$context['exception_class']   = get_class( $previous );
-				$context['exception_message'] = $previous->getMessage();
+				$context['diagnostic'] = ThrowableBoundary::context( $previous, 'replace_cause' );
 			}
 			AuditLog::log( 'media.replace_failed', 'warning', $context );
 			self::set_notice( 'error', $e->getMessage() );
@@ -358,7 +358,7 @@ final class AdminIntegration {
 		} catch ( \Throwable $e ) {
 			AuditLog::log( 'media.post_replace_hook_failed', 'warning', [
 				'attachment_id' => $attachment_id,
-				'error'         => $e->getMessage(),
+				'diagnostic'    => ThrowableBoundary::context( $e, 'post_replace_hook_failed' ),
 			] );
 		}
 
