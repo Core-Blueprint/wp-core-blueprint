@@ -46,19 +46,23 @@ final class Repository {
 		if ( '' === $id ) {
 			return false;
 		}
-		$all = self::all();
-		$all[ $id ] = $item;
-		return ChunkedOptionStore::set( self::OPTION, $all );
+		return ChunkedOptionStore::with_lock( self::OPTION, static function () use ( $id, $item ): bool {
+			$all = self::all();
+			$all[ $id ] = $item;
+			return ChunkedOptionStore::set( self::OPTION, $all );
+		} );
 	}
 
 	public static function delete( string $id ): bool {
 		$id = sanitize_key( $id );
-		$all = self::all();
-		if ( ! isset( $all[ $id ] ) ) {
-			return true;
-		}
-		unset( $all[ $id ] );
-		return ChunkedOptionStore::set( self::OPTION, $all );
+		return ChunkedOptionStore::with_lock( self::OPTION, static function () use ( $id ): bool {
+			$all = self::all();
+			if ( ! isset( $all[ $id ] ) ) {
+				return true;
+			}
+			unset( $all[ $id ] );
+			return ChunkedOptionStore::set( self::OPTION, $all );
+		} );
 	}
 
 	public static function append_event( array $item, string $action, array $context = [] ): array {
