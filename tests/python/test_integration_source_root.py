@@ -25,13 +25,30 @@ SOURCE_ONLY_FILES = {
     "docs/DESIGNER-MODE.md",
     "docs/DESIGNER-LAYOUT-CONTRACT.md",
 }
-SOURCE_TEST_FILES = (
-    "CoreApiDocumentationContractTest.php",
-    "InternalHistoryLanguageContractTest.php",
-    "PerformanceBaselineContractTest.php",
-    "SnippetsExtractionContractTest.php",
-    "WordPressOrgSubmissionContractTest.php",
-)
+# Every repository-only lookup is checked against its exact real PHP path.
+# This guards more than mere presence of a checkout-root expression.
+SOURCE_TEST_PATHS = {
+    "CoreApiDocumentationContractTest.php": (
+        "docs/PUBLIC-API.md",
+        "docs/REORDER-FOUNDATION.md",
+        "docs/SECRET-PROTECTION-FOUNDATION.md",
+        "CHANGELOG-HISTORY.md",
+    ),
+    "InternalHistoryLanguageContractTest.php": (
+        "docs/foundation-v1-contract.md",
+    ),
+    "PerformanceBaselineContractTest.php": (
+        "tests/bin/run-performance-baseline.sh",
+        "tests/performance/request.php",
+    ),
+    "SnippetsExtractionContractTest.php": (
+        "docs/DASHBOARD-CARD-API.md",
+    ),
+    "WordPressOrgSubmissionContractTest.php": (
+        "SECURITY.md",
+        "tools/build-release",
+    ),
+}
 DESIGNER_TEST_FILES = (
     "DesignerCompositionContractTest.php",
     "DesignerLayerInteractionContractTest.php",
@@ -63,10 +80,15 @@ class IntegrationSourceRootContractTest(unittest.TestCase):
                 )
 
     def test_repository_only_contracts_use_checkout_root(self):
-        for name in SOURCE_TEST_FILES:
+        for name, paths in SOURCE_TEST_PATHS.items():
             content = (INTEGRATION / name).read_text(encoding="utf-8")
             with self.subTest(file=name):
-                self.assertIn(REPO_ROOT, content)
+                for relative_path in paths:
+                    with self.subTest(path=relative_path):
+                        self.assertIn(
+                            "dirname( __DIR__, 2 ) . '/" + relative_path + "'",
+                            content,
+                        )
                 self.assertIsNone(RUNTIME_SOURCE_SUBSTITUTION.search(content))
 
     def test_designer_helpers_keep_runtime_and_docs_distinct(self):
