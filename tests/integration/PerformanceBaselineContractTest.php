@@ -4,7 +4,7 @@ declare(strict_types=1);
 final class CB_Base_Performance_Baseline_Contract_Test extends WP_UnitTestCase {
 
 	public function test_wordpress_controls_are_warmed_before_measurement(): void {
-		$runner = file_get_contents( CB_CORE_DIR . 'tests/bin/run-performance-baseline.sh' );
+		$runner = file_get_contents( dirname( __DIR__, 2 ) . '/tests/bin/run-performance-baseline.sh' );
 		self::assertIsString( $runner );
 
 		$warmup   = strpos( $runner, 'echo "[F3A] warming WordPress-only control state"' );
@@ -21,7 +21,7 @@ final class CB_Base_Performance_Baseline_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_reports_profile_is_explicit_opt_in_after_default_state_scenarios(): void {
-		$runner = file_get_contents( CB_CORE_DIR . 'tests/bin/run-performance-baseline.sh' );
+		$runner = file_get_contents( dirname( __DIR__, 2 ) . '/tests/bin/run-performance-baseline.sh' );
 		self::assertIsString( $runner );
 
 		self::assertStringContainsString( 'php "$REQUEST" enable_reports', $runner );
@@ -43,7 +43,7 @@ final class CB_Base_Performance_Baseline_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_reports_opt_in_uses_canonical_state_authority(): void {
-		$request = file_get_contents( CB_CORE_DIR . 'tests/performance/request.php' );
+		$request = file_get_contents( dirname( __DIR__, 2 ) . '/tests/performance/request.php' );
 		self::assertIsString( $request );
 
 		self::assertStringContainsString( "'enable_reports'", $request );
@@ -80,7 +80,7 @@ final class CB_Base_Performance_Baseline_Contract_Test extends WP_UnitTestCase {
 	}
 
 	public function test_profile_records_identify_opt_in_modules(): void {
-		$runner = file_get_contents( CB_CORE_DIR . 'tests/bin/run-performance-baseline.sh' );
+		$runner = file_get_contents( dirname( __DIR__, 2 ) . '/tests/bin/run-performance-baseline.sh' );
 		self::assertIsString( $runner );
 
 		self::assertStringContainsString( 'local opt_in_modules="${8:-}"', $runner );
