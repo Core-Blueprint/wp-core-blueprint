@@ -134,6 +134,25 @@ final class ChunkedOptionStore {
 		return 'cb_integrity_' . substr( hash( 'sha256', $wpdb->options . ':' . $key ), 0, 40 );
 	}
 
+	/**
+	 * Fence every option mutation, not only the outer callback. A WordPress
+	 * database reconnect during an option write must abort before the next
+	 * chunk, pointer update, or journal cleanup can proceed.
+	 */
+	private static function write_option( string $lock_key, string $option_key, mixed $value ): void {
+		$name = self::lock_name( $lock_key );
+		self::assert_lock_owned( $name );
+		update_option( $option_key, $value, false );
+		self::assert_lock_owned( $name );
+	}
+
+	private static function remove_option( string $lock_key, string $option_key ): void {
+		$name = self::lock_name( $lock_key );
+		self::assert_lock_owned( $name );
+		delete_option( $option_key );
+		self::assert_lock_owned( $name );
+	}
+
 	public static function set( string $key, mixed $value ): bool {
 		return self::with_lock( $key, static fn(): bool => self::set_locked( $key, $value ) );
 	}
@@ -158,7 +177,7 @@ final class ChunkedOptionStore {
 		$written = 0;
 		foreach ( $chunks as $index => $chunk ) {
 			$chunk_key = self::chunk_key( $key, $generation, $index );
-			update_option( $chunk_key, $chunk, false );
+			self::write_option( $key, $chunk_key, $chunk );
 			$stored = get_option( $chunk_key, null );
 			if ( ! is_string( $stored ) || $stored !== $chunk ) {
 				self::cleanup_pending( $key );
@@ -175,7 +194,7 @@ final class ChunkedOptionStore {
 			'sha256'     => hash( 'sha256', $serialized ),
 		];
 
-		update_option( $key, $meta, false );
+		self::write_option( $key, $key, $meta );
 		$stored_meta = get_option( $key, null );
 		if ( ! self::same_meta( $stored_meta, $meta ) ) {
 			self::cleanup_pending( $key );
@@ -307,7 +326,7 @@ final class ChunkedOptionStore {
 	private static function delete_generation( string $key, string $generation, int $count ): void {
 		for ( $index = 0; $index < max( 0, $count ); $index++ ) {
 			$chunk_key = self::chunk_key( $key, $generation, $index );
-			delete_option( $chunk_key );
+			self::remove_option( $key, $chunk_key );
 			if ( null !== get_option( $chunk_key, null ) ) {
 				throw new RuntimeException( 'Core Scanner storage generation cleanup failed.' );
 			}
@@ -326,13 +345,13 @@ final class ChunkedOptionStore {
 			'deleting'   => $deleting,
 		];
 		$name = $key . self::PENDING_SUFFIX;
-		update_option( $name, $record, false );
+		self::write_option( $key, $name, $record );
 		return get_option( $name, null ) === $record;
 	}
 
 	private static function clear_pending( string $key ): void {
 		$name = $key . self::PENDING_SUFFIX;
-		delete_option( $name );
+		self::remove_option( $key, $name );
 		if ( null !== get_option( $name, null ) ) {
 			throw new RuntimeException( 'Core Scanner storage cleanup journal could not be cleared.' );
 		}
@@ -366,7 +385,7 @@ final class ChunkedOptionStore {
 				throw new RuntimeException( 'Core Scanner storage deletion pointer changed unexpectedly.' );
 			}
 			if ( $is_current ) {
-				delete_option( $key );
+				self::remove_option( $key, $key );
 				if ( null !== get_option( $key, null ) ) {
 					throw new RuntimeException( 'Core Scanner storage pointer deletion failed.' );
 				}
