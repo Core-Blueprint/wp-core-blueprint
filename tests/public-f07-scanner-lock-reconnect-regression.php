@@ -20,6 +20,7 @@ final class CB_F07_Fake_Database {
 	public int $claims = 0;
 	public int $releases = 0;
 	public bool $reconnect_on_check = false;
+	public bool $reconnect_after_option_write = false;
 
 	public function __construct() {
 		$this->dbh = new stdClass();
@@ -64,6 +65,28 @@ final class CB_F07_Fake_Database {
 		$this->dbh = new stdClass();
 		$this->lock_owner = $successor_owns_lock ? $this->session_id : null;
 	}
+}
+
+
+// Tiny in-memory WordPress option API for mid-write reconnect failure injection.
+$GLOBALS['cb_f07_options'] = [];
+$GLOBALS['cb_f07_option_writes'] = [];
+function get_option( string $name, mixed $default = false ): mixed {
+	return $GLOBALS['cb_f07_options'][ $name ] ?? $default;
+}
+function update_option( string $name, mixed $value, mixed $autoload = null ): bool {
+	$GLOBALS['cb_f07_options'][ $name ] = $value;
+	$GLOBALS['cb_f07_option_writes'][] = $name;
+	$db = $GLOBALS['wpdb'];
+	if ( $db instanceof CB_F07_Fake_Database && $db->reconnect_after_option_write ) {
+		$db->reconnect_after_option_write = false;
+		$db->reconnect( true );
+	}
+	return true;
+}
+function delete_option( string $name ): bool {
+	unset( $GLOBALS['cb_f07_options'][ $name ] );
+	return true;
 }
 
 require_once dirname( __DIR__ ) . '/src/Integrity/Storage/ChunkedOptionStore.php';
@@ -133,6 +156,27 @@ $rejects( static function () use ( $key, $db ): void {
 		ChunkedOptionStore::with_lock( $key, static fn() => null );
 	} );
 }, 'named lock disappearance on same DB handle fails closed' );
+
+// Simulate loss of the lock immediately after WordPress persists a journal.
+// The next chunk or published pointer must not be written by the stale worker.
+$GLOBALS['wpdb'] = $db = new CB_F07_Fake_Database();
+$GLOBALS['cb_f07_options'] = [];
+$GLOBALS['cb_f07_option_writes'] = [];
+$db->reconnect_after_option_write = true;
+$rejects( static function () use ( $key ): void {
+	ChunkedOptionStore::set( $key, [ 'revision' => 'stale-worker' ] );
+}, 'mid-write connection loss aborts chunk publication' );
+$check( [ $key . '__pending' ] === $GLOBALS['cb_f07_option_writes'], 'no chunk or pointer update follows lost lock' );
+$check( null === get_option( $key, null ), 'stale worker did not publish a pointer' );
+$check( 0 === $db->releases, 'stale writer did not release successor lock after write' );
+
+// The pending journal belongs to interrupted work and is recoverable only
+// after the new owner has finished; this test simulates that lock release.
+$db->lock_owner = null;
+$check( true === ChunkedOptionStore::set( $key, [ 'revision' => 'recovered' ] ), 'next writer recovers interrupted journal' );
+$check( [ 'revision' => 'recovered' ] === ChunkedOptionStore::get( $key ), 'recovered snapshot is complete' );
+$check( null === get_option( $key . '__pending', null ), 'recovery clears journal' );
+ChunkedOptionStore::delete( $key );
 
 // Fail closed around every option write, including the published pointer.
 $source = file_get_contents( dirname( __DIR__ ) . '/src/Integrity/Storage/ChunkedOptionStore.php' );
