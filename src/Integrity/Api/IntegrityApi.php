@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Integrity\Api;
 
 use CoreBlueprint\Core\Integrity\Scanner\ScanJobDispatcher;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use CoreBlueprint\Core\Integrity\Scanner\ScanJobRepository;
 use CoreBlueprint\Core\Integrity\Scanner\ScanJobStatus;
 use CoreBlueprint\Core\Integrity\Scanner\ScanLockedException;
@@ -83,7 +84,7 @@ final class IntegrityApi {
 				]
 			);
 		} catch ( Throwable $throwable ) {
-			IntegrityAudit::log( 'integrity_scan_failed', 'critical', [ 'message' => $throwable->getMessage() ] );
+			IntegrityAudit::log( 'integrity_scan_failed', 'critical', ThrowableBoundary::context( $throwable, 'scan_dispatch_failed' ) );
 			return self::error(
 				'cb_integrity_scan_dispatch_failed',
 				__( 'Core Scanner could not queue the scan.', 'core-blueprint' ),
