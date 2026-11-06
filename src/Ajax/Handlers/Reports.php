@@ -30,6 +30,7 @@ use CoreBlueprint\Core\Ajax\Guards;
 use CoreBlueprint\Core\Ajax\Request;
 use CoreBlueprint\Core\Log\AuditLog;
 use CoreBlueprint\Core\PDF\Api\PdfApi;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use CoreBlueprint\Core\PDF\RendererException;
 use CoreBlueprint\Core\Reports\Generator;
 use CoreBlueprint\Core\Reports\MaintenancePdf;
@@ -84,9 +85,10 @@ final class Reports {
 		} catch ( \InvalidArgumentException $e ) {
 			wp_send_json_error( [ 'message' => $e->getMessage() ], 400 );
 		} catch ( \Throwable $e ) {
+			AuditLog::log( 'reports.generation_failed', 'warning', ThrowableBoundary::context( $e, 'generation_failed' ) );
 			wp_send_json_error( [
 				'message' => __( 'Generation failed - see audit log for details.', 'core-blueprint' ),
-				'detail'  => $e->getMessage(),
+				'code'   => 'reports_generation_failed',
 			], 500 );
 		}
 
@@ -154,7 +156,7 @@ final class Reports {
 		} catch ( RendererException $e ) {
 			AuditLog::log( 'reports.pdf_render_failed', 'warning', [
 				'report_id' => $report_id,
-				'reason'    => $e->getMessage(),
+				'diagnostic' => ThrowableBoundary::context( $e, 'pdf_render_failed' ),
 			] );
 			wp_die(
 				esc_html__( 'The PDF could not be rendered. See the audit log for details.', 'core-blueprint' ),
@@ -164,7 +166,7 @@ final class Reports {
 		} catch ( \Throwable $e ) {
 			AuditLog::log( 'reports.pdf_render_failed', 'warning', [
 				'report_id' => $report_id,
-				'reason'    => $e->getMessage(),
+				'diagnostic' => ThrowableBoundary::context( $e, 'pdf_render_failed' ),
 			] );
 			wp_die(
 				esc_html__( 'The PDF could not be rendered. See the audit log for details.', 'core-blueprint' ),
