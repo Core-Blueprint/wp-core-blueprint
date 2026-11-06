@@ -36,19 +36,29 @@ final class ChunkedOptionStore {
 	private const LOCK_WAIT_SECONDS = 2;
 	private const PENDING_SUFFIX = '__pending';
 
-	/** @var array<string,true> Named locks already owned by this PHP request. */
+	/** @var array<string,array{connection:object,session_id:int}> Session-fenced named locks. */
 	private static array $held_locks = [];
 
 	/**
-	 * Serialize the complete read-modify-write transaction, not just set().
-	 * The database drops these locks on connection termination: no stale lease
-	 * can be reclaimed while a worker is still active.
+	 * Serialize the complete read-modify-write transaction.
+	 *
+	 * MySQL named locks belong to a connection, not a PHP request. WordPress
+	 * may reconnect after a server disconnect; the old lock would be released
+	 * although this worker still has a PHP stack frame in progress. Record the
+	 * actual connection handle and lock-owning session, and fail closed on any
+	 * identity change (including during an ownership query).
 	 */
 	public static function with_lock( string $key, callable $operation ): mixed {
 		global $wpdb;
 		$name = self::lock_name( $key );
+
 		if ( isset( self::$held_locks[ $name ] ) ) {
-			return $operation();
+			self::assert_lock_owned( $name );
+			try {
+				return $operation();
+			} finally {
+				self::assert_lock_owned( $name );
+			}
 		}
 
 		$claimed = $wpdb->get_var( $wpdb->prepare(
@@ -60,15 +70,62 @@ final class ChunkedOptionStore {
 			throw new RuntimeException( 'Core Scanner storage is busy or its database mutex is unavailable.' );
 		}
 
-		self::$held_locks[ $name ] = true;
+		$connection = $wpdb->dbh ?? null;
+		if ( ! is_object( $connection ) ) {
+			throw new RuntimeException( 'Core Scanner storage mutex connection is unavailable.' );
+		}
+		$session_id = self::owned_session_id( $name );
+		if ( $session_id < 1 || $connection !== ( $wpdb->dbh ?? null ) ) {
+			throw new RuntimeException( 'Core Scanner storage mutex ownership could not be verified.' );
+		}
+
+		self::$held_locks[ $name ] = [
+			'connection' => $connection,
+			'session_id' => $session_id,
+		];
 		try {
-			return $operation();
+			$result = $operation();
+			self::assert_lock_owned( $name );
+			return $result;
 		} finally {
 			unset( self::$held_locks[ $name ] );
+			// Never release from a reconnected session: the original owner is gone,
+			// and that new connection might already be owned by another worker.
+			if ( $connection !== ( $wpdb->dbh ?? null ) ) {
+				throw new RuntimeException( 'Core Scanner storage mutex connection was lost.' );
+			}
 			$released = $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $name ) );
-			if ( '1' !== (string) $released ) {
+			if ( '1' !== (string) $released || $connection !== ( $wpdb->dbh ?? null ) ) {
 				throw new RuntimeException( 'Core Scanner could not release the storage mutex safely.' );
 			}
+		}
+	}
+
+	/**
+	 * A single database query verifies both named-lock ownership and session
+	 * identity; checking only the PHP-side held_locks map is never sufficient.
+	 */
+	private static function owned_session_id( string $name ): int {
+		global $wpdb;
+		$result = $wpdb->get_var( $wpdb->prepare(
+			'SELECT IF(IS_USED_LOCK(%s) = CONNECTION_ID(), CONNECTION_ID(), 0)',
+			$name
+		) );
+		return is_numeric( $result ) && (int) $result > 0 ? (int) $result : 0;
+	}
+
+	private static function assert_lock_owned( string $name ): void {
+		global $wpdb;
+		$held = self::$held_locks[ $name ] ?? null;
+		if ( null === $held || $held['connection'] !== ( $wpdb->dbh ?? null ) ) {
+			throw new RuntimeException( 'Core Scanner storage mutex ownership was lost.' );
+		}
+
+		if (
+			$held['session_id'] !== self::owned_session_id( $name )
+			|| $held['connection'] !== ( $wpdb->dbh ?? null )
+		) {
+			throw new RuntimeException( 'Core Scanner storage mutex ownership was lost.' );
 		}
 	}
 
