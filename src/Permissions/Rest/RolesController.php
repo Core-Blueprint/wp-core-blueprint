@@ -105,9 +105,6 @@ final class RolesController {
 			return self::error( $e->getMessage(), 400 );
 		} catch ( \RuntimeException $e ) {
 			return self::error( ThrowableBoundary::known_message( $e, [
-				__( 'Core Blueprint system role', 'core-blueprint' ),
-				__( 'WordPress built-in role', 'core-blueprint' ),
-				__( 'Default role for new users', 'core-blueprint' ),
 				__( 'You do not have permission to manage user roles.', 'core-blueprint' ),
 				__( 'Only an administrator may modify the Administrator role.', 'core-blueprint' ),
 				__( 'This change would remove your last capability to manage user roles.', 'core-blueprint' ),
