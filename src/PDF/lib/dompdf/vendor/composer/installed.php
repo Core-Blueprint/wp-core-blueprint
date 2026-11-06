@@ -48,12 +48,12 @@
             'dev_requirement' => false,
         ),
         'masterminds/html5' => array(
-            'pretty_version' => '2.10.0',
-            'version' => '2.10.0.0',
+            'pretty_version' => '2.12.0',
+            'version' => '2.12.0.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../masterminds/html5',
             'aliases' => array(),
-            'reference' => 'fcf91eb64359852f00d921887b219479b4f21251',
+            'reference' => '15e16663bd6f512352209d0e3a789c0a691c0d9b',
             'dev_requirement' => false,
         ),
         'sabberworm/php-css-parser' => array(
