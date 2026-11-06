@@ -38,7 +38,7 @@ final class Modules {
 			$state::set_enabled( $enabled, $actor );
 		} catch ( \Throwable $e ) {
 			wp_send_json_error( [
-				'message' => sanitize_text_field( $e->getMessage() ),
+				'message' => __( 'An error occurred.', 'core-blueprint' ),
 			], 409 );
 		}
 
