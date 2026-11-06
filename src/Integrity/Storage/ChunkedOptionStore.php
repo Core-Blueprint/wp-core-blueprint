@@ -5,17 +5,19 @@ namespace CoreBlueprint\Core\Integrity\Storage;
 
 use RuntimeException;
 
+use function apply_filters;
 use function count;
-use function delete_option;
 use function get_option;
 use function hash;
 use function is_array;
 use function is_string;
+use function maybe_serialize;
 use function random_bytes;
+use function sanitize_option;
 use function serialize;
 use function str_split;
 use function unserialize;
-use function update_option;
+use function wp_cache_delete;
 
 /**
  * Packet-safe storage for large Scanner state in wp_options.
@@ -135,22 +137,91 @@ final class ChunkedOptionStore {
 	}
 
 	/**
-	 * Fence every option mutation, not only the outer callback. A WordPress
-	 * database reconnect during an option write must abort before the next
-	 * chunk, pointer update, or journal cleanup can proceed.
+	 * All Scanner option DML carries the original MySQL session's named-lock
+	 * authority *inside the SQL statement*. wpdb::query() can retry a failed
+	 * statement on a new connection, so PHP checks alone cannot fence a retry.
+	 * The replayed SQL's CONNECTION_ID() no longer matches this ownership token.
+	 *
+	 * This intentionally keeps the single GET_LOCK authority; it does not
+	 * introduce a second lock/table. Scanner options are always non-autoloaded.
 	 */
 	private static function write_option( string $lock_key, string $option_key, mixed $value ): void {
+		global $wpdb;
 		$name = self::lock_name( $lock_key );
 		self::assert_lock_owned( $name );
-		update_option( $option_key, $value, false );
+
+		// Match WordPress update_option()'s value filters: a rejected pointer
+		// update must remain rejectable by pre_update_option_<option> hooks.
+		$old_value = get_option( $option_key );
+		$value = sanitize_option( $option_key, $value );
+		$value = apply_filters( "pre_update_option_{$option_key}", $value, $old_value, $option_key );
+		$value = apply_filters( 'pre_update_option', $value, $option_key, $old_value );
+		if ( $value === $old_value || maybe_serialize( $value ) === maybe_serialize( $old_value ) ) {
+			self::assert_lock_owned( $name );
+			return;
+		}
+
+		$session_id = self::$held_locks[ $name ]['session_id'];
+		$statement = $wpdb->prepare(
+			"INSERT INTO `{$wpdb->options}` (`option_name`, `option_value`, `autoload`) "
+			. 'SELECT %s, %s, %s FROM DUAL '
+			. 'WHERE CONNECTION_ID() = %d AND IS_USED_LOCK(%s) = %d '
+			. 'ON DUPLICATE KEY UPDATE `option_value` = VALUES(`option_value`), `autoload` = VALUES(`autoload`)',
+			$option_key,
+			maybe_serialize( $value ),
+			'off',
+			$session_id,
+			$name,
+			$session_id
+		);
+
+		self::assert_lock_owned( $name );
+		try {
+			if ( false === $wpdb->query( $statement ) ) {
+				throw new RuntimeException( 'Core Scanner storage option write failed.' );
+			}
+		} finally {
+			self::invalidate_option_cache( $option_key );
+		}
 		self::assert_lock_owned( $name );
 	}
 
 	private static function remove_option( string $lock_key, string $option_key ): void {
+		global $wpdb;
 		$name = self::lock_name( $lock_key );
 		self::assert_lock_owned( $name );
-		delete_option( $option_key );
+		$session_id = self::$held_locks[ $name ]['session_id'];
+
+		$statement = $wpdb->prepare(
+			"DELETE FROM `{$wpdb->options}` "
+			. 'WHERE option_name = %s AND CONNECTION_ID() = %d AND IS_USED_LOCK(%s) = %d',
+			$option_key,
+			$session_id,
+			$name,
+			$session_id
+		);
+
 		self::assert_lock_owned( $name );
+		try {
+			if ( false === $wpdb->query( $statement ) ) {
+				throw new RuntimeException( 'Core Scanner storage option deletion failed.' );
+			}
+		} finally {
+			self::invalidate_option_cache( $option_key );
+		}
+		self::assert_lock_owned( $name );
+	}
+
+	/**
+	 * Raw fenced SQL must not leave stale WP option-cache state behind. Invalidate
+	 * all three native option cache paths, including persistent object caches.
+	 * Do this on uncertain SQL results too: a server may have committed a write
+	 * just before the connection was lost.
+	 */
+	private static function invalidate_option_cache( string $option_key ): void {
+		wp_cache_delete( $option_key, 'options' );
+		wp_cache_delete( 'notoptions', 'options' );
+		wp_cache_delete( 'alloptions', 'options' );
 	}
 
 	public static function set( string $key, mixed $value ): bool {
