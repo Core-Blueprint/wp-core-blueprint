@@ -1,6 +1,8 @@
 # Template Library Foundation: T0/T1 public PHP contract
 
-Status: **additive T0+T1 + T2 browser implementation candidate**, subject to WordPress/runtime acceptance; pack format and consumer-owned personal/site operations remain **not implemented**. T3A delegated safe management navigation is now an additional source candidate; it does not persist or mutate templates in Base. PHP 8.4+; single-site Base v1 only. See docs/TEMPLATE-BROWSER-CONSUMER.md for the browser and first-consumer contract.
+**FRG-04 current-source checkpoint (6 November 2026):** Base `main@18023119473f27a95eac3215b25fcc30d115641f` contains the T0/T1 Registry, read-only T2 browser and T3A delegated navigation plus the internal T4 JSON/package verification/staging/Engine binding; none of these implements consumer-owned personal/site persistence, a user-facing upload/export endpoint or full offline round-trip acceptance. Installed FIELD for the entire combined contract and the owner Foundation Freeze remain separate gates.
+
+**Historical T0–T3A checkpoint:** **additive T0+T1 + T2 browser implementation candidate**, subject to WordPress/runtime acceptance; pack format and consumer-owned personal/site operations remain **not implemented**. T3A delegated safe management navigation is now an additional source candidate; it does not persist or mutate templates in Base. PHP 8.4+; single-site Base v1 only. See docs/TEMPLATE-BROWSER-CONSUMER.md for the browser and first-consumer contract.
 
 ## Ownership and presentation
 
