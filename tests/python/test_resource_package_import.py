@@ -77,7 +77,7 @@ namespace CoreBlueprint\Core\Interoperability {
             return 'acme-test' === $provider && 'template.report' === $entity
                 ? [
                     'provider' => $provider, 'id' => $entity,
-                    'supports' => ['import', 'json'],
+                    'supports' => ['import', 'format.json'],
                 ] : null;
         }
         public static function resolve(string $owner, string $contract, string $version,
