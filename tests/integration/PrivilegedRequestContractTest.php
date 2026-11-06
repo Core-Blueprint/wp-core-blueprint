@@ -126,8 +126,11 @@ final class CB_Base_Privileged_Request_Contract_Test extends WP_UnitTestCase {
             self::assertFalse( has_action( 'wp_ajax_nopriv_' . $action ), 'Privileged Failsafe action exposed an anonymous route.' );
         }
 
-        $admin = self::factory()->user->create( [ 'role' => 'administrator' ] );
-        wp_set_current_user( $admin );
+        // Capability is checked before password shape. A newly created
+        // administrator is unapproved; use the existing signed test operator.
+        $operator = $this->create_operator( true );
+        wp_set_current_user( (int) $operator->ID );
+        self::assertTrue( current_user_can( 'manage_options' ) );
 
         $token_before     = get_option( CB_CORE_BYPASS_TOK, false );
         $emergency_before = get_option( CB_CORE_BYPASS_OPT, false );

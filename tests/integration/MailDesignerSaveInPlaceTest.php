@@ -133,7 +133,8 @@ final class CB_Mail_Designer_Save_In_Place_Test extends \PHPUnit\Framework\TestC
 				$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 				self::assertTrue( PlatformTransport::permission( $request ) );
 				$response = PlatformTransport::dispatch( $request );
-				self::assertInstanceOf( WP_REST_Response::class, $response );
+				self::assertInstanceOf( WP_REST_Response::class, $response,
+					$response instanceof WP_Error ? 'Native Mail context denied: ' . $response->get_error_code() : 'Unexpected Mail context type.' );
 				$data = $response->get_data();
 				self::assertSame( 'loaded', $data['status'] ?? null );
 				return $data;
