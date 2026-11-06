@@ -49,6 +49,10 @@ namespace CoreBlueprint\Core\DataExchange {
                 ]],
                 'document' => ['type' => 'report', 'resource_key' => 'brand-logo'],
             ];
+            $verified_resources = $record['resources'];
+            if ($GLOBALS['scenario'] === 'resource-digest-mismatch') {
+                $record['resources'][0]['sha256'] = str_repeat('e', 64);
+            }
             $doc = json_encode([
                 'format' => Foundation::FORMAT_ID,
                 'format_version' => Foundation::FORMAT_VERSION,
@@ -64,7 +68,7 @@ namespace CoreBlueprint\Core\DataExchange {
                 'package_sha256' => hash('sha256', $GLOBALS['package_bytes']),
                 'extension_id' => 'acme-test',
                 'entity' => 'template.report',
-                'resources' => $record['resources'],
+                'resources' => $verified_resources,
             ];
         }
     }
@@ -129,7 +133,16 @@ namespace {
                 || ($GLOBALS['scenario'] === 'omit-second-plan' && $GLOBALS['planner_calls'] >= 3)) {
                 return $plan;
             }
-            return Bridge::bind_plan($plan, $context);
+            $bound = Bridge::bind_plan($plan, $context);
+            if ($bound instanceof WP_Error) {
+                return $bound;
+            }
+            // A consumer must compare the source declarations to the verified stage,
+            // not merely fingerprint unrelated package metadata.
+            if (($record['resources'] ?? null) !== $bound['payload']['cb_resource_package_binding']['resources']) {
+                return new WP_Error('fixture_resource_mismatch', 'Resource digest is not verified.');
+            }
+            return $bound;
         }
         public function apply_import(array $plan, array $context = []): array|WP_Error {
             if (!Bridge::assert_bound_plan($plan, $context) || !$this->can_import($context)) {
@@ -214,6 +227,11 @@ class PackageImportBindingTest(unittest.TestCase):
     def test_package_changed_between_requests_refuses(self):
         result = self.run_case('changed-package')
         self.assertEqual('cb_core_data_exchange_stale_plan', result['apply']['error'])
+        self.assertEqual(0, result['written_after_apply'])
+
+    def test_source_resource_digest_must_match_verified_package(self):
+        result = self.run_case('resource-digest-mismatch')
+        self.assertFalse(result['preview']['valid'], result)
         self.assertEqual(0, result['written_after_apply'])
 
     def test_actor_changed_between_requests_refuses(self):
