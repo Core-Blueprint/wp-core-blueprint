@@ -42,7 +42,7 @@ $check( ThrowableBoundary::diagnostic( $unexpected ) === RuntimeException::class
 $cases = [
 	'src/Ajax/Handlers/Reports.php' => [
 		'present' => [ 'ThrowableBoundary::context( $e,', "'code'   => 'reports_generation_failed'" ],
-		'absent'  => [ "'detail'  => \\$e->getMessage()", "'reason'    => \\$e->getMessage()" ],
+		'absent'  => [ "'detail'  => \$e->getMessage()", "'reason'    => \$e->getMessage()" ],
 	],
 	'src/Ajax/Handlers/Modules.php' => [
 		'present' => [ "'message' => __( 'An error occurred.', 'core-blueprint' )" ],
@@ -50,31 +50,31 @@ $cases = [
 	],
 	'src/Ajax/Handlers/TwoFactorPolicy.php' => [
 		'present' => [ 'ThrowableBoundary::known_message( $error,' ],
-		'absent'  => [ "'message' => \\$error->getMessage()" ],
+		'absent'  => [ "'message' => \$error->getMessage()" ],
 	],
 	'src/AdminColumns/Admin/Ajax.php' => [
 		'present' => [ "'message' => __( 'An error occurred.', 'core-blueprint' )" ],
-		'absent'  => [ "wp_send_json_error( [ 'message' => \\$error->getMessage() ], 500 )" ],
+		'absent'  => [ "wp_send_json_error( [ 'message' => \$error->getMessage() ], 500 )" ],
 	],
 	'src/Security/TwoFactor/ProfileController.php' => [
 		'present' => [ 'ThrowableBoundary::known_message( $error,', 'self::safe_failure_message( $error )' ],
-		'absent'  => [ "self::set_notice( (int) \\$user->ID, 'error', \\$error->getMessage() )" ],
+		'absent'  => [ "self::set_notice( (int) \$user->ID, 'error', \$error->getMessage() )" ],
 	],
 	'src/Profiles/Admin/Actions.php' => [
 		'present' => [ "self::redirect_with_notice( 'error', __( 'An error occurred.', 'core-blueprint' ) )" ],
-		'absent'  => [ "self::redirect_with_notice( 'error', \\$error->getMessage() )" ],
+		'absent'  => [ "self::redirect_with_notice( 'error', \$error->getMessage() )" ],
 	],
 	'src/MediaReplace/AdminIntegration.php' => [
 		'present' => [ 'ThrowableBoundary::context( $previous,', 'ThrowableBoundary::context( $e,' ],
-		'absent'  => [ "'exception_message'", "'error'         => \\$e->getMessage()" ],
+		'absent'  => [ "'exception_message'", "'error'         => \$e->getMessage()" ],
 	],
 	'src/PackageDownload/AdminIntegration.php' => [
 		'present' => [ 'ThrowableBoundary::context( $e,', 'ThrowableBoundary::diagnostic( $e )' ],
-		'absent'  => [ "esc_html( \\$e->getMessage() )", "'message'   => \\$e->getMessage()" ],
+		'absent'  => [ "esc_html( \$e->getMessage() )", "'message'   => \$e->getMessage()" ],
 	],
 	'src/Integrity/Api/IntegrityApi.php' => [
 		'present' => [ 'ThrowableBoundary::context( $throwable,' ],
-		'absent'  => [ "'message' => \\$throwable->getMessage()" ],
+		'absent'  => [ "'message' => \$throwable->getMessage()" ],
 	],
 	'src/Permissions/Rest/RolesController.php' => [
 		'present' => [ 'ThrowableBoundary::known_message( $e,' ],
