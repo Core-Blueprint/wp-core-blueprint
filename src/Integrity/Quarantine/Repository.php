@@ -24,7 +24,10 @@ final class Repository {
 	/** @return array<string,array<string,mixed>> */
 	public static function all(): array {
 		$value = ChunkedOptionStore::get( self::OPTION, [] );
-		return is_array( $value ) ? $value : [];
+		if ( ! is_array( $value ) ) {
+			throw new \RuntimeException( 'Quarantine Workspace evidence is not a valid snapshot.' );
+		}
+		return $value;
 	}
 
 	/** @return array<int,array<string,mixed>> */

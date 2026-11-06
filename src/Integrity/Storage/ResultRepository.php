@@ -71,7 +71,13 @@ final class ResultRepository {
 
 	public static function getLatest(): ?array {
 		$result = ChunkedOptionStore::get( self::OPTION_LATEST, null );
-		return StorageSchema::is_scan_result( $result ) ? $result : null;
+		if ( null === $result ) {
+			return null;
+		}
+		if ( ! StorageSchema::is_scan_result( $result ) ) {
+			throw new \RuntimeException( 'Core Scanner stored result has an invalid schema.' );
+		}
+		return $result;
 	}
 
 	public static function clear(): void {
@@ -457,7 +463,13 @@ final class ResultRepository {
 
 	public static function getBaseline(): ?array {
 		$baseline = ChunkedOptionStore::get( self::OPTION_BASELINE, null );
-		return StorageSchema::is_baseline( $baseline ) ? $baseline : null;
+		if ( null === $baseline ) {
+			return null;
+		}
+		if ( ! StorageSchema::is_baseline( $baseline ) ) {
+			throw new \RuntimeException( 'Core Scanner stored baseline has an invalid schema.' );
+		}
+		return $baseline;
 	}
 
 	public static function hasBaseline(): bool {

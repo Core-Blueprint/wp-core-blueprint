@@ -126,6 +126,28 @@ final class CB_Base_Integrity_Chunked_Storage_Transaction_Contract_Test extends 
 		self::assertTrue( QuarantineRepository::delete( $b ) );
 	}
 
+
+	public function test_f07_quarantine_workspace_rejects_wrong_snapshot_value(): void {
+		self::assertTrue( ChunkedOptionStore::set( 'cb_core_quarantine_workspace', 'damaged-evidence' ) );
+		try {
+			$this->expectException( RuntimeException::class );
+			QuarantineRepository::all();
+		} finally {
+			ChunkedOptionStore::delete( 'cb_core_quarantine_workspace' );
+		}
+	}
+
+	public function test_f07_baseline_rejects_wrong_schema_instead_of_recreating_state(): void {
+		$key = 'cb_core_integrity_baseline';
+		self::assertTrue( ChunkedOptionStore::set( $key, [ 'not' => 'baseline-schema' ] ) );
+		try {
+			$this->expectException( RuntimeException::class );
+			\CoreBlueprint\Core\Integrity\Storage\ResultRepository::getBaseline();
+		} finally {
+			ChunkedOptionStore::delete( $key );
+		}
+	}
+
 	public function test_f07_baseline_repository_writes_hold_full_transaction_lock(): void {
 		$source = file_get_contents( CB_CORE_DIR . 'src/Integrity/Storage/ResultRepository.php' );
 		self::assertIsString( $source );
