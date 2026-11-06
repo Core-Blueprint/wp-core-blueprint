@@ -1,6 +1,6 @@
 # FRG-T4-01E — Real Base Package Pipeline Integration Acceptance
 
-**Status:** Candidate integration regression; **operator ZIP-enabled acceptance pending**.
+**FRG-04 current status (6 November 2026):** Integration test and document **MERGED** at `main@18023119473f27a95eac3215b25fcc30d115641f` via PR #157. Chris reported all 8 real ZIP-dependent/fail-closed cases with zero skips, Base Level 1 and dev build ZIP/checksum PASS at feature HEAD `4a01194ee097cc54310b0a859f1d5d896bb3cac6`; raw logs/checksum are not independently recorded here. The historical assistant-only 7 skips below predate owner acceptance and were due to its missing ZipArchive. No new WordPress DB/consumer FIELD, post-merge Level 2/3 or public release claim follows.
 **Baseline:** `main@ee77ad59230570098bc87cbe3070783018ee4719`.
 **Scope:** The merged `ResourcePackageVerifier`, `ResourcePackageStage`, `ResourcePackageImport` and canonical `Engine` are loaded unchanged in a single PHP subprocess. A test-only Registry/EntityInterface consumer substitutes for real Reports/Certificates storage; no other PHP service is replaced for the ZIP-enabled test cases.
 
