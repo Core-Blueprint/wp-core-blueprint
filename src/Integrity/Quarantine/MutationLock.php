@@ -3,18 +3,19 @@ declare(strict_types=1);
 
 namespace CoreBlueprint\Core\Integrity\Quarantine;
 
+use CoreBlueprint\Core\Integrity\Support\Audit;
 use RuntimeException;
 
 use function add_option;
 use function bin2hex;
+use function hash_equals;
 use function is_array;
+use function is_serialized;
+use function is_string;
 use function preg_match;
 use function random_bytes;
 use function time;
 use function wp_cache_delete;
-use function is_string;
-use function is_serialized;
-use function hash_equals;
 
 /**
  * Owner-fenced lock for mutating Quarantine Workspace items.
@@ -38,7 +39,6 @@ final class MutationLock {
 		if ( add_option( $key, $data, '', false ) ) {
 			return $token;
 		}
-
 
 		// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
 		throw new RuntimeException( __( 'Another quarantine action is already running for this item. Try again after it finishes.', 'core-blueprint' ) );
@@ -98,7 +98,14 @@ final class MutationLock {
 		if ( $owner['acquired_at'] > time() - 600 ) {
 			throw new RuntimeException( 'A recently acquired quarantine lock cannot be recovered.' );
 		}
-		return self::delete_exact( $key, $raw );
+		if ( ! self::delete_exact( $key, $raw ) ) {
+			return false;
+		}
+		Audit::log( 'integrity_quarantine_lock_recovered', 'warning', [
+			'quarantine_id' => $id,
+			'acquired_at'  => $owner['acquired_at'],
+		] );
+		return true;
 	}
 
 	private static function read_raw( string $key ): ?string {
