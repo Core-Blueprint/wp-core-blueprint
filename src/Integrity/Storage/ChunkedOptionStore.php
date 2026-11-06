@@ -319,7 +319,7 @@ final class ChunkedOptionStore {
 			self::delete_previous_generation( $key, $prior, $generation );
 		} elseif (
 			( null === $active && null === $prior )
-			|| ( self::is_meta( $active ) && self::same_meta( $active, $prior ) )
+			|| ( self::is_meta( $active ) && self::is_meta( $prior ) && self::same_meta( $active, $prior ) )
 		) {
 			self::delete_generation( $key, $generation, $chunks );
 		} else {
