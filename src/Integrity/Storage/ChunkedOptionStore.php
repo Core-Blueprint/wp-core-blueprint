@@ -90,15 +90,17 @@ final class ChunkedOptionStore {
 			self::assert_lock_owned( $name );
 			return $result;
 		} finally {
-			unset( self::$held_locks[ $name ] );
-			// Never release from a reconnected session: the original owner is gone,
-			// and that new connection might already be owned by another worker.
-			if ( $connection !== ( $wpdb->dbh ?? null ) ) {
-				throw new RuntimeException( 'Core Scanner storage mutex connection was lost.' );
-			}
-			$released = $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $name ) );
-			if ( '1' !== (string) $released || $connection !== ( $wpdb->dbh ?? null ) ) {
-				throw new RuntimeException( 'Core Scanner could not release the storage mutex safely.' );
+			try {
+				// A mysqli handle may survive a server-session replacement. Never
+				// RELEASE_LOCK unless both the original handle and session still
+				// own the named mutex.
+				self::assert_lock_owned( $name );
+				$released = $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $name ) );
+				if ( '1' !== (string) $released || $connection !== ( $wpdb->dbh ?? null ) ) {
+					throw new RuntimeException( 'Core Scanner could not release the storage mutex safely.' );
+				}
+			} finally {
+				unset( self::$held_locks[ $name ] );
 			}
 		}
 	}
