@@ -96,7 +96,9 @@ final class ResourcePackageImport {
 				return $preview;
 			}
 			if ( ! ( $preview['valid'] ?? false ) ) {
-				return $preview; // Preserve the Engine's bounded record-level errors.
+				return null === $fingerprint
+					? $preview
+					: new WP_Error( 'cb_core_data_exchange_invalid_records', 'Data Exchange import contains invalid records.', [ 'preview' => $preview ] );
 			}
 			if ( 1 !== self::$active['bind_count'] || 1 !== ( $preview['record_count'] ?? null ) ) {
 				return self::refuse();
