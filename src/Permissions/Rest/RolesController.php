@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Permissions\Rest;
 
 use CoreBlueprint\Core\Permissions\RolePolicy;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use CoreBlueprint\Core\Permissions\RoleRepository;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -103,7 +104,21 @@ final class RolesController {
 		} catch ( \InvalidArgumentException $e ) {
 			return self::error( $e->getMessage(), 400 );
 		} catch ( \RuntimeException $e ) {
-			return self::error( $e->getMessage(), 403 );
+			return self::error( ThrowableBoundary::known_message( $e, [
+				__( 'You do not have permission to manage user roles.', 'core-blueprint' ),
+				__( 'Only an administrator may modify the Administrator role.', 'core-blueprint' ),
+				__( 'This change would remove your last capability to manage user roles.', 'core-blueprint' ),
+				__( 'Role name and slug are required.', 'core-blueprint' ),
+				__( 'Role slug must be 64 characters or fewer.', 'core-blueprint' ),
+				__( 'A role with this slug already exists.', 'core-blueprint' ),
+				__( 'The source role no longer exists.', 'core-blueprint' ),
+				__( 'WordPress could not create the role.', 'core-blueprint' ),
+				__( 'The role to duplicate no longer exists.', 'core-blueprint' ),
+				__( 'The display name of this system role is protected.', 'core-blueprint' ),
+				__( 'Role name cannot be empty.', 'core-blueprint' ),
+				__( 'Role not found.', 'core-blueprint' ),
+				__( 'WordPress could not update the role name.', 'core-blueprint' ),
+			], __( 'An error occurred.', 'core-blueprint' ) ), 403 );
 		}
 
 		return new WP_REST_Response( [

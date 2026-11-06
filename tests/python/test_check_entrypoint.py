@@ -286,6 +286,32 @@ class CheckEntrypointTest(unittest.TestCase):
         self.assertFalse(any(x.startswith('node|') for x in self.trace_lines()))
         self.assertNotIn('Level 1 checks: PASS', result.stdout)
 
+    def test_f08_regression_is_required_when_base_security_boundary_exists(self):
+        source = self.root / 'src/Support/ThrowableBoundary.php'
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text('<?php // fixture\\n', encoding='utf-8')
+        result = self.run_check()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn('F08 security exception regression is missing', result.stderr)
+        self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_f08_regression_runs_and_failures_stop_level1(self):
+        source = self.root / 'src/Support/ThrowableBoundary.php'
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text('<?php // fixture\\n', encoding='utf-8')
+        regression = self.root / 'tests/public-f08-throwable-boundary-regression.php'
+        regression.write_text('<?php // fixture\\n', encoding='utf-8')
+
+        result = self.run_check()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn('php|tests/public-f08-throwable-boundary-regression.php', self.trace_lines())
+
+        self.trace.unlink()
+        failed = self.run_check('php|tests/public-f08-throwable-boundary-regression.php')
+        self.assertEqual(23, failed.returncode, failed.stdout + failed.stderr)
+        self.assertFalse(any(x.startswith('node|') for x in self.trace_lines()))
+        self.assertNotIn('Level 1 checks: PASS', failed.stdout)
+
     def test_python_failure_stops_pass_reporting(self):
         result = self.run_check('python3|-B')
         self.assertEqual(23, result.returncode)
