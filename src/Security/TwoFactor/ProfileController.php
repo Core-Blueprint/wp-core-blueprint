@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Security\TwoFactor;
 
 use CoreBlueprint\Core\Admin\ProfileActionForms;
+use CoreBlueprint\Core\Support\ThrowableBoundary;
 use CoreBlueprint\Core\Admin\SecureActionScreen;
 use CoreBlueprint\Core\Admin\UserProfileSectionRegistry;
 use CoreBlueprint\Core\UI\Assets as UiAssets;
@@ -140,7 +141,7 @@ final class ProfileController {
 			$secret = AccountManager::start_enrollment( $user, self::posted_password() );
 			self::render_setup_secret( $user, $secret );
 		} catch ( \Throwable $error ) {
-			self::set_notice( (int) $user->ID, 'error', $error->getMessage() );
+			self::set_notice( (int) $user->ID, 'error', self::safe_failure_message( $error ) );
 			self::redirect_profile();
 		}
 	}
@@ -156,7 +157,7 @@ final class ProfileController {
 			);
 			self::render_recovery_codes( $codes );
 		} catch ( \Throwable $error ) {
-			self::set_notice( (int) $user->ID, 'error', $error->getMessage() );
+			self::set_notice( (int) $user->ID, 'error', self::safe_failure_message( $error ) );
 			self::redirect_profile();
 		}
 	}
@@ -168,7 +169,7 @@ final class ProfileController {
 			AccountManager::cancel_enrollment( $user );
 			self::set_notice( (int) $user->ID, 'success', __( 'Pending two-factor setup was cancelled.', 'core-blueprint' ) );
 		} catch ( \Throwable $error ) {
-			self::set_notice( (int) $user->ID, 'error', $error->getMessage() );
+			self::set_notice( (int) $user->ID, 'error', self::safe_failure_message( $error ) );
 		}
 
 		self::redirect_profile();
@@ -185,7 +186,7 @@ final class ProfileController {
 			);
 			self::render_recovery_codes( $codes );
 		} catch ( \Throwable $error ) {
-			self::set_notice( (int) $user->ID, 'error', $error->getMessage() );
+			self::set_notice( (int) $user->ID, 'error', self::safe_failure_message( $error ) );
 			self::redirect_profile();
 		}
 	}
@@ -201,7 +202,7 @@ final class ProfileController {
 			);
 			self::set_notice( (int) $user->ID, 'success', __( 'Base two-factor authentication was removed.', 'core-blueprint' ) );
 		} catch ( \Throwable $error ) {
-			self::set_notice( (int) $user->ID, 'error', $error->getMessage() );
+			self::set_notice( (int) $user->ID, 'error', self::safe_failure_message( $error ) );
 		}
 
 		self::redirect_profile();
@@ -539,6 +540,25 @@ final class ProfileController {
 		return isset( $_POST['cb_two_factor_code'] ) && is_scalar( $_POST['cb_two_factor_code'] )
 			? sanitize_text_field( wp_unslash( (string) $_POST['cb_two_factor_code'] ) )
 			: '';
+	}
+
+
+	/** Only AccountManager's fixed, non-secret user-facing failures are retained. */
+	private static function safe_failure_message( \Throwable $error ): string {
+		return ThrowableBoundary::known_message( $error, [
+			__( 'An external two-factor provider already manages this account.', 'core-blueprint' ),
+			__( 'Base two-factor authentication is already active for this account.', 'core-blueprint' ),
+			__( 'Password confirmation failed. Two-factor setup was not changed.', 'core-blueprint' ),
+			__( 'The verification code was not accepted. Try again.', 'core-blueprint' ),
+			__( 'Base two-factor authentication is not active for this account.', 'core-blueprint' ),
+			__( 'Password confirmation failed. Recovery codes were not changed.', 'core-blueprint' ),
+			__( 'Two-factor verification failed. Recovery codes were not changed.', 'core-blueprint' ),
+			__( 'Recovery codes could not be regenerated. Try again.', 'core-blueprint' ),
+			__( 'Base two-factor authentication cannot be removed while enforcement is required for this account.', 'core-blueprint' ),
+			__( 'Password confirmation failed. Two-factor authentication was not removed.', 'core-blueprint' ),
+			__( 'Two-factor verification failed. Two-factor authentication was not removed.', 'core-blueprint' ),
+			__( 'Base two-factor self-service is available only for your own privileged account.', 'core-blueprint' ),
+		], __( 'An error occurred.', 'core-blueprint' ) );
 	}
 
 	private static function set_notice( int $user_id, string $type, string $message ): void {
