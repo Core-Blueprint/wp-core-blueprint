@@ -1,6 +1,8 @@
 # Base Designer Exit Guard v4
 
-**CX-02E development candidate (1 November 2026):** Exit Guard API v4 supersedes B1. CX-02D SOURCE and development build are accepted; CX-02E has not yet passed Base Level 1, WordPress Level 2 or FIELD acceptance. Native Mail and Maintenance Reports retain their previously accepted fullscreen behavior. No release, merge, or external Native Trusted Host admission is authorized.
+**FRG-04 current-source checkpoint (6 November 2026):** Exit Guard API v4 is present on Base `main@18023119473f27a95eac3215b25fcc30d115641f`. Source contains `designer-cx02e-v4-public.test.mjs` and `designer-native-discard-integration.test.mjs`; earlier accepted native Mail and Maintenance Reports Save/Discard FIELD is recorded in `DESIGNER-FOUNDATION-API.md` for that limited scope. These facts do not establish new post-merge WordPress Level 2, current exact-artifact FIELD or Foundation Freeze. External Native Trusted Host admission remains deferred.
+
+**Historical CX-02E development checkpoint (1 November 2026):** Exit Guard API v4 supersedes B1. CX-02D SOURCE and development build are accepted; CX-02E has not yet passed Base Level 1, WordPress Level 2 or FIELD acceptance. Native Mail and Maintenance Reports retain their previously accepted fullscreen behavior. No release, merge, or external Native Trusted Host admission is authorized.
 
 ## Ownership and lifecycle
 
