@@ -113,6 +113,57 @@ final class CB_Base_Integrity_Chunked_Storage_Transaction_Contract_Test extends 
 		ChunkedOptionStore::delete( $key );
 	}
 
+	/**
+	 * Exercise the real MariaDB/MySQL DML predicate without killing a shared
+	 * database connection. The replay is submitted on a distinct wpdb session
+	 * which owns the mutex after the original operation has released it.
+	 */
+	public function test_f07_sql_replay_does_not_mutate_options_after_named_lock_handover(): void {
+		global $wpdb;
+		$key = self::KEY;
+		$captured = [];
+		$observe = static function ( string $sql ) use ( &$captured, $key ): string {
+			if (
+				( str_starts_with( $sql, 'INSERT INTO ' ) || str_starts_with( $sql, 'DELETE FROM ' ) )
+				&& str_contains( $sql, $key )
+			) {
+				$captured[] = $sql;
+			}
+			return $sql;
+		};
+		add_filter( 'query', $observe, PHP_INT_MAX );
+		try {
+			self::assertTrue( ChunkedOptionStore::set( $key, [ 'revision' => 'original' ] ) );
+		} finally {
+			remove_filter( 'query', $observe, PHP_INT_MAX );
+		}
+		self::assertNotEmpty( $captured );
+		$pointer = get_option( $key, null );
+		self::assertIsArray( $pointer );
+		$before = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $key ) );
+		$name = 'cb_integrity_' . substr( hash( 'sha256', $wpdb->options . ':' . $key ), 0, 40 );
+
+		$successor = new wpdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
+		self::assertSame( '1', (string) $successor->get_var( $successor->prepare( 'SELECT GET_LOCK(%s, 0)', $name ) ) );
+		try {
+			foreach ( $captured as $sql ) {
+				self::assertStringContainsString( 'CONNECTION_ID()', $sql );
+				self::assertStringContainsString( 'IS_USED_LOCK(', $sql );
+				self::assertSame( 0, $successor->query( $sql ), 'A successor must not replay a previous session DML.' );
+			}
+			self::assertSame(
+				$before,
+				$wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $key ) ),
+				'No stale SQL replay can alter the committed pointer.'
+			);
+			self::assertSame( $pointer, get_option( $key, null ) );
+			self::assertNull( get_option( $key . '__pending', null ) );
+		} finally {
+			self::assertSame( '1', (string) $successor->get_var( $successor->prepare( 'SELECT RELEASE_LOCK(%s)', $name ) ) );
+			ChunkedOptionStore::delete( $key );
+		}
+	}
+
 	public function test_f07_distinct_quarantine_items_survive_shared_snapshot_updates(): void {
 		$a = 'q_' . str_repeat( 'a', 16 );
 		$b = 'q_' . str_repeat( 'b', 16 );
