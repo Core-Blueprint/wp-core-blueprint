@@ -286,6 +286,32 @@ class CheckEntrypointTest(unittest.TestCase):
         self.assertFalse(any(x.startswith('node|') for x in self.trace_lines()))
         self.assertNotIn('Level 1 checks: PASS', result.stdout)
 
+    def test_f07_regression_is_required_when_scanner_store_exists(self):
+        source = self.root / 'src/Integrity/Storage/ChunkedOptionStore.php'
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text('<?php // fixture\\n', encoding='utf-8')
+        result = self.run_check()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn('F07 Scanner reconnect regression is missing', result.stderr)
+        self.assertFalse(any(x.startswith('composer|') for x in self.trace_lines()))
+
+    def test_f07_regression_runs_and_failure_stops_level1(self):
+        source = self.root / 'src/Integrity/Storage/ChunkedOptionStore.php'
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text('<?php // fixture\\n', encoding='utf-8')
+        test = self.root / 'tests/public-f07-scanner-lock-reconnect-regression.php'
+        test.write_text('<?php // fixture\\n', encoding='utf-8')
+
+        result = self.run_check()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn('php|tests/public-f07-scanner-lock-reconnect-regression.php', self.trace_lines())
+
+        self.trace.unlink()
+        failed = self.run_check('php|tests/public-f07-scanner-lock-reconnect-regression.php')
+        self.assertEqual(23, failed.returncode, failed.stdout + failed.stderr)
+        self.assertFalse(any(x.startswith('node|') for x in self.trace_lines()))
+        self.assertNotIn('Level 1 checks: PASS', failed.stdout)
+
     def test_f08_regression_is_required_when_base_security_boundary_exists(self):
         source = self.root / 'src/Support/ThrowableBoundary.php'
         source.parent.mkdir(parents=True, exist_ok=True)
