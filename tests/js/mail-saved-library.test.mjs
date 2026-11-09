@@ -235,6 +235,44 @@ test('T3-02 Mail-only static bootstrap binds both early and late to a READY nati
 	assert.doesNotMatch(source, /createSaveCoordinator|new CommandHistory|TemplateRepository::save/);
 });
 
+test('T3-02 READY Host binding succeeds before and after Mail bootstrap registration', () => {
+	const begin = platform.indexOf('const issue=(code)=>Object.assign(new Error(code),{code});');
+	const finish = platform.indexOf('// Native Designer uses the canonical Base Toast Foundation', begin);
+	assert.ok(begin >= 0 && finish > begin, 'real private registration source is present');
+	const actualImplementation = platform.slice(begin, finish).replace(/^export /gm, '');
+	const exercise = (early) => {
+		const calls = [];
+		const events = [];
+		const notifications = [];
+		const sandbox = {
+			baseToast: {warning: text => notifications.push(text)},
+			window: {addEventListener: (...args) => events.push(args)},
+		};
+		runInNewContext(actualImplementation +
+			'\nglobalThis.mailReadyBridge = {installMailTemplateActions,registerNativeMailTemplateActions};', sandbox);
+		const api = sandbox.mailReadyBridge;
+		const ctx = {host:{state:'READY'},root:{isConnected:true},contextSlot:{},scopeToken:'signed'};
+		const bind = item => { calls.push(item); return () => {}; };
+		if (early) {
+			assert.equal(api.registerNativeMailTemplateActions(bind), true);
+			api.installMailTemplateActions(ctx);
+		} else {
+			api.installMailTemplateActions(ctx);
+			assert.equal(api.registerNativeMailTemplateActions(bind), true);
+		}
+		assert.equal(calls.length, 1, 'exactly one Mail binder call');
+		assert.equal(calls[0], ctx, 'private Host context handed to Mail-only binder');
+		assert.equal(events.length, 1, 'pagehide cleanup installed');
+		assert.equal(events[0][0], 'pagehide');
+		assert.equal(api.registerNativeMailTemplateActions(bind), false, 'duplicate binder refused');
+		api.installMailTemplateActions({host:{state:'NOT_READY'},root:{isConnected:true}});
+		assert.equal(calls.length, 1, 'not-READY Host never binds');
+		assert.deepEqual(notifications, [], 'no unexpected fallback warnings');
+	};
+	exercise(true);
+	exercise(false);
+});
+
 test('T3-02 release-safe Designer module graph excludes every dynamic import in the new bridge', () => {
 	for(const code of [platform, bridge, source]){
 		assert.doesNotMatch(code, /\bimport\s*\(/);
