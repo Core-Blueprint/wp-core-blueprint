@@ -96,6 +96,7 @@ namespace {
 	foreach ( [
 		'src/TemplateLibrary/TemplateQuery.php',
 		'src/TemplateLibrary/TemplateSourceInterface.php',
+		'src/TemplateLibrary/TemplateApplySourceInterface.php',
 		'src/TemplateLibrary/TemplateManagementSourceInterface.php',
 		'src/TemplateLibrary/TemplateDesignerAuthorityInterface.php',
 		'src/TemplateLibrary/TemplateCategorySourceInterface.php',
@@ -116,6 +117,14 @@ namespace {
 	tl_reports_assert( $source->can_view( 'maintenance', 17 ), 'one immutable native template' );
 	tl_reports_assert( ! $source->can_view( 'other', 17 ), 'unknown ID denied' );
 	tl_reports_assert( ! $source->can_manage( 'maintenance', 17 ), 'built-in never manageable' );
+	tl_reports_assert( $source instanceof \CoreBlueprint\Core\TemplateLibrary\TemplateApplySourceInterface,
+		'native source opts in to read-only Apply contract' );
+	tl_reports_assert( $source->can_apply_to( Repository::REPORTS, Repository::REPORTS, 'maintenance', 17 ) === false,
+		'template ID must not be confused with target resource type' );
+	tl_reports_assert( $source->can_apply_to( 'maintenance', Repository::REPORTS, 'maintenance', 17 ),
+		'authorized actor can apply native template to matching target' );
+	tl_reports_assert( ! $source->can_apply_to( 'maintenance', Repository::MAIL, 'maintenance', 17 ),
+		'cross-domain target rejected' );
 	tl_reports_assert(
 		[ 'maintenance' => 'Maintenance Report' ] === $source->categories( 17 ),
 		'category facet stays public and bounded'

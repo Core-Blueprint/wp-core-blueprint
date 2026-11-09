@@ -104,6 +104,7 @@ export function createPlatformHost({
 			const intent = Object.freeze(Object.create(null));
 			applyIntents.set(intent, {
 				holder,
+				generation: holder.applyGeneration,
 				project: canonicalSaveJSON(holder.bridge.snapshot()),
 				fields: canonicalSaveJSON(readPersistedFields(holder.save)),
 			});
@@ -115,6 +116,7 @@ export function createPlatformHost({
 			if (intent && typeof intent === 'object') applyIntents.delete(intent);
 			const status = holder.save.status();
 			if (!checkpoint || checkpoint.holder !== holder
+				|| checkpoint.generation !== holder.applyGeneration
 				|| status?.blocked || !['READY_CLEAN','READY_DIRTY'].includes(status?.state)
 				|| typeof applyTemplateDocument !== 'function'
 				|| !reply || reply.status !== 'ready'
@@ -174,7 +176,7 @@ export function createPlatformHost({
 	const stage = async (candidate) => {
 		const scope = createLifecycleScope();
 		const holder = {scope, canvas: null, bridge: null, save: null, adapter: null, editor: null,
-			identity: null, profileId: null, lastProject: null, revision: 0, viewport: 'desktop'};
+			identity: null, profileId: null, lastProject: null, revision: 0, applyGeneration: 0, viewport: 'desktop'};
 		try {
 			if (!candidate || typeof candidate !== 'object' || !candidate.bootstrap) throw refusal('HOST_CONTEXT_REFUSED');
 			const registry = await resolveRegistryView(candidate.bootstrap);
@@ -252,6 +254,7 @@ export function createPlatformHost({
 			if (scope.signal.aborted) throw refusal('RENDER_STALE');
 			holder.lastProject = bridge.project();
 			const unsub = bridge.subscribe(() => {
+				holder.applyGeneration += 1;
 				if (holder === active && state === 'READY') {
 					void refresh('command').catch((error) => diagnostics(error.code || 'HOST_CONTEXT_REFUSED'));
 				}

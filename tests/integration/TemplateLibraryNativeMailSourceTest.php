@@ -102,6 +102,36 @@ final class CB_Template_Library_Native_Mail_Source_Test extends WP_UnitTestCase 
 		self::assertFalse( $source->can_manage( 'bookings.fixture', $this->operator ) );
 	}
 
+	public function test_native_apply_returns_independent_defaults_only_for_authorized_same_profile_target(): void {
+		$scope = [ 'extension' => 'core-blueprint', 'designer' => 'mail' ];
+		$template_id = 'wordpress.new-user';
+		$source = new NativeTemplateSource();
+		self::assertSame( \CoreBlueprint\Core\Design\Profile\Mail\PlatformAdapter::PROFILE, $source->target_profile_id() );
+		self::assertTrue( $source->can_apply_to( $template_id, Repository::MAIL, $template_id, $this->operator ) );
+		$copy = TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, $template_id, $source->target_profile_id(),
+			Repository::MAIL, $template_id, $scope
+		);
+		self::assertSame( TemplateRegistry::default_document( $template_id ), $copy );
+		self::assertNull( TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, $template_id, 'base/reports',
+			Repository::MAIL, $template_id, $scope
+		) );
+		self::assertNull( TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, $template_id, $source->target_profile_id(),
+			Repository::MAIL, 'wordpress.unknown', $scope
+		) );
+		self::assertNull( TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, 'wordpress.unknown', $source->target_profile_id(),
+			Repository::MAIL, $template_id, $scope
+		) );
+		self::assertNull( TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, $template_id, $source->target_profile_id(),
+			Repository::MAIL, $template_id,
+			[ 'extension' => 'core-blueprint', 'designer' => 'reports' ]
+		) );
+	}
+
 	public function test_source_cursor_is_bounded_and_metadata_only(): void {
 		$query = new TemplateQuery( source: NativeTemplateSource::SOURCE_ID, limit: 1 );
 		$cursor = null;

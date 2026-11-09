@@ -1767,7 +1767,7 @@ export const attachTrustedDesignerHost = ({
 				syncDropZones();
 				syncNodeSources();
 				interactions?.refresh();
-				// A field edit may dirty the joint Save without changing History.
+				// Field changes now participate in canonical History and joint Save state.
 				// Refresh the ONE SaveCoordinator-derived button status after Host
 				// projection, never infer saved state from a toolbar event.
 				stagedSaveUI.get(stagedRoot)?.syncSaveUI();

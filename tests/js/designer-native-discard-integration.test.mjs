@@ -289,6 +289,9 @@ async function createFixture({ unknownSave = false } = {}) {
     },
     readPersistedFields: () => realFields.snapshot().fields,
     updatePersistedField: (_save, key, value) => realFields.set(key, value),
+    applyTemplateDocument: (_save, document) => realBridge.applyTemplateDocument(
+      document.project, realFields.prepareReplace(document.fields),
+    ),
   });
   await host.mount({ bootstrap, project: baselineProject(), persistedFields: baselineFields() });
   assert.equal(host.state, 'READY', 'The real Native Host must mount before diagnosis');
@@ -429,4 +432,104 @@ test('E UNKNOWN Save remains blocked across public Native Host and Exit Guard', 
   assert.equal(result.exitCount, 0);
   assert.equal(result.finalDirty, true);
   assert.equal(result.coordinatorAfter.state, 'UNKNOWN');
+});
+
+
+// T3-01 uses real canonical PlatformHost, PlatformSessionBridge,
+// CommandHistory, PersistedFields and SaveCoordinator, with no template Save.
+test('T3-01 native template apply is one dirty, undoable, independent project + fields change', async () => {
+  const instance = await createFixture();
+  const editor = instance.publicHost().editor;
+  const intent = editor.captureApplyIntent();
+  const document = {
+    project: {
+      ...baselineProject(), root: {
+        ...baselineProject().root, properties: {title: 'applied'},
+      },
+    },
+    fields: {preheader: 'template value'},
+  };
+  const reply = {
+    status: 'ready', source: 'core-blueprint-mail', templateId: 'wordpress.new-user',
+    profileId, resourceType: 'mail', resourceKey: 'fixture',
+    contextEpoch: 0, blogId: 1, actorId: 2, document,
+  };
+  assert.equal(editor.applyTemplate(reply, intent), true);
+  assert.equal(editor.project().root.properties.title, 'applied');
+  assert.equal(editor.persistedFields().preheader, 'template value');
+  assert.equal(editor.historyStatus().size, 1);
+  assert.equal(editor.saveStatus().dirty, true);
+  assert.equal(editor.undo(), true);
+  assert.deepEqual(editor.project(), baselineProject());
+  assert.deepEqual({ ...editor.persistedFields() }, baselineFields());
+  assert.equal(editor.saveStatus().dirty, false);
+  assert.equal(editor.redo(), true);
+  assert.equal(editor.project().root.properties.title, 'applied');
+  assert.equal(editor.persistedFields().preheader, 'template value');
+  assert.equal(editor.saveStatus().dirty, true);
+  assert.equal(editor.applyTemplate(reply, intent), false, 'reused Apply intent must be refused');
+});
+
+test('T3-01 incorrect target, changed editor and UNKNOWN Save refuse Apply without partial changes', async () => {
+  const instance = await createFixture({unknownSave: true});
+  const editor = instance.publicHost().editor;
+  const doc = {project: {...baselineProject(), root: {
+    ...baselineProject().root, properties: {title: 'applied'},
+  }}, fields: {preheader: 'new'}};
+  const receipt = {
+    status: 'ready', source: 'core-blueprint-mail', templateId: 'wordpress.new-user',
+    profileId, resourceType: 'mail', resourceKey: 'fixture',
+    contextEpoch: 0, blogId: 1, actorId: 2, document: doc,
+  };
+  const wrongTarget = editor.captureApplyIntent();
+  assert.throws(() => editor.applyTemplate({...receipt, resourceKey: 'other'}, wrongTarget),
+    /SAVE_CONTEXT_CHANGED/);
+  assert.equal(editor.saveStatus().dirty, false);
+  const changedIntent = editor.captureApplyIntent();
+  editor.execute('fixture.set-title', {value: 'intervening'});
+  assert.throws(() => editor.applyTemplate(receipt, changedIntent), /SAVE_CONTEXT_CHANGED/);
+  assert.equal(editor.project().root.properties.title, 'intervening');
+  assert.equal(editor.persistedFields().preheader, 'confirmed');
+
+  const unknownIntent = editor.captureApplyIntent();
+  editor.setPersistedField('preheader', 'pending');
+  const outcome = await editor.save();
+  assert.equal(outcome.status, 'unknown');
+  assert.throws(() => editor.applyTemplate(receipt, unknownIntent),
+    /SAVE_CONTEXT_CHANGED|SAVE_PENDING_CONTEXT_BLOCKED/);
+  assert.throws(() => editor.captureApplyIntent(), /SAVE_PENDING_CONTEXT_BLOCKED/);
+  assert.equal(editor.persistedFields().preheader, 'pending');
+});
+
+test('T3-01 rejected project and failed field adjunct preserve atomic History state', async () => {
+  const instance = await createFixture();
+  const bridge = instance.bridge();
+  const fields = instance.fields();
+  const beforeProject = bridge.snapshot();
+  const beforeFields = fields.snapshot();
+  const oldHistory = bridge.historyStatus();
+  const witness = fields.prepareReplace({preheader: 'new'});
+  assert.throws(() => bridge.applyTemplateDocument({
+    ...baselineProject(), root: {
+      ...baselineProject().root, properties: {title: 123},
+    },
+  }, witness), /SCHEMA_DOMAIN_INVALID|Stable|schema/i);
+  assert.deepEqual(bridge.snapshot(), beforeProject);
+  assert.equal(fields.snapshot().fieldRevision, beforeFields.fieldRevision);
+  assert.deepEqual(bridge.historyStatus(), oldHistory);
+
+  let touched = false;
+  const broken = Object.freeze({
+    ...witness, commit() { witness.commit(); touched = true; throw new Error('INJECTED_FIELD_COMMIT_FAILURE'); },
+  });
+  assert.throws(() => bridge.applyTemplateDocument({
+    ...baselineProject(), root: {
+      ...baselineProject().root, properties: {title: 'updated'},
+    },
+  }, broken), /INJECTED_FIELD_COMMIT_FAILURE/);
+  assert.equal(touched, true);
+  assert.deepEqual(bridge.snapshot(), beforeProject);
+  assert.deepEqual(fields.snapshot().fields, beforeFields.fields);
+  assert.equal(fields.snapshot().fieldRevision, beforeFields.fieldRevision);
+  assert.deepEqual(bridge.historyStatus(), oldHistory);
 });

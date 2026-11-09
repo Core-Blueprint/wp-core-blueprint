@@ -101,6 +101,38 @@ final class CB_Template_Library_Native_Reports_Source_Test extends WP_UnitTestCa
 		)->items );
 	}
 
+	public function test_native_apply_document_is_same_target_read_only_and_capability_gated(): void {
+		$source = new NativeTemplateSource();
+		$scope = [ 'extension' => 'core-blueprint', 'designer' => 'reports' ];
+		self::assertSame( \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::PROFILE, $source->target_profile_id() );
+		$expected = [
+			'project' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_project(),
+			'fields' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_fields(),
+		];
+		self::assertSame( $expected, TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, 'maintenance', $source->target_profile_id(),
+			Repository::REPORTS, 'maintenance', $scope
+		) );
+		self::assertNull( TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, 'maintenance', 'base/mail',
+			Repository::REPORTS, 'maintenance', $scope
+		) );
+		self::assertNull( TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, 'maintenance', $source->target_profile_id(),
+			Repository::MAIL, 'maintenance', $scope
+		) );
+		self::assertNull( TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, 'maintenance', $source->target_profile_id(),
+			Repository::REPORTS, 'another-report', $scope
+		) );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'subscriber' ] ) );
+		self::assertNull( TemplateSourceRegistry::document_for_apply(
+			NativeTemplateSource::SOURCE_ID, 'maintenance', $source->target_profile_id(),
+			Repository::REPORTS, 'maintenance', $scope
+		) );
+		wp_set_current_user( $this->operator );
+	}
+
 	public function test_navigation_is_same_site_and_built_in_remains_immutable(): void {
 		$source = new NativeTemplateSource();
 		$item = $source->query( new TemplateQuery(), null )->items[0];
