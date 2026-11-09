@@ -44,6 +44,14 @@ final class Bootstrap {
 		// the Core Blueprint textdomain has loaded on init priority 0.
 		add_action( 'init', [ __CLASS__, 'register_i18n_filters' ], 1 );
 
+		// Reuse the public Template Library registry for the single native
+		// Maintenance Reports design. No second storage or Save authority.
+		add_action( 'core_blueprint_register_template_sources', static function (): void {
+			\CoreBlueprint\Core\TemplateLibrary\TemplateSourceRegistry::register(
+				new NativeTemplateSource()
+			);
+		} );
+
 		// Register the Reports admin page through the central registry.
 		// PageRegistry fires this hook during admin_menu, so the page
 		// shows up in the Core Blueprint sidebar between Logs (20) and
