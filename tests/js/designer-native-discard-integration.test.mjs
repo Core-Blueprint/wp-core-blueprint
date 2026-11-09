@@ -548,8 +548,8 @@ test('T3-01 pending Save blocks new Apply intent and does not mutate the native 
   const editor = instance.publicHost().editor;
   editor.setPersistedField('preheader', 'dirty');
   const pending = editor.save();
-  for (let attempt = 0; attempt < 1000 && instance.coordinator().status().state !== 'SUBMITTING'; attempt++) {
-    await Promise.resolve();
+  for (let attempt = 0; attempt < 50 && instance.coordinator().status().state !== 'SUBMITTING'; attempt++) {
+    await new Promise(resolve => setImmediate(resolve));
   }
   assert.equal(instance.coordinator().status().state, 'SUBMITTING');
   assert.throws(() => editor.captureApplyIntent(), /SAVE_PENDING_CONTEXT_BLOCKED/);
