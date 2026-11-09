@@ -92,7 +92,7 @@ final class CB_Template_Library_Native_Reports_Source_Test extends WP_UnitTestCa
 			self::assertSame( [], $source->query( $query, null )->items );
 		}
 		self::assertCount( 1, $source->query(
-			new TemplateQuery( search: 'branding', origin: 'built-in', category: 'maintenance' ), null
+			new TemplateQuery( search: __( 'Maintenance Report', 'core-blueprint' ), origin: 'built-in', category: 'maintenance' ), null
 		)->items );
 		self::assertSame( [], $source->query( new TemplateQuery(), '0' )->items );
 		self::assertSame( [], TemplateSourceRegistry::browse_designer(
