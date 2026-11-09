@@ -28,6 +28,7 @@ namespace {
     use CoreBlueprint\Core\Mail\DesignerState;
 
     function __( string $text, string $domain = '' ): string { return $text; }
+    function wp_strip_all_tags( string $text ): string { return strip_tags( $text ); }
     function sanitize_text_field( string $text ): string { return trim( strip_tags( $text ) ); }
     function esc_attr( string $text ): string {
         return htmlspecialchars( $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
@@ -69,6 +70,7 @@ namespace {
         'src/Design/Profile/Mail/Validator.php',
         'src/Design/Profile/Mail/PlatformAdapter.php',
         'src/Design/Document/Repository.php',
+        'src/TemplateLibrary/TemplateQuery.php',
         'src/Design/Editor/PlatformTransport.php',
         'src/Mail/Designer/TemplateRegistry.php',
         'src/Mail/Designer/WordPressTemplates.php',
