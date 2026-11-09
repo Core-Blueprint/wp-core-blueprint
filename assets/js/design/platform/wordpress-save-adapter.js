@@ -284,6 +284,16 @@ async function activate() {
 		// one confirmed navigation and its beforeunload authorization.
 		decorateDesignerControl(close, 'x', {iconOnly: true, label: 'Close Designer'});
 		closeSlot.append(close);
+		if(mail) {
+			// Optional Mail-owned template controls; an unavailable UI module
+			// must not invalidate an already committed native Host/Save session.
+			const scopeToken = mail.dataset.cbMailScope || '';
+			void import('@cb-core/mail-saved-library').then(({bindMailTemplates})=>{
+				if(host.state!=='READY')return;
+				const release=bindMailTemplates({host,root,contextSlot,scopeToken});
+				window.addEventListener('pagehide',release,{once:true});
+			}).catch(()=>baseToast.warning('Mail template management is unavailable. Reload the Designer.'));
+		}
 		if(loadingContext)loadingContext.hidden=true;
 		if(reports){origin.hidden=true;origin.setAttribute('inert','');}
 		screen.dataset.cbPlatformMounted='true';
