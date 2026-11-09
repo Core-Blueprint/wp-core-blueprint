@@ -91,8 +91,13 @@ function nameDialogBody(value = '', visibility = false) {
 
 function canCapture(host) {
 	if (host?.state !== 'READY' || host.profileId !== 'base/mail' || !host.context || !host.editor) return false;
-	const status = host.editor.saveStatus();
-	return !status.blocked && ['READY_CLEAN', 'READY_DIRTY'].includes(status.state);
+	try {
+		const status = host.editor.saveStatus();
+		return !status?.blocked && ['READY_CLEAN', 'READY_DIRTY'].includes(status?.state);
+	} catch (_) {
+		// An uncertain or switching Host can never authorize an asset snapshot.
+		return false;
+	}
 }
 
 function targetOf(host) {
@@ -192,16 +197,17 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 					form.notice.textContent = 'Enter a name and verify the current Designer Save state.';
 					return false;
 				}
-				const target = targetOf(host);
-				const captured = {
-					title, visibility: form.select.value,
-					...target,
-					document: {
-						project: host.editor.snapshot(),
-						fields: host.editor.persistedFields(),
-					},
-				};
 				try {
+					if (!canCapture(host)) throw new Error('MAIL_SAVED_CONTEXT_REFUSED');
+					const target = targetOf(host);
+					const captured = {
+						title, visibility: form.select.value,
+						...target,
+						document: {
+							project: host.editor.snapshot(),
+							fields: host.editor.persistedFields(),
+						},
+					};
 					const result = await api('create', captured, {scope: scopeToken});
 					if (result.status === 'created' && typeof result.id === 'string') {
 						toast.success('Reusable Mail template saved.');

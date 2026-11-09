@@ -54,11 +54,16 @@ final class SavedTemplateSchema {
 	}
 
 	/** Fresh physical integrity check before Mail template writes and reads. */
-	private static ?bool $last_healthy = null;
+	/** @var array<string,bool> Per-blog verified physical schemas. */
+	private static array $healthy_tables = [];
 
 	public static function healthy( bool $fresh = false ): bool {
-		if ( ! $fresh && true === self::$last_healthy ) return true;
-		return self::$last_healthy = self::inspect();
+		$table = self::table();
+		if ( ! $fresh && true === ( self::$healthy_tables[$table] ?? false ) ) return true;
+		$verified = self::inspect();
+		if ( $verified ) self::$healthy_tables[$table] = true;
+		else unset( self::$healthy_tables[$table] );
+		return $verified;
 	}
 
 	private static function inspect(): bool {
