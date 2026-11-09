@@ -125,9 +125,10 @@ const statusSummary = (value) => value
   ? { state: value.state, dirty: value.dirty, blocked: value.blocked }
   : null;
 
-async function createFixture({ unknownSave = false } = {}) {
+async function createFixture({ unknownSave = false, holdSave = false } = {}) {
   const { canonicalDigest, createRegistryView } = modules.registry;
   let rejectConfirmedBaseline = false;
+  let releaseHeldSave = null;
   const command = Object.freeze({
     contractVersion: 1, id: 'fixture.set-title',
     canApply: () => true,
@@ -262,6 +263,11 @@ async function createFixture({ unknownSave = false } = {}) {
         },
         submit: async () => {
           if (!unknownSave) throw new Error('Unexpected Save transport');
+          if (holdSave) {
+            return await new Promise(resolve => {
+              releaseHeldSave = () => resolve({ status: 'unknown', reason: 'SAVE_TX_STATE_UNVERIFIED' });
+            });
+          }
           return { status: 'unknown', reason: 'SAVE_TX_STATE_UNVERIFIED' };
         },
         lookupOperation: () => { throw new Error('Unexpected Save recovery'); },
@@ -308,7 +314,8 @@ async function createFixture({ unknownSave = false } = {}) {
   assert.equal(typeof publicHost.discard, 'function', 'Native public Host must expose Discard');
   return { host, publicHost: () => publicHost, root, document, bridge: () => realBridge,
     fields: () => realFields, coordinator: () => realCoordinator,
-    rejectBaseline: () => { rejectConfirmedBaseline = true; } };
+    rejectBaseline: () => { rejectConfirmedBaseline = true; },
+    releaseSave: () => releaseHeldSave?.() };
 }
 
 async function runScenario(name, { projectDirty = false, fieldDirty = false, rejectRestore = false, unknownSave = false } = {}) {
@@ -534,4 +541,20 @@ test('T3-01 rejected project and failed field adjunct preserve atomic History st
   assert.deepEqual(fields.snapshot().fields, beforeFields.fields);
   assert.equal(fields.snapshot().fieldRevision, beforeFields.fieldRevision);
   assert.deepEqual(bridge.historyStatus(), oldHistory);
+});
+
+test('T3-01 pending Save blocks new Apply intent and does not mutate the native document', async () => {
+  const instance = await createFixture({unknownSave: true, holdSave: true});
+  const editor = instance.publicHost().editor;
+  editor.setPersistedField('preheader', 'dirty');
+  const pending = editor.save();
+  for (let attempt = 0; attempt < 1000 && instance.coordinator().status().state !== 'SUBMITTING'; attempt++) {
+    await Promise.resolve();
+  }
+  assert.equal(instance.coordinator().status().state, 'SUBMITTING');
+  assert.throws(() => editor.captureApplyIntent(), /SAVE_PENDING_CONTEXT_BLOCKED/);
+  assert.equal(editor.project().root.properties.title, 'confirmed');
+  assert.equal(editor.persistedFields().preheader, 'dirty');
+  instance.releaseSave();
+  assert.equal((await pending).status, 'unknown');
 });
