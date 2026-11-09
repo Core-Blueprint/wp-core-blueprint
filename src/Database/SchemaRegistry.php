@@ -19,8 +19,8 @@ defined( 'ABSPATH' ) || exit;
 final class SchemaRegistry {
 
 	private const ID_PATTERN = '/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/D';
-	private const BASE_RESERVED_IDS = [ 'audit-log', 'ai-activity', 'notes', 'mail-log', 'maintenance-reports' ];
-	private const BASE_RESERVED_OPTIONS = [ 'cb_core_db_version', 'cb_core_ai_activity_db_version', 'cb_core_notes_db_version', 'cb_core_mail_log_db_version', 'cb_core_reports_db_version' ];
+	private const BASE_RESERVED_IDS = [ 'audit-log', 'ai-activity', 'notes', 'mail-log', 'mail-saved-templates', 'maintenance-reports' ];
+	private const BASE_RESERVED_OPTIONS = [ 'cb_core_db_version', 'cb_core_ai_activity_db_version', 'cb_core_notes_db_version', 'cb_core_mail_log_db_version', 'cb_core_mail_saved_templates_db_version', 'cb_core_reports_db_version' ];
 
 	/**
 	 * @var array<string, array{id:string,version:string,option_key:string,tables:array<int,callable>,install:callable}>

@@ -23,6 +23,9 @@ use CoreBlueprint\Core\Mail\Admin\LogsTab;
 use CoreBlueprint\Core\Mail\Admin\Page;
 use CoreBlueprint\Core\Mail\Admin\TemplateActions;
 use CoreBlueprint\Core\Mail\Designer\WordPressIntegration;
+use CoreBlueprint\Core\Mail\Designer\SavedTemplateSchema;
+use CoreBlueprint\Core\Mail\Designer\SavedTemplateSource;
+use CoreBlueprint\Core\Mail\Designer\SavedTemplateController;
 use CoreBlueprint\Core\Mail\Log\Repository;
 
 defined( 'ABSPATH' ) || exit;
@@ -32,6 +35,8 @@ final class Bootstrap {
 	public static function boot(): void {
 		// Register the dedicated delivery log before the central DB migration sweep.
 		add_action( 'plugins_loaded', [ Repository::class, 'register_schema' ], 4 );
+		add_action( 'plugins_loaded', [ SavedTemplateSchema::class, 'register_schema' ], 4 );
+		SavedTemplateController::init();
 		add_action( 'init', [ Repository::class, 'register_retention_store' ], 2 );
 
 		// Delivery activates after every plugin is loaded so conflict detection
@@ -48,6 +53,9 @@ final class Bootstrap {
 		add_action( 'core_blueprint_register_template_sources', static function (): void {
 			\CoreBlueprint\Core\TemplateLibrary\TemplateSourceRegistry::register(
 				new \CoreBlueprint\Core\Mail\Designer\NativeTemplateSource()
+			);
+			\CoreBlueprint\Core\TemplateLibrary\TemplateSourceRegistry::register(
+				new SavedTemplateSource()
 			);
 		} );
 

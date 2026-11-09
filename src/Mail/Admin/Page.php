@@ -195,6 +195,11 @@ final class Page extends PageBase {
 								</form>
 							</section>
 						</div>
+						<section class="cb-core-panel" data-cb-mail-saved-manager aria-label="<?php esc_attr_e( 'Saved Mail templates', 'core-blueprint' ); ?>">
+							<h2><?php esc_html_e( 'Saved Mail templates', 'core-blueprint' ); ?></h2>
+							<p><?php esc_html_e( 'Manage reusable personal and site templates here. Edit live WordPress and extension notification designs in the Mail Designer.', 'core-blueprint' ); ?></p>
+							<div data-cb-mail-saved-list role="status"><?php esc_html_e( 'Loading saved templates…', 'core-blueprint' ); ?></div>
+						</section>
 					</div>
 				<?php else : ?>
 					<div class="cb-core-platform-screen" data-cb-platform-screen aria-busy="true">
@@ -209,7 +214,7 @@ final class Page extends PageBase {
 							</a>
 						</header>
 						<div class="cb-core-platform-screen__body">
-							<div data-cb-mail-designer data-cb-mail-template="<?php echo esc_attr( $template_id ); ?>">
+							<div data-cb-mail-designer data-cb-mail-template="<?php echo esc_attr( $template_id ); ?>" data-cb-mail-scope="<?php echo esc_attr( (string) \CoreBlueprint\Core\TemplateLibrary\DesignerScope::issue( \CoreBlueprint\Core\Mail\Designer\NativeTemplateSource::SOURCE_ID, \CoreBlueprint\Core\Design\Document\Repository::MAIL, $template_id ) ); ?>">
 								<div data-cb-platform-base-context>
 									<p role="status"><?php esc_html_e( 'Verifying the Designer and loading the selected template…', 'core-blueprint' ); ?></p>
 								</div>

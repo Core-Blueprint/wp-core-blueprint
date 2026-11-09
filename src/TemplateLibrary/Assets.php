@@ -17,7 +17,9 @@ final class Assets {
 
 	public static function enqueue(): void {
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-		$core_page = $screen && 'core-blueprint_page_core-blueprint-template-library' === $screen->id;
+		$core_page = $screen && ( 'core-blueprint_page_core-blueprint-template-library' === $screen->id
+			|| ( $screen->id === \CoreBlueprint\Core\Admin\PageRegistry::hook_suffix( \CoreBlueprint\Core\Mail\Admin\Page::SLUG )
+				&& \CoreBlueprint\Core\Design\Editor\Assets::platform_fullscreen_requested() ) );
 		UiAssets::enqueue_modals( $core_page
 			? UiAssets::MODAL_PRESENTATION_CORE : UiAssets::MODAL_PRESENTATION_WP_NATIVE );
 		wp_enqueue_style(

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CoreBlueprint\Core\Mail\Designer;
 
 use CoreBlueprint\Core\Design\Document\Repository;
+use CoreBlueprint\Core\Mail\DesignerState;
 use CoreBlueprint\Core\Design\Editor\PlatformTransport;
 use CoreBlueprint\Core\TemplateLibrary\DesignerScope;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
