@@ -61,7 +61,7 @@ function harness({configOrigin = 'https://example.test', saved = {}} = {}) {
 	};
 	const transformed = source
 		.replace(/^import\s+\{[^}]+\}\s+from\s+['"][^'"]+['"];\s*$/gm,'')
-		.replace(/^export function bindMailTemplates/, 'function bindMailTemplates')
+		.replace(/^export function bindMailTemplates/m, 'function bindMailTemplates')
 		+ '\nglobalThis.__test = {api, authorizedUrl, bindMailTemplates, canCapture, targetOf};';
 	runInNewContext(transformed, sandbox, {filename:'saved-library.js'});
 	return {api:sandbox.__test, sandbox, events, browser, notices, http, buttons};
