@@ -119,13 +119,31 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 	const saveAs = element('button', 'button cb-core-button cb-core-button--secondary', 'Save as template');
 	saveAs.type = 'button';
 	saveAs.setAttribute('aria-label', 'Save a reusable copy of this Mail design');
-	contextSlot.append(browse, saveAs);
+	// The native Mail Header Picker is width-constrained by shared Base.
+	// One compact disclosure preserves responsive space and keyboard access.
+	const menu = element('details', 'cb-core-mail-saved-menu');
+	const trigger = element('summary', 'cb-core-mail-saved-menu__trigger');
+	trigger.setAttribute('aria-label', 'Mail template actions');
+	trigger.append(element('span', 'cb-core-mail-saved-menu__label', 'Templates'),
+		element('span', 'cb-core-mail-saved-menu__glyph', '⋯'));
+	const menuBody = element('div', 'cb-core-mail-saved-menu__body');
+	menuBody.append(browse, saveAs);
+	menu.append(trigger, menuBody);
+	contextSlot.append(menu);
+	const closeOutside = (event) => {
+		if (menu.open && !menu.contains(event.target)) menu.open = false;
+	};
+	document.addEventListener('pointerdown', closeOutside);
+	menu.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') { menu.open = false; trigger.focus(); }
+	});
 	if (typeof scopeToken !== 'string' || !scopeToken) {
 		browse.disabled = true;
 		saveAs.disabled = true;
 		browse.title = saveAs.title = 'Template authorization is unavailable. Reload the Designer.';
 	}
 	browse.addEventListener('click', () => {
+		menu.open = false;
 		if (busy || uncertain || !canCapture(host) || !scopeToken) {
 			toast.error('Finish or verify the current Save before applying a template.');
 			return;
@@ -157,6 +175,7 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 		}).catch(() => toast.error(errorMessage())).finally(() => { busy = false; });
 	});
 	saveAs.addEventListener('click', () => {
+		menu.open = false;
 		if (busy || uncertain || !canCapture(host) || !scopeToken) {
 			toast.error('Finish or verify the current Save before saving a template.');
 			return;
@@ -201,7 +220,7 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 			},
 		}).catch(() => toast.error(errorMessage())).finally(() => { busy = false; });
 	});
-	return () => { browse.remove(); saveAs.remove(); };
+	return () => { document.removeEventListener('pointerdown', closeOutside); menu.remove(); };
 }
 
 function mountManagement(root) {
@@ -231,6 +250,7 @@ function mountManagement(root) {
 			]) {
 				const button = element('button', 'button', name);
 				button.type = 'button';
+				button.setAttribute('aria-label', name + ': ' + item.title);
 				button.disabled = uncertain;
 				button.addEventListener('click', () => { void manage(item, action); });
 				actions.append(button);
