@@ -180,11 +180,39 @@ final class SavedTemplateStore {
 	}
 
 	public static function duplicate( string $id, int $expected, string $title, int $actor ): array {
-		if ( $expected < 1 ) return [ 'status' => 'refused' ];
-		$old = self::find( $id, $actor );
-		if ( $old['status'] !== 'found' ) return [ 'status' => $old['status'] ];
-		if ( $old['revision'] !== $expected ) return [ 'status' => 'conflict' ];
-		return self::create( $title, $old['visibility'], $actor, $old['document'] );
+		global $wpdb;
+		if ( $expected < 1 || ! self::valid_title( $title ) ) return [ 'status' => 'refused' ];
+		$original = self::find( $id, $actor );
+		if ( 'found' !== $original['status'] ) return [ 'status' => $original['status'] ];
+		if ( $original['revision'] !== $expected ) return [ 'status' => 'conflict' ];
+		if ( ! SavedTemplateSchema::healthy( true ) ) return [ 'status' => 'unavailable' ];
+		try {
+			$new_id = 'mail.saved.' . bin2hex( random_bytes( 16 ) );
+		} catch ( \Throwable ) {
+			return [ 'status' => 'unavailable' ];
+		}
+		// A single INSERT ... SELECT fences the *source row* at its exact
+		// expected revision and authorized owner scope. A concurrent Rename
+		// or Delete cannot produce an uncontrolled stale duplicate.
+		$now = gmdate( 'Y-m-d H:i:s' );
+		$sql = $wpdb->prepare(
+			"INSERT INTO %i (id,owner_id,visibility,title,revision,document_json,created_at,updated_at)
+			 SELECT %s,owner_id,visibility,%s,1,document_json,%s,%s FROM %i
+			 WHERE id = %s AND revision = %d
+			 AND (visibility = 'site' OR (visibility = 'personal' AND owner_id = %d))",
+			SavedTemplateSchema::table(), $new_id, trim( $title ), $now, $now,
+			SavedTemplateSchema::table(), $id, $expected, $actor
+		);
+		$written = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- identity, revision and scope bound above.
+		if ( false === $written ) return [ 'status' => 'unknown' ];
+		if ( 0 === $written ) return [ 'status' => 'conflict' ];
+		$check = self::find( $new_id, $actor );
+		return 'found' === $check['status']
+			&& $check['revision'] === 1
+			&& $check['title'] === trim( $title )
+			&& $check['document'] === $original['document']
+			? [ 'status' => 'created', 'id' => $new_id, 'revision' => 1 ]
+			: [ 'status' => 'unknown' ];
 	}
 
 	private function __construct() {}
