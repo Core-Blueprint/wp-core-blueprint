@@ -168,6 +168,10 @@ final class CB_Template_Library_Native_Mail_Source_Test extends WP_UnitTestCase 
 		$too_long_title['label'] = str_repeat( 'X', 192 );
 		self::assertFalse( TemplateRegistry::register( $too_long_title ) );
 
+		$empty_visible_title = $valid;
+		$empty_visible_title['label'] = '<span></span>';
+		self::assertFalse( TemplateRegistry::register( $empty_visible_title ) );
+
 		$too_long_description = $valid;
 		$too_long_description['description'] = str_repeat( 'Y', 501 );
 		self::assertFalse( TemplateRegistry::register( $too_long_description ) );
