@@ -108,7 +108,7 @@ test('T3-02 blocks Apply and Save as when canonical Save is UNKNOWN', () => {
 	};
 	const host = {state:'READY',profileId:'base/mail',context:{contextEpoch:0},editor};
 	assert.equal(h.api.canCapture(host),false);
-	const slot = new h.sandbox.document.createElement('span');
+	const slot = h.sandbox.document.createElement('span');
 	h.api.bindMailTemplates({host,root:{isConnected:true},contextSlot:slot,scopeToken:'signed-token'});
 	assert.equal(h.buttons.length,2);
 	h.buttons[0].listeners.click();
@@ -130,7 +130,7 @@ test('T3-02 native Use passes the authorized response only to Host facade', asyn
 			resourceType:'base.mail-template',resourceId:'wordpress.new-user',contextEpoch:0,
 		},editor,
 	};
-	const slot=new h.sandbox.document.createElement('span');
+	const slot=h.sandbox.document.createElement('span');
 	h.api.bindMailTemplates({host,root:{isConnected:true},contextSlot:slot,scopeToken:'signed-token'});
 	h.buttons[0].listeners.click();
 	// The browser selector retains the real asynchronous Choose callback.
