@@ -197,10 +197,11 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 					form.notice.textContent = 'Enter a name and verify the current Designer Save state.';
 					return false;
 				}
+				let captured;
 				try {
 					if (!canCapture(host)) throw new Error('MAIL_SAVED_CONTEXT_REFUSED');
 					const target = targetOf(host);
-					const captured = {
+					captured = {
 						title, visibility: form.select.value,
 						...target,
 						document: {
@@ -208,6 +209,13 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 							fields: host.editor.persistedFields(),
 						},
 					};
+				} catch (_) {
+					// No request was attempted; this is a proven local refusal,
+					// not an ambiguous asset write.
+					form.notice.textContent = 'The Designer context changed. No template was saved.';
+					return false;
+				}
+				try {
 					const result = await api('create', captured, {scope: scopeToken});
 					if (result.status === 'created' && typeof result.id === 'string') {
 						toast.success('Reusable Mail template saved.');
