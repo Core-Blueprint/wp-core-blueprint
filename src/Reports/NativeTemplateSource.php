@@ -8,6 +8,7 @@ use CoreBlueprint\Core\Admin\Pages\Preferences;
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Editor\Assets as DesignEditorAssets;
 use CoreBlueprint\Core\RequestContext;
+use CoreBlueprint\Core\TemplateLibrary\TemplateApplySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateCategorySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateDesignerAuthorityInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateManagementSourceInterface;
@@ -26,6 +27,7 @@ defined( 'ABSPATH' ) || exit;
  * This source does not create a new user-template repository or write endpoint.
  */
 final class NativeTemplateSource implements
+	TemplateApplySourceInterface,
 	TemplateManagementSourceInterface,
 	TemplateDesignerAuthorityInterface,
 	TemplateCategorySourceInterface {
@@ -55,6 +57,25 @@ final class NativeTemplateSource implements
 
 	public function can_view( string $template_id, int $user_id ): bool {
 		return self::TEMPLATE_ID === $template_id && $this->can_browse( $user_id );
+	}
+
+	public function target_profile_id(): string {
+		return \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::PROFILE;
+	}
+
+	public function can_apply_to( string $template_id, string $target_type, string $target_key, int $actor_id ): bool {
+		return $this->can_view( $template_id, $actor_id )
+			&& $this->can_access_designer_resource( $target_type, $target_key, $actor_id );
+	}
+
+	public function instantiate_for_apply(
+		string $template_id, string $target_type, string $target_key, int $actor_id
+	): ?array {
+		if ( ! $this->can_apply_to( $template_id, $target_type, $target_key, $actor_id ) ) return null;
+		return [
+			'project' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_project(),
+			'fields' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_fields(),
+		];
 	}
 
 	public function can_manage( string $template_id, int $user_id ): bool {

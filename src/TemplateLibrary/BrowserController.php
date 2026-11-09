@@ -17,6 +17,11 @@ final class BrowserController {
 	}
 
 	public static function routes(): void {
+		register_rest_route( 'core-blueprint/v1', '/template-library/apply', [
+			'methods' => 'POST',
+			'callback' => [ self::class, 'apply' ],
+			'permission_callback' => [ self::class, 'apply_permitted' ],
+		] );
 		register_rest_route( 'core-blueprint/v1', '/template-library/sources', [
 			'methods' => 'GET',
 			'callback' => [ self::class, 'sources' ],
@@ -27,6 +32,56 @@ final class BrowserController {
 			'callback' => [ self::class, 'templates' ],
 			'permission_callback' => [ self::class, 'permitted' ],
 		] );
+	}
+
+	/** Apply returns a document to the browser; it never writes to WordPress. */
+	public static function apply_permitted( WP_REST_Request $request ): bool {
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		return is_user_logged_in() && get_current_user_id() > 0
+			&& is_string( $nonce ) && (bool) wp_verify_nonce( $nonce, 'wp_rest' );
+	}
+
+	public static function apply( WP_REST_Request $request ): WP_REST_Response {
+		$data = $request->get_json_params();
+		$keys = [ 'source', 'templateId', 'profileId', 'resourceType', 'resourceKey', 'contextEpoch' ];
+		if ( ! is_array( $data ) || array_is_list( $data ) ) {
+			return new WP_REST_Response( [ 'code' => 'invalid_apply_request' ], 400 );
+		}
+		$actual = array_keys( $data );
+		sort( $actual, SORT_STRING );
+		sort( $keys, SORT_STRING );
+		if ( $actual !== $keys
+			|| ! is_int( $data['contextEpoch'] ) || $data['contextEpoch'] < 0
+			|| ! is_string( $data['source'] ) || ! TemplateQuery::valid_id( $data['source'] )
+			|| ! is_string( $data['templateId'] ) || ! TemplateQuery::valid_id( $data['templateId'] )
+			|| ! is_string( $data['profileId'] ) || ! in_array( $data['profileId'], [ 'base/mail', 'base/reports' ], true )
+			|| ! is_string( $data['resourceType'] ) || ! TemplateQuery::valid_id( $data['resourceType'] )
+			|| ! is_string( $data['resourceKey'] ) || '' === $data['resourceKey']
+			|| strlen( $data['resourceKey'] ) > 191 ) {
+			return new WP_REST_Response( [ 'code' => 'invalid_apply_request' ], 400 );
+		}
+		$token = trim( (string) $request->get_header( 'X-CB-Designer-Scope' ) );
+		$scope = '' !== $token
+			? DesignerScope::verify( $token, $data['resourceType'], $data['resourceKey'] ) : null;
+		if ( null === $scope ) {
+			return new WP_REST_Response( [ 'code' => 'apply_refused' ], 403 );
+		}
+		$document = TemplateSourceRegistry::document_for_apply(
+			$data['source'], $data['templateId'], $data['profileId'],
+			$data['resourceType'], $data['resourceKey'], $scope
+		);
+		if ( null === $document ) {
+			return new WP_REST_Response( [ 'code' => 'apply_refused' ], 403 );
+		}
+		return new WP_REST_Response( [
+			'status' => 'ready',
+			'source' => $data['source'], 'templateId' => $data['templateId'],
+			'profileId' => $data['profileId'],
+			'resourceType' => $data['resourceType'], 'resourceKey' => $data['resourceKey'],
+			'contextEpoch' => $data['contextEpoch'],
+			'actorId' => get_current_user_id(), 'blogId' => get_current_blog_id(),
+			'document' => $document,
+		], 200 );
 	}
 
 	public static function permitted( WP_REST_Request $request ): bool {

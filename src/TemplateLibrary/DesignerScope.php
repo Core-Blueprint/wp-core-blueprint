@@ -41,7 +41,7 @@ final class DesignerScope {
 	}
 
 	/** @return array{extension:string,designer:string}|null */
-	public static function verify( string $token ): ?array {
+	public static function verify( string $token, ?string $expected_type = null, ?string $expected_key = null ): ?array {
 		$user = get_current_user_id();
 		$session = self::valid_session( $user );
 		if ( null === $session || strlen( $token ) > self::MAX_TOKEN_LENGTH
@@ -72,6 +72,11 @@ final class DesignerScope {
 			|| ! is_string( $data['designer'] ?? null ) || ! TemplateQuery::valid_id( $data['designer'] )
 			|| ! is_string( $data['resource_type'] ?? null ) || ! is_string( $data['resource_key'] ?? null )
 			|| ! self::valid_resource( $data['resource_type'], $data['resource_key'] ) ) {
+			return null;
+		}
+		// A document Apply must be bound to the exact existing Designer target.
+		if ( ( null !== $expected_type && ! hash_equals( $data['resource_type'], $expected_type ) )
+			|| ( null !== $expected_key && ! hash_equals( $data['resource_key'], $expected_key ) ) ) {
 			return null;
 		}
 		$scope = TemplateSourceRegistry::authorized_designer_scope(

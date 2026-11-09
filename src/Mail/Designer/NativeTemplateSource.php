@@ -8,6 +8,7 @@ use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Mail\Admin\Page;
 use CoreBlueprint\Core\Mail\DesignerState;
 use CoreBlueprint\Core\RequestContext;
+use CoreBlueprint\Core\TemplateLibrary\TemplateApplySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateCategorySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateDesignerAuthorityInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateManagementSourceInterface;
@@ -26,6 +27,7 @@ defined( 'ABSPATH' ) || exit;
  * The Template Library owns only metadata discovery and safe navigation.
  */
 final class NativeTemplateSource implements
+	TemplateApplySourceInterface,
 	TemplateManagementSourceInterface,
 	TemplateDesignerAuthorityInterface,
 	TemplateCategorySourceInterface {
@@ -55,6 +57,23 @@ final class NativeTemplateSource implements
 		return $this->can_browse( $user_id )
 			&& TemplateQuery::valid_id( $template_id )
 			&& null !== TemplateRegistry::get( $template_id );
+	}
+
+	public function target_profile_id(): string {
+		return \CoreBlueprint\Core\Design\Profile\Mail\PlatformAdapter::PROFILE;
+	}
+
+	public function can_apply_to( string $template_id, string $target_type, string $target_key, int $actor_id ): bool {
+		return Repository::MAIL === $target_type
+			&& $this->can_view( $template_id, $actor_id )
+			&& $this->can_access_designer_resource( $target_type, $target_key, $actor_id );
+	}
+
+	public function instantiate_for_apply(
+		string $template_id, string $target_type, string $target_key, int $actor_id
+	): ?array {
+		return $this->can_apply_to( $template_id, $target_type, $target_key, $actor_id )
+			? TemplateRegistry::default_document( $template_id ) : null;
 	}
 
 	public function can_manage( string $template_id, int $user_id ): bool {

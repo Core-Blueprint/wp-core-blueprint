@@ -157,6 +157,47 @@ final class TemplateSourceRegistry {
 		}
 	}
 
+	/**
+	 * Obtain an authorized independent native document. Never trust browser
+	 * metadata, cache domain payloads, or perform writes in this registry.
+	 *
+	 * @param array{extension:string,designer:string} $scope Verified target scope.
+	 * @return array{project:array<string,mixed>,fields:array<string,mixed>}|null
+	 */
+	public static function document_for_apply(
+		string $source_id, string $template_id, string $profile_id,
+		string $target_type, string $target_key, array $scope
+	): ?array {
+		self::collect_if_ready();
+		$actor = get_current_user_id();
+		$source = self::$sources[ $source_id ] ?? null;
+		if ( $actor < 1 || ! TemplateQuery::valid_id( $template_id )
+			|| ! $source instanceof TemplateApplySourceInterface
+			|| $source->extension_id() !== ( $scope['extension'] ?? null )
+			|| $source->designer_type() !== ( $scope['designer'] ?? null )
+			|| ! self::allowed( $source ) ) {
+			return null;
+		}
+		try {
+			if ( $profile_id !== $source->target_profile_id()
+				|| ! \CoreBlueprint\Core\Design\Editor\PlatformTransport::authorized_resource(
+					$profile_id, $target_type, $target_key
+				)
+				|| ! $source->can_view( $template_id, $actor )
+				|| ! $source->can_apply_to( $template_id, $target_type, $target_key, $actor ) ) {
+				return null;
+			}
+			$document = $source->instantiate_for_apply( $template_id, $target_type, $target_key, $actor );
+			if ( ! is_array( $document )
+				|| ! \CoreBlueprint\Core\Design\Editor\PlatformTransport::valid_native_document( $target_type, $document ) ) {
+				return null;
+			}
+			return $document;
+		} catch ( \Throwable ) {
+			return null;
+		}
+	}
+
 	/** All authorized Base and extension templates. For trusted server-side Admin callers. */
 	public static function browse_global( TemplateQuery $query, ?string $cursor = null ): TemplatePage {
 		return self::browse( $query, null, null, $cursor );
