@@ -143,6 +143,78 @@ test('T3-02 native Use passes the authorized response only to Host facade', asyn
 	assert.equal(h.notices.at(-1)[0],'success');
 });
 
+test('T3-02 Save as captures project+fields only and never triggers live document Save', async () => {
+	const project = {schema_version:1, root:{type:'mail.root',children:[]}};
+	const fields = {subject:'Hello',preheader:'Preview'};
+	const saved = {
+		modalHook:async ({body,onConfirm}) => {
+			body.children[0].children[0].value = 'Reusable copy';
+			body.children[1].children[0].value = 'personal';
+			return onConfirm();
+		},
+	};
+	const h = harness({saved});
+	let liveSaved = 0;
+	const editor = {
+		saveStatus:()=>({state:'READY_DIRTY',blocked:false}),
+		snapshot:()=>project, persistedFields:()=>fields,
+		save:()=>{liveSaved++;throw new Error('LIVE_SAVE_MUST_NOT_RUN');},
+	};
+	const host = {
+		state:'READY',profileId:'base/mail',
+		context:{resourceType:'base.mail-template',resourceId:'wordpress.new-user',contextEpoch:0},
+		editor,
+	};
+	h.api.bindMailTemplates({
+		host,root:{isConnected:true},
+		contextSlot:h.sandbox.document.createElement('span'),
+		scopeToken:'signed-token',
+	});
+	h.buttons[1].listeners.click();
+	await new Promise(resolve => setImmediate(resolve));
+	assert.equal(h.http.length,1);
+	const sent=JSON.parse(h.http[0].options.body);
+	assert.equal(sent.title,'Reusable copy');
+	assert.equal(sent.visibility,'personal');
+	assert.equal(sent.profileId,'base/mail');
+	assert.equal(sent.resourceKey,'wordpress.new-user');
+	assert.deepEqual(sent.document,{project,fields});
+	assert.equal(liveSaved,0);
+	assert.equal(h.notices.at(-1)[0],'success');
+});
+
+test('T3-02 ambiguous Save as response blocks retry instead of creating another asset', async () => {
+	const saved = {
+		response:{status:'unknown'},
+		modalHook:async ({body,onConfirm}) => {
+			body.children[0].children[0].value = 'Uncertain copy';
+			body.children[1].children[0].value = 'site';
+			return onConfirm();
+		},
+	};
+	const h=harness({saved});
+	const editor={
+		saveStatus:()=>({state:'READY_CLEAN',blocked:false}),
+		snapshot:()=>({root:{}}),persistedFields:()=>({subject:'Hello'}),
+	};
+	const host={
+		state:'READY',profileId:'base/mail',
+		context:{resourceType:'base.mail-template',resourceId:'wordpress.new-user',contextEpoch:0},
+		editor,
+	};
+	h.api.bindMailTemplates({
+		host,root:{isConnected:true},
+		contextSlot:h.sandbox.document.createElement('span'),
+		scopeToken:'signed-token',
+	});
+	h.buttons[1].listeners.click();
+	await new Promise(resolve=>setImmediate(resolve));
+	assert.equal(h.http.length,1);
+	h.buttons[1].listeners.click();
+	assert.equal(h.http.length,1);
+	assert.equal(h.notices.at(-1)[0],'error');
+});
+
 test('T3-02 Mail binds UI only after the shared native Host is READY', () => {
 	assert.match(platform, /void import\('@cb-core\/mail-saved-library'\)/);
 	assert.match(platform, /if\(host\.state!=='READY'\)return/);
