@@ -101,6 +101,18 @@ final class DesignerAssets {
 				? substr( hash_file( 'sha256', CB_CORE_DIR . 'assets/js/design/mail/saved-library.js' ), 0, 16 )
 				: CB_CORE_VERSION
 		);
+		if ( $fullscreen ) {
+			// Static, Mail-only bootstrap. Do not make Base's shared Platform
+			// import Mail saved-library UI on Reports/other Designer screens.
+			wp_enqueue_script_module(
+				'@cb-core/mail-saved-controls',
+				CB_CORE_URL . 'assets/js/design/mail/saved-controls.js',
+				[ '@cb-core/base-platform-v1', '@cb-core/mail-saved-library' ],
+				is_file( CB_CORE_DIR . 'assets/js/design/mail/saved-controls.js' )
+					? substr( hash_file( 'sha256', CB_CORE_DIR . 'assets/js/design/mail/saved-controls.js' ), 0, 16 )
+					: CB_CORE_VERSION
+			);
+		}
 	}
 
 	private function __construct() {}

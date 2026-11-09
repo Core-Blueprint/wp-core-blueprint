@@ -11,6 +11,35 @@ const MODULES=new Map([
 ]);
 const issue=(code)=>Object.assign(new Error(code),{code});
 
+// First-party Mail UI registers independently through a statically imported
+// Mail-only entrypoint. Reports never imports the saved-template module.
+// Registration is gated to one live native Mail Host; no second editor/Save.
+let mailTemplateActionBinder=null;
+let pendingMailTemplateContext=null;
+function installMailTemplateActions(context) {
+	if(context?.host?.state!=='READY'||!context.root?.isConnected)return;
+	if(!mailTemplateActionBinder){
+		pendingMailTemplateContext=context;
+		return;
+	}
+	pendingMailTemplateContext=null;
+	try{
+		const release=mailTemplateActionBinder(context);
+		if(typeof release!=='function')throw issue('MAIL_TEMPLATE_ACTIONS_UNAVAILABLE');
+		window.addEventListener('pagehide',release,{once:true});
+	}catch(_error){
+		baseToast.warning('Mail template management is unavailable. Reload the Designer.');
+	}
+}
+export function registerNativeMailTemplateActions(binder) {
+	if(typeof binder!=='function'||mailTemplateActionBinder!==null)return false;
+	mailTemplateActionBinder=binder;
+	if(pendingMailTemplateContext){
+		installMailTemplateActions(pendingMailTemplateContext);
+	}
+	return true;
+}
+
 // Native Designer uses the canonical Base Toast Foundation, never a second
 // notification stack or an optimistic success inferred from HTTP 200.
 const notifyDesignerSave = ({outcome, phase, reason = null}) => {
@@ -285,14 +314,11 @@ async function activate() {
 		decorateDesignerControl(close, 'x', {iconOnly: true, label: 'Close Designer'});
 		closeSlot.append(close);
 		if(mail) {
-			// Optional Mail-owned template controls; an unavailable UI module
-			// must not invalidate an already committed native Host/Save session.
-			const scopeToken = mail.dataset.cbMailScope || '';
-			void import('@cb-core/mail-saved-library').then(({bindMailTemplates})=>{
-				if(host.state!=='READY')return;
-				const release=bindMailTemplates({host,root,contextSlot,scopeToken});
-				window.addEventListener('pagehide',release,{once:true});
-			}).catch(()=>baseToast.warning('Mail template management is unavailable. Reload the Designer.'));
+			// The Mail-specific static bootstrap may register before or after
+			// this async Host mount. Retain only this private READY context.
+			installMailTemplateActions({
+				host,root,contextSlot,scopeToken:mail.dataset.cbMailScope || '',
+			});
 		}
 		if(loadingContext)loadingContext.hidden=true;
 		if(reports){origin.hidden=true;origin.setAttribute('inert','');}

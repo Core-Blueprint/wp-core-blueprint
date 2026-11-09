@@ -8,6 +8,8 @@ import {runInNewContext} from 'node:vm';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const source = readFileSync(resolve(root, 'assets/js/design/mail/saved-library.js'), 'utf8');
 const platform = readFileSync(resolve(root, 'assets/js/design/platform/wordpress-save-adapter.js'), 'utf8');
+const bridge = readFileSync(resolve(root, 'assets/js/design/mail/saved-controls.js'), 'utf8');
+const mailAssets = readFileSync(resolve(root, 'src/Mail/Admin/DesignerAssets.php'), 'utf8');
 const backend = readFileSync(resolve(root, 'src/Mail/Designer/SavedTemplateController.php'), 'utf8');
 const phpSource = readFileSync(resolve(root, 'src/Mail/Designer/SavedTemplateSource.php'), 'utf8');
 const bootstrap = readFileSync(resolve(root, 'src/Mail/Bootstrap.php'), 'utf8');
@@ -215,9 +217,26 @@ test('T3-02 ambiguous Save as response blocks retry instead of creating another 
 	assert.equal(h.notices.at(-1)[0],'error');
 });
 
-test('T3-02 Mail binds UI only after the shared native Host is READY', () => {
-	assert.match(platform, /void import\('@cb-core\/mail-saved-library'\)/);
-	assert.match(platform, /if\(host\.state!=='READY'\)return/);
-	assert.match(platform, /bindMailTemplates\(\{host,root,contextSlot,scopeToken\}\)/);
+test('T3-02 Mail-only static bootstrap binds both early and late to a READY native Host', () => {
+	assert.doesNotMatch(platform, /\bimport\s*\(/);
+	assert.doesNotMatch(bridge, /\bimport\s*\(/);
+	assert.match(bridge, /import \{registerNativeMailTemplateActions\} from '@cb-core\/base-platform-v1'/);
+	assert.match(bridge, /import \{bindMailTemplates\} from '@cb-core\/mail-saved-library'/);
+	assert.match(bridge, /registerNativeMailTemplateActions\(bindMailTemplates\)/);
+	assert.match(platform, /function installMailTemplateActions\(context\)/);
+	assert.match(platform, /pendingMailTemplateContext=context/);
+	assert.match(platform, /export function registerNativeMailTemplateActions\(binder\)/);
+	assert.match(platform, /if\(pendingMailTemplateContext\)/);
+	assert.match(platform, /if\(mail\) \{/);
+	assert.match(platform, /installMailTemplateActions\(\{/);
+	assert.match(mailAssets, /if \( \$fullscreen \) \{/);
+	assert.match(mailAssets, /'@cb-core\/mail-saved-controls'/);
+	assert.match(mailAssets, /\[ '@cb-core\/base-platform-v1', '@cb-core\/mail-saved-library' \]/);
 	assert.doesNotMatch(source, /createSaveCoordinator|new CommandHistory|TemplateRepository::save/);
+});
+
+test('T3-02 release-safe Designer module graph excludes every dynamic import in the new bridge', () => {
+	for(const code of [platform, bridge, source]){
+		assert.doesNotMatch(code, /\bimport\s*\(/);
+	}
 });
