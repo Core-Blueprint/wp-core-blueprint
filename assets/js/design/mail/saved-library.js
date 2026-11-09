@@ -41,7 +41,10 @@ async function api(action, data = null, {scope = '', signal = null} = {}) {
 	});
 	const result = await response.json();
 	if (!result || typeof result !== 'object' || Array.isArray(result)
-		|| typeof result.status !== 'string') throw new Error('MAIL_SAVED_UNVERIFIED');
+		|| typeof result.status !== 'string'
+		|| (!response.ok && ['created', 'renamed', 'deleted', 'ready'].includes(result.status))) {
+		throw new Error('MAIL_SAVED_UNVERIFIED');
+	}
 	// A structured refusal is not a successful mutation. The caller must
 	// check an exact result status before rendering any success feedback.
 	return result;

@@ -50,7 +50,7 @@ final class SavedTemplateStore {
 		} catch ( \Throwable ) {
 			return [ 'status' => 'refused' ];
 		}
-		if ( strlen( $json ) > self::MAX_JSON || ! SavedTemplateSchema::healthy() ) {
+		if ( strlen( $json ) > self::MAX_JSON || ! SavedTemplateSchema::healthy( true ) ) {
 			return [ 'status' => 'unavailable' ];
 		}
 		$now = gmdate( 'Y-m-d H:i:s' );
@@ -130,7 +130,7 @@ final class SavedTemplateStore {
 		$sql = "SELECT id,owner_id,visibility,title,revision FROM %i WHERE {$where_sql} ORDER BY id ASC LIMIT %d";
 		$params = array_merge( [ SavedTemplateSchema::table() ], $values, [ $query->limit + 1 ] );
 		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- fixed predicates, %i identifier and bound values.
-		if ( ! is_array( $rows ) ) return [ 'status' => 'unavailable' ];
+		if ( ! is_array( $rows ) || '' !== (string) $wpdb->last_error ) return [ 'status' => 'unavailable' ];
 		$more = count( $rows ) > $query->limit;
 		$rows = array_slice( $rows, 0, $query->limit );
 		$next = $more && $rows ? (string) end( $rows )['id'] : null;
@@ -144,6 +144,7 @@ final class SavedTemplateStore {
 		$old = self::find( $id, $actor );
 		if ( $old['status'] !== 'found' ) return [ 'status' => $old['status'] ];
 		if ( $old['revision'] !== $expected ) return [ 'status' => 'conflict' ];
+		if ( ! SavedTemplateSchema::healthy( true ) ) return [ 'status' => 'unavailable' ];
 		$sql = $wpdb->prepare(
 			"UPDATE %i SET title = %s, revision = revision + 1, updated_at = %s WHERE id = %s AND revision = %d AND (visibility = 'site' OR (visibility = 'personal' AND owner_id = %d))",
 			SavedTemplateSchema::table(), trim( $title ), gmdate( 'Y-m-d H:i:s' ),
@@ -166,6 +167,7 @@ final class SavedTemplateStore {
 		$old = self::find( $id, $actor );
 		if ( $old['status'] !== 'found' ) return [ 'status' => $old['status'] ];
 		if ( $old['revision'] !== $expected ) return [ 'status' => 'conflict' ];
+		if ( ! SavedTemplateSchema::healthy( true ) ) return [ 'status' => 'unavailable' ];
 		$sql = $wpdb->prepare(
 			"DELETE FROM %i WHERE id = %s AND revision = %d AND (visibility = 'site' OR (visibility = 'personal' AND owner_id = %d))",
 			SavedTemplateSchema::table(), $id, $expected, $actor

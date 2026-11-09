@@ -50,11 +50,18 @@ final class SavedTemplateSchema {
 		) ENGINE=InnoDB {$collate};";
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
-		return self::healthy();
+		return self::healthy( true );
 	}
 
 	/** Fresh physical integrity check before Mail template writes and reads. */
-	public static function healthy(): bool {
+	private static ?bool $last_healthy = null;
+
+	public static function healthy( bool $fresh = false ): bool {
+		if ( ! $fresh && true === self::$last_healthy ) return true;
+		return self::$last_healthy = self::inspect();
+	}
+
+	private static function inspect(): bool {
 		global $wpdb;
 		$table = self::table();
 		if ( ! preg_match( '/^[A-Za-z0-9_]+$/D', $table ) ) return false;
