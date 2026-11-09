@@ -12,7 +12,7 @@ test('Template Browser exposes the canonical public module and shared workspace 
   assert.match(browser, /import \{ show as showModal \} from '@cb-core\/modal'/);
   assert.match(browser, /size: 'workspace'/);
   assert.match(browser, /expandable: true/);
-  assert.match(browser, /export \{ createBrowser, open \}/);
+  assert.match(browser, /export \{ createBrowser, open, loadForApply \}/);
   assert.match(modal, /window\.cbCore\.modal = modal/);
 });
 
@@ -147,7 +147,7 @@ test('filter interaction is safe while the source metadata response is pending',
   };
   const executable = browser
     .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = async () => false;')
-    .replace('export { createBrowser, open };', '')
+    .replace('export { createBrowser, open, loadForApply };', '')
     .replace('export default api;', '');
   runInNewContext(executable, context, { timeout: 1000 });
   context.window.cbCore.templateBrowser.createBrowser(root);
@@ -174,4 +174,57 @@ test('filter interaction is safe while the source metadata response is pending',
     'Load more must request the next cursor',
   );
   assert.equal(content.children[2].children.length, 1, 'The next authorized template remains reachable');
+});
+
+test('T3-01 native Apply loader uses same-origin authorized read and refuses mismatched response', async () => {
+  const target = {profileId: 'base/mail', resourceType: 'base.mail-template',
+    resourceKey: 'wordpress.new-user', contextEpoch: 4};
+  const calls = [];
+  const expected = {
+    status: 'ready', source: 'core-blueprint-mail', templateId: 'wordpress.new-user',
+    ...target, blogId: 1, actorId: 2,
+    document: {project: {schema_version: 1}, fields: {subject: 'Example', preheader: ''}},
+  };
+  const context = {
+    document: {
+      getElementById: () => ({textContent: JSON.stringify({
+        restRoot: '/wp-json/core-blueprint/v1/template-library/', nonce: 'verified-nonce',
+      })}),
+      querySelector: () => null,
+    },
+    window: {}, AbortController,
+    fetch: async (url, options) => {
+      calls.push({url, options});
+      return {ok: true, json: async () => expected};
+    },
+  };
+  const executable = browser
+    .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = async () => false;')
+    .replace('export { createBrowser, open, loadForApply };', '')
+    .replace('export default api;', '');
+  runInNewContext(executable, context, {timeout: 1000});
+  const loadForApply = context.window.cbCore.templateBrowser.loadForApply;
+  const reply = await loadForApply({
+    contextToken: 'signed-token', source: 'core-blueprint-mail',
+    templateId: 'wordpress.new-user', target,
+  });
+  assert.equal(reply.status, 'ready');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, '/wp-json/core-blueprint/v1/template-library/apply');
+  assert.equal(calls[0].options.method, 'POST');
+  assert.equal(calls[0].options.credentials, 'same-origin');
+  assert.equal(calls[0].options.headers['X-CB-Designer-Scope'], 'signed-token');
+  assert.equal(calls[0].options.headers['X-WP-Nonce'], 'verified-nonce');
+  assert.equal(JSON.parse(calls[0].options.body).resourceKey, target.resourceKey);
+  context.fetch = async () => ({ok: true, json: async () => ({
+    ...expected, resourceKey: 'other-resource',
+  })});
+  await assert.rejects(loadForApply({
+    contextToken: 'signed-token', source: 'core-blueprint-mail',
+    templateId: 'wordpress.new-user', target,
+  }), /Could not load templates/);
+  await assert.rejects(loadForApply({
+    contextToken: '', source: 'core-blueprint-mail',
+    templateId: 'wordpress.new-user', target,
+  }), /Could not load templates/);
 });
