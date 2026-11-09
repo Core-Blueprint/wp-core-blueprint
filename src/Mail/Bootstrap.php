@@ -42,14 +42,14 @@ final class Bootstrap {
 		// only replaces presentation when Designer is explicitly enabled.
 		add_action( 'init', [ WordPressIntegration::class, 'boot' ], 10 );
 
-        // The native Mail catalog is a first-party provider of the same public
-        // Template Library source contract used by external extensions. This
-        // does not register an alternate editor or any mutation endpoint.
-        add_action( 'core_blueprint_register_template_sources', static function (): void {
-            \CoreBlueprint\Core\TemplateLibrary\TemplateSourceRegistry::register(
-                new \CoreBlueprint\Core\Mail\Designer\NativeTemplateSource()
-            );
-        } );
+		// The native Mail catalog is a first-party provider of the same public
+		// Template Library source contract used by external extensions. This
+		// does not register an alternate editor or any mutation endpoint.
+		add_action( 'core_blueprint_register_template_sources', static function (): void {
+			\CoreBlueprint\Core\TemplateLibrary\TemplateSourceRegistry::register(
+				new \CoreBlueprint\Core\Mail\Designer\NativeTemplateSource()
+			);
+		} );
 
 		// The Mail configuration surface is always reachable. This is required to
 		// enable Designer on sites that intentionally use WordPress/host/third-party
