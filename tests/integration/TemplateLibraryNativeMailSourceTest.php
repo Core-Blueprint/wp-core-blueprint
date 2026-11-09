@@ -146,4 +146,34 @@ final class CB_Template_Library_Native_Mail_Source_Test extends WP_UnitTestCase 
 		) );
 		self::assertSame( [], $source->categories( $subscriber ) );
 	}
+
+	public function test_provider_admission_does_not_accept_unbrowsable_metadata(): void {
+		$valid = [
+			'id' => 'bookings.reference',
+			'provider' => 'bookings',
+			'group' => 'bookings',
+			'label' => 'Booking confirmation',
+			'description' => 'Safe metadata',
+			'document' => WordPressTemplates::default_document( 'wordpress.new-user' ),
+		];
+		$too_long_id = $valid;
+		$too_long_id['id'] = 'bookings.' . str_repeat( 'x', 100 );
+		self::assertFalse( TemplateRegistry::register( $too_long_id ) );
+
+		$too_long_category = $valid;
+		$too_long_category['group'] = 'category_' . str_repeat( 'x', 100 );
+		self::assertFalse( TemplateRegistry::register( $too_long_category ) );
+
+		$too_long_title = $valid;
+		$too_long_title['label'] = str_repeat( 'X', 192 );
+		self::assertFalse( TemplateRegistry::register( $too_long_title ) );
+
+		$too_long_description = $valid;
+		$too_long_description['description'] = str_repeat( 'Y', 501 );
+		self::assertFalse( TemplateRegistry::register( $too_long_description ) );
+
+		self::assertTrue( TemplateRegistry::register( $valid ) );
+		self::assertTrue( ( new NativeTemplateSource() )->can_view( 'bookings.reference', $this->operator ) );
+	}
+
 }
