@@ -293,6 +293,7 @@ try {
         $base_tables = [
             $wpdb->prefix . 'cb_core_audit_log',
             $wpdb->prefix . 'cb_core_mail_log',
+            $wpdb->prefix . 'cb_core_mail_saved_templates',
             $wpdb->prefix . 'cb_core_notes',
             $wpdb->prefix . 'cb_maintenance_reports',
         ];
@@ -431,6 +432,7 @@ try {
         $base_tables = [
             $wpdb->prefix . 'cb_core_audit_log',
             $wpdb->prefix . 'cb_core_mail_log',
+            $wpdb->prefix . 'cb_core_mail_saved_templates',
             $wpdb->prefix . 'cb_core_notes',
             $wpdb->prefix . 'cb_maintenance_reports',
         ];
