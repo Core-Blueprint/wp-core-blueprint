@@ -18,7 +18,8 @@ final class CB_Template_Library_Native_Reports_Source_Test extends WP_UnitTestCa
 
 	public function set_up(): void {
 		parent::set_up();
-		self::assertTrue( Roles::ensure_operator_role() );
+		Roles::ensure_operator_role();
+		self::assertNotNull( get_role( Roles::OPERATOR_ROLE ) );
 		$this->operator = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		$user = get_userdata( $this->operator );
 		self::assertInstanceOf( WP_User::class, $user );
