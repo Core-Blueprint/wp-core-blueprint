@@ -15,6 +15,7 @@ use CoreBlueprint\Core\Mail\Designer\TemplateRegistry;
 use CoreBlueprint\Core\Mail\Designer\WordPressTemplates;
 
 function __( string $text, string $domain = '' ): string { return $text; }
+function wp_strip_all_tags( string $text ): string { return strip_tags( $text ); }
 function sanitize_text_field( string $text ): string { return trim( strip_tags( $text ) ); }
 function wp_json_encode( mixed $value, int $flags = 0 ): string|false { return json_encode( $value, $flags ); }
 function do_action( string $name ): void {
@@ -34,6 +35,7 @@ foreach ( [
 	'src/Design/Profile/Mail/Contract.php',
 	'src/Design/Profile/Mail/Validator.php',
 	'src/Design/Document/Repository.php',
+	'src/TemplateLibrary/TemplateQuery.php',
 	'src/Design/Editor/PlatformTransport.php',
 	'src/Mail/Designer/TemplateRegistry.php',
 	'src/Mail/Designer/WordPressTemplates.php',
