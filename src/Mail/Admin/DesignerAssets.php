@@ -32,7 +32,9 @@ final class DesignerAssets {
 			self::STYLE_HANDLE,
 			CB_CORE_URL . 'assets/css/pages/mail-designer.css',
 			[],
-			CB_CORE_VERSION
+			is_file( CB_CORE_DIR . 'assets/css/pages/mail-designer.css' )
+				? substr( hash_file( 'sha256', CB_CORE_DIR . 'assets/css/pages/mail-designer.css' ), 0, 16 )
+				: CB_CORE_VERSION
 		);
 
 		if ( 'templates' !== $tab || ! current_user_can( 'manage_options' )
@@ -42,6 +44,7 @@ final class DesignerAssets {
 		$fullscreen = DesignEditorAssets::platform_fullscreen_requested();
 		if ( $fullscreen ) {
 			// Native Base Platform v1 remains the only Mail session/Save owner.
+			// Deliberately do NOT enqueue mail-designer.js or its separate Save shim.
 			DesignEditorAssets::enqueue_platform();
 		}
 		TemplateLibraryAssets::enqueue();
