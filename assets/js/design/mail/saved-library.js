@@ -59,7 +59,7 @@ function element(tag, className = '', value = '') {
 
 function nameDialogBody(value = '', visibility = false) {
 	const body = element('div', 'cb-core-mail-saved-dialog');
-	const textLabel = element('label', 'cb-core-field__label', 'Template name');
+	const textLabel = element('label', 'cb-core-field__label', label('templateName', 'Template name'));
 	const input = element('input', 'regular-text');
 	input.type = 'text';
 	input.required = true;
@@ -70,7 +70,7 @@ function nameDialogBody(value = '', visibility = false) {
 	body.append(textLabel);
 	let select = null;
 	if (visibility) {
-		const originLabel = element('label', 'cb-core-field__label', 'Availability');
+		const originLabel = element('label', 'cb-core-field__label', label('availability', 'Availability'));
 		select = element('select');
 		for (const [key, name] of [
 			['personal', label('personal', 'My templates')],
@@ -118,18 +118,18 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 	if (!host || !root || !contextSlot || root.isConnected !== true) throw new Error('MAIL_SAVED_CONTEXT_REFUSED');
 	let uncertain = false;
 	let busy = false;
-	const browse = element('button', 'button cb-core-button cb-core-button--secondary', 'Use template');
+	const browse = element('button', 'button cb-core-button cb-core-button--secondary', label('use', 'Use template'));
 	browse.type = 'button';
-	browse.setAttribute('aria-label', 'Browse and use a Mail template');
-	const saveAs = element('button', 'button cb-core-button cb-core-button--secondary', 'Save as template');
+	browse.setAttribute('aria-label', label('browseAction', 'Browse and use a Mail template'));
+	const saveAs = element('button', 'button cb-core-button cb-core-button--secondary', label('saveAs', 'Save as template'));
 	saveAs.type = 'button';
-	saveAs.setAttribute('aria-label', 'Save a reusable copy of this Mail design');
+	saveAs.setAttribute('aria-label', label('saveAsHelp', 'Save a reusable copy of this Mail design'));
 	// The native Mail Header Picker is width-constrained by shared Base.
 	// One compact disclosure preserves responsive space and keyboard access.
 	const menu = element('details', 'cb-core-mail-saved-menu');
 	const trigger = element('summary', 'cb-core-mail-saved-menu__trigger');
-	trigger.setAttribute('aria-label', 'Mail template actions');
-	trigger.append(element('span', 'cb-core-mail-saved-menu__label', 'Templates'),
+	trigger.setAttribute('aria-label', label('actions', 'Mail template actions'));
+	trigger.append(element('span', 'cb-core-mail-saved-menu__label', label('templates', 'Templates')),
 		element('span', 'cb-core-mail-saved-menu__glyph', '⋯'));
 	const menuBody = element('div', 'cb-core-mail-saved-menu__body');
 	menuBody.append(browse, saveAs);
@@ -150,17 +150,17 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 	browse.addEventListener('click', () => {
 		menu.open = false;
 		if (busy || uncertain || !canCapture(host) || !scopeToken) {
-			toast.error('Finish or verify the current Save before applying a template.');
+			toast.error(label('saveBusy', 'Finish or verify the current Save before applying a template.'));
 			return;
 		}
 		busy = true;
 		void openTemplateBrowser({
 			contextToken: scopeToken,
-			title: 'Use a Mail template',
+			title: label('useTitle', 'Use a Mail template'),
 			onChoose: async (item) => {
 				if (!['core-blueprint-mail', 'core-blueprint-mail-saved'].includes(item?.source)
 					|| !canCapture(host)) {
-					toast.error('The selected template is not authorized for this Mail Designer.');
+					toast.error(label('notAuthorized', 'The selected template is not authorized for this Mail Designer.'));
 					return false;
 				}
 				try {
@@ -170,10 +170,10 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 						target: targetOf(host),
 					});
 					const changed = host.editor.applyTemplate(reply, intent);
-					if (changed) toast.success('Template applied. Save the Mail design to keep these changes.');
+					if (changed) toast.success(label('applied', 'Template applied. Save the Mail design to keep these changes.'));
 					return true;
 				} catch (_) {
-					toast.error('Template Apply was refused or the context changed. No new Save was made.');
+					toast.error(label('applyRefused', 'Template Apply was refused or the context changed. No new Save was made.'));
 					return false;
 				}
 			},
@@ -182,19 +182,19 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 	saveAs.addEventListener('click', () => {
 		menu.open = false;
 		if (busy || uncertain || !canCapture(host) || !scopeToken) {
-			toast.error('Finish or verify the current Save before saving a template.');
+			toast.error(label('saveBusy', 'Finish or verify the current Save before saving a template.'));
 			return;
 		}
 		busy = true;
 		const form = nameDialogBody('', true);
 		void showModal({
-			title: 'Save as Mail template', body: form.body,
-			confirmLabel: 'Save template', initialFocus: form.input,
+			title: label('saveAsTitle', 'Save as Mail template'), body: form.body,
+			confirmLabel: label('saveAction', 'Save template'), initialFocus: form.input,
 			onConfirm: async () => {
 				if (uncertain) { form.notice.textContent = errorMessage(); return false; }
 				const title = form.input.value.trim();
 				if (!title || title.length > 191 || !canCapture(host)) {
-					form.notice.textContent = 'Enter a name and verify the current Designer Save state.';
+					form.notice.textContent = label('nameAndState', 'Enter a name and verify the current Designer Save state.');
 					return false;
 				}
 				let captured;
@@ -212,13 +212,13 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 				} catch (_) {
 					// No request was attempted; this is a proven local refusal,
 					// not an ambiguous asset write.
-					form.notice.textContent = 'The Designer context changed. No template was saved.';
+					form.notice.textContent = label('contextChanged', 'The Designer context changed. No template was saved.');
 					return false;
 				}
 				try {
 					const result = await api('create', captured, {scope: scopeToken});
 					if (result.status === 'created' && typeof result.id === 'string') {
-						toast.success('Reusable Mail template saved.');
+						toast.success(label('savedConfirmation', 'Reusable Mail template saved.'));
 						return true;
 					}
 					if (result.status === 'unknown' || result.status === 'unavailable') uncertain = true;
@@ -308,20 +308,20 @@ function mountManagement(root) {
 		let name = '';
 		if (action === 'delete') {
 			const confirmed = await showModal({
-				title: 'Delete Mail template', body: 'Delete this reusable template? The live Mail design will not be changed.',
-				confirmVariant: 'danger', confirmLabel: 'Delete template',
+				title: label('deleteTitle', 'Delete Mail template'), body: label('deleteBody', 'Delete this reusable template? The live Mail design will not be changed.'),
+				confirmVariant: 'danger', confirmLabel: label('deleteAction', 'Delete template'),
 			});
 			if (confirmed !== true) return;
 		} else {
 			const form = nameDialogBody(action === 'rename' ? item.title : item.title + ' copy');
 			const accepted = await showModal({
-				title: action === 'rename' ? 'Rename Mail template' : 'Duplicate Mail template',
+				title: action === 'rename' ? label('renameTitle', 'Rename Mail template') : label('duplicateTitle', 'Duplicate Mail template'),
 				body: form.body, confirmLabel: action === 'rename' ? 'Rename' : 'Duplicate',
 				initialFocus: form.input,
 				onConfirm: () => {
 					name = form.input.value.trim();
 					if (!name || name.length > 191) {
-						form.notice.textContent = 'Enter a template name.';
+						form.notice.textContent = label('nameRequired', 'Enter a template name.');
 						return false;
 					}
 					return true;
@@ -338,14 +338,14 @@ function mountManagement(root) {
 			});
 			const success = action === 'rename' ? 'renamed' : (action === 'duplicate' ? 'created' : 'deleted');
 			if (result.status === success) {
-				toast.success('Saved Mail template updated.');
+				toast.success(label('updated', 'Saved Mail template updated.'));
 				loading = false;
 				await load(true);
 				return;
 			}
 			if (result.status === 'unknown' || result.status === 'unavailable') uncertain = true;
 			toast.error(result.status === 'conflict'
-				? 'This template was changed elsewhere. Reload before trying again.' : errorMessage());
+				? label('conflict', 'This template was changed elsewhere. Reload before trying again.') : errorMessage());
 			if (result.status === 'conflict') {
 				loading = false;
 				await load(true);
