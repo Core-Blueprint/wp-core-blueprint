@@ -288,7 +288,7 @@ async function createFixture({ unknownSave = false } = {}) {
       return { activatePlatformSession: () => true, destroy: () => {} };
     },
     readPersistedFields: () => realFields.snapshot().fields,
-    updatePersistedField: (_save, key, value) => realFields.set(key, value),
+    updatePersistedField: (_save, key, value) => realBridge.applyFieldChange(realFields.prepareSet(key, value)),
     applyTemplateDocument: (_save, document) => realBridge.applyTemplateDocument(
       document.project, realFields.prepareReplace(document.fields),
     ),
@@ -455,6 +455,8 @@ test('T3-01 native template apply is one dirty, undoable, independent project + 
     contextEpoch: 0, blogId: 1, actorId: 2, document,
   };
   assert.equal(editor.applyTemplate(reply, intent), true);
+  document.project.root.properties.title = 'untrusted mutation';
+  document.fields.preheader = 'untrusted mutation';
   assert.equal(editor.project().root.properties.title, 'applied');
   assert.equal(editor.persistedFields().preheader, 'template value');
   assert.equal(editor.historyStatus().size, 1);
@@ -467,7 +469,7 @@ test('T3-01 native template apply is one dirty, undoable, independent project + 
   assert.equal(editor.project().root.properties.title, 'applied');
   assert.equal(editor.persistedFields().preheader, 'template value');
   assert.equal(editor.saveStatus().dirty, true);
-  assert.equal(editor.applyTemplate(reply, intent), false, 'reused Apply intent must be refused');
+  assert.throws(() => editor.applyTemplate(reply, intent), /SAVE_CONTEXT_CHANGED/, 'reused Apply intent must be refused');
 });
 
 test('T3-01 incorrect target, changed editor and UNKNOWN Save refuse Apply without partial changes', async () => {
