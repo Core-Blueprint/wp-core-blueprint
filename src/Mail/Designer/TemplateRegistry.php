@@ -14,6 +14,7 @@ namespace CoreBlueprint\Core\Mail\Designer;
 
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Editor\PlatformTransport;
+use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -52,11 +53,17 @@ final class TemplateRegistry {
 		$description = $definition['description'] ?? '';
 		$document = $definition['document'] ?? null;
 
+		// Every accepted native Mail resource must also fit the public Template
+		// Library metadata identity and display bounds: no silently hidden provider.
 		if ( ! is_string( $id ) || ! Repository::valid_identity( Repository::MAIL, $id )
+			|| ! TemplateQuery::valid_id( $id )
 			|| ! is_string( $provider ) || ! preg_match( '/^[a-z][a-z0-9_-]*$/D', $provider )
 			|| ! is_string( $group ) || ! preg_match( '/^[a-z][a-z0-9_-]*$/D', $group )
+			|| ! TemplateQuery::valid_id( $group )
 			|| ! is_string( $label ) || '' === trim( $label )
+			|| strlen( trim( wp_strip_all_tags( $label ) ) ) > 191
 			|| ! is_string( $description )
+			|| strlen( trim( wp_strip_all_tags( $description ) ) ) > 500
 			|| ! is_array( $document )
 			|| isset( self::$definitions[ $id ] ) ) {
 			return false;
