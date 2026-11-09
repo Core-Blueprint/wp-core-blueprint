@@ -1,6 +1,6 @@
 # T3-01 — Native Apply Template Foundation (WP Base)
 
-Status: **SOURCE IMPLEMENTED / QUALIFICATION PENDING**. FRG-04 Foundation Freeze: HOLD.
+Status: **SOURCE + LEVEL 1 + INTERNAL DEV BUILD PASS on exact T3-01 HEAD `83139756519671b8ecfd24a71a7452f7d556f6eb`** (operator evidence, 2026-11-09). FRG-04 Foundation Freeze: HOLD.
 
 This document is scoped to the WordPress Core Blueprint Base repository; it does not govern Webapp v2.
 
@@ -27,4 +27,4 @@ The public Template Browser's `loadForApply({contextToken,source,templateId,targ
 
 T3-01 is the shared mechanism, not the complete Mail template-management UI. T3-02 will wire the first-party Mail Use Template interaction plus Save as Template, My/Site, Rename, Duplicate and Delete. T4 owns offline import/export through Data Exchange.
 
-At this source checkpoint, canonical Level 1, fresh internal ZIP, WordPress Level 2 and FIELD acceptance have **not** been demonstrated on this exact feature HEAD. Do not claim FRG-04 Freeze or release readiness.
+Operator qualification on T3-01 exact HEAD: 20/20 targeted Node tests PASS, native Reports PHP regression PASS, `bash tools/check` canonical Level 1 PASS; internal build syntax 986 PHP / 131 JS + translations PASS; ZIP `dist/dev/core-blueprint-1.0.0-dev-831397565196.zip`, SHA256 `8a9816b0432bd61073c50d3d63cc3b9df6428fd48701f546728014b8ddc1b324`, archive and checksum integrity PASS. **WordPress Level 2, native installed FIELD, Foundation Freeze, release and merge were not qualified by this evidence.**
