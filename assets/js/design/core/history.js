@@ -207,10 +207,11 @@ export class CommandHistory {
 		return { project: next, forceSelection };
 	}
 
-	#entry(command, beforeProject, beforeEditor, afterProject, afterEditor, id) {
+	#entry(command, beforeProject, beforeEditor, afterProject, afterEditor, id, companion = null) {
 		return stableEntry({
 			id,
 			command,
+			companion,
 			label: String(command.label || 'command'),
 			beforeProject: cloneFrozen(beforeProject),
 			beforeEditor: cloneFrozen(beforeEditor),
@@ -389,6 +390,50 @@ export class CommandHistory {
 		});
 	}
 
+	/**
+	 * One local, undoable project + persisted-fields transition. The companion
+	 * is prepared by the verified Host field store, not from browser metadata.
+	 */
+	applyWithFields(project, companion, {source = 'template'} = {}) {
+		return this.#run(() => {
+			if (!['template', 'fields'].includes(source)
+				|| !companion || !Object.isFrozen(companion)
+				|| typeof companion.commit !== 'function'
+				|| typeof companion.rollback !== 'function'
+				|| typeof companion.prepareUndo !== 'function'
+				|| typeof companion.prepareRedo !== 'function'
+				|| typeof companion.changed !== 'boolean') {
+				throw new TypeError('SAVE_INVALID');
+			}
+			const next = this.#projectState.stage(project);
+			const before = this.#projectState.current();
+			if (!companion.changed && sameValue(next, before)) return false;
+			const previousEditor = this.#editorState.snapshot();
+			const editor = this.#stageEditor();
+			if (source === 'template') editor.selection.clear();
+			editor.reconcile(next.root, {project: next});
+			const nextEditor = editor.snapshot();
+			// This command can be replayed only against an equivalent Save
+			// baseline. A normalized server response with companions is refused.
+			const command = Object.freeze({
+				label: source === 'template' ? 'apply-template' : 'persisted-field',
+				apply: () => ({project: next}),
+			});
+			const entry = this.#entry(command, before, previousEditor,
+				next, nextEditor, this.#nextEntryId + 1, companion);
+			const undo = [...this.#undo, entry];
+			if (undo.length > this.#limit) undo.splice(0, undo.length - this.#limit);
+			this.#commit({
+				nextProject: next, nextEditor, undo, redo: [],
+				action: 'execute', source,
+				selectionSource: source, selectionAction: command.label,
+				commitAlongside: companion.commit, rollbackAlongside: companion.rollback,
+			});
+			this.#nextEntryId = entry.id;
+			return true;
+		});
+	}
+
 	undo() {
 		return this.#run(() => {
 			if (!this.#undo.length) return false;
@@ -397,10 +442,12 @@ export class CommandHistory {
 			const editor = this.#stageEditor();
 			editor.restore(entry.beforeEditor);
 			editor.reconcile(project.root, { project });
+			const alongside = entry.companion?.prepareUndo() ?? null;
 			this.#commit({
 				nextProject: project, nextEditor: editor.snapshot(),
 				undo: this.#undo.slice(0, -1), redo: [...this.#redo, entry],
 				action: 'undo', source: 'history',
+				commitAlongside: alongside?.commit, rollbackAlongside: alongside?.rollback,
 			});
 			return true;
 		});
@@ -414,12 +461,14 @@ export class CommandHistory {
 			const editor = this.#stageEditor();
 			editor.restore(entry.afterEditor);
 			editor.reconcile(project.root, { project });
+			const alongside = entry.companion?.prepareRedo() ?? null;
 			const undo = [...this.#undo, entry];
 			if (undo.length > this.#limit) undo.splice(0, undo.length - this.#limit);
 			this.#commit({
 				nextProject: project, nextEditor: editor.snapshot(),
 				undo, redo: this.#redo.slice(0, -1),
 				action: 'redo', source: 'history',
+				commitAlongside: alongside?.commit, rollbackAlongside: alongside?.rollback,
 			});
 			return true;
 		});
@@ -537,6 +586,8 @@ export class CommandHistory {
 				// Until each edge can be proven equivalent, reject safely.
 				if (checkpoint.undoIds.length || checkpoint.redoIds.length) conflict();
 				const entries = [...this.#undo, ...[...this.#redo].reverse()];
+				// A server-normalized project cannot safely replay field companions.
+				if (entries.some((entry) => entry.companion !== null)) conflict();
 				const ids = entries.map((entry) => entry.id);
 				if (entries.length !== this.#nextEntryId - checkpoint.lastEntryId
 					|| ids.some((id) => id <= checkpoint.lastEntryId)) conflict();

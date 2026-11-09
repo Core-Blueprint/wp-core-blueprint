@@ -328,12 +328,54 @@ async function open( { contextToken, onChoose, title } = {} ) {
     }
 }
 
-const api = Object.freeze( { createBrowser, open } );
+/**
+ * Read-only, scope-bound materialization. The response must go through the
+ * Host's captureApplyIntent()/applyTemplate(); never replace a project here.
+ */
+async function loadForApply( { contextToken, source, templateId, target, signal } = {} ) {
+    if ( !contextToken || typeof contextToken !== 'string'
+        || typeof source !== 'string' || typeof templateId !== 'string'
+        || !target || typeof target !== 'object'
+        || !Number.isSafeInteger( target.contextEpoch ) || target.contextEpoch < 0
+        || typeof target.profileId !== 'string'
+        || typeof target.resourceType !== 'string'
+        || typeof target.resourceKey !== 'string' ) {
+        throw safeError();
+    }
+    const response = await fetch( settings.restRoot + 'apply', {
+        method: 'POST', credentials: 'same-origin', signal,
+        headers: {
+            'X-WP-Nonce': settings.nonce,
+            'X-CB-Designer-Scope': contextToken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify( {
+            source, templateId,
+            profileId: target.profileId, resourceType: target.resourceType,
+            resourceKey: target.resourceKey, contextEpoch: target.contextEpoch,
+        } ),
+    } );
+    if ( !response.ok ) throw safeError();
+    const payload = await response.json();
+    if ( payload?.status !== 'ready' || payload.source !== source
+        || payload.templateId !== templateId
+        || payload.profileId !== target.profileId
+        || payload.resourceType !== target.resourceType
+        || payload.resourceKey !== target.resourceKey
+        || payload.contextEpoch !== target.contextEpoch
+        || !payload.document || typeof payload.document !== 'object' ) {
+        throw safeError();
+    }
+    return payload;
+}
+
+const api = Object.freeze( { createBrowser, open, loadForApply } );
 if ( typeof window !== 'undefined' ) {
     window.cbCore = window.cbCore || {};
     window.cbCore.templateBrowser = api;
     const root = document.querySelector( '[data-cb-template-library-global]' );
     if ( root ) createBrowser( root, { mode: 'global' } );
 }
-export { createBrowser, open };
+export { createBrowser, open, loadForApply };
 export default api;

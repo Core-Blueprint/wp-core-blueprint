@@ -182,6 +182,60 @@ export function createPersistedFields({
 			fieldRevision += 1;
 			return true;
 		},
+		/**
+		 * Stage a complete fields replacement as an adjunct of canonical History.
+		 * A field edit and a Template Apply use exactly the same undo/redo witness.
+		 * No observer can see the intermediate fields/project state.
+		 */
+		prepareReplace(nextFields) {
+			active();
+			const before = current;
+			const after = normalize(nextFields, '/persistedFields');
+			const changed = canonicalSaveJSON(before) !== canonicalSaveJSON(after);
+			const swap = (expected, next) => {
+				active();
+				if (current !== expected) throw new Error('SAVE_CONTEXT_CHANGED');
+				const revision = fieldRevision;
+				if (changed && revision >= Number.MAX_SAFE_INTEGER) {
+					throw new RangeError('SCHEMA_LIMIT_EXCEEDED');
+				}
+				let committed = false;
+				return Object.freeze({
+					commit() {
+						active();
+						if (committed || current !== expected || fieldRevision !== revision) {
+							throw new Error('SAVE_CONTEXT_CHANGED');
+						}
+						if (changed) {
+							current = next;
+							fieldRevision += 1;
+						}
+						committed = true;
+					},
+					rollback() {
+						if (!committed) return;
+						current = expected;
+						fieldRevision = revision;
+						committed = false;
+					},
+				});
+			};
+			const initial = swap(before, after);
+			return Object.freeze({
+				changed,
+				commit: initial.commit,
+				rollback: initial.rollback,
+				prepareUndo: () => swap(after, before),
+				prepareRedo: () => swap(before, after),
+			});
+		},
+		prepareSet(saveKey, value) {
+			active();
+			if (!saveKeys.includes(saveKey)) throw new TypeError('SCHEMA_DOMAIN_INVALID: unregistered persisted field.');
+			const staged = strictJsonCopy(current);
+			staged[saveKey] = strictJsonCopy(value);
+			return this.prepareReplace(staged);
+		},
 		validateAccepted(acceptedFields) {
 			active();
 			return normalize(acceptedFields, '/acceptedFields');

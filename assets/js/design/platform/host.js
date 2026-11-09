@@ -3,6 +3,7 @@ import { inspectTrustedContext, contextIdentityKey, nextEpoch } from './context.
 import { instantiateRenderAdapter } from './render-adapter.js';
 import { preflight as verifyRuntime } from './preflight.js';
 import { immutableData } from './manifest.js';
+import { canonicalSaveJSON } from './persisted-fields.js';
 
 const leasedRoots = new WeakMap();
 const refusal = (code) => Object.assign(new Error(code), {code});
@@ -31,6 +32,7 @@ export function createPlatformHost({
 	createShell,
 	readPersistedFields,
 	updatePersistedField,
+	applyTemplateDocument = null,
 	onDiagnostic = null,
 } = {}) {
 	if (!root?.ownerDocument || !canvasRoot || !root.contains(canvasRoot)
@@ -49,6 +51,7 @@ export function createPlatformHost({
 	let epoch = -1;
 	let ticket = 0;
 	let publishedEditor = null;
+	const applyIntents = new WeakMap();
 	const diagnostics = (code) => {
 		if (typeof onDiagnostic === 'function') {
 			try { onDiagnostic(Object.freeze({code})); } catch (_) { /* isolated observer */ }
@@ -85,6 +88,51 @@ export function createPlatformHost({
 				throw refusal('SAVE_PENDING_CONTEXT_BLOCKED');
 			}
 			const changed = updatePersistedField(holder.save, key, value);
+			if (changed) void refresh('command').catch((e) => diagnostics(e?.code || 'HOST_CONTEXT_REFUSED'));
+			return changed;
+		},
+		/**
+		 * Opaque intent captures the local source state before an asynchronous
+		 * authorized template read. It cannot survive a context switch or edits.
+		 */
+		captureApplyIntent() {
+			assertReady(holder);
+			const status = holder.save.status();
+			if (status?.blocked || !['READY_CLEAN','READY_DIRTY'].includes(status?.state)) {
+				throw refusal('SAVE_PENDING_CONTEXT_BLOCKED');
+			}
+			const intent = Object.freeze(Object.create(null));
+			applyIntents.set(intent, {
+				holder,
+				project: canonicalSaveJSON(holder.bridge.snapshot()),
+				fields: canonicalSaveJSON(readPersistedFields(holder.save)),
+			});
+			return intent;
+		},
+		applyTemplate(reply, intent) {
+			assertReady(holder);
+			const checkpoint = intent && applyIntents.get(intent);
+			if (intent && typeof intent === 'object') applyIntents.delete(intent);
+			const status = holder.save.status();
+			if (!checkpoint || checkpoint.holder !== holder
+				|| status?.blocked || !['READY_CLEAN','READY_DIRTY'].includes(status?.state)
+				|| typeof applyTemplateDocument !== 'function'
+				|| !reply || reply.status !== 'ready'
+				|| typeof reply.source !== 'string' || !reply.source
+				|| typeof reply.templateId !== 'string' || !reply.templateId
+				|| reply.profileId !== holder.profileId
+				|| reply.resourceType !== holder.identity.resourceType
+				|| reply.resourceKey !== holder.identity.resourceId
+				|| reply.contextEpoch !== holder.identity.contextEpoch
+				|| reply.actorId !== holder.identity.actorId
+				|| reply.blogId !== holder.identity.siteId
+				|| canonicalSaveJSON(holder.bridge.snapshot()) !== checkpoint.project
+				|| canonicalSaveJSON(readPersistedFields(holder.save)) !== checkpoint.fields) {
+				throw refusal('SAVE_CONTEXT_CHANGED');
+			}
+			// Only the already-verified Registry + canonical History may admit
+			// this source document; there is no second persistence authority.
+			const changed = applyTemplateDocument(holder.save, reply.document);
 			if (changed) void refresh('command').catch((e) => diagnostics(e?.code || 'HOST_CONTEXT_REFUSED'));
 			return changed;
 		},

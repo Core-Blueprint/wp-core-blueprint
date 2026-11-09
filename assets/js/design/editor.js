@@ -557,6 +557,14 @@ export const createPlatformSessionBridge = ({
 			const compound = bindRegisteredBatch(requests, {resolveCommand: resolve, ...policies});
 			return history.executeBatch(compound.steps);
 		},
+		applyTemplateDocument(project, companion) {
+			active();
+			return history.applyWithFields(project, companion, {source: 'template'});
+		},
+		applyFieldChange(companion) {
+			active();
+			return history.applyWithFields(projectState.current(), companion, {source: 'fields'});
+		},
 		undo() { active(); return history.undo(); },
 		redo() { active(); return history.redo(); },
 		historyStatus() { active(); return history.status(); },
@@ -975,6 +983,7 @@ export const attachTrustedDesignerHost = ({
 	// A single field store and a single Luna 5 SaveCoordinator per Host
 	// context. Neither is exposed to consumer code or the EditorFacade.
 	const fieldsOfSave = new WeakMap();
+	const bridgeOfSave = new WeakMap();
 	const connectSaveCoordinator = async ({
 		sessionBridge, identity, persistedFieldFacet, initialFields, evidence, signal,
 	}) => {
@@ -1041,6 +1050,7 @@ export const attachTrustedDesignerHost = ({
 			});
 			coordinator = createCanonicalSaveCoordinator({host: hostBridge, fields, adapter});
 			fieldsOfSave.set(coordinator, fields);
+			bridgeOfSave.set(coordinator, sessionBridge);
 			savesBySignal.set(signal, coordinator);
 			return coordinator;
 		} catch (error) {
@@ -1055,8 +1065,22 @@ export const attachTrustedDesignerHost = ({
 	};
 	const updatePersistedField = (coordinator, key, value) => {
 		const fields = fieldsOfSave.get(coordinator);
-		if (!fields || coordinator.status().blocked) throw new Error('SAVE_PENDING_CONTEXT_BLOCKED');
-		return fields.set(key, value);
+		const bridge = bridgeOfSave.get(coordinator);
+		if (!fields || !bridge || coordinator.status().blocked) throw new Error('SAVE_PENDING_CONTEXT_BLOCKED');
+		const companion = fields.prepareSet(key, value);
+		return companion.changed ? bridge.applyFieldChange(companion) : false;
+	};
+	const applyTemplateDocument = (coordinator, document) => {
+		const fields = fieldsOfSave.get(coordinator);
+		const bridge = bridgeOfSave.get(coordinator);
+		if (!fields || !bridge || coordinator.status().blocked
+			|| !document || typeof document !== 'object' || Array.isArray(document)
+			|| Object.keys(document).length !== 2
+			|| !Object.hasOwn(document, 'project') || !Object.hasOwn(document, 'fields')) {
+			throw new Error('SAVE_PENDING_CONTEXT_BLOCKED');
+		}
+		const companion = fields.prepareReplace(document.fields);
+		return bridge.applyTemplateDocument(document.project, companion);
 	};
 	const connectSessionBridge = ({initialProject, context, profile, schemaSnapshot, signal}) => {
 		if (signal?.aborted) throw new Error('HOST_CONTEXT_REFUSED');
@@ -1776,6 +1800,7 @@ export const attachTrustedDesignerHost = ({
 			createSaveCoordinator: connectSaveCoordinator,
 			readPersistedFields,
 			updatePersistedField,
+			applyTemplateDocument,
 			createShell,
 		}));
 		if (!host || host.root !== root
