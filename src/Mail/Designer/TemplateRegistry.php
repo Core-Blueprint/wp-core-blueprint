@@ -60,7 +60,7 @@ final class TemplateRegistry {
 			|| ! is_string( $provider ) || ! preg_match( '/^[a-z][a-z0-9_-]*$/D', $provider )
 			|| ! is_string( $group ) || ! preg_match( '/^[a-z][a-z0-9_-]*$/D', $group )
 			|| ! TemplateQuery::valid_id( $group )
-			|| ! is_string( $label ) || '' === trim( $label )
+			|| ! is_string( $label ) || '' === trim( wp_strip_all_tags( $label ) )
 			|| strlen( trim( wp_strip_all_tags( $label ) ) ) > 191
 			|| ! is_string( $description )
 			|| strlen( trim( wp_strip_all_tags( $description ) ) ) > 500
