@@ -72,6 +72,7 @@ final class DesignerAssets {
 					'saveAsHelp' => __( 'Save a reusable copy of this Mail design', 'core-blueprint' ),
 					'actions' => __( 'Mail template actions', 'core-blueprint' ),
 					'templates' => __( 'Templates', 'core-blueprint' ),
+					'browser' => __( 'Browser', 'core-blueprint' ),
 					'saveBusy' => __( 'Finish or verify the current Save before continuing.', 'core-blueprint' ),
 					'useTitle' => __( 'Use a Mail template', 'core-blueprint' ),
 					'notAuthorized' => __( 'The selected template is not authorized for this Mail Designer.', 'core-blueprint' ),

@@ -725,9 +725,9 @@ const composePlatformChrome = (root, profileId) => {
 	if (profileId === 'base/mail') {
 		// One canonical Browser launch control, bound only after native Host READY.
 		// The resource catalog remains consumer-owned; the button is Base chrome.
-		const browserButton = button('Browser', 'data-cb-platform-browser');
+		const browserButton = button(platformFieldLabel('browser'), 'data-cb-platform-browser');
 		browserButton.disabled = true;
-		decorateDesignerControl(browserButton, 'folder-open', {iconOnly: true, label: 'Browser'});
+		decorateDesignerControl(browserButton, 'folder-open', {iconOnly: true, label: platformFieldLabel('browser')});
 		resourceGroup.append(browserButton);
 	}
 	const operationGroup = node('div', 'cb-core-design-shell__toolbar-group cb-core-design-shell__toolbar-group--operations', {

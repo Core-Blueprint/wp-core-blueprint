@@ -48,6 +48,15 @@ final class Assets {
 		$existing['nonce'] = wp_create_nonce( 'wp_rest' );
 		$existing['i18n'] = [
 			'library'     => __( 'Template Library', 'core-blueprint' ),
+			'browser'     => __( 'Browser', 'core-blueprint' ),
+			'designs'     => __( 'Designs', 'core-blueprint' ),
+			'templates'   => __( 'Templates', 'core-blueprint' ),
+			'folders'     => __( 'Collections', 'core-blueprint' ),
+			'allDesigns'  => __( 'All designs', 'core-blueprint' ),
+			'current'     => __( 'Current', 'core-blueprint' ),
+			'noDesigns'   => __( 'No designs found.', 'core-blueprint' ),
+			'selectAction'=> __( 'Open / use selected', 'core-blueprint' ),
+			'saveAs'      => __( 'Save as template', 'core-blueprint' ),
 			'browse'      => __( 'Browse templates', 'core-blueprint' ),
 			'search'      => __( 'Search templates', 'core-blueprint' ),
 			'all'         => __( 'All templates', 'core-blueprint' ),

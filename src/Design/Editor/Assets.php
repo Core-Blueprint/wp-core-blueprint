@@ -216,6 +216,7 @@ final class Assets {
 			'summary' => __( 'Summary', 'core-blueprint' ),
 			'mail' => __( 'Mail', 'core-blueprint' ),
 			'reports' => __( 'Reports', 'core-blueprint' ),
+			'browser' => __( 'Browser', 'core-blueprint' ),
 		];
 	}
 
