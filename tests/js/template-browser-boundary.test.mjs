@@ -82,6 +82,23 @@ test('FIELD-04B: contextual Browser scrolls results while card rows remain intri
   assert.match(styles, /grid-template-rows: auto auto minmax\(0, 1fr\);/);
 });
 
+test('Browser Golden UX keeps contextual navigation and Save isolated from global Library', () => {
+  assert.match(browser, /resultHeading\.append\( resultTitle, resultCount \)/);
+  assert.match(browser, /toolbar\.prepend\( resultHeading, searchField \)/);
+  assert.match(browser, /resultCount\.textContent = String\( state\.entries\.length \)/);
+  assert.match(browser, /cb-template-browser__collection-count/);
+  assert.match(browser, /sidebar\.append\( saveArea \)/);
+  assert.match(browser, /if \( contextual && typeof options\.onSaveAs === 'function' \)/);
+  assert.doesNotMatch(browser, /body\.append\( saveAction \)/);
+  assert.match(browser, /footer\.hidden = contextual && !state\.cursor/);
+  assert.match(styles, /\.cb-template-browser__field\[hidden\],[\s\S]*?display: none !important;/);
+  assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__card\.is-current/);
+  assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__card:has\(\.cb-template-browser__choice:checked\)/);
+  assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__sidebar-footer/);
+  assert.match(styles, /@media \(max-width: 720px\) \{[\s\S]*?\.cb-template-browser--modal \.cb-template-browser__save-as/);
+  assert.match(styles, /\.cb-template-library-page \.cb-template-browser \{/);
+});
+
 test('global filters distinguish translated Source and Plugin without changing their query keys', () => {
   assert.match(browser, /addSelect\( 'source', 'source', 'Source' \)/);
   assert.match(browser, /addSelect\( 'extension', 'plugin', 'Plugin' \)/);

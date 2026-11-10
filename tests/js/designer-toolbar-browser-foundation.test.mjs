@@ -118,6 +118,13 @@ test('Designer Browser renders three panes with active resource cards and separa
 	const category=shell.children[0],collections=shell.children[1],content=shell.children[2];
 	assert.equal(category.children.length,2,'Designs and Templates navigation');
 	assert.equal(collections.children.length,4,'heading, All designs and two provider collections');
+	const heading=content.children[0].children[0];
+	assert.match(heading.className,/cb-template-browser__result-heading/);
+	assert.equal(heading.children[0].textContent,'All designs');
+	assert.equal(heading.children[1].textContent,'2');
+	assert.equal(collections.children[1].children[0].textContent,'2','all designs count');
+	assert.equal(collections.children[2].children[0].textContent,'1','provider collection count');
+	assert.equal(content.children[3].hidden,true,'empty contextual pagination is hidden');
 	const viewport=content.children[2];
 	assert.match(viewport.className,/cb-template-browser__results-viewport/);
 	assert.equal(viewport.attributes.role,'region');
@@ -162,6 +169,13 @@ test('Browser modal closes before a design navigation; Apply callback is never u
 		setTimeout,clearTimeout,fetch:async()=>({ok:true,json:async()=>({sources:[]})})};
 	sandbox.modalHook=async ({body,onConfirm})=>{
 		order.push('modal-open');
+		const sidebar=body.children[1].children[0].children[0];
+		const saveArea=sidebar.children[2];
+		assert.match(saveArea.className,/cb-template-browser__sidebar-footer/);
+		const saveButton=saveArea.children[0];
+		assert.equal(saveButton.textContent,'Save as template');
+		await saveButton.events.get('click')();
+		assert.equal(saveButton.disabled,false,'save-as action remains usable after completion');
 		const card=body.children[1].children[0].children[2].children[2].children[0].children[1];
 		card.children[0].checked=true;
 		card.children[0].events.get('change')();
@@ -184,7 +198,8 @@ test('Browser modal closes before a design navigation; Apply callback is never u
 		activeDesignId:'wordpress.a',
 		onChoose:async()=>{throw new Error('DESIGN_NAVIGATION_MUST_NOT_APPLY_TEMPLATE');},
 		onOpenDesign:async design=>{order.push('navigation:'+design.id);return true;},
+		onSaveAs:async()=>{order.push('save-as-template');},
 	});
 	assert.equal(result,true);
-	assert.deepEqual(order,['modal-open','modal-closed','navigation:wordpress.b']);
+	assert.deepEqual(order,['modal-open','save-as-template','modal-closed','navigation:wordpress.b']);
 });

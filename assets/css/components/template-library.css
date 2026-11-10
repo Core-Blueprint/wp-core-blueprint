@@ -317,3 +317,246 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 @media (prefers-reduced-motion: reduce) {
     .cb-template-browser * { transition: none !important; }
 }
+
+
+/* Browser Golden UX: contextual Designer workspace only. Standalone Template
+   Library cards and navigation intentionally retain their existing layout. */
+.cb-template-browser--modal {
+  --cb-browser-line: var(--cb-border, rgba(127,127,127,.24));
+  --cb-browser-muted: var(--cb-text-muted, #858d98);
+}
+.cb-template-browser--modal :is(.cb-template-browser__sidebar, .cb-template-browser__collections) {
+  gap: 4px;
+  padding: 20px 12px;
+  background: var(--cb-surface-1, transparent);
+  border-inline-end: 1px solid var(--cb-browser-line);
+}
+.cb-template-browser--modal .cb-template-browser__origin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.cb-template-browser--modal .cb-template-browser__origin[aria-pressed="true"] {
+  background: var(--cb-surface-2, rgba(127,127,127,.12));
+  border-color: var(--cb-browser-line);
+  box-shadow: inset 2px 0 0 var(--cb-accent, #2271b1);
+  font-weight: 650;
+}
+.cb-template-browser--modal .cb-template-browser__collection-count {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--cb-surface-2, rgba(127,127,127,.12));
+  color: var(--cb-browser-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.cb-template-browser--modal .cb-template-browser__sidebar-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--cb-browser-line);
+  background: var(--cb-surface-1, transparent);
+}
+.cb-template-browser--modal .cb-template-browser__save-as {
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  padding: 7px 10px;
+  white-space: normal;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.cb-template-browser--modal .cb-template-browser__content {
+  padding: 20px 22px 16px;
+}
+.cb-template-browser--modal .cb-template-browser__toolbar {
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin: 0 0 16px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--cb-browser-line);
+}
+.cb-template-browser--modal .cb-template-browser__result-heading {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 9px;
+  min-width: 125px;
+  min-height: 38px;
+}
+.cb-template-browser--modal .cb-template-browser__result-title {
+  margin: 0;
+  color: var(--cb-text-strong, inherit);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.cb-template-browser--modal .cb-template-browser__result-count {
+  flex: 0 0 auto;
+  min-width: 22px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: var(--cb-surface-2, rgba(127,127,127,.12));
+  color: var(--cb-browser-muted);
+  font-size: 11px;
+  font-weight: 650;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.cb-template-browser--modal .cb-template-browser__field--search {
+  flex: 1 1 240px;
+  min-width: min(100%, 200px);
+}
+.cb-template-browser--modal .cb-template-browser__field:not(.cb-template-browser__field--search) {
+  flex: 0 1 165px;
+}
+/* Respect the hidden attribute even when a field normally displays as grid. */
+.cb-template-browser__field[hidden],
+.cb-template-browser--modal .cb-template-browser__footer[hidden] {
+  display: none !important;
+}
+.cb-template-browser--modal .cb-template-browser__message:empty { display: none; }
+.cb-template-browser--modal .cb-template-browser__message:not(:empty) {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--cb-browser-line);
+  border-radius: 6px;
+}
+.cb-template-browser--modal .cb-template-browser__results-viewport {
+  padding: 2px 3px 10px 2px;
+}
+.cb-template-browser--modal .cb-template-browser__grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 235px), 1fr));
+  gap: 14px;
+  align-content: start;
+}
+.cb-template-browser--modal .cb-template-browser__card {
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--cb-browser-line);
+  border-radius: 10px;
+  background: var(--cb-surface-2, rgba(127,127,127,.07));
+  text-align: start;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.cb-template-browser--modal .cb-template-browser__card:hover {
+  border-color: var(--cb-text-muted, rgba(127,127,127,.45));
+}
+.cb-template-browser--modal .cb-template-browser__card:has(.cb-template-browser__choice:checked) {
+  border-color: var(--cb-accent, #2271b1);
+  box-shadow: inset 0 0 0 1px var(--cb-accent, #2271b1);
+}
+.cb-template-browser--modal .cb-template-browser__card-preview {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  min-height: 118px;
+  max-height: 172px;
+  background: var(--cb-surface-1, rgba(127,127,127,.06));
+  border-bottom: 1px solid var(--cb-browser-line);
+  color: var(--cb-browser-muted);
+}
+.cb-template-browser--modal .cb-template-browser__card-preview::before {
+  content: "";
+  width: 52px;
+  height: 66px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  background: var(--cb-surface-2, rgba(127,127,127,.12));
+  opacity: .32;
+  box-shadow: 0 4px 12px rgb(0 0 0 / .08);
+}
+.cb-template-browser--modal .cb-template-browser__card-preview::after {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  box-shadow: 0 9px 0 currentColor, 0 18px 0 currentColor;
+  opacity: .25;
+}
+.cb-template-browser--modal .cb-template-browser__card-body {
+  min-height: 102px;
+  padding: 13px 14px 14px;
+  gap: 8px;
+}
+.cb-template-browser--modal .cb-template-browser__card-title {
+  margin: 0;
+  padding-inline-end: 22px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.cb-template-browser--modal .cb-template-browser__card-meta {
+  gap: 5px;
+  margin-top: auto;
+  opacity: 1;
+  color: var(--cb-browser-muted);
+}
+.cb-template-browser--modal .cb-template-browser__card-meta span {
+  padding: 2px 7px;
+  border-color: var(--cb-browser-line);
+  border-radius: 5px;
+}
+.cb-template-browser--modal .cb-template-browser__card.is-current {
+  border-color: var(--cb-browser-line);
+}
+.cb-template-browser--modal .cb-template-browser__current {
+  color: var(--cb-text-strong, inherit);
+  font-weight: 650;
+}
+.cb-template-browser--modal .cb-template-browser__choice {
+  z-index: 1;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--cb-accent, #2271b1);
+  cursor: pointer;
+}
+.cb-template-browser--modal .cb-template-browser__choice:focus-visible {
+  outline: 2px solid var(--cb-accent, #2271b1);
+  outline-offset: 3px;
+}
+.cb-template-browser--modal .cb-template-browser__footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  min-height: 45px;
+}
+@media (max-width: 720px) {
+  .cb-template-browser--modal :is(.cb-template-browser__sidebar, .cb-template-browser__collections) {
+    padding: 8px;
+    border-inline-end: 0;
+  }
+  .cb-template-browser--modal .cb-template-browser__sidebar-footer {
+    position: static;
+    flex: 0 0 auto;
+    margin: 0 0 0 auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .cb-template-browser--modal .cb-template-browser__save-as {
+    width: auto;
+    min-height: 38px;
+    white-space: nowrap;
+  }
+  .cb-template-browser--modal .cb-template-browser__content {
+    padding: 14px 12px;
+  }
+}

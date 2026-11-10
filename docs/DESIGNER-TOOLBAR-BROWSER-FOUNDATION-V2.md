@@ -20,7 +20,7 @@ On the first Mail consumer:
 - **Templates** lists built-in/personal/site/pack assets via the signed Template Browser scope and existing authorized read-only metadata requests
 - **Use template** uses existing source-specific Apply endpoint and the Host's `captureApplyIntent()` / `applyTemplate()` authority. Never replace the active resource or save automatically
 - **Save as template** invokes Mail's existing validated create on a separate reusable asset; not the operational Save path
-- The current active design has an explicit selected-state marker in the Browser. Long resource labels and provider metadata are absent from the toolbar
+- The current active design has an explicit **Current** marker distinct from the radio-based **Selected** state. Long resource labels and provider metadata are absent from the toolbar
 
 The toolbar icon is Base-owned and disabled until the Mail binder registers against a READY Host. Browser callbacks are consumer capabilities; the Base Browser does not authorize a new write.
 
@@ -47,3 +47,12 @@ The toolbar icon is Base-owned and disabled until the Mail binder registers agai
 - The modal body, Browser mount and shell fill available height between title and actions. Contextual results scroll in a keyboard-focusable region; the search toolbar and result footer remain visible while cards keep intrinsic row heights.
 - Other modals and the standalone Template Library page retain existing layouts. Save, selection, Apply and navigation authority are unchanged; no migration or legacy layer.
 - New Level 1, build, WordPress field and visual acceptance remain required. Browser Workspace visual refinement is the next independent phase.
+
+## FIELD-05 — Browser Workspace Golden UX (source candidate, 2026-11-10)
+
+- **Hierarchy:** existing three-column Designer Browser remains canonical. The primary navigation and scoped collection buttons have calmer states and design-provider counts. The result toolbar exposes the active collection heading with a contextual count and the existing search/category filters; the irrelevant category field is actually hidden for Designs.
+- **Cards:** only the contextual Browser receives more compact visual rhythm, two-line-ready titles, subdued metadata and a neutral placeholder *without claiming a real design preview*. The `Current` badge marks the active resource and must never be confused with a checked selection. Checked radio inputs alone carry selection emphasis.
+- **Actions:** `Save as template` moves from a full-width strip below the browser to the bottom of the navigation pane, remaining an existing consumer callback. The bottom Base modal actions `Close` and `Open / use selected` are unchanged. The Browser's internal pagination footer appears for contextual results only while a next-page cursor exists.
+- **Responsive and accessibility:** keyboard-focusable result scroll region, radio controls, `aria-pressed` navigation, readable focus rings and responsive pane stacking remain authoritative; the global Template Library page is not redesigned.
+- **Out of scope:** loading document content for visual previews, new template categories, taxonomy persistence, Save/History/Apply authorization, extension retrofits, and migration/legacy support. Bricks is an information-architecture reference only; no copied assets/code.
+- **Acceptance:** source-level tests and clean build are necessary but do not replace an operator-installed dark/light and compact-width UX assessment. After FIELD approval, review preview-data contracts as a distinct product decision.

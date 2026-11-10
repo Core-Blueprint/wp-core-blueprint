@@ -85,6 +85,10 @@ function createBrowser( root, options = {} ) {
     }
     const content = el( 'div', 'cb-template-browser__content' );
     const toolbar = el( 'div', 'cb-template-browser__toolbar' );
+    const resultHeading = el( 'div', 'cb-template-browser__result-heading' );
+    const resultTitle = el( 'h3', 'cb-template-browser__result-title' );
+    const resultCount = el( 'span', 'cb-template-browser__result-count' );
+    resultHeading.append( resultTitle, resultCount );
     const results = el( 'div', 'cb-template-browser__grid' );
     // Contextual results scroll independently; the card grid keeps intrinsic row sizing.
     const resultsViewport = contextual ? el( 'div', 'cb-template-browser__results-viewport cb-scrollbar' ) : null;
@@ -148,6 +152,15 @@ function createBrowser( root, options = {} ) {
         ( collections || sidebar ).append( button );
         return button;
     } );
+    function updateResultHeading() {
+        const chosen = origins.find( ( item ) => item[0] === state.filters.origin );
+        resultTitle.textContent = state.view === 'designs'
+            ? ( state.designProvider || label( 'allDesigns', 'All designs' ) )
+            : ( chosen ? label( chosen[1], chosen[2] ) : label( 'templates', 'Templates' ) );
+        resultCount.textContent = String( state.entries.length );
+        resultCount.setAttribute( 'aria-label', String( state.entries.length ) + ' ' +
+            ( state.view === 'designs' ? label( 'designs', 'Designs' ) : label( 'templates', 'Templates' ) ) );
+    }
     function syncNavigation() {
         if ( designButton ) {
             designButton.setAttribute( 'aria-pressed', String( state.view === 'designs' ) );
@@ -162,11 +175,13 @@ function createBrowser( root, options = {} ) {
             originButtons.forEach( ( button ) => collections.append( button ) );
         } else {
             const providers = [ ...new Set( designs.map( ( item ) => item.provider ).filter( Boolean ) ) ];
-            const choices = [ [ '', label( 'allDesigns', 'All designs' ) ],
-                ...providers.map( ( name ) => [ name, name ] ) ];
-            for ( const [ value, name ] of choices ) {
+            const choices = [ [ '', label( 'allDesigns', 'All designs' ), designs.length ],
+                ...providers.map( ( name ) =>
+                    [ name, name, designs.filter( ( item ) => item.provider === name ).length ] ) ];
+            for ( const [ value, name, count ] of choices ) {
                 const button = el( 'button', 'cb-template-browser__origin', name );
                 button.type = 'button';
+                button.append( el( 'span', 'cb-template-browser__collection-count', String( count ) ) );
                 button.setAttribute( 'aria-pressed', String( value === state.designProvider ) );
                 button.addEventListener( 'click', () => {
                     state.designProvider = value;
@@ -241,8 +256,28 @@ function createBrowser( root, options = {} ) {
     } );
     const searchField = el( 'label', 'cb-template-browser__field cb-template-browser__field--search' );
     searchField.append( el( 'span', '', searchLabel ), search );
-    toolbar.prepend( searchField );
+    if ( contextual ) toolbar.prepend( resultHeading, searchField );
+    else toolbar.prepend( searchField );
     content.append( toolbar, message, resultsViewport || results, footer );
+
+    if ( contextual && typeof options.onSaveAs === 'function' ) {
+        const saveArea = el( 'div', 'cb-template-browser__sidebar-footer' );
+        const saveAction = el( 'button', 'button cb-template-browser__save-as',
+            options.saveAsLabel || label( 'saveAs', 'Save as template' ) );
+        saveAction.type = 'button';
+        saveAction.addEventListener( 'click', async () => {
+            if ( saveAction.disabled ) return;
+            saveAction.disabled = true;
+            try { await options.onSaveAs(); }
+            catch {
+                if ( options.notice instanceof HTMLElement ) {
+                    options.notice.textContent = label( 'error', 'Could not load templates.' );
+                }
+            } finally { saveAction.disabled = false; }
+        } );
+        saveArea.append( saveAction );
+        sidebar.append( saveArea );
+    }
     if ( collections ) shell.append( sidebar, collections, content );
     else shell.append( sidebar, content );
     root.replaceChildren( shell );
@@ -284,7 +319,9 @@ function createBrowser( root, options = {} ) {
         }
         message.textContent = state.entries.length ? '' : label( 'noDesigns', 'No designs found.' );
         summary.textContent = String( state.entries.length );
+        updateResultHeading();
         more.hidden = true;
+        footer.hidden = contextual;
     }
 
     function renderCard( item, index ) {
@@ -360,6 +397,7 @@ function createBrowser( root, options = {} ) {
             state.cursor = null;
             results.replaceChildren();
         }
+        updateResultHeading();
         if ( state.pending && !reset ) return;
         state.pending = true;
         const generation = ++state.requestGeneration;
@@ -367,6 +405,7 @@ function createBrowser( root, options = {} ) {
         state.controller = controller;
         message.textContent = label( 'loading', 'Loading templates…' );
         more.hidden = true;
+        footer.hidden = contextual;
         try {
             const payload = await request( 'templates', state.filters, token, controller.signal, state.cursor || '' );
             if ( state.destroyed || generation !== state.requestGeneration ) return;
@@ -381,7 +420,9 @@ function createBrowser( root, options = {} ) {
             state.cursor = payload.next_cursor;
             message.textContent = ( state.entries.length || state.cursor ) ? '' : label( 'noResults', 'No templates found.' );
             summary.textContent = String( state.entries.length );
+            updateResultHeading();
             more.hidden = !state.cursor;
+            footer.hidden = contextual && !state.cursor;
         } catch ( error ) {
             if ( !controller.signal.aborted && !state.destroyed && generation === state.requestGeneration ) {
                 message.textContent = label( 'error', 'Could not load templates.' );
@@ -439,22 +480,9 @@ async function open( { contextToken, onChoose, title, designs = [], activeDesign
     const browser = createBrowser( root, {
         mode: 'designer', contextToken,
         designs: typeof onOpenDesign === 'function' ? designs : [],
-        activeDesignId,
+        activeDesignId, onSaveAs, saveAsLabel, notice,
     } );
     let pendingDesign = null;
-    if ( typeof onSaveAs === 'function' ) {
-        const saveAction = el( 'button', 'button cb-template-browser__save-as',
-            saveAsLabel || label( 'saveAs', 'Save as template' ) );
-        saveAction.type = 'button';
-        saveAction.addEventListener( 'click', async () => {
-            if ( saveAction.disabled ) return;
-            saveAction.disabled = true;
-            try { await onSaveAs(); }
-            catch { notice.textContent = label( 'error', 'Could not load templates.' ); }
-            finally { saveAction.disabled = false; }
-        } );
-        body.append( saveAction );
-    }
     try {
         const accepted = await showModal( {
             title: title || label( 'browse', 'Browse templates' ),
