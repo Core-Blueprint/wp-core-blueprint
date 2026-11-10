@@ -13,7 +13,7 @@ The shared compact toolbar policy, existing keyboard navigation and responsive r
 
 ## Workspace information architecture
 
-The existing shared `@cb-core/template-browser` remains the foundation: Base workspace modal, expandable size, a **category pane**, a **collection pane** and a **searchable grid**. The Bricks references inform the information architecture, not branding, UI code or assets.
+The existing shared `@cb-core/template-browser` remains the foundation: Base **fullscreen modal by default** (`size: 'fullscreen'`), native accessible header Close (no Expand control), a **category pane**, a **collection pane** and a **searchable grid**. The Bricks references inform the information architecture, not branding, UI code or assets.
 
 On the first Mail consumer:
 - **Designs** lists the real current-site registered Mail resources from the server-authored select; their provider groups become collections. **Open design** is navigation (via canonical Exit Guard `request(..., {intent:'switch'})`) only after the Browser closes, never Template Apply. A clean switch is immediate after all canonical fences; a dirty switch requires Save/Discard/Cancel with the existing localized `transitionConfirm` and `transitionDirtyDescription` labels
@@ -32,3 +32,11 @@ The toolbar icon is Base-owned and disabled until the Mail binder registers agai
 4. Formal WordPress Level 2, Level 3, CI and public release remain HOLD until their own evidence; no inference from an internal build
 
 **Known limit:** The landing Saved Templates screen may have failed to execute `@cb-core/mail-saved-library` when `@cb-core/toast` was not enqueued independently of fullscreen Platform. This source patch supplies the missing static toast dependency on the landing route and replaces the indefinite server-side loading fallback with a visible error state. Browser FIELD proof is still required; do not claim the symptom root cause verified until acceptance.
+
+## FIELD-04: Base Modal fullscreen presentation (2026-11-10)
+
+- The shared `@cb-core/modal` supports an explicit `size: 'fullscreen'` in both Core and WordPress-native presentations. It occupies the viewport without inherited workspace max-height and retains native `<dialog>` focus trapping, backdrop and Escape cancellation.
+- Fullscreen creates a top-right icon-only Close control with the shared `x` icon and the existing translated Close label. Clicking it follows the same **cancel** route as Escape; while a confirm/apply callback is pending, Close is disabled and cannot dismiss the modal or authorize a navigation.
+- Ordinary/wide/workspace dialogs remain unaffected; existing optionally expandable workspace functionality is still available for legitimate other consumers. There is **no legacy modal shim or migration**.
+- Only the Designer Template Browser explicitly requests fullscreen. This does not imply Reports already has its own Browser source integration.
+- **Patch boundary:** modal presentation only. Internal Browser navigation, collections, cards and actions remain for the separately accepted Browser UX phase. FIELD-01/02/03 remain open.

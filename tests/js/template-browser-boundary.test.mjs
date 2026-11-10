@@ -10,8 +10,8 @@ const styles = readFileSync(new URL('../../assets/css/components/template-librar
 
 test('Template Browser exposes the canonical public module and shared workspace modal', () => {
   assert.match(browser, /import \{ show as showModal \} from '@cb-core\/modal'/);
-  assert.match(browser, /size: 'workspace'/);
-  assert.match(browser, /expandable: true/);
+  assert.match(browser, /size: 'fullscreen'/);
+  assert.doesNotMatch(browser, /expandable: true/);
   assert.match(browser, /export \{ createBrowser, open, loadForApply \}/);
   assert.match(modal, /window\.cbCore\.modal = modal/);
 });

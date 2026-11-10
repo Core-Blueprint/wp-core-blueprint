@@ -545,7 +545,7 @@ function show( opts ) {
 			focusTarget = dialog.querySelector( opts.initialFocus );
 		}
 
-		( focusTarget || dialog._cbInput || dialog._cbCancelBtn || dialog._cbConfirmBtn )?.focus();
+		( focusTarget || dialog._cbInput || dialog._cbHeaderCloseBtn || dialog._cbCancelBtn || dialog._cbConfirmBtn )?.focus();
 	} );
 }
 

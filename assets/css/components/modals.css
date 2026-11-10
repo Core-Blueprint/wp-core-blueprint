@@ -39,6 +39,7 @@ dialog.cb-core-modal--core.cb-core-modal--workspace.is-expanded {
 /* Full viewport is a dedicated Base Modal presentation, never a global dialog override. */
 dialog.cb-core-modal--core.cb-core-modal--fullscreen {
 	box-sizing: border-box;
+	border: 0;
 	inset: 0;
 	margin: 0;
 	width: 100vw;

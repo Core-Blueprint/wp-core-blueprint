@@ -55,8 +55,8 @@ test('Mail Browser uses the canonical workspace and rejects competing Save engin
 	assert.match(mail, /host\.editor\.applyTemplate\(reply, intent\)/);
 	assert.doesNotMatch(mail, /createSaveCoordinator|new CommandHistory|TemplateRepository::save/);
 	assert.doesNotMatch(mail, /cb-core-mail-saved-menu/);
-	assert.match(browser, /size: 'workspace'/);
-	assert.match(browser, /expandable: true/);
+	assert.match(browser, /size: 'fullscreen'/);
+	assert.doesNotMatch(browser, /expandable: true/);
 	assert.match(browser, /const accepted = await showModal/);
 	assert.match(browser, /if \( accepted && pendingDesign && typeof onOpenDesign === 'function' \)/);
 	assert.match(css, /\.cb-template-browser--designer-workspace/);
