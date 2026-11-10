@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const read = path => readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
 const formControls = read('assets/css/components/form-controls.css');
+const uiAssets = read('src/UI/Assets.php');
 const browserStyles = read('assets/css/components/template-library.css');
 const browserSource = read('assets/js/core/template-browser.js');
 
@@ -68,4 +69,15 @@ test('FIELD-05D: template grid and standalone Library keep their existing semant
     assert.match(browserSource, /article\.append\( preview \)/);
     assert.match(browserStyles, /\.cb-template-library-page \.cb-template-browser \{/);
     assert.match(formControls, /:is\(\.cb-core-wrap, \.cb-core-form-scope\) label:has\( > input\[type="radio"\]:disabled \)/);
+});
+
+test('FIELD-05D: all Foundation enqueue paths load revised form-control CSS, not cached 1.0.0 CSS', () => {
+    const registrations = [...uiAssets.matchAll(
+        /wp_enqueue_style\(\s*'cb-core-css-form-controls'[\s\S]*?\);/g
+    )];
+    assert.ok(registrations.length > 1, 'multiple canonical consumers enqueue form controls');
+    for (const match of registrations) {
+        assert.match(match[0], /self::asset_revision\( 'assets\/css\/components\/form-controls\.css' \)/);
+        assert.doesNotMatch(match[0], /CB_CORE_VERSION\s*\);/);
+    }
 });

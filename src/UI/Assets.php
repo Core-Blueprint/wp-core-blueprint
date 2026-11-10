@@ -202,7 +202,7 @@ final class Assets {
 				'cb-core-css-form-controls',
 				CB_CORE_URL . 'assets/css/components/form-controls.css',
 				[ 'cb-core-css-tokens' ],
-				CB_CORE_VERSION
+				self::asset_revision( 'assets/css/components/form-controls.css' )
 			);
 		} else {
 			wp_enqueue_style(
@@ -436,7 +436,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-form-controls', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/form-controls.css' ) );
 			}
 			wp_enqueue_style(
 				'cb-core-css-time-picker',
@@ -680,7 +680,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-form-controls', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/form-controls.css' ) );
 			}
 			wp_enqueue_style(
 				'cb-core-css-choice-group',
@@ -952,7 +952,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-form-controls', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/form-controls.css' ) );
 			}
 			wp_enqueue_style( 'cb-core-css-pickers', CB_CORE_URL . 'assets/css/components/pickers.css', [ 'cb-core-css-tokens', 'cb-core-css-buttons', 'cb-core-css-form-controls', 'cb-core-css-icons', 'dashicons' ], CB_CORE_VERSION );
 		} else {
@@ -1004,7 +1004,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-form-controls', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/form-controls.css' ) );
 			}
 			wp_enqueue_style( 'cb-core-css-pickers', CB_CORE_URL . 'assets/css/components/pickers.css', [ 'cb-core-css-tokens', 'cb-core-css-buttons', 'cb-core-css-form-controls', 'cb-core-css-icons' ], CB_CORE_VERSION );
 		} else {
@@ -1057,7 +1057,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-form-controls', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/form-controls.css' ) );
 			}
 			wp_enqueue_style(
 				'cb-core-css-object-picker',
@@ -1128,7 +1128,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-form-controls', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/form-controls.css' ) );
 			}
 			wp_enqueue_style(
 				'cb-core-css-pickers',
