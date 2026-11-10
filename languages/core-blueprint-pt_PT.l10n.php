@@ -479,6 +479,13 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'This template was changed elsewhere. Reload before trying again.' => 'Este modelo foi alterado noutro local. Recarregue a página antes de tentar novamente.',
     'Use a Mail template' => 'Utilizar um modelo de e-mail',
     'Use template' => 'Utilizar modelo',
+    'Browser' => 'Navegador',
+    'Designs' => 'Projetos',
+    'Collections' => 'Coleções',
+    'All designs' => 'Todos os projetos',
+    'Current' => 'Atual',
+    'No designs found.' => 'Nenhum projeto encontrado.',
+    'Open / use selected' => 'Abrir / utilizar seleção',
 ] );
 
 return $catalog;
