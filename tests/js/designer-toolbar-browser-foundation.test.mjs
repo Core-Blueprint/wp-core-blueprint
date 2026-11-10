@@ -31,6 +31,22 @@ test('canonical toolbar zones preserve all controls with Close at the right edge
 	assert.doesNotMatch(platform, /picker\.enhance\(selected/);
 });
 
+test('classic extension Designer shells use the same end-zone grammar without changing context authority', () => {
+	const launch = read('assets/js/features/designer-launch.js');
+	const shared = read('assets/css/design/designer-toolbar.css');
+	assert.match(launch, /start\.append\(brand\)/);
+	assert.match(launch, /if \(viewportGroup\) center\.append\(viewportGroup\)/);
+	assert.match(launch, /if \(contextSwitcher\) resourceGroup\.append\(contextSwitcher\)/);
+	assert.match(launch, /if \(save\) operationGroup\.append\(save\)/);
+	assert.match(launch, /operationGroup\.append\(close\)/);
+	assert.match(launch, /operationGroup\.append\(fullscreen\)/);
+	assert.match(launch, /end\.append\(resourceGroup, operationGroup\)/);
+	assert.doesNotMatch(launch, /start\.append\(contextSwitcher\)/);
+	assert.match(toolbar, /const context = toolbar\.querySelector\('\[data-cb-design-shell-context\]'\)/);
+	assert.match(shared, /\.cb-core-design-shell__toolbar-group--resource/);
+	assert.match(shared, /\.cb-core-design-shell__toolbar-group--operations/);
+});
+
 test('Mail Browser uses the canonical workspace and rejects competing Save engines', () => {
 	assert.match(mail, /onSaveAs: launchSaveAs/);
 	assert.match(mail, /onOpenDesign,/);

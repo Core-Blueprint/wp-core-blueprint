@@ -347,7 +347,7 @@
 		if (document.fonts?.ready) document.fonts.ready.then(requestLayout);
 		document.fonts?.addEventListener?.('loadingdone', requestLayout);
 		shell.addEventListener('cb:design-shell:fullscreenchange', requestLayout);
-		const context = start.querySelector('[data-cb-design-shell-context]');
+		const context = toolbar.querySelector('[data-cb-design-shell-context]');
 		if (context) new MutationObserver(requestLayout).observe(context, { attributes: true, childList: true, subtree: true, characterData: true });
 		applyCompactState();
 

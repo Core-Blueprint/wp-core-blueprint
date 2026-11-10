@@ -458,13 +458,13 @@
 		appendBrandedModeTitle(wordmark, title);
 		brand.append(wordmark);
 		if (contextSwitcher) {
-			brand.classList.add('cb-core-design-shell__brand--contextual');
+			// Consumer resource controls belong to Base's right resource zone.
+			// They remain functional until that consumer exposes Browser capability.
 			contextSwitcher.classList.add('cb-core-design-shell__toolbar-context');
 			contextSwitcher.hidden = false;
 			contextSwitcher.removeAttribute('aria-hidden');
 		}
 		start.append(brand);
-		if (contextSwitcher) start.append(contextSwitcher);
 		if (panelControls?.leftLauncher) start.append(panelControls.leftLauncher);
 
 		const center = document.createElement('div');
@@ -474,8 +474,22 @@
 		const end = document.createElement('div');
 		end.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--end';
 		if (panelControls?.rightLauncher) end.append(panelControls.rightLauncher);
-		if (historyGroup) end.append(historyGroup);
+		const resourceGroup = document.createElement('div');
+		resourceGroup.className = 'cb-core-design-shell__toolbar-group cb-core-design-shell__toolbar-group--resource';
+		resourceGroup.dataset.cbDesignShellResourceGroup = '';
+		resourceGroup.setAttribute('role', 'group');
+		resourceGroup.setAttribute('aria-label', 'Design resources');
+		if (contextSwitcher) resourceGroup.append(contextSwitcher);
+		const operationGroup = document.createElement('div');
+		operationGroup.className = 'cb-core-design-shell__toolbar-group cb-core-design-shell__toolbar-group--operations';
+		operationGroup.dataset.cbDesignShellActionsGroup = '';
+		operationGroup.setAttribute('role', 'group');
+		operationGroup.setAttribute('aria-label', 'History and document actions');
+		if (historyGroup) operationGroup.append(historyGroup);
+		if (persistentNotice) operationGroup.append(persistentNotice);
+		if (save) operationGroup.append(save);
 
+		// Close always occupies the last right-edge position, following Save.
 		if (direct && fullscreen && exitUrl) {
 			const close = document.createElement('button');
 			close.type = 'button';
@@ -487,12 +501,11 @@
 				// The cancellable beforeexit event is the only authorized close path.
 				if (fullscreen.getAttribute('aria-pressed') === 'true') fullscreen.click();
 			});
-			end.append(close);
+			operationGroup.append(close);
 		} else if (fullscreen) {
-			end.append(fullscreen);
+			operationGroup.append(fullscreen);
 		}
-		if (persistentNotice) end.append(persistentNotice);
-		if (save) end.append(save);
+		end.append(resourceGroup, operationGroup);
 
 		toolbar.classList.add('cb-core-design-shell__toolbar--designer');
 		toolbar.dataset.cbDesignShellHeader = 'true';

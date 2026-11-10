@@ -9,7 +9,7 @@
 - **End — resource group:** Browser icon-only action; providers supply trusted resource metadata, Base controls geometry
 - **End — operations group:** Undo/Redo, existing native Save, **Close last**; no parallel Save/History/Exit Guard
 
-The shared compact toolbar policy, existing keyboard navigation and responsive rules remain authoritative. Consumers must not hardcode their own workaround for the previous left-side selector.
+The shared compact toolbar policy, existing keyboard navigation and responsive rules remain authoritative. Both **native Platform** (Mail/Reports) and **classic extension Designer shells** now compose the same zone geometry. Classic consumers retain their authorized context selector inside the end/resource group until their consumer-specific Browser adapter is implemented and verified; never remove working context navigation in a forced visual conversion. Consumers must not hardcode their own workaround for the previous left-side selector.
 
 ## Workspace information architecture
 

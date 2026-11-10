@@ -71,6 +71,33 @@
 }
 
 /*
+ * Foundation-wide toolbar v2: all Designer consumers share the same
+ * Start / Center / End grammar. The end zone groups resource navigation
+ * separately from the single History + Save + Close authority.
+ */
+.cb-core-design-shell__toolbar--designer :is(
+	.cb-core-design-shell__toolbar-group--resource,
+	.cb-core-design-shell__toolbar-group--operations
+) {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--cb-space-2, 8px);
+	min-width: 0;
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--resource {
+	flex: 0 1 auto;
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--operations {
+	flex: 0 0 auto;
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-zone--end > .cb-core-design-shell__toolbar-group--resource {
+	margin-inline-end: var(--cb-space-2, 8px);
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--resource:empty {
+	display: none;
+}
+
+/*
  * Primary actions are textual commands (Save, Validate import, Apply import,
  * translated equivalents). Keep the canonical toolbar height, but let the
  * label determine width instead of forcing it into an icon-sized square.
