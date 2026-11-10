@@ -130,3 +130,57 @@ test('Designer Browser renders three panes with active resource cards and separa
 	assert.ok(calls.some(url=>url.includes('/templates?')),'templates remain server-authorized');
 	api.destroy();
 });
+
+test('Browser modal closes before a design navigation; Apply callback is never used', async () => {
+	class Node {
+		constructor(tag) {
+			this.tagName=tag.toUpperCase();this.children=[];this.dataset={};this.events=new Map();
+			this.value='';this.hidden=false;this.disabled=false;this.attributes={};
+			this.textContent='';this.parentElement=null;this.className='';
+			this.classList={add:key=>{this.className+=' '+key;}};
+		}
+		append(...nodes){for(const node of nodes){node.parentElement=this;this.children.push(node);}}
+		prepend(...nodes){for(const node of nodes)node.parentElement=this;this.children.unshift(...nodes);}
+		replaceChildren(...nodes){this.children=[];this.append(...nodes);}
+		setAttribute(key,value){this.attributes[key]=String(value);}
+		addEventListener(key,handler){this.events.set(key,handler);}
+	}
+	const order=[];
+	const window={location:{origin:'https://example.test',href:'https://example.test/wp-admin/'}};
+	const document={
+		createElement:tag=>new Node(tag),
+		getElementById:()=>({textContent:JSON.stringify({
+			restRoot:'/wp-json/core-blueprint/v1/template-library/',nonce:'signed-nonce',
+		})}),
+		querySelector:()=>null,
+	};
+	const sandbox={window,document,HTMLElement:Node,URL,URLSearchParams,AbortController,
+		setTimeout,clearTimeout,fetch:async()=>({ok:true,json:async()=>({sources:[]})})};
+	sandbox.modalHook=async ({body,onConfirm})=>{
+		order.push('modal-open');
+		const card=body.children[1].children[0].children[2].children[2].children[1];
+		card.children[0].checked=true;
+		card.children[0].events.get('change')();
+		const accepted=await onConfirm();
+		order.push('modal-closed');
+		return accepted;
+	};
+	const executable=browser
+		.replace("import { show as showModal } from '@cb-core/modal';",
+			'const showModal = globalThis.modalHook;')
+		.replace('export { createBrowser, open, loadForApply };','')
+		.replace('export default api;','');
+	runInNewContext(executable,sandbox,{timeout:1000});
+	const result=await window.cbCore.templateBrowser.open({
+		contextToken:'signed-context',
+		designs:[
+			{id:'wordpress.a',title:'Current',provider:'WordPress'},
+			{id:'wordpress.b',title:'Other',provider:'WordPress'},
+		],
+		activeDesignId:'wordpress.a',
+		onChoose:async()=>{throw new Error('DESIGN_NAVIGATION_MUST_NOT_APPLY_TEMPLATE');},
+		onOpenDesign:async design=>{order.push('navigation:'+design.id);return true;},
+	});
+	assert.equal(result,true);
+	assert.deepEqual(order,['modal-open','modal-closed','navigation:wordpress.b']);
+});
