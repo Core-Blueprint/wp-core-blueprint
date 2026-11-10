@@ -11,6 +11,7 @@ namespace CoreBlueprint\Core\Mail\Admin;
 use CoreBlueprint\Core\Admin\PageRegistry;
 use CoreBlueprint\Core\Design\Editor\Assets as DesignEditorAssets;
 use CoreBlueprint\Core\TemplateLibrary\Assets as TemplateLibraryAssets;
+use CoreBlueprint\Core\UI\Assets as UiAssets;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -47,6 +48,9 @@ final class DesignerAssets {
 			// Deliberately do NOT enqueue mail-designer.js or its separate Save shim.
 			DesignEditorAssets::enqueue_platform();
 		}
+		// Mail's saved-library module statically imports @cb-core/toast even
+		// on the landing Templates tab (without a fullscreen Designer Host).
+		UiAssets::enqueue_toasts( UiAssets::TOAST_PRESENTATION_CORE );
 		TemplateLibraryAssets::enqueue();
 		wp_register_script( 'cb-core-mail-saved-config', false, [], CB_CORE_VERSION, true );
 		wp_enqueue_script( 'cb-core-mail-saved-config' );
@@ -63,6 +67,7 @@ final class DesignerAssets {
 					'delete' => __( 'Delete', 'core-blueprint' ),
 					'loadMore' => __( 'Load more', 'core-blueprint' ),
 					'empty' => __( 'No saved templates yet.', 'core-blueprint' ),
+					'loading' => __( 'Loading saved templates…', 'core-blueprint' ),
 					'error' => __( 'Template operation could not be verified. Reload before retrying.', 'core-blueprint' ),
 					'templateName' => __( 'Template name', 'core-blueprint' ),
 					'availability' => __( 'Availability', 'core-blueprint' ),

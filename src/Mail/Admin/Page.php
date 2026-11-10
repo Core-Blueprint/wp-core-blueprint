@@ -198,7 +198,7 @@ final class Page extends PageBase {
 						<section class="cb-core-panel" data-cb-mail-saved-manager aria-label="<?php esc_attr_e( 'Saved Mail templates', 'core-blueprint' ); ?>">
 							<h2><?php esc_html_e( 'Saved Mail templates', 'core-blueprint' ); ?></h2>
 							<p><?php esc_html_e( 'Manage reusable personal and site templates here. Edit live WordPress and extension notification designs in the Mail Designer.', 'core-blueprint' ); ?></p>
-							<div data-cb-mail-saved-list role="status"><?php esc_html_e( 'Loading saved templates…', 'core-blueprint' ); ?></div>
+							<div data-cb-mail-saved-list role="status"><?php esc_html_e( 'Template operation could not be verified. Reload before retrying.', 'core-blueprint' ); ?></div>
 						</section>
 					</div>
 				<?php else : ?>

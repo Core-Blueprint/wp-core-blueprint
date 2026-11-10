@@ -238,6 +238,8 @@ function mountManagement(root) {
 	const list = element('ul', 'cb-core-mail-saved-list');
 	const more = element('button', 'button', label('loadMore', 'Load more'));
 	more.type = 'button';
+	more.hidden = true;
+	status.textContent = label('loading', 'Loading saved templates…');
 	surface.replaceChildren(status, list, more);
 	const render = () => {
 		list.replaceChildren();
