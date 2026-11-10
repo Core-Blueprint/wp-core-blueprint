@@ -338,47 +338,10 @@ button.cb-core-mail-binding.cb-core-clipboard-control:not(.cb-core-button) {
 .cb-core-mail-saved-dialog label { display: grid; gap: var(--cb-space-2, 8px); }
 .cb-core-mail-saved-dialog :is(input, select) { width: 100%; max-width: 100%; }
 
-/* Header Picker has a 260px budget (128px on narrow screens). One
-   accessible disclosure prevents two competing action buttons from overflowing. */
-.cb-core-design-shell--native .cb-core-design-shell__native-context { gap: var(--cb-space-2, 8px); }
-.cb-core-mail-saved-menu { position: relative; flex: 0 0 auto; }
-.cb-core-mail-saved-menu__trigger {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 36px;
-	padding: 0 8px;
-	border: 1px solid var(--cb-border);
-	border-radius: var(--cb-radius-sm, 6px);
-	background: var(--cb-surface-1);
-	color: var(--cb-text);
-	cursor: pointer;
-	list-style: none;
-}
-.cb-core-mail-saved-menu__trigger::-webkit-details-marker { display: none; }
-.cb-core-mail-saved-menu__trigger:focus-visible { outline: 2px solid var(--cb-primary); outline-offset: 2px; }
-.cb-core-mail-saved-menu__glyph { display: none; }
-.cb-core-mail-saved-menu__body {
-	position: absolute;
-	z-index: 1000;
-	top: calc(100% + 8px);
-	right: 0;
-	display: grid;
-	gap: var(--cb-space-1, 4px);
-	min-width: 180px;
-	padding: var(--cb-space-2, 8px);
-	border: 1px solid var(--cb-border);
-	border-radius: var(--cb-radius-md, 8px);
-	background: var(--cb-surface-1);
-	box-shadow: 0 8px 22px rgba(0,0,0,.14);
-}
-.cb-core-mail-saved-menu:not([open]) .cb-core-mail-saved-menu__body { display: none; }
-.cb-core-mail-saved-menu__body .button { width: 100%; text-align: left; white-space: nowrap; }
-@media (max-width: 600px) {
-	.cb-core-mail-saved-item { align-items: flex-start; flex-direction: column; }
-	.cb-core-mail-saved-menu__trigger { min-width: 36px; padding: 0 6px; }
-	.cb-core-mail-saved-menu__label { display: none; }
-	.cb-core-mail-saved-menu__glyph { display: inline; font-size: 1.2rem; line-height: 1; }
+/* The authorized Mail select is kept as an inert catalogue for Browser
+   navigation. No context text or second selector occupies the toolbar. */
+.cb-core-design-shell--native [data-cb-platform-context-slot] > select[hidden] {
+	display: none !important;
 }
 
 /* Native rich-text toolbar is inside the Mail canvas, which always enqueues
