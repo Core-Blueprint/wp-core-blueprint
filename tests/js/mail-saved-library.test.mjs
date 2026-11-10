@@ -66,7 +66,8 @@ function harness({configOrigin = 'https://example.test', saved = {}} = {}) {
 		.replace(/^export function bindMailTemplates/m, 'function bindMailTemplates')
 		+ '\nglobalThis.__test = {api, authorizedUrl, bindMailTemplates, canCapture, targetOf};';
 	runInNewContext(transformed, sandbox, {filename:'saved-library.js'});
-	return {api:sandbox.__test, sandbox, events, browser, notices, http, buttons};
+	const browserTrigger = sandbox.document.createElement('button');
+	return {api:sandbox.__test, sandbox, events, browser, notices, http, buttons, browserTrigger};
 }
 
 test('T3-02 uses a separate Mail-owned source, not operational Mail resource IDs', () => {
@@ -111,9 +112,9 @@ test('T3-02 blocks Apply and Save as when canonical Save is UNKNOWN', () => {
 	const host = {state:'READY',profileId:'base/mail',context:{contextEpoch:0},editor};
 	assert.equal(h.api.canCapture(host),false);
 	const slot = h.sandbox.document.createElement('span');
-	h.api.bindMailTemplates({host,root:{isConnected:true},contextSlot:slot,scopeToken:'signed-token'});
-	assert.equal(h.buttons.length,2);
-	h.buttons[0].listeners.click();
+	h.api.bindMailTemplates({trigger:h.browserTrigger,host,root:{isConnected:true},contextSlot:slot,scopeToken:'signed-token'});
+	assert.equal(h.browserTrigger.disabled,false);
+	h.browserTrigger.listeners.click();
 	assert.equal(h.browser.calls,0);
 	assert.equal(h.notices[0][0],'error');
 });
@@ -133,8 +134,8 @@ test('T3-02 native Use passes the authorized response only to Host facade', asyn
 		},editor,
 	};
 	const slot=h.sandbox.document.createElement('span');
-	h.api.bindMailTemplates({host,root:{isConnected:true},contextSlot:slot,scopeToken:'signed-token'});
-	h.buttons[0].listeners.click();
+	h.api.bindMailTemplates({trigger:h.browserTrigger,host,root:{isConnected:true},contextSlot:slot,scopeToken:'signed-token'});
+	h.browserTrigger.listeners.click();
 	// The browser selector retains the real asynchronous Choose callback.
 	await Promise.resolve();
 	assert.equal(h.browser.calls,1);
@@ -167,12 +168,14 @@ test('T3-02 Save as captures project+fields only and never triggers live documen
 		context:{resourceType:'base.mail-template',resourceId:'wordpress.new-user',contextEpoch:0},
 		editor,
 	};
-	h.api.bindMailTemplates({
+	h.api.bindMailTemplates({trigger:h.browserTrigger,
 		host,root:{isConnected:true},
 		contextSlot:h.sandbox.document.createElement('span'),
 		scopeToken:'signed-token',
 	});
-	h.buttons[1].listeners.click();
+	h.browserTrigger.listeners.click();
+	await Promise.resolve();
+	await h.browser.selected.onSaveAs();
 	await new Promise(resolve => setImmediate(resolve));
 	assert.equal(h.http.length,1);
 	const sent=JSON.parse(h.http[0].options.body);
@@ -204,17 +207,40 @@ test('T3-02 ambiguous Save as response blocks retry instead of creating another 
 		context:{resourceType:'base.mail-template',resourceId:'wordpress.new-user',contextEpoch:0},
 		editor,
 	};
-	h.api.bindMailTemplates({
+	h.api.bindMailTemplates({trigger:h.browserTrigger,
 		host,root:{isConnected:true},
 		contextSlot:h.sandbox.document.createElement('span'),
 		scopeToken:'signed-token',
 	});
-	h.buttons[1].listeners.click();
+	h.browserTrigger.listeners.click();
+	await Promise.resolve();
+	await h.browser.selected.onSaveAs();
 	await new Promise(resolve=>setImmediate(resolve));
 	assert.equal(h.http.length,1);
-	h.buttons[1].listeners.click();
+	await h.browser.selected.onSaveAs();
 	assert.equal(h.http.length,1);
 	assert.equal(h.notices.at(-1)[0],'error');
+});
+
+test('Browser is the single Mail toolbar action and receives authorized active design choices', async () => {
+	const h=harness();
+	const editor={saveStatus:()=>({state:'READY_CLEAN',blocked:false})};
+	const host={state:'READY',profileId:'base/mail',
+		context:{resourceType:'base.mail-template',resourceId:'wordpress.a',contextEpoch:0},editor};
+	let opened=null;
+	h.api.bindMailTemplates({trigger:h.browserTrigger,host,root:{isConnected:true},
+		contextSlot:h.sandbox.document.createElement('span'),scopeToken:'signed-token',
+		designs:[{id:'wordpress.a',title:'Current Mail',provider:'WordPress'}],
+		activeDesignId:'wordpress.a',onOpenDesign:async design=>{opened=design;return true;}});
+	assert.equal(h.buttons.length,1,'Mail adds no second action control or selector');
+	h.browserTrigger.listeners.click();
+	await Promise.resolve();
+	assert.equal(h.browser.calls,1);
+	assert.equal(h.browser.selected.designs[0].id,'wordpress.a');
+	assert.equal(h.browser.selected.activeDesignId,'wordpress.a');
+	assert.equal(await h.browser.selected.onOpenDesign({id:'wordpress.a'}),true);
+	assert.deepEqual(opened,{id:'wordpress.a'});
+	assert.equal(h.browserTrigger.disabled,false);
 });
 
 test('T3-02 Mail-only static bootstrap binds both early and late to a READY native Host', () => {
