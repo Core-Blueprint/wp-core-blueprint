@@ -329,11 +329,11 @@ html[data-cb-theme="core_blueprint_light"] :is(.cb-core-wrap, .cb-core-form-scop
 /* When a checkbox/radio sits inside a label with text after it, vertical-
  * align via flex on the label rather than baseline on the input - input
  * baseline + text baseline don't always agree across fonts. */
-/* Plain inline labels use centered input/text alignment. Structured card
- * components own their own internal alignment and must not inherit this
- * convenience rule; card content is top-aligned suite-wide. */
-:is(.cb-core-wrap, .cb-core-form-scope) label:not(.cb-core-radio-card):not(.cb-core-check-row):not(.cb-core-choice-group__option):not(.cb-core-design-shell__field):not(.cb-core-design-shell__inspector-toggle):has( > input[type="checkbox"] ),
-:is(.cb-core-wrap, .cb-core-form-scope) label:not(.cb-core-radio-card):not(.cb-core-check-row):not(.cb-core-choice-group__option):not(.cb-core-design-shell__field):not(.cb-core-design-shell__inspector-toggle):has( > input[type="radio"] ) {
+/* Plain inline labels use centered input/text alignment. Structured cards
+ * (including selectable Template Browser resources) own their own display,
+ * grid placement and alignment. Never force those labels to inline-flex. */
+:is(.cb-core-wrap, .cb-core-form-scope) label:not(.cb-core-radio-card):not(.cb-core-check-row):not(.cb-core-choice-group__option):not(.cb-core-design-shell__field):not(.cb-core-design-shell__inspector-toggle):not(.cb-template-browser__card):has( > input[type="checkbox"] ),
+:is(.cb-core-wrap, .cb-core-form-scope) label:not(.cb-core-radio-card):not(.cb-core-check-row):not(.cb-core-choice-group__option):not(.cb-core-design-shell__field):not(.cb-core-design-shell__inspector-toggle):not(.cb-template-browser__card):has( > input[type="radio"] ) {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--cb-space-2);
