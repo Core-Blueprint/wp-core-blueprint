@@ -54,6 +54,15 @@ async function request( route, filters, contextToken, signal, cursor = '' ) {
 function createBrowser( root, options = {} ) {
     if ( !( root instanceof HTMLElement ) ) throw new TypeError( 'Template browser root is required.' );
     const contextual = options.mode === 'designer';
+    // Active designs come from the consumer's already-authorized picker.
+    // Metadata only; these IDs do not authorize a document write or Apply.
+    const designs = contextual && Array.isArray( options.designs )
+        ? options.designs.filter( ( item ) => item && typeof item.id === 'string'
+            && item.id && typeof item.title === 'string' && item.title
+            && typeof item.provider === 'string' )
+            .map( ( item ) => ( { kind: 'design', id: item.id,
+                title: item.title, provider: item.provider } ) ) : [];
+    const hasDesigns = designs.length > 0;
     if ( contextual && ( typeof options.contextToken !== 'string' || !options.contextToken ) ) {
         throw new TypeError( 'A server-issued Designer scope token is required.' );
     }
@@ -62,6 +71,7 @@ function createBrowser( root, options = {} ) {
         filters: { limit: 24, search: '', source: '', extension: '', designer: '', origin: '', category: '' },
         sources: [], cursor: null, entries: [], selected: null, pending: false,
         requestGeneration: 0, controller: null, timer: null, destroyed: false,
+        view: hasDesigns ? 'designs' : 'templates',
     };
     const shell = el( 'section', 'cb-template-browser' );
     const sidebar = el( 'div', 'cb-template-browser__sidebar' );
@@ -80,6 +90,19 @@ function createBrowser( root, options = {} ) {
     const summary = el( 'span', 'cb-template-browser__summary' );
     footer.append( summary, more );
 
+    const designButton = hasDesigns ? el( 'button', 'cb-template-browser__origin cb-template-browser__origin--designs',
+        label( 'designs', 'Designs' ) ) : null;
+    if ( designButton ) {
+        designButton.type = 'button';
+        designButton.dataset.browserView = 'designs';
+        designButton.addEventListener( 'click', () => {
+            state.view = 'designs';
+            syncNavigation();
+            refresh();
+        } );
+        sidebar.append( designButton, el( 'h3', 'cb-template-browser__side-heading',
+            label( 'templates', 'Templates' ) ) );
+    }
     const origins = [
         [ '', 'all', 'All templates' ],
         [ 'built-in', 'builtin', 'Built-in' ],
@@ -92,15 +115,21 @@ function createBrowser( root, options = {} ) {
         button.type = 'button';
         button.dataset.origin = value;
         button.addEventListener( 'click', () => {
+            state.view = 'templates';
             state.filters.origin = value;
             updateCategoryOptions();
-            originButtons.forEach( ( item ) => item.setAttribute( 'aria-pressed', String( item === button ) ) );
+            syncNavigation();
             refresh();
         } );
         sidebar.append( button );
         return button;
     } );
-    originButtons[0].setAttribute( 'aria-pressed', 'true' );
+    function syncNavigation() {
+        if ( designButton ) designButton.setAttribute( 'aria-pressed', String( state.view === 'designs' ) );
+        originButtons.forEach( ( item ) => item.setAttribute( 'aria-pressed',
+            String( state.view === 'templates' && item.dataset.origin === state.filters.origin ) ) );
+    }
+    syncNavigation();
 
     const search = el( 'input', 'cb-template-browser__search' );
     search.type = 'search';
@@ -167,6 +196,43 @@ function createBrowser( root, options = {} ) {
     shell.append( sidebar, content );
     root.replaceChildren( shell );
 
+    function renderDesigns() {
+        results.replaceChildren();
+        state.entries = [];
+        state.selected = null;
+        state.cursor = null;
+        state.controller?.abort();
+        ++state.requestGeneration;
+        state.pending = false;
+        const needle = state.filters.search.toLocaleLowerCase();
+        for ( const item of designs ) {
+            if ( needle && !`${item.title} ${item.provider}`.toLocaleLowerCase().includes( needle ) ) continue;
+            const index = state.entries.push( item ) - 1;
+            const card = el( 'label', 'cb-template-browser__card cb-template-browser__card--design' );
+            const radio = el( 'input', 'cb-template-browser__choice' );
+            radio.type = 'radio';
+            radio.name = 'cb-template-choice';
+            radio.value = String( index );
+            radio.checked = false;
+            radio.addEventListener( 'change', () => { if ( radio.checked ) state.selected = index; } );
+            const body = el( 'div', 'cb-template-browser__card-body' );
+            body.append( el( 'h3', 'cb-template-browser__card-title', item.title ) );
+            const meta = el( 'div', 'cb-template-browser__card-meta' );
+            if ( item.provider ) meta.append( el( 'span', '', item.provider ) );
+            if ( item.id === options.activeDesignId ) {
+                card.classList.add( 'is-current' );
+                meta.append( el( 'span', 'cb-template-browser__current',
+                    label( 'current', 'Current' ) ) );
+            }
+            body.append( meta );
+            card.append( radio, body );
+            results.append( card );
+        }
+        message.textContent = state.entries.length ? '' : label( 'noDesigns', 'No designs found.' );
+        summary.textContent = String( state.entries.length );
+        more.hidden = true;
+    }
+
     function renderCard( item, index ) {
         const article = el( contextual ? 'label' : 'article', 'cb-template-browser__card' );
         if ( contextual ) {
@@ -223,6 +289,11 @@ function createBrowser( root, options = {} ) {
 
     async function load( reset = false ) {
         if ( state.destroyed ) return;
+        categorySelect.parentElement.hidden = state.view === 'designs';
+        if ( state.view === 'designs' ) {
+            renderDesigns();
+            return;
+        }
         if ( reset ) {
             state.controller?.abort();
             state.entries = [];
@@ -294,7 +365,8 @@ function createBrowser( root, options = {} ) {
  * Opens a strict Designer-only workspace. The consumer must separately verify
  * selected template access, owner permissions and disabled draft semantics.
  */
-async function open( { contextToken, onChoose, title } = {} ) {
+async function open( { contextToken, onChoose, title, designs = [], activeDesignId = '',
+    onOpenDesign = null, onSaveAs = null, saveAsLabel = '' } = {} ) {
     if ( typeof contextToken !== 'string' || !contextToken || typeof onChoose !== 'function' ) {
         throw new TypeError( 'Designer token and onChoose callback are required.' );
     }
@@ -304,25 +376,53 @@ async function open( { contextToken, onChoose, title } = {} ) {
     body.append( notice );
     const root = el( 'div' );
     body.append( root );
-    const browser = createBrowser( root, { mode: 'designer', contextToken } );
+    const browser = createBrowser( root, {
+        mode: 'designer', contextToken,
+        designs: typeof onOpenDesign === 'function' ? designs : [],
+        activeDesignId,
+    } );
+    let pendingDesign = null;
+    if ( typeof onSaveAs === 'function' ) {
+        const saveAction = el( 'button', 'button cb-template-browser__save-as',
+            saveAsLabel || label( 'saveAs', 'Save as template' ) );
+        saveAction.type = 'button';
+        saveAction.addEventListener( 'click', async () => {
+            if ( saveAction.disabled ) return;
+            saveAction.disabled = true;
+            try { await onSaveAs(); }
+            catch { notice.textContent = label( 'error', 'Could not load templates.' ); }
+            finally { saveAction.disabled = false; }
+        } );
+        body.append( saveAction );
+    }
     try {
-        return await showModal( {
+        const accepted = await showModal( {
             title: title || label( 'browse', 'Browse templates' ),
             body,
             size: 'workspace',
             expandable: true,
-            confirmLabel: label( 'use', 'Use template' ),
+            confirmLabel: label( 'selectAction', 'Open / use selected' ),
             cancelLabel: label( 'close', 'Close' ),
             onConfirm: async () => {
                 const selected = browser.selected();
-                if ( !selected || !selected.compatible ) {
+                if ( !selected || ( selected.kind !== 'design' && !selected.compatible ) ) {
                     notice.textContent = label( 'select', 'Select a template.' );
                     return false;
                 }
-                const accepted = await onChoose( { ...selected } );
-                return accepted !== false;
+                if ( selected.kind === 'design' ) {
+                    pendingDesign = { ...selected };
+                    return true;
+                }
+                const chosen = await onChoose( { ...selected } );
+                return chosen !== false;
             },
         } );
+        // Only navigate after the Browser dialog has closed. The consumer's
+        // existing Exit Guard decides Save/Discard for the current document.
+        if ( accepted && pendingDesign && typeof onOpenDesign === 'function' ) {
+            return await onOpenDesign( pendingDesign );
+        }
+        return accepted;
     } finally {
         browser.destroy();
     }
