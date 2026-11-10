@@ -56,3 +56,15 @@ The toolbar icon is Base-owned and disabled until the Mail binder registers agai
 - **Responsive and accessibility:** keyboard-focusable result scroll region, radio controls, `aria-pressed` navigation, readable focus rings and responsive pane stacking remain authoritative; the global Template Library page is not redesigned.
 - **Out of scope:** loading document content for visual previews, new template categories, taxonomy persistence, Save/History/Apply authorization, extension retrofits, and migration/legacy support. Bricks is an information-architecture reference only; no copied assets/code.
 - **Acceptance:** source-level tests and clean build are necessary but do not replace an operator-installed dark/light and compact-width UX assessment. After FIELD approval, review preview-data contracts as a distinct product decision.
+
+## FIELD-05B — Adaptive Browser view composition (source candidate, 2026-11-10)
+
+**Owner decision:** resource **Designs** and reusable **Templates** should not share the same visual card treatment. The Bricks reference informs hierarchy only; there is no copied interface, code or imagery.
+
+- **Designs:** two-column-capable, compact selection rows with a native radio and resource title, provider metadata and a separate `Current` badge. No preview placeholder: a registered live design is not itself a previewable template asset. `Current` remains informational; `Selected` derives solely from the checked radio. Responsive layouts use one column when space is limited.
+- **Templates:** continue as a visual grid with a dedicated preview area and metadata. Previews remain neutral placeholders until actual preview data can be verified and authorized; no generated or fabricated previews are injected.
+- **Switching and filters:** `data-browser-view` is maintained by the existing shared Browser view state, not by a second DOM implementation. Category is hidden for Designs and when the scoped Templates view has no available category facet. Existing signed `sources` and `templates` endpoints, pagination, selection reset, keyboard-native controls, resource switch after close and consumer Apply/Save/Exit Guard contracts remain unchanged.
+- **Toolbar:** search/category stay native labelled controls; their labels become visually hidden but screen-reader-accessible for a compact one-line presentation. The active collection heading, count and search remain visible; wrapping handles narrower viewports.
+- **Scope:** Base's contextual `@cb-core/template-browser` only. The global Template Library page is unchanged. No new folders, Sort/Preview APIs, Mail-specific overrides, legacy compatibility or data migrations. No modal geometry changes.
+
+**Qualification gates:** targeted adaptive source/behavior regressions + canonical Level 1 and dev build, followed by installed WordPress Dark/Light and compact viewport inspections, radio/keyboard focus, category/filter behavior, Templates preview region, Save as template, Open design/Exit Guard and Apply. User acceptance is required; this source checkpoint is not a Golden-accepted release.

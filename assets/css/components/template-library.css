@@ -560,3 +560,118 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
     padding: 14px 12px;
   }
 }
+
+
+/* FIELD-05B — Adaptive contextual presentation.
+   Active designs are compact resource rows; reusable templates remain a
+   visual grid. Do not alter the standalone Template Library page. */
+.cb-template-browser--modal .cb-template-browser__toolbar {
+  align-items: center;
+}
+.cb-template-browser--modal .cb-template-browser__result-heading {
+  margin-inline-end: auto;
+}
+.cb-template-browser--modal .cb-template-browser__field {
+  display: block;
+  align-self: center;
+}
+/* Labels remain part of their native <label>, and remain accessible to AT. */
+.cb-template-browser--modal .cb-template-browser__field > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.cb-template-browser--modal .cb-template-browser__field--search {
+  flex: 0 1 325px;
+  min-width: min(100%, 195px);
+}
+.cb-template-browser--modal .cb-template-browser__field:not(.cb-template-browser__field--search) {
+  flex: 0 0 155px;
+  min-width: 0;
+}
+.cb-template-browser--modal .cb-template-browser__field :is(input, select) {
+  min-height: 40px;
+  font-size: 13px;
+}
+
+/* Designs: scan resource identity and provider without an imaginary preview.
+   Current is an informational label, selected is the checked radio. */
+.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr));
+  grid-auto-rows: auto;
+  gap: 10px;
+}
+.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  min-height: 78px;
+  padding: 13px 15px;
+}
+.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__choice {
+  position: static;
+  margin: 0;
+  align-self: center;
+}
+.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-body {
+  min-height: 0;
+  padding: 0;
+  gap: 6px;
+}
+.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-title {
+  margin: 0;
+  padding-inline-end: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-meta {
+  margin-top: 0;
+  gap: 7px;
+  align-items: center;
+  font-size: 12px;
+}
+.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-meta span {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-meta .cb-template-browser__current {
+  padding: 2px 7px;
+  border: 1px solid var(--cb-browser-line);
+  border-radius: 5px;
+  color: var(--cb-text-strong, inherit);
+  background: var(--cb-surface-1, transparent);
+}
+.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design.is-current {
+  border-color: var(--cb-browser-line);
+}
+
+/* Templates: retain a visual browsing grid and its explicit preview region.
+   Rendering actual document previews requires a separately verified contract. */
+.cb-template-browser--modal[data-browser-view="templates"] .cb-template-browser__grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 235px), 1fr));
+  grid-auto-rows: 1fr;
+}
+@media (max-width: 720px) {
+  .cb-template-browser--modal .cb-template-browser__result-heading {
+    flex: 1 0 auto;
+    margin-inline-end: 0;
+  }
+  .cb-template-browser--modal .cb-template-browser__field--search {
+    flex: 1 1 100%;
+  }
+  .cb-template-browser--modal .cb-template-browser__field:not(.cb-template-browser__field--search) {
+    flex: 1 1 160px;
+  }
+  .cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

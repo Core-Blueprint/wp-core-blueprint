@@ -162,6 +162,7 @@ function createBrowser( root, options = {} ) {
             ( state.view === 'designs' ? label( 'designs', 'Designs' ) : label( 'templates', 'Templates' ) ) );
     }
     function syncNavigation() {
+        if ( contextual ) shell.dataset.browserView = state.view;
         if ( designButton ) {
             designButton.setAttribute( 'aria-pressed', String( state.view === 'designs' ) );
             templateButton?.setAttribute( 'aria-pressed', String( state.view === 'templates' ) );
@@ -223,6 +224,12 @@ function createBrowser( root, options = {} ) {
     const designerSelect = contextual ? null : addSelect( 'designer', 'designer', 'Designer type' );
     const categorySelect = addSelect( 'category', 'category', 'Category' );
     categorySelect.disabled = true;
+    function syncCategoryField() {
+        if ( categorySelect.parentElement ) {
+            categorySelect.parentElement.hidden = state.view === 'designs'
+                || ( contextual && categorySelect.disabled );
+        }
+    }
 
     // Provider-declared facets avoid missing categories on later result pages.
     function updateCategoryOptions() {
@@ -248,6 +255,7 @@ function createBrowser( root, options = {} ) {
             state.filters.category = '';
         }
         categorySelect.value = state.filters.category;
+        syncCategoryField();
     }
 
     search.addEventListener( 'input', () => {
@@ -302,8 +310,8 @@ function createBrowser( root, options = {} ) {
             radio.value = String( index );
             radio.checked = false;
             radio.addEventListener( 'change', () => { if ( radio.checked ) state.selected = index; } );
-            const preview = el( 'div', 'cb-template-browser__card-preview' );
-            preview.setAttribute( 'aria-hidden', 'true' );
+            // Designs are selectable resources, not visual template previews.
+            // Keep their single radio + label contract without fabricated thumbnails.
             const body = el( 'div', 'cb-template-browser__card-body' );
             body.append( el( 'h3', 'cb-template-browser__card-title', item.title ) );
             const meta = el( 'div', 'cb-template-browser__card-meta' );
@@ -314,7 +322,7 @@ function createBrowser( root, options = {} ) {
                     label( 'current', 'Current' ) ) );
             }
             body.append( meta );
-            card.append( radio, preview, body );
+            card.append( radio, body );
             results.append( card );
         }
         message.textContent = state.entries.length ? '' : label( 'noDesigns', 'No designs found.' );
@@ -385,7 +393,7 @@ function createBrowser( root, options = {} ) {
 
     async function load( reset = false ) {
         if ( state.destroyed ) return;
-        if ( categorySelect.parentElement ) categorySelect.parentElement.hidden = state.view === 'designs';
+        syncCategoryField();
         if ( state.view === 'designs' ) {
             renderDesigns();
             return;

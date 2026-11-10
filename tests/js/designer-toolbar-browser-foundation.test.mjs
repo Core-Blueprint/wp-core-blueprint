@@ -71,7 +71,7 @@ test('landing saved manager enqueues all static imports and never leaves an unow
 	assert.doesNotMatch(read('src/Mail/Admin/Page.php'), /<div data-cb-mail-saved-list role="status"><\?php esc_html_e\( 'Loading saved templates…'/);
 });
 
-test('Designer Browser renders three panes with active resource cards and separate template collections', async () => {
+test('Designer Browser renders three panes with compact resource rows and separate template collections', async () => {
 	class Node {
 		constructor(tag) {
 			this.tagName=tag.toUpperCase();this.children=[];this.dataset={};this.events=new Map();
@@ -131,7 +131,10 @@ test('Designer Browser renders three panes with active resource cards and separa
 	assert.equal(viewport.attributes.tabindex,'0');
 	const cards=viewport.children[0].children;
 	assert.equal(cards.length,2);
+	assert.equal(shell.dataset.browserView,'designs');
 	assert.match(cards[0].className,/is-current/);
+	assert.equal(cards[0].children.length,2,'design resource renders radio and details, no fake preview');
+	assert.match(cards[0].children[1].className,/cb-template-browser__card-body/);
 	cards[1].children[0].checked=true;
 	cards[1].children[0].events.get('change')();
 	assert.equal(api.selected().kind,'design');
