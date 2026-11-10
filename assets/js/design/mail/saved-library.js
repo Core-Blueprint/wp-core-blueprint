@@ -114,80 +114,29 @@ function targetOf(host) {
  * Bind native Mail actions to the existing Host toolbar, not a parallel editor
  * or a second document Save. Caller owns the root lifecycle.
  */
-export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
-	if (!host || !root || !contextSlot || root.isConnected !== true) throw new Error('MAIL_SAVED_CONTEXT_REFUSED');
+/**
+ * One Base-owned Browser icon control opens a unified native workspace.
+ * Active design navigation and reusable Template Apply remain separate Host actions.
+ */
+export function bindMailTemplates({host, root, contextSlot, trigger, designs = [],
+	activeDesignId = '', onOpenDesign = null, scopeToken} = {}) {
+	if (!host || !root || !contextSlot || root.isConnected !== true
+		|| !trigger || typeof trigger.addEventListener !== 'function') {
+		throw new Error('MAIL_SAVED_CONTEXT_REFUSED');
+	}
 	let uncertain = false;
 	let busy = false;
-	const browse = element('button', 'button cb-core-button cb-core-button--secondary', label('use', 'Use template'));
-	browse.type = 'button';
-	browse.setAttribute('aria-label', label('browseAction', 'Browse and use a Mail template'));
-	const saveAs = element('button', 'button cb-core-button cb-core-button--secondary', label('saveAs', 'Save as template'));
-	saveAs.type = 'button';
-	saveAs.setAttribute('aria-label', label('saveAsHelp', 'Save a reusable copy of this Mail design'));
-	// The native Mail Header Picker is width-constrained by shared Base.
-	// One compact disclosure preserves responsive space and keyboard access.
-	const menu = element('details', 'cb-core-mail-saved-menu');
-	const trigger = element('summary', 'cb-core-mail-saved-menu__trigger');
-	trigger.setAttribute('aria-label', label('actions', 'Mail template actions'));
-	trigger.append(element('span', 'cb-core-mail-saved-menu__label', label('templates', 'Templates')),
-		element('span', 'cb-core-mail-saved-menu__glyph', '⋯'));
-	const menuBody = element('div', 'cb-core-mail-saved-menu__body');
-	menuBody.append(browse, saveAs);
-	menu.append(trigger, menuBody);
-	contextSlot.append(menu);
-	const closeOutside = (event) => {
-		if (menu.open && !menu.contains(event.target)) menu.open = false;
-	};
-	document.addEventListener('pointerdown', closeOutside);
-	menu.addEventListener('keydown', (event) => {
-		if (event.key === 'Escape') { menu.open = false; trigger.focus(); }
-	});
-	if (typeof scopeToken !== 'string' || !scopeToken) {
-		browse.disabled = true;
-		saveAs.disabled = true;
-		browse.title = saveAs.title = 'Template authorization is unavailable. Reload the Designer.';
-	}
-	browse.addEventListener('click', () => {
-		menu.open = false;
-		if (busy || uncertain || !canCapture(host) || !scopeToken) {
-			toast.error(label('saveBusy', 'Finish or verify the current Save before applying a template.'));
-			return;
-		}
-		busy = true;
-		void openTemplateBrowser({
-			contextToken: scopeToken,
-			title: label('useTitle', 'Use a Mail template'),
-			onChoose: async (item) => {
-				if (!['core-blueprint-mail', 'core-blueprint-mail-saved'].includes(item?.source)
-					|| !canCapture(host)) {
-					toast.error(label('notAuthorized', 'The selected template is not authorized for this Mail Designer.'));
-					return false;
-				}
-				try {
-					const intent = host.editor.captureApplyIntent();
-					const reply = await loadForApply({
-						contextToken: scopeToken, source: item.source, templateId: item.id,
-						target: targetOf(host),
-					});
-					const changed = host.editor.applyTemplate(reply, intent);
-					if (changed) toast.success(label('applied', 'Template applied. Save the Mail design to keep these changes.'));
-					return true;
-				} catch (_) {
-					toast.error(label('applyRefused', 'Template Apply was refused or the context changed. No new Save was made.'));
-					return false;
-				}
-			},
-		}).catch(() => toast.error(errorMessage())).finally(() => { busy = false; });
-	});
-	saveAs.addEventListener('click', () => {
-		menu.open = false;
-		if (busy || uncertain || !canCapture(host) || !scopeToken) {
+	let saving = false;
+	trigger.disabled = typeof scopeToken !== 'string' || !scopeToken;
+	if (trigger.disabled) trigger.title = 'Template authorization is unavailable. Reload the Designer.';
+	const launchSaveAs = () => {
+		if (saving || uncertain || !canCapture(host) || !scopeToken) {
 			toast.error(label('saveBusy', 'Finish or verify the current Save before saving a template.'));
-			return;
+			return Promise.resolve(false);
 		}
-		busy = true;
+		saving = true;
 		const form = nameDialogBody('', true);
-		void showModal({
+		return showModal({
 			title: label('saveAsTitle', 'Save as Mail template'), body: form.body,
 			confirmLabel: label('saveAction', 'Save template'), initialFocus: form.input,
 			onConfirm: async () => {
@@ -232,9 +181,49 @@ export function bindMailTemplates({host, root, contextSlot, scopeToken} = {}) {
 					return false;
 				}
 			},
+		}).catch(() => toast.error(errorMessage())).finally(() => { saving = false; });
+	};
+	const openBrowser = () => {
+		if (busy || uncertain || !canCapture(host) || !scopeToken) {
+			toast.error(label('saveBusy', 'Finish or verify the current Save before continuing.'));
+			return;
+		}
+		busy = true;
+		void openTemplateBrowser({
+			contextToken: scopeToken,
+			title: label('browser', 'Browser'),
+			designs,
+			activeDesignId,
+			onOpenDesign,
+			onSaveAs: launchSaveAs,
+			saveAsLabel: label('saveAs', 'Save as template'),
+			onChoose: async (item) => {
+				if (!['core-blueprint-mail', 'core-blueprint-mail-saved'].includes(item?.source)
+					|| !canCapture(host)) {
+					toast.error(label('notAuthorized', 'The selected template is not authorized for this Mail Designer.'));
+					return false;
+				}
+				try {
+					const intent = host.editor.captureApplyIntent();
+					const reply = await loadForApply({
+						contextToken: scopeToken, source: item.source, templateId: item.id,
+						target: targetOf(host),
+					});
+					const changed = host.editor.applyTemplate(reply, intent);
+					if (changed) toast.success(label('applied', 'Template applied. Save the Mail design to keep these changes.'));
+					return true;
+				} catch (_) {
+					toast.error(label('applyRefused', 'Template Apply was refused or the context changed. No new Save was made.'));
+					return false;
+				}
+			},
 		}).catch(() => toast.error(errorMessage())).finally(() => { busy = false; });
-	});
-	return () => { document.removeEventListener('pointerdown', closeOutside); menu.remove(); };
+	};
+	trigger.addEventListener('click', openBrowser);
+	return () => {
+		trigger.removeEventListener('click', openBrowser);
+		trigger.disabled = true;
+	};
 }
 
 function mountManagement(root) {
