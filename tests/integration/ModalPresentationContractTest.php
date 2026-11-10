@@ -56,7 +56,7 @@ final class CB_Base_Modal_Presentation_Contract_Test extends WP_UnitTestCase {
 
 		self::assertIsString( $source );
 		self::assertIsString( $assets );
-		self::assertStringContainsString( "[ 'wide', 'workspace' ]", $source );
+		self::assertStringContainsString( "[ 'wide', 'workspace', 'fullscreen' ]", $source );
 		self::assertStringContainsString( "opts.expandable === true && size === 'workspace'", $source );
 		self::assertStringContainsString( "expandToggle.setAttribute( 'aria-pressed'", $source );
 		self::assertStringContainsString( "'workspace-expand'", $source );

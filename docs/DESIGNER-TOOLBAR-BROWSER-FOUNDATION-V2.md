@@ -35,8 +35,15 @@ The toolbar icon is Base-owned and disabled until the Mail binder registers agai
 
 ## FIELD-04: Base Modal fullscreen presentation (2026-11-10)
 
-- The shared `@cb-core/modal` supports an explicit `size: 'fullscreen'` in both Core and WordPress-native presentations. It occupies the viewport without inherited workspace max-height and retains native `<dialog>` focus trapping, backdrop and Escape cancellation.
+- The shared `@cb-core/modal` supports an explicit `size: 'fullscreen'` in both Core and WordPress-native presentations. It opens in the same **inset maximized geometry** as an expanded workspace, preserving a visible modal border, corner radius and backdrop without inherited workspace max-height. Native `<dialog>` focus trapping and Escape cancellation remain unchanged.
 - Fullscreen creates a top-right icon-only Close control with the shared `x` icon and the existing translated Close label. Clicking it follows the same **cancel** route as Escape; while a confirm/apply callback is pending, Close is disabled and cannot dismiss the modal or authorize a navigation.
 - Ordinary/wide/workspace dialogs remain unaffected; existing optionally expandable workspace functionality is still available for legitimate other consumers. There is **no legacy modal shim or migration**.
 - Only the Designer Template Browser explicitly requests fullscreen. This does not imply Reports already has its own Browser source integration.
 - **Patch boundary:** modal presentation only. Internal Browser navigation, collections, cards and actions remain for the separately accepted Browser UX phase. FIELD-01/02/03 remain open.
+
+## FIELD-04B: Inset maximized Browser and full-height results (2026-11-10)
+
+- Core and WordPress-native adapters share the same inset geometry for fullscreen Browser and manually maximized workspace dialogs. The Browser retains a header Close without a size toggle.
+- The modal body, Browser mount and shell fill available height between title and actions. Contextual results scroll in a keyboard-focusable region; the search toolbar and result footer remain visible while cards keep intrinsic row heights.
+- Other modals and the standalone Template Library page retain existing layouts. Save, selection, Apply and navigation authority are unchanged; no migration or legacy layer.
+- New Level 1, build, WordPress field and visual acceptance remain required. Browser Workspace visual refinement is the next independent phase.

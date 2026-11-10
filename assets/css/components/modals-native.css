@@ -46,25 +46,17 @@ body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace {
 	max-height: min(88vh, 900px);
 }
 
-body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace.is-expanded {
-	width: calc(100vw - var(--cb-space-4, 16px) - var(--cb-space-4, 16px));
-	height: calc(100vh - var(--cb-space-4, 16px) - var(--cb-space-4, 16px));
-	max-height: none;
-}
-
-/* Full viewport is a dedicated Base Modal presentation, never a global dialog override. */
+/* Expanded workspaces and fullscreen dialogs use the same inset geometry. */
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace.is-expanded,
 body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--fullscreen {
 	box-sizing: border-box;
-	border: 0;
-	inset: 0;
-	margin: 0;
-	width: 100vw;
-	height: 100vh;
-	height: 100dvh;
+	width: calc(100vw - var(--cb-space-4, 16px) - var(--cb-space-4, 16px));
+	height: calc(100vh - var(--cb-space-4, 16px) - var(--cb-space-4, 16px));
+	height: calc(100dvh - var(--cb-space-4, 16px) - var(--cb-space-4, 16px));
 	max-width: none;
 	max-height: none;
-	border-radius: 0;
 }
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace.is-expanded .cb-core-modal__form,
 body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--fullscreen .cb-core-modal__form {
 	height: 100%;
 	max-height: none;
@@ -121,11 +113,6 @@ body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__form {
 
 body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace .cb-core-modal__form {
 	max-height: min(88vh, 900px);
-}
-
-body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace.is-expanded .cb-core-modal__form {
-	height: 100%;
-	max-height: none;
 }
 
 body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--expandable .cb-core-modal__title {

@@ -71,6 +71,17 @@ test('standalone Template Library fills the page without stretching card grid ro
   assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?\.cb-template-library-page \.cb-template-browser\s*\{ flex-direction: column; \}/);
 });
 
+test('FIELD-04B: contextual Browser scrolls results while card rows remain intrinsic', () => {
+  assert.match(browser, /cb-template-browser--modal/);
+  assert.match(browser, /cb-template-browser__results-viewport/);
+  assert.match(browser, /content.append\( toolbar, message, resultsViewport \|\| results, footer \)/);
+  assert.match(styles, /cb-template-browser__mount \{[^}]*flex: 1 1 auto;[^}]*min-height: 0;/);
+  assert.match(styles, /cb-template-browser--modal \.cb-template-browser__results-viewport \{[^}]*flex: 1 1 auto;[^}]*overflow-y: auto;/);
+  assert.match(styles, /cb-template-browser--modal \.cb-template-browser__grid \{ flex: 0 0 auto; \}/);
+  assert.match(styles, /cb-template-browser--modal \.cb-template-browser__footer \{ flex: 0 0 auto; \}/);
+  assert.match(styles, /grid-template-rows: auto auto minmax\(0, 1fr\);/);
+});
+
 test('global filters distinguish translated Source and Plugin without changing their query keys', () => {
   assert.match(browser, /addSelect\( 'source', 'source', 'Source' \)/);
   assert.match(browser, /addSelect\( 'extension', 'plugin', 'Plugin' \)/);

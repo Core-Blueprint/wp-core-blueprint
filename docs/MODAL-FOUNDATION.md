@@ -136,7 +136,7 @@ Resolves to the entered string when confirmed and `null` when dismissed.
 - `confirmVariant` — `primary`, `secondary`, `remediation`, or `danger`.
 - `confirmIcon` — semantic/canonical shared Lucide icon name.
 - `dismissOnly` — informational/reference modal with one Close action.
-- `size` — `default`, `wide`, or `workspace`. `workspace` is for dense multi-column admin workspaces.
+- `size` — `default`, `wide`, `workspace`, or `fullscreen`. `workspace` is for dense multi-column admin workspaces; `fullscreen` opens directly in the existing maximized inset geometry.
 - `expandable` — when `true` with `size: 'workspace'`, renders an accessible Expand / Restore size control.
 - `expandLabel` / `restoreLabel` — optional consumer copy overrides for the workspace size control.
 - `typedConfirm` — exact phrase gate.
@@ -182,8 +182,12 @@ await window.cbCore.modal.show( {
 The normal workspace view is intentionally large without becoming full screen.
 The optional size control expands the dialog close to the viewport while
 preserving a visible modal boundary and the Base-owned title, body scroll and
-action row. Consumers should keep horizontal overflow inside their own workspace
-content rather than overriding the modal shell.
+action row. `size: 'fullscreen'` uses the same inset geometry immediately,
+without an Expand/Restore toggle; it provides an accessible header Close that
+shares Escape/Cancel authority, including the pending-confirmation guard.
+Consumers should keep horizontal overflow inside their own workspace content
+rather than overriding the modal shell. The Template Browser scrolls results
+inside the modal body so cards keep intrinsic row height.
 
 ## Presentation boundary
 

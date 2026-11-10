@@ -161,12 +161,56 @@ label.cb-template-browser__card { cursor: pointer; }
 .cb-template-browser__selection-notice { color: #b02c2c; }
 .cb-template-browser__modal-body { min-width: 0; }
 
+/* The Designer Browser consumes modal body height; only the result viewport
+   scrolls. Standalone Library content and intrinsic grid rows are unchanged. */
+dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-template-browser__modal-body) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.cb-template-browser__modal-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+.cb-template-browser__mount {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.cb-template-browser--modal {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+.cb-template-browser--modal .cb-template-browser__content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+.cb-template-browser--modal .cb-template-browser__results-viewport {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+.cb-template-browser--modal .cb-template-browser__grid { flex: 0 0 auto; }
+.cb-template-browser--modal .cb-template-browser__footer { flex: 0 0 auto; }
+.cb-template-browser--modal :is(.cb-template-browser__sidebar, .cb-template-browser__collections) {
+    min-height: 0;
+    overflow-y: auto;
+}
+
 /* Designer Browser workspace: Bricks-style information architecture using
    Base modal, three owned panes and our own component tokens. */
 .cb-template-browser--designer-workspace {
 	grid-template-columns: minmax(152px, 190px) minmax(160px, 220px) minmax(0, 1fr);
 	min-height: min(620px, 65dvh);
 }
+.cb-template-browser--modal.cb-template-browser--designer-workspace { min-height: 0; }
 .cb-template-browser--designer-workspace :is(.cb-template-browser__sidebar,.cb-template-browser__collections) {
 	display: flex;
 	flex-direction: column;
@@ -233,6 +277,10 @@ label.cb-template-browser__card { cursor: pointer; }
 
 @media (max-width: 720px) {
     .cb-template-browser { grid-template-columns: minmax(0, 1fr); }
+    .cb-template-browser--modal { grid-template-rows: auto minmax(0, 1fr); }
+    .cb-template-browser--modal.cb-template-browser--designer-workspace {
+        grid-template-rows: auto auto minmax(0, 1fr);
+    }
     .cb-template-browser--designer-workspace {
         grid-template-columns: minmax(0, 1fr);
         min-height: 0;

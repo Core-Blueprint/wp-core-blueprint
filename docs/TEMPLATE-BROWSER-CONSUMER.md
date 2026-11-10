@@ -107,7 +107,7 @@ browsing requires manage_options.
 All metadata is rechecked using source can_browse and per-item can_view.
 
 Base does not expose a preview/apply/write endpoint. The shared browser uses
-the existing @cb-core/modal workspace+expandable API; it cannot activate or
+the existing @cb-core/modal inset fullscreen API for Designer browsing; it cannot activate or
 persist domain data. Query limit defaults to 24 and maximum 48. HMAC cursor
 binds to actor/context/query/source identities. No template content is sent
 in metadata results; no vendor network access.

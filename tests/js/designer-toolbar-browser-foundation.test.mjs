@@ -118,7 +118,11 @@ test('Designer Browser renders three panes with active resource cards and separa
 	const category=shell.children[0],collections=shell.children[1],content=shell.children[2];
 	assert.equal(category.children.length,2,'Designs and Templates navigation');
 	assert.equal(collections.children.length,4,'heading, All designs and two provider collections');
-	const cards=content.children[2].children;
+	const viewport=content.children[2];
+	assert.match(viewport.className,/cb-template-browser__results-viewport/);
+	assert.equal(viewport.attributes.role,'region');
+	assert.equal(viewport.attributes.tabindex,'0');
+	const cards=viewport.children[0].children;
 	assert.equal(cards.length,2);
 	assert.match(cards[0].className,/is-current/);
 	cards[1].children[0].checked=true;
@@ -158,7 +162,7 @@ test('Browser modal closes before a design navigation; Apply callback is never u
 		setTimeout,clearTimeout,fetch:async()=>({ok:true,json:async()=>({sources:[]})})};
 	sandbox.modalHook=async ({body,onConfirm})=>{
 		order.push('modal-open');
-		const card=body.children[1].children[0].children[2].children[2].children[1];
+		const card=body.children[1].children[0].children[2].children[2].children[0].children[1];
 		card.children[0].checked=true;
 		card.children[0].events.get('change')();
 		const accepted=await onConfirm();

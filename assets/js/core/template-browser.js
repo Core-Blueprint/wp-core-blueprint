@@ -73,7 +73,8 @@ function createBrowser( root, options = {} ) {
         requestGeneration: 0, controller: null, timer: null, destroyed: false,
         view: hasDesigns ? 'designs' : 'templates', designProvider: '',
     };
-    const shell = el( 'section', hasDesigns ? 'cb-template-browser cb-template-browser--designer-workspace' : 'cb-template-browser' );
+    const shell = el( 'section', [ 'cb-template-browser', contextual ? 'cb-template-browser--modal' : '',
+        hasDesigns ? 'cb-template-browser--designer-workspace' : '' ].filter( Boolean ).join( ' ' ) );
     const sidebar = el( 'div', 'cb-template-browser__sidebar' );
     sidebar.setAttribute( 'role', 'group' );
     sidebar.setAttribute( 'aria-label', label( 'origin', 'Origin' ) );
@@ -85,6 +86,14 @@ function createBrowser( root, options = {} ) {
     const content = el( 'div', 'cb-template-browser__content' );
     const toolbar = el( 'div', 'cb-template-browser__toolbar' );
     const results = el( 'div', 'cb-template-browser__grid' );
+    // Contextual results scroll independently; the card grid keeps intrinsic row sizing.
+    const resultsViewport = contextual ? el( 'div', 'cb-template-browser__results-viewport cb-scrollbar' ) : null;
+    if ( resultsViewport ) {
+        resultsViewport.setAttribute( 'role', 'region' );
+        resultsViewport.setAttribute( 'aria-label', label( 'browse', 'Browse templates' ) );
+        resultsViewport.setAttribute( 'tabindex', '0' );
+        resultsViewport.append( results );
+    }
     const message = el( 'p', 'cb-template-browser__message' );
     message.setAttribute( 'role', 'status' );
     message.setAttribute( 'aria-live', 'polite' );
@@ -233,7 +242,7 @@ function createBrowser( root, options = {} ) {
     const searchField = el( 'label', 'cb-template-browser__field cb-template-browser__field--search' );
     searchField.append( el( 'span', '', searchLabel ), search );
     toolbar.prepend( searchField );
-    content.append( toolbar, message, results, footer );
+    content.append( toolbar, message, resultsViewport || results, footer );
     if ( collections ) shell.append( sidebar, collections, content );
     else shell.append( sidebar, content );
     root.replaceChildren( shell );
@@ -425,7 +434,7 @@ async function open( { contextToken, onChoose, title, designs = [], activeDesign
     const notice = el( 'p', 'cb-template-browser__selection-notice' );
     notice.setAttribute( 'role', 'status' );
     body.append( notice );
-    const root = el( 'div' );
+    const root = el( 'div', 'cb-template-browser__mount' );
     body.append( root );
     const browser = createBrowser( root, {
         mode: 'designer', contextToken,

@@ -141,24 +141,26 @@ test('FIELD-04: other dialogs retain ordinary and optional workspace presentatio
 	assert.equal(await workspace,false);
 });
 
-test('FIELD-04: canonical CSS fills the viewport only for the fullscreen size',()=>{
-	for(const [css,prefix] of [
-		[coreCss,'dialog.cb-core-modal--core'],
-		[nativeCss,'body.wp-admin dialog.cb-core-modal--wp-native'],
-	]){
-		const full=css.slice(css.indexOf(prefix+'.cb-core-modal--fullscreen {'));
-		assert.ok(full.length>0,'fullscreen selector exists');
-		assert.match(full,/width: 100vw;/);
-		assert.match(full,/height: 100dvh;/);
-		assert.match(full,/max-width: none;/);
-		assert.match(full,/max-height: none;/);
-		assert.match(full,/border-radius: 0;/);
-		assert.match(css,new RegExp('cb-core-modal--fullscreen \\.cb-core-modal__form \\{[^}]*height: 100%;[^}]*max-height: none;'));
-		assert.match(css, /cb-core-modal__header-close:focus-visible/);
-		assert.match(css, /cb-core-modal__header-close:disabled/);
-	}
-	assert.match(iconRegistry, /'x'\s*=>\s*\[/);
-	assert.match(browserSource, /size: 'fullscreen'/);
-	assert.doesNotMatch(browserSource,/expandable: true/);
-	assert.doesNotMatch(browserSource,/size: 'workspace'/);
+test('FIELD-04B: fullscreen shares the existing inset expanded-workspace geometry',()=>{
+  for(const [css,prefix,space] of [
+    [coreCss,'dialog.cb-core-modal--core','var(--cb-space-4)'],
+    [nativeCss,'body.wp-admin dialog.cb-core-modal--wp-native','var(--cb-space-4, 16px)'],
+  ]){
+    const selector = prefix+'.cb-core-modal--workspace.is-expanded,\n'+prefix+'.cb-core-modal--fullscreen {';
+    assert.ok(css.includes(selector),'same maximized presentation is reused');
+    const start = css.indexOf(selector);
+    const geometry = css.slice(start,css.indexOf('}',start)+1);
+    assert.ok(geometry.includes('width: calc(100vw - '+space+' - '+space+');'));
+    assert.ok(geometry.includes('height: calc(100dvh - '+space+' - '+space+');'));
+    assert.match(geometry,/max-width: none;/);
+    assert.match(geometry,/max-height: none;/);
+    assert.doesNotMatch(geometry,/border:\s*0|border-radius:\s*0|margin:\s*0|inset:\s*0/);
+    assert.ok(css.includes(prefix+'.cb-core-modal--fullscreen .cb-core-modal__form {'));
+    assert.match(css, /cb-core-modal__header-close:focus-visible/);
+    assert.match(css, /cb-core-modal__header-close:disabled/);
+  }
+  assert.match(iconRegistry, /'x'\s*=>\s*\[/);
+  assert.match(browserSource, /size: 'fullscreen'/);
+  assert.doesNotMatch(browserSource,/expandable: true/);
+  assert.doesNotMatch(browserSource,/size: 'workspace'/);
 });
