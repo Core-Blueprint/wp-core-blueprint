@@ -161,6 +161,42 @@ label.cb-template-browser__card { cursor: pointer; }
 .cb-template-browser__selection-notice { color: #b02c2c; }
 .cb-template-browser__modal-body { min-width: 0; }
 
+/* The Browser alone opts into a full-bleed modal interior. Base still owns
+   the header/actions, including their shared continuous panel boundaries. */
+dialog.cb-core-modal.cb-core-modal--fullscreen:has(.cb-template-browser__modal-body) .cb-core-modal__form,
+body.wp-admin dialog.cb-core-modal.cb-core-modal--fullscreen:has(.cb-template-browser__modal-body) .cb-core-modal__form {
+    padding: 0;
+}
+dialog.cb-core-modal.cb-core-modal--fullscreen:has(.cb-template-browser__modal-body) .cb-core-modal__title,
+body.wp-admin dialog.cb-core-modal.cb-core-modal--fullscreen:has(.cb-template-browser__modal-body) .cb-core-modal__title {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--cb-border, var(--cb-modal-native-border, rgba(127,127,127,.24)));
+}
+dialog.cb-core-modal.cb-core-modal--fullscreen:has(.cb-template-browser__modal-body) .cb-core-modal__body,
+body.wp-admin dialog.cb-core-modal.cb-core-modal--fullscreen:has(.cb-template-browser__modal-body) .cb-core-modal__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+dialog.cb-core-modal.cb-core-modal--fullscreen:has(.cb-template-browser__modal-body) .cb-core-modal__actions,
+body.wp-admin dialog.cb-core-modal.cb-core-modal--fullscreen:has(.cb-template-browser__modal-body) .cb-core-modal__actions {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    align-items: center;
+    min-height: 64px;
+    margin: 0;
+    padding: 12px 20px;
+    border-top: 1px solid var(--cb-border, var(--cb-modal-native-border, rgba(127,127,127,.24)));
+}
+
 /* The Designer Browser consumes modal body height; only the result viewport
    scrolls. Standalone Library content and intrinsic grid rows are unchanged. */
 dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-template-browser__modal-body) {
@@ -380,14 +416,16 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
   line-height: 1.35;
 }
 .cb-template-browser--modal .cb-template-browser__content {
-  padding: 20px 22px 16px;
+  padding: 0;
 }
 .cb-template-browser--modal .cb-template-browser__toolbar {
-  align-items: end;
+  flex: 0 0 auto;
+  align-items: center;
   flex-wrap: wrap;
   gap: 12px 16px;
-  margin: 0 0 16px;
-  padding: 0 0 16px;
+  min-height: 74px;
+  margin: 0;
+  padding: 14px 22px;
   border-bottom: 1px solid var(--cb-browser-line);
 }
 .cb-template-browser--modal .cb-template-browser__result-heading {
@@ -438,7 +476,7 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
   border-radius: 6px;
 }
 .cb-template-browser--modal .cb-template-browser__results-viewport {
-  padding: 2px 3px 10px 2px;
+  padding: 18px 22px;
 }
 .cb-template-browser--modal .cb-template-browser__grid {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 235px), 1fr));
@@ -534,9 +572,11 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
   outline-offset: 3px;
 }
 .cb-template-browser--modal .cb-template-browser__footer {
-  margin-top: 12px;
-  padding-top: 10px;
-  min-height: 45px;
+  box-sizing: border-box;
+  min-height: 52px;
+  margin: 0;
+  padding: 10px 22px;
+  border-top: 1px solid var(--cb-browser-line);
 }
 @media (max-width: 720px) {
   .cb-template-browser--modal :is(.cb-template-browser__sidebar, .cb-template-browser__collections) {
@@ -556,8 +596,14 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
     min-height: 38px;
     white-space: nowrap;
   }
-  .cb-template-browser--modal .cb-template-browser__content {
-    padding: 14px 12px;
+  .cb-template-browser--modal .cb-template-browser__toolbar {
+    padding: 12px;
+  }
+  .cb-template-browser--modal .cb-template-browser__results-viewport {
+    padding: 12px;
+  }
+  .cb-template-browser--modal .cb-template-browser__footer {
+    padding: 10px 12px;
   }
 }
 
@@ -610,20 +656,32 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 .cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-rows: auto;
   align-items: center;
+  justify-items: stretch;
   column-gap: 12px;
-  min-height: 78px;
-  padding: 13px 15px;
+  min-height: 74px;
+  padding: 12px 15px;
+  text-align: start;
 }
 .cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__choice {
   position: static;
-  margin: 0;
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
   align-self: center;
+  margin: 0;
 }
 .cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-body {
+  grid-column: 2;
+  grid-row: 1;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
   min-height: 0;
   padding: 0;
-  gap: 6px;
+  gap: 5px;
+  text-align: start;
 }
 .cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-title {
   margin: 0;
@@ -633,9 +691,12 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
   line-height: 1.4;
 }
 .cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-meta {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
   margin-top: 0;
   gap: 7px;
-  align-items: center;
   font-size: 12px;
 }
 .cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-meta span {
@@ -644,6 +705,7 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
   border-radius: 0;
 }
 .cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-meta .cb-template-browser__current {
+  margin-inline-start: auto;
   padding: 2px 7px;
   border: 1px solid var(--cb-browser-line);
   border-radius: 5px;

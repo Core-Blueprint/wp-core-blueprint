@@ -24,6 +24,8 @@
  *     initialFocus: 'input[name=title]',    // optional selector or HTMLElement
  *     onConfirm:    async ({ dialog, form, body, confirmButton, value }) => true,
  *                                              // return false to keep modal open
+ *     confirmEnabled: () => true,              // optional external confirm gate
+ *     onReady: ({ updateConfirmAction }) => {}, // optional label/gate refresh hook
  *
  *     // Mode selectors (mutually exclusive - pick at most one):
  *     typedConfirm: 'DELETE ALL',           // user must type this exact string
@@ -389,7 +391,12 @@ function show( opts ) {
 			const typedValid = mode !== 'typed' || dialog._cbInput?.value === opts.typedConfirm;
 			const inputValid = ! inputRequired || ( dialog._cbInput?.value ?? '' ).trim() !== '';
 			const checkValid = ! dialog._cbConfirmCheck || dialog._cbConfirmCheck.checked;
-			return typedValid && inputValid && checkValid;
+			let externalValid = true;
+			if ( typeof opts.confirmEnabled === 'function' ) {
+				try { externalValid = opts.confirmEnabled() === true; }
+				catch { externalValid = false; } // A failed external gate must not confirm.
+			}
+			return typedValid && inputValid && checkValid && externalValid;
 		};
 
 		const updateConfirmAvailability = () => {
@@ -537,6 +544,27 @@ function show( opts ) {
 
 		updateConfirmAvailability();
 		dialog.showModal();
+
+		// Opt-in action updater for workspaces whose selection changes in-place.
+		// Reuses the same pending/typed/input/check gates, including submit paths.
+		if ( typeof opts.onReady === 'function' ) {
+			try {
+				opts.onReady( {
+					updateConfirmAction: ( nextLabel ) => {
+						if ( settled ) return;
+						if ( typeof nextLabel === 'string' && nextLabel.trim() ) {
+							const target = opts.confirmIcon
+								? dialog._cbConfirmBtn.querySelector( '.cb-core-button__label' )
+								: dialog._cbConfirmBtn;
+							if ( target ) target.textContent = nextLabel;
+						}
+						updateConfirmAvailability();
+					},
+				} );
+			} catch ( error ) {
+				console.error( 'Core Blueprint modal onReady failed.', error );
+			}
+		}
 
 		let focusTarget = null;
 		if ( opts.initialFocus instanceof HTMLElement ) {

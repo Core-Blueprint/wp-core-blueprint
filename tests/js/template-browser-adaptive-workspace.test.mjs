@@ -40,7 +40,7 @@ class Element {
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
-function harness() {
+function harness(modalHook = async () => false) {
     const calls = [];
     const document = {
         createElement: tag => new Element(tag),
@@ -54,7 +54,7 @@ function harness() {
     } };
     const sandbox = {
         document, window, HTMLElement: Element, URL, URLSearchParams, AbortController,
-        setTimeout, clearTimeout,
+        setTimeout, clearTimeout, modalHook,
         fetch: async url => {
             calls.push(url);
             return { ok: true, json: async () => url.includes('/sources?')
@@ -66,7 +66,7 @@ function harness() {
         },
     };
     const executable = browserSource
-        .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = async () => false;')
+        .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = globalThis.modalHook;')
         .replace('export { createBrowser, open, loadForApply };', '')
         .replace('export default api;', '');
     runInNewContext(executable, sandbox, { timeout: 1000 });
@@ -147,9 +147,58 @@ test('FIELD-05B: global Template Library remains two-pane and unmodified', async
 
 test('FIELD-05B: responsive styles separate design rows and template grid', () => {
     assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="designs"\] \.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: auto;/);
-    assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="designs"\] \.cb-template-browser__card--design\s*\{[^}]*display: grid;[^}]*min-height: 78px;/);
+    assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="designs"\] \.cb-template-browser__card--design\s*\{[^}]*display: grid;[^}]*min-height: 74px;/);
     assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="templates"\] \.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: 1fr;/);
     assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__field > span\s*\{[^}]*position: absolute;[^}]*width: 1px;/);
     assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?data-browser-view="designs"\] \.cb-template-browser__grid/);
+    assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__content\s*\{\s*padding: 0;/);
+    assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__toolbar\s*\{[^}]*border-bottom: 1px solid var\(--cb-browser-line\);/);
+    assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__footer\s*\{[^}]*border-top: 1px solid var\(--cb-browser-line\);/);
+    assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="designs"\] \.cb-template-browser__card--design \.cb-template-browser__choice\s*\{[^}]*grid-column: 1;/);
+    assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="designs"\] \.cb-template-browser__card--design \.cb-template-browser__card-body\s*\{[^}]*grid-column: 2;/);
     assert.match(styles, /\.cb-template-library-page \.cb-template-browser/);
+});
+
+test('FIELD-05C: Browser confirm label and availability track Designs and Templates', async () => {
+    let actions = [], currentLabel = '', enabled = null;
+    const { api } = harness(async options => {
+        currentLabel = options.confirmLabel;
+        enabled = options.confirmEnabled();
+        const refresh = nextLabel => {
+            if (nextLabel) currentLabel = nextLabel;
+            enabled = options.confirmEnabled();
+        };
+        options.onReady({ updateConfirmAction: refresh });
+        assert.equal(currentLabel, 'Open design');
+        assert.equal(enabled, false);
+        const shell = options.body.children[1].children[0];
+        const search = shell.children[2].children[0].children[1].children[1];
+        assert.equal(search.placeholder, 'Search designs');
+        const first = shell.children[2].children[2].children[0].children[0].children[0];
+        first.checked = true;
+        first.events.get('change')();
+        assert.equal(enabled, true);
+
+        shell.children[0].children[1].events.get('click')();
+        await flush();
+        assert.equal(currentLabel, 'Use template');
+        assert.equal(enabled, false, 'design selection must not survive switching views');
+        assert.equal(search.placeholder, 'Search templates');
+        const grid = shell.children[2].children[2].children[0];
+        assert.equal(grid.children.length, 1);
+        const templateRadio = grid.children[0].children[0];
+        assert.equal(templateRadio.disabled, false);
+        templateRadio.checked = true;
+        templateRadio.events.get('change')();
+        assert.equal(enabled, true);
+        return await options.onConfirm();
+    });
+    const accepted = await api.open({
+        contextToken: 'server-issued-scope',
+        onChoose: async item => { actions.push(item.id); return true; },
+        onOpenDesign: async () => { throw new Error('NO_DESIGN_NAVIGATION'); },
+        designs: [ { id: 'wordpress.first', title: 'Email changed', provider: 'WordPress' } ],
+    });
+    assert.equal(accepted, true);
+    assert.deepEqual(actions, ['template-1']);
 });

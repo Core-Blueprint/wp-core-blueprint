@@ -170,8 +170,18 @@ test('Browser modal closes before a design navigation; Apply callback is never u
 	};
 	const sandbox={window,document,HTMLElement:Node,URL,URLSearchParams,AbortController,
 		setTimeout,clearTimeout,fetch:async()=>({ok:true,json:async()=>({sources:[]})})};
-	sandbox.modalHook=async ({body,onConfirm})=>{
+	sandbox.modalHook=async ({body,onConfirm,confirmLabel,confirmEnabled,onReady})=>{
 		order.push('modal-open');
+		assert.equal(confirmLabel,'Open design');
+		assert.equal(confirmEnabled(),false,'no selected resource cannot confirm');
+		let currentLabel=confirmLabel;
+		let actionEnabled=null;
+		onReady({updateConfirmAction:nextLabel=>{
+			if (nextLabel) currentLabel=nextLabel;
+			actionEnabled=confirmEnabled();
+		}});
+		assert.equal(currentLabel,'Open design');
+		assert.equal(actionEnabled,false);
 		const sidebar=body.children[1].children[0].children[0];
 		const saveArea=sidebar.children[2];
 		assert.match(saveArea.className,/cb-template-browser__sidebar-footer/);
@@ -182,6 +192,8 @@ test('Browser modal closes before a design navigation; Apply callback is never u
 		const card=body.children[1].children[0].children[2].children[2].children[0].children[1];
 		card.children[0].checked=true;
 		card.children[0].events.get('change')();
+		assert.equal(actionEnabled,true,'selection activates the external confirmation gate');
+		assert.equal(currentLabel,'Open design');
 		const accepted=await onConfirm();
 		order.push('modal-closed');
 		return accepted;

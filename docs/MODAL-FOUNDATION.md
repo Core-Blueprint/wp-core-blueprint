@@ -143,6 +143,11 @@ Resolves to the entered string when confirmed and `null` when dismissed.
 - `typedConfirmHint` / `typedConfirmMismatch` — optional copy overrides.
 - `input` — `{ type, label, placeholder, maxLength, required }`.
 - `confirmCheck` — `{ label }`; required acknowledgement gate, always initially unchecked.
+- `confirmEnabled` — optional synchronous predicate returning literal `true` to enable confirmation. False, missing readiness or a thrown exception fails closed; this gate composes with typed/input/checkbox gates and is rechecked on every submit.
+- `onReady` — optional callback after the dialog is shown: `({ updateConfirmAction }) => {}`. The updater accepts an optional non-empty translated button label and reevaluates all confirmation gates. It cannot override a pending confirmation or existing guards.
+
+For dynamic selection UIs, keep the consumer selection state outside the Modal Foundation. After a selection or view change, invoke `updateConfirmAction( translatedLabel )` from `onReady`; never query into the modal's private DOM. `onConfirm` remains the domain authority for a real action, while the optional predicate controls initial and subsequent availability. Non-opted-in dialogs retain their existing confirmation behavior.
+
 
 `danger` remains destructive intent. It must not be used merely because a modal
 contains an error message.

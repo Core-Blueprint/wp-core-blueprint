@@ -67,6 +67,9 @@ function createBrowser( root, options = {} ) {
         throw new TypeError( 'A server-issued Designer scope token is required.' );
     }
     const token = contextual ? options.contextToken : '';
+    const notifyState = () => {
+        if ( contextual && typeof options.onStateChange === 'function' ) options.onStateChange();
+    };
     const state = {
         filters: { limit: 24, search: '', source: '', extension: '', designer: '', origin: '', category: '' },
         sources: [], cursor: null, entries: [], selected: null, pending: false,
@@ -197,8 +200,8 @@ function createBrowser( root, options = {} ) {
 
     const search = el( 'input', 'cb-template-browser__search' );
     search.type = 'search';
-    const searchLabel = hasDesigns ? label( 'searchWorkspace', 'Search designs and templates' )
-        : label( 'search', 'Search templates' );
+    const searchLabel = contextual && state.view === 'designs'
+        ? label( 'searchDesigns', 'Search designs' ) : label( 'search', 'Search templates' );
     search.placeholder = searchLabel;
     search.setAttribute( 'aria-label', searchLabel );
     search.maxLength = 120;
@@ -264,6 +267,13 @@ function createBrowser( root, options = {} ) {
     } );
     const searchField = el( 'label', 'cb-template-browser__field cb-template-browser__field--search' );
     searchField.append( el( 'span', '', searchLabel ), search );
+    function syncSearchLabel() {
+        const value = contextual && state.view === 'designs'
+            ? label( 'searchDesigns', 'Search designs' ) : label( 'search', 'Search templates' );
+        search.placeholder = value;
+        search.setAttribute( 'aria-label', value );
+        searchField.children[0].textContent = value;
+    }
     if ( contextual ) toolbar.prepend( resultHeading, searchField );
     else toolbar.prepend( searchField );
     content.append( toolbar, message, resultsViewport || results, footer );
@@ -309,7 +319,12 @@ function createBrowser( root, options = {} ) {
             radio.name = 'cb-template-choice';
             radio.value = String( index );
             radio.checked = false;
-            radio.addEventListener( 'change', () => { if ( radio.checked ) state.selected = index; } );
+            radio.addEventListener( 'change', () => {
+                if ( radio.checked ) {
+                    state.selected = index;
+                    notifyState();
+                }
+            } );
             // Designs are selectable resources, not visual template previews.
             // Keep their single radio + label contract without fabricated thumbnails.
             const body = el( 'div', 'cb-template-browser__card-body' );
@@ -330,6 +345,7 @@ function createBrowser( root, options = {} ) {
         updateResultHeading();
         more.hidden = true;
         footer.hidden = contextual;
+        notifyState();
     }
 
     function renderCard( item, index ) {
@@ -341,7 +357,12 @@ function createBrowser( root, options = {} ) {
             radio.value = String( index );
             radio.checked = state.selected === index;
             radio.disabled = !item.compatible;
-            radio.addEventListener( 'change', () => { if ( radio.checked ) state.selected = index; } );
+            radio.addEventListener( 'change', () => {
+                if ( radio.checked ) {
+                    state.selected = index;
+                    notifyState();
+                }
+            } );
             article.append( radio );
         }
         if ( contextual ) {
@@ -394,6 +415,7 @@ function createBrowser( root, options = {} ) {
     async function load( reset = false ) {
         if ( state.destroyed ) return;
         syncCategoryField();
+        syncSearchLabel();
         if ( state.view === 'designs' ) {
             renderDesigns();
             return;
@@ -404,6 +426,7 @@ function createBrowser( root, options = {} ) {
             state.selected = null;
             state.cursor = null;
             results.replaceChildren();
+            notifyState();
         }
         updateResultHeading();
         if ( state.pending && !reset ) return;
@@ -431,6 +454,7 @@ function createBrowser( root, options = {} ) {
             updateResultHeading();
             more.hidden = !state.cursor;
             footer.hidden = contextual && !state.cursor;
+            notifyState();
         } catch ( error ) {
             if ( !controller.signal.aborted && !state.destroyed && generation === state.requestGeneration ) {
                 message.textContent = label( 'error', 'Could not load templates.' );
@@ -485,10 +509,16 @@ async function open( { contextToken, onChoose, title, designs = [], activeDesign
     body.append( notice );
     const root = el( 'div', 'cb-template-browser__mount' );
     body.append( root );
-    const browser = createBrowser( root, {
+    let updateConfirmAction = null;
+    let browser = null;
+    browser = createBrowser( root, {
         mode: 'designer', contextToken,
         designs: typeof onOpenDesign === 'function' ? designs : [],
         activeDesignId, onSaveAs, saveAsLabel, notice,
+        onStateChange: () => {
+            if ( browser && updateConfirmAction ) updateConfirmAction( browser.view() === 'designs'
+                ? label( 'openDesign', 'Open design' ) : label( 'use', 'Use template' ) );
+        },
     } );
     let pendingDesign = null;
     try {
@@ -496,8 +526,18 @@ async function open( { contextToken, onChoose, title, designs = [], activeDesign
             title: title || label( 'browse', 'Browse templates' ),
             body,
             size: 'fullscreen',
-            confirmLabel: typeof onOpenDesign === 'function' && Array.isArray( designs ) && designs.length
-                ? label( 'selectAction', 'Open / use selected' ) : label( 'use', 'Use template' ),
+            confirmLabel: browser.view() === 'designs'
+                ? label( 'openDesign', 'Open design' ) : label( 'use', 'Use template' ),
+            confirmEnabled: () => {
+                const selected = browser.selected();
+                return !!selected && ( selected.kind === 'design'
+                    ? typeof onOpenDesign === 'function' : !!selected.compatible );
+            },
+            onReady: ( { updateConfirmAction: updateAction } ) => {
+                updateConfirmAction = updateAction;
+                updateConfirmAction( browser.view() === 'designs'
+                    ? label( 'openDesign', 'Open design' ) : label( 'use', 'Use template' ) );
+            },
             cancelLabel: label( 'close', 'Close' ),
             onConfirm: async () => {
                 const selected = browser.selected();
