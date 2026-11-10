@@ -676,7 +676,7 @@ const composePlatformChrome = (root, profileId) => {
 	const contextSlot = node('span', 'cb-core-design-shell__native-context', {
 		'data-cb-platform-context-slot': '',
 	});
-	startZone.append(brand, contextSlot);
+	startZone.append(brand);
 	if (profileId === 'base/mail') {
 		const viewport = node('div', 'cb-core-design-shell__toolbar-group', {
 			'data-cb-design-shell-viewport-group': '', role: 'group', 'aria-label': 'Preview width',
@@ -716,7 +716,17 @@ const composePlatformChrome = (root, profileId) => {
 	const closeSlot = node('span', 'cb-core-design-shell__native-close', {
 		'data-cb-platform-close-slot': '',
 	});
-	endZone.append(history, closeSlot, save);
+	// Base is responsible for canonical toolbar zones. Consumer-owned
+	// navigation is isolated from History/Save/Close; Close is always last.
+	const resourceGroup = node('div', 'cb-core-design-shell__toolbar-group cb-core-design-shell__toolbar-group--resource', {
+		'data-cb-design-shell-resource-group': '', role: 'group', 'aria-label': 'Design browser',
+	});
+	resourceGroup.append(contextSlot);
+	const operationGroup = node('div', 'cb-core-design-shell__toolbar-group cb-core-design-shell__toolbar-group--operations', {
+		'data-cb-design-shell-actions-group': '', role: 'group', 'aria-label': 'History and document actions',
+	});
+	operationGroup.append(history, save, closeSlot);
+	endZone.append(resourceGroup, operationGroup);
 	toolbar.append(startZone, centerZone, endZone);
 	const notice = node('p', 'cb-core-design-shell__persistent-notice', {
 		'data-cb-design-shell-persistent-notice': '', role: 'status', 'aria-live': 'polite',

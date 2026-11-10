@@ -87,6 +87,7 @@
 		const save = toolbar.querySelector('[data-cb-design-shell-primary-action]');
 		const closeControl = toolbar.querySelector('[data-cb-design-shell-close], [data-cb-design-shell-fullscreen]');
 		const actionAnchor = closeControl || save;
+		const actionMount = toolbar.querySelector('[data-cb-design-shell-actions-group]') || end;
 		if (!start || !center || !end) return false;
 
 		toolbar.dataset.cbDesignShellCompactToolbar = 'true';
@@ -195,7 +196,7 @@
 		};
 
 		createExtensionGroup({ controls: extensionViewControls, group: 'view', mount: center });
-		createExtensionGroup({ controls: extensionActionControls, group: 'actions', mount: end, before: actionAnchor });
+		createExtensionGroup({ controls: extensionActionControls, group: 'actions', mount: actionMount, before: actionAnchor });
 
 		const createMenu = ({ name, label, icon, controls, mount, before = null }) => {
 			if (!controls.length || !mount) return null;
@@ -247,7 +248,7 @@
 		const viewMenu = createMenu({ name: 'view', label: viewLabel, icon: 'monitor', controls: viewControls, mount: center });
 		const toolsControls = uniqueControls([...actionControls, ...viewControls]).filter((control) =>
 			control !== closeControl && !control.hasAttribute('data-cb-design-shell-close'));
-		const toolsMenu = createMenu({ name: 'actions', label: toolsLabel, icon: 'ellipsis', controls: toolsControls, mount: end, before: actionAnchor });
+		const toolsMenu = createMenu({ name: 'actions', label: toolsLabel, icon: 'ellipsis', controls: toolsControls, mount: actionMount, before: actionAnchor });
 
 		const syncViewTrigger = () => {
 			if (!viewMenu) return;

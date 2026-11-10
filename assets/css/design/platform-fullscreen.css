@@ -203,6 +203,28 @@
 .cb-core-design-shell--native .cb-core-design-shell__toolbar-zone--center {
 	justify-content: center;
 }
+/* Canonical right zone: consumer browser + native document operations.
+   Close remains the final edge-aligned action at every breakpoint. */
+.cb-core-design-shell--native .cb-core-design-shell__toolbar-group--resource,
+.cb-core-design-shell--native .cb-core-design-shell__toolbar-group--operations {
+	display: inline-flex;
+	align-items: center;
+	min-width: 0;
+	gap: var(--cb-space-2, 8px);
+}
+.cb-core-design-shell--native .cb-core-design-shell__toolbar-group--resource {
+	flex: 0 1 auto;
+}
+.cb-core-design-shell--native .cb-core-design-shell__toolbar-group--operations {
+	flex: 0 0 auto;
+}
+.cb-core-design-shell--native .cb-core-design-shell__toolbar-zone--end > .cb-core-design-shell__toolbar-group--resource {
+	margin-inline-end: var(--cb-space-2, 8px);
+}
+.cb-core-design-shell--native .cb-core-design-shell__toolbar-group--resource:empty {
+	display: none;
+}
+
 .cb-core-design-shell--native .cb-core-design-shell__brand {
 	--cb-brand-lockup-size: 1.3rem;
 	flex: 0 0 auto;
