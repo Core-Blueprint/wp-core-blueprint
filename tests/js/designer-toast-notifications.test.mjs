@@ -109,7 +109,7 @@ test('Base preserves a generic persistent consumer status in the composed header
 	assert.ok(begin > -1 && end > begin);
 	const compose = launch.slice(begin, end);
 	const discover = compose.indexOf("toolbar.querySelector('[data-cb-design-shell-persistent-notice]')");
-	const attach = compose.indexOf('if (persistentNotice) end.append(persistentNotice);');
+	const attach = compose.indexOf('if (persistentNotice) operationGroup.append(persistentNotice);');
 	const replace = compose.indexOf('toolbar.replaceChildren(start, center, end);');
 	assert.ok(discover > -1 && attach > discover && replace > attach,
 		'consumer status must move into the Base-owned header before old toolbar children are removed');
@@ -154,6 +154,11 @@ test('actual Base header composition retains the consumer Store warning node', a
 		icons: { decorate() {} },
 	});
 	assert.equal(replaced.length, 3);
-	assert.deepEqual(replaced[2].children, [status, save],
-		'Base header must move the original status node into the final toolbar before Save');
+	assert.equal(replaced[2].children.length, 2,
+		'Base header must preserve separate resource and operational groups');
+	assert.match(replaced[2].children[0].className, /toolbar-group--resource/);
+	const operations = replaced[2].children[1];
+	assert.match(operations.className, /toolbar-group--operations/);
+	assert.deepEqual(operations.children, [status, save],
+		'Base must move the original persistent warning node before Save without replacing or cloning it');
 });

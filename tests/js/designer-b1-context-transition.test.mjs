@@ -78,14 +78,19 @@ test('B1 Header Picker readiness handles both module and classic-first orders ex
   }
 });
 
-test('B1 Native Mail imports one Picker module and restores blocked selection paint', () => {
+test('B1 Native Mail retains a trusted resource catalog without a competing visual Picker', () => {
   const native = read('assets/js/design/platform/wordpress-save-adapter.js');
   const php = read('src/Design/Editor/Assets.php');
   assert.match(php, /enqueue_select_picker\( \\CoreBlueprint\\Core\\UI\\Assets::SELECT_PICKER_PRESENTATION_CORE \)/);
   assert.match(native, /import '@cb-core\/select-picker';/);
   assert.match(php, /'@cb-core\/reports-platform', '@cb-core\/select-picker'/);
   assert.ok(native.indexOf('await host.mount(') < native.indexOf('contextSlot.append(contextControl);'));
-  assert.ok(native.indexOf('contextSlot.append(contextControl);') < native.indexOf("picker.enhance(selected,{variant:'header'});"));
+  assert.ok(native.indexOf('contextSlot.append(contextControl);') < native.indexOf('selected.hidden=true;'));
+  assert.match(native, /selected\.setAttribute\('aria-hidden','true'\)/);
+  assert.match(native, /selected\.tabIndex=-1/);
+  assert.doesNotMatch(native, /picker\.enhance\(selected,\{variant:'header'\}\)/);
+  assert.match(native, /toolbar\.querySelector\('\[data-cb-platform-browser\]'\)/);
+  assert.match(native, /guard\.request\(root,\(\)=>\{/);
 
   const start = native.indexOf("selected.addEventListener('change',()=>{");
   const end = native.indexOf("\n\t\t\t});", start);
