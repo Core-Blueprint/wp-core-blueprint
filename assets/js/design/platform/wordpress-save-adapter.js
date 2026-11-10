@@ -397,7 +397,7 @@ async function activate() {
 					location.assign(url.href);
 					window.setTimeout(()=>guard.resetApproval(root),0);
 					return true;
-				});
+				}, {intent:'switch'});
 			};
 			installMailTemplateActions({
 				host,root,contextSlot,

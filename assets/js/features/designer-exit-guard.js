@@ -256,7 +256,13 @@
 		return { confirmed: confirmed === true, action };
 	};
 
-	const request = async (shell, exit) => {
+	// Resource navigation can reuse the exact Exit Guard Save/Discard
+	// fences without showing the unrelated "Close Designer?" prompt when
+	// an explicitly selected design is already clean.
+	const request = async (shell, exit, options = {}) => {
+		if (!options || typeof options !== 'object'
+			|| (options.intent !== undefined && !['exit', 'switch'].includes(options.intent))) return false;
+		const switching = options.intent === 'switch';
 		if (!(shell instanceof Element) || typeof exit !== 'function' || pending.has(shell)) return false;
 		const adapter = providers.get(shell) || null;
 		const labels = adapter?.labels || defaults;
@@ -296,9 +302,17 @@
 			let confirmed;
 			let action = null;
 			if (dirty === true) {
-				const choice = await confirmDirty(shell, adapter, labels, labels.close);
+				const choice = await confirmDirty(
+					shell, adapter,
+					switching ? {...labels, dirtyDescription: labels.transitionDirtyDescription} : labels,
+					switching ? labels.transitionConfirm : labels.close
+				);
 				confirmed = choice.confirmed;
 				action = choice.action;
+			} else if (switching && dirty === false) {
+				// The Browser selection itself is the explicit clean intent;
+				// still enforce every final synchronous Save/context fence.
+				confirmed = true;
 			} else {
 				confirmed = await modal({
 					title: labels.cleanTitle,

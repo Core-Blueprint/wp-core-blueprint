@@ -16,7 +16,7 @@ The shared compact toolbar policy, existing keyboard navigation and responsive r
 The existing shared `@cb-core/template-browser` remains the foundation: Base workspace modal, expandable size, a **category pane**, a **collection pane** and a **searchable grid**. The Bricks references inform the information architecture, not branding, UI code or assets.
 
 On the first Mail consumer:
-- **Designs** lists the real current-site registered Mail resources from the server-authored select; their provider groups become collections. **Open design** is navigation (via canonical Exit Guard) only after the Browser closes, never Template Apply
+- **Designs** lists the real current-site registered Mail resources from the server-authored select; their provider groups become collections. **Open design** is navigation (via canonical Exit Guard `request(..., {intent:'switch'})`) only after the Browser closes, never Template Apply. A clean switch is immediate after all canonical fences; a dirty switch requires Save/Discard/Cancel with the existing localized `transitionConfirm` and `transitionDirtyDescription` labels
 - **Templates** lists built-in/personal/site/pack assets via the signed Template Browser scope and existing authorized read-only metadata requests
 - **Use template** uses existing source-specific Apply endpoint and the Host's `captureApplyIntent()` / `applyTemplate()` authority. Never replace the active resource or save automatically
 - **Save as template** invokes Mail's existing validated create on a separate reusable asset; not the operational Save path

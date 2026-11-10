@@ -81,6 +81,7 @@ const fixture = (options = {}) => {
 	return {
 		shell, events, modals, toasts,
 		request: () => window.cbCore.designerExitGuard.request(shell, exit),
+		switchDesign: () => window.cbCore.designerExitGuard.request(shell, exit, {intent:'switch'}),
 		transition: (apply) => window.cbCore.designerExitGuard.transition(shell, {targetId: apply}),
 		setDirty: (value) => { dirtyNow = value; },
 		beginSaving: () => { busyNow = true; shell.dataset.cbDesignShellSaveState = 'saving'; },
@@ -123,6 +124,31 @@ test('EXIT-A02: clean exit asks for confirmation; Cancel never exits', async () 
 	const cancelled = fixture({ accept: false });
 	assert.equal(await cancelled.request(), false);
 	assert.equal(cancelled.exits, 0);
+});
+
+test('BROWSER-SWITCH-01: clean design navigation uses existing synchronous fences without Close prompt', async () => {
+	const f = fixture({dirty:false});
+	assert.equal(await f.switchDesign(), true);
+	assert.equal(f.modals.length, 0, 'Browser already conveys the explicit design choice');
+	assert.equal(f.exits, 1);
+	assert.equal(f.writes, 0);
+	assert.equal(f.discards, 0);
+});
+
+test('BROWSER-SWITCH-02: dirty navigation requires Save/Discard/Cancel with switch-specific labels', async () => {
+	const saved = fixture({dirty:true, action:'save'});
+	assert.equal(await saved.switchDesign(), true);
+	assert.equal(saved.modals.length, 1);
+	assert.equal(saved.modals[0].confirmLabel, 'Switch design');
+	assert.equal(saved.modals[0].body.children[0].textContent,
+		'Save or discard your changes before switching designs.');
+	assert.equal(saved.writes, 1);
+	const cancelled = fixture({dirty:true, accept:false});
+	assert.equal(await cancelled.switchDesign(), false);
+	assert.equal(cancelled.exits, 0);
+	const unknown = fixture({dirty:true, unknown:true});
+	assert.equal(await unknown.switchDesign(), false);
+	assert.equal(unknown.modals.length, 0);
 });
 
 test('EXIT-A03: dirty Save & Close requires the verified receipt and no newer edits', async () => {
