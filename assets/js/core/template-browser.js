@@ -172,8 +172,10 @@ function createBrowser( root, options = {} ) {
 
     const search = el( 'input', 'cb-template-browser__search' );
     search.type = 'search';
-    search.placeholder = label( 'search', 'Search templates' );
-    search.setAttribute( 'aria-label', label( 'search', 'Search templates' ) );
+    const searchLabel = hasDesigns ? label( 'searchWorkspace', 'Search designs and templates' )
+        : label( 'search', 'Search templates' );
+    search.placeholder = searchLabel;
+    search.setAttribute( 'aria-label', searchLabel );
     search.maxLength = 120;
 
     function addSelect( name, translationKey, fallback, choices = [] ) {
@@ -229,7 +231,7 @@ function createBrowser( root, options = {} ) {
         state.timer = setTimeout( () => { state.filters.search = search.value.trim(); refresh(); }, 250 );
     } );
     const searchField = el( 'label', 'cb-template-browser__field cb-template-browser__field--search' );
-    searchField.append( el( 'span', '', label( 'search', 'Search templates' ) ), search );
+    searchField.append( el( 'span', '', searchLabel ), search );
     toolbar.prepend( searchField );
     content.append( toolbar, message, results, footer );
     if ( collections ) shell.append( sidebar, collections, content );
@@ -400,6 +402,7 @@ function createBrowser( root, options = {} ) {
     refresh();
     return {
         selected: () => state.selected === null ? null : ( state.entries[state.selected] || null ),
+        view: () => state.view,
         destroy: () => {
             state.destroyed = true;
             state.controller?.abort();
@@ -455,7 +458,8 @@ async function open( { contextToken, onChoose, title, designs = [], activeDesign
             onConfirm: async () => {
                 const selected = browser.selected();
                 if ( !selected || ( selected.kind !== 'design' && !selected.compatible ) ) {
-                    notice.textContent = label( 'select', 'Select a template.' );
+                    notice.textContent = browser.view() === 'designs'
+                        ? label( 'selectDesign', 'Select a design.' ) : label( 'select', 'Select a template.' );
                     return false;
                 }
                 if ( selected.kind === 'design' ) {
