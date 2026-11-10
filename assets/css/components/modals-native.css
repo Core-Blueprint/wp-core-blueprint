@@ -52,6 +52,57 @@ body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--workspace.is-expand
 	max-height: none;
 }
 
+/* Full viewport is a dedicated Base Modal presentation, never a global dialog override. */
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--fullscreen {
+	box-sizing: border-box;
+	inset: 0;
+	margin: 0;
+	width: 100vw;
+	height: 100vh;
+	height: 100dvh;
+	max-width: none;
+	max-height: none;
+	border-radius: 0;
+}
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--fullscreen .cb-core-modal__form {
+	height: 100%;
+	max-height: none;
+}
+body.wp-admin dialog.cb-core-modal--wp-native.cb-core-modal--fullscreen .cb-core-modal__title {
+	padding-inline-end: 44px;
+}
+body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__header-close {
+	position: absolute;
+	inset-block-start: var(--cb-space-4, 16px);
+	inset-inline-end: var(--cb-space-4, 16px);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--cb-modal-native-text-muted);
+	cursor: pointer;
+}
+body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__header-close:hover {
+	background: var(--cb-modal-native-code-surface);
+	color: var(--cb-modal-native-text-strong);
+}
+body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__header-close:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__header-close:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+body.wp-admin dialog.cb-core-modal--wp-native .cb-core-modal__header-close .cb-core-icon {
+	pointer-events: none;
+}
+
 body.wp-admin dialog.cb-core-modal--wp-native::backdrop {
 	background: rgb(0 0 0 / 0.4);
 }

@@ -450,8 +450,7 @@ async function open( { contextToken, onChoose, title, designs = [], activeDesign
         const accepted = await showModal( {
             title: title || label( 'browse', 'Browse templates' ),
             body,
-            size: 'workspace',
-            expandable: true,
+            size: 'fullscreen',
             confirmLabel: typeof onOpenDesign === 'function' && Array.isArray( designs ) && designs.length
                 ? label( 'selectAction', 'Open / use selected' ) : label( 'use', 'Use template' ),
             cancelLabel: label( 'close', 'Close' ),

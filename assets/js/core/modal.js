@@ -18,8 +18,9 @@
  *     confirmVariant:'primary',             // primary|secondary|remediation|danger
  *     confirmIcon:  'quarantine',            // optional semantic/canonical icon name
  *     dismissOnly:  false,                  // informational modal: one Close action
- *     size:         'workspace',            // optional presentation: default|wide|workspace
- *     expandable:   true,                   // optional workspace expand/restore control
+ *     size:         'fullscreen',           // optional: default|wide|workspace|fullscreen
+ *     expandable:   true,                   // only for manually expandable workspaces
+ *                                             fullscreen gets an accessible header Close button
  *     initialFocus: 'input[name=title]',    // optional selector or HTMLElement
  *     onConfirm:    async ({ dialog, form, body, confirmButton, value }) => true,
  *                                              // return false to keep modal open
@@ -107,7 +108,7 @@ function resolveMode( opts ) {
 
 function resolveSize( opts ) {
 	const requested = String( opts.size || '' );
-	return [ 'wide', 'workspace' ].includes( requested ) ? requested : '';
+	return [ 'wide', 'workspace', 'fullscreen' ].includes( requested ) ? requested : '';
 }
 
 /**
@@ -148,6 +149,7 @@ function buildDialog( opts ) {
 	const confirmCheck = resolveConfirmCheck( opts );
 	const size = resolveSize( opts );
 	const expandable = opts.expandable === true && size === 'workspace';
+	const fullscreen = size === 'fullscreen';
 
 	const dialog = document.createElement( 'dialog' );
 	const modalId = ++modalSequence;
@@ -194,6 +196,20 @@ function buildDialog( opts ) {
 		} );
 		syncExpandToggle( false );
 		form.appendChild( expandToggle );
+	}
+
+	// ─── Native fullscreen close — same cancellation authority as Esc ───
+	let headerClose = null;
+	if ( fullscreen ) {
+		headerClose = document.createElement( 'button' );
+		headerClose.type = 'button';
+		headerClose.className = 'cb-core-modal__header-close';
+		const closeLabel = String( opts.closeLabel || i18n.close || 'Close' );
+		headerClose.setAttribute( 'aria-label', closeLabel );
+		headerClose.title = closeLabel;
+		const closeIcon = createIcon( 'x', { size: 'default' } );
+		if ( closeIcon ) headerClose.appendChild( closeIcon );
+		form.appendChild( headerClose );
 	}
 
 	// ─── Body ───────────────────────────────────────────────────────────
@@ -337,6 +353,7 @@ function buildDialog( opts ) {
 	dialog._cbForm         = form;
 	dialog._cbBody         = body;
 	dialog._cbCancelBtn    = cancelBtn;
+	dialog._cbHeaderCloseBtn = headerClose;
 	dialog._cbConfirmBtn   = confirmBtn;
 	dialog._cbInput        = input;
 	dialog._cbStatus       = status;
@@ -408,6 +425,11 @@ function show( opts ) {
 				if ( ! confirmPending ) settle( false );
 			} );
 		}
+		if ( dialog._cbHeaderCloseBtn ) {
+			dialog._cbHeaderCloseBtn.addEventListener( 'click', () => {
+				if ( ! confirmPending ) settle( false );
+			} );
+		}
 
 		dialog.addEventListener( 'cancel', ( ev ) => {
 			ev.preventDefault();
@@ -437,6 +459,7 @@ function show( opts ) {
 			const cancelWasDisabled = cancelButton?.disabled ?? false;
 			updateConfirmAvailability();
 			if ( cancelButton ) cancelButton.disabled = true;
+			if ( dialog._cbHeaderCloseBtn ) dialog._cbHeaderCloseBtn.disabled = true;
 			dialog.setAttribute( 'aria-busy', 'true' );
 
 			try {
@@ -458,6 +481,7 @@ function show( opts ) {
 				dialog.removeAttribute( 'aria-busy' );
 				if ( ! settled ) {
 					if ( cancelButton ) cancelButton.disabled = cancelWasDisabled;
+					if ( dialog._cbHeaderCloseBtn ) dialog._cbHeaderCloseBtn.disabled = false;
 					updateConfirmAvailability();
 				}
 			}

@@ -36,6 +36,57 @@ dialog.cb-core-modal--core.cb-core-modal--workspace.is-expanded {
 	max-height: none;
 }
 
+/* Full viewport is a dedicated Base Modal presentation, never a global dialog override. */
+dialog.cb-core-modal--core.cb-core-modal--fullscreen {
+	box-sizing: border-box;
+	inset: 0;
+	margin: 0;
+	width: 100vw;
+	height: 100vh;
+	height: 100dvh;
+	max-width: none;
+	max-height: none;
+	border-radius: 0;
+}
+dialog.cb-core-modal--core.cb-core-modal--fullscreen .cb-core-modal__form {
+	height: 100%;
+	max-height: none;
+}
+dialog.cb-core-modal--core.cb-core-modal--fullscreen .cb-core-modal__title {
+	padding-inline-end: 44px;
+}
+dialog.cb-core-modal--core .cb-core-modal__header-close {
+	position: absolute;
+	inset-block-start: var(--cb-space-4);
+	inset-inline-end: var(--cb-space-4);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: var(--cb-radius-sm);
+	background: transparent;
+	color: var(--cb-text-muted);
+	cursor: pointer;
+}
+dialog.cb-core-modal--core .cb-core-modal__header-close:hover {
+	background: var(--cb-interactive-hover);
+	color: var(--cb-text-strong);
+}
+dialog.cb-core-modal--core .cb-core-modal__header-close:focus-visible {
+	outline: 2px solid var(--cb-interactive-focus);
+	outline-offset: 2px;
+}
+dialog.cb-core-modal--core .cb-core-modal__header-close:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+dialog.cb-core-modal--core .cb-core-modal__header-close .cb-core-icon {
+	pointer-events: none;
+}
+
 dialog.cb-core-modal--core::backdrop {
 	background: rgb(0 0 0 / 0.45);
 }
