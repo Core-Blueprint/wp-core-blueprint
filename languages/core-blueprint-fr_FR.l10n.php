@@ -485,8 +485,8 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'All designs' => 'Toutes les conceptions',
     'Current' => 'Actuel',
     'No designs found.' => 'Aucune conception trouvée.',
-    'Open / use selected' => 'Ouvrir / utiliser la sélection',
-    'Search designs and templates' => 'Rechercher des conceptions et des modèles',
+    'Open design' => 'Ouvrir la conception',
+    'Search designs' => 'Rechercher des conceptions',
     'Select a design.' => 'Sélectionnez une conception.',
 ] );
 
