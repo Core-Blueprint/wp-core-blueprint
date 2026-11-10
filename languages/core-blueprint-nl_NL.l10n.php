@@ -486,6 +486,8 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Current' => 'Huidig',
     'No designs found.' => 'Geen ontwerpen gevonden.',
     'Open / use selected' => 'Geselecteerde openen / gebruiken',
+    'Search designs and templates' => 'Zoek ontwerpen en templates',
+    'Select a design.' => 'Selecteer een ontwerp.',
 ] );
 
 return $catalog;
