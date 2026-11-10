@@ -313,13 +313,6 @@ async function activate() {
 		// one confirmed navigation and its beforeunload authorization.
 		decorateDesignerControl(close, 'x', {iconOnly: true, label: 'Close Designer'});
 		closeSlot.append(close);
-		if(mail) {
-			// The Mail-specific static bootstrap may register before or after
-			// this async Host mount. Retain only this private READY context.
-			installMailTemplateActions({
-				host,root,contextSlot,scopeToken:mail.dataset.cbMailScope || '',
-			});
-		}
 		if(loadingContext)loadingContext.hidden=true;
 		if(reports){origin.hidden=true;origin.setAttribute('inert','');}
 		screen.dataset.cbPlatformMounted='true';
@@ -379,25 +372,39 @@ async function activate() {
 				url.searchParams.set('template',selected.value);
 				location.assign(url.href);
 			});
-			// The trusted Mail select is in its final header slot and the
-			// original authorization listener is already attached.
-			if(selected instanceof HTMLSelectElement && !selected.multiple) {
-				const picker=window.cbCore?.selectPicker;
-				if(typeof picker?.enhance==='function') {
-					try {
-						picker.enhance(selected,{variant:'header'});
-					} catch(_error) {
-						// Progressive enhancement must not break native Mail
-						// navigation on an unavailable browser/UI capability.
-						const wrapper=selected.closest('.cb-core-select-picker--header');
-						if(wrapper){wrapper.before(selected);wrapper.remove();}
-						selected.hidden=false;
-						selected.removeAttribute('aria-hidden');
-						selected.removeAttribute('tabindex');
-						delete selected.dataset.cbCoreSelectPickerReady;
-					}
-				}
-			}
+			// The native select is a server-issued authorized catalog and remains
+			// the change-event compatibility boundary. Browser owns presentation.
+			selected.hidden=true;
+			selected.setAttribute('aria-hidden','true');
+			selected.tabIndex=-1;
+		}
+		if(mail) {
+			// Install after Exit Guard registration: Browser design switches
+			// must use the same Save / Discard authority as Close.
+			const designs = selected ? Array.from(selected.options).filter(option=>option.value).map(option=>({
+				id:option.value, title:option.textContent.trim(),
+				provider:option.parentElement?.label||'',
+			})) : [];
+			const openDesign = async item => {
+				if(!selected||host.state!=='READY'||!item||typeof item.id!=='string'
+					||!designs.some(design=>design.id===item.id))return false;
+				if(item.id===resourceKey)return true;
+				const guard=window.cbCore?.designerExitGuard;
+				if(typeof guard?.request!=='function')return false;
+				const url=new URL(location.href);
+				url.searchParams.set('template',item.id);
+				return await guard.request(root,()=>{
+					location.assign(url.href);
+					window.setTimeout(()=>guard.resetApproval(root),0);
+					return true;
+				});
+			};
+			installMailTemplateActions({
+				host,root,contextSlot,
+				trigger:toolbar.querySelector('[data-cb-platform-browser]'),
+				designs,activeDesignId:resourceKey,onOpenDesign:openDesign,
+				scopeToken:mail.dataset.cbMailScope || '',
+			});
 		}
 	} catch(error) {
 		failStartup(String(error?.code||error?.message||'HOST_CONTEXT_REFUSED'));

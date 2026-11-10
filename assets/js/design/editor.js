@@ -722,6 +722,14 @@ const composePlatformChrome = (root, profileId) => {
 		'data-cb-design-shell-resource-group': '', role: 'group', 'aria-label': 'Design browser',
 	});
 	resourceGroup.append(contextSlot);
+	if (profileId === 'base/mail') {
+		// One canonical Browser launch control, bound only after native Host READY.
+		// The resource catalog remains consumer-owned; the button is Base chrome.
+		const browserButton = button('Browser', 'data-cb-platform-browser');
+		browserButton.disabled = true;
+		decorateDesignerControl(browserButton, 'folder-open', {iconOnly: true, label: 'Browser'});
+		resourceGroup.append(browserButton);
+	}
 	const operationGroup = node('div', 'cb-core-design-shell__toolbar-group cb-core-design-shell__toolbar-group--operations', {
 		'data-cb-design-shell-actions-group': '', role: 'group', 'aria-label': 'History and document actions',
 	});
