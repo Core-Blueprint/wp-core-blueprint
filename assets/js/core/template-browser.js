@@ -97,6 +97,7 @@ function createBrowser( root, options = {} ) {
 
     const designButton = hasDesigns ? el( 'button', 'cb-template-browser__origin cb-template-browser__origin--designs',
         label( 'designs', 'Designs' ) ) : null;
+    let templateButton = null;
     if ( designButton ) {
         designButton.type = 'button';
         designButton.dataset.browserView = 'designs';
@@ -106,7 +107,7 @@ function createBrowser( root, options = {} ) {
             refresh();
         } );
         sidebar.append( designButton );
-        const templateButton = el( 'button', 'cb-template-browser__origin cb-template-browser__origin--templates',
+        templateButton = el( 'button', 'cb-template-browser__origin cb-template-browser__origin--templates',
             label( 'templates', 'Templates' ) );
         templateButton.type = 'button';
         templateButton.dataset.browserView = 'templates';
@@ -141,7 +142,6 @@ function createBrowser( root, options = {} ) {
     function syncNavigation() {
         if ( designButton ) {
             designButton.setAttribute( 'aria-pressed', String( state.view === 'designs' ) );
-            const templateButton = sidebar.querySelector( '[data-browser-view="templates"]' );
             templateButton?.setAttribute( 'aria-pressed', String( state.view === 'templates' ) );
         }
         originButtons.forEach( ( item ) => item.setAttribute( 'aria-pressed',
@@ -337,7 +337,7 @@ function createBrowser( root, options = {} ) {
 
     async function load( reset = false ) {
         if ( state.destroyed ) return;
-        categorySelect.parentElement.hidden = state.view === 'designs';
+        if ( categorySelect.parentElement ) categorySelect.parentElement.hidden = state.view === 'designs';
         if ( state.view === 'designs' ) {
             renderDesigns();
             return;
