@@ -880,7 +880,7 @@ final class Assets {
 			'cb-core-css-status-indicators-native',
 			CB_CORE_URL . 'assets/css/components/status-indicators-native.css',
 			[],
-			CB_CORE_VERSION
+			self::asset_revision( 'assets/css/components/status-indicators-native.css' )
 		);
 	}
 

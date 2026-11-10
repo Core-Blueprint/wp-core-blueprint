@@ -1,5 +1,7 @@
 /**
  * WordPress-native adapter for the public Status presentation.
+ * Core semantic tokens are optional: WordPress admin colors are fallbacks.
+ * The status label carries the text meaning; the dot remains decorative.
  */
 .cb-core-status {
 	display: inline-flex;
@@ -15,17 +17,17 @@
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background: #646970;
+	background: var(--cb-text-muted, #646970);
 }
 
-.cb-core-status__dot--success { background: #00a32a; }
-.cb-core-status__dot--warning { background: #dba617; }
-.cb-core-status__dot--danger  { background: #d63638; }
-.cb-core-status__dot--info    { background: #2271b1; }
-.cb-core-status__dot--muted   { background: #8c8f94; }
+.cb-core-status__dot--success { background: var(--cb-success, #00a32a); }
+.cb-core-status__dot--warning { background: var(--cb-warning, #dba617); }
+.cb-core-status__dot--danger  { background: var(--cb-danger, #d63638); }
+.cb-core-status__dot--info    { background: var(--cb-accent, var(--wp-admin-theme-color, #2271b1)); }
+.cb-core-status__dot--muted   { background: var(--cb-text-muted, #8c8f94); }
 
 .cb-core-status__label {
-	color: #1d2327;
+	color: var(--cb-text, #1d2327);
 	font-weight: 500;
 }
 
