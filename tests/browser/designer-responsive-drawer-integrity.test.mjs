@@ -29,6 +29,10 @@ function inspectBrowser() {
         const pause = () => new Promise(resolve => setTimeout(resolve, 220));
         const snap = () => ({
             leftVisible: visible(left), rightVisible: visible(right),
+            leftComputedVisibility: getComputedStyle(left).visibility,
+            rightComputedVisibility: getComputedStyle(right).visibility,
+            leftTransitionDuration: getComputedStyle(left).transitionDuration,
+            rightTransitionDuration: getComputedStyle(right).transitionDuration,
             leftCollapsed: root.classList.contains('is-left-panel-collapsed'),
             rightCollapsed: root.classList.contains('is-right-panel-collapsed'),
             backdropHidden: backdrop.hidden, backdropText: backdrop.textContent.trim(),
@@ -79,7 +83,14 @@ function fixture() {
         'html,body{margin:0}body{color:white;background:#0b0d12;}' +
         '.cb-core-platform-screen{position:relative;inset:auto;height:650px;width:100%;}' +
         '.cb-core-design-shell__workspace--collapsible{height:530px;}' +
-        '.cb-core-design-shell__canvas{background:#eee;min-width:0;}</style>' + styles +
+        '.cb-core-design-shell__canvas{background:#eee;min-width:0;}' +
+        // --virtual-time-budget advances JS timers without guaranteeing that
+        // CSS transition frames have completed. Test final state, not motion.
+        // Production styles are unchanged: this applies to the fixture only.
+        '.cb-core-platform-screen .cb-core-design-shell--native > ' +
+        '.cb-core-design-shell__workspace--collapsible > ' +
+        ':is(.cb-core-design-shell__palette,.cb-core-design-shell__sidebar)' +
+        '{transition:none!important;}</style>' + styles +
         '</head><body><div class="cb-core-platform-screen" data-cb-platform-mounted="true">' +
         '<div class="cb-core-design-shell cb-core-form-scope" id="outer-host">' +
         '<div data-cb-platform-mount>' +
@@ -122,12 +133,20 @@ for (const width of [1281, 1280, 1263, 768]) {
             assert.ok(result, 'Browser report missing: ' + (error?.[1] || run.stderr));
             const value = JSON.parse(decodeURIComponent(result[1]));
             assert.equal(value.compact, width <= 1280);
-            assert.equal(value.initial.leftVisible, width > 1280);
-            assert.equal(value.initial.rightVisible, width > 1280);
+            assert.equal(value.initial.leftTransitionDuration, '0s',
+                'The Chromium fixture must disable transitional snapshots');
+            assert.equal(value.initial.rightTransitionDuration, '0s',
+                'The Chromium fixture must disable transitional snapshots');
+            assert.equal(value.initial.leftVisible, width > 1280,
+                'Initial left rail computed visibility: ' + JSON.stringify(value.initial));
+            assert.equal(value.initial.rightVisible, width > 1280,
+                'Initial right rail computed visibility: ' + JSON.stringify(value.initial));
             assert.equal(value.initial.backdropHidden, true);
             assert.equal(value.initial.backdropText, '');
             assert.equal(value.initial.backdropName, 'Close sidebar');
             if (width <= 1280) {
+                assert.equal(value.initial.leftCollapsed, true, 'Left starts collapsed');
+                assert.equal(value.initial.rightCollapsed, true, 'Right starts collapsed');
                 assert.equal(value.initial.leftInert, true);
                 assert.equal(value.initial.rightInert, true);
                 assert.equal(value.initial.leftAriaHidden, 'true');
