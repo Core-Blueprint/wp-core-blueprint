@@ -41,6 +41,9 @@ function inspectBrowser() {
             leftAriaHidden: left.getAttribute('aria-hidden'),
             rightAriaHidden: right.getAttribute('aria-hidden'),
             launcherExpanded: rightLauncher.getAttribute('aria-expanded'),
+            leftLauncherExpanded: leftLauncher.getAttribute('aria-expanded'),
+            leftLauncherBorder: getComputedStyle(leftLauncher).borderTopColor,
+            rightLauncherBorder: getComputedStyle(rightLauncher).borderTopColor,
         });
         try {
             configurePlatformSidebars(root, new AbortController().signal);
@@ -96,9 +99,9 @@ function fixture() {
         '<div data-cb-platform-mount>' +
         '<div class="cb-core-design-shell cb-core-design-shell--native" data-cb-platform-canvas id="inner-shell">' +
         '<div class="cb-core-design-shell__toolbar cb-core-design-shell__toolbar--designer">' +
-        '<button type="button" class="cb-core-design-shell__drawer-launcher"' +
+        '<button type="button" class="cb-core-design-shell__drawer-launcher cb-core-design-shell__icon-button"' +
         ' data-cb-design-shell-drawer-toggle="left">Elements</button>' +
-        '<button type="button" class="cb-core-design-shell__drawer-launcher"' +
+        '<button type="button" class="cb-core-design-shell__drawer-launcher cb-core-design-shell__icon-button"' +
         ' data-cb-design-shell-drawer-toggle="right">Inspector</button>' +
         '</div><div class="cb-core-design-shell__workspace cb-core-design-shell__workspace--collapsible">' +
         '<section class="cb-core-design-shell__palette cb-core-design-shell__palette--tabbed">' +
@@ -144,7 +147,10 @@ for (const width of [1281, 1280, 1263, 768]) {
             assert.equal(value.initial.backdropHidden, true);
             assert.equal(value.initial.backdropText, '');
             assert.equal(value.initial.backdropName, 'Close sidebar');
+            const accentBorder = 'rgb(0, 191, 255)';
             if (width <= 1280) {
+                assert.notEqual(value.initial.leftLauncherBorder, accentBorder);
+                assert.notEqual(value.initial.rightLauncherBorder, accentBorder);
                 assert.equal(value.initial.leftCollapsed, true, 'Left starts collapsed');
                 assert.equal(value.initial.rightCollapsed, true, 'Right starts collapsed');
                 assert.equal(value.initial.leftInert, true);
@@ -158,15 +164,28 @@ for (const width of [1281, 1280, 1263, 768]) {
                 assert.equal(value.rightOpen.leftInert, true);
                 assert.equal(value.rightOpen.rightInert, false);
                 assert.equal(value.rightOpen.launcherExpanded, 'true');
+                assert.equal(value.rightOpen.rightLauncherBorder, accentBorder,
+                    'Expanded right drawer should reuse toolbar cyan active border');
+                assert.notEqual(value.rightOpen.leftLauncherBorder, accentBorder,
+                    'Closed left drawer must not look active');
                 assert.equal(value.escapeClosed.leftVisible, false);
                 assert.equal(value.escapeClosed.rightVisible, false);
                 assert.equal(value.escapeClosed.backdropHidden, true);
+                assert.equal(value.escapeClosed.launcherExpanded, 'false',
+                    'Escape clears the expanded state without suppressing keyboard focus');
                 assert.equal(value.focusReturnedOnEscape, true);
                 assert.equal(value.leftOpen.leftVisible, true);
                 assert.equal(value.leftOpen.rightVisible, false);
+                assert.equal(value.leftOpen.leftLauncherBorder, accentBorder,
+                    'Expanded left drawer should reuse toolbar cyan active border');
+                assert.equal(value.leftOpen.launcherExpanded, 'false',
+                    'The right drawer remains collapsed when the left opens');
+                assert.equal(value.leftOpen.leftLauncherExpanded, 'true');
                 assert.equal(value.backdropClosed.backdropHidden, true);
                 assert.equal(value.backdropClosed.leftVisible, false);
                 assert.equal(value.backdropClosed.rightVisible, false);
+                assert.equal(value.backdropClosed.leftLauncherExpanded, 'false',
+                    'Backdrop clears the expanded state but returns keyboard focus');
                 assert.equal(value.focusReturnedOnBackdrop, true);
             } else {
                 assert.equal(value.rightLauncherDisplay, 'none');

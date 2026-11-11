@@ -790,8 +790,8 @@ const composePlatformChrome = (root, profileId) => {
 	const rightLauncher = button('Inspector', 'data-cb-design-shell-drawer-toggle', 'right');
 	leftLauncher.classList.add('cb-core-design-shell__drawer-launcher');
 	rightLauncher.classList.add('cb-core-design-shell__drawer-launcher');
-	decorateDesignerControl(leftLauncher, 'shapes', {iconOnly: true, label: 'Open Elements and Layers'});
-	decorateDesignerControl(rightLauncher, 'sliders-horizontal', {iconOnly: true, label: 'Open Inspector and Settings'});
+	decorateDesignerControl(leftLauncher, 'panel-left', {iconOnly: true, label: 'Open Elements and Layers'});
+	decorateDesignerControl(rightLauncher, 'panel-right', {iconOnly: true, label: 'Open Inspector and Settings'});
 	startZone.append(leftLauncher);
 	endZone.prepend(rightLauncher);
 	root.append(toolbar, notice, workspace);

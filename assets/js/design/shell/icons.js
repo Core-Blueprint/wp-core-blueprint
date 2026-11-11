@@ -53,6 +53,15 @@ const ICONS = Object.freeze({
 		['line', { x1: '8', x2: '16', y1: '21', y2: '21' }],
 		['line', { x1: '12', x2: '12', y1: '17', y2: '21' }],
 	]),
+	// Native Designer responsive sidebar toggles (canonical Lucide panel glyphs).
+	'panel-left': Object.freeze([
+		['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
+		['path', { d: 'M9 3v18' }],
+	]),
+	'panel-right': Object.freeze([
+		['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
+		['path', { d: 'M15 3v18' }],
+	]),
 	'folder-open': Object.freeze([
 		['path', { d: 'M20 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z' }],
 		['path', { d: 'M2 10h20' }],
