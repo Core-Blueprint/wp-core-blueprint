@@ -36,15 +36,21 @@ function inspect() {
         const record = () => {
             const trigger = group.querySelector('[data-cb-design-shell-viewport-trigger]');
             const options = group.querySelector('.cb-core-design-shell__viewport-options');
+            // Snapshot the live DOM after the component has sorted and moved
+            // its original button nodes. The fixture's initial array is
+            // deliberately unsorted and cannot prove rendered order.
+            const ordered = [...options.querySelectorAll('[data-cb-design-shell-viewport]')];
             return {
                 compact: group.classList.contains('is-viewport-compact'),
                 triggerVisible: shown(trigger),
                 optionsVisible: shown(options) && !options.hidden,
                 expanded: trigger.getAttribute('aria-expanded'),
                 active: controller.activeViewport,
-                sameElements: buttons.every((b, i) => original[i] === b && options.contains(b)),
-                buttonOrder: buttons.map(b => b.dataset.cbDesignShellViewport),
-                pressed: buttons.map(b => b.getAttribute('aria-pressed')),
+                sameElements: ordered.length === original.length
+                    && new Set(ordered).size === original.length
+                    && ordered.every(b => original.includes(b) && options.contains(b)),
+                buttonOrder: ordered.map(b => b.dataset.cbDesignShellViewport),
+                pressed: ordered.map(b => b.getAttribute('aria-pressed')),
                 optionsColumns: getComputedStyle(options).flexDirection,
                 optionsBounds: options.getBoundingClientRect().toJSON(),
             };
