@@ -779,7 +779,9 @@ const composePlatformChrome = (root, profileId) => {
 	};
 	tabs(palette, 'palette', [['elements','Elements'],['layers','Layers']]);
 	tabs(sidebar, null, [['inspector','Inspector'],['settings','Settings']]);
-	const backdrop = button('Close panel', 'data-cb-design-shell-drawer-backdrop');
+	// The backdrop is an accessible action surface, not visible panel copy.
+	// Its aria-label names the action; it intentionally has no text node.
+	const backdrop = button('', 'data-cb-design-shell-drawer-backdrop');
 	backdrop.className = 'cb-core-design-shell__drawer-backdrop';
 	backdrop.setAttribute('aria-label', 'Close sidebar');
 	backdrop.hidden = true;

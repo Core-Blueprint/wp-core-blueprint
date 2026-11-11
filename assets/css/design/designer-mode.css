@@ -133,20 +133,20 @@
 	display: none;
 }
 
-.cb-core-design-shell.is-left-panel-collapsed .cb-core-design-shell__workspace--collapsible {
+.cb-core-design-shell.is-left-panel-collapsed > .cb-core-design-shell__workspace--collapsible {
 	--cb-design-left-track: var(--cb-design-sidebar-header-height);
 }
 
-.cb-core-design-shell.is-right-panel-collapsed .cb-core-design-shell__workspace--collapsible {
+.cb-core-design-shell.is-right-panel-collapsed > .cb-core-design-shell__workspace--collapsible {
 	--cb-design-right-track: var(--cb-design-sidebar-header-height);
 }
 
 @media (min-width: 1281px) {
-	.cb-core-design-shell.is-left-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
+	.cb-core-design-shell.is-left-panel-collapsed > .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
 		padding: 0;
 	}
 
-	.cb-core-design-shell.is-left-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette > .cb-core-design-shell__panel-header {
+	.cb-core-design-shell.is-left-panel-collapsed > .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette > .cb-core-design-shell__panel-header {
 		margin: 0;
 	}
 
@@ -165,8 +165,8 @@
 		grid-column: 1;
 	}
 
-	.cb-core-design-shell.is-left-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette > :not(.cb-core-design-shell__panel-header),
-	.cb-core-design-shell.is-right-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar > :not(.cb-core-design-shell__panel-header) {
+	.cb-core-design-shell.is-left-panel-collapsed > .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette > :not(.cb-core-design-shell__panel-header),
+	.cb-core-design-shell.is-right-panel-collapsed > .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar > :not(.cb-core-design-shell__panel-header) {
 		display: none !important;
 	}
 }
@@ -340,6 +340,9 @@
 		transition: transform 170ms cubic-bezier(.2, .8, .2, 1), visibility 170ms linear;
 	}
 
+	/* Drawer ownership is tied to the shell's DIRECT workspace child.
+	 * Native Host mounts a nested Design shell; an ancestor uncollapsed shell
+	 * must not override the inner shell's collapsed drawer visibility. */
 	/* Drawer rails must preserve the same fixed header/tabs and scrolling
 	 * panel composition as the desktop Designer. The generic drawer uses
 	 * display:block!important, so restore flex specifically for tabbed rails. */
@@ -362,20 +365,20 @@
 		grid-row: 1;
 	}
 
-	.cb-core-design-shell.is-left-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
+	.cb-core-design-shell.is-left-panel-collapsed > .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette {
 		visibility: hidden;
 		pointer-events: none;
 		transform: translateX(calc(-100% - var(--cb-space-3)));
 	}
 
-	.cb-core-design-shell.is-right-panel-collapsed .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+	.cb-core-design-shell.is-right-panel-collapsed > .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
 		visibility: hidden;
 		pointer-events: none;
 		transform: translateX(calc(100% + var(--cb-space-3)));
 	}
 
-	.cb-core-design-shell:not(.is-left-panel-collapsed) .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
-	.cb-core-design-shell:not(.is-right-panel-collapsed) .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
+	.cb-core-design-shell:not(.is-left-panel-collapsed) > .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__palette,
+	.cb-core-design-shell:not(.is-right-panel-collapsed) > .cb-core-design-shell__workspace--collapsible > .cb-core-design-shell__sidebar {
 		visibility: visible;
 		pointer-events: auto;
 		transform: translateX(0);

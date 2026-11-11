@@ -452,3 +452,13 @@ Before a Base Designer change is considered release-ready, source/regression cov
 - no browser-console or PHP errors introduced by the integration.
 
 A Base-owned Mail screen may remain a visual quality benchmark, but it is not sufficient by itself to prove the external public consumer boundary.
+
+## FIELD-06 — Native responsive drawer ownership (2026-11-11)
+
+**Cause verified in source and reproduced with Chromium at 1263px:** the native trusted Host mounts a nested `.cb-core-design-shell--native` stage inside a leased outer `.cb-core-design-shell`. The responsive CSS previously used descendant selectors for open/closed state. The outer shell lacks the inner stage's collapsed class, so its `:not(.is-left-panel-collapsed)` rule could match the nested workspace and override the inner shell's `visibility: hidden` state. JavaScript correctly reported `is-left-panel-collapsed`, while the visible left pane contradicted `inert` and `aria-hidden`.
+
+**Base-only correction:** all collapsed/open `workspace--collapsible` state selectors in `designer-mode.css` now bind to the owning shell's **direct** workspace child (`>`), preventing ancestor-state leakage for native Mail/Reports and other shells. The existing `configurePlatformSidebars()` controller remains the single authority for collapse, drawer exclusivity, focus management, backdrop, Enter/Tab/Escape and abort-scoped listeners. No new drawer engine or legacy compatibility path.
+
+The backdrop is an empty visual button with `aria-label="Close sidebar"` rather than a button with visible `Close panel` text. It retains its click handler and keyboard accessibility. The backdrop remains separate from the dialog rail and only appears when a compact drawer is open.
+
+**Regression gates:** `tests/js/designer-responsive-drawer-source.test.mjs` checks the native Host nesting, scoped selectors, accessibility and existing JS contracts. `tests/browser/designer-responsive-drawer-integrity.test.mjs` extracts the *actual* Base drawer controller and loads the *actual* Base styles in headless Chromium using a nested Host fixture. It checks computed panel visibility at 1281, 1280, 1263 and 768 CSS pixels, drawer exclusivity, backdrop presentation, aria/inert, Escape and focus restoration. Browser test intentionally requires a locally installed Chromium (`CHROMIUM_BIN` optional). Existing Level 1, clean dev build and actual WordPress FIELD acceptance remain separate gates. No merge, release or deploy is implied by source tests.
