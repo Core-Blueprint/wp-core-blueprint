@@ -1231,7 +1231,7 @@ export const attachTrustedDesignerHost = ({
 			configurePlatformSidebars(stagedRoot, signal);
 			configurePlatformBrand(stagedRoot, signal);
 			if (activeRegistry.profileId === 'base/mail') {
-				configureDesignerViewports(stagedRoot, {active: 'desktop'});
+				configureDesignerViewports(stagedRoot, {active: 'desktop', signal});
 			} else if (activeRegistry.profileId === 'base/reports') {
 				configureDesignerDocumentView(stagedRoot, {mode: 'fit', signal});
 			}

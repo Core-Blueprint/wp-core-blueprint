@@ -295,3 +295,70 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 .cb-core-designer-exit-error[hidden] {
 	display: none !important;
 }
+
+/*
+ * FIELD-06C — one viewport component, two responsive presentations.
+ * The very same Mobile/Tablet/Desktop buttons are inline at full capacity
+ * and in a horizontal popover when the measured toolbar is too narrow.
+ */
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport {
+	position: relative;
+}
+
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport:not(.is-viewport-compact) > .cb-core-design-shell__viewport-trigger {
+	display: none !important;
+}
+
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport > .cb-core-design-shell__viewport-options {
+	position: static;
+	display: inline-flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	gap: var(--cb-space-2, 8px);
+	inset: auto;
+	width: auto;
+	min-width: 0;
+	max-width: none;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	transform: none;
+}
+
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport.is-viewport-compact > .cb-core-design-shell__viewport-trigger {
+	display: inline-flex !important;
+}
+
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport.is-viewport-compact > .cb-core-design-shell__viewport-options {
+	position: absolute;
+	inset-block-start: calc(100% + var(--cb-space-2, 8px));
+	inset-inline-start: 50%;
+	z-index: 65;
+	display: flex;
+	width: max-content;
+	min-width: 0;
+	max-width: min(20rem, calc(100vw - 2rem));
+	padding: var(--cb-space-2, 8px);
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+	background: var(--cb-surface-1);
+	box-shadow: 0 14px 34px rgba(0, 0, 0, .24);
+	transform: translateX(calc(-50% + var(--cb-viewport-popover-shift, 0px)));
+}
+
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__viewport-options[hidden] {
+	display: none !important;
+}
+
+/* Keep the popover above the workarea without altering the toolbar at rest. */
+.cb-core-design-shell__toolbar--designer.has-viewport-popover-open {
+	z-index: 65;
+}
+
+/* Do not hide the one viewport trigger in the generic compact-toolbar state. */
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--viewport.has-adaptive-viewport-switcher {
+	display: inline-flex !important;
+}

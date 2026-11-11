@@ -157,7 +157,8 @@ html.cb-core-design-shell-focus-mode body {
 .cb-core-design-shell__toolbar-group--viewport .cb-core-design-shell__icon-button.is-active,
 .cb-core-design-shell__toolbar-group--viewport .cb-core-design-shell__icon-button[aria-pressed="true"],
 .cb-core-design-shell__icon-button[data-cb-design-shell-fullscreen][aria-pressed="true"],
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__drawer-launcher[aria-expanded="true"] {
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__drawer-launcher[aria-expanded="true"],
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__viewport-trigger[aria-expanded="true"] {
 	border-color: var(--cb-accent) !important;
 	box-shadow: inset 0 0 0 1px var(--cb-accent);
 }
