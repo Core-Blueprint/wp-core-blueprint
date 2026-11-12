@@ -42,21 +42,21 @@ test('FIELD-05D: generic form label alignment excludes both selectable Browser c
 test('FIELD-05D: Design resources own a two-column grid, radio first and text second', () => {
     const card = rule(
         browserStyles,
-        '.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design {'
+        '.cb-template-browser--workspace[data-browser-view="designs"] .cb-template-browser__card--design {'
     );
     assert.match(card, /display:\s*grid;/);
     assert.match(card, /grid-template-columns:\s*20px minmax\(0,\s*1fr\);/);
     assert.match(card, /min-height:\s*74px;/);
     const radio = rule(
         browserStyles,
-        '.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__choice {'
+        '.cb-template-browser--workspace[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__choice {'
     );
     assert.match(radio, /position:\s*static;/);
     assert.match(radio, /grid-column:\s*1;/);
     assert.match(radio, /grid-row:\s*1;/);
     const details = rule(
         browserStyles,
-        '.cb-template-browser--modal[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-body {'
+        '.cb-template-browser--workspace[data-browser-view="designs"] .cb-template-browser__card--design .cb-template-browser__card-body {'
     );
     assert.match(details, /grid-column:\s*2;/);
     assert.match(details, /grid-row:\s*1;/);
@@ -65,8 +65,8 @@ test('FIELD-05D: Design resources own a two-column grid, radio first and text se
     assert.match(browserStyles, /cb-template-browser__current\s*\{[^}]*margin-inline-start:\s*auto;/);
 });
 
-test('FIELD-05D: template grid and standalone Library keep their existing semantics', () => {
-    assert.match(browserStyles, /\.cb-template-browser--modal\[data-browser-view="templates"\] \.cb-template-browser__grid\s*\{/);
+test('FIELD-05D: shared template grid and global Library retain safe semantics', () => {
+    assert.match(browserStyles, /\.cb-template-browser--workspace\[data-browser-view="templates"\] \.cb-template-browser__grid\s*\{/);
     assert.match(browserSource, /const article = el\( contextual && !menu \? 'label' : 'article', 'cb-template-browser__card' \)/);
     assert.match(browserSource, /selection\.append\( preview \)/);
     assert.match(browserStyles, /\.cb-template-library-page \.cb-template-browser \{/);
