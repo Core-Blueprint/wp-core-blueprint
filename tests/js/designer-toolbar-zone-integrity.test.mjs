@@ -26,15 +26,29 @@ test('FIELD-06E: tablet End owns intrinsic width instead of competing fractional
 		'Equal-width end tracks cause the Browser control to overlap History');
 });
 
-test('FIELD-06E: narrow toolbars give End its own row, retaining all commands', () => {
-	assert.match(shared,
-		/@media \(max-width: 700px\)[\s\S]*?grid-template-columns: minmax\(0, 1fr\) max-content minmax\(0, 1fr\);/);
-	assert.match(shared, /grid-column: 1 \/ -1;\s*grid-row: 2;/);
-	assert.match(shared, /justify-content: flex-end;\s*flex-wrap: wrap;/);
-	assert.match(shared, /cb-core-design-shell__toolbar-group--resource\s*\{\s*flex-shrink: 0;/);
-	assert.match(native,
-		/@media \(max-width: 700px\)[\s\S]*?grid-template-columns: minmax\(0, 1fr\) max-content minmax\(0, 1fr\);/);
-	assert.doesNotMatch(shared,
-		/@media \(max-width: 700px\)[\s\S]*?\.cb-core-design-shell__toolbar-zone--end[^}]*display:\s*none/,
-		'The End zone must never be hidden to solve a collision');
+test('FIELD-06E R2: every responsive rail stays on one row, and resource actions cannot shrink into History', () => {
+	assert.match(shared, /grid-column: auto;\s*grid-row: 1;\s*flex-wrap: nowrap;/);
+	assert.match(shared, /\.cb-core-design-shell__toolbar--designer \.cb-core-design-shell__toolbar-group--resource\s*\{\s*flex: 0 0 auto;/);
+	assert.doesNotMatch(shared, /grid-row:\s*2;/);
+	assert.doesNotMatch(shared, /flex-wrap:\s*wrap;/);
+	assert.doesNotMatch(native, /grid-template-columns: minmax\(0, 1fr\) max-content minmax\(0, 1fr\);/);
+});
+
+test('FIELD-06E R2: exceptionally narrow screens scroll the one row without shrinking tap targets', () => {
+	assert.match(shared, /@media \(max-width: 700px\)[\s\S]*?grid-template-columns: max-content max-content max-content;/);
+	assert.match(shared, /overflow-x: auto;/);
+	assert.match(shared, /scrollbar-width: thin;/);
+	assert.match(native, /@media \(max-width: 700px\)[\s\S]*?grid-template-columns: max-content max-content max-content;/);
+	assert.match(shared, /position: fixed;\s*inset-block-start: var\(--cb-toolbar-popover-fixed-top/);
+	assert.match(shared, /inset-inline-start: var\(--cb-toolbar-popover-fixed-left/);
+	assert.doesNotMatch(shared, /max-width: 700px\)[\s\S]*?--cb-design-toolbar-control-size:/);
+});
+
+test('FIELD-06E R2: shared Viewport/History popover positioning remains accessible inside narrow scrollers', () => {
+	const popover = read('assets/js/design/shell/toolbar-popover.js');
+	assert.match(popover, /const narrowMedia = view\.matchMedia\?\.\('\(max-width: 700px\)'\)/);
+	assert.match(popover, /options\.style\.setProperty\('--cb-toolbar-popover-fixed-left', left \+ 'px'\)/);
+	assert.match(popover, /options\.style\.setProperty\('--cb-toolbar-popover-fixed-top', top \+ 'px'\)/);
+	assert.match(popover, /toolbar\.addEventListener\('scroll', position, \{signal: local\.signal, passive: true\}\)/);
+	assert.match(popover, /trigger\.setAttribute\('aria-expanded', open \? 'true' : 'false'\)/);
 });

@@ -12,7 +12,7 @@ const chrome = process.env.CHROMIUM_BIN || ['chromium', 'chromium-browser', 'goo
 const cases = [
     [1600,1600,40],[1281,1281,40],[1280,1280,40],[1024,1024,40],
     [920,920,60],[760,760,60],[700,700,60],[600,600,60],
-    [500,500,60],[500,375,40],[500,320,40],
+    [500,500,60],[440,440,40],[375,375,40],[320,320,40],
 ];
 
 function fixture(viewport, width, height) {
@@ -37,11 +37,18 @@ function fixture(viewport, width, height) {
                 return {left:r.left,right:r.right,top:r.top,bottom:r.bottom};};
             const controls=[...toolbar.querySelectorAll('[data-test-control]')].filter(el=>
                 el.getClientRects().length>0).map(el=>({name:el.dataset.testControl,...box(el)}));
+            const close=toolbar.querySelector('[data-test-control="close"]');
             const zones=Object.fromEntries(['start','center','end'].map(name=>
                 [name,box(toolbar.querySelector('.cb-core-design-shell__toolbar-zone--'+name))]));
+            const initialScroll=toolbar.scrollLeft;
+            const scrollable=toolbar.scrollWidth>toolbar.clientWidth+1;
+            toolbar.scrollLeft=toolbar.scrollWidth;
+            const closeAtRight=box(close).right<=box(toolbar).right+2;
+            const scrollReachedEnd=toolbar.scrollLeft>initialScroll+1;
             document.documentElement.setAttribute('data-zone-report',
                 encodeURIComponent(JSON.stringify({bounds:box(toolbar),zones,controls,
-                    columns:getComputedStyle(toolbar).gridTemplateColumns})));
+                    columns:getComputedStyle(toolbar).gridTemplateColumns,
+                    viewport:innerWidth,scrollable,scrollReachedEnd,closeAtRight})));
         });
     };
     return '<!doctype html><html><head><meta charset="utf-8">'+links+'<style>'+
@@ -102,15 +109,24 @@ for(const [viewport,width,height] of cases) {
                 if(x>1&&y>1)overlaps.push(a.name+' vs '+b.name);
             }
             assert.deepEqual(overlaps,[],'Overlapping controls at '+width+'px: '+JSON.stringify(r));
-            for(const a of r.controls)
-                assert.ok(a.left>=r.bounds.left-2&&a.right<=r.bounds.right+2,
-                    a.name+' escaped toolbar at '+width+'px: '+JSON.stringify(r));
-            if(viewport<=700)
-                assert.ok(r.zones.end.top>=r.zones.center.bottom,
-                    'End must be on its own row: '+JSON.stringify(r));
-            else
-                assert.ok(r.zones.end.top<r.zones.center.bottom,
-                    'Desktop/tablet toolbar must be a single row: '+JSON.stringify(r));
+            // The toolbar ALWAYS occupies one row; no mobile-only row 2.
+            for(const name of ['start','center','end'])
+                assert.ok(Math.abs(r.zones[name].top-r.zones.start.top)<=2,
+                    name+' moved to a second row at '+width+'px: '+JSON.stringify(r));
+            if(r.scrollable) {
+                // Even with enlarged controls, every original command stays
+                // on row one and Close can be reached with a horizontal swipe.
+                assert.equal(r.scrollReachedEnd,true);
+                assert.equal(r.closeAtRight,true,'Close must be reachable by scrolling');
+            } else {
+                for(const a of r.controls)
+                    assert.ok(a.left>=r.bounds.left-2&&a.right<=r.bounds.right+2,
+                        a.name+' escaped toolbar at '+width+'px: '+JSON.stringify(r));
+            }
+            if(width<=375)
+                assert.equal(r.scrollable,true,
+                    'Very narrow toolbars cannot show full-size buttons without horizontal scrolling');
+
         }finally{await rm(dir,{recursive:true,force:true});}
     });
 }

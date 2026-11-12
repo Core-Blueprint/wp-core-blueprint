@@ -47,6 +47,7 @@ function runFixture() {
                 originalButtons: live.length === original.length && live.every(b => original.includes(b)),
                 buttonOrder: live.map(b => b.hasAttribute('data-cb-design-shell-undo') ? 'undo' : 'redo'),
                 direction: getComputedStyle(options).flexDirection,
+                position: getComputedStyle(options).position,
                 border: getComputedStyle(trigger).borderTopColor,
                 bounds: {left: bounds.left, right: bounds.right},
             };
@@ -117,7 +118,7 @@ function fixture() {
         '<script>' + runtime + '\n(' + runFixture.toString() + ')();</script></body></html>';
 }
 
-for (const width of [1600, 1281, 1280, 1024, 768, 600]) {
+for (const width of [1600, 1281, 1280, 1024, 768, 700, 600, 375, 320]) {
     test('FIELD-06D Chromium shared History and brand at ' + width + 'px', async () => {
         assert.ok(browser, 'Chromium required; set CHROMIUM_BIN if necessary');
         const directory = await mkdtemp(join(tmpdir(), 'cb-history-field06d-'));
@@ -147,8 +148,10 @@ for (const width of [1600, 1281, 1280, 1024, 768, 600]) {
                 assert.equal(v.open.expanded, 'true');
                 assert.equal(v.open.optionsVisible, true);
                 assert.equal(v.open.direction, 'row');
+                if (width <= 700) assert.equal(v.open.position, 'fixed');
                 assert.equal(v.open.border, 'rgb(0, 191, 255)');
-                assert.ok(v.open.bounds.left >= 7 && v.open.bounds.right <= width - 7);
+                assert.ok(v.open.bounds.left >= 7 && v.open.bounds.right <= v.width - 7,
+                    'History popup must remain inside the actual Chromium CSS viewport');
                 assert.equal(v.disabledClick.optionsVisible, true);
                 assert.equal(v.chosen.optionsVisible, false);
                 assert.equal(v.chosen.expanded, 'false');

@@ -49,9 +49,27 @@ export const configureDesignerToolbarPopover = (root, {
 	let compact = false;
 	let open = false;
 	const media = view.matchMedia?.('(max-width: 1280px)') ?? null;
+	const narrowMedia = view.matchMedia?.('(max-width: 700px)') ?? null;
 	const position = () => {
 		if (!open) return;
 		options.style.setProperty('--cb-toolbar-popover-shift', '0px');
+		// On extremely narrow screens, the single-row toolbar is horizontally
+		// scrollable. Anchor the popup to the *visible* trigger in viewport
+		// coordinates so the menu cannot be clipped by the scroll container.
+		if (narrowMedia?.matches) {
+			const anchor = trigger.getBoundingClientRect();
+			const bounds = options.getBoundingClientRect();
+			const width = doc.documentElement?.clientWidth || view.innerWidth;
+			const height = doc.documentElement?.clientHeight || view.innerHeight;
+			const inset = 8;
+			const left = Math.max(inset, Math.min(
+				anchor.left + (anchor.width - bounds.width) / 2, width - bounds.width - inset,
+			));
+			const top = Math.max(inset, Math.min(anchor.bottom + inset, height - bounds.height - inset));
+			options.style.setProperty('--cb-toolbar-popover-fixed-left', left + 'px');
+			options.style.setProperty('--cb-toolbar-popover-fixed-top', top + 'px');
+			return;
+		}
 		const bounds = options.getBoundingClientRect();
 		const width = doc.documentElement?.clientWidth || view.innerWidth;
 		const inset = 8;
@@ -123,6 +141,7 @@ export const configureDesignerToolbarPopover = (root, {
 		? new view.ResizeObserver(sync) : null;
 	observer?.observe(toolbar);
 	view.addEventListener?.('resize', sync, {signal: local.signal, passive: true});
+	toolbar.addEventListener('scroll', position, {signal: local.signal, passive: true});
 	sync();
 
 	const destroy = () => {

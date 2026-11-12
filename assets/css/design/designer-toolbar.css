@@ -373,43 +373,66 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 
 
 /*
- * FIELD-06E — toolbar zones must never overlap on narrow surfaces.
- * The End zone contains indispensable actions and gets intrinsic width.
- * Below the two-row threshold the start/preview controls retain row one,
- * while the whole End action group gets row two without hiding anything.
+ * FIELD-06E R2 — preserve exactly one Grid row for Start / Center / End.
+ * The End rail owns the intrinsic width of its actions; the Start rail absorbs
+ * the flexible space without pushing Browser behind History. The compact
+ * Viewport and History popovers do not change their control geometry.
  */
 @media (max-width: 1280px) {
 	.cb-core-design-shell__toolbar--designer,
 	.cb-core-design-shell__toolbar--designer.is-compact {
 		grid-template-columns: minmax(0, 1fr) max-content max-content;
 	}
+	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--start,
+	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--center,
+	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--end {
+		grid-column: auto;
+		grid-row: 1;
+		flex-wrap: nowrap;
+	}
+	.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--resource {
+		flex: 0 0 auto;
+	}
 }
 
+/* On narrow phones, reduce spacing (never button hit targets or the command
+ * count). No separate grid row or flex-wrap is introduced at this breakpoint. */
 @media (max-width: 700px) {
 	.cb-core-design-shell__toolbar--designer,
 	.cb-core-design-shell__toolbar--designer.is-compact {
-		grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+		column-gap: var(--cb-space-1, 4px);
 	}
-	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--start {
-		grid-column: 1;
-		grid-row: 1;
+	.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-zone,
+	.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group {
+		column-gap: var(--cb-space-1, 4px);
 	}
-	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--center {
-		grid-column: 2;
-		grid-row: 1;
-		justify-self: center;
+	.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-zone--end > .cb-core-design-shell__toolbar-group--resource {
+		margin-inline-end: 0;
 	}
-	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--end {
-		grid-column: 1 / -1;
-		grid-row: 2;
-		justify-self: stretch;
-		justify-content: flex-end;
-		flex-wrap: wrap;
-		min-inline-size: 0;
-		max-inline-size: 100%;
-		gap: var(--cb-space-2, 8px);
+}
+
+
+/* The one-row mobile grid gives every rail its natural width. When full-size
+ * buttons physically exceed the space, only the toolbar scrolls horizontally:
+ * no overlapping targets, no hidden actions, and no second row. */
+@media (max-width: 700px) {
+	.cb-core-design-shell__toolbar--designer,
+	.cb-core-design-shell__toolbar--designer.is-compact {
+		grid-template-columns: max-content max-content max-content;
+		justify-content: space-between;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
+		scrollbar-width: thin;
 	}
-	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--end > .cb-core-design-shell__toolbar-group--resource {
-		flex-shrink: 0;
+	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone {
+		min-inline-size: max-content;
+	}
+	/* Fixed-position popup escapes the horizontal toolbar scroller. Its
+	 * coordinates are provided by the shared Base popover controller. */
+	.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--adaptive.is-adaptive-compact > .cb-core-design-shell__adaptive-options {
+		position: fixed;
+		inset-block-start: var(--cb-toolbar-popover-fixed-top, 0px);
+		inset-inline-start: var(--cb-toolbar-popover-fixed-left, 8px);
+		transform: none;
 	}
 }

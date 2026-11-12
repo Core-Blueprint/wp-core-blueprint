@@ -394,17 +394,10 @@
 	.cb-core-design-shell--native .cb-core-design-shell__toolbar-zone {
 		gap: 6px;
 	}
-	/* Give the action-heavy End rail its intrinsic width instead of
-	 * forcing it into the same fractional track as the brand. */
+	/* Keep Start/Center/End in one row. End takes its actual content width,
+	 * Start is flexible; Brand is already icon-only at this breakpoint. */
 	.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__toolbar {
 		grid-template-columns: minmax(0, 1fr) max-content max-content;
-	}
-}
-/* Two rows when all three rails cannot fit without obscuring Browser or
- * History. All existing toolbar actions stay in the DOM and operable. */
-@media (max-width: 700px) {
-	.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__toolbar {
-		grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
 	}
 }
 @media (max-width: 600px) {
@@ -466,4 +459,13 @@
 }
 .cb-core-design-shell--native .cb-reports-platform__interaction-region[draggable="true"] {
 	cursor: grab;
+}
+
+
+/* Match the shared single-row mobile grid with the stronger native selector.
+ * Intrinsic width preserves control geometry; overflow is accessible by swipe. */
+@media (max-width: 700px) {
+	.cb-core-platform-screen .cb-core-design-shell--native > .cb-core-design-shell__toolbar {
+		grid-template-columns: max-content max-content max-content;
+	}
 }
