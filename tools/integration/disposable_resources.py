@@ -121,9 +121,10 @@ class Resources:
 
     def wait_ready(self) -> None:
         for _ in range(45):
-            result = call(["podman", "exec", self.container_id, "mariadb",
-                           "-uroot", f"-p{self.password}", "--batch",
+            result = call(["podman", "exec", "--env", "MYSQL_PWD",
+                           self.container_id, "mariadb", "-uroot", "--batch",
                            "--skip-column-names", "-e", "SELECT 1;"],
+                          env={**os.environ, "MYSQL_PWD": self.password},
                           timeout=10)
             if result.returncode == 0 and result.stdout.strip() == "1":
                 return
