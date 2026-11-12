@@ -1,3 +1,7 @@
+> **TL-M2 R2 candidate (12 November 2026):** The shared Browser card now uses upper-start radio selection and an upper-end icon-only Actions button. Its popover uses Base's native top-layer pattern plus a non-clipping fixed fallback rather than expanding the card. No active Designer navigation escapes its Exit Guard; providers remain the sole authority for write/export. Source candidate only, pending exact-HEAD Level 1, protected Level 2 and interactive FIELD acceptance. See `docs/TEMPLATE-MANAGEMENT-CONSUMER.md`.
+
+---
+
 > **TL-M2 update (12 November 2026; candidate):** The shared Browser now renders provider-authorized template Actions in both global and contextual views via the internal `@cb-core/template-actions` module. A valid per-item `TemplateActionSourceInterface`, live actor authority and positive numeric revision are required for Rename/Duplicate/Export JSON/Delete. These operations use the existing provider-owned REST POST management boundary, not the read-only discovery endpoints, and never write active Designer documents. Preview and authorized Manage navigation are available only in the global Library; scoped Designer navigation remains exclusively under its Exit Guard. Generic Edit, Import and ZIP portability are not implemented by this patch. See `docs/TEMPLATE-MANAGEMENT-CONSUMER.md` for the exact contract and qualification gates. No consumer or merge/release GO is implied.
 
 ---
