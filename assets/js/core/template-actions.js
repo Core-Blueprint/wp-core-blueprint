@@ -4,6 +4,7 @@
  * No template persistence, Apply, or ownership authority lives here.
  */
 import { show as showModal } from '@cb-core/modal';
+import { create as createIcon } from '@cb-core/icon';
 
 const OPERATIONS = Object.freeze( [ 'rename', 'duplicate', 'export-json', 'delete' ] );
 let sequence = 0;
@@ -99,42 +100,132 @@ export function createActionMenu( item, options ) {
 
     const label = options.label;
     const wrapper = el( 'div', 'cb-template-browser__action-menu' );
-    const trigger = el( 'button', 'button cb-template-browser__action-trigger',
-        label( 'actions', 'Actions' ) );
+    const trigger = el( 'button', 'cb-template-browser__action-trigger' );
     trigger.type = 'button';
+    trigger.title = label( 'actions', 'Actions' );
     trigger.setAttribute( 'aria-label', label( 'actions', 'Actions' ) + ': ' + item.title );
+    trigger.setAttribute( 'aria-haspopup', 'menu' );
     trigger.setAttribute( 'aria-expanded', 'false' );
+    const icon = createIcon( 'ellipsis', { size: 'default' } );
+    if ( icon ) trigger.append( icon );
     const panel = el( 'div', 'cb-template-browser__action-panel' );
     panel.id = 'cb-template-actions-' + ++sequence;
     panel.hidden = true;
-    panel.setAttribute( 'role', 'group' );
+    panel.setAttribute( 'popover', 'manual' );
+    panel.setAttribute( 'role', 'menu' );
     panel.setAttribute( 'aria-label', label( 'actions', 'Actions' ) + ': ' + item.title );
     trigger.setAttribute( 'aria-controls', panel.id );
     wrapper.append( trigger, panel );
     let busy = false;
     let expanded = false;
     let disposed = false;
+    const hasNativePopover = typeof panel.showPopover === 'function'
+        && typeof panel.hidePopover === 'function';
+    const originalHost = wrapper;
+    const menuItems = () => Array.from( panel.querySelectorAll( '[role="menuitem"]' ) );
 
+    // The shared native Popover API escapes the clipped Designer card/viewport.
+    // On older engines, portal the fixed panel to the dialog (or document body)
+    // instead of ever expanding the card. The provider action API is untouched.
+    const viewport = () => {
+        const visual = window.visualViewport;
+        const left = visual?.offsetLeft || 0;
+        const top = visual?.offsetTop || 0;
+        const width = visual?.width || window.innerWidth;
+        const height = visual?.height || window.innerHeight;
+        const dialog = wrapper.closest?.( 'dialog' );
+        const rect = dialog?.getBoundingClientRect?.();
+        return {
+            left: Math.max( left + 8, ( rect?.left ?? left ) + 8 ),
+            top: Math.max( top + 8, ( rect?.top ?? top ) + 8 ),
+            right: Math.min( left + width - 8, ( rect?.right ?? left + width ) - 8 ),
+            bottom: Math.min( top + height - 8, ( rect?.bottom ?? top + height ) - 8 ),
+        };
+    };
+    const locate = () => {
+        if ( !expanded || !trigger.isConnected || !options.isCurrent() ) {
+            close();
+            return;
+        }
+        if ( typeof trigger.getBoundingClientRect !== 'function' ) return;
+        const anchor = trigger.getBoundingClientRect();
+        const edges = viewport();
+        if ( anchor.bottom <= edges.top || anchor.top >= edges.bottom
+            || anchor.right <= edges.left || anchor.left >= edges.right
+            || edges.right - edges.left < 56 || edges.bottom - edges.top < 56 ) {
+            close();
+            return;
+        }
+        const width = Math.min( 220, edges.right - edges.left );
+        panel.style.width = width + 'px';
+        const height = panel.scrollHeight || panel.getBoundingClientRect().height;
+        const below = Math.max( 0, edges.bottom - anchor.bottom - 6 );
+        const above = Math.max( 0, anchor.top - edges.top - 6 );
+        const placeAbove = above > below && below < Math.min( height, 160 );
+        const available = placeAbove ? above : below;
+        panel.style.maxHeight = Math.max( 40, available ) + 'px';
+        const shownHeight = Math.min( height, Math.max( 40, available ) );
+        const top = placeAbove ? anchor.top - 6 - shownHeight : anchor.bottom + 6;
+        const left = wrapper.closest?.( '[dir="rtl"]' )
+            ? anchor.left : anchor.right - width;
+        panel.style.left = Math.max( edges.left, Math.min( left, edges.right - width ) ) + 'px';
+        panel.style.top = Math.max( edges.top, Math.min( top, edges.bottom - shownHeight ) ) + 'px';
+    };
     const outside = event => {
-        if ( !wrapper.contains( event.target ) ) close();
+        if ( !wrapper.contains( event.target ) && !panel.contains( event.target ) ) close();
+    };
+    const onViewportChange = () => locate();
+    const onKeydown = event => {
+        if ( event.key === 'Escape' && expanded ) {
+            event.preventDefault();
+            event.stopPropagation();
+            close( true );
+        }
     };
     const close = ( restoreFocus = false ) => {
         if ( !expanded ) return;
         expanded = false;
-        panel.hidden = true;
         trigger.setAttribute( 'aria-expanded', 'false' );
+        if ( hasNativePopover && panel.matches?.( ':popover-open' ) ) {
+            panel.hidePopover();
+        }
+        panel.hidden = true;
+        if ( !hasNativePopover ) originalHost.append( panel );
         document.removeEventListener( 'pointerdown', outside, true );
         document.removeEventListener( 'focusin', outside, true );
+        document.removeEventListener( 'keydown', onKeydown, true );
+        window.removeEventListener?.( 'resize', onViewportChange );
+        window.removeEventListener?.( 'scroll', onViewportChange, true );
+        window.visualViewport?.removeEventListener?.( 'resize', onViewportChange );
+        window.visualViewport?.removeEventListener?.( 'scroll', onViewportChange );
         if ( restoreFocus && trigger.isConnected ) trigger.focus();
     };
-    const open = () => {
-        if ( expanded || busy || disposed ) return;
+    const open = ( focusFirst = false ) => {
+        if ( expanded || busy || disposed || !options.isCurrent() ) return;
         options.onOpening( close );
-        expanded = true;
+        if ( !hasNativePopover ) {
+            const host = wrapper.closest?.( 'dialog' ) || document.body;
+            host.append( panel );
+        }
         panel.hidden = false;
+        try {
+            if ( hasNativePopover ) panel.showPopover();
+        } catch {
+            panel.hidden = true;
+            if ( !hasNativePopover ) originalHost.append( panel );
+            return; // No in-flow fallback or accidental card expansion.
+        }
+        expanded = true;
         trigger.setAttribute( 'aria-expanded', 'true' );
+        locate();
         document.addEventListener( 'pointerdown', outside, true );
         document.addEventListener( 'focusin', outside, true );
+        document.addEventListener( 'keydown', onKeydown, true );
+        window.addEventListener?.( 'resize', onViewportChange, { passive: true } );
+        window.addEventListener?.( 'scroll', onViewportChange, { capture: true, passive: true } );
+        window.visualViewport?.addEventListener?.( 'resize', onViewportChange );
+        window.visualViewport?.addEventListener?.( 'scroll', onViewportChange );
+        if ( focusFirst ) menuItems()[ 0 ]?.focus();
     };
     const notify = ( key, fallback ) => options.onNotice( label( key, fallback ) );
     const statusMessage = status => {
@@ -159,7 +250,7 @@ export function createActionMenu( item, options ) {
     }
 
     async function action( id ) {
-        close();
+        close( true );
         if ( id === 'export-json' ) {
             const result = await execute( id );
             if ( result.status === 'ready' && typeof result.data === 'string' ) {
@@ -244,6 +335,7 @@ export function createActionMenu( item, options ) {
     for ( const entry of navigation ) {
         const link = el( 'a', 'cb-template-browser__action-item', entry.title );
         link.href = entry.href;
+        link.setAttribute( 'role', 'menuitem' );
         link.addEventListener( 'click', () => close() );
         panel.append( link );
     }
@@ -256,23 +348,29 @@ export function createActionMenu( item, options ) {
             ( id === 'delete' ? ' cb-template-browser__action-item--danger' : '' ),
             label( ...titles[id] ) );
         button.type = 'button';
+        button.setAttribute( 'role', 'menuitem' );
         button.addEventListener( 'click', () => { if ( !busy ) void action( id ); } );
         panel.append( button );
     }
     trigger.addEventListener( 'click', () => expanded ? close() : open() );
     trigger.addEventListener( 'keydown', event => {
-        if ( event.key === 'ArrowDown' ) {
+        if ( event.key === 'ArrowDown' || event.key === 'ArrowUp' ) {
             event.preventDefault();
-            open();
-            panel.querySelector( 'a, button' )?.focus();
+            if ( !expanded ) open( true );
+            else menuItems()[ event.key === 'ArrowUp' ? menuItems().length - 1 : 0 ]?.focus();
         }
     } );
-    wrapper.addEventListener( 'keydown', event => {
-        if ( event.key === 'Escape' && expanded ) {
-            event.preventDefault();
-            event.stopPropagation();
-            close( true );
-        }
+    panel.addEventListener( 'keydown', event => {
+        const items = menuItems();
+        const current = items.indexOf( document.activeElement );
+        let next = null;
+        if ( event.key === 'ArrowDown' ) next = ( current + 1 ) % items.length;
+        else if ( event.key === 'ArrowUp' ) next = ( current + items.length - 1 ) % items.length;
+        else if ( event.key === 'Home' ) next = 0;
+        else if ( event.key === 'End' ) next = items.length - 1;
+        if ( next === null || !items.length ) return;
+        event.preventDefault();
+        items[ next ]?.focus();
     } );
     return {
         node: wrapper,
