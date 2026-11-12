@@ -111,7 +111,7 @@ function fixture({direct = false, initial = 'one', mounted = true} = {}) {
 		listeners.get('change')(event);
 		return event;
 	};
-	return {select, calls, errors, state, fire, observe: () => observerCallback()};
+	return {select, calls, errors, state, window, fire, observe: () => observerCallback()};
 }
 
 test('BASE-CTX-01: nested and direct-marked selects start with the last authorized value', () => {
@@ -119,6 +119,10 @@ test('BASE-CTX-01: nested and direct-marked selects start with the last authoriz
 		const f = fixture({direct});
 		assert.equal(f.select.dataset.cbDesignShellContextValue, 'one',
 			(direct ? 'direct' : 'nested') + ' select must have its baseline on initial scan');
+		f.select.value = 'unapproved';
+		f.observe();
+		assert.equal(f.select.dataset.cbDesignShellContextValue, 'one',
+			'a subsequent DOM scan must not commit an unapproved select value');
 	}
 });
 
@@ -171,14 +175,15 @@ test('BASE-CTX-01: dynamically mounted direct select is initialized by the exist
 	assert.deepEqual(f.calls, ['draft-c']);
 });
 
-test('BASE-CTX-01: missing v4 authority blocks without leaving an unverified value painted', () => {
+test('BASE-CTX-01: unavailable v4 authority blocks without authorizing a target', () => {
 	const f = fixture({direct:true, initial:'safe'});
+	f.window.cbCore.designerExitGuard.contractVersion = 3;
 	f.select.value = 'unsafe';
-	f.state.outcome = 'blocked';
 	f.fire();
 	assert.equal(f.select.value, 'safe');
 	assert.equal(f.select.dataset.cbDesignShellContextValue, 'safe');
-	assert.deepEqual(f.calls, ['unsafe']);
+	assert.deepEqual(f.calls, [], 'no unsupported transition request');
+	assert.equal(f.errors.length, 1);
 });
 
 test('BASE-CTX-01: no second context coordinator or legacy event protocol', () => {
