@@ -150,7 +150,11 @@ export function createActionMenu( item, options ) {
         if ( typeof trigger.getBoundingClientRect !== 'function' ) return;
         const anchor = trigger.getBoundingClientRect();
         const edges = viewport();
-        if ( anchor.bottom <= edges.top || anchor.top >= edges.bottom
+        const scroller = wrapper.closest?.( '.cb-template-browser__results-viewport' );
+        const frame = scroller?.getBoundingClientRect?.();
+        const visibleTop = Math.max( edges.top, frame?.top ?? edges.top );
+        const visibleBottom = Math.min( edges.bottom, frame?.bottom ?? edges.bottom );
+        if ( anchor.bottom <= visibleTop || anchor.top >= visibleBottom
             || anchor.right <= edges.left || anchor.left >= edges.right
             || edges.right - edges.left < 56 || edges.bottom - edges.top < 56 ) {
             close();
@@ -218,6 +222,7 @@ export function createActionMenu( item, options ) {
         expanded = true;
         trigger.setAttribute( 'aria-expanded', 'true' );
         locate();
+        if ( !expanded ) return; // A hidden/offscreen card must not register stale listeners.
         document.addEventListener( 'pointerdown', outside, true );
         document.addEventListener( 'focusin', outside, true );
         document.addEventListener( 'keydown', onKeydown, true );
@@ -356,8 +361,12 @@ export function createActionMenu( item, options ) {
     trigger.addEventListener( 'keydown', event => {
         if ( event.key === 'ArrowDown' || event.key === 'ArrowUp' ) {
             event.preventDefault();
-            if ( !expanded ) open( true );
-            else menuItems()[ event.key === 'ArrowUp' ? menuItems().length - 1 : 0 ]?.focus();
+            if ( !expanded ) {
+                open();
+                if ( expanded ) menuItems()[ event.key === 'ArrowUp' ? menuItems().length - 1 : 0 ]?.focus();
+            } else {
+                menuItems()[ event.key === 'ArrowUp' ? menuItems().length - 1 : 0 ]?.focus();
+            }
         }
     } );
     panel.addEventListener( 'keydown', event => {
