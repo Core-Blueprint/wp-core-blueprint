@@ -1,3 +1,9 @@
+> **TL-M2 shared Actions UI — 12 November 2026, SOURCE CANDIDATE (not yet Level 1/2/FIELD qualified):** Base now displays a single provider-scoped **Actions** disclosure in the global Template Library and in Designer Browser template cards. The same `@cb-core/template-actions` module renders authorized operations: `rename`, `duplicate`, `export-json`, `delete`. A provider must implement `TemplateActionSourceInterface`; Base never writes provider data or owns export formats. The server checks the live actor, registered source, verified Designer scope (when present), WP REST nonce, per-item permission and expected revision again on every POST `/core-blueprint/v1/template-library/manage`. A failed or unknown response never claims a completed write. The UI uses the shared modal for title input/irreversible-delete acknowledgement and downloads only the provider-returned JSON. It refreshes on success or stale/unknown outcomes. Actionless templates expose no write controls. Read-only Preview and globally permitted Manage links share the disclosure; Manage remains withheld in the scoped Designer view. **No new Edit route, import/upload or ZIP portability flow is introduced by TL-M2**. Those remain separate contracts. Until a dedicated revision metadata contract exists, actions are visible only if `TemplateMetadata::version` is the canonical positive decimal revision (as for native Mail); semver metadata is not guessed as a CAS revision. Check `tests/js/template-actions-ui.test.mjs` and `tests/js/template-browser-boundary.test.mjs`. No merge/release/CI/deploy or external consumer migration before explicit owner acceptance.
+
+---
+
+**The T3A navigation baseline below is historical; TL-M2 supersedes its navigation-only UI, not its authorization and ownership boundaries.**
+
 # Template Library T3A: delegated management navigation
 
 Status: **additive code candidate**, awaiting Base Level 1, protected WordPress
