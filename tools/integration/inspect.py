@@ -41,7 +41,8 @@ def owner_record(root: Path, marker: Path) -> dict:
         "wordpress": record.get("wordpress"), "database": plan.DATABASE,
         "engine": database.ENGINE, "container": database.CONTAINER,
         "volume": database.VOLUME, "port": database.PORT,
-        "policy": "new-only-no-cleanup",
+        "policy": ("disposable-external-owner-cleanup" if database.DISPOSABLE
+                   else "new-only-no-cleanup"),
     } or record["wordpress"] not in ("7.0", "7.1"):
         raise preflight.PreflightError("Workspace marker does not match requested Base slot.")
     return record
