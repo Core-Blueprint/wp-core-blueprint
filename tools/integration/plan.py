@@ -70,7 +70,7 @@ def database_exists() -> bool:
     """Only inspect INFORMATION_SCHEMA. No mutating SQL and no user-controlled name."""
     output = read_only(
         ["podman", "exec", database.CONTAINER, "mariadb",
-         "-uroot", "-proot", "--batch", "--skip-column-names", "--raw", "-e", QUERY],
+         "-uroot", f"-p{database.ROOT_PASSWORD}", "--batch", "--skip-column-names", "--raw", "-e", QUERY],
         "MariaDB schema inventory",
     )
     names = [row.strip() for row in output.splitlines() if row.strip()]
