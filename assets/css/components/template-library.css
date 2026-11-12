@@ -420,7 +420,12 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
         grid-template-columns: minmax(0, 1fr);
         min-height: 0;
     }
-    .cb-template-browser--workspace .cb-template-browser__content {
+    .cb-template-browser--workspace .cb-template-browser__content,
+    .cb-template-browser--workspace.cb-template-browser--with-sections .cb-template-browser__content {
+        grid-row: auto;
+        grid-column: 1;
+    }
+    .cb-template-browser--workspace.cb-template-browser--with-sections .cb-template-browser__collections {
         grid-row: auto;
         grid-column: 1;
     }
