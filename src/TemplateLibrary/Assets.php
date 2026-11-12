@@ -31,7 +31,7 @@ final class Assets {
 		wp_enqueue_script_module(
 			'@cb-core/template-actions',
 			CB_CORE_URL . 'assets/js/core/template-actions.js',
-			[ '@cb-core/modal' ],
+			[ '@cb-core/modal', '@cb-core/icon' ],
 			self::version( 'assets/js/core/template-actions.js' )
 		);
 		wp_enqueue_script_module(
