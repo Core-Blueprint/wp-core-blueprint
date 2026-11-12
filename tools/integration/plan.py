@@ -33,9 +33,12 @@ REQUIRED = (
 
 def read_only(command: list[str], label: str, timeout: int = 12) -> str:
     try:
+        environment = {**os.environ, "GIT_OPTIONAL_LOCKS": "0"}
+        if database.DISPOSABLE and command[:2] == ["podman", "exec"]:
+            environment["MYSQL_PWD"] = database.ROOT_PASSWORD
         result = subprocess.run(
             command, capture_output=True, text=True, timeout=timeout,
-            check=False, env={**os.environ, "GIT_OPTIONAL_LOCKS": "0"},
+            check=False, env=environment,
         )
     except (OSError, subprocess.TimeoutExpired) as error:
         raise preflight.PreflightError(f"{label}: command unavailable or timed out.") from error
@@ -69,8 +72,11 @@ def verify_source(source: Path) -> None:
 def database_exists() -> bool:
     """Only inspect INFORMATION_SCHEMA. No mutating SQL and no user-controlled name."""
     output = read_only(
-        ["podman", "exec", database.CONTAINER, "mariadb",
-         "-uroot", f"-p{database.ROOT_PASSWORD}", "--batch", "--skip-column-names", "--raw", "-e", QUERY],
+        (["podman", "exec"]
+         + (["--env", "MYSQL_PWD"] if database.DISPOSABLE else [])
+         + [database.CONTAINER, "mariadb", "-uroot"]
+         + ([] if database.DISPOSABLE else ["-proot"])
+         + ["--batch", "--skip-column-names", "--raw", "-e", QUERY]),
         "MariaDB schema inventory",
     )
     names = [row.strip() for row in output.splitlines() if row.strip()]
