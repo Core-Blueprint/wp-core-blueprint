@@ -77,8 +77,13 @@
 		control.dataset.cbDesignShellContextValue = String(control.value || '');
 	};
 
+	// One authorized-value baseline for both already-recognized native forms.
+	// Header composition accepts a directly marked select or a nested select;
+	// both must be bound before the capture-phase context change handler runs.
 	const scan = () => {
-		document.querySelectorAll('[data-cb-design-shell-context] select').forEach(bindControl);
+		document.querySelectorAll(
+			'[data-cb-design-shell-context] select, select[data-cb-design-shell-context]'
+		).forEach(bindControl);
 	};
 
 	// The canonical v4 change handler delegates to Base's managed coordinator.
