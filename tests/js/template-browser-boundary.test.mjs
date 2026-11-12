@@ -102,7 +102,7 @@ test('Browser Golden UX shares layout while contextual Save remains Designer-onl
   assert.match(browser, /toolbar\.prepend\( resultHeading, searchField \)/);
   assert.match(browser, /resultCount\.textContent = String\( state\.entries\.length \)/);
   assert.match(browser, /cb-template-browser__collection-count/);
-  assert.match(browser, /sidebar\.append\( saveArea \)/);
+  assert.match(browser, /\( hasDesigns \? sidebar : collections \)\.append\( saveArea \)/);
   assert.match(browser, /if \( contextual && typeof options\.onSaveAs === 'function' \)/);
   assert.doesNotMatch(browser, /body\.append\( saveAction \)/);
   assert.match(browser, /footer\.hidden = contextual && !state\.cursor/);
@@ -195,11 +195,9 @@ test('filter interaction is safe while the source metadata response is pending',
     .replace('export default api;', '');
   runInNewContext(executable, context, { timeout: 1000 });
   context.window.cbCore.templateBrowser.createBrowser(root);
-  const sidebar = root.children[0].children[0];
-  const origins = root.children[0].children[1];
+  const origins = root.children[0].children[0];
   const builtIn = origins.children[2];
-  assert.equal(sidebar.role, 'group', 'Sections remain separate from origin filters');
-  assert.equal(sidebar.children[0]['aria-pressed'], 'true');
+  assert.equal(root.children[0].children.length, 2, 'global UI omits the empty Templates section');
   assert.equal(origins.role, 'group', 'Origin buttons are a filter group');
   assert.equal(origins.children[1]['aria-pressed'], 'true');
   assert.doesNotThrow(() => builtIn.events.get('click')());
@@ -211,7 +209,7 @@ test('filter interaction is safe while the source metadata response is pending',
     'Changing an origin before facets arrive must still refresh the template query',
   );
   await new Promise((resolve) => setImmediate(resolve));
-  const content = root.children[0].children[2];
+  const content = root.children[0].children[1];
   const more = content.children[3].children[1];
   assert.equal(more.hidden, false, 'Empty filtered pages must preserve valid continuation');
   more.events.get('click')();
