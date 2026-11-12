@@ -57,6 +57,9 @@ test('TL-M2 global and contextual Browser reuse provider-authorized actions with
   assert.match(templateActions, /target\.origin !== window\.location\.origin/);
   assert.match(templateActions, /target\.pathname\.includes\( '\/wp-admin\/' \)/);
   assert.match(templateActions, /'X-WP-Nonce'/);
+  assert.match(templateActions, /panel\.setAttribute\( 'popover', 'manual' \)/);
+  assert.match(templateActions, /createIcon\( 'ellipsis'/);
+  assert.match(assets, /\[ '@cb-core\/modal', '@cb-core\/icon' \]/);
   assert.match(templateActions, /'X-CB-Designer-Scope'/);
   assert.match(templateActions, /method: 'POST', credentials: 'same-origin'/);
   assert.match(templateActions, /confirmCheck: destructive/);
@@ -77,7 +80,9 @@ test('standalone Template Library fills the page without stretching card grid ro
   assert.match(styles, /\.cb-template-browser__card\s*\{[^}]*display: flex;[^}]*flex-direction: column;/);
   assert.match(styles, /\.cb-template-browser__card-body\s*\{[^}]*flex: 1 1 auto;/);
   assert.doesNotMatch(styles, /\.cb-template-browser__card-body\s*\{[^}]*height: 100%;/);
-  assert.match(styles, /\.cb-template-browser__actions\s*\{[^}]*border-block-start:/);
+  assert.match(styles, /\.cb-template-browser__actions\s*\{[^}]*position: absolute;[^}]*inset-block-start: 12px;[^}]*inset-inline-end: 12px;/);
+  assert.match(styles, /\.cb-template-browser__action-panel\s*\{[^}]*position: fixed;/);
+  assert.match(styles, /\.cb-template-browser__choice\s*\{[^}]*inset-inline-start: 12px;/);
   assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?\.cb-template-library-page \.cb-template-browser\s*\{ flex-direction: column; \}/);
 });
 
