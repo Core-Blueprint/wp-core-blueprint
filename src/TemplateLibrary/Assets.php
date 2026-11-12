@@ -67,6 +67,7 @@ final class Assets {
 			'search'      => __( 'Search templates', 'core-blueprint' ),
 			'searchDesigns'=> __( 'Search designs', 'core-blueprint' ),
 			'all'         => __( 'All templates', 'core-blueprint' ),
+			'allOptions'  => __( 'All', 'core-blueprint' ),
 			'origin'      => __( 'Origin', 'core-blueprint' ),
 			'source'      => __( 'Source', 'core-blueprint' ),
 			'plugin'      => __( 'Plugin', 'core-blueprint' ),
