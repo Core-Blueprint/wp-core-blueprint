@@ -65,8 +65,8 @@ test('FIELD-05D: Design resources own a two-column grid, radio first and text se
 
 test('FIELD-05D: template grid and standalone Library keep their existing semantics', () => {
     assert.match(browserStyles, /\.cb-template-browser--modal\[data-browser-view="templates"\] \.cb-template-browser__grid\s*\{/);
-    assert.match(browserSource, /const article = el\( contextual \? 'label' : 'article', 'cb-template-browser__card' \)/);
-    assert.match(browserSource, /article\.append\( preview \)/);
+    assert.match(browserSource, /const article = el\( contextual && !menu \? 'label' : 'article', 'cb-template-browser__card' \)/);
+    assert.match(browserSource, /selection\.append\( preview \)/);
     assert.match(browserStyles, /\.cb-template-library-page \.cb-template-browser \{/);
     assert.match(formControls, /:is\(\.cb-core-wrap, \.cb-core-form-scope\) label:has\( > input\[type="radio"\]:disabled \)/);
 });
