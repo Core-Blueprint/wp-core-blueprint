@@ -143,6 +143,7 @@ test('TL-M2 R2: native popover escapes clipped card, flips above and keeps geome
     const count = e.card.children.length;
     e.trigger.click();
     assert.equal(e.panel.open,true);
+    assert.equal(e.panel.attributes.popover,'manual','native API gets popover attribute');
     assert.equal(e.panel.parentNode,e.menu.node,'native top-layer popover retains ownership');
     assert.equal(e.card.children.length,count,'popover never adds grid rows');
     assert.equal(e.trigger.attributes['aria-expanded'],'true');
@@ -161,6 +162,7 @@ test('TL-M2 R2: non-native fallback portals to dialog, not the clipped card', ()
     const e = environment({native:false});
     e.trigger.click();
     assert.equal(e.panel.parentNode,e.dialog);
+    assert.equal(e.panel.attributes.popover,undefined,'fallback is not hidden by native :popover-open CSS');
     assert.equal(e.card.children.length,1,'fallback also keeps the card height stable');
     assert.equal(e.panel.hidden,false);
     assert.ok(Number.parseFloat(e.panel.style.left) >= 8);
@@ -190,6 +192,9 @@ test('TL-M2 R2: keyboard menu, viewport scroll, outside focus and disposal clean
     e.trigger.click();
     e.docEvents.get('focusin')({target:e.document.body});
     assert.equal(e.panel.hidden,true,'focus outside closes the popover');
+    e.trigger.click();
+    e.docEvents.get('pointerdown')({target:e.document.body});
+    assert.equal(e.panel.hidden,true,'outside pointer press also dismisses');
     e.trigger.click();
     e.menu.dispose();
     assert.equal(e.docEvents.size,0);
