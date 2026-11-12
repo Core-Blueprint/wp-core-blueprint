@@ -136,9 +136,6 @@ export function createActionMenu( item, options ) {
         document.addEventListener( 'focusin', outside, true );
     };
     const notify = ( key, fallback ) => options.onNotice( label( key, fallback ) );
-    const refreshAfter = async ( key, fallback ) => {
-        if ( !disposed ) await options.onChanged( label( key, fallback ) );
-    };
     const statusMessage = status => {
         if ( status === 'conflict' ) return label( 'actionConflict', 'Template changed elsewhere. Reload and try again.' );
         if ( status === 'refused' || status === 'missing' ) return label( 'actionRefused', 'You can no longer manage this template.' );
@@ -175,9 +172,9 @@ export function createActionMenu( item, options ) {
                 }
                 notify( 'actionFailed', 'The action could not be confirmed. Check the template before retrying.' );
             } else {
-                notify( 'actionFailed', statusMessage( result.status ) );
+                options.onNotice( statusMessage( result.status ) );
                 if ( [ 'conflict', 'unknown', 'missing', 'refused' ].includes( result.status ) ) {
-                    await refreshAfter( 'actionRefresh', 'Templates refreshed; verify the latest state.' );
+                    if ( !disposed ) await options.onChanged( statusMessage( result.status ) );
                 }
             }
             return;
