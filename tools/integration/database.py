@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 
 
@@ -15,13 +16,32 @@ class IsolationError(Exception):
 
 
 ENGINE = "podman"
-CONTAINER = "cb-base-l2-db"
-VOLUME = "cb-base-l2-db-data"
 IMAGE = "docker.io/library/mariadb:10.11.19"
-PORT = "3308"
-HOST = f"127.0.0.1:{PORT}"
 LABEL_KEY = "io.coreblueprint.level2.owner"
-LABEL_VALUE = "base-isolated"
+
+# Legacy Level 2 identity is intentionally unchanged. An explicitly selected
+# disposable runner uses a freshly generated token; neither branch adopts,
+# starts, drops nor reconfigures the other branch's resources.
+DISPOSABLE_TOKEN = os.environ.get("CB_BASE_DISPOSABLE_TOKEN", "")
+DISPOSABLE = bool(DISPOSABLE_TOKEN)
+if DISPOSABLE and re.fullmatch(r"d[0-9a-f]{12}", DISPOSABLE_TOKEN) is None:
+    raise IsolationError("Invalid disposable run identity.")
+if not DISPOSABLE and any(os.environ.get(key) for key in
+                          ("CB_BASE_DB_PORT", "CB_BASE_DB_PASSWORD")):
+    raise IsolationError("Disposable database overrides require a proven disposable token.")
+
+CONTAINER = f"cb-base-l2-{DISPOSABLE_TOKEN}" if DISPOSABLE else "cb-base-l2-db"
+VOLUME = f"{CONTAINER}-data" if DISPOSABLE else "cb-base-l2-db-data"
+PORT = os.environ.get("CB_BASE_DB_PORT", "") if DISPOSABLE else "3308"
+if DISPOSABLE and (not PORT.isascii() or not PORT.isdecimal()
+                   or not 1024 <= int(PORT) <= 65535):
+    raise IsolationError("Disposable port must be a bounded TCP port.")
+HOST = f"127.0.0.1:{PORT}"
+ROOT_PASSWORD = os.environ.get("CB_BASE_DB_PASSWORD", "") if DISPOSABLE else "root"
+if DISPOSABLE and (not 24 <= len(ROOT_PASSWORD) <= 100
+                   or re.fullmatch(r"[A-Za-z0-9_-]+", ROOT_PASSWORD) is None):
+    raise IsolationError("Disposable database credential is missing or unsafe.")
+LABEL_VALUE = f"base-disposable-{DISPOSABLE_TOKEN}" if DISPOSABLE else "base-isolated"
 LABEL = f"{LABEL_KEY}={LABEL_VALUE}"
 
 
@@ -79,7 +99,7 @@ def _one(value: object, name: str) -> dict:
     return value[0]
 
 
-def validate_metadata(payload: object) -> str:
+def validate_metadata(payload: object, *, require_running: bool = True) -> str:
     """Fail closed for unowned storage, wrong image, shared volume or open ports."""
     if not isinstance(payload, dict):
         raise IsolationError("Invalid Podman database metadata.")
@@ -96,7 +116,9 @@ def validate_metadata(payload: object) -> str:
             or config["Labels"].get(LABEL_KEY) != LABEL_VALUE):
         raise IsolationError("Base container has no valid ownership label.")
     state = container.get("State")
-    if not isinstance(state, dict) or state.get("Running") is not True:
+    if not isinstance(state, dict):
+        raise IsolationError("Missing Base Podman container state.")
+    if require_running and state.get("Running") is not True:
         raise IsolationError("Dedicated Base Podman database is not running.")
     if (volume.get("Name") != VOLUME
             or not isinstance(volume.get("Labels"), dict)
