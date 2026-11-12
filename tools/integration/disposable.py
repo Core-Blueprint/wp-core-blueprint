@@ -190,6 +190,10 @@ def qualify() -> int:
         env["CB_BASE_INTEGRATION_APPROVAL"] = "I_APPROVE_FRESH_BASE_TEST_DATABASE"
         completed = run_wordpress(["python3", "-B", "-m",
                                    "tools.integration.execution", "--execute"], env)
+        if completed < 0:
+            interrupted = True  # An abnormal worker signal may leave detached gates.
+            raise preflight.PreflightError(
+                "Full Base Level 2 worker died by signal; descendant state is unknown.")
         if completed:
             raise preflight.PreflightError("Full Base Level 2 matrix failed.")
         if command(["git", "rev-parse", "--verify", "HEAD"], env) != sha:
@@ -202,7 +206,7 @@ def qualify() -> int:
             raise preflight.PreflightError("Level 2 final receipt cannot be proven.")
         passed = True
     except (preflight.PreflightError, KeyboardInterrupt, OSError) as exception:
-        interrupted = isinstance(exception, KeyboardInterrupt)
+        interrupted = interrupted or isinstance(exception, KeyboardInterrupt)
         error = ("Qualification interrupted; test descendants may still be active."
                  if interrupted else str(exception))
     finally:
