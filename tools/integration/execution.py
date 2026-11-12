@@ -564,8 +564,11 @@ def main(args: list[str] | None = None) -> int:
         return 1
     print("Base Level 2: PASS (isolated WordPress integration and full matrix).")
     print(f"Exact Base HEAD: {preflight.read_source_commit(SOURCE)}")
-    print("Release builder requires the matching isolated environment variables.")
-    print("Never point tools/build-release at a production or staging database.")
+    if database.DISPOSABLE:
+        print("Disposable supervisor owns database cleanup; no release builder follows.")
+    else:
+        print("Release builder requires the matching isolated environment variables.")
+        print("Never point tools/build-release at a production or staging database.")
     return 0
 
 
