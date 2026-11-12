@@ -75,6 +75,45 @@ class DisposableIdentityTests(unittest.TestCase):
                     capture_output=True, text=True)
                 self.assertNotEqual(0, result.returncode)
 
+    def test_stopped_disposable_metadata_requires_durable_port_and_owner(self):
+        from tools.integration import database
+        with mock.patch.object(database, "CONTAINER", "cb-base-l2-" + TOKEN), \
+             mock.patch.object(database, "VOLUME", "cb-base-l2-" + TOKEN + "-data"), \
+             mock.patch.object(database, "LABEL_VALUE", "base-disposable-" + TOKEN), \
+             mock.patch.object(database, "PORT", "45673"):
+            volume_name = database.VOLUME
+            owner = "base-disposable-" + TOKEN
+            mount = "/tmp/fake-owned-database-volume"
+            payload = {
+                "containers": [{
+                    "Name": database.CONTAINER,
+                    "Config": {"Image": database.IMAGE,
+                               "Labels": {database.LABEL_KEY: owner}},
+                    "State": {"Running": False},
+                    "Mounts": [{"Type": "volume", "Name": volume_name,
+                                "Destination": "/var/lib/mysql", "RW": True,
+                                "Source": mount}],
+                    "HostConfig": {
+                        "NetworkMode": "bridge",
+                        "PortBindings": {
+                            "3306/tcp": [{"HostIp": "127.0.0.1", "HostPort": "45673"}]
+                        }
+                    },
+                    "NetworkSettings": {"Ports": None}
+                }],
+                "volumes": [{"Name": volume_name,
+                             "Labels": {database.LABEL_KEY: owner},
+                             "Mountpoint": mount}],
+                "consumers": [database.CONTAINER],
+            }
+            self.assertIn(volume_name, database.validate_metadata(
+                payload, require_running=False))
+            with self.assertRaises(database.IsolationError):
+                database.validate_metadata(payload)  # Running required for actual tests.
+            payload["containers"][0]["HostConfig"]["PortBindings"]["3306/tcp"][0]["HostIp"] = "0.0.0.0"
+            with self.assertRaises(database.IsolationError):
+                database.validate_metadata(payload, require_running=False)
+
     def test_inherited_customer_database_configuration_is_not_used(self):
         with mock.patch.dict(os.environ, {
             "WP_DB_HOST": "production.example", "WP_DB_PASSWORD": "secret",
