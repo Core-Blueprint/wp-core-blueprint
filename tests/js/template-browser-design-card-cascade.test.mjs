@@ -27,7 +27,7 @@ test('FIELD-05D: generic form label alignment excludes both selectable Browser c
     for (const type of ['checkbox', 'radio']) {
         assert.match(
             selectors,
-            new RegExp('label:[^\\n]+:not\\(\\.cb-template-browser__card\\):has\\( > input\\[type="' + type + '"\\] \\)'),
+            new RegExp('label:[^\\n]+:not\\(\\.cb-template-browser__card\\):not\\(\\.cb-template-browser__card-select\\):has\\( > input\\[type="' + type + '"\\] \\)'),
             type + ' must exclude Browser cards from convenience inline-flex rule'
         );
     }
