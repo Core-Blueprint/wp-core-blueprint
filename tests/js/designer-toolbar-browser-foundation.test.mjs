@@ -59,7 +59,7 @@ test('Mail Browser uses the canonical workspace and rejects competing Save engin
 	assert.doesNotMatch(browser, /expandable: true/);
 	assert.match(browser, /const accepted = await showModal/);
 	assert.match(browser, /if \( accepted && pendingDesign && typeof onOpenDesign === 'function' \)/);
-	assert.match(css, /\.cb-template-browser--designer-workspace/);
+	assert.match(css, /\.cb-template-browser--workspace/);
 	assert.match(css, /\.cb-template-browser__collections/);
 });
 
@@ -116,7 +116,7 @@ test('Designer Browser renders three panes with compact resource rows and separa
 	});
 	const shell=target.children[0];
 	assert.equal(shell.children.length,3,'category, collection and grid panes');
-	assert.match(shell.className,/designer-workspace/);
+	assert.match(shell.className,/cb-template-browser--workspace/);
 	const category=shell.children[0],collections=shell.children[1],content=shell.children[2];
 	assert.equal(category.children.length,2,'Designs and Templates navigation');
 	assert.equal(collections.children.length,4,'heading, All designs and two provider collections');
