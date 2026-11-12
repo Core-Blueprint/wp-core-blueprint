@@ -140,7 +140,7 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__brand-wordmark,', $designer_css );
 		self::assertStringContainsString( 'Base keeps the identity in START and places the optional context selector in the END resource group.', $docs );
 		self::assertStringContainsString( 'the Core Blueprint mark and explicit toolbar controls remain available', $docs );
-		self::assertStringContainsString( 'Layout normalization must never remove either identity node from the DOM.', $docs );
+		self::assertStringContainsString( 'layout normalization must never remove either identity node from the DOM.', $docs );
 	}
 
 	public function test_designer_history_keeps_one_canonical_command_history_authority(): void {
