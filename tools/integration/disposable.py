@@ -117,7 +117,15 @@ def copy_gate_receipts(workspace: Path, destination: Path) -> int:
         total += info.st_size
         if total > 1024 * 1024:
             raise preflight.PreflightError("Level 2 evidence exceeds safe bounds.")
-        with path.open("rb") as original:
+        # O_NOFOLLOW and fstat close the race between lstat and open, even
+        # if code running in the WordPress fixture replaces a receipt path.
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        with os.fdopen(fd, "rb") as original:
+            opened = os.fstat(original.fileno())
+            if (opened.st_ino != info.st_ino or opened.st_dev != info.st_dev
+                    or opened.st_uid != os.getuid()
+                    or not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1):
+                raise preflight.PreflightError("Level 2 evidence changed while archiving.")
             data = original.read(65537)
         if len(data) != info.st_size:
             raise preflight.PreflightError("Level 2 evidence changed while archiving.")
