@@ -370,3 +370,46 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 		display: none !important;
 	}
 }
+
+
+/*
+ * FIELD-06E — toolbar zones must never overlap on narrow surfaces.
+ * The End zone contains indispensable actions and gets intrinsic width.
+ * Below the two-row threshold the start/preview controls retain row one,
+ * while the whole End action group gets row two without hiding anything.
+ */
+@media (max-width: 1280px) {
+	.cb-core-design-shell__toolbar--designer,
+	.cb-core-design-shell__toolbar--designer.is-compact {
+		grid-template-columns: minmax(0, 1fr) max-content max-content;
+	}
+}
+
+@media (max-width: 700px) {
+	.cb-core-design-shell__toolbar--designer,
+	.cb-core-design-shell__toolbar--designer.is-compact {
+		grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+	}
+	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--start {
+		grid-column: 1;
+		grid-row: 1;
+	}
+	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--center {
+		grid-column: 2;
+		grid-row: 1;
+		justify-self: center;
+	}
+	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--end {
+		grid-column: 1 / -1;
+		grid-row: 2;
+		justify-self: stretch;
+		justify-content: flex-end;
+		flex-wrap: wrap;
+		min-inline-size: 0;
+		max-inline-size: 100%;
+		gap: var(--cb-space-2, 8px);
+	}
+	.cb-core-design-shell__toolbar--designer > .cb-core-design-shell__toolbar-zone--end > .cb-core-design-shell__toolbar-group--resource {
+		flex-shrink: 0;
+	}
+}
