@@ -7,6 +7,7 @@
  * the consumer's own separately authorized responsibility.
  */
 import { show as showModal } from '@cb-core/modal';
+import { createActionMenu } from '@cb-core/template-actions';
 
 const dataElement = typeof document !== 'undefined'
     ? document.getElementById( 'wp-script-module-data-@cb-core/template-browser' ) : null;
@@ -74,6 +75,7 @@ function createBrowser( root, options = {} ) {
         filters: { limit: 24, search: '', source: '', extension: '', designer: '', origin: '', category: '' },
         sources: [], cursor: null, entries: [], selected: null, pending: false,
         requestGeneration: 0, controller: null, timer: null, destroyed: false,
+        actionMenus: [], activeActionClose: null, actionFeedback: '',
         view: hasDesigns ? 'designs' : 'templates', designProvider: '',
     };
     const shell = el( 'section', [ 'cb-template-browser', contextual ? 'cb-template-browser--modal' : '',
@@ -300,7 +302,14 @@ function createBrowser( root, options = {} ) {
     else shell.append( sidebar, content );
     root.replaceChildren( shell );
 
+    function disposeActionMenus() {
+        state.actionMenus.forEach( menu => menu.dispose() );
+        state.actionMenus = [];
+        state.activeActionClose = null;
+    }
+
     function renderDesigns() {
+        disposeActionMenus();
         results.replaceChildren();
         state.entries = [];
         state.selected = null;
@@ -349,7 +358,32 @@ function createBrowser( root, options = {} ) {
     }
 
     function renderCard( item, index ) {
-        const article = el( contextual ? 'label' : 'article', 'cb-template-browser__card' );
+        // Only the server-advertised provider operations become controls.
+        // This is one shared menu in both the Library and Designer Browser.
+        const menu = createActionMenu( item, {
+            restRoot: settings.restRoot, nonce: settings.nonce,
+            contextToken: token, globalMode: !contextual, label,
+            isCurrent: () => !state.destroyed && state.view === 'templates'
+                && state.entries[index] === item,
+            onOpening: close => {
+                state.activeActionClose?.();
+                state.activeActionClose = close;
+            },
+            onNotice: notice => {
+                state.actionFeedback = notice;
+                message.textContent = notice;
+            },
+            onChanged: async notice => {
+                if ( state.destroyed ) return;
+                state.actionFeedback = notice;
+                await refresh();
+            },
+        } );
+        // Interactive menus must never be descendants of a selection label.
+        // An actionable card uses a separate label and sibling disclosure.
+        const article = el( contextual && !menu ? 'label' : 'article', 'cb-template-browser__card' );
+        const selection = contextual && menu
+            ? el( 'label', 'cb-template-browser__card-select' ) : article;
         if ( contextual ) {
             const radio = el( 'input', 'cb-template-browser__choice' );
             radio.type = 'radio';
@@ -363,12 +397,12 @@ function createBrowser( root, options = {} ) {
                     notifyState();
                 }
             } );
-            article.append( radio );
+            selection.append( radio );
         }
         if ( contextual ) {
             const preview = el( 'div', 'cb-template-browser__card-preview' );
             preview.setAttribute( 'aria-hidden', 'true' );
-            article.append( preview );
+            selection.append( preview );
         }
         const body = el( 'div', 'cb-template-browser__card-body' );
         body.append( el( 'h3', 'cb-template-browser__card-title', item.title ) );
@@ -385,29 +419,13 @@ function createBrowser( root, options = {} ) {
             item.compatible ? label( 'compatible', 'Compatible' ) : label( 'incompatible', 'Not compatible' )
         );
         if ( contextual || !item.compatible ) body.append( stateBadge );
-        article.append( body );
-        // T3: management is navigation to the owning extension, never a
-        // Base-owned write/export/delete request. Contextual Designer selection
-        // remains a single radio interaction without nested interactive links.
-        if ( !contextual && item.navigation && typeof item.navigation === 'object' ) {
+        selection.append( body );
+        if ( selection !== article ) article.append( selection );
+        if ( menu ) {
             const actions = el( 'div', 'cb-template-browser__actions' );
-            for ( const kind of [ 'preview', 'manage' ] ) {
-                const entry = item.navigation[kind];
-                if ( !entry || typeof entry.url !== 'string' || typeof entry.label !== 'string'
-                    || !entry.label.trim() ) continue;
-                try {
-                    const destination = new URL( entry.url, window.location.href );
-                    if ( ![ 'http:', 'https:' ].includes( destination.protocol )
-                        || destination.origin !== window.location.origin
-                        || !destination.pathname.includes( '/wp-admin/' ) ) continue;
-                    const link = el( 'a', 'button cb-template-browser__action', entry.label );
-                    link.href = destination.href;
-                    actions.append( link );
-                } catch {
-                    // Malformed provider navigation fails closed.
-                }
-            }
-            if ( actions.childElementCount ) article.append( actions );
+            actions.append( menu.node );
+            article.append( actions );
+            state.actionMenus.push( menu );
         }
         return article;
     }
@@ -422,6 +440,7 @@ function createBrowser( root, options = {} ) {
         }
         if ( reset ) {
             state.controller?.abort();
+            disposeActionMenus();
             state.entries = [];
             state.selected = null;
             state.cursor = null;
@@ -449,7 +468,9 @@ function createBrowser( root, options = {} ) {
                 results.append( renderCard( item, index ) );
             } );
             state.cursor = payload.next_cursor;
-            message.textContent = ( state.entries.length || state.cursor ) ? '' : label( 'noResults', 'No templates found.' );
+            message.textContent = state.actionFeedback || ( ( state.entries.length || state.cursor )
+                ? '' : label( 'noResults', 'No templates found.' ) );
+            state.actionFeedback = '';
             summary.textContent = String( state.entries.length );
             updateResultHeading();
             more.hidden = !state.cursor;
@@ -488,6 +509,7 @@ function createBrowser( root, options = {} ) {
         destroy: () => {
             state.destroyed = true;
             state.controller?.abort();
+            disposeActionMenus();
             clearTimeout( state.timer );
             root.replaceChildren();
         },
