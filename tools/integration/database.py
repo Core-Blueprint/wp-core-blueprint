@@ -145,6 +145,11 @@ def validate_metadata(payload: object, *, require_running: bool = True) -> str:
     if not isinstance(mode, str) or not mode or mode in ("host", "none") or mode.startswith("container:"):
         raise IsolationError("Base MariaDB network mode is not isolated.")
     for mapping in (host.get("PortBindings"), network.get("Ports")):
+        # A stopped container can have no active NetworkSettings mapping.
+        # Its immutable HostConfig port binding must still match exactly.
+        if (mapping is None and not require_running and state.get("Running") is False
+                and mapping is network.get("Ports")):
+            continue
         if not isinstance(mapping, dict) or set(mapping) != {"3306/tcp"}:
             raise IsolationError("Unexpected Base database port mapping.")
         bindings = mapping["3306/tcp"]
