@@ -395,7 +395,8 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 	white-space: nowrap;
 }
 @media (max-width: 960px) {
-	.cb-template-browser--workspace {
+	.cb-template-browser--workspace,
+	.cb-template-browser--workspace.cb-template-browser--with-sections {
 		grid-template-columns: minmax(135px, 170px) minmax(0, 1fr);
 	}
 	.cb-template-browser--workspace.cb-template-browser--with-sections .cb-template-browser__collections {
@@ -414,7 +415,8 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
     .cb-template-browser--modal.cb-template-browser--with-sections {
         grid-template-rows: auto auto minmax(0, 1fr);
     }
-    .cb-template-browser--workspace {
+    .cb-template-browser--workspace,
+    .cb-template-browser--workspace.cb-template-browser--with-sections {
         grid-template-columns: minmax(0, 1fr);
         min-height: 0;
     }
