@@ -488,6 +488,16 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Open design' => 'Ontwerp openen',
     'Search designs' => 'Ontwerpen zoeken',
     'Select a design.' => 'Selecteer een ontwerp.',
+    // FC-T4-01 native Mail offline JSON portability.
+    'Export JSON' => 'JSON exporteren',
+    'Mail template JSON is ready to download.' => 'Het JSON-bestand van de mailtemplate is klaar om te downloaden.',
+    'Import Mail template' => 'Mailtemplate importeren',
+    'Create a new personal Mail template? Existing templates and live Mail designs will not be changed.' => 'Een nieuwe persoonlijke mailtemplate maken? Bestaande templates en actieve mailontwerpen worden niet gewijzigd.',
+    'Import as new copy' => 'Als nieuwe kopie importeren',
+    'New personal Mail template imported.' => 'Nieuwe persoonlijke mailtemplate geïmporteerd.',
+    'This template contains images or embedded media. JSON export supports asset-free templates only.' => 'Deze template bevat afbeeldingen of ingesloten media. JSON-export ondersteunt alleen templates zonder mediabestanden.',
+    'Saved Mail template' => 'Opgeslagen mailtemplate',
+    'Offline JSON import/export for native saved Mail templates.' => 'Offline JSON-import en -export voor opgeslagen native mailtemplates.',
 ] );
 
 return $catalog;

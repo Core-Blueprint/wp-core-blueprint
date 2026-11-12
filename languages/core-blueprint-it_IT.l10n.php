@@ -488,6 +488,16 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Open design' => 'Apri progetto',
     'Search designs' => 'Cerca progetti',
     'Select a design.' => 'Seleziona un progetto.',
+    // FC-T4-01 native Mail offline JSON portability.
+    'Export JSON' => 'Esporta JSON',
+    'Mail template JSON is ready to download.' => 'Il file JSON del modello e-mail è pronto per il download.',
+    'Import Mail template' => 'Importa modello e-mail',
+    'Create a new personal Mail template? Existing templates and live Mail designs will not be changed.' => 'Creare un nuovo modello e-mail personale? I modelli esistenti e i progetti e-mail attivi non verranno modificati.',
+    'Import as new copy' => 'Importa come nuova copia',
+    'New personal Mail template imported.' => 'Nuovo modello e-mail personale importato.',
+    'This template contains images or embedded media. JSON export supports asset-free templates only.' => 'Questo modello contiene immagini o contenuti multimediali incorporati. L’esportazione JSON supporta solo modelli senza risorse multimediali.',
+    'Saved Mail template' => 'Modello e-mail salvato',
+    'Offline JSON import/export for native saved Mail templates.' => 'Importazione ed esportazione JSON offline per i modelli e-mail nativi salvati.',
 ] );
 
 return $catalog;
