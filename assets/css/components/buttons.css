@@ -306,6 +306,38 @@ dialog.cb-core-modal--core .cb-core-button--danger:disabled {
 	opacity: 0.5;
 }
 
+/* Admin Theme's global `body.cb-admin-theme.wp-core-ui .button` and
+ * `.button:focus` rules are more specific than the ordinary danger variant.
+ * A Core modal lives in the browser top layer, so restore the semantic
+ * danger treatment at that exact boundary rather than changing generic
+ * wp-admin buttons or adding consumer-specific CSS overrides. */
+body.cb-admin-theme.wp-core-ui dialog.cb-core-modal--core .cb-core-modal__actions .button.cb-core-button--danger {
+	background: transparent;
+	border: 1px solid var(--cb-danger);
+	color: var(--cb-danger);
+	box-shadow: none;
+}
+body.cb-admin-theme.wp-core-ui dialog.cb-core-modal--core .cb-core-modal__actions .button.cb-core-button--danger:hover,
+body.cb-admin-theme.wp-core-ui dialog.cb-core-modal--core .cb-core-modal__actions .button.cb-core-button--danger:focus {
+	background: var(--cb-danger);
+	border-color: var(--cb-danger);
+	color: var(--cb-surface-1);
+	box-shadow: none;
+}
+body.cb-admin-theme.wp-core-ui dialog.cb-core-modal--core .cb-core-modal__actions .button.cb-core-button--danger:focus-visible {
+	outline: 2px solid var(--cb-danger);
+	outline-offset: 2px;
+	box-shadow: none;
+}
+body.cb-admin-theme.wp-core-ui dialog.cb-core-modal--core .cb-core-modal__actions .button.cb-core-button--danger:disabled {
+	background: transparent;
+	border-color: var(--cb-danger);
+	color: var(--cb-danger);
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
  * WP .button.button-primary - scifi theme
  *
