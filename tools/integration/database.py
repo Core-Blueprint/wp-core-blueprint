@@ -148,7 +148,7 @@ def validate_metadata(payload: object, *, require_running: bool = True) -> str:
         # A stopped container may lose only its runtime network mapping.
         # Its durable HostConfig binding remains mandatory and fully checked.
         if (index == 1 and not require_running and state.get("Running") is False
-                and mapping in (None, {"3306/tcp": None})):
+                and mapping in (None, {}, {"3306/tcp": None})):
             continue
         if not isinstance(mapping, dict) or set(mapping) != {"3306/tcp"}:
             raise IsolationError("Unexpected Base database port mapping.")
