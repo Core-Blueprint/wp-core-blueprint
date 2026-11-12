@@ -17,6 +17,18 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        // Shared Template Browser TL-M2 provider-scoped actions.
+        'Choose a new template name.' => 'Scegli un nuovo nome per il modello.',
+        'Name the new copy of this template.' => 'Assegna un nome alla nuova copia di questo modello.',
+        'Permanently delete this saved template?' => 'Eliminare definitivamente questo modello salvato?',
+        'I understand this permanently deletes the saved template.' => 'Comprendo che questo modello salvato verrà eliminato definitivamente.',
+        'Template JSON downloaded.' => 'JSON del modello scaricato.',
+        'Template action completed.' => 'Operazione sul modello completata.',
+        'Template changed elsewhere. Reload and try again.' => 'Il modello è stato modificato altrove. Ricarica e riprova.',
+        'You can no longer manage this template.' => 'Non puoi più gestire questo modello.',
+        'This action is not supported for this template.' => 'Questa azione non è supportata per questo modello.',
+        'The action could not be confirmed. Check the template before retrying.' => 'Impossibile confermare l\'operazione. Controlla il modello prima di riprovare.',
+        'Templates refreshed; verify the latest state.' => 'Modelli aggiornati; verifica lo stato attuale.',
         // Shared native Designer Elements palette (DF-A1).
         'Add' => 'Aggiungi',
         'Dynamic Data' => 'Dati dinamici',
