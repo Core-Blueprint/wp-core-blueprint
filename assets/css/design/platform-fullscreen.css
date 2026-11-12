@@ -362,12 +362,15 @@
 .cb-core-design-shell--native .cb-mail-platform {
 	padding: 0;
 }
-/* Device previews belong to Mail. Document mode owns Reports preview geometry. */
+/* Device preview caps must never enlarge the Mail document's canonical
+ * inline max-width (set by the renderer from project.root.properties.width).
+ * Width controls the device preview; inline max-width remains authoritative.
+ * Reports document-view geometry is independent. */
 .cb-core-design-shell--native[data-cb-design-shell-viewport="mobile"] .cb-mail-platform__frame {
-	max-width: min(430px, 100%) !important;
+	width: min(430px, 100%) !important;
 }
 .cb-core-design-shell--native[data-cb-design-shell-viewport="tablet"] .cb-mail-platform__frame {
-	max-width: min(782px, 100%) !important;
+	width: min(782px, 100%) !important;
 }
 /* Fixed preview width changes only the sandboxed HTML iframe's CSS box.
  * The parent workarea keeps overflow:auto, so narrow canvases can scroll.
