@@ -129,19 +129,18 @@ test('FIELD-05B: Designs use compact resource rows; Templates keep preview cards
     instance.destroy();
 });
 
-test('TL-M3A: global Library shares the three-pane Browser composition without Designer authority', async () => {
+test('TL-M3A-R1: global Library uses one shared two-pane Browser without Designer authority', async () => {
     const { api, calls } = harness();
     const root = new Element('div');
     const instance = api.createBrowser(root);
     await flush();
     const shell = root.children[0];
-    assert.equal(shell.children.length, 3);
+    assert.equal(shell.children.length, 2, 'no empty primary section when Designs are unavailable');
     assert.equal(shell.dataset.browserView, 'templates');
     assert.match(shell.className, /cb-template-browser--workspace/);
     assert.doesNotMatch(shell.className, /cb-template-browser--modal/);
-    const [sections, origins, content] = shell.children;
-    assert.equal(sections.children.length, 1, 'only Templates section is available globally');
-    assert.equal(sections.children[0].attributes['aria-pressed'], 'true');
+    const [origins, content] = shell.children;
+    assert.doesNotMatch(shell.className, /cb-template-browser--with-sections/);
     assert.equal(origins.attributes['aria-label'], 'Origin');
     assert.equal(origins.children[0].textContent, 'Origin', 'Origins are not labeled Collections');
     assert.equal(origins.children.length, 6, 'heading and five origin filters');
@@ -150,6 +149,11 @@ test('TL-M3A: global Library shares the three-pane Browser composition without D
     assert.match(toolbar.children[0].className, /cb-template-browser__result-heading/);
     assert.equal(toolbar.children[0].children[0].tagName, 'H2');
     assert.match(toolbar.children[1].className, /cb-template-browser__field--search/);
+    assert.equal(toolbar.children[2].children[0].textContent, 'Source');
+    assert.equal(toolbar.children[2].children[1].children[0].textContent, 'All');
+    assert.equal(toolbar.children[3].children[0].textContent, 'Plugin');
+    assert.equal(toolbar.children[4].children[0].textContent, 'Designer type');
+    assert.equal(toolbar.children[5].children[0].textContent, 'Category');
     const templateCard = content.children[2].children[0];
     assert.equal(templateCard.tagName, 'ARTICLE', 'global browsing does not grant a selection/apply control');
     assert.match(templateCard.children[0].className, /cb-template-browser__card-preview/);
@@ -159,7 +163,6 @@ test('TL-M3A: global Library shares the three-pane Browser composition without D
     await flush();
     assert.equal(origins.children[2].attributes['aria-pressed'], 'true');
     assert.ok(calls.some(url => url.includes('origin=built-in')));
-    assert.equal(sections.children[0].attributes['aria-pressed'], 'true');
     instance.destroy();
 });
 
@@ -219,4 +222,17 @@ test('FIELD-05C: Browser confirm label and availability track Designs and Templa
     });
     assert.equal(accepted, true);
     assert.deepEqual(actions, ['template-1']);
+});
+
+
+test('TL-M3A-R1: global workspace is contained while Designer modal owns its frame', () => {
+    assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace\s*\{[^}]*border: 1px solid var\(--cb-browser-line\);[^}]*border-radius: 10px;[^}]*overflow: hidden;/);
+    assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__content\s*\{[^}]*background: var\(--cb-surface-1/);
+    assert.match(styles, /\.cb-template-browser--workspace\.cb-template-browser--with-sections\s*\{[^}]*grid-template-columns: minmax\(152px, 190px\) minmax\(160px, 220px\) minmax\(0, 1fr\);/);
+    assert.match(styles, /\.cb-template-browser--workspace\s*\{[^}]*grid-template-columns: minmax\(160px, 220px\) minmax\(0, 1fr\);/);
+    assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__toolbar\s*\{[^}]*display: grid;[^}]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+    assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__field:not\(\.cb-template-browser__field--search\) > span\s*\{[^}]*position: static;/);
+    assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__card-preview\s*\{[^}]*height: 104px;/);
+    assert.match(styles, /@media \(max-width: 480px\)\s*\{[^}]*\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__toolbar/);
+    assert.match(styles, /\.cb-template-browser--modal\.cb-template-browser--workspace\s*\{ min-height: 0; \}/);
 });
