@@ -79,6 +79,7 @@ function createBrowser( root, options = {} ) {
         view: hasDesigns ? 'designs' : 'templates', designProvider: '',
     };
     const shell = el( 'section', [ 'cb-template-browser', 'cb-template-browser--workspace',
+        hasDesigns ? 'cb-template-browser--with-sections' : '',
         contextual ? 'cb-template-browser--modal' : '' ].filter( Boolean ).join( ' ' ) );
     const sidebar = el( 'div', 'cb-template-browser__sidebar' );
     sidebar.setAttribute( 'role', 'group' );
@@ -211,7 +212,7 @@ function createBrowser( root, options = {} ) {
         wrapper.append( el( 'span', '', label( translationKey, fallback ) ) );
         const select = el( 'select' );
         select.dataset.filter = name;
-        select.append( option( '', label( 'all', 'All templates' ) ) );
+        select.append( option( '', label( 'allOptions', 'All' ) ) );
         choices.forEach( ( [ value, title ] ) => select.append( option( value, title ) ) );
         select.addEventListener( 'change', () => {
             state.filters[name] = select.value;
@@ -248,7 +249,7 @@ function createBrowser( root, options = {} ) {
                 if ( !available.has( category.id ) ) available.set( category.id, category.label );
             }
         }
-        categorySelect.replaceChildren( option( '', label( 'all', 'All templates' ) ) );
+        categorySelect.replaceChildren( option( '', label( 'allOptions', 'All' ) ) );
         [ ...available.entries() ].sort( ( a, b ) => a[1].localeCompare( b[1] ) )
             .forEach( ( [ id, title ] ) => categorySelect.append( option( id, title ) ) );
         categorySelect.disabled = available.size === 0;
@@ -295,7 +296,10 @@ function createBrowser( root, options = {} ) {
         saveArea.append( saveAction );
         sidebar.append( saveArea );
     }
-    shell.append( sidebar, collections, content );
+    // Without an actual Designs section, a single-item primary panel wastes
+    // space and has no navigational value. The same Browser owns both layouts.
+    if ( hasDesigns ) shell.append( sidebar, collections, content );
+    else shell.append( collections, content );
     root.replaceChildren( shell );
 
     function disposeActionMenus() {
