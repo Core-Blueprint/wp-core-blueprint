@@ -256,5 +256,7 @@ test('TL-M3A-R1: global workspace is contained while Designer modal owns its fra
     assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__field:not\(\.cb-template-browser__field--search\) > span\s*\{[^}]*position: static;/);
     assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__card-preview\s*\{[^}]*height: 104px;/);
     assert.match(styles, /@media \(max-width: 480px\)\s*\{[^}]*\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__toolbar/);
+    assert.match(styles, /\.cb-template-browser--workspace\.cb-template-browser--with-sections \.cb-template-browser__content\s*\{[^}]*grid-row: auto;[^}]*grid-column: 1;/);
+    assert.match(styles, /\.cb-template-browser--workspace\.cb-template-browser--with-sections \.cb-template-browser__collections\s*\{[^}]*grid-row: auto;[^}]*grid-column: 1;/);
     assert.match(styles, /\.cb-template-browser--modal\.cb-template-browser--workspace\s*\{ min-height: 0; \}/);
 });
