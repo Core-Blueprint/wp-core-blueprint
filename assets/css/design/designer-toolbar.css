@@ -297,19 +297,18 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 }
 
 /*
- * FIELD-06C — one viewport component, two responsive presentations.
- * The very same Mobile/Tablet/Desktop buttons are inline at full capacity
- * and in a horizontal popover when the measured toolbar is too narrow.
+ * FIELD-06D — one shared responsive popover presentation for viewport and
+ * History. The existing command buttons are moved, never duplicated.
  */
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport {
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--adaptive {
 	position: relative;
 }
 
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport:not(.is-viewport-compact) > .cb-core-design-shell__viewport-trigger {
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--adaptive:not(.is-adaptive-compact) > .cb-core-design-shell__adaptive-trigger {
 	display: none !important;
 }
 
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport > .cb-core-design-shell__viewport-options {
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--adaptive > .cb-core-design-shell__adaptive-options {
 	position: static;
 	display: inline-flex;
 	flex-direction: row;
@@ -328,11 +327,11 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 	transform: none;
 }
 
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport.is-viewport-compact > .cb-core-design-shell__viewport-trigger {
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--adaptive.is-adaptive-compact > .cb-core-design-shell__adaptive-trigger {
 	display: inline-flex !important;
 }
 
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--viewport.is-viewport-compact > .cb-core-design-shell__viewport-options {
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__toolbar-group--adaptive.is-adaptive-compact > .cb-core-design-shell__adaptive-options {
 	position: absolute;
 	inset-block-start: calc(100% + var(--cb-space-2, 8px));
 	inset-inline-start: 50%;
@@ -346,19 +345,28 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 	border-radius: var(--cb-radius-md);
 	background: var(--cb-surface-1);
 	box-shadow: 0 14px 34px rgba(0, 0, 0, .24);
-	transform: translateX(calc(-50% + var(--cb-viewport-popover-shift, 0px)));
+	transform: translateX(calc(-50% + var(--cb-toolbar-popover-shift, 0px)));
 }
 
-.cb-core-design-shell__toolbar--designer .cb-core-design-shell__viewport-options[hidden] {
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__adaptive-options[hidden] {
 	display: none !important;
 }
 
-/* Keep the popover above the workarea without altering the toolbar at rest. */
-.cb-core-design-shell__toolbar--designer.has-viewport-popover-open {
+.cb-core-design-shell__toolbar--designer:is(.has-viewport-popover-open, .has-history-popover-open) {
 	z-index: 65;
 }
 
-/* Do not hide the one viewport trigger in the generic compact-toolbar state. */
-.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--viewport.has-adaptive-viewport-switcher {
+/* Preserve the compact trigger even when generic toolbar condensation hides
+ * non-adaptive History/Viewport groups. */
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--viewport.has-adaptive-viewport-switcher,
+.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__toolbar-group--history.has-adaptive-history-switcher {
 	display: inline-flex !important;
+}
+
+/* The name is never shown on tablet/mobile. The mark and the parent brand's
+ * accessible label remain unchanged for Mail, Reports and any other consumer. */
+@media (max-width: 1280px) {
+	.cb-core-design-shell__toolbar--designer .cb-core-design-shell__brand-wordmark {
+		display: none !important;
+	}
 }

@@ -63,6 +63,7 @@ import {
 	configureDesignerViewports,
 } from './shell/viewports.js';
 import { configureDesignerDocumentView } from './shell/document-view.js';
+import { configureDesignerHistory } from './shell/history.js';
 
 const PROFILE_APIS = Object.freeze({
 	'document-fixed': Object.freeze({ ...fixedProfile }),
@@ -1230,6 +1231,7 @@ export const attachTrustedDesignerHost = ({
 			// against duplicate controllers by createDesignerShell().
 			configurePlatformSidebars(stagedRoot, signal);
 			configurePlatformBrand(stagedRoot, signal);
+			configureDesignerHistory(stagedRoot, {signal});
 			if (activeRegistry.profileId === 'base/mail') {
 				configureDesignerViewports(stagedRoot, {active: 'desktop', signal});
 			} else if (activeRegistry.profileId === 'base/reports') {
@@ -1958,6 +1960,7 @@ export {
 	animateLayoutChange,
 	configureDesignerSidebar,
 	configureDesignerViewports,
+	configureDesignerHistory,
 	configureDesignerDocumentView,
 	createDesignerIcon,
 	createDesignerInspectorControls,
@@ -1996,6 +1999,7 @@ const publicApi = Object.freeze({
 		create: createDesignerShell,
 		configureSidebar: configureDesignerSidebar,
 		configureViewports: configureDesignerViewports,
+		configureHistory: configureDesignerHistory,
 		configureDocumentView: configureDesignerDocumentView,
 		sidebarRoles: DESIGNER_SIDEBAR_ROLES,
 		viewportOrder: DESIGNER_VIEWPORT_ORDER,

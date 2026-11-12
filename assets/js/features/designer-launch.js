@@ -419,7 +419,7 @@
 			const viewportLabel = String(heading?.textContent || 'Canvas').trim();
 			heading?.remove();
 			viewportGroup.setAttribute('aria-label', viewportLabel);
-			shellApi.configureViewports(shell);
+
 		}
 
 		if (fullscreen) {
@@ -510,6 +510,8 @@
 		toolbar.classList.add('cb-core-design-shell__toolbar--designer');
 		toolbar.dataset.cbDesignShellHeader = 'true';
 		toolbar.replaceChildren(start, center, end);
+		if (viewportGroup) shellApi.configureViewports(shell);
+		if (historyGroup) shellApi.configureHistory(shell);
 		if (contextSwitcher) enhanceHeaderContext(contextSwitcher);
 	};
 

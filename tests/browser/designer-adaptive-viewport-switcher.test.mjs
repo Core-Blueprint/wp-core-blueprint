@@ -9,7 +9,9 @@ import {test} from 'node:test';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const iconsSource = await readFile(new URL('../../assets/js/design/shell/icons.js', import.meta.url), 'utf8');
 const viewportSource = await readFile(new URL('../../assets/js/design/shell/viewports.js', import.meta.url), 'utf8');
+const popoverSource = await readFile(new URL('../../assets/js/design/shell/toolbar-popover.js', import.meta.url), 'utf8');
 const runtime = iconsSource.replace(/^export /gm, '') + '\n' +
+    popoverSource.replace(/^import .*$/gm, '').replace(/^export /gm, '') + '\n' +
     viewportSource.replace(/^import .*$/gm, '').replace(/^export /gm, '');
 const browser = process.env.CHROMIUM_BIN || ['chromium', 'chromium-browser', 'google-chrome'].find(name =>
     spawnSync(name, ['--version'], {encoding: 'utf8', timeout: 3000}).status === 0
@@ -41,7 +43,7 @@ function inspect() {
             // deliberately unsorted and cannot prove rendered order.
             const ordered = [...options.querySelectorAll('[data-cb-design-shell-viewport]')];
             return {
-                compact: group.classList.contains('is-viewport-compact'),
+                compact: group.classList.contains('is-adaptive-compact'),
                 triggerVisible: shown(trigger),
                 optionsVisible: shown(options) && !options.hidden,
                 expanded: trigger.getAttribute('aria-expanded'),
