@@ -110,8 +110,11 @@ for(const [viewport,width,height] of cases) {
             }
             assert.deepEqual(overlaps,[],'Overlapping controls at '+width+'px: '+JSON.stringify(r));
             // The toolbar ALWAYS occupies one row; no mobile-only row 2.
+            // Zone heights differ (brand vs buttons), so aligned centers—not
+            // identical top edges—determine whether a zone moved to row two.
+            const centerY = zone => (zone.top+zone.bottom)/2;
             for(const name of ['start','center','end'])
-                assert.ok(Math.abs(r.zones[name].top-r.zones.start.top)<=2,
+                assert.ok(Math.abs(centerY(r.zones[name])-centerY(r.zones.start))<=2,
                     name+' moved to a second row at '+width+'px: '+JSON.stringify(r));
             if(r.scrollable) {
                 // Even with enlarged controls, every original command stays
