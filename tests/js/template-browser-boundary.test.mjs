@@ -83,7 +83,7 @@ test('standalone Template Library fills the page without stretching card grid ro
   assert.match(styles, /\.cb-template-browser__actions\s*\{[^}]*position: absolute;[^}]*inset-block-start: 12px;[^}]*inset-inline-end: 12px;/);
   assert.match(styles, /\.cb-template-browser__action-panel\s*\{[^}]*position: fixed;/);
   assert.match(styles, /\.cb-template-browser__choice\s*\{[^}]*inset-inline-start: 12px;/);
-  assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?\.cb-template-library-page \.cb-template-browser\s*\{ flex-direction: column; \}/);
+  assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?\.cb-template-browser--workspace\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/);
 });
 
 test('FIELD-04B: contextual Browser scrolls results while card rows remain intrinsic', () => {
@@ -97,7 +97,7 @@ test('FIELD-04B: contextual Browser scrolls results while card rows remain intri
   assert.match(styles, /grid-template-rows: auto auto minmax\(0, 1fr\);/);
 });
 
-test('Browser Golden UX keeps contextual navigation and Save isolated from global Library', () => {
+test('Browser Golden UX shares layout while contextual Save remains Designer-only', () => {
   assert.match(browser, /resultHeading\.append\( resultTitle, resultCount \)/);
   assert.match(browser, /toolbar\.prepend\( resultHeading, searchField \)/);
   assert.match(browser, /resultCount\.textContent = String\( state\.entries\.length \)/);
@@ -107,10 +107,10 @@ test('Browser Golden UX keeps contextual navigation and Save isolated from globa
   assert.doesNotMatch(browser, /body\.append\( saveAction \)/);
   assert.match(browser, /footer\.hidden = contextual && !state\.cursor/);
   assert.match(styles, /\.cb-template-browser__field\[hidden\],[\s\S]*?display: none !important;/);
-  assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__card\.is-current/);
-  assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__card:has\(\.cb-template-browser__choice:checked\)/);
-  assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__sidebar-footer/);
-  assert.match(styles, /@media \(max-width: 720px\) \{[\s\S]*?\.cb-template-browser--modal \.cb-template-browser__save-as/);
+  assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__card\.is-current/);
+  assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__card:has\(\.cb-template-browser__choice:checked\)/);
+  assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__sidebar-footer/);
+  assert.match(styles, /@media \(max-width: 720px\) \{[\s\S]*?\.cb-template-browser--workspace \.cb-template-browser__save-as/);
   assert.match(styles, /\.cb-template-library-page \.cb-template-browser \{/);
 });
 
@@ -196,19 +196,22 @@ test('filter interaction is safe while the source metadata response is pending',
   runInNewContext(executable, context, { timeout: 1000 });
   context.window.cbCore.templateBrowser.createBrowser(root);
   const sidebar = root.children[0].children[0];
-  const builtIn = sidebar.children[1];
-  assert.equal(sidebar.role, 'group', 'Origin buttons are a filter group, not page navigation');
+  const origins = root.children[0].children[1];
+  const builtIn = origins.children[2];
+  assert.equal(sidebar.role, 'group', 'Sections remain separate from origin filters');
   assert.equal(sidebar.children[0]['aria-pressed'], 'true');
+  assert.equal(origins.role, 'group', 'Origin buttons are a filter group');
+  assert.equal(origins.children[1]['aria-pressed'], 'true');
   assert.doesNotThrow(() => builtIn.events.get('click')());
   assert.equal(builtIn['aria-pressed'], 'true', 'The active origin is conveyed as pressed');
-  assert.equal(sidebar.children[0]['aria-pressed'], 'false', 'The previously active origin is not pressed');
+  assert.equal(origins.children[1]['aria-pressed'], 'false', 'The previous origin is no longer pressed');
   assert.equal(
     calls.filter((url) => url.includes('/templates?') && new URL(url, 'https://example.test').searchParams.get('origin') === 'built-in').length,
     1,
     'Changing an origin before facets arrive must still refresh the template query',
   );
   await new Promise((resolve) => setImmediate(resolve));
-  const content = root.children[0].children[1];
+  const content = root.children[0].children[2];
   const more = content.children[3].children[1];
   assert.equal(more.hidden, false, 'Empty filtered pages must preserve valid continuation');
   more.events.get('click')();
