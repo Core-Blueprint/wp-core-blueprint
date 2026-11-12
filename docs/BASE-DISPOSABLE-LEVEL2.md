@@ -89,7 +89,7 @@ on a disposed database. Development ZIP construction remains independent:
 | Pre-existing name/volume collision | Fail before adoption or modification |
 | Unexpected published IP, wrong label/mount, shared volume | Fail closed |
 | Database readiness, WordPress/PHPUnit or conformance gate fails | Record failure, attempt verified own-resource cleanup |
-| External interruption | Terminate test process group, attempt verified cleanup |
+| External interruption | Request test runner cancellation; **retain resources** when detached test descendants may still be alive. Never race cleanup |
 | Unknown ownership, partial resource creation or unsupported inspect output | **Never** guess/delete; retain evidence and report resources for reviewed recovery |
 | Full matrix PASS but final receipt/parity or cleanup fails | **FAIL**, never promote to Level 2 PASS |
 
