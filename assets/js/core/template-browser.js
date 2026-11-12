@@ -294,7 +294,8 @@ function createBrowser( root, options = {} ) {
             } finally { saveAction.disabled = false; }
         } );
         saveArea.append( saveAction );
-        sidebar.append( saveArea );
+        // Keep Save-as reachable when the Designer has templates but no Designs section.
+        ( hasDesigns ? sidebar : collections ).append( saveArea );
     }
     // Without an actual Designs section, a single-item primary panel wastes
     // space and has no navigational value. The same Browser owns both layouts.
