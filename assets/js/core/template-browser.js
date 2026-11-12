@@ -174,7 +174,7 @@ function createBrowser( root, options = {} ) {
         const groupKey = state.view === 'templates' ? 'origin' : 'source';
         const groupName = label( groupKey, state.view === 'templates' ? 'Origin' : 'Source' );
         collections.setAttribute( 'aria-label', groupName );
-        collections.replaceChildren( el( 'h3', 'cb-template-browser__side-heading', groupName ) );
+        collections.replaceChildren( el( contextual ? 'h3' : 'h2', 'cb-template-browser__side-heading', groupName ) );
         if ( state.view === 'templates' ) {
             originButtons.forEach( ( button ) => collections.append( button ) );
         } else {
