@@ -74,6 +74,7 @@ function harness({ modal = null, response = null } = {}) {
     };
     const executable = source
         .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = globalThis.modalHook;')
+        .replace("import { create as createIcon } from '@cb-core/icon';", 'const createIcon = () => null;')
         .replace('export function createActionMenu', 'function createActionMenu') +
         '\nglobalThis.__createActionMenu = createActionMenu;';
     runInNewContext(executable, sandbox, { timeout: 1000 });
@@ -131,7 +132,7 @@ test('TL-M2: Actions opens an accessible disclosure, supports Escape and dispose
     assert.equal(trigger.attributes['aria-expanded'], 'true');
     assert.equal(panel.hidden, false);
     assert.equal(h.docEvents.has('pointerdown'), true);
-    menu.node.key('Escape');
+    h.docEvents.get('keydown')?.({ key: 'Escape', preventDefault() {}, stopPropagation() {} });
     assert.equal(panel.hidden, true);
     assert.equal(trigger.focused, true);
     assert.equal(h.docEvents.has('pointerdown'), false);
@@ -191,8 +192,9 @@ test('TL-M2: Export returns provider JSON as a download, never inserts data as H
     assert.equal(h.requests.length, 1);
     assert.equal(JSON.parse(h.requests[0].options.body).action, 'export-json');
     assert.equal(h.blobs.length, 1);
-    assert.equal(h.document.body.children[0].download, 'core-blueprint-template-saved.one.json');
-    assert.equal(h.document.body.children[0].clicked, true);
+    const download = h.document.body.children.find( child => child.tagName === 'A' );
+    assert.equal(download.download, 'core-blueprint-template-saved.one.json');
+    assert.equal(download.clicked, true);
     assert.equal(h.modals.length, 0);
 });
 
