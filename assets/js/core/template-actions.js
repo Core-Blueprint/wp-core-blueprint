@@ -22,10 +22,10 @@ function validRevision( value ) {
 }
 
 function allowedNavigation( item, globalMode ) {
-    if ( !item.navigation || typeof item.navigation !== 'object' ) return [];
+    // Never navigate away from an active Designer; its Exit Guard owns transitions.
+    if ( !globalMode || !item.navigation || typeof item.navigation !== 'object' ) return [];
     const entries = [];
     for ( const kind of [ 'preview', 'manage' ] ) {
-        if ( kind === 'manage' && !globalMode ) continue;
         const link = item.navigation[kind];
         if ( !link || typeof link.url !== 'string' || typeof link.label !== 'string'
             || !link.label.trim() ) continue;
