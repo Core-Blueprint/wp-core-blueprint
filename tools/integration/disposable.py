@@ -140,7 +140,9 @@ def run_wordpress(args: list[str], env: dict[str, str]) -> int:
         return process.wait()
     except KeyboardInterrupt:
         try:
-            os.killpg(process.pid, signal.SIGTERM)
+            # SIGINT lets the existing gate supervisor unwind its finally-block
+            # and terminate its separately spawned scenario process group.
+            os.killpg(process.pid, signal.SIGINT)
         except ProcessLookupError:
             pass
         try:
@@ -166,6 +168,7 @@ def qualify() -> int:
     env = None
     error = ""
     passed = False
+    interrupted = False
     cleaned = False
     gate_count = 0
     print(f"Base disposable Level 2: run {token}; exact HEAD {sha}", flush=True)
@@ -191,8 +194,9 @@ def qualify() -> int:
             raise preflight.PreflightError("Level 2 final receipt cannot be proven.")
         passed = True
     except (preflight.PreflightError, KeyboardInterrupt, OSError) as exception:
-        error = ("Qualification interrupted." if isinstance(exception, KeyboardInterrupt)
-                 else str(exception))
+        interrupted = isinstance(exception, KeyboardInterrupt)
+        error = ("Qualification interrupted; test descendants may still be active."
+                 if interrupted else str(exception))
     finally:
         try:
             gate_count = copy_gate_receipts(
@@ -200,12 +204,18 @@ def qualify() -> int:
         except (preflight.PreflightError, OSError) as exception:
             error = error or f"Evidence archiving failed: {exception}"
             passed = False
-        try:
-            db.cleanup(env if env is not None else base)
-            cleaned = True
-        except (preflight.PreflightError, OSError) as exception:
-            error = error or f"Disposable cleanup blocked: {exception}"
+        if interrupted:
+            # The existing gate runner starts separate process sessions.
+            # Never assume SIGINT killed every descendant: retain resources
+            # for explicit ownership/process review rather than race cleanup.
             cleaned = False
+        else:
+            try:
+                db.cleanup(env if env is not None else base)
+                cleaned = True
+            except (preflight.PreflightError, OSError) as exception:
+                error = error or f"Disposable cleanup blocked: {exception}"
+                cleaned = False
         write_once(report, "99-outcome.json", {
             "schema": 1, "product": "core-blueprint",
             "mode": "disposable-level2", "run": token, "git_sha": sha,
