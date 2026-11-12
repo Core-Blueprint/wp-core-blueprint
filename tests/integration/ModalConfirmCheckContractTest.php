@@ -41,7 +41,11 @@ final class CB_Base_Modal_Confirm_Check_Contract_Test extends WP_UnitTestCase {
         self::assertStringContainsString( "const typedValid = mode !== 'typed'", $source );
         self::assertStringContainsString( 'const inputValid = ! inputRequired', $source );
         self::assertStringContainsString( 'const checkValid = ! dialog._cbConfirmCheck || dialog._cbConfirmCheck.checked;', $source );
-        self::assertStringContainsString( 'return typedValid && inputValid && checkValid;', $source );
+        self::assertStringContainsString( 'let externalValid = true;', $source );
+        self::assertStringContainsString( "if ( typeof opts.confirmEnabled === 'function' ) {", $source );
+        self::assertStringContainsString( 'try { externalValid = opts.confirmEnabled() === true; }', $source );
+        self::assertStringContainsString( 'catch { externalValid = false; }', $source );
+        self::assertStringContainsString( 'return typedValid && inputValid && checkValid && externalValid;', $source );
         self::assertStringContainsString(
             "dialog._cbConfirmCheck.addEventListener( 'change', updateConfirmAvailability );",
             $source

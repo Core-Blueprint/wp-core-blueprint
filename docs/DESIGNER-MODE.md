@@ -121,17 +121,17 @@ Consumers must not redefine the Designer Shell column/drawer model, reorder thes
 
 The canonical Designer toolbar is capability-driven. Consumers declare controls and actions; Base decides whether those controls remain explicit or are compressed into compact disclosures when horizontal space becomes constrained.
 
-Base measures the **actual toolbar composition** rather than relying on a product-specific viewport breakpoint. Responsive Designer identity compression is content-driven and separate from full toolbar compaction: Base measures the preferred inline size of the START-zone identity + context without allowing those children to shrink. The textual Designer wordmark is hidden only when that preferred content no longer fits the available START-zone width, while the Core Blueprint mark, context selector and explicit toolbar controls remain visible. Full compact toolbar behavior is triggered by measured zone overflow after moving lower-priority contextual commands to Base-owned Tools/View disclosures. Consumers do not configure either behavior.
+Base measures the **actual toolbar composition** rather than relying on a product-specific viewport breakpoint. Responsive Designer identity compression is content-driven and separate from full toolbar compaction: Base measures the preferred inline size of the START-zone identity without allowing those children to shrink. The textual Designer wordmark is hidden only when that preferred identity no longer fits the available START-zone width, while the Core Blueprint mark and explicit toolbar controls remain available. The optional context selector belongs to the END resource group and is protected from shrinking beneath its usable control size. Full compact toolbar behavior is triggered by measured zone overflow after moving lower-priority contextual commands to Base-owned Tools/View disclosures. Consumers do not configure either behavior.
 
 ### Toolbar zone ownership
 
 The canonical toolbar uses three stable semantic zones. Their ownership does not change per consumer:
 
-- **Start:** Base-owned branded Designer identity, followed immediately by the optional active context/file/document selector declared with `data-cb-design-shell-context`.
+- **Start:** Base-owned branded Designer identity and responsive left sidebar launcher when available.
 - **Center:** canvas/view controls, including the canonical responsive viewport switcher when the consumer exposes `data-cb-design-shell-viewport` controls.
-- **End:** status, history/actions, close/fullscreen and the canonical primary action.
+- **End:** responsive right sidebar launcher, the resource group (including an optional active context/file/document selector declared with `data-cb-design-shell-context`), status, history/actions, primary Save and close/fullscreen.
 
-A context selector must not replace or hide the Designer identity. Consumers supply the selector and its options, while Base owns its placement, compact geometry and overflow behavior. Consumers must not move the selector to the center zone merely because a particular Designer does not currently expose viewport controls; the center zone stays reserved for canvas/view capabilities so toolbar position remains predictable across Designer modes.
+A context selector must not replace or hide the Designer identity. Consumers supply the selector and its options, while Base owns its placement inside the END resource group, compact geometry and overflow behavior. Consumers must not move the selector to the START or CENTER zone; the CENTER stays reserved for canvas/view capabilities and the END resource group is sized before History and document actions so toolbar position remains predictable across Designer modes.
 
 Wide toolbar behavior:
 
@@ -392,18 +392,19 @@ Evaluator Designer  → evaluator.designer
 The currently edited artifact belongs in the adjacent `data-cb-design-shell-context` selector instead of the branded identity. For example:
 
 ```text
-reports.designer   [ Maintenance Report ▾ ]
-mail.designer      [ Password reset ▾ ]
-automation.builder [ Customer onboarding ▾ ]
+START identity           END resource selector
+reports.designer          [ Maintenance Report ▾ ]
+mail.designer             [ Password reset ▾ ]
+automation.builder        [ Customer onboarding ▾ ]
 ```
 
 Do not encode the selected artifact into the Designer identity when the context selector owns that information. For example, `maintenance.report [ Maintenance Report ▾ ]` is not a canonical Designer identity; `reports.designer [ Maintenance Report ▾ ]` is.
 
 The canonical Designer identity therefore consists of the Core Blueprint mark plus the branded mode name. Consumers must not pre-format titles with dots or lowercase them themselves, copy the Miriam Libre font or brand colours, inject a product-local logo, or override lockup geometry. Changes to Designer branding or naming belong in the Base Designer Foundation so every Designer consumer receives the same identity.
 
-The identity markup is persistent Base-owned DOM. Layout normalization may position the adjacent context selector, but it must never remove or rebuild the Core Blueprint mark or Designer wordmark. Responsive presentation belongs to Base CSS instead of DOM mutation.
+The identity markup is persistent Base-owned DOM in the START zone. The context selector is separately mounted in the END resource group; neither layout normalization nor compact presentation may remove or rebuild the Core Blueprint mark or Designer wordmark. Responsive presentation belongs to Base CSS instead of DOM mutation.
 
-In wide mode, the mark and textual `domain.mode` wordmark are visible before the optional context selector. Base keeps that full identity visible for as long as the preferred START-zone identity + context content fits. Only when that content would overflow the available START-zone width does Base enter the identity-condensed state: the textual wordmark is hidden while the Core Blueprint mark, shorter context selector and explicit toolbar controls remain visible. This decision is measured by Base at runtime and is never configured by the consumer. Full compact mode is a later state. The context selector stays adjacent to the identity in every state. Layout normalization must never remove either identity node from the DOM.
+In wide mode, the Core Blueprint mark and textual `domain.mode` wordmark are visible in START, while the optional resource selector is placed with Browser controls at the beginning of END. Base keeps the identity in START and places the optional context selector in the END resource group. When the brand would overflow its available START-zone width, Base may enter the identity-condensed state: the textual wordmark is hidden while the Core Blueprint mark and explicit toolbar controls remain available. At 1280px and below the mobile branding policy may hide the wordmark earlier. Full compact mode is an independent state. The selector remains in END across responsive states, and layout normalization must never remove either identity node from the DOM.
 
 ## Consumer restrictions
 

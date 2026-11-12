@@ -78,11 +78,12 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		$icons       = $this->source( 'assets/js/design/shell/icons.js' );
 
 		self::assertStringContainsString( "const contextSwitcher = toolbar.querySelector('[data-cb-design-shell-context]');", $launch );
-		self::assertStringContainsString( 'if (contextSwitcher) start.append(contextSwitcher);', $launch );
+		self::assertStringContainsString( 'if (contextSwitcher) resourceGroup.append(contextSwitcher);', $launch );
+		self::assertStringContainsString( 'end.append(resourceGroup, operationGroup);', $launch );
 		self::assertStringContainsString( "shellApi.icons.decorate(fullscreen, active ? 'x' : 'maximize-2'", $launch );
 		self::assertStringNotContainsString( "active ? 'minimize-2'", $launch );
 		self::assertStringContainsString( "close.dataset.cbDesignShellClose = '';", $launch );
-		self::assertStringContainsString( 'if (save) end.append(save);', $launch );
+		self::assertStringContainsString( 'if (save) operationGroup.append(save);', $launch );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar-context', $toolbar_css );
 		self::assertStringContainsString( '.cb-core-design-shell__layer-row.is-selected', $layers_css );
 		self::assertStringContainsString( '.cb-core-design-shell__layer-action.button', $layers_css );
@@ -90,23 +91,29 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "'arrow-down': Object.freeze([", $icons );
 	}
 
-	public function test_designer_toolbar_keeps_identity_and_context_in_start_with_viewports_centered(): void {
+	public function test_designer_toolbar_separates_brand_viewports_and_resource_actions_into_three_zones(): void {
 		$launch      = $this->source( 'assets/js/features/designer-launch.js' );
 		$toolbar_css = $this->source( 'assets/css/design/designer-toolbar.css' );
 		$docs        = $this->source( 'docs/DESIGNER-MODE.md' );
 
-		$brand_position   = strpos( $launch, 'start.append(brand);' );
-		$context_position = strpos( $launch, 'if (contextSwitcher) start.append(contextSwitcher);' );
-		$center_position  = strpos( $launch, "center.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--center'" );
-		$viewport_position = strpos( $launch, 'if (viewportGroup) center.append(viewportGroup);' );
+		$brand_position     = strpos( $launch, 'start.append(brand);' );
+		$center_position    = strpos( $launch, "center.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--center'" );
+		$viewport_position  = strpos( $launch, 'if (viewportGroup) center.append(viewportGroup);' );
+		$resource_position  = strpos( $launch, "resourceGroup.className = 'cb-core-design-shell__toolbar-group cb-core-design-shell__toolbar-group--resource';" );
+		$context_position   = strpos( $launch, 'if (contextSwitcher) resourceGroup.append(contextSwitcher);' );
+		$operations_position = strpos( $launch, 'if (save) operationGroup.append(save);' );
+		$end_position       = strpos( $launch, 'end.append(resourceGroup, operationGroup);' );
 
-		self::assertIsInt( $brand_position );
-		self::assertIsInt( $context_position );
-		self::assertIsInt( $center_position );
-		self::assertIsInt( $viewport_position );
-		self::assertLessThan( $context_position, $brand_position );
-		self::assertLessThan( $center_position, $context_position );
+		foreach ( [ $brand_position, $center_position, $viewport_position, $resource_position, $context_position, $operations_position, $end_position ] as $position ) {
+			self::assertIsInt( $position );
+		}
+		self::assertLessThan( $center_position, $brand_position );
 		self::assertLessThan( $viewport_position, $center_position );
+		self::assertLessThan( $resource_position, $viewport_position );
+		self::assertLessThan( $context_position, $resource_position );
+		self::assertLessThan( $end_position, $context_position );
+		self::assertLessThan( $end_position, $operations_position );
+		self::assertStringNotContainsString( 'if (contextSwitcher) start.append(contextSwitcher);', $launch );
 
 		self::assertStringContainsString( 'max-width: min(16rem, 36vw);', $toolbar_css );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-measuring-identity .cb-core-design-shell__toolbar-zone--start', $toolbar_css );
@@ -131,8 +138,8 @@ final class CB_Designer_Toolbar_Composition_Contract_Test extends WP_UnitTestCas
 		self::assertStringContainsString( "brand.classList.add('cb-core-design-shell__brand--contextual');", $layout );
 		self::assertStringNotContainsString( "brand.querySelector('.cb-core-design-shell__brand-wordmark')?.remove();", $layout );
 		self::assertStringContainsString( '.cb-core-design-shell__toolbar--designer.is-compact .cb-core-design-shell__brand-wordmark,', $designer_css );
-		self::assertStringContainsString( 'Base keeps that full identity visible for as long as the preferred START-zone identity + context content fits.', $docs );
-		self::assertStringContainsString( 'the Core Blueprint mark, shorter context selector and explicit toolbar controls remain visible', $docs );
+		self::assertStringContainsString( 'Base keeps the identity in START and places the optional context selector in the END resource group.', $docs );
+		self::assertStringContainsString( 'the Core Blueprint mark and explicit toolbar controls remain available', $docs );
 		self::assertStringContainsString( 'Layout normalization must never remove either identity node from the DOM.', $docs );
 	}
 
