@@ -166,6 +166,28 @@ test('TL-M3A-R1: global Library uses one shared two-pane Browser without Designe
     instance.destroy();
 });
 
+test('TL-M3A-R1: two-pane scoped Browser preserves Save-as when no Designs exist', async () => {
+    const { api } = harness();
+    const root = new Element('div');
+    let calls = 0;
+    const instance = api.createBrowser(root, {
+        mode: 'designer', contextToken: 'server-issued-scope',
+        onSaveAs: async () => { calls++; },
+    });
+    await flush();
+    const shell = root.children[0];
+    assert.equal(shell.children.length, 2, 'without Designs there is no empty primary navigation pane');
+    assert.doesNotMatch(shell.className, /cb-template-browser--with-sections/);
+    const origins = shell.children[0];
+    const footer = origins.children.find(node => node.className.includes('cb-template-browser__sidebar-footer'));
+    assert.ok(footer, 'scoped Save-as stays accessible in the origin sidebar');
+    assert.equal(footer.children[0].textContent, 'Save as template');
+    await footer.children[0].events.get('click')();
+    assert.equal(calls, 1);
+    assert.equal(footer.children[0].disabled, false);
+    instance.destroy();
+});
+
 test('FIELD-05B: responsive styles separate design rows and template grid', () => {
     assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="designs"\] \.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: auto;/);
     assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="designs"\] \.cb-template-browser__card--design\s*\{[^}]*display: grid;[^}]*min-height: 74px;/);
