@@ -124,7 +124,9 @@ function fixture() {
         '<script>' + runtime + '\n(' + inspect.toString() + ')();</script></body></html>';
 }
 
-for (const width of [1600, 1024, 768, 600]) {
+// Test both sides of the shared 1280px boundary plus intermediate tablet and
+// mobile widths: desktop controls must never reappear as the screen narrows.
+for (const width of [1600, 1281, 1280, 1263, 1024, 768, 600]) {
     test('FIELD-06C Chromium viewport group at ' + width + 'px', async () => {
         assert.ok(browser, 'A locally installed Chromium is required; set CHROMIUM_BIN if needed.');
         const temp = await mkdtemp(join(tmpdir(), 'cb-viewport-field06c-'));
@@ -141,7 +143,7 @@ for (const width of [1600, 1024, 768, 600]) {
             const error = run.stdout.match(/data-viewport-error="([^"]+)"/);
             assert.ok(encoded, 'No viewport report: ' + (error?.[1] || run.stderr));
             const v = JSON.parse(decodeURIComponent(encoded[1]));
-            const expectCompact = width <= 768;
+            const expectCompact = width <= 1280;
             assert.equal(v.initial.compact, expectCompact, JSON.stringify(v.initial));
             assert.equal(v.initial.triggerVisible, expectCompact);
             assert.equal(v.initial.optionsVisible, !expectCompact);

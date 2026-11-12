@@ -22,16 +22,17 @@ test('FIELD-06C: one canonical set of actual viewport buttons, independent of co
 		'Viewport adapter must have no Mail/Reports branching');
 });
 
-test('FIELD-06C: capacity measurement and lifecycle stay owned by Base', () => {
-	assert.match(viewports, /const available = toolbarWidth - padding - widthOf\(start\) - widthOf\(end\) - \(2 \* gap\)/);
-	assert.match(viewports, /available < inlineWidth \+ \(compact \? 36 : 16\)/);
+test('FIELD-06C: mobile and tablet always use the one-button dropdown; desktop uses inline controls', () => {
+	assert.match(viewports, /view\?\.matchMedia\?\.\('\(max-width: 1280px\)'\)/);
+	assert.match(viewports, /const next = compactMedia\.matches/);
+	assert.match(viewports, /compactMedia\?\.addEventListener\?\.\('change', syncAdaptive, \{ signal: local\.signal \}\)/);
+	assert.doesNotMatch(viewports, /inlineWidth|toolbarWidth|const available|hysteresis|classList\.contains\('is-compact'\)/,
+		'Changing toolbar content must never revive desktop controls on tablet/mobile');
 	assert.match(viewports, /view\.ResizeObserver\(syncAdaptive\)/);
 	assert.match(viewports, /view\?\.addEventListener\?\.\('resize', syncAdaptive/);
 	assert.match(viewports, /signal\?\.addEventListener\('abort', destroy/);
 	assert.match(viewports, /resize\?\.disconnect\(\)/);
 	assert.match(editor, /configureDesignerViewports\(stagedRoot, \{active: 'desktop', signal\}\)/);
-	assert.doesNotMatch(viewports, /innerWidth\s*[<>=]|matchMedia\(.*max-width/,
-		'Component adapts to available toolbar capacity, not viewport breakpoint');
 });
 
 test('FIELD-06C: popover is a keyboard-accessible group with one active selection authority', () => {
@@ -62,5 +63,5 @@ test('FIELD-06C: existing three control states and popover share Foundation visu
 	assert.match(modeCss, /\.cb-core-design-shell__toolbar--designer\.is-compact \.cb-core-design-shell__toolbar-group--viewport,/);
 	assert.match(css, /\.cb-core-design-shell__toolbar--designer\.is-compact \.cb-core-design-shell__toolbar-group--viewport\.has-adaptive-viewport-switcher\s*\{\s*display: inline-flex !important;/);
 	assert.match(viewports, /group\.classList\.add\('has-adaptive-viewport-switcher'\)/);
-	assert.match(viewports, /toolbar\.classList\.contains\('is-compact'\)/);
+	assert.match(viewports, /const next = compactMedia\.matches/);
 });

@@ -160,26 +160,14 @@ export const configureDesignerViewports = (root, {
 		|| '';
 	if (initial) activate(initial, { emit: false });
 
+	// Viewport presentation follows the same tablet/mobile boundary as Base's
+	// responsive sidebars. Capacity measurements were non-monotonic: when the
+	// brand condensed, available space increased and revived the three inline
+	// buttons on a *narrower* screen. This switcher must not oscillate.
+	const compactMedia = view?.matchMedia?.('(max-width: 1280px)') ?? null;
 	const syncAdaptive = () => {
-		if (destroyed || !trigger || !options || !view || !toolbar.isConnected) return;
-		const toolbarWidth = toolbar.clientWidth;
-		if (!(toolbarWidth > 0)) return;
-		const start = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--start');
-		const end = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--end');
-		const style = view.getComputedStyle(toolbar);
-		const gap = Number.parseFloat(style.columnGap) || 8;
-		const padding = (Number.parseFloat(style.paddingLeft) || 0)
-			+ (Number.parseFloat(style.paddingRight) || 0);
-		const widthOf = (element) => element
-			? Math.max(element.scrollWidth || 0, element.getBoundingClientRect().width || 0) : 0;
-		const controlSize = Number.parseFloat(view.getComputedStyle(controls[0]).width) || 44;
-		const optionGap = Number.parseFloat(view.getComputedStyle(options).columnGap) || 8;
-		const inlineWidth = (controlSize * controls.length) + (optionGap * Math.max(0, controls.length - 1));
-		const available = toolbarWidth - padding - widthOf(start) - widthOf(end) - (2 * gap);
-		// Account for breathing room around the center controls, with 20px of
-		// hysteresis after collapsing so font/resize observers cannot oscillate.
-		const next = toolbar.classList.contains('is-compact')
-			|| available < inlineWidth + (compact ? 36 : 16);
+		if (destroyed || !trigger || !options || !compactMedia) return;
+		const next = compactMedia.matches;
 		if (compact === next) {
 			if (open) positionPopover();
 			return;
@@ -214,18 +202,14 @@ export const configureDesignerViewports = (root, {
 		doc.addEventListener('focusin', (event) => {
 			if (open && !group.contains(event.target)) setOpen(false);
 		}, { signal: local.signal });
+		compactMedia?.addEventListener?.('change', syncAdaptive, { signal: local.signal });
+		// Observer and resize callbacks reposition an open popup only. The
+		// desktop/tablet presentation itself depends solely on the media query.
 		if (typeof view?.ResizeObserver === 'function') {
 			resize = new view.ResizeObserver(syncAdaptive);
 			resize.observe(toolbar);
-			const start = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--start');
-			const end = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--end');
-			if (start) resize.observe(start);
-			if (end) resize.observe(end);
 		}
 		view?.addEventListener?.('resize', syncAdaptive, { signal: local.signal, passive: true });
-		view?.document?.fonts?.ready?.then(() => {
-			if (!destroyed) syncAdaptive();
-		});
 		syncAdaptive();
 	}
 
