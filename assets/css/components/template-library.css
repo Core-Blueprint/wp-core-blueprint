@@ -122,8 +122,8 @@ label.cb-template-browser__card { cursor: pointer; }
     border-color: var(--cb-accent, #2271b1);
     box-shadow: inset 0 0 0 1px var(--cb-accent, #2271b1);
 }
-.cb-template-browser__choice { position: absolute; inset-block-start: 12px; inset-inline-end: 12px; }
-.cb-template-browser__card:has(.cb-template-browser__choice) .cb-template-browser__card-title { padding-inline-end: 26px; }
+.cb-template-browser__choice { position: absolute; inset-block-start: 12px; inset-inline-start: 12px; inset-inline-end: auto; }
+.cb-template-browser__card:has(.cb-template-browser__action-menu):not(.cb-template-browser--modal .cb-template-browser__card) .cb-template-browser__card-title { padding-inline-end: 46px; }
 .cb-template-browser__card-title { margin: 0 0 9px; color: inherit; font-size: 16px; font-weight: 650; overflow-wrap: anywhere; }
 .cb-template-browser__card-description {
     margin: 0 0 16px;
@@ -140,18 +140,18 @@ label.cb-template-browser__card { cursor: pointer; }
     overflow-wrap: anywhere;
 }
 .cb-template-browser__card-body { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; }
+/* TL-M2 R2: action trigger floats at the upper trailing corner.
+   Selectable templates use the upper leading corner, independently of actions.
+   The popover is viewport-fixed/top-layer and never changes card geometry. */
 .cb-template-browser__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-block-start: 12px;
-    padding-block-start: 12px;
-    border-block-start: 1px solid var(--cb-border, rgba(127,127,127,.24));
+    position: absolute;
+    inset-block-start: 12px;
+    inset-inline-end: 12px;
+    z-index: 2;
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
-.cb-template-browser__action { max-width: 100%; }
-.cb-template-browser__action:focus-visible { outline: 2px solid var(--cb-accent, #2271b1); outline-offset: 3px; }
-/* TL-M2: the single disclosure belongs to the card, not to a radio label.
-   The panel expands in-flow: no viewport clipping or overlaid neighbor cards. */
 .cb-template-browser__card-select {
     display: flex;
     flex: 1 1 auto;
@@ -160,30 +160,53 @@ label.cb-template-browser__card { cursor: pointer; }
     min-height: 0;
     cursor: pointer;
 }
-.cb-template-browser__action-menu { display: grid; gap: 6px; width: 100%; min-width: 0; }
+.cb-template-browser__action-menu { display: block; width: auto; }
 .cb-template-browser__action-trigger {
-    justify-self: end;
-    min-height: 40px;
-    padding: 6px 12px;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
     border: 1px solid var(--cb-border, rgba(127,127,127,.28));
-    border-radius: 7px;
-    background: var(--cb-surface-1, rgba(127,127,127,.06));
+    border-radius: 8px;
+    background: var(--cb-surface-2, rgba(127,127,127,.09));
     color: inherit;
     cursor: pointer;
 }
-.cb-template-browser__action-trigger[aria-expanded="true"] {
+.cb-template-browser__action-trigger[aria-expanded="true"],
+.cb-template-browser__action-trigger:hover {
     border-color: var(--cb-accent, #2271b1);
-    background: var(--cb-surface-2, rgba(127,127,127,.13));
+    background: var(--cb-surface-2, rgba(127,127,127,.16));
 }
+.cb-template-browser__action-trigger svg { pointer-events: none; }
 .cb-template-browser__action-panel {
+    position: fixed;
+    inset: auto;
+    box-sizing: border-box;
     display: grid;
     gap: 2px;
-    padding: 4px;
+    width: 220px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    margin: 0;
+    padding: 5px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     border: 1px solid var(--cb-border, rgba(127,127,127,.26));
-    border-radius: 8px;
-    background: var(--cb-surface-1, rgba(127,127,127,.08));
+    border-radius: 9px;
+    background: var(--cb-surface-1, #11161d);
+    color: var(--cb-text, inherit);
+    box-shadow: 0 12px 28px rgba(0,0,0,.28);
+    z-index: 1000;
 }
-.cb-template-browser__action-panel[hidden] { display: none !important; }
+.cb-template-browser__action-panel[hidden],
+.cb-template-browser__action-panel[popover]:not(:popover-open) {
+    display: none !important;
+}
 .cb-template-browser__action-item {
     display: block;
     box-sizing: border-box;
@@ -218,7 +241,6 @@ label.cb-template-browser__card { cursor: pointer; }
 .cb-template-browser__action-feedback { margin: 0; }
 .cb-template-browser__action-feedback:empty { display: none; }
 .cb-template-browser__action-menu[aria-busy="true"] { opacity: .65; }
-.cb-template-browser__actions .cb-template-browser__action-menu { margin-inline-start: auto; }
 
 .cb-template-browser__status { display: inline-block; margin-top: 11px; font-size: 12px; }
 .cb-template-browser__status--blocked { color: #b02c2c; }
