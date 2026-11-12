@@ -78,20 +78,20 @@ function createBrowser( root, options = {} ) {
         actionMenus: [], activeActionClose: null, actionFeedback: '',
         view: hasDesigns ? 'designs' : 'templates', designProvider: '',
     };
-    const shell = el( 'section', [ 'cb-template-browser', contextual ? 'cb-template-browser--modal' : '',
-        hasDesigns ? 'cb-template-browser--designer-workspace' : '' ].filter( Boolean ).join( ' ' ) );
+    const shell = el( 'section', [ 'cb-template-browser', 'cb-template-browser--workspace',
+        contextual ? 'cb-template-browser--modal' : '' ].filter( Boolean ).join( ' ' ) );
     const sidebar = el( 'div', 'cb-template-browser__sidebar' );
     sidebar.setAttribute( 'role', 'group' );
-    sidebar.setAttribute( 'aria-label', label( 'origin', 'Origin' ) );
-    const collections = hasDesigns ? el( 'div', 'cb-template-browser__collections' ) : null;
-    if ( collections ) {
-        collections.setAttribute( 'role', 'group' );
-        collections.setAttribute( 'aria-label', label( 'folders', 'Collections' ) );
-    }
+    sidebar.setAttribute( 'aria-label', label( 'browser', 'Browser' ) );
+    // Both presentations use the same primary sections and secondary facets.
+    // Origins are not folders; no folder API or synthetic collections are implied.
+    const collections = el( 'div', 'cb-template-browser__collections' );
+    collections.setAttribute( 'role', 'group' );
+    collections.setAttribute( 'aria-label', label( 'origin', 'Origin' ) );
     const content = el( 'div', 'cb-template-browser__content' );
     const toolbar = el( 'div', 'cb-template-browser__toolbar' );
     const resultHeading = el( 'div', 'cb-template-browser__result-heading' );
-    const resultTitle = el( 'h3', 'cb-template-browser__result-title' );
+    const resultTitle = el( contextual ? 'h3' : 'h2', 'cb-template-browser__result-title' );
     const resultCount = el( 'span', 'cb-template-browser__result-count' );
     resultHeading.append( resultTitle, resultCount );
     const results = el( 'div', 'cb-template-browser__grid' );
@@ -115,7 +115,6 @@ function createBrowser( root, options = {} ) {
 
     const designButton = hasDesigns ? el( 'button', 'cb-template-browser__origin cb-template-browser__origin--designs',
         label( 'designs', 'Designs' ) ) : null;
-    let templateButton = null;
     if ( designButton ) {
         designButton.type = 'button';
         designButton.dataset.browserView = 'designs';
@@ -125,17 +124,17 @@ function createBrowser( root, options = {} ) {
             refresh();
         } );
         sidebar.append( designButton );
-        templateButton = el( 'button', 'cb-template-browser__origin cb-template-browser__origin--templates',
-            label( 'templates', 'Templates' ) );
-        templateButton.type = 'button';
-        templateButton.dataset.browserView = 'templates';
-        templateButton.addEventListener( 'click', () => {
-            state.view = 'templates';
-            syncNavigation();
-            refresh();
-        } );
-        sidebar.append( templateButton );
     }
+    const templateButton = el( 'button', 'cb-template-browser__origin cb-template-browser__origin--templates',
+        label( 'templates', 'Templates' ) );
+    templateButton.type = 'button';
+    templateButton.dataset.browserView = 'templates';
+    templateButton.addEventListener( 'click', () => {
+        state.view = 'templates';
+        syncNavigation();
+        refresh();
+    } );
+    sidebar.append( templateButton );
     const origins = [
         [ '', 'all', 'All templates' ],
         [ 'built-in', 'builtin', 'Built-in' ],
@@ -154,7 +153,7 @@ function createBrowser( root, options = {} ) {
             syncNavigation();
             refresh();
         } );
-        ( collections || sidebar ).append( button );
+        collections.append( button );
         return button;
     } );
     function updateResultHeading() {
@@ -167,16 +166,15 @@ function createBrowser( root, options = {} ) {
             ( state.view === 'designs' ? label( 'designs', 'Designs' ) : label( 'templates', 'Templates' ) ) );
     }
     function syncNavigation() {
-        if ( contextual ) shell.dataset.browserView = state.view;
-        if ( designButton ) {
-            designButton.setAttribute( 'aria-pressed', String( state.view === 'designs' ) );
-            templateButton?.setAttribute( 'aria-pressed', String( state.view === 'templates' ) );
-        }
+        shell.dataset.browserView = state.view;
+        if ( designButton ) designButton.setAttribute( 'aria-pressed', String( state.view === 'designs' ) );
+        templateButton.setAttribute( 'aria-pressed', String( state.view === 'templates' ) );
         originButtons.forEach( ( item ) => item.setAttribute( 'aria-pressed',
             String( state.view === 'templates' && item.dataset.origin === state.filters.origin ) ) );
-        if ( !collections ) return;
-        collections.replaceChildren( el( 'h3', 'cb-template-browser__side-heading',
-            label( 'folders', 'Collections' ) ) );
+        const groupKey = state.view === 'templates' ? 'origin' : 'source';
+        const groupName = label( groupKey, state.view === 'templates' ? 'Origin' : 'Source' );
+        collections.setAttribute( 'aria-label', groupName );
+        collections.replaceChildren( el( 'h3', 'cb-template-browser__side-heading', groupName ) );
         if ( state.view === 'templates' ) {
             originButtons.forEach( ( button ) => collections.append( button ) );
         } else {
@@ -276,8 +274,7 @@ function createBrowser( root, options = {} ) {
         search.setAttribute( 'aria-label', value );
         searchField.children[0].textContent = value;
     }
-    if ( contextual ) toolbar.prepend( resultHeading, searchField );
-    else toolbar.prepend( searchField );
+    toolbar.prepend( resultHeading, searchField );
     content.append( toolbar, message, resultsViewport || results, footer );
 
     if ( contextual && typeof options.onSaveAs === 'function' ) {
@@ -298,8 +295,7 @@ function createBrowser( root, options = {} ) {
         saveArea.append( saveAction );
         sidebar.append( saveArea );
     }
-    if ( collections ) shell.append( sidebar, collections, content );
-    else shell.append( sidebar, content );
+    shell.append( sidebar, collections, content );
     root.replaceChildren( shell );
 
     function disposeActionMenus() {
@@ -399,11 +395,11 @@ function createBrowser( root, options = {} ) {
             } );
             selection.append( radio );
         }
-        if ( contextual ) {
-            const preview = el( 'div', 'cb-template-browser__card-preview' );
-            preview.setAttribute( 'aria-hidden', 'true' );
-            selection.append( preview );
-        }
+        // A neutral, non-document preview keeps cards visually consistent across
+        // the global Library and scoped Browser without exposing document bodies.
+        const preview = el( 'div', 'cb-template-browser__card-preview' );
+        preview.setAttribute( 'aria-hidden', 'true' );
+        selection.append( preview );
         const body = el( 'div', 'cb-template-browser__card-body' );
         body.append( el( 'h3', 'cb-template-browser__card-title', item.title ) );
         if ( item.description ) body.append( el( 'p', 'cb-template-browser__card-description', item.description ) );
