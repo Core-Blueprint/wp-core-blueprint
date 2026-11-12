@@ -334,11 +334,14 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
     overflow-y: auto;
 }
 
-/* Shared three-pane workspace. Context controls permissions and interaction,
-   while both presentations use the same grid and visual primitives. */
+/* Shared Browser workspace. Only an actual Designs section adds a third pane.
+   Layout variants are Base-owned; no duplicate renderer or consumer adapter. */
 .cb-template-browser--workspace {
-	grid-template-columns: minmax(152px, 190px) minmax(160px, 220px) minmax(0, 1fr);
+	grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
 	min-height: min(620px, 65dvh);
+}
+.cb-template-browser--workspace.cb-template-browser--with-sections {
+	grid-template-columns: minmax(152px, 190px) minmax(160px, 220px) minmax(0, 1fr);
 }
 .cb-template-browser--modal.cb-template-browser--workspace { min-height: 0; }
 .cb-template-browser--workspace :is(.cb-template-browser__sidebar,.cb-template-browser__collections) {
@@ -395,11 +398,11 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 	.cb-template-browser--workspace {
 		grid-template-columns: minmax(135px, 170px) minmax(0, 1fr);
 	}
-	.cb-template-browser--workspace .cb-template-browser__collections {
+	.cb-template-browser--workspace.cb-template-browser--with-sections .cb-template-browser__collections {
 		grid-column: 1;
 		border-block-start: 1px solid var(--cb-border, rgba(127,127,127,.24));
 	}
-	.cb-template-browser--workspace .cb-template-browser__content {
+	.cb-template-browser--workspace.cb-template-browser--with-sections .cb-template-browser__content {
 		grid-row: 1 / span 2;
 		grid-column: 2;
 	}
@@ -408,7 +411,7 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 @media (max-width: 720px) {
     .cb-template-browser { grid-template-columns: minmax(0, 1fr); }
     .cb-template-browser--modal { grid-template-rows: auto minmax(0, 1fr); }
-    .cb-template-browser--modal.cb-template-browser--workspace {
+    .cb-template-browser--modal.cb-template-browser--with-sections {
         grid-template-rows: auto auto minmax(0, 1fr);
     }
     .cb-template-browser--workspace {
@@ -827,6 +830,123 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
     flex: 1 1 160px;
   }
   .cb-template-browser--workspace[data-browser-view="designs"] .cb-template-browser__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* TL-M3A-R1 — Global Library is one contained workspace, not loose WP panels.
+   The Designer modal retains its existing native outer border and footer. */
+.cb-template-library-page .cb-template-browser--workspace {
+  box-sizing: border-box;
+  min-width: 0;
+  border: 1px solid var(--cb-browser-line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--cb-surface-1, #0d1117);
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__collections {
+  background: var(--cb-surface-1, #0d1117);
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__content {
+  background: var(--cb-surface-1, #0d1117);
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__toolbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 12px;
+  min-height: 0;
+  padding: 18px 20px;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__result-heading {
+  grid-column: 1 / span 2;
+  align-self: center;
+  min-width: 0;
+  margin-inline-end: 0;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__field--search {
+  grid-column: 3 / -1;
+  min-width: 0;
+  width: 100%;
+  flex: none;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__field:not(.cb-template-browser__field--search) {
+  display: grid;
+  align-self: stretch;
+  gap: 5px;
+  min-width: 0;
+  width: 100%;
+  flex: none;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__field:not(.cb-template-browser__field--search) > span {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  color: var(--cb-browser-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+  padding: 18px 20px 24px;
+  box-sizing: border-box;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__card-preview {
+  aspect-ratio: auto;
+  height: 104px;
+  min-height: 0;
+  max-height: none;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__card-preview::before {
+  width: 34px;
+  height: 44px;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__card-preview::after {
+  width: 22px;
+  box-shadow: 0 7px 0 currentColor, 0 14px 0 currentColor;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__card-body {
+  min-height: 112px;
+  padding: 12px 13px;
+  gap: 6px;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__message:not(:empty) {
+  margin: 12px 20px 0;
+}
+.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__footer:not([hidden]) {
+  margin-top: 0;
+}
+@media (max-width: 1200px) {
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__result-heading {
+    grid-column: 1;
+  }
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__field--search {
+    grid-column: 2;
+  }
+}
+@media (max-width: 720px) {
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__toolbar {
+    padding: 14px 12px;
+  }
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__result-heading,
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__field--search {
+    grid-column: 1 / -1;
+  }
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__grid {
+    padding: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__toolbar {
     grid-template-columns: minmax(0, 1fr);
   }
 }
