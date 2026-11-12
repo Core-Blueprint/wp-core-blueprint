@@ -8,7 +8,7 @@ use WP_REST_Response;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Read-only request boundary for the offline Template Library browser. */
+/** Template Library read, apply and provider-owned management boundaries. */
 final class BrowserController {
 	public const ROUTE = 'core-blueprint/v1/template-library';
 
@@ -17,6 +17,11 @@ final class BrowserController {
 	}
 
 	public static function routes(): void {
+		register_rest_route( 'core-blueprint/v1', '/template-library/manage', [
+			'methods' => 'POST',
+			'callback' => [ self::class, 'manage' ],
+			'permission_callback' => [ self::class, 'manage_permitted' ],
+		] );
 		register_rest_route( 'core-blueprint/v1', '/template-library/apply', [
 			'methods' => 'POST',
 			'callback' => [ self::class, 'apply' ],
@@ -32,6 +37,52 @@ final class BrowserController {
 			'callback' => [ self::class, 'templates' ],
 			'permission_callback' => [ self::class, 'permitted' ],
 		] );
+	}
+
+	/** All management writes require BOTH WordPress REST CSRF and live scope/admin authority. */
+	public static function manage_permitted( WP_REST_Request $request ): bool {
+		return self::apply_permitted( $request ) && self::permitted( $request );
+	}
+
+	/** Shared transport only; provider is the sole domain writer/exporter. */
+	public static function manage( WP_REST_Request $request ): WP_REST_Response {
+		$scope = self::scope( $request );
+		if ( false === $scope || ! self::manage_permitted( $request ) ) {
+			return new WP_REST_Response( [ 'status' => 'refused' ], 403 );
+		}
+		if ( strlen( $request->get_body() ) > 4096 ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$data = $request->get_json_params();
+		if ( ! is_array( $data ) || array_is_list( $data ) ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$keys = array_keys( $data );
+		sort( $keys, SORT_STRING );
+		if ( $keys !== [ 'action', 'input', 'revision', 'source', 'templateId' ]
+			|| ! is_string( $data['source'] ) || ! TemplateQuery::valid_id( $data['source'] )
+			|| ! is_string( $data['templateId'] ) || ! TemplateQuery::valid_id( $data['templateId'] )
+			|| ! is_string( $data['action'] )
+			|| ! is_int( $data['revision'] ) || $data['revision'] < 1
+			|| ! is_array( $data['input'] ) ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$result = TemplateSourceRegistry::perform_action(
+			$data['source'], $data['templateId'], $data['action'],
+			$data['revision'], $data['input'], $scope
+		);
+		$status = $result['status'];
+		$http = match ( $status ) {
+			'created' => 201,
+			'renamed', 'deleted', 'ready' => 200,
+			'conflict' => 409,
+			'missing' => 404,
+			'refused' => 403,
+			'invalid' => 400,
+			'unsupported' => 422,
+			default => 503,
+		};
+		return new WP_REST_Response( $result, $http );
 	}
 
 	/** Apply returns a document to the browser; it never writes to WordPress. */
@@ -164,6 +215,7 @@ final class BrowserController {
 				'locale' => $item->locale, 'version' => $item->version,
 				'compatible' => $item->compatible,
 				'navigation' => TemplateSourceRegistry::navigation( $item, null === $scope )->public_links( null === $scope ),
+				'actions' => TemplateSourceRegistry::actions( $item ),
 			], $page->items ),
 			'next_cursor' => $page->next_cursor,
 		] );

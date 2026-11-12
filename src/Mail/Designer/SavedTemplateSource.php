@@ -9,6 +9,8 @@ use CoreBlueprint\Core\Design\Editor\PlatformTransport;
 use CoreBlueprint\Core\Mail\Admin\Page;
 use CoreBlueprint\Core\Mail\DesignerState;
 use CoreBlueprint\Core\RequestContext;
+use CoreBlueprint\Core\DataExchange\Engine;
+use CoreBlueprint\Core\TemplateLibrary\TemplateActionSourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateApplySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateCategorySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateDesignerAuthorityInterface;
@@ -26,7 +28,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class SavedTemplateSource implements
 	TemplateApplySourceInterface,
-	TemplateManagementSourceInterface,
+	TemplateActionSourceInterface,
 	TemplateDesignerAuthorityInterface,
 	TemplateCategorySourceInterface {
 
@@ -49,6 +51,57 @@ final class SavedTemplateSource implements
 
 	public function can_manage( string $template_id, int $user_id ): bool {
 		return $this->can_view( $template_id, $user_id );
+	}
+
+	/** Native Mail saved assets only; editing a snapshot is not yet supported. */
+	public function supported_actions( string $template_id, int $user_id ): array {
+		return $this->can_manage( $template_id, $user_id )
+			? [ 'rename', 'duplicate', 'export-json', 'delete' ] : [];
+	}
+
+	/** Mail remains the only storage, revision and Data Exchange authority. */
+	public function perform_action(
+		string $template_id, string $action, int $expected_revision,
+		array $input, int $user_id
+	): array {
+		if ( $expected_revision < 1
+			|| ! in_array( $action, $this->supported_actions( $template_id, $user_id ), true ) ) {
+			return [ 'status' => 'refused' ];
+		}
+		$original = SavedTemplateStore::find( $template_id, $user_id );
+		if ( 'found' !== $original['status'] ) {
+			return [ 'status' => $original['status'] ];
+		}
+		if ( $original['revision'] !== $expected_revision ) {
+			return [ 'status' => 'conflict' ];
+		}
+		if ( 'rename' === $action || 'duplicate' === $action ) {
+			if ( array_keys( $input ) !== [ 'title' ] || ! is_string( $input['title'] )
+				|| ! SavedTemplateStore::valid_title( $input['title'] ) ) {
+				return [ 'status' => 'invalid' ];
+			}
+			return 'rename' === $action
+				? SavedTemplateStore::rename( $template_id, $expected_revision, $input['title'], $user_id )
+				: SavedTemplateStore::duplicate( $template_id, $expected_revision, $input['title'], $user_id );
+		}
+		if ( [] !== $input ) {
+			return [ 'status' => 'invalid' ];
+		}
+		if ( 'delete' === $action ) {
+			return SavedTemplateStore::delete( $template_id, $expected_revision, $user_id );
+		}
+		$json = Engine::export_json( 'core-blueprint', SavedTemplatePortability::ENTITY, [
+			'source_id' => $template_id, 'revision' => $expected_revision,
+		] );
+		if ( is_wp_error( $json ) ) {
+			return [ 'status' => match ( $json->get_error_code() ) {
+				'cb_mail_portability_stale' => 'conflict',
+				'cb_mail_portability_media_unsupported' => 'unsupported',
+				'cb_mail_portability_refused' => 'refused',
+				default => 'unknown',
+			} ];
+		}
+		return [ 'status' => 'ready', 'data' => $json ];
 	}
 
 	public function can_access_designer_resource(

@@ -158,6 +158,117 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
+	 * TL-M1: optional action capability discovery. Re-evaluate the current
+	 * actor; returned IDs are UI hints, never an authorization token.
+	 *
+	 * @return list<string>
+	 */
+	public static function actions( TemplateMetadata $item ): array {
+		self::collect_if_ready();
+		$actor = get_current_user_id();
+		$source = self::$sources[ $item->source ] ?? null;
+		if ( $actor < 1 || ! $source instanceof TemplateActionSourceInterface
+			|| ! in_array( $item->origin, [ 'personal', 'site' ], true )
+			|| $source->extension_id() !== $item->extension
+			|| $source->designer_type() !== $item->designer
+			|| ! TemplateQuery::valid_id( $item->id )
+			|| ! self::allowed( $source ) ) {
+			return [];
+		}
+		try {
+			if ( ! $source->can_view( $item->id, $actor )
+				|| ! $source->can_manage( $item->id, $actor ) ) {
+				return [];
+			}
+			$supported = $source->supported_actions( $item->id, $actor );
+			if ( ! is_array( $supported ) ) {
+				return [];
+			}
+			$allowed = [ 'rename', 'duplicate', 'export-json', 'delete' ];
+			return array_values( array_filter( $allowed, static fn ( string $action ): bool =>
+				in_array( $action, $supported, true ) ) );
+		} catch ( \Throwable ) {
+			return [];
+		}
+	}
+
+	/**
+	 * Shared server-side action boundary: no metadata or document is accepted
+	 * from the browser. Providers keep the sole write/export authority.
+	 *
+	 * @param array<string,mixed> $input
+	 * @param array{extension:string,designer:string}|null $scope Server-verified scope.
+	 * @return array<string,mixed>
+	 */
+	public static function perform_action(
+		string $source_id, string $template_id, string $action,
+		int $expected_revision, array $input, ?array $scope
+	): array {
+		self::collect_if_ready();
+		$actor = get_current_user_id();
+		$source = self::$sources[ $source_id ] ?? null;
+		if ( $actor < 1 || ! TemplateQuery::valid_id( $source_id )
+			|| ! TemplateQuery::valid_id( $template_id )
+			|| $expected_revision < 1
+			|| ! in_array( $action, [ 'rename', 'duplicate', 'export-json', 'delete' ], true )
+			|| ! $source instanceof TemplateActionSourceInterface
+			|| ( null !== $scope && (
+				$source->extension_id() !== $scope['extension']
+				|| $source->designer_type() !== $scope['designer']
+			) )
+			|| ! self::allowed( $source ) ) {
+			return [ 'status' => 'refused' ];
+		}
+		$needs_title = in_array( $action, [ 'rename', 'duplicate' ], true );
+		if ( $needs_title ) {
+			if ( array_keys( $input ) !== [ 'title' ] || ! is_string( $input['title'] )
+				|| strlen( $input['title'] ) > 191 ) {
+				return [ 'status' => 'invalid' ];
+			}
+		} elseif ( [] !== $input ) {
+			return [ 'status' => 'invalid' ];
+		}
+		try {
+			if ( ! $source->can_view( $template_id, $actor )
+				|| ! $source->can_manage( $template_id, $actor )
+				|| ! in_array( $action, $source->supported_actions( $template_id, $actor ), true ) ) {
+				return [ 'status' => 'refused' ];
+			}
+			$result = $source->perform_action(
+				$template_id, $action, $expected_revision, $input, $actor
+			);
+			$status = $result['status'] ?? null;
+			if ( ! is_string( $status ) ) {
+				return [ 'status' => 'unknown' ];
+			}
+			if ( in_array( $status, [ 'conflict', 'missing', 'refused', 'invalid', 'unsupported', 'unavailable', 'unknown' ], true ) ) {
+				return [ 'status' => $status ];
+			}
+			if ( 'rename' === $action && 'renamed' === $status
+				&& ( $result['revision'] ?? null ) === $expected_revision + 1 ) {
+				return [ 'status' => 'renamed', 'revision' => $result['revision'] ];
+			}
+			if ( 'duplicate' === $action && 'created' === $status
+				&& is_string( $result['id'] ?? null )
+				&& TemplateQuery::valid_id( $result['id'] )
+				&& is_int( $result['revision'] ?? null ) && $result['revision'] > 0 ) {
+				return [ 'status' => 'created', 'id' => $result['id'], 'revision' => $result['revision'] ];
+			}
+			if ( 'delete' === $action && 'deleted' === $status ) {
+				return [ 'status' => 'deleted' ];
+			}
+			if ( 'export-json' === $action && 'ready' === $status
+				&& is_string( $result['data'] ?? null )
+				&& '' !== $result['data'] && strlen( $result['data'] ) <= 2500000 ) {
+				return [ 'status' => 'ready', 'data' => $result['data'] ];
+			}
+		} catch ( \Throwable ) {
+			// Fail closed on provider exceptions; a write may have occurred.
+		}
+		return [ 'status' => 'unknown' ];
+	}
+
+	/**
 	 * Obtain an authorized independent native document. Never trust browser
 	 * metadata, cache domain payloads, or perform writes in this registry.
 	 *
