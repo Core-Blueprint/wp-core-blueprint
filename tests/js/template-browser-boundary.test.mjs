@@ -51,7 +51,7 @@ test('TL-M2 global and contextual Browser reuse provider-authorized actions with
   assert.match(browser, /state\.actionMenus\.push\( menu \)/);
   assert.match(templateActions, /const OPERATIONS = Object\.freeze/);
   assert.match(templateActions, /declared\.includes\( id \)/);
-  assert.match(templateActions, /kind === 'manage' && !globalMode/);
+  assert.match(templateActions, /!globalMode \|\| !item\.navigation/);
   assert.match(templateActions, /target\.origin !== window\.location\.origin/);
   assert.match(templateActions, /target\.pathname\.includes\( '\/wp-admin\/' \)/);
   assert.match(templateActions, /'X-WP-Nonce'/);
