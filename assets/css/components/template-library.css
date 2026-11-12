@@ -150,6 +150,76 @@ label.cb-template-browser__card { cursor: pointer; }
 }
 .cb-template-browser__action { max-width: 100%; }
 .cb-template-browser__action:focus-visible { outline: 2px solid var(--cb-accent, #2271b1); outline-offset: 3px; }
+/* TL-M2: the single disclosure belongs to the card, not to a radio label.
+   The panel expands in-flow: no viewport clipping or overlaid neighbor cards. */
+.cb-template-browser__card-select {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    cursor: pointer;
+}
+.cb-template-browser__action-menu { display: grid; gap: 6px; width: 100%; min-width: 0; }
+.cb-template-browser__action-trigger {
+    justify-self: end;
+    min-height: 40px;
+    padding: 6px 12px;
+    border: 1px solid var(--cb-border, rgba(127,127,127,.28));
+    border-radius: 7px;
+    background: var(--cb-surface-1, rgba(127,127,127,.06));
+    color: inherit;
+    cursor: pointer;
+}
+.cb-template-browser__action-trigger[aria-expanded="true"] {
+    border-color: var(--cb-accent, #2271b1);
+    background: var(--cb-surface-2, rgba(127,127,127,.13));
+}
+.cb-template-browser__action-panel {
+    display: grid;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid var(--cb-border, rgba(127,127,127,.26));
+    border-radius: 8px;
+    background: var(--cb-surface-1, rgba(127,127,127,.08));
+}
+.cb-template-browser__action-panel[hidden] { display: none !important; }
+.cb-template-browser__action-item {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    text-align: start;
+    text-decoration: none;
+    font: inherit;
+    cursor: pointer;
+}
+.cb-template-browser__action-item:hover,
+.cb-template-browser__action-item:focus-visible {
+    background: var(--cb-surface-2, rgba(127,127,127,.12));
+}
+.cb-template-browser__action-item--danger {
+    color: var(--cb-danger, #b02c2c);
+}
+.cb-template-browser__action-trigger:focus-visible,
+.cb-template-browser__action-item:focus-visible,
+.cb-template-browser__action-input:focus-visible {
+    outline: 2px solid var(--cb-accent, #2271b1);
+    outline-offset: 2px;
+}
+.cb-template-browser__action-dialog { display: grid; gap: 12px; }
+.cb-template-browser__action-field { display: grid; gap: 6px; }
+.cb-template-browser__action-field input { width: 100%; max-width: 100%; box-sizing: border-box; }
+.cb-template-browser__action-feedback { margin: 0; }
+.cb-template-browser__action-feedback:empty { display: none; }
+.cb-template-browser__action-menu[aria-busy="true"] { opacity: .65; }
+.cb-template-browser__actions .cb-template-browser__action-menu { margin-inline-start: auto; }
+
 .cb-template-browser__status { display: inline-block; margin-top: 11px; font-size: 12px; }
 .cb-template-browser__status--blocked { color: #b02c2c; }
 .cb-template-browser__footer {
