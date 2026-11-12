@@ -32,6 +32,8 @@ test('FIELD-05D: generic form label alignment excludes both selectable Browser c
         );
     }
     assert.equal((selectors.match(/:not\(\.cb-template-browser__card\)/g) || []).length, 2);
+    assert.equal((selectors.match(/:not\(\.cb-template-browser__card-select\)/g) || []).length, 2,
+        'actionable contextual selection labels must not inherit inline-flex layout');
     assert.match(formControls, /label:not\(\.cb-core-radio-card\)/, 'ordinary label convenience remains');
     assert.match(formControls, /display: inline-flex;/, 'plain inline input labels remain flex');
     assert.match(formControls, /input\[type="radio"\]:checked/, 'native radio checked token behavior remains');
