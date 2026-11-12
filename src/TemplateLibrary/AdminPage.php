@@ -7,7 +7,7 @@ use CoreBlueprint\Core\Admin\Page;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Metadata-only discovery. All consumer-owned actions stay in their Designer. */
+/** Standalone Browser presentation; provider authority owns management writes. */
 final class AdminPage implements Page {
 	public const SLUG = 'core-blueprint-template-library';
 
@@ -23,7 +23,6 @@ final class AdminPage implements Page {
 		}
 		echo '<div class="wrap cb-template-library-page cb-core-form-scope">';
 		echo '<h1>' . esc_html( $this->title() ) . '</h1>';
-		echo '<p>' . esc_html__( 'Browse templates', 'core-blueprint' ) . '</p>';
 		echo '<div data-cb-template-library-global></div>';
 		echo '</div>';
 	}
