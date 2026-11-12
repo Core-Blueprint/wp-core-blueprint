@@ -43,6 +43,8 @@ class BaseEvidenceInspectionTest(unittest.TestCase):
             mock.patch.object(preflight, "verify_parent_security", return_value="private"),
             mock.patch.object(inspect.plan, "database_exists", return_value=True),
             mock.patch.object(preflight, "read_source_commit", return_value="b" * 40),
+            mock.patch.object(preflight, "read_podman_metadata", return_value={}),
+            mock.patch.object(preflight, "validate_podman_metadata", return_value=([], "owned")),
         )
 
     def run_inspect(self):
@@ -55,7 +57,7 @@ class BaseEvidenceInspectionTest(unittest.TestCase):
         before_marker = self.marker.read_bytes()
         before_lock = self.lock.read_bytes()
         patches = self.scoped()
-        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
+        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6], patches[7]:
             rc, output, error = self.run_inspect()
         self.assertEqual(0, rc, error)
         self.assertIn("UNVERIFIED (historical runner", output)
@@ -86,6 +88,15 @@ class BaseEvidenceInspectionTest(unittest.TestCase):
         with self.assertRaises(preflight.PreflightError):
             inspect.final_evidence(self.root, json.loads(self.marker.read_text()))
 
+    def test_inspection_blocks_unowned_podman_before_database_query(self):
+        patches = self.scoped()
+        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6], patches[7], \
+             mock.patch.object(preflight, "validate_podman_metadata",
+                               side_effect=preflight.PreflightError("unowned volume")):
+            rc, _, error = self.run_inspect()
+        self.assertEqual(1, rc)
+        self.assertIn("unowned volume", error)
+
     def test_symlinked_owner_marker_is_rejected_without_mutating_target(self):
         original = self.marker.read_bytes()
         external = self.root / "external-owner.json"
@@ -101,7 +112,7 @@ class BaseEvidenceInspectionTest(unittest.TestCase):
         record["database"] = "wordpress_test"
         self.marker.write_text(json.dumps(record))
         patches = self.scoped()
-        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
+        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6], patches[7]:
             rc, output, error = self.run_inspect()
         self.assertEqual(1, rc)
         self.assertIn("BLOCKED", error)

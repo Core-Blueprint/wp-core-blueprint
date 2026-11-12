@@ -119,6 +119,9 @@ def validate_metadata(payload: object) -> str:
     network = container.get("NetworkSettings")
     if not isinstance(host, dict) or not isinstance(network, dict):
         raise IsolationError("Base database port metadata is missing.")
+    mode = host.get("NetworkMode")
+    if not isinstance(mode, str) or not mode or mode in ("host", "none") or mode.startswith("container:"):
+        raise IsolationError("Base MariaDB network mode is not isolated.")
     for mapping in (host.get("PortBindings"), network.get("Ports")):
         if not isinstance(mapping, dict) or set(mapping) != {"3306/tcp"}:
             raise IsolationError("Unexpected Base database port mapping.")

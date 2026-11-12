@@ -110,6 +110,7 @@ class SafetyPolicyTest(unittest.TestCase):
             },
             "State": {"Running": True},
             "HostConfig": {
+                "NetworkMode": "slirp4netns",
                 "PortBindings": {"3306/tcp": [{"HostIp": "127.0.0.1", "HostPort": "3308"}]}
             },
             "NetworkSettings": {
@@ -160,6 +161,12 @@ class SafetyPolicyTest(unittest.TestCase):
         info = self.podman_info()
         info["containers"][0]["NetworkSettings"]["Ports"]["80/tcp"] = []
         with self.assertRaisesRegex(preflight.PreflightError, "port mapping"):
+            preflight.validate_podman_metadata(info)
+
+    def test_host_network_mode_is_refused(self):
+        info = self.podman_info()
+        info["containers"][0]["HostConfig"]["NetworkMode"] = "host"
+        with self.assertRaisesRegex(preflight.PreflightError, "network mode"):
             preflight.validate_podman_metadata(info)
 
     def test_unowned_or_shared_persistent_storage_is_refused(self):

@@ -1,7 +1,7 @@
 """Read-only inspection of an owned Base Level 2 workspace.
 
 This is NOT a replay/resume tool, nor evidence of a historical suite PASS.
-It never creates or resets a database, starts Docker, or changes files.
+It never creates or resets a database, starts Podman, or changes files.
 """
 from __future__ import annotations
 
@@ -109,6 +109,7 @@ def inspect() -> int:
             lock_meta = execution.LOCK_FILE.stat()
             if stat.S_IMODE(lock_meta.st_mode) != 0o600:
                 raise preflight.PreflightError("Base lock must have mode 0600.")
+        preflight.validate_podman_metadata(preflight.read_podman_metadata())
         database_exists = plan.database_exists()  # read-only INFORMATION_SCHEMA
         current_sha = preflight.read_source_commit(plan.SOURCE)
         status = final_evidence(root, owner)
