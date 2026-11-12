@@ -1,3 +1,5 @@
+> **November 12, 2026 — Separate disposable qualifier SOURCE candidate:** The historical Level 2 workflow documented below intentionally requires a persistent Base Podman MariaDB and remains unchanged. A new independent `./tools/check-integration --disposable` mode creates a freshly labelled **per-run rootless Podman container + volume + random localhost port**, runs the identical full Level 2 matrix and verifies evidence before owner-scoped cleanup. See [BASE-DISPOSABLE-LEVEL2.md](BASE-DISPOSABLE-LEVEL2.md). This is a new implementation candidate, not yet operator-qualified Level 2 PASS; do not use the historical `cb-base-l2-db` container as a substitute. No release/merge permission is implied.
+
 # Base validation workflow reconciliation (candidate)
 
 **Source:** `Core-Blueprint/wp-core-blueprint main@caa8daf1e677ed688d2d253108b6021895e1df33`.
