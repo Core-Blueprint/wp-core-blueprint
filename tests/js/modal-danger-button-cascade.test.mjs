@@ -22,7 +22,7 @@ function declarations(selector) {
 }
 
 test('TL-M2 R2 polish: global Admin Theme has a more specific generic button cascade', () => {
-    assert.match(adminTheme, /body\.cb-admin-theme\.wp-core-ui \.button\s*\{/);
+    assert.match(adminTheme, /body\.cb-admin-theme\.wp-core-ui \.button\s*,/);
     assert.match(adminTheme, /body\.cb-admin-theme\.wp-core-ui \.button:focus/);
     assert.match(modal, /confirmBtn\.className = 'button cb-core-button cb-core-button--' \+ confirmVariant/);
     assert.match(actions, /confirmVariant: destructive \? 'danger' : 'primary'/);
