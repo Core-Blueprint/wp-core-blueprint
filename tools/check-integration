@@ -3,12 +3,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-usage() { echo 'Usage: ./tools/check-integration [--preflight|--dry-run|--inspect|--execute]' >&2; }
+usage() { echo 'Usage: ./tools/check-integration [--preflight|--dry-run|--inspect|--provision-db|--execute]' >&2; }
 
 case "${1:-}" in
   --preflight)
     [[ $# -eq 1 ]] || { usage; exit 64; }
-    PYTHONDONTWRITEBYTECODE=1 python3 -B "$ROOT/tools/integration/preflight.py" --preflight
+    cd "$ROOT"
+    PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.preflight --preflight
     ;;
   --dry-run)
     [[ $# -eq 1 ]] || { usage; exit 64; }
@@ -19,6 +20,16 @@ case "${1:-}" in
     [[ $# -eq 1 ]] || { usage; exit 64; }
     cd "$ROOT"
     PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.inspect --inspect
+    ;;
+  --provision-db)
+    [[ $# -eq 1 ]] || { usage; exit 64; }
+    if [[ "${CB_BASE_DB_PROVISION_APPROVAL:-}" != "I_APPROVE_NEW_BASE_PODMAN_RESOURCES" ]]; then
+      echo 'BLOCKED: Base Podman provisioning requires explicit approval for NEW, dedicated resources.' >&2
+      echo 'Review the Base-only container/volume/port contract before provisioning.' >&2
+      exit 2
+    fi
+    cd "$ROOT"
+    PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.provision --provision-db
     ;;
   --execute)
     [[ $# -eq 1 ]] || { usage; exit 64; }

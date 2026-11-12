@@ -12,7 +12,7 @@ import re
 import stat
 import sys
 
-from tools.integration import execution, plan, preflight
+from tools.integration import database, execution, plan, preflight
 
 
 def require_file(path: Path) -> None:
@@ -37,8 +37,10 @@ def owner_record(root: Path, marker: Path) -> dict:
     if not isinstance(sha, str) or re.fullmatch("[a-f0-9]{40}", sha) is None:
         raise preflight.PreflightError("Invalid recorded Git SHA.")
     if record != {
-        "schema": 1, "product": "core-blueprint", "git_sha": sha,
+        "schema": 2, "product": "core-blueprint", "git_sha": sha,
         "wordpress": record.get("wordpress"), "database": plan.DATABASE,
+        "engine": database.ENGINE, "container": database.CONTAINER,
+        "volume": database.VOLUME, "port": database.PORT,
         "policy": "new-only-no-cleanup",
     } or record["wordpress"] not in ("7.0", "7.1"):
         raise preflight.PreflightError("Workspace marker does not match requested Base slot.")
@@ -121,6 +123,7 @@ def inspect() -> int:
     print("Source moved since original execution: " + ("YES" if current_sha != owner["git_sha"] else "NO"))
     print(f"WordPress target: {owner['wordpress']}")
     print(f"Dedicated database: {owner['database']} ({'present' if database_exists else 'absent'})")
+    print(f"Podman: {owner['container']} / {owner['volume']} / 127.0.0.1:{owner['port']}")
     print(f"Exclusive lock: {'present' if execution.LOCK_FILE.exists() else 'absent'} (not proof of an active process)")
     for label, relative in (
         ("WordPress runtime", "wp/wp-load.php"),

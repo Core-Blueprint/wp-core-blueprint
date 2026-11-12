@@ -101,74 +101,109 @@ class SafetyPolicyTest(unittest.TestCase):
         with self.assertRaisesRegex(preflight.PreflightError, 'symlink'):
             preflight.verify_parent_security(linked / 'core-blueprint')
 
-    def docker_info(self, **overrides):
+    def podman_info(self, **overrides):
         obj = {
-            'Name': '/cb-base-test-db',
-            'Config': {'Image': 'mariadb:10.11.19'},
-            'State': {'Running': True},
-            'HostConfig': {'PortBindings': {'3306/tcp': [{'HostIp': '127.0.0.1', 'HostPort': '3307'}]}},
-            'NetworkSettings': {'Ports': {'3306/tcp': [{'HostIp': '127.0.0.1', 'HostPort': '3307'}]}},
-            'Mounts': [],
+            "Name": "cb-base-l2-db",
+            "Config": {
+                "Image": "docker.io/library/mariadb:10.11.19",
+                "Labels": {"io.coreblueprint.level2.owner": "base-isolated"},
+            },
+            "State": {"Running": True},
+            "HostConfig": {
+                "PortBindings": {"3306/tcp": [{"HostIp": "127.0.0.1", "HostPort": "3308"}]}
+            },
+            "NetworkSettings": {
+                "Ports": {"3306/tcp": [{"HostIp": "127.0.0.1", "HostPort": "3308"}]}
+            },
+            "Mounts": [{
+                "Type": "volume", "Name": "cb-base-l2-db-data",
+                "Source": "/home/test/volumes/cb-base-l2-db-data/_data",
+                "Destination": "/var/lib/mysql", "RW": True,
+            }],
         }
         obj.update(overrides)
-        return [obj]
+        return {
+            "containers": [obj],
+            "volumes": [{
+                "Name": "cb-base-l2-db-data",
+                "Mountpoint": "/home/test/volumes/cb-base-l2-db-data/_data",
+                "Labels": {"io.coreblueprint.level2.owner": "base-isolated"},
+            }],
+            "consumers": ["cb-base-l2-db"],
+        }
 
-    def test_exact_existing_mariadb_metadata_is_accepted(self):
-        warnings, description = preflight.validate_docker_metadata(self.docker_info())
+    def test_dedicated_podman_metadata_is_accepted(self):
+        warnings, description = preflight.validate_podman_metadata(self.podman_info())
         self.assertEqual([], warnings)
-        self.assertIn('mariadb:10.11.19', description)
+        self.assertIn("owned volume", description)
+        self.assertIn("rootless Podman", description)
 
     def test_wrong_name_image_stopped_or_port_is_refused(self):
         broken = (
-            {'Name': '/another-db'},
-            {'Config': {'Image': 'mariadb:latest'}},
-            {'State': {'Running': False}},
-            {'HostConfig': {'PortBindings': {'3306/tcp': [{'HostPort': '3306'}]}}},
-            {'NetworkSettings': {'Ports': {'3306/tcp': [{'HostPort': '3306'}]}}},
+            {"Name": "cb-base-test-db"},
+            {"Config": {"Image": "docker.io/library/mariadb:latest",
+                        "Labels": {"io.coreblueprint.level2.owner": "base-isolated"}}},
+            {"State": {"Running": False}},
+            {"HostConfig": {"PortBindings": {"3306/tcp": [
+                {"HostIp": "127.0.0.1", "HostPort": "3307"}]}}},
         )
         for value in broken:
             with self.subTest(value=value):
                 with self.assertRaises(preflight.PreflightError):
-                    preflight.validate_docker_metadata(self.docker_info(**value))
+                    preflight.validate_podman_metadata(self.podman_info(**value))
 
-    def test_wildcard_binding_is_blocked(self):
-        info = self.docker_info()
-        info[0]['HostConfig']['PortBindings']['3306/tcp'][0]['HostIp'] = '0.0.0.0'
-        with self.assertRaisesRegex(preflight.PreflightError, 'beyond loopback'):
-            preflight.validate_docker_metadata(info)
+    def test_public_port_or_extra_bindings_are_refused(self):
+        info = self.podman_info()
+        info["containers"][0]["HostConfig"]["PortBindings"]["3306/tcp"][0]["HostIp"] = "0.0.0.0"
+        with self.assertRaisesRegex(preflight.PreflightError, "bind only"):
+            preflight.validate_podman_metadata(info)
+        info = self.podman_info()
+        info["containers"][0]["NetworkSettings"]["Ports"]["80/tcp"] = []
+        with self.assertRaisesRegex(preflight.PreflightError, "port mapping"):
+            preflight.validate_podman_metadata(info)
 
-    def test_non_loopback_dual_stack_binding_is_blocked(self):
-        info = self.docker_info()
-        info[0]['HostConfig']['PortBindings']['3306/tcp'][0]['HostIp'] = ''
-        info[0]['NetworkSettings']['Ports']['3306/tcp'] = [
-            {'HostIp': '0.0.0.0', 'HostPort': '3307'},
-            {'HostIp': '::', 'HostPort': '3307'},
-        ]
-        with self.assertRaisesRegex(preflight.PreflightError, 'beyond loopback'):
-            preflight.validate_docker_metadata(info)
+    def test_unowned_or_shared_persistent_storage_is_refused(self):
+        info = self.podman_info()
+        info["volumes"][0]["Labels"] = {}
+        with self.assertRaisesRegex(preflight.PreflightError, "ownership"):
+            preflight.validate_podman_metadata(info)
+        info = self.podman_info()
+        info["consumers"].append("cb-bookings")
+        with self.assertRaisesRegex(preflight.PreflightError, "shared"):
+            preflight.validate_podman_metadata(info)
+        info = self.podman_info(Mounts=[{"Type": "bind", "Destination": "/var/lib/mysql"}])
+        with self.assertRaisesRegex(preflight.PreflightError, "mount"):
+            preflight.validate_podman_metadata(info)
 
-    def test_persistent_mounts_warn_and_do_not_claim_disposability(self):
-        warnings, _ = preflight.validate_docker_metadata(self.docker_info(Mounts=[{'Type': 'volume'}]))
-        self.assertTrue(any('data ownership' in item for item in warnings))
+    def test_rootless_podman_inspection_is_read_only(self):
+        from tools.integration import database
+        payload = self.podman_info()
+        with mock.patch.object(database, "rootless"), \
+             mock.patch.object(database.subprocess, "run", side_effect=[
+                 mock.Mock(returncode=0, stdout=json.dumps(payload["containers"])),
+                 mock.Mock(returncode=0, stdout=json.dumps(payload["volumes"])),
+                 mock.Mock(returncode=0, stdout="cb-base-l2-db\n"),
+             ]) as runner:
+            self.assertEqual(payload, preflight.read_podman_metadata())
+        self.assertEqual(["podman", "container", "inspect", "cb-base-l2-db"],
+                         runner.call_args_list[0].args[0])
+        self.assertEqual(["podman", "volume", "inspect", "cb-base-l2-db-data"],
+                         runner.call_args_list[1].args[0])
+        self.assertEqual("podman", runner.call_args_list[2].args[0][0])
+        self.assertIn("volume=cb-base-l2-db-data", runner.call_args_list[2].args[0])
 
-    def test_only_docker_inspect_is_invoked(self):
-        payload = self.docker_info()
-        with mock.patch.object(preflight.subprocess, 'run', return_value=mock.Mock(
-            returncode=0, stdout=json.dumps(payload))) as runner:
-            result = preflight.read_docker_metadata()
-        self.assertEqual(payload, result)
-        runner.assert_called_once_with(
-            ['docker', 'inspect', 'cb-base-test-db'], capture_output=True,
-            text=True, check=False, timeout=10,
-        )
-
-    def test_docker_missing_and_bad_json_are_refused(self):
-        with mock.patch.object(preflight.subprocess, 'run', return_value=mock.Mock(returncode=1, stdout='')):
+    def test_podman_missing_and_bad_json_are_refused(self):
+        from tools.integration import database
+        with mock.patch.object(database, "rootless"), \
+             mock.patch.object(database.subprocess, "run",
+                               return_value=mock.Mock(returncode=1, stdout="")):
             with self.assertRaises(preflight.PreflightError):
-                preflight.read_docker_metadata()
-        with mock.patch.object(preflight.subprocess, 'run', return_value=mock.Mock(returncode=0, stdout='bad-json')):
+                preflight.read_podman_metadata()
+        with mock.patch.object(database, "rootless"), \
+             mock.patch.object(database.subprocess, "run",
+                               return_value=mock.Mock(returncode=0, stdout="bad-json")):
             with self.assertRaises(preflight.PreflightError):
-                preflight.read_docker_metadata()
+                preflight.read_podman_metadata()
 
     def test_git_source_identity_is_read_only(self):
         fake_sha = 'a' * 40

@@ -42,7 +42,7 @@ def resolve(source: Path) -> dict[str, str]:
     inspect.require_file(execution.LOCK_FILE)
     if stat.S_IMODE(execution.LOCK_FILE.stat().st_mode) != 0o600:
         raise preflight.PreflightError("Base integration lock permissions are unsafe.")
-    warnings, _ = preflight.validate_docker_metadata(preflight.read_docker_metadata())
+    warnings, _ = preflight.validate_podman_metadata(preflight.read_podman_metadata())
     if any("beyond loopback" in warning for warning in warnings):
         raise preflight.PreflightError("Unsafe MariaDB publication.")
     if not plan.database_exists():

@@ -27,7 +27,7 @@ import tarfile
 import urllib.request
 from urllib.parse import urlparse
 
-from tools.integration import plan, preflight
+from tools.integration import database, plan, preflight
 
 SOURCE = plan.SOURCE
 TEST_ROOT = preflight.CANONICAL_TEST_ROOT
@@ -56,8 +56,8 @@ def verify_execution_scope() -> tuple[str, str]:
         raise preflight.PreflightError("A fresh Base workspace must be absent before execution.")
     plan.verify_source(SOURCE)
     sha = preflight.read_source_commit(SOURCE)
-    warnings, _ = preflight.validate_docker_metadata(
-        preflight.read_docker_metadata()
+    warnings, _ = preflight.validate_podman_metadata(
+        preflight.read_podman_metadata()
     )
     if any("beyond loopback" in warning for warning in warnings):
         raise preflight.PreflightError(
@@ -111,11 +111,15 @@ def create_new_workspace(sha: str, version: str) -> None:
         raise preflight.PreflightError("Workspace already exists; refusing reuse.")
     TEST_ROOT.mkdir(mode=0o700)
     owner = {
-        "schema": 1,
+        "schema": 2,
         "product": "core-blueprint",
         "git_sha": sha,
         "wordpress": version,
         "database": DB,
+        "engine": database.ENGINE,
+        "container": database.CONTAINER,
+        "volume": database.VOLUME,
+        "port": database.PORT,
         "policy": "new-only-no-cleanup",
     }
     with OWNER_FILE.open("x", encoding="utf-8") as handle:
@@ -135,8 +139,10 @@ def assert_owner(sha: str) -> None:
     except (OSError, ValueError) as error:
         raise preflight.PreflightError("Invalid owned workspace marker.") from error
     if record != {
-        "schema": 1, "product": "core-blueprint", "git_sha": sha,
+        "schema": 2, "product": "core-blueprint", "git_sha": sha,
         "wordpress": record.get("wordpress"), "database": DB,
+        "engine": database.ENGINE, "container": database.CONTAINER,
+        "volume": database.VOLUME, "port": database.PORT,
         "policy": "new-only-no-cleanup",
     } or record.get("wordpress") not in ("7.0", "7.1"):
         raise preflight.PreflightError("Base test workspace marker does not match the source.")
@@ -152,8 +158,8 @@ def create_fresh_database(sha: str) -> None:
         "COLLATE utf8mb4_unicode_ci;"
     )
     # Recheck the container immediately before the sole permitted SQL mutation.
-    warnings, _ = preflight.validate_docker_metadata(
-        preflight.read_docker_metadata()
+    warnings, _ = preflight.validate_podman_metadata(
+        preflight.read_podman_metadata()
     )
     if any("beyond loopback" in warning for warning in warnings):
         raise preflight.PreflightError("MariaDB network exposure changed before database creation.")
@@ -161,7 +167,7 @@ def create_fresh_database(sha: str) -> None:
         raise preflight.PreflightError("Source changed before database creation.")
     try:
         result = subprocess.run(
-            ["docker", "exec", preflight.CONTAINER, "mariadb",
+            ["podman", "exec", database.CONTAINER, "mariadb",
              "-uroot", "-proot", "-e", sql],
             capture_output=True, text=True, check=False, timeout=20,
         )
@@ -525,7 +531,7 @@ def prepared_pipeline() -> None:
     """Run only after CLI opt-in and the complete fail-closed safety preflight.
 
     Existing workstation configurations with non-loopback MariaDB bindings
-    remain blocked. No Docker reconfiguration or database reset is attempted.
+    remain blocked. No Podman reconfiguration or database reset is attempted.
     """
     version, sha = verify_execution_scope()
     with exclusive_lock():
@@ -540,7 +546,7 @@ def prepared_pipeline() -> None:
 
 
 def main(args: list[str] | None = None) -> int:
-    """Opt-in entrypoint; no filesystem, Docker or SQL work before authorization."""
+    """Opt-in entrypoint; no filesystem, Podman or SQL work before authorization."""
     args = sys.argv[1:] if args is None else args
     if args != ["--execute"]:
         print("Usage: python3 -B -m tools.integration.execution --execute", file=sys.stderr)

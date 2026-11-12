@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Read-only Base integration safety preflight, not a WordPress integration runner.
 
-No WordPress provisioning, database queries, Docker state changes, or cleanup.
+No WordPress provisioning, database queries, Podman state changes, or cleanup.
 The full Level 2 runner requires separate explicit approval.
 """
 
@@ -14,6 +14,8 @@ import stat
 from pathlib import Path
 import subprocess
 import sys
+
+from tools.integration import database
 
 class PreflightError(Exception):
     """An unsafe or incomplete local integration prerequisite."""
@@ -33,9 +35,6 @@ RUN_SLOT = validate_slot(os.environ.get("CB_BASE_TEST_SLOT", ""))
 CANONICAL_TEST_ROOT = Path('/tmp') / (
     f'core-blueprint-base-{RUN_SLOT}' if RUN_SLOT else 'core-blueprint-base'
 )
-CONTAINER = 'cb-base-test-db'
-IMAGE = 'mariadb:10.11.19'
-PORT = '3307'
 
 
 def validate_test_root(candidate: str, required_root: Path = CANONICAL_TEST_ROOT) -> str:
@@ -86,63 +85,18 @@ def verify_parent_security(test_root: Path) -> str:
     )
 
 
-def validate_docker_metadata(entries: object) -> tuple[list[str], str]:
-    """Validate the named existing container from Docker inspect JSON only."""
-    if not isinstance(entries, list) or len(entries) != 1 or not isinstance(entries[0], dict):
-        raise PreflightError('Docker inspect must return exactly one container.')
-    obj = entries[0]
-    if obj.get('Name') != f'/{CONTAINER}':
-        raise PreflightError('Unexpected Docker container identity.')
-    if not isinstance(obj.get('Config'), dict) or obj['Config'].get('Image') != IMAGE:
-        raise PreflightError('MariaDB container image does not match the canonical baseline.')
-    if not isinstance(obj.get('State'), dict) or obj['State'].get('Running') is not True:
-        raise PreflightError('MariaDB container is not running; preflight will not start it.')
-    host_config = obj.get('HostConfig')
-    network = obj.get('NetworkSettings')
-    if not isinstance(host_config, dict) or not isinstance(network, dict):
-        raise PreflightError('Docker port metadata missing.')
-    actual = host_config.get('PortBindings')
-    advertised = network.get('Ports')
-    if not isinstance(actual, dict) or not isinstance(advertised, dict):
-        raise PreflightError('Docker port bindings missing.')
-    if set(actual) != {'3306/tcp'} or set(advertised) != {'3306/tcp'}:
-        raise PreflightError('Unexpected published container ports.')
-    binding = actual['3306/tcp']
-    external = advertised['3306/tcp']
-    if not isinstance(binding, list) or not binding or not isinstance(external, list):
-        raise PreflightError('Docker MariaDB host port is missing.')
-    for pair in (binding, external):
-        for entry in pair:
-            if not isinstance(entry, dict) or entry.get('HostPort') != PORT:
-                raise PreflightError('MariaDB must publish only port 3307.')
-    warnings = []
-    ips = {item.get('HostIp', '') for item in binding + external}
-    if not ips.issubset({'127.0.0.1', '::1'}):
-        raise PreflightError('MariaDB is bound beyond loopback; refusing unsafe publication.')
-    mounts = obj.get('Mounts', [])
-    if not isinstance(mounts, list):
-        raise PreflightError('Docker mount metadata is invalid.')
-    if mounts:
-        warnings.append(
-            'Container has persistent mounts; preflight does not establish data ownership.'
-        )
-    return warnings, f'{IMAGE}, existing container {CONTAINER}, host port {PORT}'
+def read_podman_metadata() -> dict:
+    try:
+        return database.read_metadata()
+    except database.IsolationError as error:
+        raise PreflightError(str(error)) from error
 
 
-def read_docker_metadata() -> object:
+def validate_podman_metadata(payload: object) -> tuple[list[str], str]:
     try:
-        result = subprocess.run(
-            ['docker', 'inspect', CONTAINER],
-            capture_output=True, text=True, check=False, timeout=10,
-        )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise PreflightError('Docker inspect unavailable or timed out.') from error
-    if result.returncode != 0:
-        raise PreflightError(f'Existing {CONTAINER} container not found or Docker is unavailable.')
-    try:
-        return json.loads(result.stdout)
-    except ValueError as error:
-        raise PreflightError('Docker inspect returned invalid JSON.') from error
+        return [], database.validate_metadata(payload)
+    except database.IsolationError as error:
+        raise PreflightError(str(error)) from error
 
 
 def read_source_commit(source: Path) -> str:
@@ -169,7 +123,7 @@ def preflight() -> int:
         state = validate_test_root(root)
         parent_state = verify_parent_security(Path(root))
         sha = read_source_commit(source)
-        warnings, description = validate_docker_metadata(read_docker_metadata())
+        warnings, description = validate_podman_metadata(read_podman_metadata())
     except PreflightError as error:
         print(f'Base integration safety preflight: BLOCKED: {error}', file=sys.stderr)
         return 1
@@ -178,7 +132,7 @@ def preflight() -> int:
     print(f'Base source commit: {sha}')
     print(f'Test root: {root} ({state}; no files touched)')
     print(f'Test parent: {parent_state}; permissions unchanged')
-    print(f'MariaDB: {description} (not started or modified)')
+    print(f'MariaDB: {description} (no resources started or modified)')
     for warning in warnings:
         print(f'WARNING: {warning}', file=sys.stderr)
     print('Database safety: NOT AUTHORIZED for reset or schema changes.')

@@ -20,7 +20,7 @@ class BaseIntegrationPlanTest(unittest.TestCase):
     def test_default_database_is_not_legacy_wordpress_test(self):
         self.assertTrue(plan.DATABASE.startswith("core_blueprint_base"))
         self.assertTrue(plan.DATABASE.endswith("_test"))
-        self.assertEqual("127.0.0.1:3307", plan.DATABASE_HOST)
+        self.assertEqual("127.0.0.1:3308", plan.DATABASE_HOST)
 
     def test_database_query_is_constant_read_only_information_schema(self):
         self.assertTrue(plan.QUERY.startswith("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA "))
@@ -29,7 +29,7 @@ class BaseIntegrationPlanTest(unittest.TestCase):
         with mock.patch.object(plan, "read_only", return_value="") as called:
             self.assertFalse(plan.database_exists())
         command = called.call_args.args[0]
-        self.assertEqual(command[:3], ["docker", "exec", "cb-base-test-db"])
+        self.assertEqual(command[:3], ["podman", "exec", "cb-base-l2-db"])
         self.assertEqual(command[-2:], ["-e", plan.QUERY])
         self.assertNotIn("wordpress_test", plan.QUERY)
 
@@ -94,15 +94,15 @@ class BaseIntegrationPlanTest(unittest.TestCase):
         with mock.patch.object(plan.subprocess, "run",
                                return_value=mock.Mock(returncode=4, stdout="", stderr="blocked")):
             with self.assertRaisesRegex(preflight.PreflightError, "failed"):
-                plan.read_only(["docker", "inspect"], "docker")
+                plan.read_only(["podman", "inspect"], "podman")
 
     def mock_live_checks(self, database_exists=False, warnings=()):
         return [
             mock.patch.object(plan.preflight, "validate_test_root", return_value="absent"),
             mock.patch.object(plan, "verify_source"),
             mock.patch.object(plan.preflight, "read_source_commit", return_value="a" * 40),
-            mock.patch.object(plan.preflight, "read_docker_metadata", return_value=[]),
-            mock.patch.object(plan.preflight, "validate_docker_metadata",
+            mock.patch.object(plan.preflight, "read_podman_metadata", return_value=[]),
+            mock.patch.object(plan.preflight, "validate_podman_metadata",
                               return_value=(list(warnings), "existing MariaDB")),
             mock.patch.object(plan, "database_exists", return_value=database_exists),
         ]

@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from tools.integration import execution, inspect, preflight
+from tools.integration import database, execution, inspect, preflight
 
 
 class BaseEvidenceInspectionTest(unittest.TestCase):
@@ -25,8 +25,10 @@ class BaseEvidenceInspectionTest(unittest.TestCase):
         self.root.mkdir(mode=0o700)
         self.marker = self.root / ".base-integration-owner.json"
         self.marker.write_text(json.dumps({
-            "schema": 1, "product": "core-blueprint", "git_sha": self.SHA,
+            "schema": 2, "product": "core-blueprint", "git_sha": self.SHA,
             "wordpress": "7.0", "database": execution.DB,
+            "engine": database.ENGINE, "container": database.CONTAINER,
+            "volume": database.VOLUME, "port": database.PORT,
             "policy": "new-only-no-cleanup",
         }), encoding="utf-8")
         self.lock = Path(temp.name) / ".lock"

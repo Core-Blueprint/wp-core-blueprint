@@ -58,6 +58,8 @@ class ExecutionSafetyTest(unittest.TestCase):
             execution.assert_owner(self.sha)
             record = json.loads(execution.OWNER_FILE.read_text())
             self.assertEqual("new-only-no-cleanup", record["policy"])
+            self.assertEqual("podman", record["engine"])
+            self.assertEqual("cb-base-l2-db-data", record["volume"])
             self.assertEqual(execution.DB, record["database"])
             with self.assertRaises(preflight.PreflightError):
                 execution.create_new_workspace(self.sha, "7.0")
@@ -98,15 +100,15 @@ class ExecutionSafetyTest(unittest.TestCase):
         patches = self.patch_root()
         with patches[0], patches[1], patches[2], patches[3], \
              mock.patch.object(execution.plan, "database_exists", return_value=False), \
-             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
-             mock.patch.object(execution.preflight, "validate_docker_metadata", return_value=([], "MariaDB")), \
+             mock.patch.object(execution.preflight, "read_podman_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_podman_metadata", return_value=([], "MariaDB")), \
              mock.patch.object(execution.preflight, "read_source_commit", return_value=self.sha), \
              mock.patch.object(execution.subprocess, "run", return_value=mock.Mock(returncode=0)) as run:
             execution.create_new_workspace(self.sha, "7.0")
             execution.create_fresh_database(self.sha)
         run.assert_called_once()
         command = run.call_args.args[0]
-        self.assertEqual(["docker", "exec", "cb-base-test-db"], command[:3])
+        self.assertEqual(["podman", "exec", "cb-base-l2-db"], command[:3])
         self.assertEqual("-e", command[-2])
         self.assertTrue(command[-1].startswith(f"CREATE DATABASE `{execution.DB}`"))
         self.assertNotIn("DROP", command[-1])
@@ -126,8 +128,8 @@ class ExecutionSafetyTest(unittest.TestCase):
         patches = self.patch_root()
         with patches[0], patches[1], patches[2], patches[3], \
              mock.patch.object(execution.plan, "database_exists", return_value=False), \
-             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
-             mock.patch.object(execution.preflight, "validate_docker_metadata",
+             mock.patch.object(execution.preflight, "read_podman_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_podman_metadata",
                                return_value=(["MariaDB is bound beyond loopback"], "MariaDB")), \
              mock.patch.object(execution.subprocess, "run") as run:
             execution.create_new_workspace(self.sha, "7.0")
@@ -139,8 +141,8 @@ class ExecutionSafetyTest(unittest.TestCase):
         patches = self.patch_root()
         with patches[0], patches[1], patches[2], patches[3], \
              mock.patch.object(execution.plan, "database_exists", return_value=False), \
-             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
-             mock.patch.object(execution.preflight, "validate_docker_metadata",
+             mock.patch.object(execution.preflight, "read_podman_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_podman_metadata",
                                return_value=([], "MariaDB")), \
              mock.patch.object(execution.preflight, "read_source_commit", return_value="b" * 40), \
              mock.patch.object(execution.subprocess, "run") as run:
@@ -153,8 +155,8 @@ class ExecutionSafetyTest(unittest.TestCase):
         patches = self.patch_root()
         with patches[0], patches[1], patches[2], patches[3], \
              mock.patch.object(execution.plan, "database_exists", return_value=False), \
-             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
-             mock.patch.object(execution.preflight, "validate_docker_metadata",
+             mock.patch.object(execution.preflight, "read_podman_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_podman_metadata",
                                return_value=([], "MariaDB")), \
              mock.patch.object(execution.preflight, "read_source_commit", return_value=self.sha), \
              mock.patch.object(execution.subprocess, "run",
@@ -165,12 +167,12 @@ class ExecutionSafetyTest(unittest.TestCase):
         run.assert_called_once()
         self.assertNotIn("DROP", run.call_args.args[0][-1])
 
-    def test_external_docker_port_binding_blocks_all_mutations(self):
+    def test_external_podman_port_binding_blocks_all_mutations(self):
         with mock.patch.object(execution.preflight, "validate_test_root", return_value="absent"), \
              mock.patch.object(execution.plan, "verify_source"), \
              mock.patch.object(execution.preflight, "read_source_commit", return_value=self.sha), \
-             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
-             mock.patch.object(execution.preflight, "validate_docker_metadata",
+             mock.patch.object(execution.preflight, "read_podman_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_podman_metadata",
                                return_value=(["MariaDB is bound beyond loopback"], "MariaDB")), \
              mock.patch.object(execution.plan, "database_exists") as database:
             with self.assertRaisesRegex(preflight.PreflightError, "beyond loopback"):
@@ -181,8 +183,8 @@ class ExecutionSafetyTest(unittest.TestCase):
         with mock.patch.object(execution.preflight, "validate_test_root", return_value="absent"), \
              mock.patch.object(execution.plan, "verify_source"), \
              mock.patch.object(execution.preflight, "read_source_commit", return_value=self.sha), \
-             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
-             mock.patch.object(execution.preflight, "validate_docker_metadata", return_value=([], "MariaDB")), \
+             mock.patch.object(execution.preflight, "read_podman_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_podman_metadata", return_value=([], "MariaDB")), \
              mock.patch.object(execution.plan, "database_exists", return_value=True):
             with self.assertRaisesRegex(preflight.PreflightError, "never reused"):
                 execution.verify_execution_scope()
@@ -232,8 +234,8 @@ class ExecutionSafetyTest(unittest.TestCase):
         with mock.patch.object(execution.preflight, "validate_test_root", return_value="absent"), \
              mock.patch.object(execution.plan, "verify_source"), \
              mock.patch.object(execution.preflight, "read_source_commit", return_value=self.sha), \
-             mock.patch.object(execution.preflight, "read_docker_metadata", return_value=[]), \
-             mock.patch.object(execution.preflight, "validate_docker_metadata", return_value=([], "MariaDB")), \
+             mock.patch.object(execution.preflight, "read_podman_metadata", return_value=[]), \
+             mock.patch.object(execution.preflight, "validate_podman_metadata", return_value=([], "MariaDB")), \
              mock.patch.object(execution.plan, "database_exists", return_value=False):
             self.assertEqual(("7.0", self.sha), execution.verify_execution_scope())
         self.assertFalse(self.root.exists())
@@ -312,7 +314,7 @@ class ExecutionSafetyTest(unittest.TestCase):
     def test_environment_scopes_wordpress_database_and_tmp(self):
         env = execution.test_environment("7.0")
         self.assertEqual(execution.DB, env["WP_DB_NAME"])
-        self.assertEqual("127.0.0.1:3307", env["WP_DB_HOST"])
+        self.assertEqual("127.0.0.1:3308", env["WP_DB_HOST"])
         self.assertEqual(str(execution.TEST_ROOT / "tmp"), env["TMPDIR"])
         self.assertTrue(env["CB_PLUGIN_FILE"].startswith(str(execution.TEST_ROOT)))
         self.assertTrue(env["CB_WP_CLI_PHAR"].startswith(str(execution.TEST_ROOT)))

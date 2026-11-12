@@ -5,12 +5,12 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-from tools.integration import preflight
+from tools.integration import database, preflight
 
 SOURCE = Path(__file__).resolve().parents[2]
 TEST_ROOT = preflight.CANONICAL_TEST_ROOT
 DATABASE = (f"core_blueprint_base_{preflight.RUN_SLOT}_test" if preflight.RUN_SLOT else "core_blueprint_base_test")
-DATABASE_HOST = "127.0.0.1:3307"
+DATABASE_HOST = database.HOST
 QUERY = (
     "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA "
     f"WHERE SCHEMA_NAME = '{DATABASE}';"
@@ -69,7 +69,7 @@ def verify_source(source: Path) -> None:
 def database_exists() -> bool:
     """Only inspect INFORMATION_SCHEMA. No mutating SQL and no user-controlled name."""
     output = read_only(
-        ["docker", "exec", preflight.CONTAINER, "mariadb",
+        ["podman", "exec", database.CONTAINER, "mariadb",
          "-uroot", "-proot", "--batch", "--skip-column-names", "--raw", "-e", QUERY],
         "MariaDB schema inventory",
     )
@@ -84,7 +84,7 @@ def database_exists() -> bool:
 def plan_steps(version: str, sha: str) -> tuple[str, ...]:
     """Human-review plan; execution still requires explicit opt-in."""
     return (
-        "Recheck exclusive Base test-root ownership, database name, lock and exact SHA",
+        "Recheck exclusive Base test-root ownership, Podman database identity, lock and exact SHA",
         f"Create only NEW dedicated database {DATABASE} after separate explicit approval",
         f"Provision pinned WordPress {version} and matching wp-phpunit under {TEST_ROOT}/",
         f"Stage Base commit {sha} into canonical core-blueprint/ plugin test copy",
@@ -108,8 +108,8 @@ def dry_run() -> int:
         parent_state = preflight.verify_parent_security(Path(target))
         verify_source(SOURCE)
         sha = preflight.read_source_commit(SOURCE)
-        warnings, description = preflight.validate_docker_metadata(
-            preflight.read_docker_metadata()
+        warnings, description = preflight.validate_podman_metadata(
+            preflight.read_podman_metadata()
         )
         occupied = database_exists()
     except preflight.PreflightError as error:

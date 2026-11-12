@@ -73,8 +73,8 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
              patch.object(release_env.inspect, "require_file"), \
              patch.object(release_env.Path, "is_symlink", return_value=False), \
              patch.object(release_env.Path, "stat") as status, \
-             patch.object(release_env.preflight, "read_docker_metadata", return_value={}), \
-             patch.object(release_env.preflight, "validate_docker_metadata", return_value=([], "safe")), \
+             patch.object(release_env.preflight, "read_podman_metadata", return_value={}), \
+             patch.object(release_env.preflight, "validate_podman_metadata", return_value=([], "safe")), \
              patch.object(release_env.plan, "database_exists", return_value=True), \
              patch.object(release_env.inspect, "final_evidence", return_value="INCOMPLETE"):
             status.return_value.st_mode = 0o100600
@@ -84,7 +84,7 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
 
     @contextmanager
     def proved_workspace(self):
-        """Simulate all read-only external evidence, without invoking Docker."""
+        """Simulate all read-only external evidence, without invoking Podman."""
         env = {key: "verified_" + key for key in release_env.REQUIRED}
         env["WP_PHPUNIT__TABLE_PREFIX"] = "cbtests_"
         with ExitStack() as stack:
@@ -108,9 +108,9 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
                 else (stat.S_IFREG | 0o600),
                 st_uid=os.getuid(),
             )
-            stack.enter_context(patch.object(release_env.preflight, "read_docker_metadata", return_value={}))
+            stack.enter_context(patch.object(release_env.preflight, "read_podman_metadata", return_value={}))
             docker = stack.enter_context(patch.object(
-                release_env.preflight, "validate_docker_metadata", return_value=([], "safe")
+                release_env.preflight, "validate_podman_metadata", return_value=([], "safe")
             ))
             database = stack.enter_context(patch.object(release_env.plan, "database_exists", return_value=True))
             receipts = stack.enter_context(patch.object(
@@ -134,7 +134,7 @@ class ProvenReleaseEnvironmentTest(unittest.TestCase):
                 release_env.resolve(Path("/source"))
             database.assert_not_called()
 
-    def test_unsafe_docker_binding_blocks_database_access(self):
+    def test_unsafe_podman_binding_blocks_database_access(self):
         with self.proved_workspace() as (docker, database, _, _):
             docker.side_effect = preflight.PreflightError("beyond loopback")
             with self.assertRaisesRegex(preflight.PreflightError, "beyond loopback"):
