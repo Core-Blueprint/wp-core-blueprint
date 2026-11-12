@@ -196,7 +196,7 @@ final class Assets {
 				'cb-core-css-buttons',
 				CB_CORE_URL . 'assets/css/components/buttons.css',
 				[ 'cb-core-css-tokens' ],
-				CB_CORE_VERSION
+				self::asset_revision( 'assets/css/components/buttons.css' )
 			);
 			wp_enqueue_style(
 				'cb-core-css-form-controls',
@@ -276,7 +276,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-buttons', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/buttons.css' ) );
 			}
 			wp_enqueue_style( 'cb-core-css-token-inputs', CB_CORE_URL . 'assets/css/components/token-inputs.css', [ 'cb-core-css-tokens', 'cb-core-css-buttons' ], CB_CORE_VERSION );
 		} else {
@@ -366,7 +366,7 @@ final class Assets {
 			if ( ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
 				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
 			}
-			wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+			wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/buttons.css' ) );
 		}
 
 		wp_enqueue_style(
@@ -433,7 +433,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-buttons', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/buttons.css' ) );
 			}
 			if ( ! wp_style_is( 'cb-core-css-form-controls', 'enqueued' ) ) {
 				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/form-controls.css' ) );
@@ -731,7 +731,7 @@ final class Assets {
 				'cb-core-css-buttons',
 				CB_CORE_URL . 'assets/css/components/buttons.css',
 				[ 'cb-core-css-tokens' ],
-				CB_CORE_VERSION
+				self::asset_revision( 'assets/css/components/buttons.css' )
 			);
 			return;
 		}
@@ -949,7 +949,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-buttons', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/buttons.css' ) );
 			}
 			if ( ! wp_style_is( 'cb-core-css-form-controls', 'enqueued' ) ) {
 				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/form-controls.css' ) );
@@ -1001,7 +1001,7 @@ final class Assets {
 				wp_enqueue_style( 'cb-core-css-tokens', CB_CORE_URL . 'assets/css/tokens.css', [], CB_CORE_VERSION );
 			}
 			if ( ! wp_style_is( 'cb-core-css-buttons', 'enqueued' ) ) {
-				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], CB_CORE_VERSION );
+				wp_enqueue_style( 'cb-core-css-buttons', CB_CORE_URL . 'assets/css/components/buttons.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/buttons.css' ) );
 			}
 			if ( ! wp_style_is( 'cb-core-css-form-controls', 'enqueued' ) ) {
 				wp_enqueue_style( 'cb-core-css-form-controls', CB_CORE_URL . 'assets/css/components/form-controls.css', [ 'cb-core-css-tokens' ], self::asset_revision( 'assets/css/components/form-controls.css' ) );
