@@ -34,7 +34,8 @@ function allowedNavigation( item, globalMode ) {
             if ( ![ 'http:', 'https:' ].includes( target.protocol )
                 || target.origin !== window.location.origin
                 || !target.pathname.includes( '/wp-admin/' )
-                || /\\.\\.|(?:^|\\/)admin-(?:post|ajax)\\.php$/i.test( target.pathname ) ) continue;
+                || [ 'admin-post.php', 'admin-ajax.php', 'update.php' ]
+                    .includes( target.pathname.split( '/' ).pop() ) ) continue;
             entries.push( { kind, href: target.href, title: link.label } );
         } catch {
             // Invalid navigation is not shown.
