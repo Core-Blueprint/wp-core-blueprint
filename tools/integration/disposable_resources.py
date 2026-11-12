@@ -121,10 +121,11 @@ class Resources:
 
     def wait_ready(self) -> None:
         for _ in range(45):
-            if call(["podman", "exec", self.container_id, "mariadb",
-                     "-uroot", f"-p{self.password}", "--batch",
-                     "--skip-column-names", "-e", "SELECT 1;"],
-                    timeout=10).stdout.strip() == "1":
+            result = call(["podman", "exec", self.container_id, "mariadb",
+                           "-uroot", f"-p{self.password}", "--batch",
+                           "--skip-column-names", "-e", "SELECT 1;"],
+                          timeout=10)
+            if result.returncode == 0 and result.stdout.strip() == "1":
                 return
             time.sleep(2)
         raise preflight.PreflightError(
@@ -152,10 +153,12 @@ class Resources:
             entries = json.loads(output)
         except (ValueError, TypeError) as error:
             raise preflight.PreflightError("Untrusted disposable volume JSON.") from error
-        if (not isinstance(entries, list) or len(entries) != 1
-                or entries[0].get("Name") != self.volume
-                or entries[0].get("Labels", {}).get(LABEL_KEY)
-                != "base-disposable-" + self.token):
+        if not isinstance(entries, list) or len(entries) != 1 or not isinstance(entries[0], dict):
+            raise preflight.PreflightError("Invalid disposable volume metadata.")
+        labels = entries[0].get("Labels")
+        if (entries[0].get("Name") != self.volume
+                or not isinstance(labels, dict)
+                or labels.get(LABEL_KEY) != "base-disposable-" + self.token):
             raise preflight.PreflightError("Disposable volume identity changed.")
         consumers = require_success(["podman", "ps", "--all",
                                      "--filter", f"volume={self.volume}",
