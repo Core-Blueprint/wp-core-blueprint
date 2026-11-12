@@ -298,6 +298,13 @@ class DisposableSupervisorTests(unittest.TestCase):
         self.assertTrue(fake.cleanup.called)
         self.assertEqual("fail", receipts[-1][1]["status"])
 
+    def test_abnormally_signal_terminated_runner_preserves_resources(self):
+        status, receipts, fake = self.mocked_qualify(matrix_status=-9)
+        self.assertEqual(1, status)
+        fake.cleanup.assert_not_called()
+        self.assertEqual("fail", receipts[-1][1]["status"])
+        self.assertFalse(receipts[-1][1]["resources_removed"])
+
     def test_cleanup_failure_is_not_misreported_as_qualification_pass(self):
         status, receipts, fake = self.mocked_qualify(cleanup_error=True)
         self.assertEqual(1, status)
