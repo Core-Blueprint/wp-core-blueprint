@@ -168,10 +168,16 @@ def create_fresh_database(sha: str) -> None:
     if preflight.read_source_commit(SOURCE) != sha:
         raise preflight.PreflightError("Source changed before database creation.")
     try:
+        command = (["podman", "exec"]
+                   + (["--env", "MYSQL_PWD"] if database.DISPOSABLE else [])
+                   + [database.CONTAINER, "mariadb", "-uroot"]
+                   + ([] if database.DISPOSABLE else ["-proot"])
+                   + ["-e", sql])
+        kwargs = ({"env": {**os.environ, "MYSQL_PWD": database.ROOT_PASSWORD}}
+                  if database.DISPOSABLE else {})
         result = subprocess.run(
-            ["podman", "exec", database.CONTAINER, "mariadb",
-             "-uroot", f"-p{database.ROOT_PASSWORD}", "-e", sql],
-            capture_output=True, text=True, check=False, timeout=20,
+            command, capture_output=True, text=True, check=False, timeout=20,
+            **kwargs,
         )
     except (OSError, subprocess.TimeoutExpired) as error:
         raise preflight.PreflightError("Creating the new isolated schema failed.") from error
