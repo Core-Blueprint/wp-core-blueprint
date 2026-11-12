@@ -96,13 +96,30 @@ final class DesignerAssets {
 					'nameRequired' => __( 'Enter a template name.', 'core-blueprint' ),
 					'updated' => __( 'Saved Mail template updated.', 'core-blueprint' ),
 					'conflict' => __( 'This template was changed elsewhere. Reload before trying again.', 'core-blueprint' ),
+					'exportJson' => __( 'Export JSON', 'core-blueprint' ),
+					'exported' => __( 'Mail template JSON is ready to download.', 'core-blueprint' ),
+					'importJson' => __( 'Import JSON', 'core-blueprint' ),
+					'importTitle' => __( 'Import Mail template', 'core-blueprint' ),
+					'importConfirm' => __( 'Create a new personal Mail template? Existing templates and live Mail designs will not be changed.', 'core-blueprint' ),
+					'importAction' => __( 'Import as new copy', 'core-blueprint' ),
+					'imported' => __( 'New personal Mail template imported.', 'core-blueprint' ),
+					'importTemplate' => __( 'Template', 'core-blueprint' ),
+					'mediaNeedsZip' => __( 'This template contains images or embedded media. JSON export supports asset-free templates only.', 'core-blueprint' ),
 				],
 			] ) . ';', 'before'
+		);
+		wp_register_script_module(
+			'@cb-core/mail-saved-portability',
+			CB_CORE_URL . 'assets/js/design/mail/saved-portability.js',
+			[],
+			is_file( CB_CORE_DIR . 'assets/js/design/mail/saved-portability.js' )
+				? substr( hash_file( 'sha256', CB_CORE_DIR . 'assets/js/design/mail/saved-portability.js' ), 0, 16 )
+				: CB_CORE_VERSION
 		);
 		wp_enqueue_script_module(
 			'@cb-core/mail-saved-library',
 			CB_CORE_URL . 'assets/js/design/mail/saved-library.js',
-			[ '@cb-core/template-browser', '@cb-core/modal', '@cb-core/toast' ],
+			[ '@cb-core/template-browser', '@cb-core/modal', '@cb-core/toast', '@cb-core/mail-saved-portability' ],
 			is_file( CB_CORE_DIR . 'assets/js/design/mail/saved-library.js' )
 				? substr( hash_file( 'sha256', CB_CORE_DIR . 'assets/js/design/mail/saved-library.js' ), 0, 16 )
 				: CB_CORE_VERSION

@@ -6,6 +6,7 @@
 import { open as openTemplateBrowser, loadForApply } from '@cb-core/template-browser';
 import { show as showModal } from '@cb-core/modal';
 import { toast } from '@cb-core/toast';
+import { exportMailTemplate, mountMailImport } from '@cb-core/mail-saved-portability';
 
 const config = typeof window !== 'undefined' ? window.cbCoreMailSaved : null;
 const label = (key, fallback) =>
@@ -249,6 +250,7 @@ function mountManagement(root) {
 				item.title + ' · ' + label(item.visibility, item.visibility));
 			const actions = element('span', 'cb-core-mail-saved-item__actions');
 			for (const [action, name] of [
+				['export', label('exportJson', 'Export JSON')],
 				['rename', label('rename', 'Rename')],
 				['duplicate', label('duplicate', 'Duplicate')],
 				['delete', label('delete', 'Delete')],
@@ -257,7 +259,13 @@ function mountManagement(root) {
 				button.type = 'button';
 				button.setAttribute('aria-label', name + ': ' + item.title);
 				button.disabled = uncertain;
-				button.addEventListener('click', () => { void manage(item, action); });
+				button.addEventListener('click', () => {
+					if (action === 'export') {
+						void exportMailTemplate({api, item, label, toast});
+					} else {
+						void manage(item, action);
+					}
+				});
 				actions.append(button);
 			}
 			row.append(details, actions);
@@ -351,6 +359,10 @@ function mountManagement(root) {
 		}
 	};
 	more.addEventListener('click', () => { void load(); });
+	mountMailImport({
+		root, api, label, toast, showModal, reload: () => load(true),
+		onUncertain: () => { uncertain = true; render(); },
+	});
 	void load(true);
 }
 

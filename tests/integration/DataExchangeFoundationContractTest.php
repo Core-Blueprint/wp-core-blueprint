@@ -177,7 +177,7 @@ final class CB_Base_Data_Exchange_Foundation_Contract_Test extends WP_UnitTestCa
 		self::assertSame( EntityInterface::class, $contract['interface'] ?? null );
 
 		$entities = Engine::entities( [ Foundation::SUPPORT_IMPORT, Foundation::SUPPORT_JSON ] );
-		self::assertCount( 1, $entities );
+		self::assertCount( 2, $entities, 'Fixture plus trusted Base Mail template entity.' );
 		$entity = array_values( $entities )[0];
 		self::assertSame( self::PROVIDER, $entity['provider'] ?? null );
 		self::assertSame( self::ENTITY, $entity['id'] ?? null );

@@ -38,15 +38,32 @@ final class SavedTemplateStore {
 
 	/** @return array{status:string,id?:string,revision?:int} */
 	public static function create( string $title, string $visibility, int $actor, array $document ): array {
+		try {
+			$id = 'mail.saved.' . bin2hex( random_bytes( 16 ) );
+		} catch ( \Throwable ) {
+			return [ 'status' => 'refused' ];
+		}
+		return self::insert_new( $id, $title, $visibility, $actor, $document );
+	}
+
+	/**
+	 * Portable imports must bind a unique destination ID before preview.
+	 * This is a personal asset only, never a live Mail resource or site template.
+	 */
+	public static function create_imported_personal( string $id, string $title, int $actor, array $document ): array {
+		return self::insert_new( $id, $title, 'personal', $actor, $document );
+	}
+
+	private static function insert_new( string $id, string $title, string $visibility, int $actor, array $document ): array {
 		global $wpdb;
-		if ( ! self::allowed( $actor ) || ! self::valid_title( $title )
+		if ( ! self::valid_id( $id ) || ! self::allowed( $actor )
+			|| ! self::valid_title( $title )
 			|| ! in_array( $visibility, [ 'personal', 'site' ], true )
 			|| ! PlatformTransport::valid_native_document( Repository::MAIL, $document ) ) {
 			return [ 'status' => 'refused' ];
 		}
 		try {
 			$json = json_encode( $document, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
-			$id = 'mail.saved.' . bin2hex( random_bytes( 16 ) );
 		} catch ( \Throwable ) {
 			return [ 'status' => 'refused' ];
 		}
@@ -60,6 +77,7 @@ final class SavedTemplateStore {
 			'title' => trim( $title ), 'revision' => 1, 'document_json' => $json,
 			'created_at' => $now, 'updated_at' => $now,
 		], [ '%s', '%d', '%s', '%s', '%d', '%s', '%s', '%s' ] );
+		// A primary-key collision can NEVER update or replace an existing asset.
 		if ( 1 !== $written ) return [ 'status' => 'unknown' ];
 		$check = self::find( $id, $actor );
 		return 'found' === $check['status'] && $check['document'] === $document

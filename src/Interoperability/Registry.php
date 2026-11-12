@@ -73,6 +73,11 @@ final class Registry {
 			foreach ( BaseContractCatalog::definitions() as $definition ) {
 				self::register_base_contract_definition( $definition );
 			}
+			// Trusted Base implementations are never contributed through the
+			// public extension callback, which cannot claim Base identity.
+			foreach ( BaseImplementationCatalog::definitions() as $definition ) {
+				self::accept_implementation( $definition, true );
+			}
 
 			self::$collecting_contracts = true;
 			do_action( 'core_blueprint_register_interoperability_contracts' );
@@ -125,7 +130,12 @@ final class Registry {
 			return false;
 		}
 
-		$normalized = self::normalize_implementation( $definition );
+		return self::accept_implementation( $definition, false );
+	}
+
+	/** Trusted Base catalog vs public extension admission; identical duplicate fence. */
+	private static function accept_implementation( array $definition, bool $base_owned ): bool {
+		$normalized = self::normalize_implementation( $definition, $base_owned );
 		if ( null === $normalized ) {
 			return false;
 		}
@@ -344,7 +354,7 @@ final class Registry {
 	/** @param array<string,mixed> $definition
 	 *  @return array{provider:string,id:string,label:string,description:string,contract_owner:string,contract:string,contract_version:string,supports:list<string>,factory:callable}|null
 	 */
-	private static function normalize_implementation( array $definition ): ?array {
+	private static function normalize_implementation( array $definition, bool $base_owned = false ): ?array {
 		$allowed = [ 'provider', 'id', 'label', 'description', 'contract_owner', 'contract', 'contract_version', 'supports', 'factory' ];
 		if ( [] !== array_diff( array_keys( $definition ), $allowed ) ) {
 			return null;
@@ -363,7 +373,9 @@ final class Registry {
 		$contract_key = self::contract_key_if_valid( $contract_owner, $contract, $contract_version );
 		if (
 			! ExtensionRegistry::is_valid_id( $provider )
-			|| null === ExtensionRegistry::definition( $provider )
+			|| ( $base_owned
+				? self::BASE_OWNER !== $provider
+				: ( self::BASE_OWNER === $provider || null === ExtensionRegistry::definition( $provider ) ) )
 			|| 1 !== preg_match( self::ID_PATTERN, $id )
 			|| '' === $label
 			|| strlen( $label ) > 120

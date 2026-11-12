@@ -86,7 +86,7 @@ final class CB_Base_Interoperability_Foundation_Contract_Test extends WP_UnitTes
 		self::assertFalse( $this->results['unknown_provider'] ?? true );
 
 		self::assertArrayHasKey( self::OWNER . '::' . self::CONTRACT . '@' . self::VERSION, $contracts );
-		self::assertCount( 3, $implementations, 'Multiple implementations for one contract were not retained.' );
+		self::assertCount( 4, $implementations, 'Three extension implementations plus the trusted Base Mail portability implementation are required.' );
 	}
 
 	public function test_if1_registration_is_refused_outside_controlled_lifecycle(): void {
@@ -137,13 +137,13 @@ final class CB_Base_Interoperability_Foundation_Contract_Test extends WP_UnitTes
 	}
 
 	public function test_if1_registry_freezes_after_canonical_collection(): void {
-		self::assertCount( 3, Registry::implementations() );
+		self::assertCount( 4, Registry::implementations() );
 
 		add_action( 'core_blueprint_register_interoperability_implementations', [ $this, 'register_late_implementation' ] );
 		do_action( 'core_blueprint_register_interoperability_implementations' );
 
 		self::assertFalse( $this->results['late'] ?? true, 'A late implementation bypassed the frozen registry.' );
-		self::assertCount( 3, Registry::implementations(), 'Frozen registry mutated after canonical collection.' );
+		self::assertCount( 4, Registry::implementations(), 'Frozen registry mutated after canonical collection.' );
 	}
 
 	public function test_if1_foundation_source_remains_domain_and_builder_neutral(): void {

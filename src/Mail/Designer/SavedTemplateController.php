@@ -6,6 +6,8 @@ namespace CoreBlueprint\Core\Mail\Designer;
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Mail\DesignerState;
 use CoreBlueprint\Core\Design\Editor\PlatformTransport;
+use CoreBlueprint\Core\DataExchange\Engine;
+use CoreBlueprint\Core\DataExchange\Foundation;
 use CoreBlueprint\Core\TemplateLibrary\DesignerScope;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
 
@@ -21,7 +23,7 @@ final class SavedTemplateController {
 	}
 
 	public static function routes(): void {
-		foreach ( [ 'list' => 'GET', 'create' => 'POST', 'rename' => 'POST', 'duplicate' => 'POST', 'delete' => 'POST' ] as $action => $method ) {
+		foreach ( [ 'list' => 'GET', 'create' => 'POST', 'rename' => 'POST', 'duplicate' => 'POST', 'delete' => 'POST', 'export' => 'POST', 'preview' => 'POST', 'import' => 'POST' ] as $action => $method ) {
 			register_rest_route( 'core-blueprint/v1', '/mail-templates/' . $action, [
 				'methods' => $method,
 				'callback' => [ self::class, $action === 'list' ? 'listing' : $action ],
@@ -51,12 +53,12 @@ final class SavedTemplateController {
 			? $success_code
 			: ( 'conflict' === $status ? 409
 				: ( 'missing' === $status ? 404
-					: ( 'refused' === $status ? 403 : 503 ) ) );
+					: ( 'refused' === $status ? 403 : ( 'invalid' === $status ? 400 : ( 'unsupported' === $status ? 422 : 503 ) ) ) ) );
 		return new \WP_REST_Response( $result, $code );
 	}
 
-	private static function payload( \WP_REST_Request $request, array $keys ): ?array {
-		if ( strlen( $request->get_body() ) > 1150000 ) return null;
+	private static function payload( \WP_REST_Request $request, array $keys, int $limit = 1150000 ): ?array {
+		if ( strlen( $request->get_body() ) > $limit ) return null;
 		$data = $request->get_json_params();
 		return self::exact( $data, $keys ) ? $data : null;
 	}
@@ -140,6 +142,77 @@ final class SavedTemplateController {
 		return self::reply( SavedTemplateStore::delete(
 			$data['id'], $data['revision'], get_current_user_id()
 		) );
+	}
+
+
+	/** Export one authorized saved Mail asset as an exact Data Exchange envelope. */
+	public static function export( \WP_REST_Request $request ): \WP_REST_Response {
+		$data = self::payload( $request, [ 'id', 'revision' ] );
+		if ( null === $data || ! is_string( $data['id'] ) || ! SavedTemplateStore::valid_id( $data['id'] )
+			|| ! is_int( $data['revision'] ) || $data['revision'] < 1 ) {
+			return self::reply( [ 'status' => 'invalid' ] );
+		}
+		$json = Engine::export_json( 'core-blueprint', SavedTemplatePortability::ENTITY, [
+			'source_id' => $data['id'], 'revision' => $data['revision'],
+		] );
+		if ( is_wp_error( $json ) ) {
+			return self::reply( [ 'status' => $json->get_error_code() === 'cb_mail_portability_media_unsupported'
+				? 'unsupported' : 'refused' ] );
+		}
+		return self::reply( [ 'status' => 'ready', 'data' => $json ] );
+	}
+
+	/** Strict bounded payload, no uploaded server files and no preview mutations. */
+	private static function import_payload( \WP_REST_Request $request, bool $apply ): ?array {
+		$data = self::payload( $request,
+			$apply ? [ 'file', 'destinationId', 'fingerprint' ] : [ 'file', 'destinationId' ],
+			2500000
+		);
+		if ( null === $data || ! is_string( $data['file'] )
+			|| strlen( $data['file'] ) < 1 || strlen( $data['file'] ) > 1150000
+			|| ! is_string( $data['destinationId'] )
+			|| ! SavedTemplateStore::valid_id( $data['destinationId'] )
+			|| ( $apply && ( ! is_string( $data['fingerprint'] )
+				|| 1 !== preg_match( '/^[a-f0-9]{64}$/D', $data['fingerprint'] ) ) ) ) return null;
+		return $data;
+	}
+
+	private static function import_context( string $destination ): array {
+		return [ 'intent' => 'create_personal_copy', 'destination_id' => $destination ];
+	}
+
+	public static function preview( \WP_REST_Request $request ): \WP_REST_Response {
+		$data = self::import_payload( $request, false );
+		if ( null === $data ) return self::reply( [ 'status' => 'invalid' ] );
+		$preview = Engine::preview_json( $data['file'], Foundation::MODE_CREATE_ONLY,
+			self::import_context( $data['destinationId'] )
+		);
+		if ( is_wp_error( $preview ) || ! ( $preview['valid'] ?? false )
+			|| ( $preview['record_count'] ?? 0 ) !== 1
+			|| ( $preview['counts'][Foundation::OP_CREATE] ?? 0 ) !== 1
+			|| ! is_string( $preview['fingerprint'] ?? null ) ) {
+			return self::reply( [ 'status' => 'invalid' ] );
+		}
+		// Expose only the public preview contract; never the document/opaque plan.
+		return self::reply( [ 'status' => 'ready', 'preview' => $preview ] );
+	}
+
+	public static function import( \WP_REST_Request $request ): \WP_REST_Response {
+		$data = self::import_payload( $request, true );
+		if ( null === $data ) return self::reply( [ 'status' => 'invalid' ] );
+		$result = Engine::apply_json( $data['file'], Foundation::MODE_CREATE_ONLY,
+			$data['fingerprint'], self::import_context( $data['destinationId'] )
+		);
+		if ( is_wp_error( $result ) ) return self::reply( [ 'status' => 'invalid' ] );
+		if ( ( $result['status'] ?? null ) !== 'complete'
+			|| ( $result['applied_count'] ?? null ) !== 1
+			|| ( $result['record_count'] ?? null ) !== 1
+			|| ( $result['items'][0]['reference'] ?? null ) !== $data['destinationId'] ) {
+			return self::reply( [ 'status' => 'unknown' ] );
+		}
+		return self::reply( [
+			'status' => 'created', 'id' => $data['destinationId'], 'revision' => 1,
+		], 201 );
 	}
 
 	private function __construct() {}
