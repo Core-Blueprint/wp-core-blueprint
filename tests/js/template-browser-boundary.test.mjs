@@ -72,8 +72,8 @@ test('standalone Template Library fills the page without stretching card grid ro
   assert.doesNotMatch(styles, /\.cb-template-library-page\s*\{[^}]*max-width:\s*1440px;/);
   assert.match(styles, /\.cb-template-library-page\s*\{[^}]*display: flex;[^}]*flex-direction: column;[^}]*min-height: calc\(100dvh - 80px\);/);
   assert.match(styles, /\.cb-template-library-page > \[data-cb-template-library-global\]\s*\{[^}]*display: flex;[^}]*flex: 1 1 auto;/);
-  assert.match(styles, /\.cb-template-library-page \.cb-template-browser\s*\{[^}]*display: flex;[^}]*flex: 1 1 auto;/);
-  assert.match(styles, /\.cb-template-library-page \.cb-template-browser__sidebar\s*\{[^}]*flex: 0 0 clamp\(160px, 19%, 236px\);/);
+  assert.match(styles, /\.cb-template-library-page \.cb-template-browser\s*\{[^}]*display: grid;[^}]*flex: 1 1 auto;/);
+  assert.match(styles, /\.cb-template-library-page \.cb-template-browser__sidebar\s*\{[^}]*min-width: 0;/);
   assert.match(styles, /\.cb-template-library-page \.cb-template-browser__grid\s*\{[^}]*flex: 0 0 auto;/);
   assert.match(styles, /\.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: 1fr;/);
   assert.match(styles, /\.cb-template-browser__grid\s*\{[^}]*align-content: start;/);
