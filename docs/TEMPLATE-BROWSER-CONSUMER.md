@@ -1,3 +1,7 @@
+> **TL-M2 update (12 November 2026; candidate):** The shared Browser now renders provider-authorized template Actions in both global and contextual views via the internal `@cb-core/template-actions` module. A valid per-item `TemplateActionSourceInterface`, live actor authority and positive numeric revision are required for Rename/Duplicate/Export JSON/Delete. These operations use the existing provider-owned REST POST management boundary, not the read-only discovery endpoints, and never write active Designer documents. Preview and authorized global Manage navigation remain local; contextual Manage navigation is withheld. Generic Edit, Import and ZIP portability are not implemented by this patch. See `docs/TEMPLATE-MANAGEMENT-CONSUMER.md` for the exact contract and qualification gates. No consumer or merge/release GO is implied.
+
+---
+
 # Template Browser Foundation: T2 consumer integration
 
 Status: **implementation candidate**, pending WordPress/runtime acceptance.
