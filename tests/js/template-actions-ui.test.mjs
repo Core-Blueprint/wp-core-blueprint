@@ -112,10 +112,8 @@ test('TL-M2: contextual actions do not reveal global Manage navigation; unsafe l
         preview: {url: 'https://example.test/wp-admin/admin.php?page=preview', label: 'Preview'},
         manage: {url: 'https://example.test/wp-admin/admin.php?page=manage', label: 'Manage'},
     }};
-    const contextual = h.create(item, {globalMode: false});
-    assert.ok(contextual);
-    assert.equal(contextual.node.children[1].children.length, 1);
-    assert.equal(contextual.node.children[1].children[0].textContent, 'Preview');
+    assert.equal(h.create(item, {globalMode: false}), null,
+        'Designer navigation must remain owned by Exit Guard, not the Browser');
     const global = h.create(item, {globalMode: true});
     assert.equal(global.node.children[1].children.length, 2);
     assert.equal(h.create({...item, navigation: {
