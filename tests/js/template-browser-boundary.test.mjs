@@ -46,6 +46,8 @@ test('Load more carries the signed page cursor through the GET query and keeps f
 
 test('TL-M2 global and contextual Browser reuse provider-authorized actions without nesting interactive controls', () => {
   assert.match(browser, /import \{ createActionMenu \} from '@cb-core\/template-actions'/);
+  assert.match(assets, /'@cb-core\/template-actions'/);
+  assert.match(assets, /self::version\( 'assets\/js\/core\/template-actions\.js' \)/);
   assert.match(browser, /contextual && !menu \? 'label' : 'article'/);
   assert.match(browser, /cb-template-browser__card-select/);
   assert.match(browser, /state\.actionMenus\.push\( menu \)/);
