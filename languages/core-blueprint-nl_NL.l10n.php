@@ -17,6 +17,18 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        // Shared Template Browser TL-M2 provider-scoped actions.
+        'Choose a new template name.' => 'Kies een nieuwe templatenaam.',
+        'Name the new copy of this template.' => 'Geef de nieuwe kopie van deze template een naam.',
+        'Permanently delete this saved template?' => 'Deze opgeslagen template definitief verwijderen?',
+        'I understand this permanently deletes the saved template.' => 'Ik begrijp dat deze opgeslagen template definitief wordt verwijderd.',
+        'Template JSON downloaded.' => 'Template-JSON gedownload.',
+        'Template action completed.' => 'Templateactie voltooid.',
+        'Template changed elsewhere. Reload and try again.' => 'De template is elders gewijzigd. Laad opnieuw en probeer het nog eens.',
+        'You can no longer manage this template.' => 'Je kunt deze template niet meer beheren.',
+        'This action is not supported for this template.' => 'Deze actie wordt niet ondersteund voor deze template.',
+        'The action could not be confirmed. Check the template before retrying.' => 'De actie kon niet worden bevestigd. Controleer de template voordat je het opnieuw probeert.',
+        'Templates refreshed; verify the latest state.' => 'Templates vernieuwd; controleer de actuele status.',
         // Shared native Designer Elements palette (DF-A1).
         'Add' => 'Toevoegen',
         'Dynamic Data' => 'Dynamische gegevens',
