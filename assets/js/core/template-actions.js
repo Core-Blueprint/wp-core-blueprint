@@ -111,7 +111,6 @@ export function createActionMenu( item, options ) {
     const panel = el( 'div', 'cb-template-browser__action-panel' );
     panel.id = 'cb-template-actions-' + ++sequence;
     panel.hidden = true;
-    panel.setAttribute( 'popover', 'manual' );
     panel.setAttribute( 'role', 'menu' );
     panel.setAttribute( 'aria-label', label( 'actions', 'Actions' ) + ': ' + item.title );
     trigger.setAttribute( 'aria-controls', panel.id );
@@ -121,6 +120,7 @@ export function createActionMenu( item, options ) {
     let disposed = false;
     const hasNativePopover = typeof panel.showPopover === 'function'
         && typeof panel.hidePopover === 'function';
+    if ( hasNativePopover ) panel.setAttribute( 'popover', 'manual' );
     const originalHost = wrapper;
     const menuItems = () => Array.from( panel.querySelectorAll( '[role="menuitem"]' ) );
 
