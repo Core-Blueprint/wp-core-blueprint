@@ -32,6 +32,11 @@ final class Icon {
 	 * @var array<string,array<int,array{0:string,1:array<string,string>}>>
 	 */
 	private const ICONS = [
+		'ellipsis' => [
+			[ 'circle', [ 'cx' => '5', 'cy' => '12', 'r' => '1' ] ],
+			[ 'circle', [ 'cx' => '12', 'cy' => '12', 'r' => '1' ] ],
+			[ 'circle', [ 'cx' => '19', 'cy' => '12', 'r' => '1' ] ],
+		],
 		'chevron-right' => [
 			[ 'path', [ 'd' => 'm9 18 6-6-6-6' ] ],
 		],
