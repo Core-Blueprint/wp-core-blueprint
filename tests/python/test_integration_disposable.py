@@ -148,6 +148,18 @@ class ResourceLifecycleTests(unittest.TestCase):
         self.assertNotIn("Z" * 32, run_command)
         self.assertEqual("Z" * 32, run.call_args_list[1].kwargs["env"]["MARIADB_ROOT_PASSWORD"])
 
+    def test_readiness_passes_ephemeral_password_by_environment_not_argv(self):
+        item = resources.Resources(TOKEN, "Z" * 32)
+        item.container_id = IDENTITY
+        with mock.patch.object(resources, "call",
+                               return_value=mock.Mock(returncode=0, stdout="1\\n")) as run:
+            item.wait_ready()
+        args = run.call_args.args[0]
+        self.assertIn("--env", args)
+        self.assertIn("MYSQL_PWD", args)
+        self.assertNotIn("Z" * 32, " ".join(args))
+        self.assertEqual("Z" * 32, run.call_args.kwargs["env"]["MYSQL_PWD"])
+
     def test_public_or_ambiguous_port_fails_closed(self):
         for bad in ("0.0.0.0:42612", "127.0.0.1:330", "localhost:42612", ""):
             item = resources.Resources(TOKEN, "Z" * 32)
@@ -298,6 +310,35 @@ class DisposableSupervisorTests(unittest.TestCase):
                             "Level 2 outcome: INCOMPLETE"))
         self.assertEqual(1, status)
         self.assertEqual("fail", receipts[-1][1]["status"])
+
+    def test_gate_evidence_archive_is_no_follow_and_new_only(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source = root / "test-root"
+            evidence = source / "evidence"
+            evidence.mkdir(parents=True)
+            destination = root / "report"
+            destination.mkdir()
+            (evidence / "01-pass.json").write_text('{"status":"pass"}\\n')
+            self.assertEqual(1, disposable.copy_gate_receipts(source, destination))
+            self.assertTrue((destination / "gates/01-pass.json").is_file())
+            with self.assertRaises(FileExistsError):
+                disposable.copy_gate_receipts(source, destination)
+
+    def test_symlink_evidence_is_never_read_or_archived(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source = root / "test-root"
+            evidence = source / "evidence"
+            evidence.mkdir(parents=True)
+            target = root / "secret.txt"
+            target.write_text("do not open")
+            (evidence / "01-pass.json").symlink_to(target)
+            destination = root / "report"
+            destination.mkdir()
+            with self.assertRaises(preflight.PreflightError):
+                disposable.copy_gate_receipts(source, destination)
+            self.assertFalse((destination / "gates/01-pass.json").exists())
 
     def test_owner_only_receipt_creation_refuses_collision(self):
         with tempfile.TemporaryDirectory() as folder:
