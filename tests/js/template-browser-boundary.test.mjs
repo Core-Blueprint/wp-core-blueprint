@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 
 const browser = readFileSync(new URL('../../assets/js/core/template-browser.js', import.meta.url), 'utf8');
+const templateActions = readFileSync(new URL('../../assets/js/core/template-actions.js', import.meta.url), 'utf8');
 const assets = readFileSync(new URL('../../src/TemplateLibrary/Assets.php', import.meta.url), 'utf8');
 const modal = readFileSync(new URL('../../assets/js/core/modal.js', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../../assets/css/components/template-library.css', import.meta.url), 'utf8');
@@ -43,14 +44,21 @@ test('Load more carries the signed page cursor through the GET query and keeps f
   assert.match(browser, /const response = await fetch\( settings\.restRoot \+ route \+ '\?' \+ queryString\( filters, cursor \)/);
 });
 
-test('T3 global management stays delegated to local owner screens', () => {
-  assert.match(browser, /if \( !contextual && item\.navigation/);
-  assert.match(browser, /for \( const kind of \[ 'preview', 'manage' \] \)/);
-  assert.match(browser, /destination\.origin !== window\.location\.origin/);
-  assert.match(browser, /destination\.pathname\.includes\( '\/wp-admin\/' \)/);
-  assert.match(browser, /el\( 'a', 'button cb-template-browser__action'/);
-  assert.doesNotMatch(browser, /fetch\([^\n]*method: 'POST'/);
-  assert.doesNotMatch(browser, /onDelete|deleteTemplate|exportTemplate/);
+test('TL-M2 global and contextual Browser reuse provider-authorized actions without nesting interactive controls', () => {
+  assert.match(browser, /import \{ createActionMenu \} from '@cb-core\/template-actions'/);
+  assert.match(browser, /contextual && !menu \? 'label' : 'article'/);
+  assert.match(browser, /cb-template-browser__card-select/);
+  assert.match(browser, /state\.actionMenus\.push\( menu \)/);
+  assert.match(templateActions, /const OPERATIONS = Object\.freeze/);
+  assert.match(templateActions, /declared\.includes\( id \)/);
+  assert.match(templateActions, /kind === 'manage' && !globalMode/);
+  assert.match(templateActions, /target\.origin !== window\.location\.origin/);
+  assert.match(templateActions, /target\.pathname\.includes\( '\/wp-admin\/' \)/);
+  assert.match(templateActions, /'X-WP-Nonce'/);
+  assert.match(templateActions, /'X-CB-Designer-Scope'/);
+  assert.match(templateActions, /method: 'POST', credentials: 'same-origin'/);
+  assert.match(templateActions, /confirmCheck: destructive/);
+  assert.doesNotMatch(templateActions, /\.innerHTML\s*=/);
 });
 
 test('standalone Template Library fills the page without stretching card grid rows', () => {
@@ -175,6 +183,7 @@ test('filter interaction is safe while the source metadata response is pending',
   };
   const executable = browser
     .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = async () => false;')
+    .replace("import { createActionMenu } from '@cb-core/template-actions';", 'const createActionMenu = () => null;')
     .replace('export { createBrowser, open, loadForApply };', '')
     .replace('export default api;', '');
   runInNewContext(executable, context, { timeout: 1000 });
@@ -228,6 +237,7 @@ test('T3-01 native Apply loader uses same-origin authorized read and refuses mis
   };
   const executable = browser
     .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = async () => false;')
+    .replace("import { createActionMenu } from '@cb-core/template-actions';", 'const createActionMenu = () => null;')
     .replace('export { createBrowser, open, loadForApply };', '')
     .replace('export default api;', '');
   runInNewContext(executable, context, {timeout: 1000});
