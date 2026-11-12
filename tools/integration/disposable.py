@@ -181,9 +181,13 @@ def qualify() -> int:
                                    "tools.integration.execution", "--execute"], env)
         if completed:
             raise preflight.PreflightError("Full Base Level 2 matrix failed.")
+        if command(["git", "rev-parse", "--verify", "HEAD"], env) != sha:
+            raise preflight.PreflightError("Base HEAD changed during qualification.")
         proof = command(["python3", "-B", "-m",
                          "tools.integration.inspect", "--inspect"], env)
-        if "Level 2 outcome: PASS (recorded full Level 2 matrix" not in proof:
+        if (f"Recorded source: {sha}" not in proof
+                or f"Current source: {sha}" not in proof
+                or "Level 2 outcome: PASS (recorded full Level 2 matrix" not in proof):
             raise preflight.PreflightError("Level 2 final receipt cannot be proven.")
         passed = True
     except (preflight.PreflightError, KeyboardInterrupt, OSError) as exception:
@@ -235,7 +239,7 @@ def main(args: list[str] | None = None) -> int:
         print("No containers, volumes, databases or workspaces were changed.")
         return 0
     if args != ["--execute"]:
-        print("Usage: ./tools/qualify-disposable --preflight|--execute", file=sys.stderr)
+        print("Usage: ./tools/check-integration --disposable-preflight|--disposable", file=sys.stderr)
         return 64
     if os.environ.get("CB_BASE_DISPOSABLE_APPROVAL") != APPROVAL:
         print("BLOCKED: explicit fresh disposable Level 2 approval required.",
