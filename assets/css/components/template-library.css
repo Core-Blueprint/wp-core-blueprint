@@ -203,9 +203,11 @@ label.cb-template-browser__card { cursor: pointer; }
     box-shadow: 0 12px 28px rgba(0,0,0,.28);
     z-index: 1000;
 }
-.cb-template-browser__action-panel[hidden],
-.cb-template-browser__action-panel[popover]:not(:popover-open) {
-    display: none !important;
+.cb-template-browser__action-panel[hidden] { display: none !important; }
+@supports selector(:popover-open) {
+    .cb-template-browser__action-panel[popover]:not(:popover-open) {
+        display: none !important;
+    }
 }
 .cb-template-browser__action-item {
     display: block;
