@@ -29,9 +29,15 @@ final class Assets {
 			self::version( 'assets/css/components/template-library.css' )
 		);
 		wp_enqueue_script_module(
+			'@cb-core/template-actions',
+			CB_CORE_URL . 'assets/js/core/template-actions.js',
+			[ '@cb-core/modal' ],
+			self::version( 'assets/js/core/template-actions.js' )
+		);
+		wp_enqueue_script_module(
 			self::MODULE_ID,
 			CB_CORE_URL . 'assets/js/core/template-browser.js',
-			[ '@cb-core/modal' ],
+			[ '@cb-core/modal', '@cb-core/template-actions' ],
 			self::version( 'assets/js/core/template-browser.js' )
 		);
 		if ( ! self::$data_registered ) {
@@ -80,6 +86,25 @@ final class Assets {
 			'close'       => __( 'Close', 'core-blueprint' ),
 			'compatible'  => __( 'Compatible', 'core-blueprint' ),
 			'incompatible'=> __( 'Not compatible', 'core-blueprint' ),
+			'actions'     => __( 'Actions', 'core-blueprint' ),
+			'rename'      => __( 'Rename', 'core-blueprint' ),
+			'duplicate'   => __( 'Duplicate', 'core-blueprint' ),
+			'exportJson'  => __( 'Export JSON', 'core-blueprint' ),
+			'delete'      => __( 'Delete', 'core-blueprint' ),
+			'saveAction'  => __( 'Save', 'core-blueprint' ),
+			'cancel'      => __( 'Cancel', 'core-blueprint' ),
+			'templateName'=> __( 'Template name', 'core-blueprint' ),
+			'renameHelp'  => __( 'Choose a new template name.', 'core-blueprint' ),
+			'duplicateHelp'=> __( 'Name the new copy of this template.', 'core-blueprint' ),
+			'deleteWarning'=> __( 'Permanently delete this saved template?', 'core-blueprint' ),
+			'deleteConfirm'=> __( 'I understand this permanently deletes the saved template.', 'core-blueprint' ),
+			'exportReady' => __( 'Template JSON downloaded.', 'core-blueprint' ),
+			'actionDone'  => __( 'Template action completed.', 'core-blueprint' ),
+			'actionConflict'=> __( 'Template changed elsewhere. Reload and try again.', 'core-blueprint' ),
+			'actionRefused'=> __( 'You can no longer manage this template.', 'core-blueprint' ),
+			'actionUnsupported'=> __( 'This action is not supported for this template.', 'core-blueprint' ),
+			'actionFailed'=> __( 'The action could not be confirmed. Check the template before retrying.', 'core-blueprint' ),
+			'actionRefresh'=> __( 'Templates refreshed; verify the latest state.', 'core-blueprint' ),
 			'details'     => __( 'Templates are managed by their owning extension.', 'core-blueprint' ),
 		];
 		return $existing;
