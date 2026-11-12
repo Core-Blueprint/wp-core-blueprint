@@ -129,34 +129,51 @@ test('FIELD-05B: Designs use compact resource rows; Templates keep preview cards
     instance.destroy();
 });
 
-test('FIELD-05B: global Template Library remains two-pane and unmodified', async () => {
-    const { api } = harness();
+test('TL-M3A: global Library shares the three-pane Browser composition without Designer authority', async () => {
+    const { api, calls } = harness();
     const root = new Element('div');
     const instance = api.createBrowser(root);
     await flush();
     const shell = root.children[0];
-    assert.equal(shell.children.length, 2);
-    assert.equal(shell.dataset.browserView, undefined);
+    assert.equal(shell.children.length, 3);
+    assert.equal(shell.dataset.browserView, 'templates');
+    assert.match(shell.className, /cb-template-browser--workspace/);
     assert.doesNotMatch(shell.className, /cb-template-browser--modal/);
-    const toolbar = shell.children[1].children[0];
-    assert.match(toolbar.children[0].className, /cb-template-browser__field--search/);
-    assert.equal(toolbar.children.some(node => node.className === 'cb-template-browser__result-heading'), false);
-    const templateCard = shell.children[1].children[2].children[0];
-    assert.equal(templateCard.tagName, 'ARTICLE');
+    const [sections, origins, content] = shell.children;
+    assert.equal(sections.children.length, 1, 'only Templates section is available globally');
+    assert.equal(sections.children[0].attributes['aria-pressed'], 'true');
+    assert.equal(origins.attributes['aria-label'], 'Origin');
+    assert.equal(origins.children[0].textContent, 'Origin', 'Origins are not labeled Collections');
+    assert.equal(origins.children.length, 6, 'heading and five origin filters');
+    assert.equal(origins.children[1].attributes['aria-pressed'], 'true');
+    const toolbar = content.children[0];
+    assert.match(toolbar.children[0].className, /cb-template-browser__result-heading/);
+    assert.equal(toolbar.children[0].children[0].tagName, 'H2');
+    assert.match(toolbar.children[1].className, /cb-template-browser__field--search/);
+    const templateCard = content.children[2].children[0];
+    assert.equal(templateCard.tagName, 'ARTICLE', 'global browsing does not grant a selection/apply control');
+    assert.match(templateCard.children[0].className, /cb-template-browser__card-preview/);
+    assert.equal(templateCard.children[0].attributes['aria-hidden'], 'true');
+    assert.match(templateCard.children[1].className, /cb-template-browser__card-body/);
+    origins.children[2].events.get('click')();
+    await flush();
+    assert.equal(origins.children[2].attributes['aria-pressed'], 'true');
+    assert.ok(calls.some(url => url.includes('origin=built-in')));
+    assert.equal(sections.children[0].attributes['aria-pressed'], 'true');
     instance.destroy();
 });
 
 test('FIELD-05B: responsive styles separate design rows and template grid', () => {
-    assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="designs"\] \.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: auto;/);
-    assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="designs"\] \.cb-template-browser__card--design\s*\{[^}]*display: grid;[^}]*min-height: 74px;/);
-    assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="templates"\] \.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: 1fr;/);
-    assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__field > span\s*\{[^}]*position: absolute;[^}]*width: 1px;/);
+    assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="designs"\] \.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: auto;/);
+    assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="designs"\] \.cb-template-browser__card--design\s*\{[^}]*display: grid;[^}]*min-height: 74px;/);
+    assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="templates"\] \.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: 1fr;/);
+    assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__field > span\s*\{[^}]*position: absolute;[^}]*width: 1px;/);
     assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?data-browser-view="designs"\] \.cb-template-browser__grid/);
-    assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__content\s*\{\s*padding: 0;/);
-    assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__toolbar\s*\{[^}]*border-bottom: 1px solid var\(--cb-browser-line\);/);
-    assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__footer\s*\{[^}]*border-top: 1px solid var\(--cb-browser-line\);/);
-    assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="designs"\] \.cb-template-browser__card--design \.cb-template-browser__choice\s*\{[^}]*grid-column: 1;/);
-    assert.match(styles, /\.cb-template-browser--modal\[data-browser-view="designs"\] \.cb-template-browser__card--design \.cb-template-browser__card-body\s*\{[^}]*grid-column: 2;/);
+    assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__content\s*\{\s*padding: 0;/);
+    assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__toolbar\s*\{[^}]*border-bottom: 1px solid var\(--cb-browser-line\);/);
+    assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__footer\s*\{[^}]*border-top: 1px solid var\(--cb-browser-line\);/);
+    assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="designs"\] \.cb-template-browser__card--design \.cb-template-browser__choice\s*\{[^}]*grid-column: 1;/);
+    assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="designs"\] \.cb-template-browser__card--design \.cb-template-browser__card-body\s*\{[^}]*grid-column: 2;/);
     assert.match(styles, /\.cb-template-library-page \.cb-template-browser/);
 });
 
