@@ -152,7 +152,7 @@ class ResourceLifecycleTests(unittest.TestCase):
         item = resources.Resources(TOKEN, "Z" * 32)
         item.container_id = IDENTITY
         with mock.patch.object(resources, "call",
-                               return_value=mock.Mock(returncode=0, stdout="1\\n")) as run:
+                               return_value=mock.Mock(returncode=0, stdout="1\n")) as run:
             item.wait_ready()
         args = run.call_args.args[0]
         self.assertIn("--env", args)
@@ -319,7 +319,7 @@ class DisposableSupervisorTests(unittest.TestCase):
             evidence.mkdir(parents=True)
             destination = root / "report"
             destination.mkdir()
-            (evidence / "01-pass.json").write_text('{"status":"pass"}\\n')
+            (evidence / "01-pass.json").write_text('{"status":"pass"}\n')
             self.assertEqual(1, disposable.copy_gate_receipts(source, destination))
             self.assertTrue((destination / "gates/01-pass.json").is_file())
             with self.assertRaises(FileExistsError):
