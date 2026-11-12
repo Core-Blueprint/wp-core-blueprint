@@ -53,8 +53,13 @@ final class BrowserController {
 		if ( strlen( $request->get_body() ) > 4096 ) {
 			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
 		}
+		// PHP associative decoding otherwise conflates JSON [] and {}.
+		// The input contract explicitly requires a JSON object, even when empty.
+		$raw = json_decode( $request->get_body() );
 		$data = $request->get_json_params();
-		if ( ! is_array( $data ) || array_is_list( $data ) ) {
+		if ( ! $raw instanceof \stdClass || ! isset( $raw->input )
+			|| ! $raw->input instanceof \stdClass
+			|| ! is_array( $data ) || array_is_list( $data ) ) {
 			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
 		}
 		$keys = array_keys( $data );

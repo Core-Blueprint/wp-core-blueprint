@@ -71,7 +71,8 @@ final class CB_Template_Library_Action_Transport_Test extends WP_UnitTestCase {
 		if ( $nonce ) $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body( wp_json_encode( [
 			'source' => SavedTemplateSource::SOURCE_ID, 'templateId' => $id,
-			'action' => $action, 'revision' => $revision, 'input' => $input,
+			'action' => $action, 'revision' => $revision,
+			'input' => [] === $input ? (object) [] : $input,
 		] ) );
 		return $request;
 	}
@@ -83,6 +84,13 @@ final class CB_Template_Library_Action_Transport_Test extends WP_UnitTestCase {
 		self::assertCount( 1, $page->items );
 		self::assertSame( [ 'rename', 'duplicate', 'export-json', 'delete' ],
 			TemplateSourceRegistry::actions( $page->items[0] ) );
+		$listing_request = new WP_REST_Request( 'GET', '/core-blueprint/v1/template-library/templates' );
+		$listing_request->set_param( 'source', SavedTemplateSource::SOURCE_ID );
+		$listing = BrowserController::templates( $listing_request );
+		self::assertSame( 200, $listing->get_status() );
+		self::assertCount( 1, $listing->get_data()['items'] );
+		self::assertSame( [ 'rename', 'duplicate', 'export-json', 'delete' ],
+			$listing->get_data()['items'][0]['actions'] );
 		$built_in = new TemplateMetadata(
 			SavedTemplateSource::SOURCE_ID, 'core-blueprint', 'mail',
 			$created['id'], 'Not editable', '', 'built-in', 'saved', 'en', '1'
@@ -130,6 +138,12 @@ final class CB_Template_Library_Action_Transport_Test extends WP_UnitTestCase {
 		$id = $created['id'];
 		self::assertSame( 403, rest_do_request( $this->request( $id, 'edit', 1 ) )->get_status() );
 		self::assertSame( 400, rest_do_request( $this->request( $id, 'rename', 1 ) )->get_status() );
+		$wrong_input = $this->request( $id, 'delete', 1 );
+		$wrong_input->set_body( wp_json_encode( [
+			'source' => SavedTemplateSource::SOURCE_ID, 'templateId' => $id,
+			'action' => 'delete', 'revision' => 1, 'input' => [],
+		] ) );
+		self::assertSame( 400, rest_do_request( $wrong_input )->get_status() );
 		$request = $this->request( $id, 'delete', 1 );
 		$request->set_header( 'X-CB-Designer-Scope', 'invalid' );
 		self::assertSame( 403, rest_do_request( $request )->get_status() );

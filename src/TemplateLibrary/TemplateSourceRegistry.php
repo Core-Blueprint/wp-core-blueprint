@@ -169,14 +169,14 @@ final class TemplateSourceRegistry {
 		$source = self::$sources[ $item->source ] ?? null;
 		if ( $actor < 1 || ! $source instanceof TemplateActionSourceInterface
 			|| ! in_array( $item->origin, [ 'personal', 'site' ], true )
-			|| $source->extension_id() !== $item->extension
-			|| $source->designer_type() !== $item->designer
 			|| ! TemplateQuery::valid_id( $item->id )
 			|| ! self::allowed( $source ) ) {
 			return [];
 		}
 		try {
-			if ( ! $source->can_view( $item->id, $actor )
+			if ( $source->extension_id() !== $item->extension
+				|| $source->designer_type() !== $item->designer
+				|| ! $source->can_view( $item->id, $actor )
 				|| ! $source->can_manage( $item->id, $actor ) ) {
 				return [];
 			}
@@ -212,10 +212,6 @@ final class TemplateSourceRegistry {
 			|| $expected_revision < 1
 			|| ! in_array( $action, [ 'rename', 'duplicate', 'export-json', 'delete' ], true )
 			|| ! $source instanceof TemplateActionSourceInterface
-			|| ( null !== $scope && (
-				$source->extension_id() !== $scope['extension']
-				|| $source->designer_type() !== $scope['designer']
-			) )
 			|| ! self::allowed( $source ) ) {
 			return [ 'status' => 'refused' ];
 		}
@@ -229,7 +225,10 @@ final class TemplateSourceRegistry {
 			return [ 'status' => 'invalid' ];
 		}
 		try {
-			if ( ! $source->can_view( $template_id, $actor )
+			if ( ( null !== $scope && (
+				$source->extension_id() !== ( $scope['extension'] ?? null )
+				|| $source->designer_type() !== ( $scope['designer'] ?? null )
+			) ) || ! $source->can_view( $template_id, $actor )
 				|| ! $source->can_manage( $template_id, $actor )
 				|| ! in_array( $action, $source->supported_actions( $template_id, $actor ), true ) ) {
 				return [ 'status' => 'refused' ];

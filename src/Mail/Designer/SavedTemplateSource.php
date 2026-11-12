@@ -14,7 +14,6 @@ use CoreBlueprint\Core\TemplateLibrary\TemplateActionSourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateApplySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateCategorySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateDesignerAuthorityInterface;
-use CoreBlueprint\Core\TemplateLibrary\TemplateManagementSourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateMetadata;
 use CoreBlueprint\Core\TemplateLibrary\TemplateNavigation;
 use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
