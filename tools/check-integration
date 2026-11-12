@@ -9,12 +9,14 @@ case "${1:-}" in
   --disposable-preflight)
     [[ $# -eq 1 ]] || { usage; exit 64; }
     cd "$ROOT"
-    PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.disposable --preflight
+    env -u CB_BASE_DISPOSABLE_TOKEN -u CB_BASE_DB_PORT -u CB_BASE_DB_PASSWORD \
+      PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.disposable --preflight
     ;;
   --disposable)
     [[ $# -eq 1 ]] || { usage; exit 64; }
     cd "$ROOT"
-    PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.disposable --execute
+    env -u CB_BASE_DISPOSABLE_TOKEN -u CB_BASE_DB_PORT -u CB_BASE_DB_PASSWORD \
+      PYTHONDONTWRITEBYTECODE=1 python3 -B -m tools.integration.disposable --execute
     ;;
   --preflight)
     [[ $# -eq 1 ]] || { usage; exit 64; }
