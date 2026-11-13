@@ -155,7 +155,8 @@ test('TL-1C-C Browser advertises explicit preview without placing HTML in listin
         assert.equal( panel.hidden, false );
         const toolbar = f.content.children[0];
         assert.equal( toolbar.inert, true, 'background controls cannot receive focus' );
-        assert.equal( f.grid.inert, true, 'underlying templates cannot receive focus' );
+        assert.equal( ( contextual ? f.content.children[2] : f.grid ).inert, true,
+            'underlying template viewport cannot receive focus' );
         const iframe = panel.children[2];
         assert.equal( iframe.tagName, 'IFRAME' );
         assert.equal( iframe.attributes.sandbox, '' );
@@ -171,7 +172,8 @@ test('TL-1C-C Browser advertises explicit preview without placing HTML in listin
         close.events.get( 'click' )();
         assert.equal( panel.hidden, true );
         assert.equal( f.content.children[0].inert, false, 'filters regain normal keyboard focus' );
-        assert.equal( f.grid.inert, false, 'template list regains keyboard focus' );
+        assert.equal( ( contextual ? f.content.children[2] : f.grid ).inert, false,
+            'template viewport regains keyboard focus' );
         assert.equal( iframe.srcdoc, '', 'closing drops previously authorized HTML from iframe' );
         assert.equal( button.focused, true, 'keyboard focus restored to Preview trigger' );
         f.browser.destroy();
