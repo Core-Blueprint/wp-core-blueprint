@@ -971,7 +971,7 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 /* TL-1B2 — one truthful, provider-gated sort control in both Browser modes.
    Desktop: heading / search / sort, then the four existing source facets.
    The Designer workspace uses flex and the global Library uses CSS grid. */
-.cb-template-browser--modal .cb-template-browser__field--sort {
+.cb-template-browser--modal.cb-template-browser--workspace .cb-template-browser__field--sort {
   flex: 0 1 245px;
   margin-inline-start: auto;
 }
@@ -1001,7 +1001,7 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
   }
 }
 @media (max-width: 720px) {
-  .cb-template-browser--modal .cb-template-browser__field--sort {
+  .cb-template-browser--modal.cb-template-browser--workspace .cb-template-browser__field--sort {
     flex: 1 1 100%;
     margin-inline-start: 0;
   }
