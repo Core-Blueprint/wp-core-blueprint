@@ -432,7 +432,7 @@ function createBrowser( root, options = {} ) {
         if ( typeof item.version === 'string' && item.version ) {
             provenance.append( el( 'span', '', 'v' + item.version ) );
         }
-        if ( provenance.childNodes.length ) body.append( provenance );
+        if ( provenance.children.length ) body.append( provenance );
         const stateBadge = el( 'span',
             item.compatible ? 'cb-template-browser__status' : 'cb-template-browser__status cb-template-browser__status--blocked',
             item.compatible ? label( 'compatible', 'Compatible' ) : label( 'incompatible', 'Not compatible' )
