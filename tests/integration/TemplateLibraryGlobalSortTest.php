@@ -240,6 +240,39 @@ final class CB_Template_Library_Global_Sort_Test extends WP_UnitTestCase {
 		self::assertSame( 'invalid_query', $response->get_data()['code'] );
 	}
 
+	public function test_sources_advertise_sort_capability_without_granting_any_permissions(): void {
+		$request = new WP_REST_Request( 'GET', '/core-blueprint/v1/template-library/sources' );
+		$items = BrowserController::sources( $request )->get_data()['sources'];
+		self::assertCount( 2, $items );
+		foreach ( $items as $source ) {
+			self::assertSame( [ TemplateSort::TITLE_ASC ], $source['sorts'] );
+		}
+		TemplateSourceRegistry::_reset_for_testing();
+		$this->unsupported = true;
+		$items = BrowserController::sources( $request )->get_data()['sources'];
+		self::assertCount( 3, $items );
+		foreach ( $items as $source ) {
+			if ( 'core-blueprint-sort-legacy' === $source['id'] ) {
+				self::assertSame( [], $source['sorts'] );
+			}
+		}
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'subscriber' ] ) );
+		self::assertSame( [], BrowserController::sources( $request )->get_data()['sources'] );
+	}
+
+	public function test_rest_rejects_tampered_sort_cursor_with_bad_request(): void {
+		$query = new TemplateQuery( limit: 2, sort: TemplateSort::TITLE_ASC );
+		$first = TemplateSourceRegistry::browse_global( $query );
+		self::assertNotNull( $first->next_cursor );
+		$request = new WP_REST_Request( 'GET', '/core-blueprint/v1/template-library/templates' );
+		$request->set_param( 'sort', TemplateSort::TITLE_ASC );
+		$request->set_param( 'limit', '2' );
+		$request->set_param( 'cursor', 'tampered' );
+		$response = BrowserController::templates( $request );
+		self::assertSame( 400, $response->get_status() );
+		self::assertSame( 'invalid_cursor', $response->get_data()['code'] );
+	}
+
 	public function test_unauthorized_user_cannot_obtain_sorted_provider_metadata(): void {
 		$query = new TemplateQuery( limit: 2, sort: TemplateSort::TITLE_ASC );
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'subscriber' ] ) );
