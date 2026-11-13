@@ -240,7 +240,6 @@ function createBrowser( root, options = {} ) {
     );
     sortField.append( sortLabel, sortSelect );
     sortField.hidden = true;
-    toolbar.append( sortField );
     sortSelect.addEventListener( 'change', () => {
         const next = sortSelect.value;
         if ( next && ( next !== 'title-asc' || !canSortAllSources() ) ) {
@@ -322,7 +321,8 @@ function createBrowser( root, options = {} ) {
         search.setAttribute( 'aria-label', value );
         searchField.children[0].textContent = value;
     }
-    toolbar.prepend( resultHeading, searchField );
+    // Keep DOM and visual focus order aligned: Search → Sort → source facets.
+    toolbar.prepend( resultHeading, searchField, sortField );
     content.append( toolbar, message, resultsViewport || results, footer );
 
     if ( contextual && typeof options.onSaveAs === 'function' ) {
