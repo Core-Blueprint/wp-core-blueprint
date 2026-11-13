@@ -40,7 +40,7 @@ class Element {
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
-function harness(modalHook = async () => false) {
+function harness(modalHook = async () => false, fixtures = {}) {
     const calls = [];
     const document = {
         createElement: tag => new Element(tag),
@@ -57,11 +57,16 @@ function harness(modalHook = async () => false) {
         setTimeout, clearTimeout, modalHook,
         fetch: async url => {
             calls.push(url);
-            return { ok: true, json: async () => url.includes('/sources?')
-                ? { sources: [ { id: 'core', categories: [ { id: 'mail', label: 'Mail' } ] } ] }
-                : { items: [ { id: 'template-1', title: 'Authorized template',
-                    source: 'core', origin: 'built-in', category: 'mail', designer: 'mail', version: '2.1',
-                    compatible: true, description: 'Reusable content' } ], next_cursor: null },
+            const query = new URL(url, 'https://example.test');
+            const fallbackSources = [ { id: 'core', extension: 'core-blueprint', designer: 'mail',
+                categories: [ { id: 'mail', label: 'Mail' } ] } ];
+            const fallbackPage = { items: [ { id: 'template-1', title: 'Authorized template',
+                source: 'core', origin: 'built-in', category: 'mail', designer: 'mail', version: '2.1',
+                compatible: true, description: 'Reusable content' } ], next_cursor: null };
+            return { ok: true, json: async () => query.pathname.endsWith('/sources')
+                ? { sources: fixtures.sources || fallbackSources }
+                : typeof fixtures.templatePage === 'function'
+                    ? fixtures.templatePage(query.searchParams) : fallbackPage,
             };
         },
     };
@@ -195,6 +200,147 @@ test('TL-1A: global and scoped cards show declared provenance without creating n
             'a metadata label must never grant a clickable trusted-origin action');
         browser.destroy();
     }
+});
+
+test('TL-1B2: global sort is gated by all eligible backend capabilities and uses signed paging', async () => {
+    const sources = [
+        { id: 'core-a', extension: 'core-blueprint', designer: 'mail', sorts: ['title-asc'], categories: [] },
+        { id: 'core-b', extension: 'core-blueprint', designer: 'mail', sorts: ['title-asc'], categories: [] },
+    ];
+    const { api, calls } = harness(undefined, { sources, templatePage: params => {
+        const sorted = params.get('sort') === 'title-asc';
+        const cursor = params.get('cursor');
+        return {
+            items: [ { id: cursor ? 'second' : 'first', title: sorted
+                ? cursor ? 'Beta' : 'Alpha' : 'Default',
+                source: 'core-a', origin: 'built-in', category: 'mail', designer: 'mail',
+                version: '1', compatible: true } ],
+            next_cursor: sorted && !cursor ? 'opaque-signed-position' : null,
+        };
+    } });
+    const root = new Element('div');
+    const instance = api.createBrowser(root);
+    await flush();
+    const content = root.children[0].children[1];
+    const toolbar = content.children[0];
+    const sortField = toolbar.children[6], select = sortField.children[1];
+    assert.match(sortField.className, /cb-template-browser__field--sort/);
+    assert.equal(sortField.hidden, false);
+    assert.equal(sortField.children[0].textContent, 'Sort by');
+    assert.deepEqual(select.children.map(item => item.textContent),
+        ['Source order', 'Title (exact, case-sensitive)']);
+    assert.equal(select.value, '', 'default source order remains unchanged');
+    select.value = 'title-asc';
+    select.events.get('change')();
+    await flush();
+    assert.ok(calls.some(url => url.includes('sort=title-asc')), 'sorted URL is explicitly opted in');
+    assert.equal(content.children[2].children[0].children[1].children[0].textContent, 'Alpha');
+    const more = content.children[3].children[1];
+    assert.equal(more.hidden, false);
+    more.events.get('click')();
+    await flush();
+    assert.ok(calls.some(url => url.includes('cursor=opaque-signed-position') && url.includes('sort=title-asc')),
+        'Load more retains the server-owned cursor and sort');
+    assert.equal(content.children[2].children.length, 2);
+    assert.equal(more.hidden, true);
+    select.value = '';
+    select.events.get('change')();
+    await flush();
+    assert.equal(content.children[2].children.length, 1,
+        'changing sort resets the prior result page instead of locally reordering');
+    assert.equal(content.children[2].children[0].children[1].children[0].textContent, 'Default');
+    assert.equal(new URL(calls.at(-1), 'https://example.test').searchParams.has('sort'), false);
+    assert.equal(new URL(calls.at(-1), 'https://example.test').searchParams.has('cursor'), false);
+    instance.destroy();
+});
+
+test('TL-1B2: unsupported and oversized source sets never claim global sorting', async () => {
+    for (const sources of [
+        [ { id: 'supported', extension: 'core-blueprint', designer: 'mail', sorts: ['title-asc'] },
+            { id: 'unsupported', extension: 'core-blueprint', designer: 'reports', sorts: [] } ],
+        Array.from({ length: 13 }, (_, index) => ({
+            id: 'many-' + index, extension: 'core-blueprint', designer: 'mail', sorts: ['title-asc'],
+        })),
+        [],
+    ]) {
+        const { api, calls } = harness(undefined, { sources });
+        const root = new Element('div');
+        const instance = api.createBrowser(root);
+        await flush();
+        const content = root.children[0].children[1], toolbar = content.children[0];
+        const field = toolbar.children[6], sort = field.children[1];
+        assert.equal(field.hidden, true, 'All means every matching authorized source');
+        assert.equal(sort.disabled, true);
+        assert.ok(!calls.some(url => url.includes('sort=title-asc')));
+        if (sources.length === 2) {
+            const type = toolbar.children[4].children[1];
+            type.value = 'mail';
+            type.events.get('change')();
+            await flush();
+            assert.equal(field.hidden, false, 'Designer filter narrows the actual backend source set');
+            sort.value = 'title-asc';
+            sort.events.get('change')();
+            await flush();
+            assert.ok(calls.some(url => url.includes('designer=mail') && url.includes('sort=title-asc')));
+            type.value = 'reports';
+            type.events.get('change')();
+            await flush();
+            assert.equal(field.hidden, true, 'unsupported filter revokes sort option');
+            assert.equal(sort.value, '', 'selected sort state clears before refresh');
+            assert.equal(new URL(calls.at(-1), 'https://example.test').searchParams.has('sort'), false,
+                'a new query cannot reuse the old sorted cursor/identity');
+        }
+        instance.destroy();
+    }
+});
+
+test('TL-1B2: scoped sort respects Designs mode and clears selection on ordering changes', async () => {
+    const sources = [ {
+        id: 'core', extension: 'core-blueprint', designer: 'mail',
+        sorts: ['title-asc'], categories: [ { id: 'mail', label: 'Mail' } ],
+    } ];
+    const { api, calls } = harness(undefined, { sources });
+    const root = new Element('div');
+    const instance = api.createBrowser(root, {
+        mode: 'designer', contextToken: 'server-issued-scope',
+        designs: [ { id: 'existing', title: 'Existing design', provider: 'WordPress' } ],
+    });
+    await flush();
+    const shell = root.children[0], content = shell.children[2], toolbar = content.children[0];
+    const sortField = toolbar.children[3], sort = sortField.children[1];
+    assert.equal(shell.dataset.browserView, 'designs');
+    assert.equal(sortField.hidden, true, 'sorting is for templates only');
+    shell.children[0].children[1].events.get('click')();
+    await flush();
+    assert.equal(sortField.hidden, false);
+    const grid = content.children[2].children[0];
+    const radio = grid.children[0].children[0];
+    radio.checked = true;
+    radio.events.get('change')();
+    assert.ok(instance.selected(), 'template selection exists before changing sort');
+    sort.value = 'title-asc';
+    sort.events.get('change')();
+    await flush();
+    assert.equal(instance.selected(), null, 'changing global order invalidates scoped selection');
+    assert.ok(calls.some(url => url.includes('sort=title-asc')));
+    shell.children[0].children[0].events.get('click')();
+    await flush();
+    assert.equal(sortField.hidden, true, 'Designs never display a template sort');
+    shell.children[0].children[1].events.get('click')();
+    await flush();
+    assert.equal(sortField.hidden, false);
+    assert.equal(sort.value, 'title-asc', 'template choice persists through Designs navigation');
+    instance.destroy();
+});
+
+test('TL-1B2: sort has a responsive, semantic presentation in both Browser modes', () => {
+    assert.match(browserSource, /const sortField = el\( 'label', 'cb-template-browser__field cb-template-browser__field--sort' \)/);
+    assert.match(browserSource, /sortSelect\.dataset\.filter = 'sort'/);
+    assert.match(browserSource, /eligible\.length <= 12/);
+    assert.match(styles, /TL-1B2 — one truthful, provider-gated sort control/);
+    assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__field--sort/);
+    assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__field--sort/);
+    assert.match(styles, /@media \(max-width: 720px\)[\s\S]*?\.cb-template-browser--modal \.cb-template-browser__field--sort/);
 });
 
 test('TL-M3A-R1: two-pane scoped Browser preserves Save-as when no Designs exist', async () => {
