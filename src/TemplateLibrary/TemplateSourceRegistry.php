@@ -66,6 +66,58 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
+	 * Source-level preview capability hint, NOT an authorization grant.
+	 * Individual items are checked separately for each POST preview request.
+	 */
+	public static function supports_preview( string $source_id ): bool {
+		self::collect_if_ready();
+		$source = self::$sources[ $source_id ] ?? null;
+		return $source instanceof TemplatePreviewSourceInterface && self::allowed( $source );
+	}
+
+	/**
+	 * Read-only provider-owned preview boundary, independent of Apply/Save.
+	 * No client-supplied HTML/document, repository access, network or caching.
+	 *
+	 * @param array{extension:string,designer:string}|null $scope Verified Designer scope; null = global admin.
+	 */
+	public static function preview(
+		string $source_id, string $template_id, string $expected_version, ?array $scope
+	): ?TemplatePreview {
+		self::collect_if_ready();
+		$actor = get_current_user_id();
+		$source = self::$sources[ $source_id ] ?? null;
+		if ( $actor < 1 || ! TemplateQuery::valid_id( $source_id )
+			|| ! TemplateQuery::valid_id( $template_id )
+			|| ! $source instanceof TemplatePreviewSourceInterface
+			|| ! self::allowed( $source )
+			|| ( null !== $scope && (
+				$source->extension_id() !== ( $scope['extension'] ?? null )
+				|| $source->designer_type() !== ( $scope['designer'] ?? null )
+			) ) ) {
+			return null;
+		}
+		try {
+			if ( ! $source->can_view( $template_id, $actor )
+				|| ! $source->can_preview( $template_id, $actor ) ) {
+				return null;
+			}
+			$result = $source->render_preview( $template_id, $expected_version, $actor );
+			if ( ! $result instanceof TemplatePreview
+				|| ! hash_equals( $expected_version, $result->version )
+				|| ! self::allowed( $source )
+				|| ! $source->can_view( $template_id, $actor )
+				|| ! $source->can_preview( $template_id, $actor ) ) {
+				return null;
+			}
+			return $result;
+		} catch ( \Throwable ) {
+			// Provider exceptions, unknown revisions and unsafe HTML fail closed.
+			return null;
+		}
+	}
+
+	/**
 	 * Resolve a registered source and the consumer's current Designer authority.
 	 * Source registration and browse permission are not launch authority.
 	 *

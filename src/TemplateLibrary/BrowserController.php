@@ -22,6 +22,11 @@ final class BrowserController {
 			'callback' => [ self::class, 'manage' ],
 			'permission_callback' => [ self::class, 'manage_permitted' ],
 		] );
+		register_rest_route( 'core-blueprint/v1', '/template-library/preview', [
+			'methods' => 'POST',
+			'callback' => [ self::class, 'preview' ],
+			'permission_callback' => [ self::class, 'preview_permitted' ],
+		] );
 		register_rest_route( 'core-blueprint/v1', '/template-library/apply', [
 			'methods' => 'POST',
 			'callback' => [ self::class, 'apply' ],
@@ -37,6 +42,61 @@ final class BrowserController {
 			'callback' => [ self::class, 'templates' ],
 			'permission_callback' => [ self::class, 'permitted' ],
 		] );
+	}
+
+	/** Read-only POST still requires REST nonce and current global/scoped authority. */
+	public static function preview_permitted( WP_REST_Request $request ): bool {
+		return 'POST' === $request->get_method()
+			&& self::apply_permitted( $request )
+			&& self::permitted( $request );
+	}
+
+	public static function preview( WP_REST_Request $request ): WP_REST_Response {
+		if ( ! self::preview_permitted( $request ) ) {
+			return new WP_REST_Response( [ 'status' => 'refused' ], 403 );
+		}
+		$scope = self::scope( $request );
+		if ( false === $scope ) {
+			return new WP_REST_Response( [ 'status' => 'refused' ], 403 );
+		}
+		if ( strlen( $request->get_body() ) > 768 ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$raw = json_decode( $request->get_body() );
+		$data = $request->get_json_params();
+		if ( ! $raw instanceof \stdClass || ! is_array( $data ) || array_is_list( $data ) ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$keys = array_keys( $data );
+		sort( $keys, SORT_STRING );
+		if ( $keys !== [ 'contextEpoch', 'source', 'templateId', 'version' ]
+			|| ! is_string( $data['source'] ) || ! TemplateQuery::valid_id( $data['source'] )
+			|| ! is_string( $data['templateId'] ) || ! TemplateQuery::valid_id( $data['templateId'] )
+			|| ! is_string( $data['version'] )
+			|| strlen( $data['version'] ) > 48
+			|| 1 !== preg_match( '/^[1-9][0-9]*(?:\.[0-9]+){0,2}$/D', $data['version'] )
+			|| ! is_int( $data['contextEpoch'] ) || $data['contextEpoch'] < 0
+			|| $data['contextEpoch'] > 2147483647 ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		// contextEpoch is a stale-response correlation value, NOT a server
+		// authorization token. DesignerScope validates the actual identity.
+		$result = TemplateSourceRegistry::preview(
+			$data['source'], $data['templateId'], $data['version'], $scope
+		);
+		if ( null === $result ) {
+			return new WP_REST_Response( [ 'status' => 'refused' ], 403 );
+		}
+		$response = new WP_REST_Response( [
+			'status' => 'ready', 'apiVersion' => TemplatePreviewSourceInterface::API_VERSION,
+			'source' => $data['source'], 'templateId' => $data['templateId'],
+			'version' => $result->version, 'contextEpoch' => $data['contextEpoch'],
+			'html' => $result->html,
+		], 200 );
+		$response->header( 'Cache-Control', 'private, no-store, max-age=0' );
+		$response->header( 'X-Content-Type-Options', 'nosniff' );
+		$response->header( 'Referrer-Policy', 'no-referrer' );
+		return $response;
 	}
 
 	/** All management writes require BOTH WordPress REST CSRF and live scope/admin authority. */
@@ -168,6 +228,8 @@ final class BrowserController {
 				'categories' => $categories[$id] ?? [],
 				'sorts' => TemplateSourceRegistry::supports_title_sort( $id )
 					? [ TemplateSort::TITLE_ASC ] : [],
+				'previews' => TemplateSourceRegistry::supports_preview( $id )
+					? [ TemplatePreviewSourceInterface::API_VERSION ] : [],
 			], array_keys( $sources ), array_values( $sources ) ),
 		] );
 	}
