@@ -411,6 +411,7 @@ function createBrowser( root, options = {} ) {
         } );
     }
     function closePreview( restoreFocus = false ) {
+        const wasOpen = !!state.previewPanel && !state.previewPanel.hidden;
         setBackgroundInert( false );
         ++state.previewEpoch;
         state.previewController?.abort();
@@ -422,6 +423,7 @@ function createBrowser( root, options = {} ) {
         if ( restoreFocus && focus && typeof focus.focus === 'function' && focus.isConnected ) {
             focus.focus();
         }
+        if ( wasOpen ) notifyState();
     }
     function previewSurface() {
         if ( state.previewPanel ) return state.previewPanel;
@@ -470,6 +472,7 @@ function createBrowser( root, options = {} ) {
         panel.hidden = false;
         setBackgroundInert( true );
         state.previewFocus = trigger;
+        notifyState();
         const close = header.children[1];
         if ( typeof close.focus === 'function' ) close.focus();
         const controller = new AbortController();
@@ -732,6 +735,7 @@ function createBrowser( root, options = {} ) {
     refresh();
     return {
         selected: () => state.selected === null ? null : ( state.entries[state.selected] || null ),
+        previewOpen: () => !!state.previewPanel && !state.previewPanel.hidden,
         view: () => state.view,
         destroy: () => {
             closePreview();
@@ -779,6 +783,9 @@ async function open( { contextToken, onChoose, title, designs = [], activeDesign
             confirmLabel: browser.view() === 'designs'
                 ? label( 'openDesign', 'Open design' ) : label( 'use', 'Use template' ),
             confirmEnabled: () => {
+                // The parent modal must not Apply a selected template through
+                // an open preview's inert background.
+                if ( browser.previewOpen() ) return false;
                 const selected = browser.selected();
                 return !!selected && ( selected.kind === 'design'
                     ? typeof onOpenDesign === 'function' : !!selected.compatible );
@@ -790,6 +797,8 @@ async function open( { contextToken, onChoose, title, designs = [], activeDesign
             },
             cancelLabel: label( 'close', 'Close' ),
             onConfirm: async () => {
+                // Recheck at execution, not just when the button was rendered.
+                if ( browser.previewOpen() ) return false;
                 const selected = browser.selected();
                 if ( !selected || ( selected.kind !== 'design' && !selected.compatible ) ) {
                     notice.textContent = browser.view() === 'designs'

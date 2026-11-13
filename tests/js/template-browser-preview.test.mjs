@@ -48,7 +48,8 @@ class Element {
 }
 
 const nextTurn = () => new Promise( resolve => setImmediate( resolve ) );
-function fixture( { preview = true, refuse = false, deferred = null, contextual = false } = {} ) {
+function fixture( { preview = true, refuse = false, deferred = null, contextual = false,
+    modalDriver = null } = {} ) {
     const calls = [];
     const item = {
         id: 'wordpress.new-user', source: 'core-blueprint-mail',
@@ -66,7 +67,7 @@ function fixture( { preview = true, refuse = false, deferred = null, contextual 
     const window = { location: { origin: 'https://example.invalid' } };
     const sandbox = {
         document, window, HTMLElement: Element, URL, URLSearchParams,
-        AbortController, setTimeout, clearTimeout,
+        AbortController, setTimeout, clearTimeout, __showModal: modalDriver,
         fetch: async ( url, options = {} ) => {
             calls.push( { url, options } );
             if ( url.includes( '/sources?' ) ) return {
@@ -94,7 +95,7 @@ function fixture( { preview = true, refuse = false, deferred = null, contextual 
         },
     };
     const code = source
-        .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = async () => false;')
+        .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = globalThis.__showModal || (async () => false);')
         .replace("import { createActionMenu } from '@cb-core/template-actions';", 'const createActionMenu = () => null;')
         .replace('export { createBrowser, open, loadForApply };', '')
         .replace('export default api;', '');
@@ -105,7 +106,7 @@ function fixture( { preview = true, refuse = false, deferred = null, contextual 
     const shell = root.children[0];
     const content = shell.children[contextual ? 1 : 1];
     const grid = contextual ? content.children[2].children[0] : content.children[2];
-    return { browser, root, content, grid, calls, item };
+    return { browser, root, content, grid, calls, item, api: window.cbCore.templateBrowser };
 }
 
 function previewButton( grid ) {
@@ -154,6 +155,7 @@ test('TL-1C-C Browser advertises explicit preview without placing HTML in listin
         const panel = previewPanel( f.content );
         assert.ok( panel );
         assert.equal( panel.hidden, false );
+        assert.equal( f.browser.previewOpen(), true );
         const toolbar = f.content.children[0];
         assert.equal( toolbar.inert, true, 'background controls cannot receive focus' );
         assert.equal( ( contextual ? f.content.children[2] : f.grid ).inert, true,
@@ -172,12 +174,53 @@ test('TL-1C-C Browser advertises explicit preview without placing HTML in listin
         const close = panel.children[0].children[1];
         close.events.get( 'click' )();
         assert.equal( panel.hidden, true );
+        assert.equal( f.browser.previewOpen(), false );
         assert.equal( f.content.children[0].inert, false, 'filters regain normal keyboard focus' );
         assert.equal( ( contextual ? f.content.children[2] : f.grid ).inert, false,
             'template viewport regains keyboard focus' );
         assert.equal( iframe.srcdoc, '', 'closing drops previously authorized HTML from iframe' );
         assert.equal( button.focused, true, 'keyboard focus restored to Preview trigger' );
         f.browser.destroy();
+    }
+} );
+
+
+test('TL-1C-D open preview gates the owning Designer modal confirmation', async () => {
+    let modalOptions;
+    let releaseModal;
+    let confirmUpdates = 0;
+    let chooseCalls = 0;
+    const f = fixture( { contextual: true, modalDriver: options => {
+        modalOptions = options;
+        options.onReady( { updateConfirmAction: () => { confirmUpdates++; } } );
+        return new Promise( resolve => { releaseModal = resolve; } );
+    } } );
+    f.browser.destroy();
+    const opening = f.api.open( {
+        contextToken: 'server-issued-scope',
+        onChoose: async () => { chooseCalls++; return true; },
+    } );
+    try {
+        await nextTurn();
+        await nextTurn();
+        const modalRoot = modalOptions.body.children[1];
+        const content = modalRoot.children[0].children[1];
+        const grid = content.children[2].children[0];
+        const radio = grid.children[0].children[0].children[0];
+        radio.checked = true;
+        radio.events.get( 'change' )();
+        assert.equal( modalOptions.confirmEnabled(), true, 'selection enables Use' );
+        previewButton( grid ).events.get( 'click' )();
+        assert.equal( modalOptions.confirmEnabled(), false, 'preview disables Use' );
+        assert.equal( await modalOptions.onConfirm(), false, 'direct submit also refuses' );
+        assert.equal( chooseCalls, 0, 'no Apply while preview owns focus' );
+        const panel = previewPanel( content );
+        panel.children[0].children[1].events.get( 'click' )();
+        assert.equal( modalOptions.confirmEnabled(), true, 'Close restores selected action' );
+        assert.ok( confirmUpdates >= 3, 'modal refreshed its native confirmation gate' );
+    } finally {
+        releaseModal( false );
+        await opening;
     }
 } );
 
