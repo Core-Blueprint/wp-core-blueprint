@@ -512,27 +512,37 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
-	 * The cursor carries one global seek tuple, NOT unbounded private provider
-	 * cursors. Binding includes actor, site, query/sort, Designer scope and the
-	 * current visible provider set; every source permission is rechecked.
+	 * One encrypted/authenticated global seek tuple, NOT private provider
+	 * cursors. Plaintext titles must never leak into REST URLs or access logs.
+	 * A missing AEAD primitive makes optional sort unavailable, not insecure.
 	 *
 	 * @return array{title:string,source:string,id:string}|null
 	 */
 	private static function read_sorted_cursor( ?string $cursor, string $fingerprint, int $user ): ?array {
-		if ( null === $cursor ) {
-			return null;
+		if ( null === $cursor ) return null;
+		if ( ! function_exists( 'openssl_decrypt' ) || ! function_exists( 'openssl_encrypt' ) ) {
+			throw new \DomainException( 'sort_unavailable' );
 		}
-		if ( strlen( $cursor ) > 2048
-			|| ! preg_match( '/^[A-Za-z0-9_-]+\.[a-f0-9]{64}$/D', $cursor ) ) {
+		if ( strlen( $cursor ) > 2048 || strlen( $cursor ) < 40
+			|| ! preg_match( '/^[A-Za-z0-9_-]+$/D', $cursor ) ) {
 			throw new \DomainException( 'invalid_cursor' );
 		}
-		[ $encoded, $mac ] = explode( '.', $cursor, 2 );
-		if ( ! hash_equals( hash_hmac( 'sha256', $encoded, wp_salt( 'auth' ) ), $mac ) ) {
+		$bytes = base64_decode( strtr( $cursor, '-_', '+/' ), true );
+		if ( ! is_string( $bytes ) || strlen( $bytes ) < 29 ) {
+			throw new \DomainException( 'invalid_cursor' );
+		}
+		$iv = substr( $bytes, 0, 12 );
+		$tag = substr( $bytes, 12, 16 );
+		$encrypted = substr( $bytes, 28 );
+		$plain = openssl_decrypt(
+			$encrypted, 'aes-256-gcm', self::sorted_cursor_key(),
+			OPENSSL_RAW_DATA, $iv, $tag
+		);
+		if ( ! is_string( $plain ) ) {
 			throw new \DomainException( 'invalid_cursor' );
 		}
 		try {
-			$bytes = base64_decode( strtr( $encoded, '-_', '+/' ), true );
-			$state = json_decode( (string) $bytes, true, 8, JSON_THROW_ON_ERROR );
+			$state = json_decode( $plain, true, 8, JSON_THROW_ON_ERROR );
 		} catch ( \Throwable ) {
 			throw new \DomainException( 'invalid_cursor' );
 		}
@@ -550,13 +560,32 @@ final class TemplateSourceRegistry {
 
 	/** @param array{title:string,source:string,id:string} $after */
 	private static function write_sorted_cursor( array $after, string $fingerprint, int $user ): string {
+		if ( ! function_exists( 'openssl_encrypt' ) || ! function_exists( 'openssl_decrypt' ) ) {
+			throw new \DomainException( 'sort_unavailable' );
+		}
 		$body = json_encode( [
 			'v' => 2, 'user' => $user, 'blog' => get_current_blog_id(),
 			'fingerprint' => $fingerprint, 'after' => $after,
 			'expires' => time() + 900,
 		], JSON_THROW_ON_ERROR );
-		$encoded = rtrim( strtr( base64_encode( $body ), '+/', '-_' ), '=' );
-		return $encoded . '.' . hash_hmac( 'sha256', $encoded, wp_salt( 'auth' ) );
+		try {
+			$iv = random_bytes( 12 );
+			$tag = '';
+			$encrypted = openssl_encrypt(
+				$body, 'aes-256-gcm', self::sorted_cursor_key(),
+				OPENSSL_RAW_DATA, $iv, $tag, '', 16
+			);
+		} catch ( \Throwable ) {
+			throw new \DomainException( 'sort_unavailable' );
+		}
+		if ( ! is_string( $encrypted ) || strlen( $tag ) !== 16 ) {
+			throw new \DomainException( 'sort_unavailable' );
+		}
+		return rtrim( strtr( base64_encode( $iv . $tag . $encrypted ), '+/', '-_' ), '=' );
+	}
+
+	private static function sorted_cursor_key(): string {
+		return hash( 'sha256', 'cb-template-sort-cursor-v2|' . wp_salt( 'auth' ), true );
 	}
 
 	private static function matches( TemplateMetadata $item, TemplateQuery $query ): bool {
