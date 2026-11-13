@@ -75,6 +75,41 @@ final class CB_Template_Library_Preview_Transport_Test extends WP_UnitTestCase {
 
 	public function register_fixture(): void {
 		TemplateSourceRegistry::register( $this->fixture );
+		// Metadata-only provider proves the optional interface is not required.
+		TemplateSourceRegistry::register( new class implements \CoreBlueprint\Core\TemplateLibrary\TemplateSourceInterface {
+			public function source_id(): string { return 'core-blueprint-preview-unavailable'; }
+			public function extension_id(): string { return 'core-blueprint'; }
+			public function designer_type(): string { return 'mail'; }
+			public function can_browse( int $user_id ): bool { return $user_id > 0 && user_can( $user_id, 'manage_options' ); }
+			public function can_view( string $template_id, int $user_id ): bool {
+				return 'example' === $template_id && $this->can_browse( $user_id );
+			}
+			public function query( TemplateQuery $query, ?string $cursor ): TemplatePage {
+				return new TemplatePage( [ new TemplateMetadata(
+					$this->source_id(), 'core-blueprint', 'mail', 'example',
+					'Plain', '', 'built-in', 'example', 'en', '1'
+				) ] );
+			}
+		} );
+		// Distinct, independently authenticated Designer authority, but not a
+		// preview provider. Its token must NOT unlock the Mail preview source.
+		TemplateSourceRegistry::register( new class implements \CoreBlueprint\Core\TemplateLibrary\TemplateSourceInterface, TemplateDesignerAuthorityInterface {
+			public function source_id(): string { return 'core-blueprint-preview-scope-reports'; }
+			public function extension_id(): string { return 'core-blueprint'; }
+			public function designer_type(): string { return 'reports'; }
+			public function can_browse( int $user_id ): bool { return $user_id > 0 && user_can( $user_id, 'manage_options' ); }
+			public function can_view( string $template_id, int $user_id ): bool { return false; }
+			public function query( TemplateQuery $query, ?string $cursor ): TemplatePage { return new TemplatePage( [] ); }
+			public function can_access_designer_resource( string $resource_type, string $resource_key, int $actor_id ): bool {
+				return 'reports' === $resource_type && 'fixture-reports' === $resource_key
+					&& $this->can_browse( $actor_id );
+			}
+			public function can_launch_designer( string $resource_type, string $resource_key, int $actor_id ): bool {
+				$screen = get_current_screen();
+				return $screen instanceof WP_Screen && $screen->id === 'core-blueprint-test-reports'
+					&& $this->can_access_designer_resource( $resource_type, $resource_key, $actor_id );
+			}
+		} );
 	}
 
 	private function set_session( int $user_id ): void {
@@ -143,6 +178,49 @@ final class CB_Template_Library_Preview_Transport_Test extends WP_UnitTestCase {
 		$failed = rest_do_request( $this->preview_request() );
 		self::assertSame( 403, $failed->get_status() );
 		self::assertStringNotContainsString( 'Provider secret', wp_json_encode( $failed->get_data() ) );
+	}
+
+	public function test_previewless_provider_remains_visible_without_preview_transport(): void {
+		$sources = rest_do_request( new WP_REST_Request(
+			'GET', '/core-blueprint/v1/template-library/sources'
+		) )->get_data()['sources'];
+		$none = array_values( array_filter( $sources, static fn ( array $row ): bool =>
+			'core-blueprint-preview-unavailable' === $row['id'] ) );
+		self::assertCount( 1, $none );
+		self::assertSame( [], $none[0]['previews'] );
+		self::assertSame( 403, rest_do_request( $this->preview_request( [
+			'source' => 'core-blueprint-preview-unavailable',
+		] ) )->get_status() );
+	}
+
+	public function test_cross_designer_cross_actor_and_expired_scopes_fail_closed(): void {
+		$mail_scope = DesignerScope::issue( 'core-blueprint-preview-fixture', 'mail', 'fixture-mail' );
+		self::assertIsString( $mail_scope );
+		set_current_screen( 'core-blueprint-test-reports' );
+		$reports_scope = DesignerScope::issue(
+			'core-blueprint-preview-scope-reports', 'reports', 'fixture-reports'
+		);
+		set_current_screen( 'core-blueprint-test-mail' );
+		self::assertIsString( $reports_scope );
+		self::assertSame( 403, rest_do_request( $this->preview_request( [], true, $reports_scope ) )->get_status() );
+		self::assertNull( TemplateSourceRegistry::preview(
+			'core-blueprint-preview-fixture', 'example', '1',
+			[ 'extension' => 'core-blueprint', 'designer' => 'reports' ]
+		) );
+		[ $encoded ] = explode( '.', $mail_scope, 2 );
+		$data = json_decode( base64_decode( strtr( $encoded, '-_', '+/' ), true ), true );
+		self::assertIsArray( $data );
+		$data['expires'] = time() - 1;
+		$expired_payload = rtrim( strtr( base64_encode( wp_json_encode( $data ) ), '+/', '-_' ), '=' );
+		$expired_scope = $expired_payload . '.' . hash_hmac( 'sha256', $expired_payload, wp_salt( 'auth' ) );
+		self::assertSame( 403, rest_do_request( $this->preview_request( [], true, $expired_scope ) )->get_status() );
+		$other_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$other = get_userdata( $other_id );
+		self::assertInstanceOf( WP_User::class, $other );
+		self::assertTrue( PrivilegedAccessRegistry::approve( $other, 0, 'template_preview_fixture' ) );
+		$this->set_session( $other_id );
+		self::assertSame( 403, rest_do_request( $this->preview_request( [], true, $mail_scope ) )->get_status() );
+		$this->set_session( $this->actor_id );
 	}
 
 	public function test_active_markup_remote_media_and_large_fragments_are_refused(): void {
