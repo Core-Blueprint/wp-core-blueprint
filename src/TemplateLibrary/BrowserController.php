@@ -176,7 +176,7 @@ final class BrowserController {
 			return new WP_REST_Response( [ 'code' => 'invalid_scope' ], 403 );
 		}
 		$params = [];
-		foreach ( [ 'search', 'source', 'extension', 'designer', 'origin', 'category', 'locale', 'limit', 'cursor' ] as $key ) {
+		foreach ( [ 'search', 'source', 'extension', 'designer', 'origin', 'category', 'locale', 'limit', 'cursor', 'sort' ] as $key ) {
 			$value = $request->get_param( $key );
 			if ( null !== $value && ! is_string( $value ) && ! is_int( $value ) ) {
 				return new WP_REST_Response( [ 'code' => 'invalid_query' ], 400 );
@@ -194,11 +194,13 @@ final class BrowserController {
 				search: $params['search'], source: $params['source'],
 				extension: $params['extension'], designer: $params['designer'],
 				origin: $params['origin'], category: $params['category'],
-				locale: $params['locale'], limit: '' === $params['limit'] ? 24 : (int) $params['limit']
+				locale: $params['locale'], limit: '' === $params['limit'] ? 24 : (int) $params['limit'],
+				sort: $params['sort']
 			);
 		} catch ( \InvalidArgumentException ) {
 			return new WP_REST_Response( [ 'code' => 'invalid_query' ], 400 );
 		}
+		try {
 		if ( null === $scope ) {
 			$page = TemplateSourceRegistry::browse_global( $query, '' === $params['cursor'] ? null : $params['cursor'] );
 		} else {
@@ -210,6 +212,12 @@ final class BrowserController {
 				$scope['extension'], $scope['designer'], $query,
 				'' === $params['cursor'] ? null : $params['cursor']
 			);
+		}
+		} catch ( \DomainException $exception ) {
+			$invalid_cursor = 'invalid_cursor' === $exception->getMessage();
+			return new WP_REST_Response( [
+				'code' => $invalid_cursor ? 'invalid_cursor' : 'sort_unavailable',
+			], $invalid_cursor ? 400 : 422 );
 		}
 		return new WP_REST_Response( [
 			'items' => array_map( static fn ( TemplateMetadata $item ): array => [
