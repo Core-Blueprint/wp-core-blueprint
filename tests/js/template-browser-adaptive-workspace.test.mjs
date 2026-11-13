@@ -338,7 +338,7 @@ test('TL-1B2: sort has a responsive, semantic presentation in both Browser modes
     assert.match(browserSource, /sortSelect\.dataset\.filter = 'sort'/);
     assert.match(browserSource, /eligible\.length <= 12/);
     assert.match(styles, /TL-1B2 — one truthful, provider-gated sort control/);
-    assert.match(styles, /\.cb-template-browser--modal \.cb-template-browser__field--sort/);
+    assert.match(styles, /\.cb-template-browser--modal\.cb-template-browser--workspace \.cb-template-browser__field--sort/);
     assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__field--sort/);
     assert.match(styles, /@media \(max-width: 720px\)[\s\S]*?\.cb-template-browser--modal \.cb-template-browser__field--sort/);
 });
