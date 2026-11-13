@@ -16,6 +16,8 @@ use CoreBlueprint\Core\TemplateLibrary\TemplateMetadata;
 use CoreBlueprint\Core\TemplateLibrary\TemplateNavigation;
 use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
+use CoreBlueprint\Core\TemplateLibrary\TemplateSort;
+use CoreBlueprint\Core\TemplateLibrary\TemplateSortedSourceInterface;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -30,7 +32,8 @@ final class NativeTemplateSource implements
 	TemplateApplySourceInterface,
 	TemplateManagementSourceInterface,
 	TemplateDesignerAuthorityInterface,
-	TemplateCategorySourceInterface {
+	TemplateCategorySourceInterface,
+	TemplateSortedSourceInterface {
 
 	public const SOURCE_ID = 'core-blueprint-mail';
 
@@ -178,6 +181,41 @@ final class NativeTemplateSource implements
 		$items = array_slice( $filtered, $offset, $query->limit );
 		$next = $offset + count( $items );
 		return new TemplatePage( $items, $next < $total ? (string) $next : null );
+	}
+
+	/** Exact bytewise UTF-8 title, source ID and item ID ordering. */
+	public function query_sorted( TemplateQuery $query, ?array $after ): TemplatePage {
+		if ( TemplateSort::TITLE_ASC !== $query->sort
+			|| ! $this->can_browse( get_current_user_id() )
+			|| ( '' !== $query->source && self::SOURCE_ID !== $query->source )
+			|| ( '' !== $query->extension && 'core-blueprint' !== $query->extension )
+			|| ( '' !== $query->designer && 'mail' !== $query->designer )
+			|| ( '' !== $query->origin && 'built-in' !== $query->origin )
+			|| ( '' !== $query->locale && 'en' !== $query->locale ) ) {
+			return new TemplatePage( [] );
+		}
+		$items = [];
+		foreach ( TemplateRegistry::all() as $id => $definition ) {
+			if ( ! $this->can_view( (string) $id, get_current_user_id() ) ) continue;
+			$category = (string) ( $definition['group'] ?? '' );
+			if ( ! TemplateQuery::valid_id( $category )
+				|| ( '' !== $query->category && $category !== $query->category ) ) continue;
+			$title = (string) ( $definition['label'] ?? '' );
+			$description = (string) ( $definition['description'] ?? '' );
+			if ( '' !== $query->search
+				&& false === stripos( $title . ' ' . $description, $query->search ) ) continue;
+			try {
+				$item = new TemplateMetadata(
+					self::SOURCE_ID, 'core-blueprint', 'mail', (string) $id,
+					$title, $description, 'built-in', $category, 'en', '1'
+				);
+				if ( null === $after || TemplateSort::after( $item, $after ) ) $items[] = $item;
+			} catch ( \InvalidArgumentException ) {
+				// Broken local definition is not browseable.
+			}
+		}
+		usort( $items, [ TemplateSort::class, 'compare' ] );
+		return new TemplatePage( array_slice( $items, 0, $query->limit ) );
 	}
 
 	public function navigation( TemplateMetadata $item, int $user_id ): TemplateNavigation {
