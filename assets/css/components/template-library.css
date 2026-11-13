@@ -721,9 +721,9 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 }
 
 
-/* FIELD-05B — Adaptive shared presentation.
-   Active designs remain compact resource rows; templates use the same visual
-   grid in global Library and scoped Browser. */
+/* FIELD-05B / TL-1B2 — Shared, visible form-label geometry.
+   The same two-row field structure serves global grid and contextual flex;
+   matching label and control tracks prevent Search/Sort vertical drift. */
 .cb-template-browser--workspace .cb-template-browser__toolbar {
   align-items: center;
 }
@@ -731,20 +731,26 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
   margin-inline-end: auto;
 }
 .cb-template-browser--workspace .cb-template-browser__field {
-  display: block;
-  align-self: center;
+  display: grid;
+  align-self: stretch;
+  grid-template-rows: auto minmax(40px, auto);
+  align-content: end;
+  gap: 5px;
 }
-/* Labels remain part of their native <label>, and remain accessible to AT. */
 .cb-template-browser--workspace .cb-template-browser__field > span {
-  position: absolute;
-  width: 1px;
-  height: 1px;
+  position: static;
+  width: auto;
+  height: auto;
   padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
   border: 0;
+  color: var(--cb-browser-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 .cb-template-browser--workspace .cb-template-browser__field--search {
   flex: 0 1 325px;
@@ -894,19 +900,6 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
   min-width: 0;
   width: 100%;
   flex: none;
-}
-.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__field:not(.cb-template-browser__field--search) > span {
-  position: static;
-  width: auto;
-  height: auto;
-  margin: 0;
-  overflow: visible;
-  clip: auto;
-  white-space: normal;
-  color: var(--cb-browser-muted);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.3;
 }
 .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__grid {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
