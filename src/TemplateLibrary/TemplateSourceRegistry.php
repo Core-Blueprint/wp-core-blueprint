@@ -87,7 +87,8 @@ final class TemplateSourceRegistry {
 		self::collect_if_ready();
 		$actor = get_current_user_id();
 		$source = self::$sources[ $source_id ] ?? null;
-		if ( $actor < 1 || ! TemplateQuery::valid_id( $source_id )
+		if ( $actor < 1 || ( null === $scope && ! current_user_can( 'manage_options' ) )
+			|| ! TemplateQuery::valid_id( $source_id )
 			|| ! TemplateQuery::valid_id( $template_id )
 			|| ! $source instanceof TemplatePreviewSourceInterface
 			|| ! self::allowed( $source )

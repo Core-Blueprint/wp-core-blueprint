@@ -29,6 +29,12 @@ final class TemplatePreview {
 			|| preg_match( '/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/', $html ) ) {
 			throw new \InvalidArgumentException( 'Invalid template preview boundary.' );
 		}
+		// Refuse CSS fetch primitives before wp_kses, even when entity-encoded.
+		$decoded = html_entity_decode( $html, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		if ( str_contains( $decoded, '\\' )
+			|| preg_match( '/(?:url\s*\(|image-set\s*\(|@import\b|@font-face\b)/i', $decoded ) ) {
+			throw new \InvalidArgumentException( 'Unsafe template preview styles.' );
+		}
 		$allowed = [
 			'div', 'span', 'p', 'br', 'strong', 'b', 'em', 'i',
 			'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'small', 'blockquote',

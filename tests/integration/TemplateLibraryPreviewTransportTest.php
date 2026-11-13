@@ -150,6 +150,9 @@ final class CB_Template_Library_Preview_Transport_Test extends WP_UnitTestCase {
 			'<script>alert(1)</script>', '<img src="https://example.com/a.png">',
 			'<p onclick="alert(1)">X</p>', '<a href="/wp-admin/">X</a>',
 			'<div style="background-image:url(https://example.com/x)">X</div>',
+			'<div style="background-image:u&#114;l(https://example.com/x)">X</div>',
+			'<div style="background-image:u\\72l(https://example.com/x)">X</div>',
+			'<div style="@import https://example.com/x">X</div>',
 			str_repeat( 'x', TemplatePreview::MAX_HTML_BYTES + 1 ),
 		] as $html ) {
 			$this->fixture->markup = $html;
