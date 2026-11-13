@@ -209,13 +209,18 @@ final class NativeTemplateSource implements
 					self::SOURCE_ID, 'core-blueprint', 'mail', (string) $id,
 					$title, $description, 'built-in', $category, 'en', '1'
 				);
-				if ( null === $after || TemplateSort::after( $item, $after ) ) $items[] = $item;
+				if ( null === $after || TemplateSort::after( $item, $after ) ) {
+					// Keep only the lowest 48 (or fewer) items in this in-memory
+					// provider scan; never accumulate the entire catalog for sorting.
+					$items[] = $item;
+					usort( $items, [ TemplateSort::class, 'compare' ] );
+					if ( count( $items ) > $query->limit ) array_pop( $items );
+				}
 			} catch ( \InvalidArgumentException ) {
 				// Broken local definition is not browseable.
 			}
 		}
-		usort( $items, [ TemplateSort::class, 'compare' ] );
-		return new TemplatePage( array_slice( $items, 0, $query->limit ) );
+		return new TemplatePage( $items );
 	}
 
 	public function navigation( TemplateMetadata $item, int $user_id ): TemplateNavigation {
