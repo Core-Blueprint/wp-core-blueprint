@@ -6,6 +6,7 @@ namespace CoreBlueprint\Core\Mail\Designer;
 use CoreBlueprint\Core\Design\Document\Repository;
 use CoreBlueprint\Core\Design\Editor\PlatformTransport;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
+use CoreBlueprint\Core\TemplateLibrary\TemplateSort;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -153,6 +154,54 @@ final class SavedTemplateStore {
 		$rows = array_slice( $rows, 0, $query->limit );
 		$next = $more && $rows ? (string) end( $rows )['id'] : null;
 		return [ 'status' => 'ready', 'items' => $rows, 'next' => $next ];
+	}
+
+	/**
+	 * Sorted metadata-only seek. BINARY title and BINARY id in SQL exactly
+	 * match PHP's strcmp() raw UTF-8 byte comparator. No locale collation or
+	 * document_json is read. This does not change the default ID-keyset page().
+	 *
+	 * @param array{title:string,source:string,id:string}|null $after
+	 * @return array{status:string,items?:array}
+	 */
+	public static function sorted_page( TemplateQuery $query, ?array $after, int $actor ): array {
+		global $wpdb;
+		if ( TemplateSort::TITLE_ASC !== $query->sort || ! self::allowed( $actor ) ) {
+			return [ 'status' => 'refused' ];
+		}
+		if ( null !== $after && ! TemplateSort::valid_position( $after ) ) {
+			return [ 'status' => 'refused' ];
+		}
+		if ( ! SavedTemplateSchema::healthy() ) return [ 'status' => 'unavailable' ];
+		$where = [ "(visibility = 'site' OR (visibility = 'personal' AND owner_id = %d))" ];
+		$values = [ $actor ];
+		if ( '' !== $query->origin ) {
+			$where[] = 'visibility = %s';
+			$values[] = $query->origin;
+		}
+		if ( '' !== $query->search ) {
+			$where[] = 'title LIKE %s';
+			$values[] = '%' . $wpdb->esc_like( $query->search ) . '%';
+		}
+		if ( null !== $after ) {
+			$relation = strcmp( SavedTemplateSource::SOURCE_ID, $after['source'] );
+			if ( $relation > 0 ) {
+				$where[] = 'BINARY title >= BINARY %s';
+				$values[] = $after['title'];
+			} elseif ( $relation < 0 ) {
+				$where[] = 'BINARY title > BINARY %s';
+				$values[] = $after['title'];
+			} else {
+				$where[] = '(BINARY title > BINARY %s OR (BINARY title = BINARY %s AND BINARY id > BINARY %s))';
+				array_push( $values, $after['title'], $after['title'], $after['id'] );
+			}
+		}
+		$where_sql = implode( ' AND ', $where );
+		$sql = "SELECT id,owner_id,visibility,title,revision FROM %i WHERE {$where_sql} ORDER BY BINARY title ASC, BINARY id ASC LIMIT %d";
+		$params = array_merge( [ SavedTemplateSchema::table() ], $values, [ $query->limit ] );
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- fixed SQL predicates, %i table, bound values.
+		if ( ! is_array( $rows ) || '' !== (string) $wpdb->last_error ) return [ 'status' => 'unavailable' ];
+		return [ 'status' => 'ready', 'items' => $rows ];
 	}
 
 	/** @return array{status:string,revision?:int} */
