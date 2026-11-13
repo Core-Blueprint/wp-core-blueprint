@@ -184,16 +184,20 @@ final class SavedTemplateStore {
 			$values[] = '%' . $wpdb->esc_like( $query->search ) . '%';
 		}
 		if ( null !== $after ) {
+			// Bind a hex-encoded UTF-8 cursor so wpdb never has to validate
+			// non-ASCII SQL under a binary comparison. UNHEX restores the exact
+			// bytes for MariaDB/MySQL; never use a locale collation here.
+			$title_hex = bin2hex( $after['title'] );
 			$relation = strcmp( SavedTemplateSource::SOURCE_ID, $after['source'] );
 			if ( $relation > 0 ) {
-				$where[] = 'BINARY title >= BINARY %s';
-				$values[] = $after['title'];
+				$where[] = 'BINARY title >= UNHEX(%s)';
+				$values[] = $title_hex;
 			} elseif ( $relation < 0 ) {
-				$where[] = 'BINARY title > BINARY %s';
-				$values[] = $after['title'];
+				$where[] = 'BINARY title > UNHEX(%s)';
+				$values[] = $title_hex;
 			} else {
-				$where[] = '(BINARY title > BINARY %s OR (BINARY title = BINARY %s AND BINARY id > BINARY %s))';
-				array_push( $values, $after['title'], $after['title'], $after['id'] );
+				$where[] = '(BINARY title > UNHEX(%s) OR (BINARY title = UNHEX(%s) AND BINARY id > BINARY %s))';
+				array_push( $values, $title_hex, $title_hex, $after['id'] );
 			}
 		}
 		$where_sql = implode( ' AND ', $where );
