@@ -11,6 +11,7 @@ use CoreBlueprint\Core\Mail\Designer\WordPressTemplates;
 use CoreBlueprint\Core\Mail\DesignerState;
 use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
+use CoreBlueprint\Core\TemplateLibrary\TemplateSort;
 use CoreBlueprint\Core\TemplateLibrary\TemplateSourceRegistry;
 
 final class CB_Mail_Saved_Template_Lifecycle_Test extends WP_UnitTestCase {
@@ -106,6 +107,56 @@ final class CB_Mail_Saved_Template_Lifecycle_Test extends WP_UnitTestCase {
 		$subscriber = self::factory()->user->create( [ 'role' => 'subscriber' ] );
 		wp_set_current_user( $subscriber );
 		self::assertFalse( ( new SavedTemplateSource() )->can_view( $item['id'], $subscriber ) );
+	}
+
+	/** Physical MariaDB parity: BINARY SQL title/id order must equal PHP strcmp. */
+	public function test_sorted_mail_saved_source_uses_exact_bytewise_utf8_order_and_keyset(): void {
+		$doc = WordPressTemplates::default_document( 'wordpress.new-user' );
+		self::assertIsArray( $doc );
+		$names = [ 'beta', 'Alpha', 'alpha', 'Éclair', 'Alpha' ];
+		$expected = [];
+		foreach ( $names as $title ) {
+			$created = SavedTemplateStore::create( $title, 'personal', $this->actor, $doc );
+			self::assertSame( 'created', $created['status'] );
+			$this->ids[] = $created['id'];
+			$expected[] = [ 'title' => $title, 'id' => $created['id'] ];
+		}
+		usort( $expected, static fn ( array $a, array $b ): int =>
+			strcmp( $a['title'], $b['title'] ) ?: strcmp( $a['id'], $b['id'] )
+		);
+		$source = new SavedTemplateSource();
+		$query = new TemplateQuery(
+			source: SavedTemplateSource::SOURCE_ID, origin: 'personal',
+			limit: 2, sort: TemplateSort::TITLE_ASC
+		);
+		$actual = [];
+		$after = null;
+		for ( $round = 0; $round < 4; ++$round ) {
+			$page = $source->query_sorted( $query, $after );
+			self::assertLessThanOrEqual( 2, count( $page->items ) );
+			self::assertNull( $page->next_cursor, 'The global cursor belongs to Base.' );
+			if ( ! $page->items ) break;
+			foreach ( $page->items as $item ) {
+				$actual[] = [ 'title' => $item->title, 'id' => $item->id ];
+				self::assertArrayNotHasKey( 'document', get_object_vars( $item ) );
+			}
+			$after = TemplateSort::position( $page->items[ count( $page->items ) - 1 ] );
+		}
+		self::assertSame( $expected, $actual );
+		self::assertSame( [ 'title' => 'Alpha', 'id' => $expected[0]['id'] ],
+			$actual[0], 'The first tie is ordered by binary saved template ID.' );
+		$other_source_after = [
+			'title' => 'Alpha', 'source' => 'a-earlier-source', 'id' => 'a',
+		];
+		$inclusive = $source->query_sorted( $query, $other_source_after );
+		self::assertSame( 'Alpha', $inclusive->items[0]->title,
+			'An earlier provider has not consumed same-titled Mail records.' );
+		$later_source_after = [
+			'title' => 'Alpha', 'source' => 'z-later-source', 'id' => 'a',
+		];
+		$exclusive = $source->query_sorted( $query, $later_source_after );
+		self::assertSame( 'alpha', $exclusive->items[0]->title,
+			'An alphabetically later provider already passed same-titled Mail records.' );
 	}
 
 	public function test_revision_fences_rename_duplicate_and_delete(): void {
