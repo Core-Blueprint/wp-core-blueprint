@@ -60,7 +60,7 @@ function harness(modalHook = async () => false) {
             return { ok: true, json: async () => url.includes('/sources?')
                 ? { sources: [ { id: 'core', categories: [ { id: 'mail', label: 'Mail' } ] } ] }
                 : { items: [ { id: 'template-1', title: 'Authorized template',
-                    source: 'core', origin: 'built-in', category: 'mail', designer: 'mail',
+                    source: 'core', origin: 'built-in', category: 'mail', designer: 'mail', version: '2.1',
                     compatible: true, description: 'Reusable content' } ], next_cursor: null },
             };
         },
@@ -164,6 +164,36 @@ test('TL-M3A-R1: global Library uses one shared two-pane Browser without Designe
     assert.equal(origins.children[2].attributes['aria-pressed'], 'true');
     assert.ok(calls.some(url => url.includes('origin=built-in')));
     instance.destroy();
+});
+
+test('TL-1A: global and scoped cards show declared provenance without creating navigation authority', async () => {
+    for (const contextual of [false, true]) {
+        const { api } = harness();
+        const root = new Element('div');
+        const browser = api.createBrowser(root, contextual
+            ? {mode: 'designer', contextToken: 'server-issued-scope'} : {});
+        await flush();
+        const shell = root.children[0];
+        const content = shell.children[1];
+        const card = content.children[2].children[0];
+        const body = card.children.find(child =>
+            child.className.includes('cb-template-browser__card-body'));
+        assert.ok(body);
+        const meta = body.children.find(child =>
+            child.className.includes('cb-template-browser__card-meta'));
+        assert.deepEqual(meta.children.map(child => child.textContent), ['Built-in', 'mail', 'mail'],
+            'origin is localized but category and Designer remain provider metadata');
+        const provenance = body.children.find(child =>
+            child.className.includes('cb-template-browser__card-provenance'));
+        assert.ok(provenance, 'provenance stays visible without opening an action menu');
+        assert.deepEqual(provenance.children.map(child => child.textContent),
+            ['Source: core', 'v2.1']);
+        assert.equal(provenance.children.every(child => child.tagName === 'SPAN'), true,
+            'the provenance is text, never provider-authored navigation or executable HTML');
+        assert.equal(card.children.some(child => child.tagName === 'A'), false,
+            'a metadata label must never grant a clickable trusted-origin action');
+        browser.destroy();
+    }
 });
 
 test('TL-M3A-R1: two-pane scoped Browser preserves Save-as when no Designs exist', async () => {
