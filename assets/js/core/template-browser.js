@@ -418,7 +418,7 @@ function createBrowser( root, options = {} ) {
             site: [ 'site', 'Site templates' ],
             'installed-pack': [ 'packs', 'Installed packs' ],
         };
-        const origin = origins[item.origin];
+        const origin = Object.hasOwn( origins, item.origin ) ? origins[item.origin] : null;
         meta.append(
             el( 'span', '', origin ? label( ...origin ) : item.origin ),
             el( 'span', '', item.category ),
