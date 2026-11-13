@@ -1,8 +1,8 @@
 # TL-1B1 — Bounded global template sorting (Base contract)
 
-**Status:** SOURCE CANDIDATE, exact-head native integration and WordPress FIELD **OPEN**.  
+**Status (13 November 2026):** TL-1B1 merged on Base `main@df922fd68666fc5c30825520db9243d12ede45d3`, exact-head Level 1 and disposable WordPress Level 2 **PASS**, global Library desktop baseline stable; TL-1B2 Browser sort UX is an independent SOURCE CANDIDATE requiring native tests, exact-head build and WordPress FIELD.  
 **Initial Base parent:** `main@7958f9677ac173a25078fc2329bf402b19dceb87`.  
-**Consumer note:** TL-1B2 will introduce the UI control after this backend is accepted. Existing unsorted browsing remains the default, unchanged. **No Foundation Freeze, merge or release is implied.**
+**Consumer note:** TL-1B2 adds a native sort select in the shared global/contextual Browser only when all currently eligible authorized providers advertise `title-asc`; the unsorted provider order remains the default. Sorting a page in JavaScript is prohibited. **No FRG-04 Foundation Freeze, TL-1B2 merge, CI or release is implied.**
 
 ## Sort identity and correct global order
 
@@ -47,6 +47,6 @@ Native providers initially implementing this contract: Mail built-in, Mail Saved
 
 ## Deliberately deferred
 
-TL-1B2: a sort-select in both Browser modes, only after the backend is qualified, with accurate case-sensitive ordering language, responsive/RTL/keyboard behavior, cursor/selection invalidation and end-to-end FIELD.
+TL-1B2 SOURCE CANDIDATE: shared Browser sort-select in global and scoped template views, truthful exact-case-sensitive title label, strict all-eligible-provider capability gating (≤12 sources), responsive/RTL/keyboard semantics, fresh server request and selection/cursor reset; native WordPress FIELD and merge approval still required. The Designs resource view never applies template sort.
 
 True linguistic, case-folded `Title A–Z`, locale-aware comparisons, natural sorting, provider-specific collations or indices require a separately verified cross-DB/JSON comparator and seek contract. Provider-authorized real document previews remain a separate Foundation task.
