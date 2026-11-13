@@ -35,7 +35,22 @@ final class DesignerPreview {
 	 * @return array{html:string,source:string}
 	 */
 	public function render_with_source( ?array $native = null ): array {
-		$report = $this->preview_report();
+		return $this->render_report( $this->preview_report(), $native );
+	}
+
+	/**
+	 * TL-1C Library-only proof: fixed synthetic report, never archived storage,
+	 * actual site identity, current user, branding attachments or live metrics.
+	 * Existing Reports Designer preview intentionally retains its own behavior.
+	 *
+	 * @param array{project:array<string,mixed>,fields:array<string,mixed>} $native
+	 */
+	public function render_library_sample( array $native ): string {
+		return $this->render_report( $this->sample_report( true ), $native )['html'];
+	}
+
+	/** @param array<string,mixed> $report */
+	private function render_report( array $report, ?array $native ): array {
 		$data = $report['report_data'] ?? null;
 		if ( ! is_array( $data ) ) {
 			throw new \RuntimeException( 'Reports Designer preview snapshot is missing.' );
@@ -92,8 +107,8 @@ final class DesignerPreview {
 	}
 
 	/** @return array<string,mixed> */
-	private function sample_report(): array {
-		$end           = time();
+	private function sample_report( bool $library = false ): array {
+		$end           = $library ? gmmktime( 12, 0, 0, 1, 30, 2026 ) : time();
 		$start         = $end - ( 29 * DAY_IN_SECONDS );
 		$activity_date = gmdate( 'Y-m-d H:i:s', $end - DAY_IN_SECONDS );
 		$backup_date   = gmdate( 'Y-m-d H:i:s', $end - ( 2 * HOUR_IN_SECONDS ) );
@@ -102,8 +117,8 @@ final class DesignerPreview {
 			'id'           => 0,
 			'period_start' => wp_date( 'Y-m-d', $start ),
 			'period_end'   => wp_date( 'Y-m-d', $end ),
-			'generated_at' => current_time( 'mysql', true ),
-			'generated_by' => get_current_user_id(),
+			'generated_at' => $library ? gmdate( 'Y-m-d H:i:s', $end ) : current_time( 'mysql', true ),
+			'generated_by' => $library ? 0 : get_current_user_id(),
 			'status'       => 'generated',
 			'report_data'  => [
 				'snapshot_version' => MaintenanceAggregator::SNAPSHOT_VERSION,
@@ -113,8 +128,8 @@ final class DesignerPreview {
 					'days'     => 30,
 				],
 				'site'             => [
-					'title' => (string) get_bloginfo( 'name' ),
-					'url'   => (string) home_url(),
+					'title' => $library ? 'Example Website' : (string) get_bloginfo( 'name' ),
+					'url'   => $library ? 'https://example.invalid' : (string) home_url(),
 				],
 				'kpis'             => [
 					'updates_performed' => [ 'count' => 12, 'breakdown' => [ 'Plugins: 10', 'Themes: 2' ] ],
@@ -124,10 +139,10 @@ final class DesignerPreview {
 					'active_users'      => [ 'count' => 6, 'breakdown' => [] ],
 				],
 				'site_state'       => [
-					'wp_core'  => [ 'label' => 'WordPress', 'status' => 'ok', 'state' => (string) get_bloginfo( 'version' ), 'detail' => '' ],
+					'wp_core'  => [ 'label' => 'WordPress', 'status' => 'ok', 'state' => $library ? 'Example version' : (string) get_bloginfo( 'version' ), 'detail' => '' ],
 					'theme'    => [ 'label' => 'Theme', 'status' => 'ok', 'state' => 'OK', 'detail' => '' ],
 					'plugins'  => [ 'label' => 'Plugins', 'status' => 'ok', 'state' => 'OK', 'detail' => '' ],
-					'php'      => [ 'label' => 'PHP', 'status' => 'ok', 'state' => PHP_VERSION, 'detail' => '' ],
+					'php'      => [ 'label' => 'PHP', 'status' => 'ok', 'state' => $library ? 'Example runtime' : PHP_VERSION, 'detail' => '' ],
 					'database' => [ 'label' => 'Database', 'status' => 'ok', 'state' => 'OK', 'detail' => '' ],
 					'website'  => [ 'label' => 'Website', 'status' => 'ok', 'state' => 'OK', 'detail' => '' ],
 				],

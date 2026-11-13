@@ -18,6 +18,9 @@ use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
 use CoreBlueprint\Core\TemplateLibrary\TemplateSort;
 use CoreBlueprint\Core\TemplateLibrary\TemplateSortedSourceInterface;
+use CoreBlueprint\Core\TemplateLibrary\TemplatePreview;
+use CoreBlueprint\Core\TemplateLibrary\TemplatePreviewSourceInterface;
+use CoreBlueprint\Core\TemplateLibrary\PreviewHtmlProjection;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -33,7 +36,8 @@ final class NativeTemplateSource implements
 	TemplateManagementSourceInterface,
 	TemplateDesignerAuthorityInterface,
 	TemplateCategorySourceInterface,
-	TemplateSortedSourceInterface {
+	TemplateSortedSourceInterface,
+	TemplatePreviewSourceInterface {
 
 	public const SOURCE_ID = 'core-blueprint-reports';
 	public const TEMPLATE_ID = 'maintenance';
@@ -60,6 +64,30 @@ final class NativeTemplateSource implements
 
 	public function can_view( string $template_id, int $user_id ): bool {
 		return self::TEMPLATE_ID === $template_id && $this->can_browse( $user_id );
+	}
+
+	/** Built-in Maintenance template only: no archived or live report data. */
+	public function can_preview( string $template_id, int $actor_id ): bool {
+		return $this->can_view( $template_id, $actor_id );
+	}
+
+	public function render_preview( string $template_id, string $expected_version, int $actor_id ): ?TemplatePreview {
+		if ( '1' !== $expected_version || ! $this->can_preview( $template_id, $actor_id ) ) {
+			return null;
+		}
+		$fields = \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_fields();
+		// Even bundled branding rasterization is unnecessary for a no-assets
+		// Library preview. Force the logo off; never read an attachment.
+		$fields['show_logo'] = 'off';
+		$fields['logo_attachment_id'] = 0;
+		$fields['provider_name'] = '';
+		$fields['provider_contact'] = '';
+		$native = [
+			'project' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_project(),
+			'fields' => $fields,
+		];
+		$html = ( new DesignerPreview() )->render_library_sample( $native );
+		return PreviewHtmlProjection::from_rendered_html( '1', $html );
 	}
 
 	public function target_profile_id(): string {
