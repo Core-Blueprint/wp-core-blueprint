@@ -69,6 +69,10 @@ final class TemplateQuery {
 	}
 
 	public function fingerprint(): string {
-		return hash( 'sha256', json_encode( [ $this->search, $this->source, $this->extension, $this->designer, $this->origin, $this->category, $this->locale, $this->limit, $this->sort ], JSON_THROW_ON_ERROR ) );
+		$fields = [ $this->search, $this->source, $this->extension, $this->designer, $this->origin, $this->category, $this->locale, $this->limit ];
+		// Do not invalidate outstanding (15-minute) unsorted Browser cursors.
+		// Only sorted requests add the new ordering contract to the fingerprint.
+		if ( '' !== $this->sort ) $fields[] = $this->sort;
+		return hash( 'sha256', json_encode( $fields, JSON_THROW_ON_ERROR ) );
 	}
 }
