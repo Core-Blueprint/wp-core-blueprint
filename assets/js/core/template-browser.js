@@ -72,7 +72,7 @@ function createBrowser( root, options = {} ) {
         if ( contextual && typeof options.onStateChange === 'function' ) options.onStateChange();
     };
     const state = {
-        filters: { limit: 24, search: '', source: '', extension: '', designer: '', origin: '', category: '' },
+        filters: { limit: 24, search: '', source: '', extension: '', designer: '', origin: '', category: '', sort: '' },
         sources: [], cursor: null, entries: [], selected: null, pending: false,
         requestGeneration: 0, controller: null, timer: null, destroyed: false,
         actionMenus: [], activeActionClose: null, actionFeedback: '',
@@ -228,6 +228,52 @@ function createBrowser( root, options = {} ) {
     const designerSelect = contextual ? null : addSelect( 'designer', 'designer', 'Designer type' );
     const categorySelect = addSelect( 'category', 'category', 'Category' );
     categorySelect.disabled = true;
+    // Source order is the unchanged default; sorted results are opt-in and
+    // only advertised when the entire currently eligible provider set agrees.
+    const sortField = el( 'label', 'cb-template-browser__field cb-template-browser__field--sort' );
+    const sortLabel = el( 'span', '', label( 'sortBy', 'Sort by' ) );
+    const sortSelect = el( 'select' );
+    sortSelect.dataset.filter = 'sort';
+    sortSelect.append(
+        option( '', label( 'sourceOrder', 'Source order' ) ),
+        option( 'title-asc', label( 'exactTitleOrder', 'Title (exact, case-sensitive)' ) )
+    );
+    sortField.append( sortLabel, sortSelect );
+    sortField.hidden = true;
+    toolbar.append( sortField );
+    sortSelect.addEventListener( 'change', () => {
+        const next = sortSelect.value;
+        if ( next && ( next !== 'title-asc' || !canSortAllSources() ) ) {
+            sortSelect.value = state.filters.sort;
+            return;
+        }
+        if ( next === state.filters.sort ) return;
+        state.filters.sort = next;
+        refresh();
+    } );
+    // This intentionally does NOT use the visible category/origin facets to
+    // discard nonparticipating providers: the server still queries all
+    // sources selected by source, extension and Designer identity.
+    function eligibleSources() {
+        return state.sources.filter( source =>
+            ( !state.filters.source || source.id === state.filters.source )
+            && ( !state.filters.extension || source.extension === state.filters.extension )
+            && ( !state.filters.designer || source.designer === state.filters.designer )
+        );
+    }
+    function canSortAllSources() {
+        const eligible = eligibleSources();
+        return eligible.length > 0 && eligible.length <= 12
+            && eligible.every( source => Array.isArray( source.sorts )
+                && source.sorts.includes( 'title-asc' ) );
+    }
+    function syncSortField() {
+        const available = canSortAllSources();
+        sortField.hidden = state.view !== 'templates' || !available;
+        sortSelect.disabled = !available;
+        if ( !available ) state.filters.sort = '';
+        sortSelect.value = state.filters.sort;
+    }
     function syncCategoryField() {
         if ( categorySelect.parentElement ) {
             categorySelect.parentElement.hidden = state.view === 'designs'
@@ -260,6 +306,7 @@ function createBrowser( root, options = {} ) {
         }
         categorySelect.value = state.filters.category;
         syncCategoryField();
+        syncSortField();
     }
 
     search.addEventListener( 'input', () => {
@@ -452,6 +499,7 @@ function createBrowser( root, options = {} ) {
     async function load( reset = false ) {
         if ( state.destroyed ) return;
         syncCategoryField();
+        syncSortField();
         syncSearchLabel();
         if ( state.view === 'designs' ) {
             renderDesigns();
@@ -519,6 +567,7 @@ function createBrowser( root, options = {} ) {
             fill( designerSelect, [ ...new Set( state.sources.map( ( item ) => item.designer ).filter( Boolean ) ) ] );
         }
         updateCategoryOptions();
+        syncSortField();
     } ).catch( () => {} );
 
     refresh();
