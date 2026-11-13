@@ -97,6 +97,10 @@ namespace {
 		'src/TemplateLibrary/TemplateSort.php',
 		'src/TemplateLibrary/TemplateQuery.php',
 		'src/TemplateLibrary/TemplateSourceInterface.php',
+		// TL-1C optional provider contract must precede the native source in
+		// this standalone PHP fixture (no WordPress class autoloader here).
+		'src/TemplateLibrary/TemplatePreview.php',
+		'src/TemplateLibrary/TemplatePreviewSourceInterface.php',
 		'src/TemplateLibrary/TemplateSortedSourceInterface.php',
 		'src/TemplateLibrary/TemplateApplySourceInterface.php',
 		'src/TemplateLibrary/TemplateManagementSourceInterface.php',
@@ -117,6 +121,10 @@ namespace {
 	tl_reports_assert( $source->can_browse( 17 ), 'authorized operator can browse' );
 	tl_reports_assert( ! $source->can_browse( 18 ), 'no actor impersonation' );
 	tl_reports_assert( $source->can_view( 'maintenance', 17 ), 'one immutable native template' );
+	tl_reports_assert( $source instanceof \CoreBlueprint\Core\TemplateLibrary\TemplatePreviewSourceInterface,
+		'TL-1C optional preview source is loaded in standalone runtime' );
+	tl_reports_assert( $source->can_preview( 'maintenance', 17 ), 'active authorized sample preview permitted' );
+	tl_reports_assert( ! $source->can_preview( 'other', 17 ), 'unknown preview record refused' );
 	tl_reports_assert( ! $source->can_view( 'other', 17 ), 'unknown ID denied' );
 	tl_reports_assert( ! $source->can_manage( 'maintenance', 17 ), 'built-in never manageable' );
 	tl_reports_assert( $source instanceof \CoreBlueprint\Core\TemplateLibrary\TemplateApplySourceInterface,
