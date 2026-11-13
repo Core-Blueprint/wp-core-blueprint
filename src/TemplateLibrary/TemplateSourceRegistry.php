@@ -53,6 +53,19 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
+	 * An informational capability hint for an already-authorized source.
+	 * The sorted browse endpoint still checks every provider, filter, actor
+	 * and the bounded source-set size; this is never an authorization grant.
+	 */
+	public static function supports_title_sort( string $source_id ): bool {
+		self::collect_if_ready();
+		$source = self::$sources[ $source_id ] ?? null;
+		return $source instanceof TemplateSortedSourceInterface
+			&& function_exists( 'openssl_encrypt' ) && function_exists( 'openssl_decrypt' )
+			&& self::allowed( $source );
+	}
+
+	/**
 	 * Resolve a registered source and the consumer's current Designer authority.
 	 * Source registration and browse permission are not launch authority.
 	 *
