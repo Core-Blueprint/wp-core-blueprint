@@ -31,6 +31,7 @@ final class CB_Template_Library_Preview_Transport_Test extends WP_UnitTestCase {
 		$this->fixture = new class implements TemplatePreviewSourceInterface, TemplateDesignerAuthorityInterface {
 			public bool $allow = true;
 			public bool $fail = false;
+			public bool $revoke_session_during_render = false;
 			public int $renders = 0;
 			public string $markup = '<p>Safe sample</p>';
 			public string $current_version = '1';
@@ -49,6 +50,9 @@ final class CB_Template_Library_Preview_Transport_Test extends WP_UnitTestCase {
 			public function render_preview( string $template_id, string $expected_version, int $actor_id ): ?TemplatePreview {
 				++$this->renders;
 				if ( $this->fail ) throw new \RuntimeException( 'Provider secret detail' );
+				if ( $this->revoke_session_during_render ) {
+					WP_Session_Tokens::get_instance( $actor_id )->destroy( wp_get_session_token() );
+				}
 				if ( ! $this->can_preview( $template_id, $actor_id ) || $this->current_version !== $expected_version ) {
 					return null;
 				}
@@ -236,6 +240,16 @@ final class CB_Template_Library_Preview_Transport_Test extends WP_UnitTestCase {
 			$this->fixture->markup = $html;
 			self::assertSame( 403, rest_do_request( $this->preview_request() )->get_status() );
 		}
+	}
+
+	public function test_session_revoked_during_provider_render_never_returns_preview_html(): void {
+		$scope = DesignerScope::issue( 'core-blueprint-preview-fixture', 'mail', 'fixture-mail' );
+		self::assertIsString( $scope );
+		$this->fixture->revoke_session_during_render = true;
+		$result = rest_do_request( $this->preview_request( [], true, $scope ) );
+		self::assertSame( 403, $result->get_status() );
+		self::assertSame( 1, $this->fixture->renders );
+		self::assertArrayNotHasKey( 'html', $result->get_data() );
 	}
 
 	public function test_scope_mismatch_revoked_session_and_invalid_request_are_refused(): void {

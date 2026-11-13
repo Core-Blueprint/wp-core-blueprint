@@ -81,10 +81,15 @@ final class BrowserController {
 		}
 		// contextEpoch is a stale-response correlation value, NOT a server
 		// authorization token. DesignerScope validates the actual identity.
+		$actor = get_current_user_id();
 		$result = TemplateSourceRegistry::preview(
 			$data['source'], $data['templateId'], $data['version'], $scope
 		);
-		if ( null === $result ) {
+		// A provider callback may outlive or revoke its initiating session/scope.
+		// Do not return rendered content under authority that no longer exists.
+		if ( null === $result || get_current_user_id() !== $actor
+			|| ! self::preview_permitted( $request )
+			|| self::scope( $request ) !== $scope ) {
 			return new WP_REST_Response( [ 'status' => 'refused' ], 403 );
 		}
 		$response = new WP_REST_Response( [
