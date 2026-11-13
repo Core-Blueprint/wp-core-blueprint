@@ -94,8 +94,10 @@ namespace {
 
 	$root = dirname( __DIR__ );
 	foreach ( [
+		'src/TemplateLibrary/TemplateSort.php',
 		'src/TemplateLibrary/TemplateQuery.php',
 		'src/TemplateLibrary/TemplateSourceInterface.php',
+		'src/TemplateLibrary/TemplateSortedSourceInterface.php',
 		'src/TemplateLibrary/TemplateApplySourceInterface.php',
 		'src/TemplateLibrary/TemplateManagementSourceInterface.php',
 		'src/TemplateLibrary/TemplateDesignerAuthorityInterface.php',
