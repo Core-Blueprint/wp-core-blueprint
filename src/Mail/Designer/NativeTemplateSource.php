@@ -18,6 +18,8 @@ use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
 use CoreBlueprint\Core\TemplateLibrary\TemplateSort;
 use CoreBlueprint\Core\TemplateLibrary\TemplateSortedSourceInterface;
+use CoreBlueprint\Core\TemplateLibrary\TemplatePreview;
+use CoreBlueprint\Core\TemplateLibrary\TemplatePreviewSourceInterface;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -33,7 +35,8 @@ final class NativeTemplateSource implements
 	TemplateManagementSourceInterface,
 	TemplateDesignerAuthorityInterface,
 	TemplateCategorySourceInterface,
-	TemplateSortedSourceInterface {
+	TemplateSortedSourceInterface,
+	TemplatePreviewSourceInterface {
 
 	public const SOURCE_ID = 'core-blueprint-mail';
 
@@ -60,6 +63,25 @@ final class NativeTemplateSource implements
 		return $this->can_browse( $user_id )
 			&& TemplateQuery::valid_id( $template_id )
 			&& null !== TemplateRegistry::get( $template_id );
+	}
+
+	/**
+	 * Only Base-owned, immutable WordPress Mail templates are previewable in v1.
+	 * Other registered Mail providers retain metadata and navigation, but must
+	 * opt into their own reviewed synthetic preview boundary.
+	 */
+	public function can_preview( string $template_id, int $actor_id ): bool {
+		return $this->can_view( $template_id, $actor_id )
+			&& null !== WordPressTemplates::default_document( $template_id );
+	}
+
+	public function render_preview( string $template_id, string $expected_version, int $actor_id ): ?TemplatePreview {
+		if ( '1' !== $expected_version || ! $this->can_preview( $template_id, $actor_id ) ) {
+			return null;
+		}
+		$document = WordPressTemplates::default_document( $template_id );
+		if ( null === $document ) return null;
+		return LibraryPreview::render( $document, '1' );
 	}
 
 	public function target_profile_id(): string {
