@@ -48,7 +48,9 @@ test('TL-M2 global and contextual Browser reuse provider-authorized actions with
   assert.match(browser, /import \{ createActionMenu \} from '@cb-core\/template-actions'/);
   assert.match(assets, /'@cb-core\/template-actions'/);
   assert.match(assets, /self::version\( 'assets\/js\/core\/template-actions\.js' \)/);
-  assert.match(browser, /contextual && !menu \? 'label' : 'article'/);
+  assert.match(browser, /contextual && !menu && !previewable \? 'label' : 'article'/);
+  assert.match(browser, /const selection = contextual && \( menu \|\| previewable \)/);
+  assert.match(browser, /article\.append\( button \)/);
   assert.match(browser, /cb-template-browser__card-select/);
   assert.match(browser, /state\.actionMenus\.push\( menu \)/);
   assert.match(templateActions, /const OPERATIONS = Object\.freeze/);

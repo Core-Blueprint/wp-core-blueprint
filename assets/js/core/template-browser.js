@@ -403,7 +403,15 @@ function createBrowser( root, options = {} ) {
             && state.sources.some( source => source.id === item.source
                 && Array.isArray( source.previews ) && source.previews.includes( 1 ) );
     }
+    function setBackgroundInert( active ) {
+        // No nested modal: the page/Designer Browser remains the focus owner.
+        // Exclude every underlying interactive pane while preview is open.
+        [ sidebar, collections, toolbar, resultsViewport || results, footer ].forEach( node => {
+            node.inert = active;
+        } );
+    }
     function closePreview( restoreFocus = false ) {
+        setBackgroundInert( false );
         ++state.previewEpoch;
         state.previewController?.abort();
         state.previewController = null;
@@ -460,6 +468,7 @@ function createBrowser( root, options = {} ) {
         status.textContent = label( 'loading', 'Loading templates…' );
         iframe.hidden = true;
         panel.hidden = false;
+        setBackgroundInert( true );
         state.previewFocus = trigger;
         const close = header.children[1];
         if ( typeof close.focus === 'function' ) close.focus();
