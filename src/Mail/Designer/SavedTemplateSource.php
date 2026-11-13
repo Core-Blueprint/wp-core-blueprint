@@ -18,6 +18,8 @@ use CoreBlueprint\Core\TemplateLibrary\TemplateMetadata;
 use CoreBlueprint\Core\TemplateLibrary\TemplateNavigation;
 use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
+use CoreBlueprint\Core\TemplateLibrary\TemplateSort;
+use CoreBlueprint\Core\TemplateLibrary\TemplateSortedSourceInterface;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -29,7 +31,8 @@ final class SavedTemplateSource implements
 	TemplateApplySourceInterface,
 	TemplateActionSourceInterface,
 	TemplateDesignerAuthorityInterface,
-	TemplateCategorySourceInterface {
+	TemplateCategorySourceInterface,
+	TemplateSortedSourceInterface {
 
 	public const SOURCE_ID = 'core-blueprint-mail-saved';
 
@@ -172,6 +175,39 @@ final class SavedTemplateSource implements
 			}
 		}
 		return new TemplatePage( $items, $page['next'] );
+	}
+
+	/** Sorted queries keep Mail ownership and metadata-only visibility. */
+	public function query_sorted( TemplateQuery $query, ?array $after ): TemplatePage {
+		$actor = get_current_user_id();
+		if ( TemplateSort::TITLE_ASC !== $query->sort
+			|| ! $this->can_browse( $actor )
+			|| ( '' !== $query->source && self::SOURCE_ID !== $query->source )
+			|| ( '' !== $query->extension && 'core-blueprint' !== $query->extension )
+			|| ( '' !== $query->designer && 'mail' !== $query->designer )
+			|| ( '' !== $query->category && 'saved' !== $query->category )
+			|| ( '' !== $query->locale && 'en' !== $query->locale )
+			|| ( '' !== $query->origin && ! in_array( $query->origin, [ 'personal', 'site' ], true ) ) ) {
+			return new TemplatePage( [] );
+		}
+		$page = SavedTemplateStore::sorted_page( $query, $after, $actor );
+		if ( 'ready' !== $page['status'] ) {
+			// Never claim a complete sorted result when storage is unavailable.
+			throw new \DomainException( 'sort_unavailable' );
+		}
+		$items = [];
+		foreach ( $page['items'] as $row ) {
+			$id = (string) ( $row['id'] ?? '' );
+			if ( ! SavedTemplateStore::valid_id( $id ) || ! $this->can_view( $id, $actor ) ) {
+				throw new \DomainException( 'sort_unavailable' );
+			}
+			$items[] = new TemplateMetadata(
+				self::SOURCE_ID, 'core-blueprint', 'mail', $id,
+				(string) $row['title'], '', (string) $row['visibility'],
+				'saved', 'en', (string) $row['revision']
+			);
+		}
+		return new TemplatePage( $items );
 	}
 
 	public function navigation( TemplateMetadata $item, int $user_id ): TemplateNavigation {
