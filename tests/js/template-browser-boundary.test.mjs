@@ -99,7 +99,7 @@ test('FIELD-04B: contextual Browser scrolls results while card rows remain intri
 
 test('Browser Golden UX shares layout while contextual Save remains Designer-only', () => {
   assert.match(browser, /resultHeading\.append\( resultTitle, resultCount \)/);
-  assert.match(browser, /toolbar\.prepend\( resultHeading, searchField \)/);
+  assert.match(browser, /toolbar\.prepend\( resultHeading, searchField, sortField \)/);
   assert.match(browser, /resultCount\.textContent = String\( state\.entries\.length \)/);
   assert.match(browser, /cb-template-browser__collection-count/);
   assert.match(browser, /\( hasDesigns \? sidebar : collections \)\.append\( saveArea \)/);
