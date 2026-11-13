@@ -384,6 +384,9 @@ final class TemplateSourceRegistry {
 		$keys = array_keys( $sources );
 		$scope = ( $extension ?? '*' ) . ':' . ( $designer ?? '*' );
 		$fingerprint = hash( 'sha256', $query->fingerprint() . '|' . $scope . '|' . implode( '|', $keys ) );
+		if ( TemplateSort::TITLE_ASC === $query->sort ) {
+			return self::browse_sorted( $query, $sources, $fingerprint, $cursor, $user );
+		}
 		$position = self::read_cursor( $cursor, $fingerprint, $user );
 		if ( null === $position ) {
 			return new TemplatePage( [] );
@@ -423,6 +426,137 @@ final class TemplateSourceRegistry {
 		}
 		return new TemplatePage( $items, $index < count( $keys )
 			? self::write_cursor( $index, null, $fingerprint, $user ) : null );
+	}
+
+	/**
+	 * TL-1B1: exact global ordered metadata across bounded opt-in sources.
+	 * No template document is loaded here; providers return only authorized
+	 * keyset pages and Base validates every item before completing a page.
+	 *
+	 * @param array<string,TemplateSourceInterface> $sources
+	 */
+	private static function browse_sorted(
+		TemplateQuery $query, array $sources, string $fingerprint, ?string $cursor, int $user
+	): TemplatePage {
+		if ( count( $sources ) > TemplateSort::MAX_SOURCES ) {
+			throw new \DomainException( 'sort_unavailable' );
+		}
+		foreach ( $sources as $source ) {
+			if ( ! $source instanceof TemplateSortedSourceInterface ) {
+				throw new \DomainException( 'sort_unavailable' );
+			}
+		}
+		$after = self::read_sorted_cursor( $cursor, $fingerprint, $user );
+		$rows = self::sorted_candidates( $sources, $query, $after, $user );
+		usort( $rows, [ TemplateSort::class, 'compare' ] );
+		$items = array_slice( $rows, 0, $query->limit );
+		if ( ! $items ) {
+			return new TemplatePage( [] );
+		}
+		$last = TemplateSort::position( $items[ count( $items ) - 1 ] );
+		// An item beyond this page is already known, or perform one bounded
+		// peek per eligible source to avoid a spurious final "Load more".
+		$has_more = count( $rows ) > $query->limit;
+		if ( ! $has_more && count( $items ) === $query->limit ) {
+			$has_more = [] !== self::sorted_candidates(
+				$sources, $query->with_limit( 1 ), $last, $user
+			);
+		}
+		return new TemplatePage( $items, $has_more
+			? self::write_sorted_cursor( $last, $fingerprint, $user ) : null );
+	}
+
+	/**
+	 * At most 12 providers x 48 metadata items in memory, with an optional
+	 * 12-provider peek for the continuation. Never enumerate a full catalog.
+	 *
+	 * @param array<string,TemplateSourceInterface> $sources
+	 * @param array{title:string,source:string,id:string}|null $after
+	 * @return list<TemplateMetadata>
+	 */
+	private static function sorted_candidates(
+		array $sources, TemplateQuery $query, ?array $after, int $user
+	): array {
+		$found = [];
+		foreach ( $sources as $id => $source ) {
+			try {
+				if ( ! $source instanceof TemplateSortedSourceInterface
+					|| ! self::allowed( $source ) ) {
+					throw new \UnexpectedValueException( 'Sorted provider access unavailable.' );
+				}
+				$page = $source->query_sorted( $query, $after );
+				if ( null !== $page->next_cursor || count( $page->items ) > $query->limit ) {
+					throw new \UnexpectedValueException( 'Invalid sorted provider page.' );
+				}
+				$previous = null;
+				foreach ( $page->items as $item ) {
+					if ( $item->source !== $id
+						|| $item->extension !== $source->extension_id()
+						|| $item->designer !== $source->designer_type()
+						|| ! self::matches( $item, $query )
+						|| ! $source->can_view( $item->id, $user )
+						|| ( null !== $after && ! TemplateSort::after( $item, $after ) )
+						|| ( null !== $previous && TemplateSort::compare( $previous, $item ) >= 0 ) ) {
+						throw new \UnexpectedValueException( 'Invalid ordered or unauthorized metadata.' );
+					}
+					$found[] = $item;
+					$previous = $item;
+				}
+			} catch ( \Throwable ) {
+				// Unlike unsorted discovery, silently skipping one provider would
+				// falsely advertise a complete globally ordered result.
+				throw new \DomainException( 'sort_unavailable' );
+			}
+		}
+		return $found;
+	}
+
+	/**
+	 * The cursor carries one global seek tuple, NOT unbounded private provider
+	 * cursors. Binding includes actor, site, query/sort, Designer scope and the
+	 * current visible provider set; every source permission is rechecked.
+	 *
+	 * @return array{title:string,source:string,id:string}|null
+	 */
+	private static function read_sorted_cursor( ?string $cursor, string $fingerprint, int $user ): ?array {
+		if ( null === $cursor ) {
+			return null;
+		}
+		if ( strlen( $cursor ) > 2048
+			|| ! preg_match( '/^[A-Za-z0-9_-]+\.[a-f0-9]{64}$/D', $cursor ) ) {
+			throw new \DomainException( 'invalid_cursor' );
+		}
+		[ $encoded, $mac ] = explode( '.', $cursor, 2 );
+		if ( ! hash_equals( hash_hmac( 'sha256', $encoded, wp_salt( 'auth' ) ), $mac ) ) {
+			throw new \DomainException( 'invalid_cursor' );
+		}
+		try {
+			$bytes = base64_decode( strtr( $encoded, '-_', '+/' ), true );
+			$state = json_decode( (string) $bytes, true, 8, JSON_THROW_ON_ERROR );
+		} catch ( \Throwable ) {
+			throw new \DomainException( 'invalid_cursor' );
+		}
+		if ( ! is_array( $state )
+			|| array_keys( $state ) !== [ 'v', 'user', 'blog', 'fingerprint', 'after', 'expires' ]
+			|| 2 !== $state['v'] || $user !== $state['user']
+			|| get_current_blog_id() !== $state['blog']
+			|| $fingerprint !== $state['fingerprint']
+			|| ! TemplateSort::valid_position( $state['after'] )
+			|| ! is_int( $state['expires'] ) || $state['expires'] < time() ) {
+			throw new \DomainException( 'invalid_cursor' );
+		}
+		return $state['after'];
+	}
+
+	/** @param array{title:string,source:string,id:string} $after */
+	private static function write_sorted_cursor( array $after, string $fingerprint, int $user ): string {
+		$body = json_encode( [
+			'v' => 2, 'user' => $user, 'blog' => get_current_blog_id(),
+			'fingerprint' => $fingerprint, 'after' => $after,
+			'expires' => time() + 900,
+		], JSON_THROW_ON_ERROR );
+		$encoded = rtrim( strtr( base64_encode( $body ), '+/', '-_' ), '=' );
+		return $encoded . '.' . hash_hmac( 'sha256', $encoded, wp_salt( 'auth' ) );
 	}
 
 	private static function matches( TemplateMetadata $item, TemplateQuery $query ): bool {
