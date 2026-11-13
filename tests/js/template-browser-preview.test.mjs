@@ -61,6 +61,7 @@ function fixture( { preview = true, refuse = false, deferred = null, contextual 
         getElementById: () => ({ textContent: JSON.stringify( {
             restRoot: '/wp-json/core-blueprint/v1/template-library/', nonce: 'fixture-nonce',
         } ) }),
+        querySelector: () => null,
     };
     const window = { location: { origin: 'https://example.invalid' } };
     const sandbox = {
