@@ -313,7 +313,10 @@ final class CB_Template_Library_Global_Sort_Test extends WP_UnitTestCase {
 			}
 		}
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'subscriber' ] ) );
-		self::assertSame( [], BrowserController::sources( $request )->get_data()['sources'] );
+		self::assertFalse( BrowserController::permitted( $request ), 'Subscriber must not pass the existing REST permission callback.' );
+		$denied = BrowserController::sources( $request );
+		self::assertSame( 403, $denied->get_status(), 'Unauthorized discovery must fail closed, not return an authorized empty catalog.' );
+		self::assertSame( 'invalid_scope', $denied->get_data()['code'] );
 	}
 
 	public function test_rest_rejects_tampered_sort_cursor_with_bad_request(): void {
