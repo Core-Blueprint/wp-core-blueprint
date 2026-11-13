@@ -175,7 +175,8 @@ test('TL-1A: global and scoped cards show declared provenance without creating n
         await flush();
         const shell = root.children[0];
         const content = shell.children[1];
-        const card = content.children[2].children[0];
+        const grid = contextual ? content.children[2].children[0] : content.children[2];
+        const card = grid.children[0];
         const body = card.children.find(child =>
             child.className.includes('cb-template-browser__card-body'));
         assert.ok(body);
