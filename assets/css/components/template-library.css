@@ -140,6 +140,16 @@ label.cb-template-browser__card { cursor: pointer; }
     overflow-wrap: anywhere;
 }
 .cb-template-browser__card-body { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; }
+.cb-template-browser__card-provenance {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 9px;
+    margin-top: 8px;
+    color: var(--cb-text-muted, inherit);
+    font-size: 11px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
 /* TL-M2 R2: action trigger floats at the upper trailing corner.
    Selectable templates use the upper leading corner, independently of actions.
    The popover is viewport-fixed/top-layer and never changes card geometry. */
