@@ -409,12 +409,30 @@ function createBrowser( root, options = {} ) {
         body.append( el( 'h3', 'cb-template-browser__card-title', item.title ) );
         if ( item.description ) body.append( el( 'p', 'cb-template-browser__card-description', item.description ) );
         const meta = el( 'div', 'cb-template-browser__card-meta' );
+        // Translate the declared origin, but never turn it into a trust badge.
+        // The source ID and version are the server-projected, non-authoritative
+        // provenance facts: they do not authenticate an offline template pack.
+        const origins = {
+            'built-in': [ 'builtin', 'Built-in' ],
+            personal: [ 'personal', 'My templates' ],
+            site: [ 'site', 'Site templates' ],
+            'installed-pack': [ 'packs', 'Installed packs' ],
+        };
+        const origin = origins[item.origin];
         meta.append(
-            el( 'span', '', item.origin ),
+            el( 'span', '', origin ? label( ...origin ) : item.origin ),
             el( 'span', '', item.category ),
             el( 'span', '', item.designer )
         );
         body.append( meta );
+        const provenance = el( 'div', 'cb-template-browser__card-provenance' );
+        if ( typeof item.source === 'string' && item.source ) {
+            provenance.append( el( 'span', '', label( 'source', 'Source' ) + ': ' + item.source ) );
+        }
+        if ( typeof item.version === 'string' && item.version ) {
+            provenance.append( el( 'span', '', 'v' + item.version ) );
+        }
+        if ( provenance.childNodes.length ) body.append( provenance );
         const stateBadge = el( 'span',
             item.compatible ? 'cb-template-browser__status' : 'cb-template-browser__status cb-template-browser__status--blocked',
             item.compatible ? label( 'compatible', 'Compatible' ) : label( 'incompatible', 'Not compatible' )
