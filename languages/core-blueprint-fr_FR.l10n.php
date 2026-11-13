@@ -500,6 +500,10 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Open design' => 'Ouvrir la conception',
     'Search designs' => 'Rechercher des conceptions',
     'Select a design.' => 'Sélectionnez une conception.',
+    // TL-1B2 — shared, source-gated sort with exact binary title order.
+    'Sort by' => 'Trier par',
+    'Source order' => 'Ordre des sources',
+    'Title (exact, case-sensitive)' => 'Titre (ordre exact, sensible à la casse)',
     // FC-T4-01 native Mail offline JSON portability.
     'Export JSON' => 'Exporter en JSON',
     'Mail template JSON is ready to download.' => 'Le fichier JSON du modèle d’e-mail est prêt à être téléchargé.',
