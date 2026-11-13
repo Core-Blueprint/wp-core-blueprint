@@ -166,6 +166,8 @@ final class BrowserController {
 			'sources' => array_map( static fn ( string $id, array $source ): array => [
 				'id' => $id, 'extension' => $source['extension'], 'designer' => $source['designer'],
 				'categories' => $categories[$id] ?? [],
+				'sorts' => TemplateSourceRegistry::supports_title_sort( $id )
+					? [ TemplateSort::TITLE_ASC ] : [],
 			], array_keys( $sources ), array_values( $sources ) ),
 		] );
 	}
