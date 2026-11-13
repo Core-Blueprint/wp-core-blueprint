@@ -16,6 +16,7 @@ final class CB_Template_Library_Global_Sort_Test extends WP_UnitTestCase {
 	private int $admin = 0;
 	private bool $many = false;
 	private bool $unsupported = false;
+	private int $extra_sources = 0;
 	private string $failure = '';
 
 	public function set_up(): void {
@@ -43,6 +44,11 @@ final class CB_Template_Library_Global_Sort_Test extends WP_UnitTestCase {
 		TemplateSourceRegistry::register( $this->source(
 			'core-blueprint-sort-b', [ 'Bravo', 'Charlie', 'Delta', 'Zulu' ], 1
 		) );
+		for ( $i = 0; $i < $this->extra_sources; ++$i ) {
+			TemplateSourceRegistry::register( $this->source(
+				'core-blueprint-sort-extra-' . $i, [ 'Additional ' . $i ], 0
+			) );
+		}
 		if ( $this->unsupported ) {
 			TemplateSourceRegistry::register( new class implements TemplateSourceInterface {
 				public function source_id(): string { return 'core-blueprint-sort-legacy'; }
@@ -216,6 +222,14 @@ final class CB_Template_Library_Global_Sort_Test extends WP_UnitTestCase {
 		), 'sort_unavailable' );
 		TemplateSourceRegistry::_reset_for_testing();
 		$this->failure = 'throw';
+		$this->assert_sorted_refused( static fn () => TemplateSourceRegistry::browse_global(
+			$query
+		), 'sort_unavailable' );
+	}
+
+	public function test_sorted_provider_budget_refuses_truncation_at_thirteen_sources(): void {
+		$this->extra_sources = 11; // 2 normal providers + 11 extra = 13.
+		$query = new TemplateQuery( limit: 2, sort: TemplateSort::TITLE_ASC );
 		$this->assert_sorted_refused( static fn () => TemplateSourceRegistry::browse_global(
 			$query
 		), 'sort_unavailable' );
