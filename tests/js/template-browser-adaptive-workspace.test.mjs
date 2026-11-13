@@ -93,7 +93,7 @@ test('FIELD-05B: Designs use compact resource rows; Templates keep preview cards
     const shell = root.children[0], sidebar = shell.children[0];
     const content = shell.children[2], toolbar = content.children[0];
     const grid = content.children[2].children[0];
-    const categoryField = toolbar.children[2];
+    const categoryField = toolbar.children[3];
     assert.equal(shell.children.length, 3);
     assert.equal(shell.dataset.browserView, 'designs');
     assert.equal(grid.children.length, 2);
@@ -154,11 +154,11 @@ test('TL-M3A-R1: global Library uses one shared two-pane Browser without Designe
     assert.match(toolbar.children[0].className, /cb-template-browser__result-heading/);
     assert.equal(toolbar.children[0].children[0].tagName, 'H2');
     assert.match(toolbar.children[1].className, /cb-template-browser__field--search/);
-    assert.equal(toolbar.children[2].children[0].textContent, 'Source');
-    assert.equal(toolbar.children[2].children[1].children[0].textContent, 'All');
-    assert.equal(toolbar.children[3].children[0].textContent, 'Plugin');
-    assert.equal(toolbar.children[4].children[0].textContent, 'Designer type');
-    assert.equal(toolbar.children[5].children[0].textContent, 'Category');
+    assert.equal(toolbar.children[3].children[0].textContent, 'Source');
+    assert.equal(toolbar.children[3].children[1].children[0].textContent, 'All');
+    assert.equal(toolbar.children[4].children[0].textContent, 'Plugin');
+    assert.equal(toolbar.children[5].children[0].textContent, 'Designer type');
+    assert.equal(toolbar.children[6].children[0].textContent, 'Category');
     const templateCard = content.children[2].children[0];
     assert.equal(templateCard.tagName, 'ARTICLE', 'global browsing does not grant a selection/apply control');
     assert.match(templateCard.children[0].className, /cb-template-browser__card-preview/);
@@ -223,10 +223,12 @@ test('TL-1B2: global sort is gated by all eligible backend capabilities and uses
     await flush();
     const content = root.children[0].children[1];
     const toolbar = content.children[0];
-    const sortField = toolbar.children[6], select = sortField.children[1];
+    const sortField = toolbar.children[2], select = sortField.children[1];
     assert.match(sortField.className, /cb-template-browser__field--sort/);
     assert.equal(sortField.hidden, false);
     assert.equal(sortField.children[0].textContent, 'Sort by');
+    assert.equal(toolbar.children[1].children[1].tagName, 'INPUT', 'Search is before sort in Tab order');
+    assert.equal(toolbar.children[3].children[1].tagName, 'SELECT', 'Sort is before source filters in Tab order');
     assert.deepEqual(select.children.map(item => item.textContent),
         ['Source order', 'Title (exact, case-sensitive)']);
     assert.equal(select.value, '', 'default source order remains unchanged');
@@ -268,12 +270,12 @@ test('TL-1B2: unsupported and oversized source sets never claim global sorting',
         const instance = api.createBrowser(root);
         await flush();
         const content = root.children[0].children[1], toolbar = content.children[0];
-        const field = toolbar.children[6], sort = field.children[1];
+        const field = toolbar.children[2], sort = field.children[1];
         assert.equal(field.hidden, true, 'All means every matching authorized source');
         assert.equal(sort.disabled, true);
         assert.ok(!calls.some(url => url.includes('sort=title-asc')));
         if (sources.length === 2) {
-            const type = toolbar.children[4].children[1];
+            const type = toolbar.children[5].children[1];
             type.value = 'mail';
             type.events.get('change')();
             await flush();
@@ -307,7 +309,7 @@ test('TL-1B2: scoped sort respects Designs mode and clears selection on ordering
     });
     await flush();
     const shell = root.children[0], content = shell.children[2], toolbar = content.children[0];
-    const sortField = toolbar.children[3], sort = sortField.children[1];
+    const sortField = toolbar.children[2], sort = sortField.children[1];
     assert.equal(shell.dataset.browserView, 'designs');
     assert.equal(sortField.hidden, true, 'sorting is for templates only');
     shell.children[0].children[1].events.get('click')();
