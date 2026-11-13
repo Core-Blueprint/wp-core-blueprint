@@ -168,8 +168,15 @@ final class CB_Template_Library_Global_Sort_Test extends WP_UnitTestCase {
 		$page = TemplateSourceRegistry::browse_global( $query );
 		self::assertNotNull( $page->next_cursor );
 		$cursor = $page->next_cursor;
+		// The opaque REST cursor must not expose personal template titles
+		// in a trivially decoded access-log parameter.
+		$bytes = base64_decode( strtr( $cursor, '-_', '+/' ), true );
+		self::assertIsString( $bytes );
+		self::assertStringNotContainsString( 'Bravo', $bytes );
+		self::assertStringNotContainsString( 'Bravo', $cursor );
+		$replacement = 'A' === $cursor[0] ? 'B' : 'A';
 		$this->assert_sorted_refused( static fn () => TemplateSourceRegistry::browse_global(
-			$query, 'X' . substr( $cursor, 1 )
+			$query, $replacement . substr( $cursor, 1 )
 		), 'invalid_cursor' );
 		$this->assert_sorted_refused( static fn () => TemplateSourceRegistry::browse_global(
 			new TemplateQuery( limit: 3, sort: TemplateSort::TITLE_ASC ), $cursor
