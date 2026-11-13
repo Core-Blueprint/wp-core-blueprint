@@ -132,16 +132,6 @@ final class CB_Mail_Saved_Template_Lifecycle_Test extends WP_UnitTestCase {
 		$actual = [];
 		$after = null;
 		for ( $round = 0; $round < 4; ++$round ) {
-			// Diagnostic boundary: distinguish schema/SQL failure from a provider
-			// contract failure without changing the production fail-closed behavior.
-			global $wpdb;
-			$store_page = SavedTemplateStore::sorted_page( $query, $after, $this->actor );
-			$db_error = (string) $wpdb->last_error;
-			$db_errno = $wpdb->dbh instanceof \mysqli ? mysqli_errno( $wpdb->dbh ) : 0;
-			self::assertSame( 'ready', $store_page['status'],
-				sprintf( 'Mail saved sorted metadata page %d: DB errno %d; %s',
-					$round + 1, $db_errno, substr( $db_error, 0, 250 ) )
-			);
 			$page = $source->query_sorted( $query, $after );
 			self::assertLessThanOrEqual( 2, count( $page->items ) );
 			self::assertNull( $page->next_cursor, 'The global cursor belongs to Base.' );
@@ -155,6 +145,25 @@ final class CB_Mail_Saved_Template_Lifecycle_Test extends WP_UnitTestCase {
 		self::assertSame( $expected, $actual );
 		self::assertSame( [ 'title' => 'Alpha', 'id' => $expected[0]['id'] ],
 			$actual[0], 'The first tie is ordered by binary saved template ID.' );
+		// The final seek follows a non-ASCII UTF-8 title. WordPress must not
+		// reject that SQL before MariaDB can perform the binary comparison.
+		self::assertSame( 'Éclair', $after['title'] );
+		$empty_seek = SavedTemplateStore::sorted_page( $query, $after, $this->actor );
+		self::assertSame( 'ready', $empty_seek['status'] );
+		self::assertSame( [], $empty_seek['items'] );
+		global $wpdb;
+		self::assertSame( 1, preg_match( '/^[\\x00-\\x7F]*$/D', (string) $wpdb->last_query ),
+			'Encoded UTF-8 seek must not put raw non-ASCII bytes in WordPress SQL.' );
+		$unicode_before_source = [
+			'title' => 'Éclair', 'source' => 'a-earlier-source', 'id' => 'a',
+		];
+		self::assertSame( 'Éclair',
+			$source->query_sorted( $query, $unicode_before_source )->items[0]->title );
+		$unicode_after_source = [
+			'title' => 'Éclair', 'source' => 'z-later-source', 'id' => 'a',
+		];
+		self::assertSame( [],
+			$source->query_sorted( $query, $unicode_after_source )->items );
 		$other_source_after = [
 			'title' => 'Alpha', 'source' => 'a-earlier-source', 'id' => 'a',
 		];
