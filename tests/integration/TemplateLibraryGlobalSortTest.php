@@ -203,6 +203,48 @@ final class CB_Template_Library_Global_Sort_Test extends WP_UnitTestCase {
 		), 'invalid_cursor' );
 	}
 
+	public function test_changed_provider_set_rejects_existing_sorted_cursor(): void {
+		$query = new TemplateQuery( limit: 2, sort: TemplateSort::TITLE_ASC );
+		$first = TemplateSourceRegistry::browse_global( $query );
+		self::assertNotNull( $first->next_cursor );
+		$this->extra_sources = 1;
+		TemplateSourceRegistry::_reset_for_testing();
+		$this->assert_sorted_refused( static fn () => TemplateSourceRegistry::browse_global(
+			$query, $first->next_cursor
+		), 'invalid_cursor' );
+	}
+
+	public function test_expired_and_cross_blog_cursor_states_fail_closed(): void {
+		$query = new TemplateQuery( limit: 2, sort: TemplateSort::TITLE_ASC );
+		$first = TemplateSourceRegistry::browse_global( $query );
+		self::assertNotNull( $first->next_cursor );
+		$key = hash( 'sha256', 'cb-template-sort-cursor-v2|' . wp_salt( 'auth' ), true );
+		$bytes = base64_decode( strtr( $first->next_cursor, '-_', '+/' ), true );
+		self::assertIsString( $bytes );
+		$plain = openssl_decrypt( substr( $bytes, 28 ), 'aes-256-gcm', $key,
+			OPENSSL_RAW_DATA, substr( $bytes, 0, 12 ), substr( $bytes, 12, 16 ) );
+		self::assertIsString( $plain );
+		$state = json_decode( $plain, true, 8, JSON_THROW_ON_ERROR );
+		$seal = static function ( array $state ) use ( $key ): string {
+			$iv = random_bytes( 12 );
+			$tag = '';
+			$sealed = openssl_encrypt(
+				wp_json_encode( $state ), 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag, '', 16
+			);
+			self::assertIsString( $sealed );
+			return rtrim( strtr( base64_encode( $iv . $tag . $sealed ), '+/', '-_' ), '=' );
+		};
+		$state['expires'] = time() - 60;
+		$this->assert_sorted_refused( static fn () => TemplateSourceRegistry::browse_global(
+			$query, $seal( $state )
+		), 'invalid_cursor' );
+		$state['expires'] = time() + 300;
+		$state['blog'] = get_current_blog_id() + 1;
+		$this->assert_sorted_refused( static fn () => TemplateSourceRegistry::browse_global(
+			$query, $seal( $state )
+		), 'invalid_cursor' );
+	}
+
 	public function test_unsupported_or_failing_source_never_returns_false_global_sort(): void {
 		$query = new TemplateQuery( limit: 2, sort: TemplateSort::TITLE_ASC );
 		$this->unsupported = true;
