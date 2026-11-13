@@ -31,6 +31,27 @@ final class PreviewHtmlProjection {
 			if ( ! $body instanceof \DOMElement ) {
 				throw new \InvalidArgumentException( 'Rendered preview body is missing.' );
 			}
+			// Remove active or external-resource nodes INCLUDING THEIR CONTENT.
+			// Stripping only tags would expose Flow's JavaScript as literal text.
+			foreach ( [
+				'script', 'style', 'noscript', 'iframe', 'object', 'embed',
+				'img', 'svg', 'math', 'video', 'audio', 'source', 'link',
+				'template', 'form', 'meta',
+			] as $tag ) {
+				$nodes = $body->getElementsByTagName( $tag );
+				while ( $nodes->length > 0 ) {
+					$node = $nodes->item( 0 );
+					if ( null === $node || null === $node->parentNode ) break;
+					$node->parentNode->removeChild( $node );
+				}
+			}
+			$xpath = new \DOMXPath( $dom );
+			$comments = $xpath->query( '//comment()' );
+			if ( false !== $comments ) {
+				foreach ( $comments as $node ) {
+					if ( null !== $node->parentNode ) $node->parentNode->removeChild( $node );
+				}
+			}
 			// Body CSS is inert once filtered. No raw document element may be
 			// inserted into the parent Browser or the eventual iframe.
 			$fragment = '<div style="' . esc_attr( $body->getAttribute( 'style' ) ) . '">';
