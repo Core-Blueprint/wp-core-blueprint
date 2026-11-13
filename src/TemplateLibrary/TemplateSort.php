@@ -21,9 +21,9 @@ final class TemplateSort {
 
 	/** @param array{title:string,source:string,id:string} $after */
 	public static function after( TemplateMetadata $item, array $after ): bool {
-		return strcmp( $item->title, $after['title'] )
+		return ( strcmp( $item->title, $after['title'] )
 			?: ( strcmp( $item->source, $after['source'] )
-				?: strcmp( $item->id, $after['id'] ) ) > 0;
+				?: strcmp( $item->id, $after['id'] ) ) ) > 0;
 	}
 
 	/** @return array{title:string,source:string,id:string} */
