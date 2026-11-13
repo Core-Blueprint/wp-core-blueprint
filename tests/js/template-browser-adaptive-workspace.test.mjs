@@ -202,6 +202,45 @@ test('TL-1A: global and scoped cards show declared provenance without creating n
     }
 });
 
+test('TL-1B2 polish: Search and Sort keep visible native labels in both Browser contexts', async () => {
+    for (const contextual of [ false, true ]) {
+        const { api } = harness(undefined, { sources: [
+            { id: 'core', extension: 'core-blueprint', designer: 'mail',
+                sorts: [ 'title-asc' ], categories: [ { id: 'mail', label: 'Mail' } ] },
+        ] });
+        const root = new Element('div');
+        const instance = api.createBrowser(root, contextual ? {
+            mode: 'designer', contextToken: 'server-issued-scope',
+            designs: [ { id: 'design-1', title: 'Existing', provider: 'WordPress' } ],
+        } : {});
+        await flush();
+        const shell = root.children[0];
+        const content = shell.children[contextual ? 2 : 1];
+        const toolbar = content.children[0];
+        const searchField = toolbar.children[1];
+        const sortField = toolbar.children[2];
+        assert.equal(searchField.tagName, 'LABEL', 'Search preserves its native label semantics');
+        assert.equal(sortField.tagName, 'LABEL', 'Sort preserves its native label semantics');
+        assert.equal(searchField.children[1].tagName, 'INPUT');
+        assert.equal(sortField.children[1].tagName, 'SELECT');
+        assert.equal(sortField.children[0].textContent, 'Sort by');
+        assert.equal(searchField.children[0].textContent, contextual ? 'Search designs' : 'Search templates');
+        assert.equal(searchField.children[1].attributes['aria-label'],
+            searchField.children[0].textContent, 'label and input accessible name remain in sync');
+        if ( contextual ) {
+            assert.equal(sortField.hidden, true, 'Designs view never offers template sort');
+            shell.children[0].children[1].events.get('click')();
+            await flush();
+            assert.equal(searchField.children[0].textContent, 'Search templates',
+                'label changes with scoped view, not a hard-coded visible caption');
+            assert.equal(sortField.hidden, false);
+        } else {
+            assert.equal(sortField.hidden, false);
+        }
+        instance.destroy();
+    }
+});
+
 test('TL-1B2: global sort is gated by all eligible backend capabilities and uses signed paging', async () => {
     const sources = [
         { id: 'core-a', extension: 'core-blueprint', designer: 'mail', sorts: ['title-asc'], categories: [] },
@@ -379,7 +418,12 @@ test('FIELD-05B: responsive styles separate design rows and template grid', () =
     assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="designs"\] \.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: auto;/);
     assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="designs"\] \.cb-template-browser__card--design\s*\{[^}]*display: grid;[^}]*min-height: 74px;/);
     assert.match(styles, /\.cb-template-browser--workspace\[data-browser-view="templates"\] \.cb-template-browser__grid\s*\{[^}]*grid-auto-rows: 1fr;/);
-    assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__field > span\s*\{[^}]*position: absolute;[^}]*width: 1px;/);
+    assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__field\s*\{[^}]*display: grid;[^}]*align-self: stretch;[^}]*grid-template-rows: auto minmax\(40px, auto\);/,
+        'all Workspace controls share label and input tracks');
+    assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__field > span\s*\{[^}]*position: static;[^}]*overflow: visible;[^}]*font-weight: 600;/,
+        'the existing accessible label is also visible in global and contextual Browsers');
+    assert.doesNotMatch(styles, /\.cb-template-browser--workspace \.cb-template-browser__field > span\s*\{[^}]*position: absolute;/,
+        'search must not remain visually hidden');
     assert.match(styles, /@media \(max-width: 720px\)\s*\{[\s\S]*?data-browser-view="designs"\] \.cb-template-browser__grid/);
     assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__content\s*\{\s*padding: 0;/);
     assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__toolbar\s*\{[^}]*border-bottom: 1px solid var\(--cb-browser-line\);/);
