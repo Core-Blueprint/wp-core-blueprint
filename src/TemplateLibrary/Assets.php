@@ -109,6 +109,7 @@ final class Assets {
 			'actionUnsupported'=> __( 'This action is not supported for this template.', 'core-blueprint' ),
 			'actionFailed'=> __( 'The action could not be confirmed. Check the template before retrying.', 'core-blueprint' ),
 			'actionRefresh'=> __( 'Templates refreshed; verify the latest state.', 'core-blueprint' ),
+			'preview'     => __( 'Preview', 'core-blueprint' ),
 			'details'     => __( 'Templates are managed by their owning extension.', 'core-blueprint' ),
 		];
 		return $existing;

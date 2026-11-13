@@ -1,5 +1,6 @@
 /**
- * Shared Template Library browser, metadata-only and offline-first.
+ * Shared Template Library browser. Discovery is metadata-only; previews are
+ * explicit, authorized read-only POSTs isolated inside an opaque sandbox.
  *
  * @cb-core/template-browser is the only supported extension import.
  * Contextual browsing takes a server-issued DesignerScope token, NEVER a
@@ -38,6 +39,44 @@ function queryString( filters, cursor = '' ) {
     if ( cursor ) query.set( 'cursor', cursor );
     return query.toString();
 }
+// A preview is not a listing, Apply, or renderer. Recheck identity on reply.
+async function requestPreview( item, contextToken, signal, contextEpoch ) {
+    if ( !settings.restRoot || !settings.nonce ) throw safeError();
+    const headers = { 'X-WP-Nonce': settings.nonce, 'Content-Type': 'application/json' };
+    if ( contextToken ) headers['X-CB-Designer-Scope'] = contextToken;
+    const response = await fetch( settings.restRoot + 'preview', {
+        method: 'POST', credentials: 'same-origin', headers, signal,
+        cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer',
+        body: JSON.stringify( {
+            source: item.source, templateId: item.id, version: item.version, contextEpoch,
+        } ),
+    } );
+    if ( !response.ok ) throw safeError();
+    const result = await response.json();
+    if ( !result || result.status !== 'ready' || result.apiVersion !== 1
+        || result.source !== item.source || result.templateId !== item.id
+        || result.version !== item.version || result.contextEpoch !== contextEpoch
+        || typeof result.html !== 'string' || !result.html || result.html.length > 65536 ) {
+        throw safeError();
+    }
+    return result.html;
+}
+
+// The iframe is both scriptless and an opaque origin. WordPress KSES and the
+// TemplatePreview DTO enforce the server-side HTML contract independently.
+const PREVIEW_CSP = "default-src 'none'; base-uri 'none'; form-action 'none'; " +
+    "script-src 'none'; object-src 'none'; frame-src 'none'; connect-src 'none'; " +
+    "img-src 'none'; media-src 'none'; font-src 'none'; style-src 'unsafe-inline'";
+function previewDocument( html ) {
+    return '<!doctype html><html><head><meta charset="utf-8">' +
+        '<meta http-equiv="Content-Security-Policy" content="' + PREVIEW_CSP + '">' +
+        '<meta name="referrer" content="no-referrer">' +
+        '<style>html{color-scheme:light;}body{font:14px/1.5 system-ui,sans-serif;' +
+        'margin:16px;color:#202329;background:#fff;overflow-wrap:anywhere;}' +
+        'table{max-width:100%;}*{box-sizing:border-box;}</style></head>' +
+        '<body dir="auto">' + html + '</body></html>';
+}
+
 async function request( route, filters, contextToken, signal, cursor = '' ) {
     if ( !settings.restRoot || !settings.nonce ) throw safeError();
     const headers = { 'X-WP-Nonce': settings.nonce };
@@ -76,6 +115,8 @@ function createBrowser( root, options = {} ) {
         sources: [], cursor: null, entries: [], selected: null, pending: false,
         requestGeneration: 0, controller: null, timer: null, destroyed: false,
         actionMenus: [], activeActionClose: null, actionFeedback: '',
+        previewController: null, previewEpoch: 0, previewPanel: null,
+        previewFrame: null, previewFocus: null,
         view: hasDesigns ? 'designs' : 'templates', designProvider: '',
     };
     const shell = el( 'section', [ 'cb-template-browser', 'cb-template-browser--workspace',
@@ -356,7 +397,97 @@ function createBrowser( root, options = {} ) {
         state.activeActionClose = null;
     }
 
+    function providerSupportsPreview( item ) {
+        return typeof item.version === 'string'
+            && /^[1-9][0-9]*(?:\\.[0-9]+){0,2}$/.test( item.version )
+            && state.sources.some( source => source.id === item.source
+                && Array.isArray( source.previews ) && source.previews.includes( 1 ) );
+    }
+    function closePreview( restoreFocus = false ) {
+        ++state.previewEpoch;
+        state.previewController?.abort();
+        state.previewController = null;
+        if ( state.previewFrame ) state.previewFrame.srcdoc = '';
+        if ( state.previewPanel ) state.previewPanel.hidden = true;
+        const focus = state.previewFocus;
+        state.previewFocus = null;
+        if ( restoreFocus && focus && typeof focus.focus === 'function' && focus.isConnected ) {
+            focus.focus();
+        }
+    }
+    function previewSurface() {
+        if ( state.previewPanel ) return state.previewPanel;
+        const panel = el( 'section', 'cb-template-browser__preview-panel' );
+        panel.setAttribute( 'role', 'region' );
+        panel.setAttribute( 'aria-label', label( 'preview', 'Preview' ) );
+        const header = el( 'div', 'cb-template-browser__preview-header' );
+        const heading = el( 'h3', 'cb-template-browser__preview-title' );
+        const close = el( 'button', 'button cb-template-browser__preview-close', label( 'close', 'Close' ) );
+        close.type = 'button';
+        close.addEventListener( 'click', () => closePreview( true ) );
+        header.append( heading, close );
+        const status = el( 'p', 'cb-template-browser__preview-status' );
+        status.setAttribute( 'role', 'status' );
+        status.setAttribute( 'aria-live', 'polite' );
+        const iframe = el( 'iframe', 'cb-template-browser__preview-frame' );
+        iframe.setAttribute( 'sandbox', '' );
+        iframe.setAttribute( 'referrerpolicy', 'no-referrer' );
+        iframe.setAttribute( 'loading', 'lazy' );
+        iframe.hidden = true;
+        panel.append( header, status, iframe );
+        panel.hidden = true;
+        panel.addEventListener( 'keydown', event => {
+            if ( event.key === 'Escape' ) {
+                event.preventDefault();
+                event.stopPropagation();
+                closePreview( true );
+            }
+        } );
+        content.append( panel );
+        state.previewPanel = panel;
+        state.previewFrame = iframe;
+        return panel;
+    }
+    async function openPreview( item, index, trigger ) {
+        if ( state.destroyed || state.view !== 'templates'
+            || state.entries[index] !== item || !providerSupportsPreview( item ) ) return;
+        closePreview();
+        state.activeActionClose?.();
+        const panel = previewSurface();
+        const [ header, status, iframe ] = panel.children;
+        header.children[0].textContent = item.title;
+        iframe.setAttribute( 'title', label( 'preview', 'Preview' ) + ': ' + item.title );
+        status.textContent = label( 'loading', 'Loading templates…' );
+        iframe.hidden = true;
+        panel.hidden = false;
+        state.previewFocus = trigger;
+        const close = header.children[1];
+        if ( typeof close.focus === 'function' ) close.focus();
+        const controller = new AbortController();
+        state.previewController = controller;
+        const currentEpoch = ++state.previewEpoch;
+        const contextEpoch = state.requestGeneration;
+        try {
+            const html = await requestPreview( item, token, controller.signal, contextEpoch );
+            if ( controller.signal.aborted || state.destroyed
+                || currentEpoch !== state.previewEpoch || contextEpoch !== state.requestGeneration
+                || state.entries[index] !== item || state.view !== 'templates' ) return;
+            iframe.srcdoc = previewDocument( html );
+            iframe.hidden = false;
+            status.textContent = '';
+        } catch {
+            if ( !controller.signal.aborted && !state.destroyed && currentEpoch === state.previewEpoch ) {
+                iframe.srcdoc = '';
+                iframe.hidden = true;
+                status.textContent = label( 'error', 'Could not load templates.' );
+            }
+        } finally {
+            if ( state.previewController === controller ) state.previewController = null;
+        }
+    }
+
     function renderDesigns() {
+        closePreview();
         disposeActionMenus();
         results.replaceChildren();
         state.entries = [];
@@ -429,8 +560,10 @@ function createBrowser( root, options = {} ) {
         } );
         // Interactive menus must never be descendants of a selection label.
         // An actionable card uses a separate label and sibling disclosure.
-        const article = el( contextual && !menu ? 'label' : 'article', 'cb-template-browser__card' );
-        const selection = contextual && menu
+        const previewable = providerSupportsPreview( item );
+        const article = el( contextual && !menu && !previewable ? 'label' : 'article',
+            'cb-template-browser__card' );
+        const selection = contextual && ( menu || previewable )
             ? el( 'label', 'cb-template-browser__card-select' ) : article;
         if ( contextual ) {
             const radio = el( 'input', 'cb-template-browser__choice' );
@@ -487,6 +620,14 @@ function createBrowser( root, options = {} ) {
         if ( contextual || !item.compatible ) body.append( stateBadge );
         selection.append( body );
         if ( selection !== article ) article.append( selection );
+        if ( previewable ) {
+            // A separate sibling control: never nest it in a selectable label.
+            const button = el( 'button', 'button cb-template-browser__preview-trigger',
+                label( 'preview', 'Preview' ) );
+            button.type = 'button';
+            button.addEventListener( 'click', () => { void openPreview( item, index, button ); } );
+            article.append( button );
+        }
         if ( menu ) {
             const actions = el( 'div', 'cb-template-browser__actions' );
             actions.append( menu.node );
@@ -498,6 +639,7 @@ function createBrowser( root, options = {} ) {
 
     async function load( reset = false ) {
         if ( state.destroyed ) return;
+        if ( reset ) closePreview();
         syncCategoryField();
         syncSortField();
         syncSearchLabel();
@@ -568,6 +710,14 @@ function createBrowser( root, options = {} ) {
         }
         updateCategoryOptions();
         syncSortField();
+        // Sources can resolve after the first template page. Add the optional
+        // preview controls without issuing a second metadata request.
+        if ( state.view === 'templates' && state.entries.length
+            && data.sources.some( source => Array.isArray( source.previews )
+                && source.previews.includes( 1 ) ) ) {
+            disposeActionMenus();
+            results.replaceChildren( ...state.entries.map( ( item, index ) => renderCard( item, index ) ) );
+        }
     } ).catch( () => {} );
 
     refresh();
@@ -575,6 +725,7 @@ function createBrowser( root, options = {} ) {
         selected: () => state.selected === null ? null : ( state.entries[state.selected] || null ),
         view: () => state.view,
         destroy: () => {
+            closePreview();
             state.destroyed = true;
             state.controller?.abort();
             disposeActionMenus();
