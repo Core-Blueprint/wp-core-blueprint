@@ -100,15 +100,18 @@ final class CB_Template_Library_Reports_Sample_Preview_Test extends WP_UnitTestC
 		self::assertStringContainsString( 'return $this->render_report( $this->preview_report(), $native );', $source );
 		self::assertStringContainsString( 'return $this->render_report( $this->sample_report( true ), $native )', $source );
 		self::assertStringContainsString( 'Storage::find_recent(', $source );
-		self::assertSame( 'string', get_debug_type(
-			( new DesignerPreview() )->render_library_sample( [
-				'project' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_project(),
-				'fields' => array_replace(
-					\CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_fields(),
-					[ 'show_logo' => 'off', 'logo_attachment_id' => 0 ]
-				),
-			] )
-		) );
+		$native = [
+			'project' => \CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_project(),
+			'fields' => array_replace(
+				\CoreBlueprint\Core\Design\Profile\Reports\PlatformAdapter::default_fields(),
+				[ 'show_logo' => 'off', 'logo_attachment_id' => '0' ]
+			),
+		];
+		self::assertTrue(
+			\CoreBlueprint\Core\Reports\Composer\NativeComposition::valid_document( $native ),
+			'Library sample fixture must pass the unchanged native Reports schema.'
+		);
+		self::assertIsString( ( new DesignerPreview() )->render_library_sample( $native ) );
 	}
 
 	public function test_shared_projection_removes_entire_active_node_subtrees(): void {

@@ -79,7 +79,7 @@ final class NativeTemplateSource implements
 		// Even bundled branding rasterization is unnecessary for a no-assets
 		// Library preview. Force the logo off; never read an attachment.
 		$fields['show_logo'] = 'off';
-		$fields['logo_attachment_id'] = 0;
+		$fields['logo_attachment_id'] = '0';
 		$fields['provider_name'] = '';
 		$fields['provider_contact'] = '';
 		$native = [
