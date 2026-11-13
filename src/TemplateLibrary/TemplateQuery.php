@@ -15,6 +15,7 @@ final class TemplateQuery {
 	public readonly string $category;
 	public readonly string $locale;
 	public readonly int $limit;
+	public readonly string $sort;
 
 	public function __construct(
 		string $search = '',
@@ -24,7 +25,8 @@ final class TemplateQuery {
 		string $origin = '',
 		string $category = '',
 		string $locale = '',
-		int $limit = 24
+		int $limit = 24,
+		string $sort = ''
 	) {
 		$search = trim( $search );
 		if ( strlen( $search ) > 120 || preg_match( '/[\x00-\x1f\x7f]/', $search ) ) {
@@ -41,6 +43,9 @@ final class TemplateQuery {
 		if ( '' !== $locale && ! preg_match( '/^[a-z]{2}(?:_[A-Z]{2})?$/D', $locale ) ) {
 			throw new \InvalidArgumentException( 'Invalid template locale.' );
 		}
+		if ( '' !== $sort && TemplateSort::TITLE_ASC !== $sort ) {
+			throw new \InvalidArgumentException( 'Unsupported template sort.' );
+		}
 		if ( $limit < 1 || $limit > 48 ) {
 			throw new \InvalidArgumentException( 'Template query exceeds the page limit.' );
 		}
@@ -52,6 +57,7 @@ final class TemplateQuery {
 		$this->category = $category;
 		$this->locale = $locale;
 		$this->limit = $limit;
+		$this->sort = $sort;
 	}
 
 	public static function valid_id( string $id ): bool {
@@ -59,10 +65,10 @@ final class TemplateQuery {
 	}
 
 	public function with_limit( int $limit ): self {
-		return new self( $this->search, $this->source, $this->extension, $this->designer, $this->origin, $this->category, $this->locale, $limit );
+		return new self( $this->search, $this->source, $this->extension, $this->designer, $this->origin, $this->category, $this->locale, $limit, $this->sort );
 	}
 
 	public function fingerprint(): string {
-		return hash( 'sha256', json_encode( [ $this->search, $this->source, $this->extension, $this->designer, $this->origin, $this->category, $this->locale, $this->limit ], JSON_THROW_ON_ERROR ) );
+		return hash( 'sha256', json_encode( [ $this->search, $this->source, $this->extension, $this->designer, $this->origin, $this->category, $this->locale, $this->limit, $this->sort ], JSON_THROW_ON_ERROR ) );
 	}
 }
