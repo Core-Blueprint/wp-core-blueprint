@@ -20,6 +20,8 @@ use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
 use CoreBlueprint\Core\TemplateLibrary\TemplateSort;
 use CoreBlueprint\Core\TemplateLibrary\TemplateSortedSourceInterface;
+use CoreBlueprint\Core\TemplateLibrary\TemplatePreview;
+use CoreBlueprint\Core\TemplateLibrary\TemplatePreviewSourceInterface;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -32,7 +34,8 @@ final class SavedTemplateSource implements
 	TemplateActionSourceInterface,
 	TemplateDesignerAuthorityInterface,
 	TemplateCategorySourceInterface,
-	TemplateSortedSourceInterface {
+	TemplateSortedSourceInterface,
+	TemplatePreviewSourceInterface {
 
 	public const SOURCE_ID = 'core-blueprint-mail-saved';
 
@@ -49,6 +52,22 @@ final class SavedTemplateSource implements
 	public function can_view( string $template_id, int $user_id ): bool {
 		return $this->can_browse( $user_id ) && SavedTemplateStore::valid_id( $template_id )
 			&& 'found' === SavedTemplateStore::find( $template_id, $user_id )['status'];
+	}
+
+	/** Personal/site Mail snapshots are accessed solely through current actor ACL. */
+	public function can_preview( string $template_id, int $actor_id ): bool {
+		return $this->can_view( $template_id, $actor_id );
+	}
+
+	public function render_preview( string $template_id, string $expected_version, int $actor_id ): ?TemplatePreview {
+		if ( ! $this->can_preview( $template_id, $actor_id ) ) return null;
+		$read = SavedTemplateStore::find( $template_id, $actor_id );
+		if ( 'found' !== $read['status']
+			|| (string) $read['revision'] !== $expected_version
+			|| ! is_array( $read['document'] ?? null ) ) return null;
+		// Uses the same Mail-owned, synthetic-binding project renderer as the
+		// immutable defaults; no new template storage, write or live mail data.
+		return LibraryPreview::render( $read['document'], $expected_version );
 	}
 
 	public function can_manage( string $template_id, int $user_id ): bool {
