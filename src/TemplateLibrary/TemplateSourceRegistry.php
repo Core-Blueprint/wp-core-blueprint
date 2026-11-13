@@ -507,6 +507,7 @@ final class TemplateSourceRegistry {
 						|| $item->extension !== $source->extension_id()
 						|| $item->designer !== $source->designer_type()
 						|| ! self::matches( $item, $query )
+						|| ! TemplateSort::valid_position( TemplateSort::position( $item ) )
 						|| ! $source->can_view( $item->id, $user )
 						|| ( null !== $after && ! TemplateSort::after( $item, $after ) )
 						|| ( null !== $previous && TemplateSort::compare( $previous, $item ) >= 0 ) ) {
@@ -576,12 +577,15 @@ final class TemplateSourceRegistry {
 		if ( ! function_exists( 'openssl_encrypt' ) || ! function_exists( 'openssl_decrypt' ) ) {
 			throw new \DomainException( 'sort_unavailable' );
 		}
-		$body = json_encode( [
-			'v' => 2, 'user' => $user, 'blog' => get_current_blog_id(),
-			'fingerprint' => $fingerprint, 'after' => $after,
-			'expires' => time() + 900,
-		], JSON_THROW_ON_ERROR );
+		if ( ! TemplateSort::valid_position( $after ) ) {
+			throw new \DomainException( 'sort_unavailable' );
+		}
 		try {
+			$body = json_encode( [
+				'v' => 2, 'user' => $user, 'blog' => get_current_blog_id(),
+				'fingerprint' => $fingerprint, 'after' => $after,
+				'expires' => time() + 900,
+			], JSON_THROW_ON_ERROR );
 			$iv = random_bytes( 12 );
 			$tag = '';
 			$encrypted = openssl_encrypt(
