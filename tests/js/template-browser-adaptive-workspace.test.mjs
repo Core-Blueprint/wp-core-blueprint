@@ -343,6 +343,14 @@ test('TL-1B2: sort has a responsive, semantic presentation in both Browser modes
     assert.match(styles, /\.cb-template-browser--modal\.cb-template-browser--workspace \.cb-template-browser__field--sort/);
     assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__field--sort/);
     assert.match(styles, /@media \(max-width: 720px\)[\s\S]*?\.cb-template-browser--modal\.cb-template-browser--workspace \.cb-template-browser__field--sort/);
+    assert.match(browserSource, /toolbar\.prepend\( resultHeading, searchField, sortField \)/,
+        'native tab order must match the visual ordering');
+    assert.doesNotMatch(browserSource, /state\.entries\.sort\(/,
+        'client-side sorting a paginated result set would be incorrect');
+    assert.match(styles, /@media \(max-width: 720px\)[\s\S]*?\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__field--search\s*\{\s*grid-row: 2;/,
+        'mobile search must not overlap the heading');
+    assert.match(styles, /@media \(max-width: 720px\)[\s\S]*?\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__field--sort\s*\{[^}]*grid-row: 3;/,
+        'mobile sort follows search before the four source facets');
 });
 
 test('TL-M3A-R1: two-pane scoped Browser preserves Save-as when no Designs exist', async () => {
