@@ -132,6 +132,16 @@ final class CB_Mail_Saved_Template_Lifecycle_Test extends WP_UnitTestCase {
 		$actual = [];
 		$after = null;
 		for ( $round = 0; $round < 4; ++$round ) {
+			// Diagnostic boundary: distinguish schema/SQL failure from a provider
+			// contract failure without changing the production fail-closed behavior.
+			global $wpdb;
+			$store_page = SavedTemplateStore::sorted_page( $query, $after, $this->actor );
+			$db_error = (string) $wpdb->last_error;
+			$db_errno = $wpdb->dbh instanceof \mysqli ? mysqli_errno( $wpdb->dbh ) : 0;
+			self::assertSame( 'ready', $store_page['status'],
+				sprintf( 'Mail saved sorted metadata page %d: DB errno %d; %s',
+					$round + 1, $db_errno, substr( $db_error, 0, 250 ) )
+			);
 			$page = $source->query_sorted( $query, $after );
 			self::assertLessThanOrEqual( 2, count( $page->items ) );
 			self::assertNull( $page->next_cursor, 'The global cursor belongs to Base.' );
