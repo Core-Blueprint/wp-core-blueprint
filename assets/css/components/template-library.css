@@ -1005,6 +1005,12 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
     flex: 1 1 100%;
     margin-inline-start: 0;
   }
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__result-heading {
+    grid-row: 1;
+  }
+  .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__field--search {
+    grid-row: 2;
+  }
   .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__field--sort {
     grid-column: 1 / -1;
     grid-row: 3;
