@@ -16,6 +16,8 @@ use CoreBlueprint\Core\TemplateLibrary\TemplateMetadata;
 use CoreBlueprint\Core\TemplateLibrary\TemplateNavigation;
 use CoreBlueprint\Core\TemplateLibrary\TemplatePage;
 use CoreBlueprint\Core\TemplateLibrary\TemplateQuery;
+use CoreBlueprint\Core\TemplateLibrary\TemplateSort;
+use CoreBlueprint\Core\TemplateLibrary\TemplateSortedSourceInterface;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -30,7 +32,8 @@ final class NativeTemplateSource implements
 	TemplateApplySourceInterface,
 	TemplateManagementSourceInterface,
 	TemplateDesignerAuthorityInterface,
-	TemplateCategorySourceInterface {
+	TemplateCategorySourceInterface,
+	TemplateSortedSourceInterface {
 
 	public const SOURCE_ID = 'core-blueprint-reports';
 	public const TEMPLATE_ID = 'maintenance';
@@ -142,6 +145,16 @@ final class NativeTemplateSource implements
 				$title, $description, 'built-in', self::CATEGORY, 'en', '1'
 			),
 		] );
+	}
+
+	/** One built-in Reports resource; no documents or production reports are loaded. */
+	public function query_sorted( TemplateQuery $query, ?array $after ): TemplatePage {
+		if ( TemplateSort::TITLE_ASC !== $query->sort ) return new TemplatePage( [] );
+		$page = $this->query( $query, null );
+		return new TemplatePage( array_values( array_filter( $page->items,
+			static fn ( TemplateMetadata $item ): bool =>
+				null === $after || TemplateSort::after( $item, $after )
+		) ) );
 	}
 
 	public function navigation( TemplateMetadata $item, int $user_id ): TemplateNavigation {
