@@ -60,7 +60,8 @@ final class ResourcePackageImport {
 
 	/**
 	 * Give the owning consumer the exact resource bytes only during the
-	 * canonical apply phase and only for its currently bound verified plan.
+	 * canonical Engine apply_import callback and only for its currently bound
+	 * verified plan. Replanning is not a resource-reading authority.
 	 * This is read-only: consumer-specific media validation, ownership,
 	 * journaling, rollback and persistence are never performed by Base.
 	 *
@@ -68,6 +69,7 @@ final class ResourcePackageImport {
 	 */
 	public static function read_resource( array $plan, array $context, string $key ): string|WP_Error {
 		if ( null === self::$active || 'apply' !== ( self::$active['phase'] ?? null )
+			|| ! Engine::in_apply_callback()
 			|| ! self::assert_bound_plan( $plan, $context )
 			|| 1 !== preg_match( '/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/D', $key )
 			|| strlen( $key ) > 96 ) {
