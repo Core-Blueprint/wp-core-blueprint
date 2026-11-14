@@ -66,6 +66,33 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
+	 * The only destination presented by the global ZIP importer for this source.
+	 * No client-supplied filesystem path, entity, callback or actor binding.
+	 * ResourcePackageImport and the canonical entity still reauthorize writes.
+	 */
+	public static function resource_import_destination( string $source_id ): ?string {
+		self::collect_if_ready();
+		$source = self::$sources[ $source_id ] ?? null;
+		$actor = get_current_user_id();
+		if ( $actor < 1 || ! current_user_can( 'manage_options' )
+			|| ! $source instanceof TemplateResourceImportSourceInterface
+			|| ! self::allowed( $source ) ) {
+			return null;
+		}
+		try {
+			if ( ! $source->can_import_resource_package( $actor ) ) {
+				return null;
+			}
+			$destination = $source->resource_import_destination();
+			return is_string( $destination ) && strlen( $destination ) <= 96
+				&& 1 === preg_match( '/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/D', $destination )
+				? $destination : null;
+		} catch ( \Throwable ) {
+			return null;
+		}
+	}
+
+	/**
 	 * Source-level preview capability hint, NOT an authorization grant.
 	 * Individual items are checked separately for each POST preview request.
 	 */
