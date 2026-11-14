@@ -15,10 +15,23 @@ if ( ! is_string( $source ) || '' === $source ) {
     exit( 1 );
 }
 
+// Only the legacy redirect method owns these four route alternatives.
+// is_clean_canonical_path() has a separate optional feed matcher; scanning
+// the entire file would mistake that valid guard for a duplicate redirect.
+$method_start = strpos( $source, 'public static function maybe_redirect_legacy_route(): void {' );
+$method_end = false === $method_start
+    ? false
+    : strpos( $source, 'public static function category_changed(): void {', $method_start );
+if ( false === $method_start || false === $method_end || $method_end <= $method_start ) {
+    fwrite( STDERR, "FAIL: legacy redirect method boundary unavailable\n" );
+    exit( 1 );
+}
+$redirect_source = substr( $source, $method_start, $method_end - $method_start );
+
 $extract = <<<'PCRE'
 ~preg_match\(\s*'([^'\r\n]+)'\s*\.\s*\$(quoted|legacy_quoted)\s*\.\s*'([^'\r\n]+)'~
 PCRE;
-preg_match_all( $extract, $source, $found, PREG_SET_ORDER );
+preg_match_all( $extract, $redirect_source, $found, PREG_SET_ORDER );
 
 $cases = [];
 foreach ( $found as $match ) {
