@@ -135,9 +135,11 @@
     background: var(--cb-surface, transparent);
     font-size: 14px;
 }
+/* Focus belongs to the actual keyboard target, not every enclosing card.
+   Card-level :focus-within doubled the selected border when its menu opened. */
 .cb-template-browser__field :is(input, select):focus-visible,
 .cb-template-browser__origin:focus-visible,
-.cb-template-browser__card:focus-within { outline: 2px solid var(--cb-accent, #2271b1); outline-offset: 2px; }
+.cb-template-browser__card:focus-visible { outline: 2px solid var(--cb-accent, #2271b1); outline-offset: 2px; }
 .cb-template-browser__message { min-height: 1.4em; margin: 8px 0; font-size: 13px; }
 .cb-template-browser__grid {
     display: grid;
@@ -162,8 +164,9 @@
 }
 label.cb-template-browser__card { cursor: pointer; }
 .cb-template-browser__card:has(.cb-template-browser__choice:checked) {
+    /* A single selected border; focused controls have their own visible ring. */
     border-color: var(--cb-accent, #2271b1);
-    box-shadow: inset 0 0 0 1px var(--cb-accent, #2271b1);
+    box-shadow: none;
 }
 .cb-template-browser__choice { position: absolute; inset-block-start: 12px; inset-inline-start: 12px; inset-inline-end: auto; }
 .cb-template-library-page .cb-template-browser__card:has(.cb-template-browser__action-menu) .cb-template-browser__card-title { padding-inline-end: 46px; }
@@ -285,9 +288,18 @@ label.cb-template-browser__card { cursor: pointer; }
     font: inherit;
     cursor: pointer;
 }
+/* WordPress/admin link cascades must not make navigation links neon-blue
+   while adjacent Preview buttons remain muted. All non-danger actions use
+   the same neutral text, with contrast and focus states preserved. */
+.cb-template-browser__action-panel :is(button, a).cb-template-browser__action-item:not(.cb-template-browser__action-item--danger) {
+    color: var(--cb-text, inherit);
+}
 .cb-template-browser__action-item:hover,
 .cb-template-browser__action-item:focus-visible {
     background: var(--cb-surface-2, rgba(127,127,127,.12));
+}
+.cb-template-browser__action-panel :is(button, a).cb-template-browser__action-item:not(.cb-template-browser__action-item--danger):is(:hover, :focus-visible) {
+    color: var(--cb-text-strong, var(--cb-text, inherit));
 }
 .cb-template-browser__action-item--danger {
     color: var(--cb-danger, #b02c2c);
@@ -663,7 +675,7 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 }
 .cb-template-browser--workspace .cb-template-browser__card:has(.cb-template-browser__choice:checked) {
   border-color: var(--cb-accent, #2271b1);
-  box-shadow: inset 0 0 0 1px var(--cb-accent, #2271b1);
+  box-shadow: none;
 }
 .cb-template-browser--workspace .cb-template-browser__card-preview {
   position: relative;
