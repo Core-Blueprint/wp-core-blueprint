@@ -97,6 +97,7 @@ function fixture( { preview = true, refuse = false, deferred = null, contextual 
     const code = source
         .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = globalThis.__showModal || (async () => false);')
         .replace("import { createActionMenu } from '@cb-core/template-actions';", 'const createActionMenu = () => null;')
+        .replace("import { createImportControl } from '@cb-core/template-resource-import';", 'const createImportControl = () => null;')
         .replace('export { createBrowser, open, loadForApply };', '')
         .replace('export default api;', '');
     runInNewContext( code, sandbox, { timeout: 1000 } );
