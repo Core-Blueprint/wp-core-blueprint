@@ -169,11 +169,16 @@ label.cb-template-browser__card { cursor: pointer; }
 .cb-template-library-page .cb-template-browser__card:has(.cb-template-browser__action-menu) .cb-template-browser__card-title { padding-inline-end: 46px; }
 .cb-template-browser__card-title { margin: 0 0 9px; color: inherit; font-size: 16px; font-weight: 650; overflow-wrap: anywhere; }
 .cb-template-browser__card-description {
-    margin: 0 0 16px;
-    font-size: 14px;
+    margin: 0;
+    font-size: 13px;
     line-height: 1.5;
     opacity: .88;
     overflow-wrap: anywhere;
+    /* Preserve the complete semantic description for assistive technology. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
 }
 .cb-template-browser__card-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; font-size: 12px; opacity: .9; }
 .cb-template-browser__card-meta span {
@@ -229,8 +234,11 @@ label.cb-template-browser__card { cursor: pointer; }
     color: inherit;
     cursor: pointer;
 }
-.cb-template-browser__action-trigger[aria-expanded="true"],
 .cb-template-browser__action-trigger:hover {
+    border-color: var(--cb-text-muted, rgba(127,127,127,.45));
+    background: var(--cb-surface-2, rgba(127,127,127,.16));
+}
+.cb-template-browser__action-trigger[aria-expanded="true"] {
     border-color: var(--cb-accent, #2271b1);
     background: var(--cb-surface-2, rgba(127,127,127,.16));
 }
@@ -651,6 +659,7 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 }
 .cb-template-browser--workspace .cb-template-browser__card:hover {
   border-color: var(--cb-text-muted, rgba(127,127,127,.45));
+  box-shadow: 0 4px 14px rgb(0 0 0 / .075);
 }
 .cb-template-browser--workspace .cb-template-browser__card:has(.cb-template-browser__choice:checked) {
   border-color: var(--cb-accent, #2271b1);
@@ -687,26 +696,31 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 }
 .cb-template-browser--workspace .cb-template-browser__card-body {
   min-height: 102px;
-  padding: 13px 14px 14px;
-  gap: 8px;
+  padding: 14px 15px 15px;
+  gap: 7px;
 }
 .cb-template-browser--workspace .cb-template-browser__card-title {
   margin: 0;
   padding-inline-end: 22px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 .cb-template-browser--workspace .cb-template-browser__card-meta {
-  gap: 5px;
+  gap: 0;
   margin-top: auto;
   opacity: 1;
   color: var(--cb-browser-muted);
 }
-.cb-template-browser--workspace .cb-template-browser__card-meta span {
-  padding: 2px 7px;
-  border-color: var(--cb-browser-line);
-  border-radius: 5px;
+.cb-template-browser--workspace[data-browser-view="templates"] .cb-template-browser__card-meta span {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+.cb-template-browser--workspace[data-browser-view="templates"] .cb-template-browser__card-meta span + span::before {
+  content: "·";
+  margin-inline: 7px;
+  color: var(--cb-browser-muted);
 }
 .cb-template-browser--workspace .cb-template-browser__card.is-current {
   border-color: var(--cb-browser-line);
@@ -952,7 +966,7 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
 }
 .cb-template-library-page .cb-template-browser--workspace .cb-template-browser__card-preview {
   aspect-ratio: auto;
-  height: 104px;
+  height: 142px;
   min-height: 0;
   max-height: none;
 }
@@ -1053,21 +1067,17 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
   }
 }
 
-/* TL-1C-C: on-demand preview is a separate, non-selecting card action. */
-.cb-template-browser__preview-trigger {
-    align-self: flex-start;
-    flex: 0 0 auto;
-    min-height: 36px;
-    margin-block-start: 12px;
-    padding-inline: 14px;
-    border-radius: 8px;
-    border: 1px solid var(--cb-border, rgba(127,127,127,.3));
-    color: inherit;
-    background: var(--cb-surface, transparent);
-    cursor: pointer;
+/* When sort is not provider-supported, Search spans the unused track
+   without changing DOM/keyboard order or misaligning the filter row. */
+@media (min-width: 1201px) {
+  .cb-template-library-page .cb-template-browser--workspace
+    .cb-template-browser__toolbar:has(.cb-template-browser__field--sort[hidden])
+    .cb-template-browser__field--search {
+    grid-column: 2 / -1;
+  }
 }
-.cb-template-browser__preview-trigger:hover,
-.cb-template-browser__preview-trigger:focus-visible,
+
+/* TL-1C preview remains browser-owned and restores focus to the Actions trigger. */
 .cb-template-browser__preview-close:focus-visible {
     border-color: var(--cb-accent, #2271b1);
     outline: 2px solid var(--cb-accent, #2271b1);
