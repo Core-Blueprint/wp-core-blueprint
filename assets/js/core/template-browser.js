@@ -552,8 +552,8 @@ function createBrowser( root, options = {} ) {
         // Only the server-advertised provider operations become controls.
         // This is one shared menu in both the Library and Designer Browser.
         const menu = createActionMenu( item, {
-            restRoot: settings.restRoot, nonce: settings.nonce,
-            contextToken: token, globalMode: !contextual, label,
+            restRoot: settings.restRoot, downloadRoot: settings.downloadRoot,
+            nonce: settings.nonce, contextToken: token, globalMode: !contextual, label,
             isCurrent: () => !state.destroyed && state.view === 'templates'
                 && state.entries[index] === item,
             onOpening: close => {
