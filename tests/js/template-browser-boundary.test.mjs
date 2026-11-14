@@ -95,7 +95,9 @@ test('standalone Template Library fills the page without stretching card grid ro
 test('FIELD-04B: contextual Browser scrolls results while card rows remain intrinsic', () => {
   assert.match(browser, /cb-template-browser--modal/);
   assert.match(browser, /cb-template-browser__results-viewport/);
-  assert.match(browser, /content.append\( toolbar, message, resultsViewport \|\| results, footer \)/);
+  assert.match(browser, /content.append\( toolbar, message \)/);
+   assert.match(browser, /content.append\( resultsViewport \|\| results, footer \)/);
+   assert.match(browser, /!contextual \? createBulkControl/);
   assert.match(styles, /cb-template-browser__mount \{[^}]*flex: 1 1 auto;[^}]*min-height: 0;/);
   assert.match(styles, /cb-template-browser--modal \.cb-template-browser__results-viewport \{[^}]*flex: 1 1 auto;[^}]*overflow-y: auto;/);
   assert.match(styles, /cb-template-browser--modal \.cb-template-browser__grid \{ flex: 0 0 auto; \}/);
@@ -198,6 +200,7 @@ test('filter interaction is safe while the source metadata response is pending',
     .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = async () => false;')
     .replace("import { createActionMenu } from '@cb-core/template-actions';", 'const createActionMenu = () => null;')
         .replace("import { createImportControl } from '@cb-core/template-resource-import';", 'const createImportControl = () => null;')
+        .replace("import { createBulkControl } from '@cb-core/template-bulk';", 'const createBulkControl = () => null;')
     .replace('export { createBrowser, open, loadForApply };', '')
     .replace('export default api;', '');
   runInNewContext(executable, context, { timeout: 1000 });
@@ -254,6 +257,7 @@ test('T3-01 native Apply loader uses same-origin authorized read and refuses mis
     .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = async () => false;')
     .replace("import { createActionMenu } from '@cb-core/template-actions';", 'const createActionMenu = () => null;')
         .replace("import { createImportControl } from '@cb-core/template-resource-import';", 'const createImportControl = () => null;')
+        .replace("import { createBulkControl } from '@cb-core/template-bulk';", 'const createBulkControl = () => null;')
     .replace('export { createBrowser, open, loadForApply };', '')
     .replace('export default api;', '');
   runInNewContext(executable, context, {timeout: 1000});
