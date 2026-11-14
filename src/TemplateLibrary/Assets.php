@@ -51,6 +51,7 @@ final class Assets {
 	 */
 	public static function data( array $existing ): array {
 		$existing['restRoot'] = esc_url_raw( rest_url( BrowserController::ROUTE . '/' ) );
+		$existing['downloadRoot'] = esc_url_raw( admin_url( 'admin-post.php' ) );
 		$existing['nonce'] = wp_create_nonce( 'wp_rest' );
 		$existing['i18n'] = [
 			'library'     => __( 'Template Library', 'core-blueprint' ),
