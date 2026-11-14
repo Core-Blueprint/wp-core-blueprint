@@ -250,14 +250,14 @@ final class Runtime {
 				self::redirect_if_needed( CategoryRoutes::route_feed_url( $current_url, $path ) );
 				return;
 			}
-			if ( preg_match( '#(?:^|/)' . $quoted . '/feed/(feed|rdf|rss|rss2|atom)/?$', $current, $match ) ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/feed/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
 				self::redirect_if_needed(
 					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
 				);
 				return;
 			}
 
-			if ( preg_match( '#(?:^|/)' . $quoted . '/(feed|rdf|rss|rss2|atom)/?$', $current, $match ) ) {
+			if ( preg_match( '#(?:^|/)' . $quoted . '/(feed|rdf|rss|rss2|atom)/?$#', $current, $match ) ) {
 				self::redirect(
 					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
 				);
@@ -271,7 +271,7 @@ final class Runtime {
 			}
 			if (
 				$legacy_base !== $path
-				&& preg_match( '#(?:^|/)' . $legacy_quoted . '/feed/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
+				&& preg_match( '#(?:^|/)' . $legacy_quoted . '/feed/(feed|rdf|rss|rss2|atom)/?$#', $current, $match )
 			) {
 				self::redirect(
 					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
@@ -279,7 +279,7 @@ final class Runtime {
 			}
 			if (
 				$legacy_base !== $path
-				&& preg_match( '#(?:^|/)' . $legacy_quoted . '/(feed|rdf|rss|rss2|atom)/?$', $current, $match )
+				&& preg_match( '#(?:^|/)' . $legacy_quoted . '/(feed|rdf|rss|rss2|atom)/?$#', $current, $match )
 			) {
 				self::redirect(
 					CategoryRoutes::route_feed_url( $current_url, $path, (string) $match[1] )
