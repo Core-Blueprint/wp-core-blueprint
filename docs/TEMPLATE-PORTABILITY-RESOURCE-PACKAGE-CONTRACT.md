@@ -4,6 +4,17 @@
 **Baseline:** Base Data Exchange Foundation v1 after merge `6f82a7f4a2eba30f9257785aa94cdc85cbce0214`.
 **Related:** [FRG-T4-01B Consumer Audit](TEMPLATE-PORTABILITY-RESOURCE-RECONCILIATION.md) and [Asset-Free JSON Contract](TEMPLATE-PORTABILITY-JSON-CONTRACT.md).
 
+## FRG-T4-01G — Verified resource-byte handoff (14 November 2026; source candidate)
+
+The internal Base resource package bridge now provides an **apply-only, plan-bound** read capability, not a second import engine or media repository:
+
+1. During `ResourcePackageImport::preview()`, `bind_plan()` can attach the verified projection, but `read_resource($plan, $context, $key)` refuses before opening media bytes.
+2. During `ResourcePackageImport::apply()`, after matching the preview fingerprint, the owning `EntityInterface::apply_import()` must call `assert_bound_plan()` and may call `read_resource()` for required keys. Only a present key from the currently active signed, actor-/destination-bound package is readable. Missing keys, wrong actor/context, invalid plan, expired or revoked ticket and modified package fail closed.
+3. `ResourcePackageStage::read_resource()` verifies the whole private staged package again, reads the exact SHA-256-addressed entry with a 5 MiB bound, checks length/digest and hashes the package after the read. No private path, external URL, attachment ID or media-write authority is returned.
+4. The consumer **must independently** enforce domain document schema, current ACL, destination identity, image decode/re-encode, media ownership, journal/rollback, draft creation and cleanup. Byte integrity alone does not satisfy those responsibilities.
+
+This remains an **internal candidate**, not a public frozen package API or end-user ZIP import workflow. Exact GitHub-blob-parity local read-scope regression: 2/2 PASS on `ResourcePackageImport.php` and `test_resource_package_reader.py`. Real-ZIP integration fixture now includes preview-denial, SHA-matched resource consumption and unknown-key negative cases, but its ZIP-enabled run and full WordPress Level 2/FIELD remain pending. No consumer patch, domain media write or release.
+
 ## Architectural decision
 
 **One engine:** the canonical `CoreBlueprint\Core\DataExchange\Engine::preview_json()/apply_json()` continues to own the only import plan, fingerprint, apply and partial-status orchestration. An eventual resource package adapter is a *bounded, offline, read-only verifier and resource staging interface*, **not** a second import engine, alternate record schema, archive-driven mutator or provider capability.
