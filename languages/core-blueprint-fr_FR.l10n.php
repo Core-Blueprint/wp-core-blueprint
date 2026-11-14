@@ -23,6 +23,7 @@ $catalog['messages'] = array_replace(
         'Permanently delete this saved template?' => 'Supprimer définitivement ce modèle enregistré ?',
         'I understand this permanently deletes the saved template.' => 'Je comprends que ce modèle enregistré sera supprimé définitivement.',
         'Template JSON downloaded.' => 'JSON du modèle téléchargé.',
+        'Export ZIP' => 'Exporter en ZIP',
         'Template action completed.' => 'Action sur le modèle terminée.',
         'Template changed elsewhere. Reload and try again.' => 'Le modèle a été modifié ailleurs. Rechargez et réessayez.',
         'You can no longer manage this template.' => 'Vous ne pouvez plus gérer ce modèle.',
