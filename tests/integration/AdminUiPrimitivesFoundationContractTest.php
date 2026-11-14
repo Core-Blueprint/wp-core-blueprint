@@ -84,6 +84,12 @@ final class CB_Admin_UI_Primitives_Foundation_Contract_Test extends WP_UnitTestC
 		self::assertTrue( wp_style_is( 'cb-core-css-status-indicators-native', 'enqueued' ) );
 		self::assertFalse( wp_style_is( 'cb-core-css-status-indicators', 'enqueued' ) );
 		self::assertSame( $tokens_before, wp_style_is( 'cb-core-css-tokens', 'enqueued' ) );
+		self::assertSame( [], wp_styles()->registered['cb-core-css-status-indicators-native']->deps );
+		$native_css_path = CB_CORE_DIR . 'assets/css/components/status-indicators-native.css';
+		self::assertSame(
+			CB_CORE_VERSION . '-' . substr( hash_file( 'sha256', $native_css_path ), 0, 12 ),
+			wp_styles()->registered['cb-core-css-status-indicators-native']->ver
+		);
 	}
 
 	public function test_wp_native_segmented_control_is_standalone_safe(): void {
