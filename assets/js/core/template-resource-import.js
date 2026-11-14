@@ -97,6 +97,7 @@ export function createImportControl( options ) {
     };
     const sync = () => {
         button.hidden = !root || !options.nonce || sources.length === 0 || destroyed;
+        container.hidden = button.hidden;
         button.disabled = busy || unknown;
     };
     const discard = async ( ticket, destination ) => {
