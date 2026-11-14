@@ -298,6 +298,10 @@ final class BrowserController {
 				'compatible' => $item->compatible,
 				'navigation' => TemplateSourceRegistry::navigation( $item, null === $scope )->public_links( null === $scope ),
 				'actions' => TemplateSourceRegistry::actions( $item ),
+				// Global-only optional ZIP export; each request reauthorizes
+				// the provider and version. Not a permission-bearing token.
+				'resourcePackageExport' => null === $scope
+					&& TemplateSourceRegistry::supports_resource_export( $item ),
 			], $page->items ),
 			'next_cursor' => $page->next_cursor,
 		] );
