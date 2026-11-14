@@ -21,6 +21,27 @@ final class ResourcePackageController {
 
 	public static function init(): void {
 		add_action( 'rest_api_init', [ self::class, 'routes' ] );
+		add_action( 'init', [ self::class, 'schedule_cleanup' ], 10 );
+		add_action( 'core_blueprint_resource_package_cleanup', [ self::class, 'cleanup' ] );
+	}
+
+	/** Opportunistic per-request self-heal of the bounded hourly cleanup job. */
+	public static function schedule_cleanup(): void {
+		if ( ! wp_next_scheduled( 'core_blueprint_resource_package_cleanup' ) ) {
+			wp_schedule_event( time() + 3600, 'hourly', 'core_blueprint_resource_package_cleanup' );
+		}
+	}
+
+	public static function cleanup(): void {
+		$root = self::private_root();
+		if ( null !== $root ) {
+			ResourcePackageStage::prune_expired( $root, 100 );
+			ResourcePackageExport::prune_expired( $root, 100 );
+		}
+	}
+
+	public static function clear_schedule(): void {
+		wp_clear_scheduled_hook( 'core_blueprint_resource_package_cleanup' );
 	}
 
 	public static function routes(): void {
