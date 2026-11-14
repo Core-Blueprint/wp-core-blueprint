@@ -82,6 +82,22 @@ test('FIELD-05D: shared template grid and global Library retain safe semantics',
     assert.match(formControls, /:is\(\.cb-core-wrap, \.cb-core-form-scope\) label:has\( > input\[type="radio"\]:disabled \)/);
 });
 
+test('TL-M3B: template cards are compact, preview-footer-free, and retain source/version', () => {
+    const description = rule(browserStyles, '.cb-template-browser__card-description');
+    assert.match(description, /-webkit-line-clamp:\s*2;/);
+    const metadata = rule(browserStyles,
+        '.cb-template-browser--workspace[data-browser-view="templates"] .cb-template-browser__card-meta span');
+    assert.match(metadata, /padding:\s*0;/);
+    assert.match(metadata, /border:\s*0;/);
+    const preview = rule(browserStyles,
+        '.cb-template-library-page .cb-template-browser--workspace .cb-template-browser__card-preview');
+    assert.match(preview, /height:\s*142px;/);
+    assert.match(browserSource, /body\.append\( provenance \)/);
+    assert.match(browserSource, /onPreview: trigger => \{ void openPreview\( item, index, trigger \); \}/);
+    assert.doesNotMatch(browserSource, /cb-template-browser__preview-trigger/);
+    assert.doesNotMatch(browserStyles, /\.cb-template-browser__preview-trigger/);
+});
+
 test('FIELD-05D: all Foundation enqueue paths load revised form-control CSS, not cached 1.0.0 CSS', () => {
     const registrations = [...uiAssets.matchAll(
         /wp_enqueue_style\(\s*'cb-core-css-form-controls'[\s\S]*?\);/g
