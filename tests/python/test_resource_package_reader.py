@@ -77,6 +77,9 @@ namespace CoreBlueprint\Core\DataExchange {
                 'payload' => [], 'warnings' => [],
             ], $context);
             if ($plan instanceof \WP_Error) { return $plan; }
+            if ($GLOBALS['scenario'] === 'wrong-actor') { $GLOBALS['actor'] = 8; }
+            if ($GLOBALS['scenario'] === 'wrong-context') { $context['destination_id'] = 'copy-b'; }
+            if ($GLOBALS['scenario'] === 'unbound-plan') { unset($plan['payload']['cb_resource_package_binding']); }
             $key = $GLOBALS['scenario'] === 'wrong-key' ? 'different-resource' : 'brand-logo';
             $bytes = ResourcePackageImport::read_resource($plan, $context, $key);
             if ($bytes instanceof \WP_Error) { return $bytes; }
@@ -137,6 +140,16 @@ class ScopedResourceReadTests(unittest.TestCase):
         self.assertEqual(0, result["stage_reads"], result)
         self.assertIsNone(result["read_digest"], result)
         self.assertTrue(result["outside_refused"], result)
+
+    def test_actor_destination_and_plan_binding_refuse_resource_reads(self):
+        for scenario in ("wrong-actor", "wrong-context", "unbound-plan"):
+            with self.subTest(scenario=scenario):
+                result = self.run_scenario(scenario)
+                self.assertTrue(result["preview_denied"], result)
+                self.assertEqual("cb_core_resource_package_binding_invalid", result["apply_status"])
+                self.assertEqual(0, result["stage_reads"], result)
+                self.assertIsNone(result["read_digest"], result)
+                self.assertTrue(result["outside_refused"], result)
 
 
 if __name__ == "__main__":
