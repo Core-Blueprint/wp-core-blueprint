@@ -53,6 +53,11 @@ namespace {
     $GLOBALS['staged'] = false;
     $GLOBALS['discarded'] = false;
     $GLOBALS['scenario'] = $argv[3];
+    $GLOBALS['scheduled'] = false;
+    $GLOBALS['schedule_calls'] = 0;
+    $GLOBALS['cleared'] = false;
+    $GLOBALS['stage_prunes'] = 0;
+    $GLOBALS['export_prunes'] = 0;
     $GLOBALS['tempbase'] = $argv[2];
     function get_current_user_id(): int { return $GLOBALS['actor']; }
     function get_current_blog_id(): int { return 42; }
@@ -65,6 +70,19 @@ namespace {
     }
     function wp_salt(string $name): string { return str_repeat('s', 64) . $name; }
     function add_action(string $action, mixed $callback): void { $GLOBALS['hooks'][$action] = $callback; }
+    function wp_next_scheduled(string $hook): int|false {
+        return $GLOBALS['scheduled'] ? time() + 3600 : false;
+    }
+    function wp_schedule_event(int $at, string $cadence, string $hook): bool {
+        ++$GLOBALS['schedule_calls'];
+        $GLOBALS['scheduled'] = $hook === 'core_blueprint_resource_package_cleanup'
+            && $cadence === 'hourly' && $at > time();
+        return $GLOBALS['scheduled'];
+    }
+    function wp_clear_scheduled_hook(string $hook): int {
+        $GLOBALS['cleared'] = $hook === 'core_blueprint_resource_package_cleanup';
+        return 1;
+    }
     function register_rest_route(string $namespace, string $route, array $config): void {
         $GLOBALS['routes'][] = [$namespace, $route, $config['methods']];
     }
@@ -76,6 +94,10 @@ namespace CoreBlueprint\Core\DataExchange {
     }
     class Foundation { const OP_CREATE = 'create'; }
     class ResourcePackageStage {
+        static function prune_expired(string $root, int $limit): int {
+            ++$GLOBALS['stage_prunes'];
+            return $limit === 100 && is_dir($root) ? 1 : 0;
+        }
         static function private_root_path(string $path): ?string {
             if (is_link($path) || !is_dir($path) || (fileperms($path) & 0077) !== 0) return null;
             return realpath($path) ?: null;
@@ -91,6 +113,12 @@ namespace CoreBlueprint\Core\DataExchange {
             $GLOBALS['discarded'] = $ticket === str_repeat('t', 124)
                 && $destination === 'copy-a' && is_dir($root) && $GLOBALS['actor'] === 7;
             return $GLOBALS['discarded'];
+        }
+    }
+    class ResourcePackageExport {
+        static function prune_expired(string $root, int $limit): int {
+            ++$GLOBALS['export_prunes'];
+            return $limit === 100 && is_dir($root) ? 1 : 0;
         }
     }
     class ResourcePackageImport {
@@ -145,7 +173,13 @@ namespace CoreBlueprint\Core\DataExchange {
 
     Controller::init();
     Controller::routes();
-    if (in_array($scenario, ['stage', 'bad-upload', 'bad-nonce', 'no-capability',
+    if ($scenario === 'cron') {
+        Controller::schedule_cleanup();
+        Controller::schedule_cleanup();
+        Controller::cleanup();
+        Controller::clear_schedule();
+        $result = new \WP_REST_Response(['status' => 'ready'], 200);
+    } elseif (in_array($scenario, ['stage', 'bad-upload', 'bad-nonce', 'no-capability',
         'anonymous', 'extra-upload-field'], true)) {
         $result = Controller::stage(new \WP_REST_Request(headers:$auth,fields:$fields,files:$files));
     } elseif (in_array($scenario, ['preview', 'bad-preview', 'bad-destination', 'unexpected-json'], true)) {
@@ -171,6 +205,10 @@ namespace CoreBlueprint\Core\DataExchange {
         'root_count' => count($private ?: []),
         'root_mode' => $private ? (fileperms($private[0]) & 0777) : null,
         'routes' => $GLOBALS['routes'],
+        'schedule_calls' => $GLOBALS['schedule_calls'],
+        'cleared' => $GLOBALS['cleared'],
+        'stage_prunes' => $GLOBALS['stage_prunes'],
+        'export_prunes' => $GLOBALS['export_prunes'],
         'secrets_exposed' => str_contains(json_encode($data), $GLOBALS['tempbase'])
             || str_contains(json_encode($data), '/verified-php-upload.tmp'),
     ], JSON_THROW_ON_ERROR);
@@ -245,6 +283,15 @@ class PackageHttpContractTests(unittest.TestCase):
         invalid = self.run_case("bad-fingerprint")
         self.assertEqual(400, invalid["http"])
         self.assertEqual(0, invalid["calls"])
+
+    def test_hourly_cleanup_scheduled_once_and_cleared(self):
+        result = self.run_case("cron")
+        self.assertEqual(1, result["schedule_calls"], result)
+        self.assertTrue(result["cleared"], result)
+        self.assertEqual(1, result["stage_prunes"], result)
+        self.assertEqual(1, result["export_prunes"], result)
+        core = (ROOT / "src/Core.php").read_text()
+        self.assertIn(r"\CoreBlueprint\Core\DataExchange\ResourcePackageController::clear_schedule();", core)
 
     def test_discard_and_non_post_refusal(self):
         discarded = self.run_case("discard")
