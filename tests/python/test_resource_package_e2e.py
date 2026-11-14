@@ -39,6 +39,9 @@ namespace {
     $GLOBALS['store'] = [];
     $GLOBALS['apply_calls'] = 0;
     $GLOBALS['preview_resource_denied'] = null;
+    $GLOBALS['replan_resource_denied'] = true;
+    $GLOBALS['replan_probes'] = 0;
+    $GLOBALS['monitor_replan'] = false;
     $GLOBALS['resource_sha256'] = null;
     function get_current_user_id(): int { return $GLOBALS['actor']; }
     function current_user_can(string $capability): bool {
@@ -117,6 +120,13 @@ namespace {
                 $GLOBALS['preview_resource_denied'] = is_wp_error($probe)
                     && $probe->get_error_code() === 'cb_core_resource_package_binding_invalid';
             }
+            if ($GLOBALS['monitor_replan']) {
+                ++$GLOBALS['replan_probes'];
+                $probe = Bridge::read_resource($bound, $context, 'brand-logo');
+                $GLOBALS['replan_resource_denied'] = $GLOBALS['replan_resource_denied']
+                    && is_wp_error($probe)
+                    && $probe->get_error_code() === 'cb_core_resource_package_binding_invalid';
+            }
             return $bound;
         }
         public function apply_import(array $plan, array $context = []): array|WP_Error {
@@ -192,6 +202,7 @@ namespace {
                     $stage = $encoded . '.' . hash_hmac('sha256', 'cb-resource-stage-v1:' . $encoded, $key);
                     break;
             }
+            $GLOBALS['monitor_replan'] = true;
             $out['apply'] = summarize(Bridge::apply(
                 $stage, $root, $scenario === 'changed-destination' ? 'copy-b' : 'copy-a',
                 $pre['fingerprint']
@@ -205,6 +216,8 @@ namespace {
     $out['apply_calls_after'] = $GLOBALS['apply_calls'];
     $out['store'] = $GLOBALS['store'];
     $out['resource_sha256'] = $GLOBALS['resource_sha256'];
+    $out['replan_resource_denied'] = $GLOBALS['replan_resource_denied'];
+    $out['replan_probes'] = $GLOBALS['replan_probes'];
     $out['remaining_files'] = count(glob($root . '/*.zip'));
     echo json_encode($out, JSON_THROW_ON_ERROR);
 }
@@ -280,6 +293,8 @@ class RealPackageEndToEndTests(unittest.TestCase):
         self.assertEqual(0, result["writes_at_preview"])
         self.assertEqual(0, result["apply_calls_at_preview"])
         self.assertTrue(result["preview_resource_denied"], result)
+        self.assertTrue(result["replan_resource_denied"], result)
+        self.assertGreaterEqual(result["replan_probes"], 2, result)
         self.assertFalse(result["preview"]["leaks_binding"])
         self.assertEqual("complete", result["apply"]["status"], result)
         self.assertEqual(1, result["writes_after"])
