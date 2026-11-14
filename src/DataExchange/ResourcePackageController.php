@@ -165,6 +165,7 @@ final class ResourcePackageController {
 			|| 1 !== ( $result['record_count'] ?? null )
 			|| 1 !== ( $result['counts'][Foundation::OP_CREATE] ?? null )
 			|| ! is_string( $result['fingerprint'] ?? null )
+			|| 1 !== preg_match( '/^[a-f0-9]{64}$/D', $result['fingerprint'] )
 			|| ! self::permitted( $request ) || get_current_user_id() !== $actor ) {
 			return self::respond( 'invalid' );
 		}
@@ -195,13 +196,15 @@ final class ResourcePackageController {
 			|| is_wp_error( $result ) || ! is_array( $result )
 			|| ( $result['status'] ?? null ) !== 'complete'
 			|| ( $result['applied_count'] ?? null ) !== 1
-			|| ( $result['record_count'] ?? null ) !== 1 ) {
+			|| ( $result['record_count'] ?? null ) !== 1
+			|| ! is_string( $result['items'][0]['reference'] ?? null )
+			|| '' === $result['items'][0]['reference'] ) {
 			return self::respond( 'unknown', 503 );
 		}
 		// Leave the ticket until explicit discard or expiry for reconciliation;
 		// no automatic replay and no exposure of opaque plan/media internals.
 		return self::respond( 'complete', 200, [
-			'reference' => $result['items'][0]['reference'] ?? null,
+			'reference' => $result['items'][0]['reference'],
 		] );
 	}
 
