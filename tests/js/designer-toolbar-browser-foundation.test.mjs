@@ -102,6 +102,8 @@ test('Designer Browser renders three panes with compact resource rows and separa
 		.replace("import { show as showModal } from '@cb-core/modal';","const showModal = async () => false;")
 		.replace("import { createActionMenu } from '@cb-core/template-actions';",
 			'const createActionMenu = () => null;')
+		.replace("import { createImportControl } from '@cb-core/template-resource-import';",
+			'const createImportControl = () => null;')
 		.replace('export { createBrowser, open, loadForApply };','')
 		.replace('export default api;','');
 	runInNewContext(executable,sandbox,{timeout:1000});
@@ -205,6 +207,8 @@ test('Browser modal closes before a design navigation; Apply callback is never u
 			'const showModal = globalThis.modalHook;')
 		.replace("import { createActionMenu } from '@cb-core/template-actions';",
 			'const createActionMenu = () => null;')
+		.replace("import { createImportControl } from '@cb-core/template-resource-import';",
+			'const createImportControl = () => null;')
 		.replace('export { createBrowser, open, loadForApply };','')
 		.replace('export default api;','');
 	runInNewContext(executable,sandbox,{timeout:1000});
