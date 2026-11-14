@@ -188,6 +188,11 @@ final class ResourcePackageStage {
 			? $payload : null;
 	}
 
+	/** Internal shared storage-admission boundary for private package exports. */
+	public static function private_root_path( string $path ): ?string {
+		return self::private_root( $path );
+	}
+
 	/** Verify caller-provisioned 0700 storage outside any public document roots. */
 	private static function private_root( string $path ): ?string {
 		$real = '' !== $path && ! is_link( $path ) ? realpath( $path ) : false;
