@@ -10,6 +10,7 @@
 import { show as showModal } from '@cb-core/modal';
 import { createActionMenu } from '@cb-core/template-actions';
 import { createImportControl } from '@cb-core/template-resource-import';
+import { createBulkControl } from '@cb-core/template-bulk';
 
 const dataElement = typeof document !== 'undefined'
     ? document.getElementById( 'wp-script-module-data-@cb-core/template-browser' ) : null;
@@ -375,7 +376,24 @@ function createBrowser( root, options = {} ) {
         onChanged: () => load( true ),
     } ) : null;
     if ( importControl ) toolbar.append( importControl.node );
-    content.append( toolbar, message, resultsViewport || results, footer );
+    // Global Library alone owns bulk selection. Designer Use stays single-select.
+    const bulkControl = !contextual ? createBulkControl( {
+        label, nonce: settings.nonce, restRoot: settings.restRoot,
+        isCurrent: () => !state.destroyed && state.view === 'templates' && !state.pending,
+        onNotice: text => {
+            if ( state.destroyed ) return;
+            state.actionFeedback = text;
+            message.textContent = text;
+        },
+        onChanged: async text => {
+            if ( state.destroyed ) return;
+            state.actionFeedback = text;
+            await load( true );
+        },
+    } ) : null;
+    content.append( toolbar, message );
+    if ( bulkControl ) content.append( bulkControl.node );
+    content.append( resultsViewport || results, footer );
 
     if ( contextual && typeof options.onSaveAs === 'function' ) {
         const saveArea = el( 'div', 'cb-template-browser__sidebar-footer' );
@@ -417,7 +435,8 @@ function createBrowser( root, options = {} ) {
     function setBackgroundInert( active ) {
         // No nested modal: the page/Designer Browser remains the focus owner.
         // Exclude every underlying interactive pane while preview is open.
-        [ sidebar, collections, toolbar, resultsViewport || results, footer ].forEach( node => {
+        [ sidebar, collections, toolbar, bulkControl?.node, resultsViewport || results, footer ]
+            .filter( Boolean ).forEach( node => {
             node.inert = active;
         } );
     }
@@ -650,6 +669,10 @@ function createBrowser( root, options = {} ) {
         if ( contextual || !item.compatible ) body.append( stateBadge );
         selection.append( body );
         if ( selection !== article ) article.append( selection );
+        // Only provider-managed personal/site templates get native checkboxes.
+        // Browser modal radios and the individual Actions menu remain separate.
+        const bulkCheckbox = bulkControl?.checkbox( item, article );
+        if ( bulkCheckbox ) article.append( bulkCheckbox );
         if ( menu ) {
             const actions = el( 'div', 'cb-template-browser__actions' );
             actions.append( menu.node );
@@ -670,6 +693,7 @@ function createBrowser( root, options = {} ) {
             return;
         }
         if ( reset ) {
+            bulkControl?.reset();
             state.controller?.abort();
             disposeActionMenus();
             state.entries = [];
@@ -739,6 +763,7 @@ function createBrowser( root, options = {} ) {
             && data.sources.some( source => Array.isArray( source.previews )
                 && source.previews.includes( 1 ) ) ) {
             disposeActionMenus();
+            bulkControl?.reset(); // Recreate native checkbox DOM with the refreshed cards.
             results.replaceChildren( ...state.entries.map( ( item, index ) => renderCard( item, index ) ) );
         }
     } ).catch( () => {} );
@@ -753,6 +778,7 @@ function createBrowser( root, options = {} ) {
             state.destroyed = true;
             state.controller?.abort();
             importControl?.destroy();
+            bulkControl?.destroy();
             disposeActionMenus();
             clearTimeout( state.timer );
             root.replaceChildren();
