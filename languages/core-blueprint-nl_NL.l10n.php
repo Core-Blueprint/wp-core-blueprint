@@ -23,6 +23,7 @@ $catalog['messages'] = array_replace(
         'Permanently delete this saved template?' => 'Deze opgeslagen template definitief verwijderen?',
         'I understand this permanently deletes the saved template.' => 'Ik begrijp dat deze opgeslagen template definitief wordt verwijderd.',
         'Template JSON downloaded.' => 'Template-JSON gedownload.',
+        'Export ZIP' => 'ZIP exporteren',
         'Template action completed.' => 'Templateactie voltooid.',
         'Template changed elsewhere. Reload and try again.' => 'De template is elders gewijzigd. Laad opnieuw en probeer het nog eens.',
         'You can no longer manage this template.' => 'Je kunt deze template niet meer beheren.',
