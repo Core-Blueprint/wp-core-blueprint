@@ -118,6 +118,75 @@ final class ResourcePackageStage {
 		return $verified;
 	}
 
+	/**
+	 * Read one verified package-local resource for the ticket's current actor.
+	 * Never returns a filesystem path, URL or authorization for media writes.
+	 * The caller must enforce its own domain authorization and safely decode /
+	 * re-encode image bytes before creating any consumer-owned media.
+	 *
+	 * @return string|WP_Error Verified bounded resource bytes.
+	 */
+	public static function read_resource(
+		string $ticket,
+		string $private_root,
+		string $destination,
+		string $key
+	): string|WP_Error {
+		if ( ! self::valid_id( $key ) ) {
+			return self::refuse();
+		}
+		$verified = self::inspect( $ticket, $private_root, $destination );
+		if ( is_wp_error( $verified ) ) {
+			return self::refuse();
+		}
+		$resource = null;
+		foreach ( $verified['resources'] ?? [] as $item ) {
+			if ( is_array( $item ) && ( $item['key'] ?? null ) === $key ) {
+				$resource = $item;
+				break;
+			}
+		}
+		if ( null === $resource || ! is_string( $resource['sha256'] ?? null )
+			|| 1 !== preg_match( '/^[a-f0-9]{64}$/D', $resource['sha256'] )
+			|| ! is_int( $resource['size'] ?? null )
+			|| $resource['size'] < 1 || $resource['size'] > 5 * 1024 * 1024 ) {
+			return self::refuse();
+		}
+		$root = self::private_root( $private_root );
+		$payload = self::authorize_ticket( $ticket, $destination );
+		if ( null === $root || null === $payload || time() >= $payload['expires']
+			|| ! hash_equals( $payload['sha256'], $verified['package_sha256'] ) ) {
+			return self::refuse();
+		}
+		$path = $root . '/' . $payload['id'] . '.zip';
+		$zip = new \ZipArchive();
+		if ( true !== $zip->open( $path, \ZipArchive::CHECKCONS ) ) {
+			return self::refuse();
+		}
+		try {
+			$bytes = $zip->getFromName(
+				'resources/sha256/' . $resource['sha256'],
+				$resource['size'] + 1
+			);
+		} finally {
+			$zip->close();
+		}
+		if ( ! is_string( $bytes ) || strlen( $bytes ) !== $resource['size']
+			|| ! hash_equals( $resource['sha256'], hash( 'sha256', $bytes ) ) ) {
+			return self::refuse();
+		}
+		// Inspect verified the full archive before this read. Reject even a
+		// same-path replacement made between inspection and resource reading.
+		$current_digest = @hash_file( 'sha256', $path );
+		if ( ! is_string( $current_digest )
+			|| ! hash_equals( $verified['package_sha256'], $current_digest )
+			|| get_current_user_id() !== $payload['actor']
+			|| ! current_user_can( $payload['capability'] ) ) {
+			return self::refuse();
+		}
+		return $bytes;
+	}
+
 	/** Cleanup only the current actor's signed staging identity. */
 	public static function discard( string $ticket, string $private_root, string $destination ): bool {
 		$root = self::private_root( $private_root );
