@@ -76,6 +76,30 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
+	 * Per-item UI capability hint, not a right to download.
+	 * Never advertises ZIP for a provider with only JSON support.
+	 */
+	public static function supports_resource_export( TemplateMetadata $item ): bool {
+		self::collect_if_ready();
+		$actor = get_current_user_id();
+		$source = self::$sources[ $item->source ] ?? null;
+		if ( $actor < 1 || ! current_user_can( 'manage_options' )
+			|| ! $source instanceof TemplateResourceExportSourceInterface
+			|| $source->extension_id() !== $item->extension
+			|| $source->designer_type() !== $item->designer
+			|| ! self::allowed( $source ) ) {
+			return false;
+		}
+		try {
+			return TemplateQuery::valid_id( $source->resource_export_entity() )
+				&& $source->can_view( $item->id, $actor )
+				&& $source->can_export_resource_package( $item->id, $item->version, $actor );
+		} catch ( \Throwable ) {
+			return false;
+		}
+	}
+
+	/**
 	 * Download transport admission for a resource-bearing template.
 	 * No browser-supplied provider/entity, export context or resource bytes.
 	 * Every domain operation remains on the registered source and the existing
@@ -98,6 +122,7 @@ final class TemplateSourceRegistry {
 			|| ! self::allowed( $source ) ) {
 			return new \WP_Error( 'cb_core_resource_export_refused', 'Resource export is unavailable.' );
 		}
+		$package = null;
 		$refuse = static fn(): \WP_Error => new \WP_Error(
 			'cb_core_resource_export_refused', 'Resource export is unavailable.'
 		);
@@ -141,6 +166,9 @@ final class TemplateSourceRegistry {
 			}
 			return $package;
 		} catch ( \Throwable ) {
+			if ( is_array( $package ) && is_string( $package['path'] ?? null ) ) {
+				\CoreBlueprint\Core\DataExchange\ResourcePackageExport::discard( $package['path'], $private_root );
+			}
 			return $refuse();
 		}
 	}
