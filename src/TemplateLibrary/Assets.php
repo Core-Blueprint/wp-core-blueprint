@@ -41,9 +41,15 @@ final class Assets {
 			self::version( 'assets/js/core/template-resource-import.js' )
 		);
 		wp_enqueue_script_module(
+			'@cb-core/template-bulk',
+			CB_CORE_URL . 'assets/js/core/template-bulk.js',
+			[ '@cb-core/modal' ],
+			self::version( 'assets/js/core/template-bulk.js' )
+		);
+		wp_enqueue_script_module(
 			self::MODULE_ID,
 			CB_CORE_URL . 'assets/js/core/template-browser.js',
-			[ '@cb-core/modal', '@cb-core/template-actions', '@cb-core/template-resource-import' ],
+			[ '@cb-core/modal', '@cb-core/template-actions', '@cb-core/template-resource-import', '@cb-core/template-bulk' ],
 			self::version( 'assets/js/core/template-browser.js' )
 		);
 		if ( ! self::$data_registered ) {
@@ -120,6 +126,21 @@ final class Assets {
 			'duplicateHelp'=> __( 'Name the new copy of this template.', 'core-blueprint' ),
 			'deleteWarning'=> __( 'Permanently delete this saved template?', 'core-blueprint' ),
 			'deleteConfirm'=> __( 'I understand this permanently deletes the saved template.', 'core-blueprint' ),
+			'bulkSelectShown' => __( 'Select shown', 'core-blueprint' ),
+			'bulkSelected' => __( 'selected', 'core-blueprint' ),
+			'bulkExport' => __( 'Export selected ZIP', 'core-blueprint' ),
+			'bulkDelete' => __( 'Delete selected', 'core-blueprint' ),
+			'bulkClear' => __( 'Clear selection', 'core-blueprint' ),
+			'bulkSelectTemplate' => __( 'Select template', 'core-blueprint' ),
+			'bulkLimit' => __( 'Select at most 12 templates per batch.', 'core-blueprint' ),
+			'bulkExportReady' => __( 'Selected JSON templates downloaded as ZIP.', 'core-blueprint' ),
+			'bulkExportRefused' => __( 'Bulk export could not be verified. Review selected templates.', 'core-blueprint' ),
+			'bulkDeleteTitle' => __( 'Delete selected templates', 'core-blueprint' ),
+			'bulkDeleteWarning' => __( 'Permanently delete the selected saved templates? This cannot be undone.', 'core-blueprint' ),
+			'bulkDeleteCheck' => __( 'I understand that selected templates will be permanently deleted.', 'core-blueprint' ),
+			'bulkDeleted' => __( 'deleted', 'core-blueprint' ),
+			'bulkNotProcessed' => __( 'not processed', 'core-blueprint' ),
+			'bulkUnknown' => __( 'Outcome uncertain. Inspect the Library before any retry.', 'core-blueprint' ),
 			'exportReady' => __( 'Template JSON downloaded.', 'core-blueprint' ),
 			'actionDone'  => __( 'Template action completed.', 'core-blueprint' ),
 			'actionConflict'=> __( 'Template changed elsewhere. Reload and try again.', 'core-blueprint' ),
