@@ -109,6 +109,7 @@ function fixture( { preview = true, refuse = false, deferred = null, contextual 
                 return { node: wrapper, dispose() {} };
             };`)
         .replace("import { createImportControl } from '@cb-core/template-resource-import';", 'const createImportControl = () => null;')
+        .replace("import { createBulkControl } from '@cb-core/template-bulk';", 'const createBulkControl = () => null;')
         .replace('export { createBrowser, open, loadForApply };', '')
         .replace('export default api;', '');
     runInNewContext( code, sandbox, { timeout: 1000 } );
