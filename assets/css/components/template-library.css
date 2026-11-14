@@ -1144,3 +1144,87 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
     .cb-template-browser__preview-header { align-items: flex-start; }
     .cb-template-browser__preview-title { font-size: 16px; }
 }
+
+
+/* TL-BULK-01: global-only management selection, never contextual Designer Use.
+   Selection and focus use distinct semantics; built-ins get no checkboxes. */
+.cb-template-library-page .cb-template-browser__bulk[hidden],
+.cb-template-library-page .cb-template-browser__bulk-actions[hidden] { display: none !important; }
+.cb-template-library-page .cb-template-browser__bulk {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    padding: 11px 20px;
+    border-bottom: 1px solid var(--cb-browser-line, var(--cb-border));
+    color: var(--cb-text, inherit);
+    background: var(--cb-surface-1, transparent);
+    font-size: 13px;
+}
+.cb-template-library-page .cb-template-browser__bulk-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 36px;
+    cursor: pointer;
+}
+.cb-template-library-page .cb-template-browser__bulk-all input,
+.cb-template-library-page .cb-template-browser__bulk-checkbox {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--cb-accent, #2271b1);
+    cursor: pointer;
+}
+.cb-template-library-page .cb-template-browser__bulk :is(input, button):focus-visible,
+.cb-template-library-page .cb-template-browser__bulk-checkbox:focus-visible {
+    outline: 2px solid var(--cb-accent, #2271b1);
+    outline-offset: 3px;
+}
+.cb-template-library-page .cb-template-browser__bulk-count {
+    color: var(--cb-browser-muted, var(--cb-text-muted));
+    font-variant-numeric: tabular-nums;
+}
+.cb-template-library-page .cb-template-browser__bulk-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-inline-start: auto;
+}
+.cb-template-library-page .cb-template-browser__bulk-actions .button {
+    min-height: 36px;
+    margin: 0;
+    border-radius: 7px;
+    white-space: normal;
+}
+.cb-template-library-page .cb-template-browser__bulk-delete:not(:disabled) {
+    color: var(--cb-danger, #e5484d);
+    border-color: var(--cb-danger, #e5484d);
+}
+.cb-template-library-page .cb-template-browser__bulk-delete:not(:disabled):is(:hover, :focus-visible) {
+    background: var(--cb-surface-2, rgba(127,127,127,.12));
+}
+.cb-template-library-page .cb-template-browser__card.is-bulk-selected {
+    border-color: var(--cb-accent, #2271b1);
+    box-shadow: none;
+}
+.cb-template-library-page .cb-template-browser__bulk-select {
+    position: absolute;
+    inset-block-start: 15px;
+    inset-inline-start: 15px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 6px;
+    background: var(--cb-surface-2, rgba(127,127,127,.12));
+    cursor: pointer;
+}
+@media (max-width: 720px) {
+    .cb-template-library-page .cb-template-browser__bulk { padding: 12px; }
+    .cb-template-library-page .cb-template-browser__bulk-actions {
+        margin-inline-start: 0;
+        width: 100%;
+    }
+}
