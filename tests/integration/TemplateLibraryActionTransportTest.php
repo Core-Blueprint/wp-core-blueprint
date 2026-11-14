@@ -149,4 +149,80 @@ final class CB_Template_Library_Action_Transport_Test extends WP_UnitTestCase {
 		self::assertSame( 403, rest_do_request( $request )->get_status() );
 		self::assertSame( 1, SavedTemplateStore::find( $id, $this->actor )['revision'] );
 	}
+	/** @param list<array<string,mixed>> $items */
+	private function bulk_request( array $items, bool $nonce = true ): WP_REST_Request {
+		$request = new WP_REST_Request( 'POST', '/core-blueprint/v1/template-library/bulk-export' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		if ( $nonce ) $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_body( wp_json_encode( [ 'items' => $items ] ) );
+		return $request;
+	}
+
+	public function test_bounded_global_bulk_json_zip_reuses_per_template_export_authority(): void {
+		self::assertTrue( class_exists( ZipArchive::class ) );
+		$first = $this->make();
+		$second = $this->make();
+		$items = [
+			[ 'source' => SavedTemplateSource::SOURCE_ID, 'templateId' => $first['id'], 'revision' => 1 ],
+			[ 'source' => SavedTemplateSource::SOURCE_ID, 'templateId' => $second['id'], 'revision' => 1 ],
+		];
+		self::assertArrayHasKey(
+			'/core-blueprint/v1/template-library/bulk-export', rest_get_server()->get_routes()
+		);
+		$reply = rest_do_request( $this->bulk_request( $items ) );
+		self::assertSame( 200, $reply->get_status() );
+		$data = $reply->get_data();
+		self::assertSame( 'ready', $data['status'] );
+		self::assertSame( 'core-blueprint-bulk-json-v1', $data['format'] );
+		self::assertSame( 2, $data['count'] );
+		$bytes = base64_decode( $data['data'], true );
+		self::assertIsString( $bytes );
+		$temp = tempnam( get_temp_dir(), 'cbtl-unit-' );
+		self::assertIsString( $temp );
+		$zip = new ZipArchive();
+		try {
+			self::assertGreaterThan( 0, file_put_contents( $temp, $bytes ) );
+			self::assertTrue( $zip->open( $temp ) );
+			self::assertSame( 3, $zip->numFiles );
+			$manifest = json_decode( $zip->getFromName( 'manifest.json' ), true );
+			self::assertSame( 'core-blueprint-bulk-json-v1', $manifest['format'] );
+			self::assertCount( 2, $manifest['items'] );
+			foreach ( $items as $index => $item ) {
+				$record = $manifest['items'][ $index ];
+				self::assertSame( $item['templateId'], $record['templateId'] );
+				self::assertSame( $item['revision'], $record['revision'] );
+				$entry = $zip->getFromName( $record['file'] );
+				self::assertIsString( $entry );
+				self::assertSame( hash( 'sha256', $entry ), $record['sha256'] );
+				self::assertIsArray( json_decode( $entry, true ) );
+			}
+		} finally {
+			$zip->close();
+			unlink( $temp );
+		}
+		self::assertSame( 'found', SavedTemplateStore::find( $first['id'], $this->actor )['status'] );
+		self::assertSame( 'found', SavedTemplateStore::find( $second['id'], $this->actor )['status'] );
+	}
+
+	public function test_bulk_zip_refuses_nonce_duplicates_stale_revision_and_scope(): void {
+		$record = $this->make();
+		$good = [
+			'source' => SavedTemplateSource::SOURCE_ID,
+			'templateId' => $record['id'], 'revision' => 1,
+		];
+		self::assertSame( 403, rest_do_request( $this->bulk_request( [ $good ], false ) )->get_status() );
+		self::assertSame( 400, rest_do_request( $this->bulk_request( [ $good, $good ] ) )->get_status() );
+		$stale = $good;
+		$stale['revision'] = 2;
+		self::assertSame( 409, rest_do_request( $this->bulk_request( [ $stale ] ) )->get_status() );
+		$scoped = $this->bulk_request( [ $good ] );
+		$scoped->set_header( 'X-CB-Designer-Scope', 'not-an-authorized-scope' );
+		self::assertSame( 403, rest_do_request( $scoped )->get_status() );
+		$invalid = $this->bulk_request( [ $good ] );
+		$invalid->set_body( '{"items":[{"source":"' . SavedTemplateSource::SOURCE_ID . '","templateId":"'
+			. $record['id'] . '","revision":1,"document":{}}]}' );
+		self::assertSame( 400, rest_do_request( $invalid )->get_status() );
+		self::assertSame( 'found', SavedTemplateStore::find( $record['id'], $this->actor )['status'] );
+	}
+
 }
