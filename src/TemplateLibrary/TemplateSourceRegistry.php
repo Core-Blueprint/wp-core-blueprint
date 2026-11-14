@@ -76,6 +76,76 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
+	 * Download transport admission for a resource-bearing template.
+	 * No browser-supplied provider/entity, export context or resource bytes.
+	 * Every domain operation remains on the registered source and the existing
+	 * Data Exchange Engine. A ZIP is never a permission to import or publish.
+	 *
+	 * @return array{path:string,package_sha256:string,document_sha256:string,resources:array}|\WP_Error
+	 */
+	public static function export_resource_package(
+		string $source_id, string $template_id, string $version, string $private_root
+	): array|\WP_Error {
+		self::collect_if_ready();
+		$actor = get_current_user_id();
+		$source = self::$sources[ $source_id ] ?? null;
+		if ( $actor < 1 || ! current_user_can( 'manage_options' )
+			|| ! TemplateQuery::valid_id( $source_id )
+			|| ! TemplateQuery::valid_id( $template_id )
+			|| strlen( $version ) > 48
+			|| 1 !== preg_match( '/^[1-9][0-9]*(?:\\.[0-9]+){0,2}$/D', $version )
+			|| ! $source instanceof TemplateResourceExportSourceInterface
+			|| ! self::allowed( $source ) ) {
+			return new \WP_Error( 'cb_core_resource_export_refused', 'Resource export is unavailable.' );
+		}
+		$refuse = static fn(): \WP_Error => new \WP_Error(
+			'cb_core_resource_export_refused', 'Resource export is unavailable.'
+		);
+		try {
+			$entity = $source->resource_export_entity();
+			if ( ! TemplateQuery::valid_id( $entity )
+				|| ! $source->can_view( $template_id, $actor )
+				|| ! $source->can_export_resource_package( $template_id, $version, $actor ) ) {
+				return $refuse();
+			}
+			$context = $source->resource_export_context( $template_id, $version, $actor );
+			if ( is_wp_error( $context ) || ! is_array( $context )
+				|| ( $context['templateId'] ?? null ) !== $template_id
+				|| ( $context['version'] ?? null ) !== $version
+				|| ( $context['actorId'] ?? null ) !== $actor ) {
+				return $refuse();
+			}
+			$read = static function ( array $resource ) use (
+				$source, $actor, $template_id, $version
+			): string|\WP_Error {
+				if ( get_current_user_id() !== $actor
+					|| ! current_user_can( 'manage_options' )
+					|| ! $source->can_view( $template_id, $actor )
+					|| ! $source->can_export_resource_package( $template_id, $version, $actor ) ) {
+					return new \WP_Error( 'cb_core_resource_export_revoked', 'Resource export is unavailable.' );
+				}
+				return $source->read_export_resource( $template_id, $version, $resource, $actor );
+			};
+			$package = \CoreBlueprint\Core\DataExchange\ResourcePackageExport::create(
+				$source->extension_id(), $entity, $context, $read, $private_root
+			);
+			if ( is_wp_error( $package ) ) {
+				return $refuse();
+			}
+			if ( get_current_user_id() !== $actor || ! current_user_can( 'manage_options' )
+				|| ! self::allowed( $source )
+				|| ! $source->can_view( $template_id, $actor )
+				|| ! $source->can_export_resource_package( $template_id, $version, $actor ) ) {
+				\CoreBlueprint\Core\DataExchange\ResourcePackageExport::discard( $package['path'], $private_root );
+				return $refuse();
+			}
+			return $package;
+		} catch ( \Throwable ) {
+			return $refuse();
+		}
+	}
+
+	/**
 	 * Read-only provider-owned preview boundary, independent of Apply/Save.
 	 * No client-supplied HTML/document, repository access, network or caching.
 	 *
