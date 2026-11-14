@@ -79,6 +79,56 @@
     gap: 12px;
     margin-bottom: 18px;
 }
+/* Import is an opt-in global action. Hidden providers must reserve no space.
+   Keep its bottom edge aligned with the Search / Sort controls. */
+.cb-template-browser__import-control {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 8px;
+    margin-inline-start: auto;
+    min-height: 38px;
+}
+.cb-template-browser__import-control[hidden] { display: none; }
+.cb-template-browser__import { min-height: 38px; white-space: nowrap; }
+.cb-template-browser__import-status {
+    max-width: 24rem;
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+.cb-template-browser__import-body {
+    display: grid;
+    gap: 14px;
+}
+.cb-template-browser__import-body > label {
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.cb-template-browser__import-body :is(select,input[type="file"]) {
+    box-sizing: border-box;
+    max-width: 100%;
+    width: 100%;
+    min-height: 38px;
+    padding: 6px 10px;
+    border: 1px solid var(--cb-border, #8c8f94);
+    border-radius: 7px;
+    background: var(--cb-surface, transparent);
+    color: inherit;
+    font: inherit;
+}
+.cb-template-browser__import-body :is(select,input[type="file"]):focus-visible {
+    outline: 2px solid var(--cb-accent, #2271b1);
+    outline-offset: 2px;
+}
+.cb-template-browser__import-error { margin: 0; font-size: 13px; }
+.cb-template-browser__import-summary { line-height: 1.5; }
+@media (max-width: 600px) {
+    .cb-template-browser__import-control { margin-inline-start: 0; width: 100%; }
+    .cb-template-browser__import-status { max-width: 100%; }
+}
 .cb-template-browser__field { display: grid; gap: 5px; min-width: 135px; font-size: 12px; }
 .cb-template-browser__field--search { flex: 2 1 230px; }
 .cb-template-browser__field :is(input, select) {
