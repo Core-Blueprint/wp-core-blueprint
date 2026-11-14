@@ -121,7 +121,7 @@ final class ResourcePackageExport {
 		if ( strlen( $manifest_json ) > 64 * 1024 ) {
 			return self::refuse();
 		}
-		$path = $root . '/' . $id . '.zip';
+		$path = $root . '/' . $id . '.export.zip';
 		$old_umask = umask( 0077 );
 		try {
 			$handle = @fopen( $path, 'xb' );
@@ -178,6 +178,44 @@ final class ResourcePackageExport {
 				@unlink( $path );
 			}
 		}
+	}
+
+
+	/** Delete only an export created inside the admitted private root. */
+	public static function discard( string $path, string $private_root ): bool {
+		$root = ResourcePackageStage::private_root_path( $private_root );
+		$name = basename( $path );
+		return null !== $root && 1 === preg_match( '/^[a-f0-9]{48}\.export\.zip$/D', $name )
+			&& $path === $root . '/' . $name && ! is_link( $path ) && is_file( $path )
+			&& @unlink( $path );
+	}
+
+	/** Bounded crash-recovery cleanup for owned exports; never touches staged imports. */
+	public static function prune_expired( string $private_root, int $max_entries = 100 ): int {
+		$root = ResourcePackageStage::private_root_path( $private_root );
+		if ( null === $root || $max_entries < 1 || $max_entries > 1000 ) {
+			return 0;
+		}
+		$removed = 0;
+		$seen = 0;
+		try {
+			foreach ( new \DirectoryIterator( $root ) as $file ) {
+				if ( ++$seen > $max_entries ) {
+					break;
+				}
+				if ( ! $file->isFile() || $file->isLink()
+					|| 1 !== preg_match( '/^[a-f0-9]{48}\.export\.zip$/D', $file->getFilename() )
+					|| $file->getMTime() > time() - 1200 ) {
+					continue;
+				}
+				if ( @unlink( $file->getPathname() ) ) {
+					++$removed;
+				}
+			}
+		} catch ( \Throwable ) {
+			return $removed;
+		}
+		return $removed;
 	}
 
 	private static function document( string $json, string $extension_id, string $entity_id ): ?array {
