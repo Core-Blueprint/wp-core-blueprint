@@ -22,6 +22,11 @@ final class BrowserController {
 			'callback' => [ self::class, 'manage' ],
 			'permission_callback' => [ self::class, 'manage_permitted' ],
 		] );
+		register_rest_route( 'core-blueprint/v1', '/template-library/bulk-export', [
+			'methods' => 'POST',
+			'callback' => [ self::class, 'bulk_export' ],
+			'permission_callback' => [ self::class, 'manage_permitted' ],
+		] );
 		register_rest_route( 'core-blueprint/v1', '/template-library/preview', [
 			'methods' => 'POST',
 			'callback' => [ self::class, 'preview' ],
@@ -150,6 +155,55 @@ final class BrowserController {
 			'refused' => 403,
 			'invalid' => 400,
 			'unsupported' => 422,
+			default => 503,
+		};
+		return new WP_REST_Response( $result, $http );
+	}
+
+	/**
+	 * Read-only batch transport. A bundle is delivered only after every record
+	 * independently passes the canonical provider-owned export-json authority.
+	 * Never accepts document bytes or a path from the browser.
+	 */
+	public static function bulk_export( WP_REST_Request $request ): WP_REST_Response {
+		if ( null !== self::scope( $request ) || ! self::manage_permitted( $request ) ) {
+			return new WP_REST_Response( [ 'status' => 'refused' ], 403 );
+		}
+		if ( strlen( $request->get_body() ) > 8192 ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$raw = json_decode( $request->get_body() );
+		$data = $request->get_json_params();
+		if ( ! $raw instanceof \stdClass || array_keys( get_object_vars( $raw ) ) !== [ 'items' ]
+			|| ! isset( $raw->items ) || ! is_array( $raw->items )
+			|| ! is_array( $data ) || ! is_array( $data['items'] ?? null )
+			|| ! array_is_list( $data['items'] )
+			|| count( $data['items'] ) < 1 || count( $data['items'] ) > BulkJsonExport::MAX_ITEMS ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$items = [];
+		foreach ( $raw->items as $raw_item ) {
+			if ( ! $raw_item instanceof \stdClass ) {
+				return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+			}
+			$keys = array_keys( get_object_vars( $raw_item ) );
+			sort( $keys, SORT_STRING );
+			if ( $keys !== [ 'revision', 'source', 'templateId' ]
+				|| ! is_string( $raw_item->source ) || ! TemplateQuery::valid_id( $raw_item->source )
+				|| ! is_string( $raw_item->templateId ) || ! TemplateQuery::valid_id( $raw_item->templateId )
+				|| ! is_int( $raw_item->revision ) || $raw_item->revision < 1 ) {
+				return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+			}
+			$items[] = [
+				'source' => $raw_item->source,
+				'templateId' => $raw_item->templateId,
+				'revision' => $raw_item->revision,
+			];
+		}
+		$result = BulkJsonExport::prepare( $items );
+		$http = match ( $result['status'] ) {
+			'ready' => 200, 'invalid' => 400, 'conflict' => 409,
+			'missing' => 404, 'refused' => 403, 'unsupported' => 422,
 			default => 503,
 		};
 		return new WP_REST_Response( $result, $http );
