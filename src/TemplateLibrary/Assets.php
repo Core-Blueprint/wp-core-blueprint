@@ -95,6 +95,7 @@ final class Assets {
 			'rename'      => __( 'Rename', 'core-blueprint' ),
 			'duplicate'   => __( 'Duplicate', 'core-blueprint' ),
 			'exportJson'  => __( 'Export JSON', 'core-blueprint' ),
+			'exportZip'   => __( 'Export ZIP', 'core-blueprint' ),
 			'delete'      => __( 'Delete', 'core-blueprint' ),
 			'saveAction'  => __( 'Save', 'core-blueprint' ),
 			'cancel'      => __( 'Cancel', 'core-blueprint' ),
