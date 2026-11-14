@@ -155,8 +155,11 @@ class ResourcePackageExportTests(unittest.TestCase):
         self.private.mkdir(mode=0o700)
 
     def run_case(self, scenario):
+        # This driver declares a test-only ZipArchive double. Isolate it from
+        # optional extensions loaded by the operator's normal PHP CLI; the
+        # real-ZIP integration suite deliberately keeps the normal CLI.
         result = subprocess.run(
-            ["php", str(self.script), str(ROOT / "src/DataExchange/ResourcePackageExport.php"),
+            ["php", "-n", str(self.script), str(ROOT / "src/DataExchange/ResourcePackageExport.php"),
              scenario, str(self.private)], capture_output=True, text=True,
         )
         self.assertEqual(0, result.returncode, result.stderr)
