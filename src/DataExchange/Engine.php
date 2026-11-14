@@ -16,6 +16,15 @@ use WP_Error;
 defined( 'ABSPATH' ) || exit;
 
 final class Engine {
+	// One canonical apply callback at a time. A package may expose verified
+	// resource bytes only inside this callback, NEVER during plan_import()
+	// (including the second plan that precedes fingerprint comparison).
+	private static int $apply_callback_depth = 0;
+
+	/** Internal phase witness; never an authorization grant by itself. */
+	public static function in_apply_callback(): bool {
+		return 1 === self::$apply_callback_depth;
+	}
 
 	private const MAX_DEPTH             = 16;
 	private const MAX_CONTAINER_SIZE    = 10000;
@@ -232,7 +241,12 @@ final class Engine {
 				continue;
 			}
 			try {
-				$result = $entity->apply_import( $plan, $context );
+				++self::$apply_callback_depth;
+				try {
+					$result = $entity->apply_import( $plan, $context );
+				} finally {
+					--self::$apply_callback_depth;
+				}
 			} catch ( Throwable $throwable ) {
 				unset( $throwable );
 				$result = new WP_Error( 'cb_core_data_exchange_provider_failed', 'Data Exchange provider failed while applying an import record.' );
