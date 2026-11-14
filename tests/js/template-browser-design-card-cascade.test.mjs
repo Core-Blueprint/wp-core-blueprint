@@ -126,7 +126,8 @@ test('FRG-04 polish: preview button and navigation link share one neutral menu c
         '.cb-template-browser__action-panel :is(button, a).cb-template-browser__action-item:not(.cb-template-browser__action-item--danger):is(:hover, :focus-visible)');
     assert.match(interactive, /color:\s*var\(--cb-text-strong,/);
     assert.match(browserStyles, /\.cb-template-browser__action-item--danger\s*\{\s*color:/);
-    assert.match(browserSource, /item\.category === 'wordpress' \? 'WordPress' : item\.category/);
+    assert.match(browserSource, /item\.category === 'wordpress' \? 'WordPress'/);
+    assert.match(browserSource, /item\.category === 'mail' \? 'Mail' : item\.category/);
     assert.match(browserSource, /item\.designer === 'mail' \? 'Mail' : item\.designer/);
     assert.match(browserSource, /'Source' \) \+ ': ' \+ item\.source/);
 });
