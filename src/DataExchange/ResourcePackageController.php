@@ -317,6 +317,9 @@ final class ResourcePackageController {
 							'source' => $input['source'],
 							'template' => $input['templateId'],
 							'version' => $input['version'],
+							// Every initiated delivery is its own audit event,
+							// including two exports of the same template.
+							'eventId' => bin2hex( random_bytes( 8 ) ),
 						]
 					);
 				} catch ( \Throwable ) {
