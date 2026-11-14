@@ -118,6 +118,13 @@ test('TL-1C polish: Preview-only provider has one read-only menu action and rest
         previewAvailable: true, onPreview: anchor => { previewAnchor = anchor; },
     });
     assert.ok(menu, 'Preview alone warrants the existing accessible Actions menu');
+    // Preview uses a display version, not the CAS integer revision required
+    // for mutable management operations.
+    const semver = h.create({...only, version: '1.2.3'}, {
+        previewAvailable: true, onPreview: () => {},
+    });
+    assert.ok(semver);
+    semver.dispose();
     const [trigger, panel] = menu.node.children;
     assert.equal(panel.children.length, 1);
     assert.equal(panel.children[0].textContent, 'Preview');
