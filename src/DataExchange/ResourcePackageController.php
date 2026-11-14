@@ -307,6 +307,27 @@ final class ResourcePackageController {
 					&& ! headers_sent();
 			}
 			if ( $ready ) {
+				// Audit the start of delivery, not a claimed browser receipt.
+				// A failed audit write must not silently authorize export.
+				try {
+					$audit = \CoreBlueprint\Core\Log\AuditLog::log(
+						'template_package_export_delivery',
+						'info',
+						[
+							'source' => $input['source'],
+							'template' => $input['templateId'],
+							'version' => $input['version'],
+						]
+					);
+				} catch ( \Throwable ) {
+					$audit = false;
+				}
+				$ready = false !== $audit && get_current_user_id() === $actor
+					&& is_user_logged_in() && current_user_can( self::CAPABILITY )
+					&& wp_verify_nonce( $input['_wpnonce'], 'wp_rest' )
+					&& ! headers_sent();
+			}
+			if ( $ready ) {
 				header( 'Content-Type: application/zip' );
 				header( 'Content-Disposition: attachment; filename="core-blueprint-template-resources.zip"' );
 				header( 'Content-Length: ' . (string) $size );
