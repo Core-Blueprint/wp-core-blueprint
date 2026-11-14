@@ -200,7 +200,7 @@ export function createBulkControl( options ) {
             notice( label( 'bulkExportRefused', 'Bulk export could not be verified. Review selected templates.' ) );
         } finally { busy = false; sync(); }
     }
-    exportButton.addEventListener( 'click', () => { void exportSelected(); } );
+    exportButton.addEventListener( 'click', () => exportSelected() );
 
     async function deleteSelected() {
         if ( busy || !current() || !allAllowed( 'delete' ) ) return;
@@ -255,7 +255,7 @@ export function createBulkControl( options ) {
             sync();
         }
     }
-    deleteButton.addEventListener( 'click', () => { void deleteSelected(); } );
+    deleteButton.addEventListener( 'click', () => deleteSelected() );
     sync();
     return Object.freeze( {
         node: bar, checkbox, reset, sync,
