@@ -186,5 +186,106 @@ class ResourcePackageExportTests(unittest.TestCase):
                 self.assertEqual(0, result["leftovers"], result)
 
 
+# Real archive integration uses the actual ZipArchive and production verifier.
+# PHP ZipArchive is optional in Base; exact-head 0-skip proof is required for
+# resource-package qualification rather than counting skipped cases as PASS.
+REAL_PHP_DRIVER = r'''<?php
+declare(strict_types=1);
+namespace {
+    define('ABSPATH', '/nonexistent-wp-public-root/');
+    class WP_Error {
+        public function __construct(private string $code, private string $message) {}
+        public function get_error_code(): string { return $this->code; }
+    }
+    function is_wp_error(mixed $value): bool { return $value instanceof WP_Error; }
+    function get_current_user_id(): int { return 7; }
+}
+namespace CoreBlueprint\Core\DataExchange {
+    require_once $argv[1] . '/src/DataExchange/Foundation.php';
+    require_once $argv[1] . '/src/DataExchange/ResourcePackageVerifier.php';
+    require_once $argv[1] . '/src/DataExchange/ResourcePackageStage.php';
+    require_once $argv[1] . '/src/DataExchange/ResourcePackageExport.php';
+    class Engine {
+        public static function export_json(string $extension, string $entity, array $context): string|\WP_Error {
+            return json_encode([
+                'format' => Foundation::FORMAT_ID,
+                'format_version' => Foundation::FORMAT_VERSION,
+                'extension_id' => $extension, 'entity' => $entity,
+                'schema_version' => 1,
+                'exported_at' => '2026-11-14T00:00:00Z',
+                'records' => [[
+                    'portable_id' => 'report-a',
+                    'resources' => [$GLOBALS['resource']],
+                    'document' => ['resource_key' => 'brand-logo'],
+                ]],
+            ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
+    }
+    $bytes = base64_decode($argv[3], true);
+    $GLOBALS['resource'] = [
+        'key' => 'brand-logo', 'sha256' => hash('sha256', $bytes),
+        'size' => strlen($bytes), 'media_type' => 'image/png',
+    ];
+    $created = ResourcePackageExport::create('acme-integrated', 'template.report', [],
+        static fn (array $resource): string => $bytes, $argv[2]);
+    if ($created instanceof \WP_Error) {
+        $out = ['error' => $created->get_error_code()];
+    } else {
+        $real = ResourcePackageVerifier::verify_file($created['path']);
+        $out = ['ok' => !($real instanceof \WP_Error),
+                'digest' => $real instanceof \WP_Error ? null : $real['package_sha256'],
+                'returned_digest' => $created['package_sha256'],
+                'private' => (fileperms($created['path']) & 0077) === 0,
+                'resource_count' => count($created['resources'])];
+        unlink($created['path']);
+    }
+    $out['leftovers'] = count(glob($argv[2] . '/*.zip'));
+    echo json_encode($out, JSON_THROW_ON_ERROR);
+}
+'''
+
+
+@unittest.skipUnless(
+    subprocess.run(["php", "-r", "exit(class_exists('ZipArchive', false) ? 0 : 1);"],
+                   capture_output=True, check=False).returncode == 0,
+    "real PHP ZipArchive is unavailable; not a qualified package PASS",
+)
+class ResourcePackageExportRealZipTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        folder = Path(tmp.name)
+        self.script = folder / "real.php"
+        self.script.write_text(REAL_PHP_DRIVER)
+        self.private = folder / "private"
+        self.private.mkdir(mode=0o700)
+
+    def run_case(self, data):
+        import base64
+        result = subprocess.run(
+            ["php", str(self.script), str(ROOT), str(self.private), base64.b64encode(data).decode()],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(0, result.returncode, result.stderr)
+        return json.loads(result.stdout)
+
+    def test_real_zip_roundtrips_through_production_verifier(self):
+        import base64
+        png = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC0lEQVR42mP8/x8AAusB9gZyC9sAAAAASUVORK5CYII="
+        )
+        outcome = self.run_case(png)
+        self.assertTrue(outcome["ok"], outcome)
+        self.assertEqual(outcome["digest"], outcome["returned_digest"])
+        self.assertTrue(outcome["private"])
+        self.assertEqual(1, outcome["resource_count"])
+        self.assertEqual(0, outcome["leftovers"])
+
+    def test_invalid_image_content_is_refused_and_cleaned(self):
+        result = self.run_case(b"not-a-valid-png-but-hash-matches")
+        self.assertEqual("cb_core_resource_package_export_invalid", result["error"], result)
+        self.assertEqual(0, result["leftovers"])
+
+
 if __name__ == "__main__":
     unittest.main()
