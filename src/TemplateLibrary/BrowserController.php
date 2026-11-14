@@ -206,7 +206,9 @@ final class BrowserController {
 			'missing' => 404, 'refused' => 403, 'unsupported' => 422,
 			default => 503,
 		};
-		return new WP_REST_Response( $result, $http );
+		$response = new WP_REST_Response( $result, $http );
+		$response->header( 'Cache-Control', 'private, no-store' );
+		return $response;
 	}
 
 	/** Apply returns a document to the browser; it never writes to WordPress. */
