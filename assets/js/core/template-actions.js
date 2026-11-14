@@ -144,8 +144,13 @@ export function createActionMenu( item, options ) {
         ...( revision === null ? [] : OPERATIONS.filter( id => declared.includes( id ) ) ),
         ...( resourceZip ? [ 'export-zip' ] : [] ),
     ];
+    // Read-only preview belongs to the Browser, not this management transport.
+    // The Browser validates the current source capability before exposing it;
+    // its callback rechecks item identity and the server reauthorizes on use.
+    const previewAvailable = options.previewAvailable === true
+        && typeof options.onPreview === 'function';
     const navigation = allowedNavigation( item, options.globalMode );
-    if ( !operations.length && !navigation.length ) return null;
+    if ( !previewAvailable && !operations.length && !navigation.length ) return null;
 
     const label = options.label;
     const wrapper = el( 'div', 'cb-template-browser__action-menu' );
@@ -304,6 +309,19 @@ export function createActionMenu( item, options ) {
     }
 
     async function action( id ) {
+        // Close the popover and anchor focus on its stable trigger before the
+        // Browser moves focus into its existing preview surface. Never call
+        // management transport, change Selection, or follow navigation.
+        if ( id === 'preview' ) {
+            if ( disposed || busy || !previewAvailable || !options.isCurrent() ) {
+                close( true );
+                return;
+            }
+            close( true );
+            try { options.onPreview( trigger ); }
+            catch { options.onNotice( label( 'actionFailed', 'The action could not be confirmed. Check the template before retrying.' ) ); }
+            return;
+        }
         close( true );
         if ( id === 'export-zip' ) {
             // The request opens a separate download response, not a mutation
@@ -394,6 +412,14 @@ export function createActionMenu( item, options ) {
         if ( refreshMessage ) await options.onChanged( refreshMessage );
     }
 
+    if ( previewAvailable ) {
+        const preview = el( 'button', 'cb-template-browser__action-item',
+            label( 'preview', 'Preview' ) );
+        preview.type = 'button';
+        preview.setAttribute( 'role', 'menuitem' );
+        preview.addEventListener( 'click', () => { if ( !busy ) void action( 'preview' ); } );
+        panel.append( preview );
+    }
     for ( const entry of navigation ) {
         const link = el( 'a', 'cb-template-browser__action-item', entry.title );
         link.href = entry.href;
