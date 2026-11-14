@@ -154,6 +154,29 @@ class ResourcePackageExportTests(unittest.TestCase):
         self.assertEqual(2, result["export_calls"])
         self.assertEqual(0, result["leftovers"])
 
+    def test_missing_ziparchive_refuses_before_export_or_storage(self):
+        source = r"""<?php
+        define('ABSPATH', __DIR__ . '/public/');
+        class WP_Error {
+            public function __construct(private string $code, private string $message) {}
+            public function get_error_code(): string { return $this->code; }
+        }
+        require_once $argv[1];
+        $result = \CoreBlueprint\Core\DataExchange\ResourcePackageExport::create(
+            'acme-integrated', 'template.report', [], static fn() => 'bytes', $argv[2]
+        );
+        echo $result instanceof WP_Error ? $result->get_error_code() : 'unexpected-success';
+        """
+        script = self.script.parent / "nozip.php"
+        script.write_text(source)
+        result = subprocess.run(
+            ["php", "-n", str(script), str(ROOT / "src/DataExchange/ResourcePackageExport.php"),
+             str(self.private)], capture_output=True, text=True,
+        )
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("cb_core_resource_package_unavailable", result.stdout)
+        self.assertEqual([], list(self.private.iterdir()))
+
     def test_invalid_resources_and_domain_changes_fail_without_retained_file(self):
         for scenario in ("mismatch", "revoked", "actor-switch", "stale", "throws",
                          "no-resource", "wrong-type", "duplicate-digest", "private-root"):
