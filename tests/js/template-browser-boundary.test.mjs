@@ -50,11 +50,15 @@ test('TL-M2 global and contextual Browser reuse provider-authorized actions with
   assert.match(assets, /self::version\( 'assets\/js\/core\/template-actions\.js' \)/);
   assert.match(browser, /contextual && !menu && !previewable \? 'label' : 'article'/);
   assert.match(browser, /const selection = contextual && \( menu \|\| previewable \)/);
-  assert.match(browser, /article\.append\( button \)/);
+  assert.match(browser, /previewAvailable: previewable/);
+  assert.match(browser, /onPreview: trigger => \{ void openPreview\( item, index, trigger \); \}/);
+  assert.doesNotMatch(browser, /cb-template-browser__preview-trigger/);
   assert.match(browser, /cb-template-browser__card-select/);
   assert.match(browser, /state\.actionMenus\.push\( menu \)/);
   assert.match(templateActions, /const OPERATIONS = Object\.freeze/);
   assert.match(templateActions, /declared\.includes\( id \)/);
+  assert.match(templateActions, /!previewAvailable && !operations\.length && !navigation\.length/);
+  assert.match(templateActions, /options\.onPreview\( trigger \)/);
   assert.match(templateActions, /!globalMode \|\| !item\.navigation/);
   assert.match(templateActions, /target\.origin !== window\.location\.origin/);
   assert.match(templateActions, /target\.pathname\.includes\( '\/wp-admin\/' \)/);
