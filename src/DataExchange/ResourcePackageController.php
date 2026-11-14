@@ -44,7 +44,10 @@ final class ResourcePackageController {
 	}
 
 	private static function respond( string $status, int $http = 400, array $data = [] ): WP_REST_Response {
-		return new WP_REST_Response( [ 'status' => $status ] + $data, $http );
+		$response = new WP_REST_Response( [ 'status' => $status ] + $data, $http );
+		// Tickets and previews are authentication-scoped, never shared cache data.
+		$response->header( 'Cache-Control', 'private, no-store, max-age=0' );
+		return $response;
 	}
 
 	private static function valid_destination( mixed $id ): bool {
