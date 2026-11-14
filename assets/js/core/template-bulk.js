@@ -89,14 +89,14 @@ export function createBulkControl( options ) {
     const toggle = element( 'label', 'cb-template-browser__bulk-all' );
     const allCheckbox = element( 'input' );
     allCheckbox.type = 'checkbox';
-    const allText = element( 'span', '', label( 'bulkSelectShown', 'Select shown' ) );
+    const allText = element( 'span', '', label( 'bulkSelectShown', 'Select shown (max 12)' ) );
     toggle.append( allCheckbox, allText );
     const count = element( 'span', 'cb-template-browser__bulk-count' );
     count.setAttribute( 'role', 'status' );
     count.setAttribute( 'aria-live', 'polite' );
     const buttons = element( 'div', 'cb-template-browser__bulk-actions' );
     const exportButton = element( 'button', 'button cb-template-browser__bulk-export',
-        label( 'bulkExport', 'Export selected ZIP' ) );
+        label( 'bulkExport', 'Export JSON ZIP' ) );
     const deleteButton = element( 'button', 'button cb-template-browser__bulk-delete',
         label( 'bulkDelete', 'Delete selected' ) );
     const clearButton = element( 'button', 'button cb-template-browser__bulk-clear',
@@ -192,7 +192,7 @@ export function createBulkControl( options ) {
             const response = await send( root, options.nonce, 'bulk-export', { items: records } );
             if ( response.status === 'ready' && response.format === 'core-blueprint-bulk-json-v1'
                 && response.count === records.length && download( response.data ) ) {
-                notice( label( 'bulkExportReady', 'Selected JSON templates downloaded as ZIP.' ) );
+                notice( label( 'bulkExportReady', 'ZIP download requested for selected JSON templates.' ) );
             } else {
                 notice( label( 'bulkExportRefused', 'Bulk export could not be verified. Review selected templates.' ) );
             }
