@@ -272,7 +272,7 @@ class ResourcePackageExportRealZipTests(unittest.TestCase):
     def test_real_zip_roundtrips_through_production_verifier(self):
         import base64
         png = base64.b64decode(
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC0lEQVR42mP8/x8AAusB9gZyC9sAAAAASUVORK5CYII="
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9gZyC9sAAAAASUVORK5CYII="
         )
         outcome = self.run_case(png)
         self.assertTrue(outcome["ok"], outcome)
