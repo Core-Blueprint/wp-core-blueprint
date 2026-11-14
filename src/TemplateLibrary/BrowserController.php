@@ -235,6 +235,8 @@ final class BrowserController {
 					? [ TemplateSort::TITLE_ASC ] : [],
 				'previews' => TemplateSourceRegistry::supports_preview( $id )
 					? [ TemplatePreviewSourceInterface::API_VERSION ] : [],
+				'resourceImportDestination' => null === $scope
+					? TemplateSourceRegistry::resource_import_destination( $id ) : null,
 			], array_keys( $sources ), array_values( $sources ) ),
 		] );
 	}
