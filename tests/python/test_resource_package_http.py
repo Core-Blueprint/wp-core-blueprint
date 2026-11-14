@@ -37,7 +37,10 @@ namespace {
         public function get_file_params(): array { return $this->files; }
     }
     class WP_REST_Response {
+        private array $headers = [];
         public function __construct(private array $data, private int $status) {}
+        public function header(string $name, string $value): void { $this->headers[$name] = $value; }
+        public function get_headers(): array { return $this->headers; }
         public function get_data(): array { return $this->data; }
         public function get_status(): int { return $this->status; }
     }
@@ -161,6 +164,7 @@ namespace CoreBlueprint\Core\DataExchange {
     echo json_encode([
         'http' => $result->get_status(),
         'data' => $data,
+        'cache_control' => $result->get_headers()['Cache-Control'] ?? null,
         'calls' => $GLOBALS['import_calls'],
         'staged' => $GLOBALS['staged'],
         'discarded' => $GLOBALS['discarded'],
@@ -205,6 +209,7 @@ class PackageHttpContractTests(unittest.TestCase):
         self.assertEqual(1, good["root_count"])
         self.assertEqual(0o700, good["root_mode"])
         self.assertFalse(good["secrets_exposed"])
+        self.assertEqual("private, no-store, max-age=0", good["cache_control"])
 
     def test_bad_upload_nonce_capability_actor_and_fields_fail_without_staging(self):
         for scenario, status in (("bad-upload", 400), ("extra-upload-field", 400),
