@@ -58,6 +58,42 @@ final class ResourcePackageImport {
 			&& ( $plan['payload'][ self::PLAN_KEY ] ?? null ) === $binding;
 	}
 
+	/**
+	 * Give the owning consumer the exact resource bytes only during the
+	 * canonical apply phase and only for its currently bound verified plan.
+	 * This is read-only: consumer-specific media validation, ownership,
+	 * journaling, rollback and persistence are never performed by Base.
+	 *
+	 * @return string|WP_Error
+	 */
+	public static function read_resource( array $plan, array $context, string $key ): string|WP_Error {
+		if ( null === self::$active || 'apply' !== ( self::$active['phase'] ?? null )
+			|| ! self::assert_bound_plan( $plan, $context )
+			|| 1 !== preg_match( '/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/D', $key )
+			|| strlen( $key ) > 96 ) {
+			return self::refuse();
+		}
+		$found = false;
+		foreach ( self::$active['binding']['resources'] as $resource ) {
+			if ( ( $resource['key'] ?? null ) === $key ) {
+				$found = true;
+				break;
+			}
+		}
+		if ( ! $found ) {
+			return self::refuse();
+		}
+		$bytes = ResourcePackageStage::read_resource(
+			self::$active['ticket'],
+			self::$active['private_root'],
+			self::$active['binding']['destination_id'],
+			$key
+		);
+		// Re-read authorization and digest inside Stage at every call;
+		// a prior preview/plan never authorizes a later byte read.
+		return is_wp_error( $bytes ) ? self::refuse() : $bytes;
+	}
+
 	/** @return array<string,mixed>|WP_Error */
 	private static function execute( string $ticket, string $private_root, string $destination, ?string $fingerprint, array $consumer_context ): array|WP_Error {
 		if ( null !== self::$active || '' === $destination || ! self::valid_context( $consumer_context ) ) {
@@ -89,7 +125,10 @@ final class ResourcePackageImport {
 		$context['intent'] = 'create_personal_copy';
 		$context['destination_id'] = $destination;
 		$context[ self::SCOPE_KEY ] = $scope;
-		self::$active = [ 'scope' => $scope, 'binding' => $binding, 'bind_count' => 0 ];
+		self::$active = [
+			'scope' => $scope, 'binding' => $binding, 'bind_count' => 0,
+			'phase' => 'preview', 'ticket' => $ticket, 'private_root' => $private_root,
+		];
 		try {
 			$preview = Engine::preview_json( $verified['document_json'], Foundation::MODE_CREATE_ONLY, $context );
 			if ( is_wp_error( $preview ) || ! is_array( $preview ) ) {
@@ -111,6 +150,7 @@ final class ResourcePackageImport {
 			}
 			// Engine re-plans and checks its own canonical fingerprint BEFORE apply_import().
 			// Omitting bind_plan during that re-plan changes the fingerprint and fails closed.
+			self::$active['phase'] = 'apply';
 			return Engine::apply_json( $verified['document_json'], Foundation::MODE_CREATE_ONLY, $fingerprint, $context );
 		} finally {
 			self::$active = null; // Never leak authorization into another import request.
