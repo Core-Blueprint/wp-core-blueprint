@@ -9,6 +9,7 @@
  */
 import { show as showModal } from '@cb-core/modal';
 import { createActionMenu } from '@cb-core/template-actions';
+import { createImportControl } from '@cb-core/template-resource-import';
 
 const dataElement = typeof document !== 'undefined'
     ? document.getElementById( 'wp-script-module-data-@cb-core/template-browser' ) : null;
@@ -364,6 +365,12 @@ function createBrowser( root, options = {} ) {
     }
     // Keep DOM and visual focus order aligned: Search → Sort → source facets.
     toolbar.prepend( resultHeading, searchField, sortField );
+    const importControl = !contextual ? createImportControl( {
+        label, nonce: settings.nonce, resourceRoot: settings.resourceRoot,
+        onNotice: text => { if ( !state.destroyed ) message.textContent = text; },
+        onChanged: () => load( true ),
+    } ) : null;
+    if ( importControl ) toolbar.append( importControl.node );
     content.append( toolbar, message, resultsViewport || results, footer );
 
     if ( contextual && typeof options.onSaveAs === 'function' ) {
@@ -711,6 +718,7 @@ function createBrowser( root, options = {} ) {
     request( 'sources', {}, token, undefined ).then( ( data ) => {
         if ( state.destroyed || !Array.isArray( data.sources ) ) return;
         state.sources = data.sources;
+        importControl?.updateSources( data.sources );
         if ( !contextual ) {
             const fill = ( select, items ) => {
                 if ( !select ) return;
@@ -741,6 +749,7 @@ function createBrowser( root, options = {} ) {
             closePreview();
             state.destroyed = true;
             state.controller?.abort();
+            importControl?.destroy();
             disposeActionMenus();
             clearTimeout( state.timer );
             root.replaceChildren();
