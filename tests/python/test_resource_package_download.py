@@ -77,6 +77,19 @@ namespace CoreBlueprint\Core\DataExchange {
         }
     }
 }
+namespace CoreBlueprint\Core\Log {
+    final class AuditLog {
+        static function log(string $event, string $severity, array $context): int|false {
+            if ($event !== 'template_package_export_delivery' || $severity !== 'info'
+                || ($context['source'] ?? '') !== 'acme-test'
+                || ($context['template'] ?? '') !== 'report-a'
+                || ($context['version'] ?? '') !== '1.0') return false;
+            if ($GLOBALS['scenario'] === 'audit-failed') return false;
+            if ($GLOBALS['scenario'] === 'audit-revoked') $GLOBALS['allowed'] = false;
+            return 1;
+        }
+    }
+}
 namespace CoreBlueprint\Core\TemplateLibrary {
     final class TemplateSourceRegistry {
         static function export_resource_package(
@@ -142,7 +155,7 @@ class ResourcePackageDownloadTests(unittest.TestCase):
 
     def test_failed_export_invalid_digest_and_revocation_never_stream(self):
         self.assertEqual(b"refused-403", self.call("provider-refuses"))
-        for scenario in ("digest-mismatch", "actor-switched", "revoke"):
+        for scenario in ("digest-mismatch", "actor-switched", "revoke", "audit-failed", "audit-revoked"):
             with self.subTest(scenario=scenario):
                 self.assertEqual(b"refused-503", self.call(scenario))
 
