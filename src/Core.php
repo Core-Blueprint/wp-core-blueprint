@@ -463,6 +463,7 @@ final class Core {
 		delete_transient( Failsafe::BYPASS_TRANSIENT );
 
 		Retention::unschedule();
+		\CoreBlueprint\Core\DataExchange\ResourcePackageController::clear_schedule();
 
 		// Clear Privileged Access Guard cron so deactivation leaves no orphan.
 		\CoreBlueprint\Core\Permissions\PrivilegedAccessGuard::clear_schedule();
