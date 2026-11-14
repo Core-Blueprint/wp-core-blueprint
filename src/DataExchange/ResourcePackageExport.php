@@ -207,7 +207,8 @@ final class ResourcePackageExport {
 
 	private static function resource( mixed $value ): bool {
 		return is_array( $value ) && ! array_is_list( $value )
-			&& array_keys( $value ) === [ 'key', 'sha256', 'size', 'media_type' ]
+			&& count( $value ) === 4
+			&& ! array_diff( [ 'key', 'sha256', 'size', 'media_type' ], array_keys( $value ) )
 			&& is_string( $value['key'] ) && strlen( $value['key'] ) <= 96
 			&& 1 === preg_match( '/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/D', $value['key'] )
 			&& is_string( $value['sha256'] ) && 1 === preg_match( '/^[a-f0-9]{64}$/D', $value['sha256'] )
