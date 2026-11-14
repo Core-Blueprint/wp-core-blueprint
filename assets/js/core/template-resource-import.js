@@ -234,7 +234,9 @@ export function createImportControl( options ) {
         }
     }
 
-    button.addEventListener( 'click', () => { void start(); } );
+    // Returning the Promise is harmless to DOM event dispatch and allows
+    // deterministic lifecycle checks in the independent regression fixture.
+    button.addEventListener( 'click', () => start() );
     sync();
     return Object.freeze( {
         node: container,
