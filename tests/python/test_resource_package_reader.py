@@ -163,7 +163,7 @@ class ScopedResourceReadTests(unittest.TestCase):
             with self.subTest(scenario=scenario):
                 result = self.run_scenario(scenario)
                 self.assertTrue(result["preview_denied"], result)
-        self.assertTrue(result["replan_denied"], result)
+                self.assertTrue(result["replan_denied"], result)
                 self.assertEqual("cb_core_resource_package_binding_invalid", result["apply_status"])
                 self.assertEqual(0, result["stage_reads"], result)
                 self.assertIsNone(result["read_digest"], result)
