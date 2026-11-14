@@ -67,8 +67,15 @@ test('FIELD-05D: Design resources own a two-column grid, radio first and text se
 
 test('FIELD-05D: shared template grid and global Library retain safe semantics', () => {
     assert.match(browserStyles, /\.cb-template-browser--workspace\[data-browser-view="templates"\] \.cb-template-browser__grid\s*\{/);
-    assert.match(browserSource, /const article = el\( contextual && !menu \? 'label' : 'article', 'cb-template-browser__card' \)/);
+    // TL-1C: Preview joins Actions as a sibling of the selectable label.
+    // A contextual card is itself a label only when it has no sibling controls.
+    assert.match(browserSource, /const previewable = providerSupportsPreview\( item \);/);
+    assert.match(browserSource, /const article = el\( contextual && !menu && !previewable \? 'label' : 'article',\s*'cb-template-browser__card' \)/);
+    assert.match(browserSource, /const selection = contextual && \( menu \|\| previewable \)\s*\? el\( 'label', 'cb-template-browser__card-select' \) : article;/);
     assert.match(browserSource, /selection\.append\( preview \)/);
+    assert.match(browserSource, /if \( selection !== article \) article\.append\( selection \);/);
+    assert.match(browserSource, /if \( previewable \) \{[\s\S]*?article\.append\( button \);/);
+    assert.match(browserSource, /if \( menu \) \{[\s\S]*?article\.append\( actions \);/);
     assert.match(browserStyles, /\.cb-template-library-page \.cb-template-browser \{/);
     assert.match(formControls, /:is\(\.cb-core-wrap, \.cb-core-form-scope\) label:has\( > input\[type="radio"\]:disabled \)/);
 });
