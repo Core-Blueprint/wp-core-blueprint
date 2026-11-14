@@ -73,6 +73,7 @@ function harness(modalHook = async () => false, fixtures = {}) {
     const executable = browserSource
         .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = globalThis.modalHook;')
         .replace("import { createActionMenu } from '@cb-core/template-actions';", 'const createActionMenu = () => null;')
+        .replace("import { createImportControl } from '@cb-core/template-resource-import';", 'const createImportControl = () => null;')
         .replace('export { createBrowser, open, loadForApply };', '')
         .replace('export default api;', '');
     runInNewContext(executable, sandbox, { timeout: 1000 });
