@@ -487,7 +487,7 @@ test('TL-M3A-R1: global workspace is contained while Designer modal owns its fra
     assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__toolbar\s*\{[^}]*display: grid;[^}]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
     assert.match(styles, /\.cb-template-browser--workspace \.cb-template-browser__field > span\s*\{[^}]*position: static;/,
         'visible labels are owned once by the shared Workspace, not the global-only CSS');
-    assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__card-preview\s*\{[^}]*height: 104px;/);
+    assert.match(styles, /\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__card-preview\s*\{[^}]*height: 142px;/);
     assert.match(styles, /@media \(max-width: 480px\)\s*\{[^}]*\.cb-template-library-page \.cb-template-browser--workspace \.cb-template-browser__toolbar/);
     assert.match(styles, /\.cb-template-browser--workspace\.cb-template-browser--with-sections \.cb-template-browser__content\s*\{[^}]*grid-row: auto;[^}]*grid-column: 1;/);
     assert.match(styles, /\.cb-template-browser--workspace\.cb-template-browser--with-sections \.cb-template-browser__collections\s*\{[^}]*grid-row: auto;[^}]*grid-column: 1;/);
