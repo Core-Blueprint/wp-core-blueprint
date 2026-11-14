@@ -42,6 +42,9 @@ test( 'T4-01J download never accepts URLs, server paths, resource bytes or calle
     assert.match( download, /ResourcePackageExport::discard\( \$path, \$root \)/ );
     assert.match( download, /Cache-Control: private, no-store, max-age=0/ );
     assert.match( download, /X-Content-Type-Options: nosniff/ );
+    assert.match( download, /AuditLog::log\(/ );
+    assert.match( download, /template_package_export_delivery/ );
+    assert.match( download, /\$ready = false !== \$audit/ );
     assert.match( registry, /ResourcePackageExport::create\(/ );
     assert.match( registry, /ResourcePackageExport::discard\(/ );
 } );
