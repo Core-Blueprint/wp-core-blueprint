@@ -21,6 +21,7 @@ namespace {
     $GLOBALS['bytes'] = 'verified-resource-bytes';
     $GLOBALS['scenario'] = $argv[2];
     $GLOBALS['replan_read_denied'] = false;
+    $GLOBALS['replan_probes'] = 0;
     function get_current_user_id(): int { return $GLOBALS['actor']; }
 }
 namespace CoreBlueprint\Core\DataExchange {
@@ -83,6 +84,7 @@ namespace CoreBlueprint\Core\DataExchange {
             // The second Engine plan is not the canonical apply callback:
             // digest bytes must remain inaccessible until the fingerprint
             // has already been checked by the real Engine.
+            ++$GLOBALS['replan_probes'];
             $probe = ResourcePackageImport::read_resource($plan, $context, 'brand-logo');
             $GLOBALS['replan_read_denied'] = $probe instanceof \WP_Error
                 && $probe->get_error_code() === 'cb_core_resource_package_binding_invalid';
@@ -107,10 +109,13 @@ namespace CoreBlueprint\Core\DataExchange {
     $out = [
         'preview_valid' => !is_wp_error($pre) && ($pre['valid'] ?? false),
         'preview_denied' => $GLOBALS['preview_denied'] ?? false,
-        'replan_denied' => $GLOBALS['replan_read_denied'],
         'reads_after_preview' => $GLOBALS['stage_reads'],
     ];
     $result = Bridge::apply('ticket', '/private', 'copy-a', str_repeat('f', 64));
+    // The re-plan probe executes inside apply_json(), not preview().
+    // Snapshot its result only after the simulated apply has finished.
+    $out['replan_denied'] = $GLOBALS['replan_read_denied'];
+    $out['replan_probes'] = $GLOBALS['replan_probes'];
     $out['apply_status'] = is_wp_error($result) ? $result->get_error_code() : $result['status'];
     $out['read_digest'] = $GLOBALS['read_digest'] ?? null;
     $out['stage_reads'] = $GLOBALS['stage_reads'];
@@ -142,6 +147,7 @@ class ScopedResourceReadTests(unittest.TestCase):
         self.assertTrue(result["preview_valid"], result)
         self.assertTrue(result["preview_denied"], result)
         self.assertTrue(result["replan_denied"], result)
+        self.assertEqual(1, result["replan_probes"], result)
         self.assertEqual(0, result["reads_after_preview"], result)
         self.assertEqual("complete", result["apply_status"], result)
         import hashlib
@@ -153,6 +159,7 @@ class ScopedResourceReadTests(unittest.TestCase):
         result = self.run_scenario("wrong-key")
         self.assertTrue(result["preview_denied"], result)
         self.assertTrue(result["replan_denied"], result)
+        self.assertEqual(1, result["replan_probes"], result)
         self.assertEqual("cb_core_resource_package_binding_invalid", result["apply_status"])
         self.assertEqual(0, result["stage_reads"], result)
         self.assertIsNone(result["read_digest"], result)
@@ -164,6 +171,7 @@ class ScopedResourceReadTests(unittest.TestCase):
                 result = self.run_scenario(scenario)
                 self.assertTrue(result["preview_denied"], result)
                 self.assertTrue(result["replan_denied"], result)
+                self.assertEqual(1, result["replan_probes"], result)
                 self.assertEqual("cb_core_resource_package_binding_invalid", result["apply_status"])
                 self.assertEqual(0, result["stage_reads"], result)
                 self.assertIsNone(result["read_digest"], result)
