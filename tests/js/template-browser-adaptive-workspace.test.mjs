@@ -203,6 +203,32 @@ test('TL-1A: global and scoped cards show declared provenance without creating n
     }
 });
 
+test('FRG-04: known WordPress/Mail captions are readable without rewriting provider IDs', async () => {
+    const item = { id: 'newsletter', title: 'Welcome', source: 'core',
+        origin: 'built-in', category: 'wordpress', designer: 'mail',
+        version: '2.1', compatible: true, description: 'Example' };
+    const { api } = harness(undefined, {
+        templatePage: () => ({ items: [ item ], next_cursor: null }),
+    });
+    const root = new Element('div');
+    const browser = api.createBrowser(root);
+    await flush();
+    const grid = root.children[0].children[1].children[2];
+    const body = grid.children[0].children.find(child =>
+        child.className.includes('cb-template-browser__card-body'));
+    const metadata = body.children.find(child =>
+        child.className.includes('cb-template-browser__card-meta'));
+    assert.deepEqual(metadata.children.map(child => child.textContent),
+        [ 'Built-in', 'WordPress', 'Mail' ]);
+    const provenance = body.children.find(child =>
+        child.className.includes('cb-template-browser__card-provenance'));
+    assert.deepEqual(provenance.children.map(child => child.textContent),
+        [ 'Source: core', 'v2.1' ]);
+    assert.equal(item.category, 'wordpress', 'display caption must not change provider identity');
+    assert.equal(item.designer, 'mail', 'designer routing keeps raw ID');
+    browser.destroy();
+});
+
 test('TL-1B2 polish: Search and Sort keep visible native labels in both Browser contexts', async () => {
     for (const contextual of [ false, true ]) {
         const { api } = harness(undefined, { sources: [
