@@ -367,7 +367,11 @@ function createBrowser( root, options = {} ) {
     toolbar.prepend( resultHeading, searchField, sortField );
     const importControl = !contextual ? createImportControl( {
         label, nonce: settings.nonce, resourceRoot: settings.resourceRoot,
-        onNotice: text => { if ( !state.destroyed ) message.textContent = text; },
+        onNotice: text => {
+            if ( state.destroyed ) return;
+            state.actionFeedback = text; // Survives the confirmed list refresh.
+            message.textContent = text;
+        },
         onChanged: () => load( true ),
     } ) : null;
     if ( importControl ) toolbar.append( importControl.node );
