@@ -171,6 +171,7 @@ final class CB_Template_Library_Action_Transport_Test extends WP_UnitTestCase {
 		);
 		$reply = rest_do_request( $this->bulk_request( $items ) );
 		self::assertSame( 200, $reply->get_status() );
+		self::assertSame( 'private, no-store', $reply->get_headers()['Cache-Control'] ?? null );
 		$data = $reply->get_data();
 		self::assertSame( 'ready', $data['status'] );
 		self::assertSame( 'core-blueprint-bulk-json-v1', $data['format'] );
@@ -212,6 +213,12 @@ final class CB_Template_Library_Action_Transport_Test extends WP_UnitTestCase {
 		];
 		self::assertSame( 403, rest_do_request( $this->bulk_request( [ $good ], false ) )->get_status() );
 		self::assertSame( 400, rest_do_request( $this->bulk_request( [ $good, $good ] ) )->get_status() );
+		self::assertSame( 400, rest_do_request( $this->bulk_request( array_fill( 0, 13, $good ) ) )->get_status() );
+		$built_in = [
+			'source' => \CoreBlueprint\Core\Mail\Designer\NativeTemplateSource::SOURCE_ID,
+			'templateId' => 'wordpress.new-user', 'revision' => 1,
+		];
+		self::assertSame( 403, rest_do_request( $this->bulk_request( [ $built_in ] ) )->get_status() );
 		$stale = $good;
 		$stale['revision'] = 2;
 		self::assertSame( 409, rest_do_request( $this->bulk_request( [ $stale ] ) )->get_status() );
