@@ -102,6 +102,24 @@ namespace CoreBlueprint\Core\DataExchange {
         $GLOBALS['record']['resources'][] = $second;
     }
     if ($scenario === 'private-root') { $root .= '/non-existent'; }
+    if ($scenario === 'cleanup') {
+        $old = $root . '/' . str_repeat('a', 48) . '.export.zip';
+        $stage = $root . '/' . str_repeat('b', 48) . '.zip';
+        $fresh = $root . '/' . str_repeat('c', 48) . '.export.zip';
+        file_put_contents($old, 'old-export');
+        file_put_contents($stage, 'staged-import');
+        file_put_contents($fresh, 'fresh-export');
+        touch($old, time() - 2000);
+        touch($stage, time() - 2000);
+        clearstatcache();
+        echo json_encode([
+            'pruned' => ResourcePackageExport::prune_expired($root),
+            'stage_preserved' => is_file($stage),
+            'fresh_preserved' => is_file($fresh),
+            'old_removed' => !is_file($old),
+        ], JSON_THROW_ON_ERROR);
+        exit;
+    }
     $loader = static function (array $r) use ($bytes, $scenario): string {
         if ($scenario === 'actor-switch') { $GLOBALS['actor'] = 8; }
         if ($scenario === 'revoked') { $GLOBALS['allowed'] = false; }
@@ -117,7 +135,7 @@ namespace CoreBlueprint\Core\DataExchange {
                    'sha256' => hash_file('sha256', $result['path']) === $result['package_sha256'],
                    'perms' => fileperms($result['path']) & 0077,
                    'resource_count' => count($result['resources'])];
-        unlink($result['path']);
+        $output['discarded'] = ResourcePackageExport::discard($result['path'], $root);
     }
     $output['export_calls'] = $GLOBALS['export_calls'];
     $output['leftovers'] = count(glob($argv[3] . '/*.zip'));
@@ -153,6 +171,14 @@ class ResourcePackageExportTests(unittest.TestCase):
         self.assertEqual(1, result["resource_count"])
         self.assertEqual(2, result["export_calls"])
         self.assertEqual(0, result["leftovers"])
+        self.assertTrue(result["discarded"])
+
+    def test_expired_export_cleanup_never_deletes_import_stage(self):
+        outcome = self.run_case("cleanup")
+        self.assertEqual(1, outcome["pruned"])
+        self.assertTrue(outcome["stage_preserved"])
+        self.assertTrue(outcome["fresh_preserved"])
+        self.assertTrue(outcome["old_removed"])
 
     def test_missing_ziparchive_refuses_before_export_or_storage(self):
         source = r"""<?php
@@ -237,7 +263,7 @@ namespace CoreBlueprint\Core\DataExchange {
                 'returned_digest' => $created['package_sha256'],
                 'private' => (fileperms($created['path']) & 0077) === 0,
                 'resource_count' => count($created['resources'])];
-        unlink($created['path']);
+        $out['discarded'] = ResourcePackageExport::discard($created['path'], $argv[2]);
     }
     $out['leftovers'] = count(glob($argv[2] . '/*.zip'));
     echo json_encode($out, JSON_THROW_ON_ERROR);
@@ -280,6 +306,7 @@ class ResourcePackageExportRealZipTests(unittest.TestCase):
         self.assertTrue(outcome["private"])
         self.assertEqual(1, outcome["resource_count"])
         self.assertEqual(0, outcome["leftovers"])
+        self.assertTrue(outcome["discarded"])
 
     def test_invalid_image_content_is_refused_and_cleaned(self):
         result = self.run_case(b"not-a-valid-png-but-hash-matches")
