@@ -624,10 +624,14 @@ function createBrowser( root, options = {} ) {
             'installed-pack': [ 'packs', 'Installed packs' ],
         };
         const origin = Object.hasOwn( origins, item.origin ) ? origins[item.origin] : null;
+        // Human-facing names only; preserve the exact provider IDs for
+        // filters, routing, authorization and provenance. Unknown IDs stay as-is.
+        const categoryCaption = item.category === 'wordpress' ? 'WordPress' : item.category;
+        const designerCaption = item.designer === 'mail' ? 'Mail' : item.designer;
         meta.append(
             el( 'span', '', origin ? label( ...origin ) : item.origin ),
-            el( 'span', '', item.category ),
-            el( 'span', '', item.designer )
+            el( 'span', '', categoryCaption ),
+            el( 'span', '', designerCaption )
         );
         body.append( meta );
         const provenance = el( 'div', 'cb-template-browser__card-provenance' );
