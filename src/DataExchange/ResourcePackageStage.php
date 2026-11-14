@@ -159,17 +159,26 @@ final class ResourcePackageStage {
 			return self::refuse();
 		}
 		$path = $root . '/' . $payload['id'] . '.zip';
-		$zip = new \ZipArchive();
-		if ( true !== $zip->open( $path, \ZipArchive::CHECKCONS ) ) {
+		if ( is_link( $path ) || ! is_file( $path ) ) {
 			return self::refuse();
 		}
+		$zip = new \ZipArchive();
+		$opened = false;
 		try {
+			if ( true !== $zip->open( $path, \ZipArchive::CHECKCONS ) ) {
+				return self::refuse();
+			}
+			$opened = true;
 			$bytes = $zip->getFromName(
 				'resources/sha256/' . $resource['sha256'],
 				$resource['size'] + 1
 			);
+		} catch ( \Throwable ) {
+			return self::refuse();
 		} finally {
-			$zip->close();
+			if ( $opened ) {
+				$zip->close();
+			}
 		}
 		if ( ! is_string( $bytes ) || strlen( $bytes ) !== $resource['size']
 			|| ! hash_equals( $resource['sha256'], hash( 'sha256', $bytes ) ) ) {
