@@ -96,7 +96,18 @@ function fixture( { preview = true, refuse = false, deferred = null, contextual 
     };
     const code = source
         .replace("import { show as showModal } from '@cb-core/modal';", 'const showModal = globalThis.__showModal || (async () => false);')
-        .replace("import { createActionMenu } from '@cb-core/template-actions';", 'const createActionMenu = () => null;')
+        .replace("import { createActionMenu } from '@cb-core/template-actions';", `
+            const createActionMenu = (_item, options) => {
+                if (!options.previewAvailable || typeof options.onPreview !== 'function') return null;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'cb-template-browser__action-menu';
+                const trigger = document.createElement('button');
+                trigger.className = 'cb-template-browser__action-trigger';
+                trigger.setAttribute('aria-haspopup', 'menu');
+                trigger.addEventListener('click', () => options.onPreview(trigger));
+                wrapper.append(trigger);
+                return { node: wrapper, dispose() {} };
+            };`)
         .replace("import { createImportControl } from '@cb-core/template-resource-import';", 'const createImportControl = () => null;')
         .replace('export { createBrowser, open, loadForApply };', '')
         .replace('export default api;', '');
@@ -111,9 +122,10 @@ function fixture( { preview = true, refuse = false, deferred = null, contextual 
 }
 
 function previewButton( grid ) {
-    return grid.children[0]?.children.find( child =>
-        child.className.includes( 'cb-template-browser__preview-trigger' )
+    const actions = grid.children[0]?.children.find( child =>
+        child.className.includes( 'cb-template-browser__actions' )
     );
+    return actions?.children[0]?.children[0];
 }
 function previewPanel( content ) {
     return content.children.find( child =>
@@ -121,12 +133,14 @@ function previewPanel( content ) {
     );
 }
 
-test('TL-1C-C Browser advertises explicit preview without placing HTML in listing cards', async () => {
+test('TL-1C-C Browser exposes preview exclusively through provider-gated Actions', async () => {
     for ( const contextual of [false, true] ) {
         const f = fixture( { contextual } );
         await nextTurn();
         const button = previewButton( f.grid );
-        assert.ok( button, 'only supported provider receives explicit Preview button' );
+        assert.ok( button, 'provider-supported Preview gets a stable Actions trigger' );
+        assert.equal( button.attributes['aria-haspopup'], 'menu' );
+        assert.equal( f.grid.children[0].children.some( child => child.className.includes( 'cb-template-browser__preview-trigger' ) ), false );
         const card = f.grid.children[0];
         assert.equal( card.tagName, 'ARTICLE', 'actionable card is not an interactive label' );
         if ( contextual ) {
@@ -180,7 +194,7 @@ test('TL-1C-C Browser advertises explicit preview without placing HTML in listin
         assert.equal( ( contextual ? f.content.children[2] : f.grid ).inert, false,
             'template viewport regains keyboard focus' );
         assert.equal( iframe.srcdoc, '', 'closing drops previously authorized HTML from iframe' );
-        assert.equal( button.focused, true, 'keyboard focus restored to Preview trigger' );
+        assert.equal( button.focused, true, 'keyboard focus restored to the stable Actions trigger' );
         f.browser.destroy();
     }
 } );
@@ -277,8 +291,8 @@ test('TL-1C-C security, accessibility and RTL presentation remain Base-owned', (
     assert.match( source, /state\.previewController\?\.abort\(\)/ );
     assert.match( source, /event\.key === 'Escape'/ );
     assert.match( styles, /\.cb-template-browser__preview-panel\[hidden\]/ );
-    assert.match( styles, /\.cb-template-browser__preview-trigger:focus-visible/ );
-    assert.match( styles, /margin-block-start:/ );
+    assert.match( styles, /\.cb-template-browser__action-trigger:focus-visible/ );
+    assert.doesNotMatch( styles, /\.cb-template-browser__preview-trigger/ );
     assert.match( styles, /@media \(max-width: 720px\)/ );
     assert.match( assets, /'preview'\s*=> __\( 'Preview', 'core-blueprint' \)/ );
 } );
