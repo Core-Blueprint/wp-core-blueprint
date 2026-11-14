@@ -188,8 +188,8 @@ test('TL-1A: global and scoped cards show declared provenance without creating n
         assert.ok(body);
         const meta = body.children.find(child =>
             child.className.includes('cb-template-browser__card-meta'));
-        assert.deepEqual(meta.children.map(child => child.textContent), ['Built-in', 'mail', 'mail'],
-            'origin is localized but category and Designer remain provider metadata');
+        assert.deepEqual(meta.children.map(child => child.textContent), ['Built-in', 'Mail', 'Mail'],
+            'known IDs have readable captions; provider identity and provenance stay unchanged');
         const provenance = body.children.find(child =>
             child.className.includes('cb-template-browser__card-provenance'));
         assert.ok(provenance, 'provenance stays visible without opening an action menu');
