@@ -38,6 +38,8 @@ namespace {
     $GLOBALS['skip_binding'] = false;
     $GLOBALS['store'] = [];
     $GLOBALS['apply_calls'] = 0;
+    $GLOBALS['preview_resource_denied'] = null;
+    $GLOBALS['resource_sha256'] = null;
     function get_current_user_id(): int { return $GLOBALS['actor']; }
     function current_user_can(string $capability): bool {
         return $capability === 'upload_files' && $GLOBALS['allowed'];
@@ -109,6 +111,12 @@ namespace {
                 $bound['payload']['cb_resource_package_binding']['resources']) {
                 return new WP_Error('integration_unverified_resource', 'Unverified record asset.');
             }
+            if ($GLOBALS['preview_resource_denied'] === null) {
+                // A plan is bound at preview, but resource bytes are not readable then.
+                $probe = Bridge::read_resource($bound, $context, 'brand-logo');
+                $GLOBALS['preview_resource_denied'] = is_wp_error($probe)
+                    && $probe->get_error_code() === 'cb_core_resource_package_binding_invalid';
+            }
             return $bound;
         }
         public function apply_import(array $plan, array $context = []): array|WP_Error {
@@ -117,6 +125,16 @@ namespace {
                 || isset($GLOBALS['store']['copy-a'])) {
                 return new WP_Error('integration_apply_forbidden', 'Apply forbidden.');
             }
+            $key = !empty($GLOBALS['wrong_resource_key']) ? 'another-key' : 'brand-logo';
+            $bytes = Bridge::read_resource($plan, $context, $key);
+            if (is_wp_error($bytes) || !hash_equals(
+                $plan['payload']['cb_resource_package_binding']['resources'][0]['sha256'],
+                hash('sha256', $bytes)
+            )) {
+                return new WP_Error('integration_media_unavailable', 'Verified resource bytes unavailable.');
+            }
+            // Reference verifies bytes, never creates domain media.
+            $GLOBALS['resource_sha256'] = hash('sha256', $bytes);
             $GLOBALS['store']['copy-a'] = [
                 'owner' => get_current_user_id(),
                 'status' => 'draft',
@@ -148,6 +166,7 @@ namespace {
         $out['preview'] = summarize($pre);
         $out['writes_at_preview'] = count($GLOBALS['store']);
         $out['apply_calls_at_preview'] = $GLOBALS['apply_calls'];
+        $out['preview_resource_denied'] = $GLOBALS['preview_resource_denied'];
         if ($pre instanceof WP_Error || !($pre['valid'] ?? false)) {
             $out['discard'] = Stage::discard($stage, $root, 'copy-a');
         } else {
@@ -157,6 +176,7 @@ namespace {
                 case 'revoked-domain': $GLOBALS['domain_allowed'] = false; break;
                 case 'stale-plan': $GLOBALS['plan_revision'] = 2; break;
                 case 'missing-binding': $GLOBALS['skip_binding'] = true; break;
+                case 'wrong-resource-key': $GLOBALS['wrong_resource_key'] = true; break;
                 case 'mutated-stage':
                     foreach (glob($root . '/*.zip') as $file) {
                         file_put_contents($file, 'PK-modified after preview');
@@ -184,6 +204,7 @@ namespace {
     $out['writes_after'] = count($GLOBALS['store']);
     $out['apply_calls_after'] = $GLOBALS['apply_calls'];
     $out['store'] = $GLOBALS['store'];
+    $out['resource_sha256'] = $GLOBALS['resource_sha256'];
     $out['remaining_files'] = count(glob($root . '/*.zip'));
     echo json_encode($out, JSON_THROW_ON_ERROR);
 }
@@ -258,11 +279,13 @@ class RealPackageEndToEndTests(unittest.TestCase):
         self.assertTrue(result["preview"]["valid"], result)
         self.assertEqual(0, result["writes_at_preview"])
         self.assertEqual(0, result["apply_calls_at_preview"])
+        self.assertTrue(result["preview_resource_denied"], result)
         self.assertFalse(result["preview"]["leaks_binding"])
         self.assertEqual("complete", result["apply"]["status"], result)
         self.assertEqual(1, result["writes_after"])
         self.assertEqual(1, result["apply_calls_after"])
         self.assertEqual("draft", result["store"]["copy-a"]["status"])
+        self.assertEqual(hashlib.sha256(PNG).hexdigest(), result["resource_sha256"])
         self.assertTrue(result["discard"])
         self.assertEqual(0, result["remaining_files"])
 
@@ -308,6 +331,13 @@ class RealPackageEndToEndTests(unittest.TestCase):
         self.assertEqual("cb_core_data_exchange_stale_plan", result["apply"]["error"], result)
         self.assertEqual(0, result["writes_after"])
         self.assertEqual(0, result["apply_calls_after"])
+
+    def test_unknown_resource_key_refused_without_a_domain_write(self):
+        result = self.run_case("wrong-resource-key")
+        self.assertTrue(result["preview_resource_denied"], result)
+        self.assertEqual("failed", result["apply"]["status"], result)
+        self.assertEqual(0, result["writes_after"], result)
+        self.assertIsNone(result["resource_sha256"], result)
 
     def test_missing_consumer_binding_fails_before_apply(self):
         result = self.run_case("missing-binding")
