@@ -27,7 +27,8 @@ namespace {
     function doing_action(string $action): bool {
         return $action === 'core_blueprint_register_template_sources';
     }
-    function did_action(string $action): int { return 1; }
+    // Fixture registers sources directly; real init collection is not run.
+    function did_action(string $action): int { return 0; }
     function add_action(string $name, mixed $callback, int $priority = 10): void {}
     if ($GLOBALS['scenario'] === 'anonymous') $GLOBALS['actor'] = 0;
     if ($GLOBALS['scenario'] === 'no-admin') $GLOBALS['admin'] = false;
