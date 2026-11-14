@@ -91,10 +91,59 @@ function saveJson( item, json ) {
     }
 }
 
+// ZIP delivery is server-generated via one authenticated POST; no public
+// download URL, local filename, provider callback or packaged bytes in JS.
+// A download request is NOT proof that a browser accepted the file.
+function requestResourceZip( item, options ) {
+    if ( !options.globalMode || !options.isCurrent() ||
+        item.resourcePackageExport !== true || typeof options.nonce !== 'string' ||
+        !options.nonce || typeof options.downloadRoot !== 'string' ) return false;
+    let target;
+    try { target = new URL( options.downloadRoot, window.location.href ); }
+    catch { return false; }
+    if ( target.origin !== window.location.origin || target.username || target.password ||
+        target.search || target.hash || !target.pathname.endsWith( '/admin-post.php' ) ||
+        !/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/.test( item.source ) ||
+        !/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/.test( item.id ) ||
+        !/^[1-9][0-9]*(?:\.[0-9]+){0,2}$/.test( item.version ) ) return false;
+    const form = el( 'form' );
+    form.method = 'POST';
+    form.action = target.href;
+    form.target = '_blank';
+    form.rel = 'noopener noreferrer';
+    form.hidden = true;
+    for ( const [ name, value ] of Object.entries( {
+        action: 'cb_core_template_resource_export',
+        _wpnonce: options.nonce,
+        source: item.source, templateId: item.id, version: item.version,
+    } ) ) {
+        const field = el( 'input' );
+        field.type = 'hidden';
+        field.name = name;
+        field.value = value;
+        form.append( field );
+    }
+    document.body.append( form );
+    try {
+        form.submit();
+        return true;
+    } catch {
+        return false;
+    } finally {
+        form.remove();
+    }
+}
+
 export function createActionMenu( item, options ) {
     const revision = validRevision( item.version );
     const declared = Array.isArray( item.actions ) ? item.actions : [];
-    const operations = revision === null ? [] : OPERATIONS.filter( id => declared.includes( id ) );
+    const resourceZip = options.globalMode && item.resourcePackageExport === true
+        && typeof item.version === 'string'
+        && /^[1-9][0-9]*(?:\.[0-9]+){0,2}$/.test( item.version );
+    const operations = [
+        ...( revision === null ? [] : OPERATIONS.filter( id => declared.includes( id ) ) ),
+        ...( resourceZip ? [ 'export-zip' ] : [] ),
+    ];
     const navigation = allowedNavigation( item, options.globalMode );
     if ( !operations.length && !navigation.length ) return null;
 
@@ -256,6 +305,14 @@ export function createActionMenu( item, options ) {
 
     async function action( id ) {
         close( true );
+        if ( id === 'export-zip' ) {
+            // The request opens a separate download response, not a mutation
+            // in the active Designer and not a confirmed browser download.
+            if ( !requestResourceZip( item, options ) ) {
+                options.onNotice( label( 'actionFailed', 'The action could not be confirmed. Check the template before retrying.' ) );
+            }
+            return;
+        }
         if ( id === 'export-json' ) {
             const result = await execute( id );
             if ( result.status === 'ready' && typeof result.data === 'string' ) {
@@ -347,7 +404,8 @@ export function createActionMenu( item, options ) {
     for ( const id of operations ) {
         const titles = {
             rename: [ 'rename', 'Rename' ], duplicate: [ 'duplicate', 'Duplicate' ],
-            'export-json': [ 'exportJson', 'Export JSON' ], delete: [ 'delete', 'Delete' ],
+            'export-json': [ 'exportJson', 'Export JSON' ],
+            'export-zip': [ 'exportZip', 'Export ZIP' ], delete: [ 'delete', 'Delete' ],
         };
         const button = el( 'button', 'cb-template-browser__action-item' +
             ( id === 'delete' ? ' cb-template-browser__action-item--danger' : '' ),
