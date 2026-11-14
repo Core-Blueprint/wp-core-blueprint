@@ -13,7 +13,7 @@ The internal Base resource package bridge now provides an **apply-only, plan-bou
 3. `ResourcePackageStage::read_resource()` verifies the whole private staged package again, reads the exact SHA-256-addressed entry with a 5 MiB bound, checks length/digest and hashes the package after the read. No private path, external URL, attachment ID or media-write authority is returned.
 4. The consumer **must independently** enforce domain document schema, current ACL, destination identity, image decode/re-encode, media ownership, journal/rollback, draft creation and cleanup. Byte integrity alone does not satisfy those responsibilities.
 
-This remains an **internal candidate**, not a public frozen package API or end-user ZIP import workflow. Exact GitHub-blob-parity local read-scope regression: 2/2 PASS on `ResourcePackageImport.php` and `test_resource_package_reader.py`. Real-ZIP integration fixture now includes preview-denial, SHA-matched resource consumption and unknown-key negative cases, but its ZIP-enabled run and full WordPress Level 2/FIELD remain pending. No consumer patch, domain media write or release.
+This remains an **internal candidate**, not a public frozen package API or end-user ZIP import workflow. Exact GitHub-blob-parity local read-scope regression: 3/3 PASS (including wrong actor, destination, resource key and tampered plan) on `ResourcePackageImport.php` and `test_resource_package_reader.py`. Real-ZIP integration fixture now includes preview-denial, SHA-matched resource consumption and unknown-key negative cases, but its ZIP-enabled run and full WordPress Level 2/FIELD remain pending. No consumer patch, domain media write or release.
 
 ## Architectural decision
 
