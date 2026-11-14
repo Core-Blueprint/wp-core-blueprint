@@ -23,6 +23,7 @@ $catalog['messages'] = array_replace(
         'Permanently delete this saved template?' => 'Diese gespeicherte Vorlage endgültig löschen?',
         'I understand this permanently deletes the saved template.' => 'Ich verstehe, dass diese gespeicherte Vorlage endgültig gelöscht wird.',
         'Template JSON downloaded.' => 'Vorlagen-JSON heruntergeladen.',
+        'Export ZIP' => 'ZIP exportieren',
         'Template action completed.' => 'Vorlagenaktion abgeschlossen.',
         'Template changed elsewhere. Reload and try again.' => 'Die Vorlage wurde an anderer Stelle geändert. Laden Sie neu und versuchen Sie es erneut.',
         'You can no longer manage this template.' => 'Sie können diese Vorlage nicht mehr verwalten.',
