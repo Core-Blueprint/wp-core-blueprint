@@ -107,6 +107,47 @@ test('TL-M2: no control without live allowlisted authority and an integer revisi
     assert.equal(h.create({...h.item, actions: ['edit', 'import-zip']}), null);
 });
 
+test('TL-1C polish: Preview-only provider has one read-only menu action and restores trigger focus', async () => {
+    const h = harness();
+    let previewAnchor = null;
+    const only = {...h.item, actions: [], navigation: undefined, version: '1'};
+    assert.equal(h.create(only), null, 'no provider capability means no menu');
+    assert.equal(h.create(only, {previewAvailable: true}), null,
+        'a hint without a Browser-owned Preview callback grants nothing');
+    const menu = h.create(only, {
+        previewAvailable: true, onPreview: anchor => { previewAnchor = anchor; },
+    });
+    assert.ok(menu, 'Preview alone warrants the existing accessible Actions menu');
+    const [trigger, panel] = menu.node.children;
+    assert.equal(panel.children.length, 1);
+    assert.equal(panel.children[0].textContent, 'Preview');
+    assert.equal(panel.children[0].attributes.role, 'menuitem');
+    trigger.click();
+    assert.equal(panel.hidden, false);
+    panel.children[0].click();
+    await flush();
+    assert.equal(previewAnchor, trigger, 'Browser receives the stable Actions trigger');
+    assert.equal(trigger.focused, true);
+    assert.equal(panel.hidden, true);
+    assert.equal(h.requests.length, 0, 'Preview does not POST to management');
+    assert.equal(h.modals.length, 0, 'existing Browser owns preview, not management modal');
+    menu.dispose();
+});
+
+test('TL-1C polish: stale Preview menu cannot invoke Browser callback after actor revalidation', () => {
+    const h = harness();
+    let previews = 0;
+    const menu = h.create({...h.item, actions: []}, {
+        previewAvailable: true, onPreview: () => { previews++; },
+    });
+    menu.node.children[0].click();
+    h.deactivate();
+    menu.node.children[1].children[0].click();
+    assert.equal(previews, 0);
+    assert.equal(h.requests.length, 0);
+    menu.dispose();
+});
+
 test('TL-M2: contextual actions do not reveal global Manage navigation; unsafe links are rejected', () => {
     const h = harness();
     const item = {...h.item, actions: [], navigation: {
