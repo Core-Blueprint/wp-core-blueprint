@@ -23,6 +23,7 @@ final class ResourcePackageController {
 		add_action( 'rest_api_init', [ self::class, 'routes' ] );
 		add_action( 'init', [ self::class, 'schedule_cleanup' ], 10 );
 		add_action( 'core_blueprint_resource_package_cleanup', [ self::class, 'cleanup' ] );
+		add_action( 'admin_post_cb_core_template_resource_export', [ self::class, 'download' ] );
 	}
 
 	/** Opportunistic per-request self-heal of the bounded hourly cleanup job. */
@@ -247,6 +248,91 @@ final class ResourcePackageController {
 		}
 		return ResourcePackageStage::discard( $data['ticket'], $root, $data['destinationId'] )
 			? self::respond( 'discarded', 200 ) : self::respond( 'invalid' );
+	}
+
+	/**
+	 * Authenticated, server-generated ZIP download over POST, not a public URL.
+	 * No pre-generated file path, callback, entity ID or storage root is
+	 * accepted from a browser. The provider must support the opt-in contract.
+	 */
+	public static function download(): void {
+		$actor = get_current_user_id();
+		$input = wp_unslash( $_POST );
+		if ( ( $_SERVER['REQUEST_METHOD'] ?? '' ) !== 'POST'
+			|| ! is_user_logged_in() || $actor < 1
+			|| ! current_user_can( self::CAPABILITY )
+			|| ! self::exact( $input, [ 'action', '_wpnonce', 'source', 'templateId', 'version' ] )
+			|| ( $input['action'] ?? null ) !== 'cb_core_template_resource_export'
+			|| ! is_string( $input['_wpnonce'] )
+			|| ! wp_verify_nonce( $input['_wpnonce'], 'wp_rest' )
+			|| ! self::valid_destination( $input['source'] )
+			|| ! self::valid_destination( $input['templateId'] )
+			|| ! is_string( $input['version'] )
+			|| strlen( $input['version'] ) > 48
+			|| 1 !== preg_match( '/^[1-9][0-9]*(?:\\.[0-9]+){0,2}$/D', $input['version'] )
+			|| headers_sent() ) {
+			wp_die( 'Template package export is unavailable.', '', [ 'response' => 403 ] );
+		}
+		$root = self::private_root();
+		if ( null === $root ) {
+			wp_die( 'Template package export is unavailable.', '', [ 'response' => 503 ] );
+		}
+		$package = \CoreBlueprint\Core\TemplateLibrary\TemplateSourceRegistry::export_resource_package(
+			$input['source'], $input['templateId'], $input['version'], $root
+		);
+		if ( is_wp_error( $package ) || ! is_array( $package ) ) {
+			wp_die( 'Template package export is unavailable.', '', [ 'response' => 403 ] );
+		}
+		$path = $package['path'] ?? null;
+		$digest = $package['package_sha256'] ?? null;
+		$handle = null;
+		$ready = false;
+		$size = 0;
+		try {
+			if ( is_string( $path ) && is_string( $digest )
+				&& 1 === preg_match( '/^[a-f0-9]{64}$/D', $digest )
+				&& 1 === preg_match( '~^' . preg_quote( $root, '~' ) . '/[a-f0-9]{48}\\.export\\.zip$~D', $path )
+				&& ! is_link( $path ) && is_file( $path )
+				&& 0 === ( fileperms( $path ) & 0077 )
+				&& ! headers_sent() ) {
+				$handle = @fopen( $path, 'rb' );
+				$stat = is_resource( $handle ) ? fstat( $handle ) : false;
+				$size = is_array( $stat ) ? ( $stat['size'] ?? 0 ) : 0;
+				$current = @hash_file( 'sha256', $path );
+				$ready = is_int( $size ) && $size > 0 && $size <= self::MAX_UPLOAD_BYTES
+					&& is_string( $current ) && hash_equals( $digest, $current )
+					&& get_current_user_id() === $actor && is_user_logged_in()
+					&& current_user_can( self::CAPABILITY )
+					&& wp_verify_nonce( $input['_wpnonce'], 'wp_rest' )
+					&& ! headers_sent();
+			}
+			if ( $ready ) {
+				header( 'Content-Type: application/zip' );
+				header( 'Content-Disposition: attachment; filename="core-blueprint-template-resources.zip"' );
+				header( 'Content-Length: ' . (string) $size );
+				header( 'Cache-Control: private, no-store, max-age=0' );
+				header( 'X-Content-Type-Options: nosniff' );
+				header( 'Referrer-Policy: no-referrer' );
+				while ( ! feof( $handle ) ) {
+					$bytes = fread( $handle, 65536 );
+					if ( false === $bytes || '' === $bytes ) {
+						break;
+					}
+					echo $bytes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- verified ZIP binary download.
+				}
+			}
+		} finally {
+			if ( is_resource( $handle ) ) {
+				fclose( $handle );
+			}
+			if ( is_string( $path ) ) {
+				ResourcePackageExport::discard( $path, $root );
+			}
+		}
+		if ( ! $ready ) {
+			wp_die( 'Template package export is unavailable.', '', [ 'response' => 503 ] );
+		}
+		exit;
 	}
 
 	private function __construct() {}
