@@ -35,9 +35,15 @@ final class Assets {
 			self::version( 'assets/js/core/template-actions.js' )
 		);
 		wp_enqueue_script_module(
+			'@cb-core/template-resource-import',
+			CB_CORE_URL . 'assets/js/core/template-resource-import.js',
+			[ '@cb-core/modal' ],
+			self::version( 'assets/js/core/template-resource-import.js' )
+		);
+		wp_enqueue_script_module(
 			self::MODULE_ID,
 			CB_CORE_URL . 'assets/js/core/template-browser.js',
-			[ '@cb-core/modal', '@cb-core/template-actions' ],
+			[ '@cb-core/modal', '@cb-core/template-actions', '@cb-core/template-resource-import' ],
 			self::version( 'assets/js/core/template-browser.js' )
 		);
 		if ( ! self::$data_registered ) {
@@ -52,6 +58,7 @@ final class Assets {
 	public static function data( array $existing ): array {
 		$existing['restRoot'] = esc_url_raw( rest_url( BrowserController::ROUTE . '/' ) );
 		$existing['downloadRoot'] = esc_url_raw( admin_url( 'admin-post.php' ) );
+		$existing['resourceRoot'] = esc_url_raw( rest_url( 'core-blueprint/v1/template-resource-package/' ) );
 		$existing['nonce'] = wp_create_nonce( 'wp_rest' );
 		$existing['i18n'] = [
 			'library'     => __( 'Template Library', 'core-blueprint' ),
