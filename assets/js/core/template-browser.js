@@ -560,11 +560,14 @@ function createBrowser( root, options = {} ) {
     }
 
     function renderCard( item, index ) {
-        // Only the server-advertised provider operations become controls.
-        // This is one shared menu in both the Library and Designer Browser.
+        // The same provider-gated preview capability now participates in
+        // the canonical Actions menu. Never introduce a second card control.
+        const previewable = providerSupportsPreview( item );
         const menu = createActionMenu( item, {
             restRoot: settings.restRoot, downloadRoot: settings.downloadRoot,
             nonce: settings.nonce, contextToken: token, globalMode: !contextual, label,
+            previewAvailable: previewable,
+            onPreview: trigger => { void openPreview( item, index, trigger ); },
             isCurrent: () => !state.destroyed && state.view === 'templates'
                 && state.entries[index] === item,
             onOpening: close => {
@@ -583,7 +586,6 @@ function createBrowser( root, options = {} ) {
         } );
         // Interactive menus must never be descendants of a selection label.
         // An actionable card uses a separate label and sibling disclosure.
-        const previewable = providerSupportsPreview( item );
         const article = el( contextual && !menu && !previewable ? 'label' : 'article',
             'cb-template-browser__card' );
         const selection = contextual && ( menu || previewable )
@@ -643,14 +645,6 @@ function createBrowser( root, options = {} ) {
         if ( contextual || !item.compatible ) body.append( stateBadge );
         selection.append( body );
         if ( selection !== article ) article.append( selection );
-        if ( previewable ) {
-            // A separate sibling control: never nest it in a selectable label.
-            const button = el( 'button', 'button cb-template-browser__preview-trigger',
-                label( 'preview', 'Preview' ) );
-            button.type = 'button';
-            button.addEventListener( 'click', () => { void openPreview( item, index, button ); } );
-            article.append( button );
-        }
         if ( menu ) {
             const actions = el( 'div', 'cb-template-browser__actions' );
             actions.append( menu.node );
