@@ -75,13 +75,9 @@ export function createImportControl( options ) {
     button.type = 'button';
     button.className = 'button cb-template-browser__import';
     button.hidden = true;
-    const status = element( 'span' );
-    status.className = 'cb-template-browser__import-status';
-    status.setAttribute( 'role', 'status' );
-    status.setAttribute( 'aria-live', 'polite' );
     const container = element( 'div' );
     container.className = 'cb-template-browser__import-control';
-    container.append( button, status );
+    container.append( button );
 
     let sources = [];
     let destroyed = false;
@@ -91,7 +87,7 @@ export function createImportControl( options ) {
 
     const notify = ( message ) => {
         if ( !destroyed ) {
-            status.textContent = message;
+            // The parent Browser already has the sole polite status region.
             options.onNotice?.( message );
         }
     };
@@ -188,6 +184,12 @@ export function createImportControl( options ) {
             } );
 
             if ( !prepared || !ticket || !fingerprint || destroyed || epoch !== generation ) return;
+            // Base Modal returns before its next-frame focus-restoration task.
+            // Finish that task before opening another top-layer dialog.
+            if ( typeof requestAnimationFrame === 'function' ) {
+                await new Promise( resolve => requestAnimationFrame( resolve ) );
+            }
+            if ( destroyed || epoch !== generation ) return;
             const summary = element( 'p',
                 label( 'importConfirm', 'Create one new draft copy from this verified package?' ) );
             summary.className = 'cb-template-browser__import-summary';
