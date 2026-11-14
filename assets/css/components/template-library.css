@@ -91,12 +91,6 @@
 }
 .cb-template-browser__import-control[hidden] { display: none; }
 .cb-template-browser__import { min-height: 38px; white-space: nowrap; }
-.cb-template-browser__import-status {
-    max-width: 24rem;
-    font-size: 12px;
-    line-height: 1.45;
-    overflow-wrap: anywhere;
-}
 .cb-template-browser__import-body {
     display: grid;
     gap: 14px;
@@ -127,7 +121,6 @@
 .cb-template-browser__import-summary { line-height: 1.5; }
 @media (max-width: 600px) {
     .cb-template-browser__import-control { margin-inline-start: 0; width: 100%; }
-    .cb-template-browser__import-status { max-width: 100%; }
 }
 .cb-template-browser__field { display: grid; gap: 5px; min-width: 135px; font-size: 12px; }
 .cb-template-browser__field--search { flex: 2 1 230px; }
