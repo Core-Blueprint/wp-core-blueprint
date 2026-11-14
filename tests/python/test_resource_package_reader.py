@@ -20,6 +20,7 @@ namespace {
     $GLOBALS['stage_reads'] = 0;
     $GLOBALS['bytes'] = 'verified-resource-bytes';
     $GLOBALS['scenario'] = $argv[2];
+    $GLOBALS['replan_read_denied'] = false;
     function get_current_user_id(): int { return $GLOBALS['actor']; }
 }
 namespace CoreBlueprint\Core\DataExchange {
@@ -55,6 +56,8 @@ namespace CoreBlueprint\Core\DataExchange {
         }
     }
     class Engine {
+        private static bool $in_apply_callback = false;
+        static function in_apply_callback(): bool { return self::$in_apply_callback; }
         static function preview_json(string $json, string $mode, array $context): array|\WP_Error {
             $plan = ResourcePackageImport::bind_plan([
                 'operation' => Foundation::OP_CREATE, 'reference' => 'copy-a',
@@ -77,11 +80,22 @@ namespace CoreBlueprint\Core\DataExchange {
                 'payload' => [], 'warnings' => [],
             ], $context);
             if ($plan instanceof \WP_Error) { return $plan; }
+            // The second Engine plan is not the canonical apply callback:
+            // digest bytes must remain inaccessible until the fingerprint
+            // has already been checked by the real Engine.
+            $probe = ResourcePackageImport::read_resource($plan, $context, 'brand-logo');
+            $GLOBALS['replan_read_denied'] = $probe instanceof \WP_Error
+                && $probe->get_error_code() === 'cb_core_resource_package_binding_invalid';
             if ($GLOBALS['scenario'] === 'wrong-actor') { $GLOBALS['actor'] = 8; }
             if ($GLOBALS['scenario'] === 'wrong-context') { $context['destination_id'] = 'copy-b'; }
             if ($GLOBALS['scenario'] === 'unbound-plan') { unset($plan['payload']['cb_resource_package_binding']); }
             $key = $GLOBALS['scenario'] === 'wrong-key' ? 'different-resource' : 'brand-logo';
-            $bytes = ResourcePackageImport::read_resource($plan, $context, $key);
+            self::$in_apply_callback = true;
+            try {
+                $bytes = ResourcePackageImport::read_resource($plan, $context, $key);
+            } finally {
+                self::$in_apply_callback = false;
+            }
             if ($bytes instanceof \WP_Error) { return $bytes; }
             $GLOBALS['read_digest'] = hash('sha256', $bytes);
             return ['status' => 'complete'];
@@ -93,6 +107,7 @@ namespace CoreBlueprint\Core\DataExchange {
     $out = [
         'preview_valid' => !is_wp_error($pre) && ($pre['valid'] ?? false),
         'preview_denied' => $GLOBALS['preview_denied'] ?? false,
+        'replan_denied' => $GLOBALS['replan_read_denied'],
         'reads_after_preview' => $GLOBALS['stage_reads'],
     ];
     $result = Bridge::apply('ticket', '/private', 'copy-a', str_repeat('f', 64));
@@ -126,6 +141,7 @@ class ScopedResourceReadTests(unittest.TestCase):
         result = self.run_scenario("ok")
         self.assertTrue(result["preview_valid"], result)
         self.assertTrue(result["preview_denied"], result)
+        self.assertTrue(result["replan_denied"], result)
         self.assertEqual(0, result["reads_after_preview"], result)
         self.assertEqual("complete", result["apply_status"], result)
         import hashlib
@@ -136,6 +152,7 @@ class ScopedResourceReadTests(unittest.TestCase):
     def test_unknown_resource_never_reaches_private_stage(self):
         result = self.run_scenario("wrong-key")
         self.assertTrue(result["preview_denied"], result)
+        self.assertTrue(result["replan_denied"], result)
         self.assertEqual("cb_core_resource_package_binding_invalid", result["apply_status"])
         self.assertEqual(0, result["stage_reads"], result)
         self.assertIsNone(result["read_digest"], result)
@@ -146,6 +163,7 @@ class ScopedResourceReadTests(unittest.TestCase):
             with self.subTest(scenario=scenario):
                 result = self.run_scenario(scenario)
                 self.assertTrue(result["preview_denied"], result)
+        self.assertTrue(result["replan_denied"], result)
                 self.assertEqual("cb_core_resource_package_binding_invalid", result["apply_status"])
                 self.assertEqual(0, result["stage_reads"], result)
                 self.assertIsNone(result["read_digest"], result)
