@@ -105,16 +105,39 @@ final class Renderer {
 	}
 
 	/**
+	 * Opt-in, single-pass PDF output with authoritative physical page fragments.
+	 * Consumers must use the typed Flow facade rather than constructing HTML.
+	 *
+	 * @param list<string> $region_ids
 	 * @param array<string,mixed> $options
-	 * @return array{pdf:string,page_count:int|null}
+	 * @return array{pdf:string,page_count:int,page_width_pt:float,page_height_pt:float,regions:array<string,mixed>}
 	 */
-	private function render_document( string $html, array $options, bool $capture_count ): array {
+	public function render_with_page_regions( string $html, array $region_ids, array $options = [] ): array {
+		$result = $this->render_document( $html, $options, true, $region_ids );
+		$geometry = $result['geometry'];
+		return [
+			'pdf' => $result['pdf'],
+			'page_count' => $result['page_count'],
+			'page_width_pt' => $geometry['page_width_pt'],
+			'page_height_pt' => $geometry['page_height_pt'],
+			'regions' => $geometry['regions'],
+		];
+	}
+
+	/**
+	 * @param array<string,mixed> $options
+	 * @param list<string>|null $region_ids
+	 * @return array{pdf:string,page_count:int|null,geometry:array<string,mixed>|null}
+	 */
+	private function render_document( string $html, array $options, bool $capture_count, ?array $region_ids = null ): array {
 		$opts = array_merge( $this->defaults, $options );
 		[ $paper_size, $orientation ] = $this->paper_contract( $opts );
 		$this->require_engine();
 
 		$font_cache = null;
 		$page_count = null;
+		$geometry = null;
+		$collector = null;
 		try {
 			// Dompdf otherwise writes derived font metrics into its vendor tree.
 			// Keep each render's cache private and outside the installed plugin.
@@ -130,11 +153,23 @@ final class Renderer {
 			$dompdf = new \Dompdf\Dompdf( $dompdf_options );
 			$dompdf->setPaper( $paper_size, $orientation );
 			$dompdf->loadHtml( $html );
+			if ( null !== $region_ids ) {
+				$canvas = $dompdf->getCanvas();
+				$collector = new PageRegionCollector(
+					$region_ids,
+					(float) $canvas->get_width(),
+					(float) $canvas->get_height()
+				);
+				$dompdf->setCallbacks( $collector->callbacks() );
+			}
 			$dompdf->render();
-			if ( $capture_count ) {
+			if ( $capture_count || null !== $collector ) {
 				// Real pages belong to this exact rendered PDF, never the
 				// height of the continuous HTML Designer preview.
 				$page_count = $dompdf->getCanvas()->get_page_count();
+			}
+			if ( null !== $collector ) {
+				$geometry = $collector->result( $page_count );
 			}
 			$output = $dompdf->output();
 		} catch ( \Throwable $e ) {
@@ -165,7 +200,7 @@ final class Renderer {
 			throw new RendererException( 'PDF page count unavailable or exceeds the Designer page contract.' );
 		}
 
-		return [ 'pdf' => $output, 'page_count' => $page_count ];
+		return [ 'pdf' => $output, 'page_count' => $page_count, 'geometry' => $geometry ];
 	}
 
 	private function require_engine(): void {
