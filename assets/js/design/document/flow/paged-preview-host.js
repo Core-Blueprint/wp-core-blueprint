@@ -38,6 +38,15 @@ const endpointUrl = (endpoint, baseUrl) => {
 		|| target.username || target.password || target.hash) {
 		throw new TypeError('FLOW_PAGED_PREVIEW_ENDPOINT_UNTRUSTED');
 	}
+	// Restrict arbitrary same-origin POSTs as well as cross-origin URLs.
+	// Future consumers may supply their own Base-owned typed preview route,
+	// never a Save, import or arbitrary REST endpoint.
+	const route = target.searchParams.has('rest_route')
+		? target.searchParams.get('rest_route') : target.pathname;
+	if (typeof route !== 'string'
+		|| !/(?:^|\/)core-blueprint\/v1\/[a-z0-9/-]+\/preview-paged$/.test(route)) {
+		throw new TypeError('FLOW_PAGED_PREVIEW_ENDPOINT_UNTRUSTED');
+	}
 	return target.href;
 };
 
