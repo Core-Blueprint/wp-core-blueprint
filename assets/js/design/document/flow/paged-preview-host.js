@@ -103,7 +103,7 @@ export const createFlowPagedPreviewHost = ({
 		try {
 			// A fresh document revision invalidates prior geometry immediately.
 			// Coalesce bursts of Inspector edits before making a costly PHP
-			// Dompdf request; never permit an old revision to repaint the canvas.
+			// PDF request; never permit an old revision to repaint the canvas.
 			await new Promise(resolve => setTimeout(resolve, 220));
 			if (destroyed || serial !== generation || abortController.signal.aborted) return false;
 			const response = await win.fetch(target, {
