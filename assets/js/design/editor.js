@@ -63,6 +63,7 @@ import {
 	configureDesignerViewports,
 } from './shell/viewports.js';
 import { configureDesignerDocumentView } from './shell/document-view.js';
+import { configureDesignerPageNavigation } from './shell/page-navigation.js';
 import { configureDesignerHistory } from './shell/history.js';
 
 const PROFILE_APIS = Object.freeze({
@@ -690,14 +691,17 @@ const composePlatformChrome = (root, profileId) => {
 		}
 		centerZone.append(viewport);
 	} else {
-		const documentGroup = node('div', 'cb-core-design-shell__toolbar-group', {
-			role: 'group', 'aria-label': 'Document view',
+		// The document icon is page navigation, never a width/zoom switch.
+		// No Flow page descriptors are available until a trusted consumer provides them.
+		const documentGroup = node('div', 'cb-core-design-shell__toolbar-group cb-core-design-shell__page-navigation', {
+			'data-cb-design-shell-page-navigation-group': '',
+			role: 'group', 'aria-label': 'Document pages',
 		});
-		const documentButton = button('Document view', 'data-cb-design-shell-document-view-toggle');
+		const documentButton = button('Pages', 'data-cb-design-shell-page-navigation');
 		decorateDesignerControl(documentButton, 'file-text', {
-			iconOnly: true, label: 'Switch to fixed document width',
+			iconOnly: true, label: 'Page navigation unavailable',
 		});
-		documentButton.setAttribute('aria-pressed', 'true');
+		documentButton.disabled = true;
 		documentGroup.append(documentButton);
 		centerZone.append(documentGroup);
 	}
@@ -1235,7 +1239,7 @@ export const attachTrustedDesignerHost = ({
 			if (activeRegistry.profileId === 'base/mail') {
 				configureDesignerViewports(stagedRoot, {active: 'desktop', signal});
 			} else if (activeRegistry.profileId === 'base/reports') {
-				configureDesignerDocumentView(stagedRoot, {mode: 'fit', signal});
+				configureDesignerPageNavigation(stagedRoot, {signal});
 			}
 			const controller = createDesignerShell(stagedRoot, {
 				session: editor,
@@ -1962,6 +1966,7 @@ export {
 	configureDesignerViewports,
 	configureDesignerHistory,
 	configureDesignerDocumentView,
+	configureDesignerPageNavigation,
 	createDesignerIcon,
 	createDesignerInspectorControls,
 	createDesignerInspectorTextControl,
@@ -2001,6 +2006,7 @@ const publicApi = Object.freeze({
 		configureViewports: configureDesignerViewports,
 		configureHistory: configureDesignerHistory,
 		configureDocumentView: configureDesignerDocumentView,
+		configurePageNavigation: configureDesignerPageNavigation,
 		sidebarRoles: DESIGNER_SIDEBAR_ROLES,
 		viewportOrder: DESIGNER_VIEWPORT_ORDER,
 		paletteRoles: DESIGNER_PALETTE_ROLES,

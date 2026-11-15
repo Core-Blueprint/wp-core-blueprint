@@ -506,6 +506,8 @@ export const createDesignerShell = (root, {
 		// Native dialog owns Tab focus trapping and Escape cancellation.
 		if (document.querySelector?.('dialog[open]')) return;
 		if (document.querySelector?.('.cb-core-design-context-menu:not([hidden])')?.contains?.(event.target)) return;
+		// A Base-owned page menu consumes Escape/Tab before fullscreen exits.
+		if (root.querySelector?.('.cb-core-design-shell__page-menu:not([hidden])')) return;
 		if (event.key === 'Escape') {
 			event.preventDefault();
 			exitFullscreen();

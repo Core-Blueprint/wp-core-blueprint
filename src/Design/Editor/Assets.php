@@ -40,6 +40,8 @@ final class Assets {
 	public const INSPECTOR_COMPOSITION_API = 1;
 	/** Optional shared graph-neutral canvas pan/fit controller. */
 	public const CANVAS_NAVIGATION_API = 2;
+	/** Opt-in verified document-page navigation, independent of Flow PDF pagination. */
+	public const DESIGNER_PAGE_NAVIGATION_API = 1;
 	/** Optional shared flat context menu presenter; no domain authority. */
 	public const DESIGNER_CONTEXT_MENU_API = 1;
 	/** Public fail-closed Exit Guard, not an A2-06 receipt/recovery API. */

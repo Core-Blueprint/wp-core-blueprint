@@ -436,3 +436,61 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 		transform: none;
 	}
 }
+
+
+/* DP-NAV-01 — one Base document-page menu, independent from Flow/PDF width. */
+.cb-core-design-shell__toolbar--designer.has-page-navigation-open {
+	z-index: 70;
+}
+.cb-core-design-shell__page-navigation {
+	position: relative;
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__page-menu {
+	position: fixed;
+	inset-block-start: var(--cb-design-page-menu-top, 0px);
+	inset-inline-start: var(--cb-design-page-menu-left, 8px);
+	z-index: 75;
+	display: grid;
+	gap: var(--cb-space-1, 4px);
+	box-sizing: border-box;
+	width: max-content;
+	min-width: 208px;
+	max-width: min(320px, calc(100vw - 16px));
+	max-height: min(320px, calc(100dvh - 16px));
+	padding: var(--cb-space-2, 8px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+	color: var(--cb-text);
+	background: var(--cb-surface-1);
+	box-shadow: 0 14px 34px rgb(0 0 0 / 24%);
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__page-menu[hidden] {
+	display: none !important;
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__page-menu-item {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 36px;
+	padding: var(--cb-space-2, 8px) var(--cb-space-3, 12px);
+	border: 0;
+	border-inline-start: 3px solid transparent;
+	border-radius: var(--cb-radius-sm);
+	color: var(--cb-text);
+	background: transparent;
+	font: inherit;
+	font-size: var(--cb-fs-sm);
+	text-align: start;
+	overflow-wrap: anywhere;
+	cursor: pointer;
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__page-menu-item:hover,
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__page-menu-item:focus-visible {
+	background: var(--cb-surface-2);
+}
+.cb-core-design-shell__toolbar--designer .cb-core-design-shell__page-menu-item[aria-checked="true"] {
+	border-inline-start-color: var(--cb-accent-strong);
+	font-weight: var(--cb-fw-semibold);
+}
