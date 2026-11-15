@@ -143,3 +143,23 @@ test('DP-NAV-02C invalid PDF+projection envelope fails closed without DOM or Sav
 	assert.equal(root.children.length, 0);
 	host.destroy();
 });
+
+test('DP-NAV-02C failed preview status callback unwinds its mounted PDF and DND targets', async () => {
+	let destroyed = 0;
+	const root = makeRoot(async () => ({
+		ok: true, headers: {get() { return null; }}, json: async () => payload(),
+	}));
+	const host = createFlowPagedPreviewHost({
+		root, pdfJsLoader: async () => ({version: '6.5.438'}),
+		pageSourceFactory: async options => {
+			const source = await sourceFactory(options);
+			return {...source, destroy() { destroyed++; }};
+		},
+		onSource() { throw new Error('Failed to publish current preview source'); },
+	});
+	await assert.rejects(host.render(request), /Failed to publish current preview source/);
+	assert.equal(root.children.length, 0);
+	assert.equal(destroyed, 1);
+	host.destroy();
+	assert.equal(destroyed, 1);
+});
