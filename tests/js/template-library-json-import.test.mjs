@@ -109,7 +109,7 @@ test('MC-02C imports one JSON file as one new personal Mail copy after preflight
 	assert.deepEqual(h.calls.map(x=>x.body.phase),['preview','apply']);
 	assert.equal(h.calls[0].body.source,'core-blueprint-mail-saved');
 	assert.equal(h.calls[1].body.destinationId,h.calls[0].body.destinationId);
-	assert.match(h.calls[1].body.destinationId,/^mail\.saved\.0{0}7{32}$/);
+	assert.match(h.calls[1].body.destinationId,/^mail\.saved\.(?:07){16}$/);
 	assert.equal(h.calls[1].body.fingerprint,'f'.repeat(64));
 	assert.equal(h.calls[1].body.file,h.calls[0].body.file);
 	assert.equal(h.calls[1].opts.headers['X-WP-Nonce'],'test-nonce');
@@ -148,10 +148,21 @@ test('MC-02C unknown post-commit outcome locks out automatic retry',async()=>{
 	assert.equal(h.reloads(),0);
 	// Closing/reopening the Browser in the same page cannot bypass an
 	// uncertain post-commit result or mint another destination.
-	const reopened=harness();
-	assert.equal(reopened.button.disabled,true);
-	reopened.button.click();
-	assert.equal(reopened.input.clicks,0);
+	const reopened=h.context.__api.createJsonImportControl({
+		label:(key,fallback)=>fallback,
+		restRoot:'https://example.test/wp-json/core-blueprint/v1/template-library/',
+		nonce:'test-nonce',contextToken:'',isCurrent:()=>true,
+		onNotice(){},onChanged:async()=>{},
+	});
+	reopened.updateSources([{
+		id:'core-blueprint-mail-saved',
+		jsonImport:{version:1,destinationPrefix:'mail.saved.'},
+	}]);
+	reopened.setVisible(true);
+	assert.equal(reopened.node.children[1].disabled,true);
+	reopened.node.children[1].click();
+	assert.equal(reopened.node.children[2].clicks,0);
+	reopened.destroy();
 });
 
 test('MC-02C shares existing Browser, Mail Data Exchange and save controls',()=>{
