@@ -1,6 +1,6 @@
 # DP-NAV-02C Gate 3B — shared paged PDF surface
 
-**Status: source candidate, NOT a connected WordPress Designer / NOT FIELD accepted.**
+**Status: connected in Base/Reports source, but not yet qualified, packaged or FIELD accepted.**
 Owner: Core Blueprint Base. Overseer: WordPress #94. Main remains MC-02C accepted.
 
 ## Confirmed foundation evidence
@@ -38,14 +38,15 @@ Owner: Core Blueprint Base. Overseer: WordPress #94. Main remains MC-02C accepte
   same-origin, known-name local worker URL and a copied PDF byte snapshot.
 - Rejects untrusted worker origins, version mismatches and invalid or oversized
   PDF bytes. Disables PDF JavaScript eval and XFA during page loading.
-- This module does NOT download PDF.js or import a CDN. There is no bundled
-  `pdf.mjs`/`pdf.worker.min.mjs` in the current branch; a real browser PDF
-  cannot render until the dependency is pinned, license-audited, vendored and
-  included by the WordPress asset/build graph.
+- This module dynamically loads the standard `@cb-core/pdfjs-display` WordPress
+  import-map dependency. It does not download PDF.js or import a CDN.
+  **The actual upstream `pdf.min.mjs`, `pdf.worker.min.mjs`, font/CMap/WASM
+  runtime and LICENSE are not yet vendored/committed.** The browser cannot
+  render until the official pinned distribution has been audited and added.
 
 `assets/css/design/document-paged-surface.css`:
-- Opt-in, scoped responsive paper and accessible semantic overlays; not yet
-  enqueued by a consumer.
+- Opt-in, scoped responsive paper and accessible semantic overlays. Reports
+  now enqueues this only for its native document Designer, never Mail.
 
 `tests/js/design-flow-paged-surface.test.mjs`:
 - Covers paper construction, authoritative page descriptors, lazy draw,
@@ -60,16 +61,18 @@ Owner: Core Blueprint Base. Overseer: WordPress #94. Main remains MC-02C accepte
    module support, no code execution from PDFs, memory limits, and packaging.
    Apache-2.0 is GPLv3-compatible but not GPLv2-only-compatible; verify Core
    Blueprint's GPL-2.0-or-later distribution obligations and retain notices.
-2. **Authenticated unsaved preview transport:** producer compiles authorized
-   typed Flow state, emits the PDF bytes and page-region JSON from the SAME
-   render. Use short-lived no-store, bounded, authenticated transport. Never
-   offer user-controlled arbitrary PDF/HTML entrypoints, remote URLs or site
-   storage by default.
-3. **Controlled integration:** actual Base ESM/WordPress asset registration and
-   opt-in first-party Reports reference UI; native selection/Inspector/Layers
-   mapping and the one DND controller, never parallel save engines. Reconcile
-   PDF rectangle transforms with CSS zoom and scroll, including split text,
-   tables, nested regions and explicit page breaks.
+2. **Authenticated unsaved preview transport:** SOURCE WIRED. The new
+   `/core-blueprint/v1/reports-designer/preview-paged` REST POST duplicates
+   existing strict nonce, authenticated capability, Reports-state and native
+   document-shape admissions. It returns private no-store PDF base64 bytes and
+   associated fragment JSON from the SAME one-pass Dompdf render, without site
+   writes. Verify size, MIME, CSP, actual PHP performance and privacy in FIELD.
+3. **Controlled integration:** SOURCE WIRED. Base exports the public Flow
+   paged host, registers local pinned PDF.js dynamically, and Reports opts into
+   the new paged preview and native DP-NAV-01 controller. Semantic IDs resolve
+   back to trusted document paths for the one shared Selection, DND, Layers
+   and Inspector authority. This must still be proven in live WordPress with
+   actual PDF.js bytes, accurate CSS zoom and split text/table fixtures.
 4. **Consumer boundaries:** no Reports-only renderer or per-consumer reflow.
    Contracts/other Flow consumers opt in after Foundation acceptance; Fixed
    documents remain governed by their own profile capabilities. Mail remains
@@ -88,3 +91,10 @@ selection, acknowledged native page navigation, and destroyed its nodes and
 source exactly once. This does **not** replace `node --test` or browser FIELD.
 
 **No new browser ZIP, site install, merge, release, CI/CD or deployment.**
+
+The vendor admission source is `tools/vendor-pdfjs` (npm-pack SRI verification,
+local LICENSE and asset hash manifest). Both `tools/build-release` and `build-dev`
+refuse an absent or modified vendor bundle. The source-only additions are not
+proof that the pinned npm tarball has been downloaded or a WordPress viewport
+has rendered a real PDF. `docs/DP-NAV-02C-DOCUMENT-RELIABILITY-GATE.md`
+contains the mandatory all-document-consumer acceptance matrix.
