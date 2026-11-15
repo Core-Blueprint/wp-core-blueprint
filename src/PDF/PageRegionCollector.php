@@ -125,7 +125,7 @@ final class PageRegionCollector {
 				}
 			}
 			usort( $this->fragments[ $id ], static fn ( array $a, array $b ): int =>
-				$a['page'] <=> $b['page'] ?: $a['y'] <=> $b['y'] );
+				( $a['page'] <=> $b['page'] ) ?: ( $a['y'] <=> $b['y'] ) );
 		}
 		ksort( $this->fragments, SORT_STRING );
 		return [
