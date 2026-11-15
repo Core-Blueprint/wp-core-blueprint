@@ -70,7 +70,39 @@ def read_version(plugin_file: Path) -> str:
     return header.group(1)
 
 
+def check_pdfjs_vendor(source: Path) -> None:
+    """Fail closed when a PDF viewer is not exactly the audited local build."""
+    directory = source / "assets/vendor/pdfjs"
+    manifest_path = directory / "manifest.json"
+    if not manifest_path.is_file():
+        fail("Pinned local PDF.js bundle is missing; vendor and commit 6.5.438 first.")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        fail("PDF.js manifest could not be read.")
+    expected = {"pdf.min.mjs", "pdf.worker.min.mjs", "LICENSE"}
+    hashes = manifest.get("files")
+    if (manifest.get("package") != "pdfjs-dist@6.5.438"
+        or manifest.get("license") != "Apache-2.0"
+        or not isinstance(hashes, dict)
+        or not expected.issubset(hashes)):
+        fail("PDF.js package provenance/version/license is invalid.")
+    actual = {
+        item.relative_to(directory).as_posix()
+        for item in directory.rglob("*") if item.is_file() and item != manifest_path
+    }
+    if actual != set(hashes):
+        fail("PDF.js runtime file inventory does not match its manifest.")
+    for name, digest in hashes.items():
+        path = directory / name
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > 16 * 1024 * 1024:
+            fail(f"PDF.js runtime artifact missing, linked or oversized: {name}")
+        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            fail(f"PDF.js runtime artifact checksum mismatch: {name}")
+
+
 def collect_files(source: Path) -> list[Path]:
+    check_pdfjs_vendor(source)
     files: list[Path] = []
 
     for relative in ROOT_FILES:
