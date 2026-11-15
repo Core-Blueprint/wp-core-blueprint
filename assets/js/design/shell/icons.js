@@ -27,6 +27,11 @@
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 const ICONS = Object.freeze({
+	// Fixed Elements-sidebar search field.
+	search: Object.freeze([
+		['circle', {cx: '11', cy: '11', r: '8'}],
+		['path', {d: 'm21 21-4.35-4.35'}],
+	]),
 	'history': Object.freeze([
 		['path', { d: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8' }],
 		['path', { d: 'M3 3v5h5' }],

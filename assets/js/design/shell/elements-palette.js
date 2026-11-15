@@ -42,6 +42,9 @@ export const createDesignerElementsPalette = ({
 	const words = {
 		elements: safeText(labels.elements) || 'Elements',
 		dynamicData: safeText(labels.dynamicData) || 'Dynamic Data',
+		search: safeText(labels.search) || 'Search elements and dynamic data',
+		searchPlaceholder: safeText(labels.searchPlaceholder) || 'Search…',
+		noResults: safeText(labels.noResults) || 'No matching elements or dynamic data',
 		actions: Object.fromEntries(['add', 'edit', 'select', 'copy']
 			.map((key) => [key, safeText(labels.actions?.[key]) || ({
 				add: 'Add', edit: 'Edit', select: 'Select', copy: 'Copy',
@@ -49,7 +52,65 @@ export const createDesignerElementsPalette = ({
 	};
 	const root = documentRef.createElement('div');
 	root.className = 'cb-core-design-shell__elements-palette';
+	// The Native Host mounts this sibling AFTER the scrolling list; tabs and
+	// the search footer therefore stay visible while only the cards scroll.
+	const searchElement = documentRef.createElement('div');
+	searchElement.className = 'cb-core-design-shell__elements-search-footer';
+	searchElement.setAttribute('role', 'search');
+	const searchField = documentRef.createElement('label');
+	searchField.className = 'cb-core-design-shell__elements-search-field';
+	const searchIcon = createDesignerIcon('search', documentRef);
+	if (searchIcon) searchField.append(searchIcon);
+	const searchInput = documentRef.createElement('input');
+	searchInput.className = 'cb-core-design-shell__elements-search-input';
+	searchInput.type = 'search';
+	searchInput.value = '';
+	searchInput.maxLength = 120;
+	searchInput.placeholder = words.searchPlaceholder;
+	searchInput.setAttribute('aria-label', words.search);
+	searchInput.setAttribute('autocomplete', 'off');
+	searchInput.setAttribute('spellcheck', 'false');
+	searchInput.setAttribute('data-cb-design-elements-search', '');
+	searchField.append(searchInput);
+	searchElement.append(searchField);
+	const emptyState = documentRef.createElement('p');
+	emptyState.className = 'cb-core-design-shell__elements-no-results';
+	emptyState.textContent = words.noResults;
+	emptyState.setAttribute('role', 'status');
+	emptyState.setAttribute('aria-live', 'polite');
+	emptyState.hidden = true;
+	let visibleSections = [];
+	const filter = () => {
+		const query = String(searchInput.value || '').slice(0, 120).trim().toLocaleLowerCase();
+		let visibleTotal = 0;
+		for (const group of visibleSections) {
+			let visible = 0;
+			for (const entry of group.entries) {
+				const match = !query || entry.searchText.includes(query);
+				entry.control.hidden = !match;
+				if (match) visible += 1;
+			}
+			group.section.hidden = !!query && visible === 0;
+			visibleTotal += visible;
+		}
+		emptyState.hidden = !query || visibleTotal > 0;
+	};
 	let disposed = false;
+	const onSearch = () => {
+		if (disposed) return;
+		filter();
+		root.scrollTop = 0;
+	};
+	const onSearchKeydown = (event) => {
+		if (disposed || event.key !== 'Escape' || !searchInput.value) return;
+		searchInput.value = '';
+		filter();
+		root.scrollTop = 0;
+		event.preventDefault();
+		event.stopPropagation();
+	};
+	searchInput.addEventListener('input', onSearch);
+	searchInput.addEventListener('keydown', onSearchKeydown);
 	let generation = 0;
 	let listeners = [];
 	const releaseListeners = () => {
@@ -160,40 +221,70 @@ export const createDesignerElementsPalette = ({
 		releaseListeners();
 		const version = ++generation;
 		const section = makeSection(words.elements);
+		const groups = [];
+		const elementGroup = {section: section.section, entries: []};
+		groups.push(elementGroup);
+		const searchable = (entry) => [
+			entry.label, entry.id, entry.type, entry.description,
+			entry.value, entry.disabledReason,
+		].filter(value => typeof value === 'string').join(' ').toLocaleLowerCase();
 		const grid = documentRef.createElement('div');
 		grid.className = 'cb-core-design-shell__palette-grid';
-		for (const entry of items) grid.append(card(entry, 'elements', version));
+		for (const entry of items) {
+			const control = card(entry, 'elements', version);
+			grid.append(control);
+			elementGroup.entries.push({control, searchText: searchable(entry)});
+		}
 		section.section.append(grid);
 		const children = [section.section];
 		if (usable) {
 			const data = makeSection(words.dynamicData);
+			data.heading.classList.add('cb-core-design-shell__panel-section-title--icon');
 			const glyph = createDesignerIcon('braces', documentRef);
 			if (glyph) data.heading.prepend(glyph);
+			const dataGroup = {section: data.section, entries: []};
+			groups.push(dataGroup);
 			const tokenGrid = documentRef.createElement('div');
 			tokenGrid.className = 'cb-core-design-shell__palette-grid cb-core-design-shell__dynamic-grid';
-			for (const entry of tokens) tokenGrid.append(card(entry, 'dynamic-data', version));
+			for (const entry of tokens) {
+				const control = card(entry, 'dynamic-data', version);
+				tokenGrid.append(control);
+				dataGroup.entries.push({control, searchText: searchable(entry)});
+			}
 			data.section.append(tokenGrid);
 			children.push(data.section);
 		}
-		root.replaceChildren(...children);
+		// Retain the input, its focus and the query across session/DND refreshes.
+		// The filter only sets hidden; it never rebuilds cards while typing.
+		const oldScrollTop = root.scrollTop;
+		visibleSections = groups;
+		root.replaceChildren(...children, emptyState);
+		filter();
+		root.scrollTop = oldScrollTop;
 		if (focused) {
 			const current = [...root.querySelectorAll('[data-cb-design-element-source]')]
 				.find(item => item.dataset.cbDesignElementSource === focused.source
 					&& item.dataset.cbDesignComponentId === focused.id
-					&& item.dataset.cbDesignElementAction === focused.action && !item.disabled);
-			(current || section.heading).focus();
+					&& item.dataset.cbDesignElementAction === focused.action
+					&& !item.disabled && !item.hidden);
+			(current || (section.section.hidden ? searchInput : section.heading)).focus();
 		}
 	};
 	update({elements, dynamicData});
 	return Object.freeze({
 		element: root,
+		searchElement,
 		update,
 		destroy: () => {
 			if (disposed) return;
 			disposed = true;
 			generation += 1;
 			releaseListeners();
+			searchInput.removeEventListener('input', onSearch);
+			searchInput.removeEventListener('keydown', onSearchKeydown);
+			visibleSections = [];
 			root.replaceChildren();
+			searchElement.replaceChildren();
 		},
 	});
 };

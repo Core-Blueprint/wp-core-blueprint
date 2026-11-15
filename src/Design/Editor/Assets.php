@@ -506,6 +506,9 @@ final class Assets {
 					'elements'     => __( 'Elements', 'core-blueprint' ),
 					'layers'       => __( 'Layers', 'core-blueprint' ),
 					'dynamicData'  => __( 'Dynamic Data', 'core-blueprint' ),
+					'search'       => __( 'Search elements and dynamic data', 'core-blueprint' ),
+					'searchPlaceholder' => __( 'Search…', 'core-blueprint' ),
+					'noResults'    => __( 'No matching elements or dynamic data', 'core-blueprint' ),
 					'actions'      => [
 						'add'    => __( 'Add', 'core-blueprint' ),
 						'edit'   => __( 'Edit', 'core-blueprint' ),

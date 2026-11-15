@@ -1188,3 +1188,116 @@
 	text-wrap: pretty;
 	overflow-wrap: anywhere;
 }
+
+/* MC-02B UX: icon and title share the same alignment baseline. */
+.cb-core-design-shell__panel-section-title--icon {
+	display: flex;
+	align-items: center;
+	gap: var(--cb-space-2);
+	min-height: 22px;
+}
+.cb-core-design-shell__panel-section-title--icon > .cb-core-design-shell__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	align-self: center;
+	flex: 0 0 18px;
+	width: 18px;
+	height: 18px;
+}
+
+/* Shared Native Elements search: tabs stay at the top, only the card list
+ * scrolls, and the search footer stays visible at the bottom. Layers, Inspector
+ * and Settings retain their existing panel overflow and interaction behavior. */
+.cb-core-design-shell--native .cb-core-design-shell__palette--tabbed
+	> .cb-core-design-shell__panel[data-cb-design-shell-panel="elements"]:not([hidden]) {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+.cb-core-design-shell--native .cb-core-design-shell__palette--tabbed [data-cb-design-shell-panel="elements"]
+	> .cb-core-design-shell__panel-body {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 0;
+	min-width: 0;
+	min-height: 0;
+	padding: 0;
+	overflow: hidden;
+}
+.cb-core-design-shell--native .cb-core-design-shell__elements-palette {
+	flex: 1 1 auto;
+	min-height: 0;
+	min-width: 0;
+	padding: var(--cb-space-3);
+	box-sizing: border-box;
+	overflow-x: hidden;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+.cb-core-design-shell--native .cb-core-design-shell__elements-search-footer {
+	flex: 0 0 auto;
+	min-width: 0;
+	padding: var(--cb-space-3);
+	border-top: 1px solid var(--cb-border);
+	background: var(--cb-surface-1);
+}
+.cb-core-design-shell__elements-search-field {
+	display: flex;
+	align-items: center;
+	gap: var(--cb-space-2);
+	width: 100%;
+	min-width: 0;
+	min-height: 42px;
+	padding: 0 var(--cb-space-3);
+	box-sizing: border-box;
+	border: 1px solid var(--cb-border);
+	border-radius: var(--cb-radius-md);
+	background: var(--cb-surface-2);
+	color: var(--cb-text-strong);
+}
+.cb-core-design-shell__elements-search-field:focus-within {
+	border-color: var(--cb-accent);
+	outline: 2px solid var(--cb-accent);
+	outline-offset: 1px;
+}
+.cb-core-design-shell__elements-search-field > .cb-core-design-shell__icon {
+	flex: 0 0 18px;
+	width: 18px;
+	height: 18px;
+	color: var(--cb-text-muted);
+}
+.cb-core-design-shell__elements-search-input {
+	appearance: none;
+	width: 100%;
+	min-width: 0;
+	min-height: 40px;
+	padding: 0;
+	box-sizing: border-box;
+	border: 0 !important;
+	border-radius: 0;
+	background: transparent !important;
+	color: inherit;
+	font: inherit;
+	font-size: var(--cb-fs-sm);
+	box-shadow: none !important;
+	outline: none !important;
+}
+.cb-core-design-shell__elements-search-input::placeholder {
+	color: var(--cb-text-muted);
+	opacity: 1;
+}
+.cb-core-design-shell__elements-no-results {
+	margin: var(--cb-space-3) 0;
+	color: var(--cb-text-muted);
+	font-size: var(--cb-fs-sm);
+	line-height: 1.4;
+	text-align: center;
+}
+/* The stacked widget cards use display:flex!important; hidden must win for
+ * filtered entries, including described Dynamic Data entries on narrow rails. */
+.cb-core-design-shell--native .cb-core-design-shell__elements-palette [hidden] {
+	display: none !important;
+}

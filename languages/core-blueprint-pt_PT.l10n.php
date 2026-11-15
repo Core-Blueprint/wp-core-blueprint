@@ -17,6 +17,10 @@ if ( ! is_array( $catalog ) || ! isset( $catalog['messages'] ) || ! is_array( $c
 $catalog['messages'] = array_replace(
     $catalog['messages'],
     [
+        // MC-02B: pinned Elements palette search footer.
+        'Search elements and dynamic data' => 'Pesquisar elementos e dados dinâmicos',
+        'Search…' => 'Pesquisar…',
+        'No matching elements or dynamic data' => 'Não existem elementos nem dados dinâmicos correspondentes',
         // Shared Template Browser TL-M2 provider-scoped actions.
         'Choose a new template name.' => 'Escolha um novo nome para o modelo.',
         'Name the new copy of this template.' => 'Dê um nome à nova cópia deste modelo.',

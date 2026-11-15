@@ -39,6 +39,30 @@ The catalog never includes a callable resolver, resolved value, runtime mail con
 
 The existing Base Elements palette displays **label**, **provider · group**, the **fictional example**, and the copyable literal `{{binding.key}}`. The click action is **Copy** through the existing clipboard interface only. No HTML injection or markup execution: every field uses `textContent` and is validated before rendering. The catalogue is read-only and does not alter the document, History, Save, delivery, recipients, fallback, or consent.
 
+### Native Elements sidebar polish (MC-02B UX)
+
+The shared `createDesignerElementsPalette()` exposes two presentation surfaces:
+`element` (scrollable widget/Dynamic Data content) and `searchElement`
+(a sibling fixed footer). The native Host mounts both in the Elements panel
+body, below the Elements/Layers tabs; only the list owns vertical scrolling.
+The separate Layers, Inspector and Settings panel scrolling is unchanged.
+
+The search field has an accessible full name and a compact visible placeholder,
+with localized text in all six bundled Base locales. Filtering is immediate,
+case-insensitive, and uses element labels/types/IDs and Dynamic Data
+labels/binding IDs/fictional example descriptions. Non-matching sections and
+cards use true `hidden` semantics; an accessible status explains an empty
+result. Escape clears a non-empty query without closing the Designer drawer.
+
+**Safety and lifecycle:** filtering only changes the hidden state of existing
+cards. It does not replace live drag handles, change Copy/Add/edit intents,
+submit anything to the server, reveal other providers, or persist into a
+design. The search term, input focus and scroll container survive Host palette
+refreshes. Rehydration of the authorized Mail resource still determines which
+provider's binding IDs are available; search cannot discover suppressed tokens.
+The Dynamic Data heading icon and label share one vertically centered flex
+alignment, owned by the Base composition stylesheet.
+
 Rich-text cursor insertion remains a separate capability **not implemented** by this source patch because the current Palette → Host command path offers copy-only token insertion and must not introduce a second editing or History engine. Review keyboard, rich text and undo behavior before adding insertion.
 
 ## Exact-head acceptance requirements

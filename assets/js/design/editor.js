@@ -1685,6 +1685,9 @@ export const attachTrustedDesignerHost = ({
 				labels: {
 					elements: window.cbCoreDesignerLaunch?.paletteLabels?.elements || 'Elements',
 					dynamicData: window.cbCoreDesignerLaunch?.paletteLabels?.dynamicData || 'Dynamic Data',
+					search: window.cbCoreDesignerLaunch?.paletteLabels?.search || 'Search elements and dynamic data',
+					searchPlaceholder: window.cbCoreDesignerLaunch?.paletteLabels?.searchPlaceholder || 'Search…',
+					noResults: window.cbCoreDesignerLaunch?.paletteLabels?.noResults || 'No matching elements or dynamic data',
 					actions: window.cbCoreDesignerLaunch?.paletteLabels?.actions || {
 						add: 'Add', edit: 'Edit', select: 'Select', copy: 'Copy',
 					},
@@ -1737,7 +1740,8 @@ export const attachTrustedDesignerHost = ({
 					}
 				},
 			});
-			elementsPanel.replaceChildren(palette.element);
+			// Native Host owns the fixed footer slot; only palette.element scrolls.
+			elementsPanel.replaceChildren(palette.element, palette.searchElement);
 			const registeredPaletteSources = new Map();
 			const releasePaletteSources = () => {
 				for (const release of registeredPaletteSources.values()) release();
