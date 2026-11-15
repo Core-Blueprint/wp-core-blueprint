@@ -76,7 +76,7 @@ export const validateFlowPageProjection = projection => {
 const selectedRegion = regionId => regionId === null
 	|| (typeof regionId === 'string' && REGION_ID.test(regionId) && regionId.length <= 64);
 
-const pageView = (doc, index, count, projection, labels, onActivate) => {
+const pageView = (doc, index, count, projection, labels, onActivate, resolveRegion) => {
 	const section = doc.createElement('section');
 	section.className = 'cb-core-flow-paged__page';
 	section.setAttribute('data-cb-flow-paged-page', String(index));
@@ -105,7 +105,21 @@ const pageView = (doc, index, count, projection, labels, onActivate) => {
 				? labels[id].trim().slice(0, 100) : 'document element';
 			action.setAttribute('aria-label', 'Select ' + name + ' on page ' + index);
 			action.setAttribute('aria-pressed', 'false');
-			action.disabled = typeof onActivate !== 'function';
+			// Semantic ID is a rendering hint, not authority. Only a trusted
+			// domain resolver may attach the native Host's command/DND handles.
+			const resolved = resolveRegion?.(id);
+			const validPath = Array.isArray(resolved?.path) && resolved.path.length > 0
+				&& resolved.path.length <= 32
+				&& resolved.path.every(part => Number.isSafeInteger(part) && part >= 0);
+			if (validPath && typeof resolved.type === 'string'
+				&& /^[a-z][a-z0-9._-]{1,63}$/.test(resolved.type)) {
+				action.dataset.cbDesignNodePath = JSON.stringify(resolved.path);
+				action.dataset.cbDesignNodeType = resolved.type;
+				if (resolved.draggable === true) {
+					action.dataset.cbDesignNodeDragSource = JSON.stringify(resolved.path);
+				}
+			}
+			action.disabled = typeof onActivate !== 'function' || (resolveRegion !== null && !validPath);
 			if (!action.disabled) action.addEventListener('click', () =>
 				onActivate(Object.freeze({regionId: id, page: index})));
 			overlay.append(action);
@@ -129,7 +143,7 @@ const pageView = (doc, index, count, projection, labels, onActivate) => {
  */
 export const createFlowPagedSurface = ({
 	root, pageSource, projection, navigation = null, onActivate = null,
-	onPageError = null, labels = null, signal = null, zoom = 1,
+	onPageError = null, labels = null, resolveRegion = null, signal = null, zoom = 1,
 } = {}) => {
 	if (!root || typeof root.replaceChildren !== 'function' || !root.ownerDocument?.createElement
 		|| !pageSource || typeof pageSource.getPage !== 'function'
@@ -137,6 +151,7 @@ export const createFlowPagedSurface = ({
 		|| (navigation !== null && typeof navigation.update !== 'function')
 		|| (onActivate !== null && typeof onActivate !== 'function')
 		|| (onPageError !== null && typeof onPageError !== 'function')
+		|| (resolveRegion !== null && typeof resolveRegion !== 'function')
 		|| (labels !== null && (typeof labels !== 'object' || Array.isArray(labels)))
 		|| !bounded(zoom, 0.25, 2) || signal?.aborted) {
 		throw new TypeError('FLOW_PAGED_SURFACE_OPTIONS_INVALID');
@@ -173,7 +188,7 @@ export const createFlowPagedSurface = ({
 		const activate = onActivate === null ? null : intent => {
 			if (!destroyed) onActivate(intent);
 		};
-		const view = pageView(doc, index, descriptor.page_count, descriptor, labels, activate);
+		const view = pageView(doc, index, descriptor.page_count, descriptor, labels, activate, resolveRegion);
 		view.section.style.width = expectedWidth + 'px';
 		// CSS aspect-ratio owns height as the sheet shrinks on narrow screens.
 		view.section.style.maxWidth = '100%';
@@ -182,6 +197,9 @@ export const createFlowPagedSurface = ({
 	}
 	root.replaceChildren(...views.map(view => view.section));
 	root.classList?.add('cb-core-flow-paged');
+	root.dispatchEvent?.(new doc.defaultView.CustomEvent(
+		'cb:designer-dropzones-changed', {bubbles: true}
+	));
 	const evict = () => {
 		if (rendered.size <= MAX_RENDERED_PAGES) return;
 		const candidates = [...rendered.keys()].filter(index => index !== activePage);
@@ -220,8 +238,10 @@ export const createFlowPagedSurface = ({
 			const canvas = doc.createElement('canvas');
 			canvas.width = width;
 			canvas.height = height;
-			canvas.style.width = expectedWidth + 'px';
-			canvas.style.height = expectedHeight + 'px';
+			// The physical bitmap has fixed pixels; CSS follows the responsive
+			// A4 sheet so overlays never drift from the rendered image.
+			canvas.style.width = '100%';
+			canvas.style.height = '100%';
 			const context = canvas.getContext('2d', {alpha: false});
 			if (!context) throw new Error('FLOW_PAGED_CANVAS_CONTEXT_UNAVAILABLE');
 			task = page.render({canvasContext: context, viewport});
@@ -323,6 +343,9 @@ export const createFlowPagedSurface = ({
 		rendered.clear();
 		root.replaceChildren();
 		root.classList?.remove('cb-core-flow-paged');
+		root.dispatchEvent?.(new doc.defaultView.CustomEvent(
+			'cb:designer-dropzones-changed', {bubbles: true}
+		));
 		try { Promise.resolve(pageSource.destroy?.()).catch(() => {}); }
 		catch (_) { /* Best effort. */ }
 		// The owning Designer Session disposes its page-navigation controller.
