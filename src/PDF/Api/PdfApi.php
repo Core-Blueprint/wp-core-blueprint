@@ -66,4 +66,17 @@ final class PdfApi {
 	public static function render_with_page_count( string $html, array $options = [] ): array {
 		return ( new Renderer() )->render_with_page_count( $html, $options );
 	}
+
+	/**
+	 * Single-pass PDF and bounded page-local semantic geometry.
+	 * Region IDs must originate from an authorized typed Document Flow compiler.
+	 * PDF points/frames are internal projection data, not editable DOM.
+	 *
+	 * @param list<string> $region_ids
+	 * @param array<string,mixed> $options
+	 * @return array{pdf:string,page_count:int,page_width_pt:float,page_height_pt:float,regions:array<string,mixed>}
+	 */
+	public static function render_with_page_regions( string $html, array $region_ids, array $options = [] ): array {
+		return ( new Renderer() )->render_with_page_regions( $html, $region_ids, $options );
+	}
 }
