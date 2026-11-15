@@ -79,12 +79,27 @@ def verify() -> None:
 def vendor() -> None:
     if not shutil.which("npm"):
         fail("npm is required once on the developer workstation.")
-    integrity = json.loads(run("npm", "view", PACKAGE, "dist.integrity", "--json"))
+    # The projected `npm view ... dist.integrity --json` field may be
+    # represented differently across npm CLI releases/configurations.
+    # Read the exact-version package metadata instead of assuming a scalar
+    # projection. Integrity must still come from registry metadata, never
+    # from the downloaded tarball we are trying to verify.
+    registry = "https://registry.npmjs.org/"
+    metadata_raw = run("npm", "view", PACKAGE, "--json", "--registry=" + registry)
+    try:
+        metadata = json.loads(metadata_raw)
+    except ValueError:
+        fail("Official npm package metadata is not valid JSON.")
+    if not isinstance(metadata, dict) or metadata.get("name") != "pdfjs-dist" or metadata.get("version") != VERSION:
+        fail("Official npm metadata does not identify the exact pinned PDF.js release.")
+    dist = metadata.get("dist")
+    integrity = dist.get("integrity") if isinstance(dist, dict) else None
     if not isinstance(integrity, str) or not integrity.startswith("sha512-"):
-        fail("npm dist.integrity must be a SHA-512 SRI string.")
+        fail("Official npm package metadata lacks a SHA-512 dist.integrity value.")
     with tempfile.TemporaryDirectory(prefix="cb-pdfjs-vendor-") as temp:
         work = Path(temp)
-        tar_name = run("npm", "pack", PACKAGE, "--ignore-scripts", "--silent", "--pack-destination", str(work)).splitlines()[-1]
+        tar_name = run("npm", "pack", PACKAGE, "--ignore-scripts", "--silent",
+                       "--registry=" + registry, "--pack-destination", str(work)).splitlines()[-1]
         archive = work / tar_name
         blob = archive.read_bytes()
         sha512 = base64.b64encode(hashlib.sha512(blob).digest()).decode("ascii")
