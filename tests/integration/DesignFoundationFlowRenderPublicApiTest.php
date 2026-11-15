@@ -114,7 +114,7 @@ final class CB_Design_Foundation_Flow_Render_Public_Api_Test extends WP_UnitTest
 		self::assertGreaterThanOrEqual( 2, $broken['page_count'] );
 		// Byte-level page markers are a secondary regression assertion only.
 		// The implementation obtains truth from the rendered Dompdf Canvas.
-		self::assertSame( preg_match_all( '/\\/Type\\s*\\/Page\\b/', $broken['pdf'] ), $broken['page_count'] );
+		self::assertSame( $broken['page_count'], preg_match_all( '/\/Type\s*\/Page\b/', $broken['pdf'] ) );
 	}
 
 	public function test_authoritative_pdf_count_handles_natural_a4_overflow(): void {
