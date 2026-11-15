@@ -499,7 +499,6 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Loading saved templates…' => 'A carregar modelos guardados…',
     'Mail template actions' => 'Ações dos modelos de e-mail',
     'Manage Mail templates' => 'Gerir modelos de e-mail',
-    'Manage reusable personal and site templates here. Edit live WordPress and extension notification designs in the Mail Designer.' => 'Gira aqui os modelos reutilizáveis pessoais e do site. Edite as notificações ativas do WordPress e das extensões no Mail Designer.',
     'My templates' => 'Os meus modelos',
     'No saved templates yet.' => 'Ainda não existem modelos guardados.',
     'Rename' => 'Mudar nome',
