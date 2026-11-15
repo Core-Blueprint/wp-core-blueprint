@@ -120,7 +120,13 @@ FlowRenderApi::pdf_with_page_regions(
   on the DP-NAV-02C feature branch, but **runtime tests, Level 1/2, ZIP and
   browser FIELD remain OPEN**.
 
-## Gate 3B — interactive paged browser viewer (NOT IMPLEMENTED)
+## Gate 3B — interactive paged browser viewer (SOURCE CANDIDATE / NOT CONNECTED)
+
+A bounded two-part page-surface and pinned PDF.js adapter have now been added
+on this unmerged feature branch, along with optional CSS and Node tests.
+See `docs/DP-NAV-02C-GATE3B-PAGE-SURFACE.md` for exact capabilities,
+source-only evidence, the unbundled PDF.js dependency, security and next gates.
+No WordPress consumer, transport or page visual is yet connected.
 
 A safe local PDF page renderer, authenticated unsaved-preview transport,
 trusted fragment overlay, native selection/Inspector/Layers/DND mapping,
