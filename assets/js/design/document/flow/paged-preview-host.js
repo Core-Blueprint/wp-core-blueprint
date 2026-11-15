@@ -124,8 +124,9 @@ export const createFlowPagedPreviewHost = ({
 				pageSource.destroy();
 				return false;
 			}
+			let surface = null;
 			try {
-				const surface = createFlowPagedSurface({
+				surface = createFlowPagedSurface({
 					root, pageSource, projection, navigation,
 					resolveRegion, onActivate,
 					signal: abortController.signal,
@@ -138,7 +139,11 @@ export const createFlowPagedPreviewHost = ({
 				onSource?.(envelope.source);
 				return true;
 			} catch (error) {
-				pageSource.destroy();
+				// Failed page/admission/status cannot leave an actionable but
+				// unverified PDF canvas mounted in the native Designer.
+				surface?.destroy();
+				if (current === surface) current = null;
+				if (!surface) pageSource.destroy();
 				throw error;
 			}
 		} catch (error) {
