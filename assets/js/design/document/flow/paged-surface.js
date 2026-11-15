@@ -111,15 +111,17 @@ const pageView = (doc, index, count, projection, labels, onActivate, resolveRegi
 			const validPath = Array.isArray(resolved?.path) && resolved.path.length > 0
 				&& resolved.path.length <= 32
 				&& resolved.path.every(part => Number.isSafeInteger(part) && part >= 0);
-			if (validPath && typeof resolved.type === 'string'
-				&& /^[a-z][a-z0-9._-]{1,63}$/.test(resolved.type)) {
+			const validType = typeof resolved?.type === 'string'
+				&& /^[a-z][a-z0-9._-]{1,63}$/.test(resolved.type);
+			if (validPath && validType) {
 				action.dataset.cbDesignNodePath = JSON.stringify(resolved.path);
 				action.dataset.cbDesignNodeType = resolved.type;
 				if (resolved.draggable === true) {
 					action.dataset.cbDesignNodeDragSource = JSON.stringify(resolved.path);
 				}
 			}
-			action.disabled = typeof onActivate !== 'function' || (resolveRegion !== null && !validPath);
+			action.disabled = typeof onActivate !== 'function'
+				|| (resolveRegion !== null && (!validPath || !validType));
 			if (!action.disabled) action.addEventListener('click', () =>
 				onActivate(Object.freeze({regionId: id, page: index})));
 			overlay.append(action);
@@ -176,6 +178,7 @@ export const createFlowPagedSurface = ({
 	const queue = [];
 	const requested = new Set();
 	const visible = new Set();
+	const intersectionRatio = new Map();
 	const rendered = new Map();
 	let activePage = 1;
 	let selection = null;
@@ -321,8 +324,20 @@ export const createFlowPagedSurface = ({
 				if (!Number.isSafeInteger(index) || index < 1 || index > views.length) continue;
 				if (entry.isIntersecting) {
 					visible.add(index);
+					intersectionRatio.set(index, Number(entry.intersectionRatio) || 0);
 					request(index);
-				} else visible.delete(index);
+				} else {
+					visible.delete(index);
+					intersectionRatio.delete(index);
+				}
+			}
+			if (intersectionRatio.size > 0) {
+				const next = [...intersectionRatio].sort((a, b) =>
+					b[1] - a[1] || a[0] - b[0])[0][0];
+				if (next !== activePage) {
+					activePage = next;
+					navigation?.setActivePage?.('pdf-page-' + next);
+				}
 			}
 			evict();
 		}, {root: null, rootMargin: '600px 0px', threshold: 0});
@@ -343,6 +358,8 @@ export const createFlowPagedSurface = ({
 		rendered.clear();
 		root.replaceChildren();
 		root.classList?.remove('cb-core-flow-paged');
+		try { navigation?.update?.({pages: null, activePageId: '', onNavigate: null}); }
+		catch (_) { /* A disposed navigation host cannot revive page state. */ }
 		root.dispatchEvent?.(new doc.defaultView.CustomEvent(
 			'cb:designer-dropzones-changed', {bubbles: true}
 		));
