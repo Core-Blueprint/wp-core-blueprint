@@ -36,6 +36,10 @@ final class Assets {
 	public const FLOW_PREVIEW_NESTED_REGIONS_API = 1;
 	/** Optional true Dompdf pagination count from the same PDF render (not HTML page geometry). */
 	public const FLOW_PAGED_PAGE_COUNT_API = 1;
+	/** DP-NAV-02C: PDF.js-powered paginated Document Flow viewport, Base-owned. */
+	public const FLOW_PAGED_DOCUMENT_VIEW_API = 1;
+	private const PDFJS_VERSION = '6.5.438';
+	private const PDFJS_VIEW_STYLE = 'cb-core-design-paged-document';
 	/** MC-02B: authorized, resource-scoped and fictional Mail Dynamic Data palette. */
 	public const MAIL_BINDING_CATALOG_API = 1;
 	/** A consumer may authoritatively withhold Save without Base re-enabling it on idle/error. */
@@ -289,13 +293,27 @@ final class Assets {
 			. 'background-image: url("' . CoreBlueprintMark::data_uri() . '");'
 			. '}'
 		);
-		foreach ( [
-			'@cb-core/mail-platform' => 'assets/js/design/mail/platform-adapter.js',
-			'@cb-core/reports-platform' => 'assets/js/design/reports/platform-adapter.js',
-		] as $handle => $path ) {
-			wp_register_script_module( $handle, CB_CORE_URL . $path, [],
-				self::asset_version( $path ) );
-		}
+		// The PDF viewer is a dynamic dependency of Reports only. It does not
+		// load on Mail or other admin routes. Both display module and worker are
+		// local, identically pinned artifacts admitted by the build gate.
+		wp_register_script_module(
+			'@cb-core/pdfjs-display',
+			CB_CORE_URL . 'assets/vendor/pdfjs/pdf.min.mjs',
+			[],
+			self::PDFJS_VERSION
+		);
+		wp_register_script_module(
+			'@cb-core/mail-platform',
+			CB_CORE_URL . 'assets/js/design/mail/platform-adapter.js',
+			[],
+			self::asset_version( 'assets/js/design/mail/platform-adapter.js' )
+		);
+		wp_register_script_module(
+			'@cb-core/reports-platform',
+			CB_CORE_URL . 'assets/js/design/reports/platform-adapter.js',
+			[ [ 'id' => '@cb-core/pdfjs-display', 'import' => 'dynamic' ] ],
+			self::asset_version( 'assets/js/design/reports/platform-adapter.js' )
+		);
 		// A separately registered classic inline handle prints the REST nonce
 		// before the module executes. This is a request CSRF token, not an
 		// ArtifactEvidence identity or permission grant.
@@ -305,6 +323,8 @@ final class Assets {
 			'window.cbCorePlatformV1=' . wp_json_encode( [
 				'restRoot' => esc_url_raw( rest_url() ),
 				'nonce' => wp_create_nonce( 'wp_rest' ),
+				'documentPaged' => true,
+				'pdfjsWorker' => esc_url_raw( CB_CORE_URL . 'assets/vendor/pdfjs/pdf.worker.min.mjs' ),
 				'labels' => self::platform_field_labels(),
 				'saveNotices' => [
 					'saved' => __( 'Changes saved and verified.', 'core-blueprint' ),
@@ -321,6 +341,19 @@ final class Assets {
 			CB_CORE_URL . 'assets/js/design/platform/wordpress-save-adapter.js',
 			[ self::MODULE_ID, '@cb-core/toast', '@cb-core/mail-platform', '@cb-core/reports-platform', '@cb-core/select-picker' ],
 			self::asset_version( 'assets/js/design/platform/wordpress-save-adapter.js' )
+		);
+	}
+
+	/**
+	 * Standard PDF.js page-view styling for paginated Document Flow consumers.
+	 * Loaded only on actual document Designer routes, never on Mail.
+	 */
+	public static function enqueue_document_pdf_viewer(): void {
+		wp_enqueue_style(
+			self::PDFJS_VIEW_STYLE,
+			CB_CORE_URL . 'assets/css/design/document-paged-surface.css',
+			[ self::SHELL_STYLE ],
+			self::asset_version( 'assets/css/design/document-paged-surface.css' )
 		);
 	}
 
