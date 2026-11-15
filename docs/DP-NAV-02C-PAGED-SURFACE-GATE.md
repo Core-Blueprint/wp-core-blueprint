@@ -1,6 +1,6 @@
 # DP-NAV-02C — physical page-to-semantic-fragment engineering gate
 
-Status: **PROOF ONLY / NO PAGED UI**. Base owner: Core Blueprint. Started from
+Status: **GATE 2 USER PASS; OPTIONAL BACKEND PROJECTION SOURCE CANDIDATE / NO PAGED UI**. Base owner: Core Blueprint. Started from
 `main@2ac4a9c3561410374ed0e5c48ae291d9a091f0bc`.
 
 Related canonical roadmap: WordPress Overseer #94, with #93 (navigation),
@@ -74,7 +74,60 @@ Summarize `status`, `proof`, `page_dimensions`, `geometry.clipped_fragments`,
 `geometry.samples` for the five cases. Preserve the full JSON locally.
 A failing result is a diagnostic gate, not a reason to weaken bounds.
 
-## Gate 3 — actual Foundation paged-source contract (not yet implemented)
+## Gate 2 user-run result — physical geometry proven on synthetic cases
+
+At `f8392c60116eba6632c3f7a38b228e1328b14635`, Chris ran the
+extended actual Dompdf proof: **5/5 PASS, PROOF_CANDIDATE, exit 0**.
+A4 page dimensions are 595.28 × 841.89 PDF points. The one-page, split
+paragraph, table spill, nested split and explicit break probes reported
+zero invalid/outside/clipped fragments and consistent per-page coordinates.
+
+Examples: the split paragraph occupies page-local rectangle
+`(51.02,42.52,493.23,742.63)` on pages 1–3 and shorter last-page
+rectangle `(51.02,42.52,493.23,649.8)` on page 4. Nested fragments
+similarly preserve stable semantic identity across pages; the explicit
+page break places `r2` only on page 2.
+
+These are synthetic, sampled frame boxes. They are **not** independently
+verified pixel-perfect hit targets, do not yet prove repeated table header
+mapping or full report PDF parity, and do not establish a browser viewer.
+
+## Gate 3A — optional Base PDF region projection (source candidate)
+
+New opt-in Flow API (not yet qualified/consumer-enabled):
+
+```php
+FlowRenderApi::pdf_with_page_regions(
+    $layout, $typed_blocks, $locale, $presentation, $preview_regions
+);
+```
+
+- Emits PDF bytes from **one** hardened bundled Dompdf render, together
+  with its actual page count, physical dimensions and bounded region boxes
+  in PDF points; it does not render a second time.
+- The shared Flow renderer inserts *inert, validated region attributes*
+  into the PDF-specific HTML. This preserves normal PDF presentation
+  while allowing Dompdf's end-frame callback to retain fragment identity.
+- `PageRegionCollector` internally enforces ≤500 distinct region IDs,
+  ≤5000 frame fragments, bounded page numbers and canonical box geometry.
+  Missing/invalid/out-of-page data fails closed, not converted to fake pages.
+- Existing `pdf()`, `pdf_with_page_count()` and `preview_html()` retain
+  their existing semantics and public contracts. No consumer or endpoint is
+  automatically opted in.
+- No HTTP route, generated PDF stored on disk, new database schema,
+  third-party dependency or vendor edit is part of Gate 3A.
+- Source implementation and targeted integration tests have been committed
+  on the DP-NAV-02C feature branch, but **runtime tests, Level 1/2, ZIP and
+  browser FIELD remain OPEN**.
+
+## Gate 3B — interactive paged browser viewer (NOT IMPLEMENTED)
+
+A safe local PDF page renderer, authenticated unsaved-preview transport,
+trusted fragment overlay, native selection/Inspector/Layers/DND mapping,
+and actual DP-NAV-01 DOM targets are required. Gate 3A is not evidence
+that the user can see or edit separated A4 pages.
+
+## Gate 3 — actual Foundation paged-source contract (in progress)
 
 Only after Gate 1 evidence:
 
@@ -108,7 +161,7 @@ a fresh internal ZIP, and user FIELD acceptance as separate gates. Acceptance
 must verify 0/1/2/many pages, automatic and explicit breaks, long split text,
 table spill and headers, A4 margins, per-page navigation, keyboard/focus,
 interaction overlays, responsive and zoom behavior, PDF visual parity, and
-security/resource limits. This proof-only source must not be represented as
+security/resource limits. This backend source candidate must not be represented as
 a completed paged A4 editor or an accepted release.
 
 No production consumer patches, merge, CI/CD, release or deployment are
