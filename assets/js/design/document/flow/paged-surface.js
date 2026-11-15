@@ -212,6 +212,8 @@ export const createFlowPagedSurface = ({
 		for (const index of candidates) {
 			if (rendered.size <= MAX_RENDERED_PAGES) break;
 			views[index - 1].visual.replaceChildren();
+			try { rendered.get(index)?.cleanup?.(); }
+			catch (_) { /* Cleanup failure cannot expose stale page controls. */ }
 			rendered.delete(index);
 		}
 	};
@@ -257,7 +259,7 @@ export const createFlowPagedSurface = ({
 			view.visual.replaceChildren(canvas);
 			view.section.dataset.cbFlowPagedStatus = 'ready';
 			rendered.delete(index);
-			rendered.set(index, true);
+			rendered.set(index, page);
 			evict();
 		} catch (error) {
 			if (!destroyed && generation === token) {
@@ -355,6 +357,9 @@ export const createFlowPagedSurface = ({
 			try { task.cancel?.(); } catch (_) { /* Best effort. */ }
 		}
 		rendering.clear();
+		for (const page of rendered.values()) {
+			try { page.cleanup?.(); } catch (_) { /* Best effort. */ }
+		}
 		rendered.clear();
 		root.replaceChildren();
 		root.classList?.remove('cb-core-flow-paged');
