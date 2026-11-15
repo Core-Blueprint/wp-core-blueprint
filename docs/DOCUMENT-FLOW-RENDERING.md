@@ -153,6 +153,34 @@ remain independently authorized.
 
 The Dompdf implementation, security options, paper-point conversion and backend lifecycle remain Base internals. Consumers must not instantiate or configure Dompdf directly.
 
+## DP-NAV-02C — PDF.js module delivery on WordPress hosting
+
+The optional Base-owned paginated browser surface loads two **locally bundled**
+Mozilla PDF.js 6.5.438 ES modules:
+`assets/vendor/pdfjs/pdf.min.mjs` and
+`assets/vendor/pdfjs/pdf.worker.min.mjs`. Neither module may use a remote CDN
+fallback. Browsers reject these imports unless the server responds with a
+JavaScript-compatible `Content-Type` (preferably `text/javascript`); a
+default `application/octet-stream` response does **not** work.
+
+The Base development package contains
+`assets/vendor/pdfjs/.htaccess` with the scoped directive
+`AddType text/javascript .mjs`. The PDF.js vendoring and build checks verify
+the exact policy bytes, but this **does not prove** that a given WordPress
+hosting setup actually honors local `.htaccess` directives. Apache/LiteSpeed
+must permit the corresponding FileInfo override. On deployments using
+Nginx, a restrictive reverse proxy, or a CDN that overrides MIME types,
+configure the equivalent mapping in the responsible server/CDN instead;
+do not bypass module MIME enforcement with a PHP proxy or disable
+the browser's module security.
+
+**FIELD acceptance:** open the native Reports Designer and inspect the real
+Network response headers for **both** module URLs. Each must return HTTP
+`200` and a JavaScript MIME type such as `text/javascript`. Verify a real
+multi-page PDF preview and the paged worker without console MIME errors.
+This check is distinct from Level 1, disposable WordPress Level 2, and ZIP
+integrity because those gates do not control the deployed HTTP server.
+
 ## Internal renderers
 
 The following classes are implementation details and are **not** public consumer APIs even when a method is technically `public`:
