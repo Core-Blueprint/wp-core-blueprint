@@ -44,12 +44,15 @@ const endpointUrl = (endpoint, baseUrl) => {
 export const createFlowPagedPreviewHost = ({
 	root, navigation = null, resolveRegion = null, onActivate = null,
 	onSource = null, onError = null, signal = null,
+	pdfJsLoader = loadBundledPdfJs,
+	pageSourceFactory = createBundledPdfJsPageSource,
 } = {}) => {
 	if (!root?.ownerDocument?.defaultView?.fetch || !root.replaceChildren
 		|| (onActivate !== null && typeof onActivate !== 'function')
 		|| (onSource !== null && typeof onSource !== 'function')
 		|| (onError !== null && typeof onError !== 'function')
 		|| (resolveRegion !== null && typeof resolveRegion !== 'function')
+		|| typeof pdfJsLoader !== 'function' || typeof pageSourceFactory !== 'function'
 		|| signal?.aborted) {
 		throw new TypeError('FLOW_PAGED_PREVIEW_HOST_INVALID');
 	}
@@ -89,6 +92,11 @@ export const createFlowPagedPreviewHost = ({
 		signal?.addEventListener('abort', abort, {once: true});
 		requestSignal?.addEventListener('abort', abort, {once: true});
 		try {
+			// A fresh document revision invalidates prior geometry immediately.
+			// Coalesce bursts of Inspector edits before making a costly PHP
+			// Dompdf request; never permit an old revision to repaint the canvas.
+			await new Promise(resolve => setTimeout(resolve, 220));
+			if (destroyed || serial !== generation || abortController.signal.aborted) return false;
 			const response = await win.fetch(target, {
 				method: 'POST', credentials: 'same-origin', cache: 'no-store',
 				headers: {'Content-Type': 'application/json', 'X-WP-Nonce': nonce, Accept: 'application/json'},
@@ -107,9 +115,9 @@ export const createFlowPagedPreviewHost = ({
 			}
 			const projection = validateFlowPageProjection(envelope.projection);
 			const bytes = decodePdf(envelope.pdf_base64);
-			const pdfjs = await loadBundledPdfJs();
+			const pdfjs = await pdfJsLoader();
 			if (destroyed || serial !== generation || abortController.signal.aborted) return false;
-			const pageSource = await createBundledPdfJsPageSource({
+			const pageSource = await pageSourceFactory({
 				pdfjs, pdfBytes: bytes, workerSrc, baseUrl,
 			});
 			if (destroyed || serial !== generation || abortController.signal.aborted) {
