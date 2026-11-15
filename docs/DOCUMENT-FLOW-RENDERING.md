@@ -17,6 +17,7 @@ Supported v1 methods:
 ```text
 FlowRenderApi::preview_html( $layout, $blocks, $locale, $presentation = null, $preview_regions = [] )
 FlowRenderApi::pdf( $layout, $blocks, $locale, $presentation = null )
+FlowRenderApi::pdf_with_page_count( $layout, $blocks, $locale, $presentation = null )
 FlowRenderApi::is_pdf_available()
 ```
 
@@ -81,9 +82,33 @@ The optional `$preview_regions` map is preview-only Designer metadata. Each sema
 ]
 ```
 
-Every referenced path must resolve to an existing typed `RenderBlock`, and one render path may belong to only one semantic region. Invalid or duplicate paths fail closed. When a region is selected, the isolated preview may apply editor-only outline and minimum-height affordances so even empty blocks remain visible and selectable; those styles are removed when selection clears. Region metadata and editor affordances are never emitted by paged HTML/PDF rendering.
+Every referenced path must resolve to an existing typed `RenderBlock`, and one render path may belong to only one semantic region. Invalid or duplicate paths fail closed. When a region is selected, the isolated preview may apply editor-only outline and minimum-height affordances so even empty blocks remain visible and selectable; those styles are removed when selection clears. Existing `pdf()` and `pdf_with_page_count()` do not emit region metadata or editor affordances. An isolated, opt-in physical-page geometry source candidate is described below; it adds only inert identifiers to the PDF HTML used for the trusted Dompdf pass, never editor styling or scripts.
 
 For browser embedding, consumers should place the returned complete document in an isolated `iframe` using `srcdoc` and a bare `sandbox` attribute. Consumers should not add `allow-scripts`, `allow-same-origin`, remote-resource permissions or other capabilities that the Flow preview does not require.
+
+## DP-NAV-02C — physical PDF region source candidate (NOT browser-page capable yet)
+
+The optional method below is present on a **development branch only**, and is
+**not yet an accepted/released public v1 capability**:
+
+```text
+FlowRenderApi::pdf_with_page_regions( $layout, $blocks, $locale, $presentation = null, $preview_regions = [] )
+```
+
+Typed inputs and the exact validated semantic region map are identical to
+`preview_html()`. The method requires one or more valid region IDs and
+returns `pdf` (binary), `page_count` (actual Canvas), `page_width_pt`,
+`page_height_pt`, and `regions` (ID => ordered page-local PDF-point boxes).
+Boxes are physical Dompdf layout fragments, not DOM nodes or granted editing
+authority. The underlying collector is private to Base and deliberately
+limits IDs, fragment counts, geometry and page number.
+
+The PDF and fragment metadata come from a **single hardened Dompdf render**.
+Ordinary PDF output and continuous HTML preview do not change unless this
+opt-in API is explicitly called. No browser page images, hit testing, site
+storage, transport, page targets or interactive multi-page capability exists
+as part of this backend-only development change. The actual viewer requires
+separate security, performance, PDF visual-parity and FIELD qualification.
 
 ## DP-NAV-02A/B — Scroll ownership and authoritative page counts (source candidate)
 
