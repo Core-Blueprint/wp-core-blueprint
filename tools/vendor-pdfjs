@@ -53,10 +53,9 @@ def verify() -> None:
     if manifest.get("package") != PACKAGE or manifest.get("license") != "Apache-2.0":
         fail("PDF.js version/license mismatch.")
     files = manifest.get("files")
-    if not isinstance(files, dict) or not set(PINNED).issubset(files):
+    required = {name.removeprefix("build/") for name in PINNED}
+    if not isinstance(files, dict) or not required.issubset(files):
         fail("PDF.js vendor manifest is incomplete.")
-    if (OUTPUT / "pdf.min.mjs").name not in files or (OUTPUT / "pdf.worker.min.mjs").name not in files:
-        fail("PDF.js display/worker module entries are absent.")
     current_files = {
         path.relative_to(OUTPUT).as_posix()
         for path in OUTPUT.rglob("*") if path.is_file() and path.name != "manifest.json"
