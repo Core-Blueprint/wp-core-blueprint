@@ -150,7 +150,10 @@ export const createFlowPreviewHost = (iframe, {
 	parentNode.insertBefore(state, iframe);
 
 	iframe.setAttribute('sandbox', 'allow-scripts');
-	iframe.removeAttribute('scrolling');
+	// The Designer workarea, never the isolated Flow iframe, owns scrolling.
+	// The sizing handshake keeps the frame as tall as its complete document.
+	iframe.setAttribute('scrolling', 'no');
+	iframe.style.overflow = 'hidden';
 	iframe.removeAttribute('height');
 	iframe.setAttribute('data-cb-core-flow-preview-host', '1');
 	iframe.style.height = '0px';
@@ -228,6 +231,25 @@ export const createFlowPreviewHost = (iframe, {
 		}, '*');
 	};
 
+	// Sizing bridge reports the child document's content-box height. A
+	// bordered, border-box iframe needs its own decorations ADDED to that
+	// height; otherwise the inner viewport is two pixels too short and
+	// browsers introduce a second scrollbar despite valid size messages.
+	const frameBoxHeight = (contentHeight) => {
+		if (typeof windowRef.getComputedStyle !== 'function') return contentHeight;
+		let style;
+		try { style = windowRef.getComputedStyle(iframe); }
+		catch (_) { return contentHeight; }
+		if (!style || style.boxSizing !== 'border-box') return contentHeight;
+		const dimension = value => {
+			const parsed = Number.parseFloat(value);
+			return Number.isFinite(parsed) && parsed >= 0 && parsed <= 32 ? parsed : 0;
+		};
+		const inset = dimension(style.borderTopWidth) + dimension(style.borderBottomWidth)
+			+ dimension(style.paddingTop) + dimension(style.paddingBottom);
+		return contentHeight + (inset <= 64 ? Math.ceil(inset) : 0);
+	};
+
 	const onMessage = (event) => {
 		if (destroyed || event.source !== iframe.contentWindow) return;
 
@@ -261,12 +283,13 @@ export const createFlowPreviewHost = (iframe, {
 		if (messageGeneration !== activeGeneration) {
 			return;
 		}
-		if (lastAppliedHeight === height) {
+		const boxHeight = frameBoxHeight(height);
+		if (lastAppliedHeight === boxHeight) {
 			return;
 		}
 
-		iframe.style.height = `${height}px`;
-		lastAppliedHeight = height;
+		iframe.style.height = `${boxHeight}px`;
+		lastAppliedHeight = boxHeight;
 
 		if (awaitingFirstSize) {
 			awaitingFirstSize = false;

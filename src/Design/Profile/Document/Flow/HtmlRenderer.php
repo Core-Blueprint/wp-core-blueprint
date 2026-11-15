@@ -97,7 +97,7 @@ final class HtmlRenderer {
 			. '<meta name="cb-core-flow-preview-protocol" content="1">'
 			. '<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; img-src data:; style-src &#39;unsafe-inline&#39;; script-src &#39;sha256-' . self::escape( $bridge_hash ) . '&#39;; base-uri &#39;none&#39;; form-action &#39;none&#39;;">'
 			. '<meta name="viewport" content="width=device-width, initial-scale=1"><style>'
-			. 'html,body{margin:0;padding:0;background:#fff;}'
+			. 'html,body{margin:0;padding:0;overflow:hidden;background:#fff;}'
 			. '.cb-flow-preview-page{box-sizing:border-box;width:100%;max-width:' . $width . 'mm;min-height:' . $height . 'mm;margin:0 auto;padding:' . $padding . ';background:#fff;}'
 			. '.cb-flow-preview-page .cb-flow-block{page-break-before:auto!important;page-break-after:auto!important;page-break-inside:auto!important;break-before:auto!important;break-after:auto!important;break-inside:auto!important;}'
 			. self::presentation_css( $presentation )

@@ -88,11 +88,33 @@ final class Renderer {
 	 * @throws RendererException When rendering fails.
 	 */
 	public function render( string $html, array $options = [] ): string {
+		return $this->render_document( $html, $options, false )['pdf'];
+	}
+
+	/**
+	 * One Dompdf render returns the PDF and its authoritative page count.
+	 * A page count beyond the Designer's supported 500 pages is refused
+	 * ONLY for this optional API; ordinary PDF rendering stays available.
+	 *
+	 * @param array<string,mixed> $options
+	 * @return array{pdf:string,page_count:int}
+	 */
+	public function render_with_page_count( string $html, array $options = [] ): array {
+		$result = $this->render_document( $html, $options, true );
+		return [ 'pdf' => $result['pdf'], 'page_count' => $result['page_count'] ];
+	}
+
+	/**
+	 * @param array<string,mixed> $options
+	 * @return array{pdf:string,page_count:int|null}
+	 */
+	private function render_document( string $html, array $options, bool $capture_count ): array {
 		$opts = array_merge( $this->defaults, $options );
 		[ $paper_size, $orientation ] = $this->paper_contract( $opts );
 		$this->require_engine();
 
 		$font_cache = null;
+		$page_count = null;
 		try {
 			// Dompdf otherwise writes derived font metrics into its vendor tree.
 			// Keep each render's cache private and outside the installed plugin.
@@ -109,6 +131,11 @@ final class Renderer {
 			$dompdf->setPaper( $paper_size, $orientation );
 			$dompdf->loadHtml( $html );
 			$dompdf->render();
+			if ( $capture_count ) {
+				// Real pages belong to this exact rendered PDF, never the
+				// height of the continuous HTML Designer preview.
+				$page_count = $dompdf->getCanvas()->get_page_count();
+			}
 			$output = $dompdf->output();
 		} catch ( \Throwable $e ) {
 			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not HTML output; escape only at the eventual presentation boundary.
@@ -134,7 +161,11 @@ final class Renderer {
 			throw new RendererException( 'PDF rendering produced invalid output.' );
 		}
 
-		return $output;
+		if ( $capture_count && ( ! is_int( $page_count ) || $page_count < 1 || $page_count > 500 ) ) {
+			throw new RendererException( 'PDF page count unavailable or exceeds the Designer page contract.' );
+		}
+
+		return [ 'pdf' => $output, 'page_count' => $page_count ];
 	}
 
 	private function require_engine(): void {

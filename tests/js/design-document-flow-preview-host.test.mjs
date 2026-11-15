@@ -169,7 +169,8 @@ test('host owns opaque sandbox and pre-first-size state without fixed-height fal
 	const env = harness();
 	const host = createFlowPreviewHost(env.iframe);
 	assert.equal(env.iframe.getAttribute('sandbox'), 'allow-scripts');
-	assert.equal(env.iframe.getAttribute('scrolling'), null);
+	assert.equal(env.iframe.getAttribute('scrolling'), 'no');
+	assert.equal(env.iframe.style.overflow, 'hidden');
 	assert.equal(env.iframe.getAttribute('height'), null);
 	assert.equal(env.iframe.style.height, '0px');
 	assert.equal(env.iframe.style.minHeight, '0px');
@@ -813,4 +814,46 @@ test('isolated Flow bridge refuses an invalid geometry set instead of publishing
 	assert.deepEqual(JSON.parse(JSON.stringify(sent)), [
 		{type: 'cb-core-flow-preview-regions', version: 1, generation: 7, regions: null},
 	]);
+});
+
+test('shared Flow host sizes a bordered border-box iframe without an inner scrollbar', () => {
+	const env = harness();
+	// A real Reports iframe is border-box with one-pixel borders. Those
+	// pixels must not reduce the inner document viewport below its content.
+	env.windowRef.getComputedStyle = () => ({
+		boxSizing: 'border-box',
+		borderTopWidth: '1px',
+		borderBottomWidth: '1px',
+		paddingTop: '0px',
+		paddingBottom: '0px',
+	});
+	const host = createFlowPreviewHost(env.iframe);
+	assert.equal(env.iframe.getAttribute('scrolling'), 'no');
+	assert.equal(env.iframe.style.overflow, 'hidden');
+	assert.equal(host.render(canonicalHtml()), true);
+	env.dispatch(env.iframe.contentWindow, sizeMessage(1, 1123));
+	assert.equal(env.iframe.style.height, '1125px');
+	env.dispatch(env.iframe.contentWindow, sizeMessage(1, 8200));
+	assert.equal(env.iframe.style.height, '8202px');
+	host.destroy();
+});
+
+test('shared Flow host does not invent extra height for content-box or absent CSS', () => {
+	const env = harness();
+	env.windowRef.getComputedStyle = () => ({
+		boxSizing: 'content-box',
+		borderTopWidth: '1px', borderBottomWidth: '1px',
+		paddingTop: '0px', paddingBottom: '0px',
+	});
+	const host = createFlowPreviewHost(env.iframe);
+	host.render(canonicalHtml());
+	env.dispatch(env.iframe.contentWindow, sizeMessage(1, 2345));
+	assert.equal(env.iframe.style.height, '2345px');
+	host.destroy();
+});
+
+test('Flow iframe explicitly disables internal document scrolling while keeping sizing bridge', () => {
+	const source = readFileSync(new URL('../../src/Design/Profile/Document/Flow/HtmlRenderer.php', import.meta.url), 'utf8');
+	assert.ok(source.includes('html,body{margin:0;padding:0;overflow:hidden;background:#fff;}'));
+	assert.match(source, /PREVIEW_SIZING_BRIDGE/);
 });

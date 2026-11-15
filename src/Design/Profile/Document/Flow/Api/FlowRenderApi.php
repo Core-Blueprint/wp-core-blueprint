@@ -62,6 +62,21 @@ final class FlowRenderApi {
 	}
 
 	/**
+	 * Return the authoritative paged PDF plus true page count.
+	 *
+	 * This does not expose DOM page boundaries, element positions or page
+	 * targets. Consumers cannot activate the Designer's Page Navigation from
+	 * this count alone while their preview remains continuous HTML.
+	 *
+	 * @param array<string,mixed> $layout
+	 * @param list<RenderBlock> $blocks
+	 * @return array{pdf:string,page_count:int}
+	 */
+	public static function pdf_with_page_count( array $layout, array $blocks, string $locale, ?Presentation $presentation = null ): array {
+		return ( new PdfRenderer() )->render_with_page_count( $layout, $blocks, $locale, $presentation );
+	}
+
+	/**
 	 * Whether the bundled PDF backend is available in the current runtime.
 	 *
 	 * Screen preview rendering does not depend on the PDF backend.

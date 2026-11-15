@@ -85,6 +85,41 @@ Every referenced path must resolve to an existing typed `RenderBlock`, and one r
 
 For browser embedding, consumers should place the returned complete document in an isolated `iframe` using `srcdoc` and a bare `sandbox` attribute. Consumers should not add `allow-scripts`, `allow-same-origin`, remote-resource permissions or other capabilities that the Flow preview does not require.
 
+## DP-NAV-02A/B — Scroll ownership and authoritative page counts (source candidate)
+
+The shared Flow Preview Host owns the sandboxed HTML frame and measures its
+entire continuous document. The **surrounding Designer workarea is the only
+vertical scrolling surface**: inner iframe scrolling is disabled and the parent
+frame receives enough height for its complete inner content, including trusted
+border-box decorations. The existing region/selection, iframe generation,
+strict CSP, security checks, undo/redo, save and drag/drop contracts remain
+unchanged. This single-scroll change applies to any consumer using the public
+`createFlowPreviewHost` boundary, not only Maintenance Reports.
+
+`FlowRenderApi::pdf_with_page_count($layout, $blocks, $locale, $presentation)`
+is an additive opt-in method returning `['pdf' => <binary>, 'page_count' => <int>]`.
+The matching installed Base capability is
+`CoreBlueprint\\Core\\Design\\Editor\\Assets::FLOW_PAGED_PAGE_COUNT_API >= 1`.
+It uses the **same hardened Dompdf render pass** for both outputs; the count
+is read directly from the actual Dompdf Canvas after rendering. The bound is
+1–500 pages, matching the public Designer Page Navigation component. A larger
+output is refused by this *optional metadata method only*; the existing
+`FlowRenderApi::pdf()` remains compatible and does not acquire this UI bound.
+The existing `PdfApi::render()` and all PDF security settings remain unchanged.
+
+**Important limitation:** A correct PDF page count does not provide page
+boundaries, editable HTML page fragments or rendered navigation targets.
+The currently installed continuous `preview_html()` does **not** become
+multiple A4 pages merely because the PDF count is available. Feeding the count
+to the existing Page Navigation UI without an authoritative page surface would
+mislead users and is not permitted. A genuine paged visual renderer with
+interactivity mapping is a separate DP-NAV-02C gate; Reports/Contracts opt-in
+then follows under DP-NAV-03. Never split by CSS height heuristics.
+
+The newly added source tests and this documentation are not a runtime or
+WordPress FIELD acceptance receipt. Merge, deployment and public release
+remain independently authorized.
+
 ## Authoritative PDF output
 
 `pdf()` returns the paged PDF binary for the same typed Flow document. PDF pagination, page counters and fixed per-page footer behavior are authoritative only in this target.

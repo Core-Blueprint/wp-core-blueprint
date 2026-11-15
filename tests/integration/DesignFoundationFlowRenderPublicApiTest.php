@@ -30,6 +30,8 @@ final class CB_Design_Foundation_Flow_Render_Public_Api_Test extends WP_UnitTest
 		self::assertTrue( class_exists( FlowRenderApi::class ) );
 		self::assertTrue( method_exists( FlowRenderApi::class, 'preview_html' ) );
 		self::assertTrue( method_exists( FlowRenderApi::class, 'pdf' ) );
+		self::assertTrue( method_exists( FlowRenderApi::class, 'pdf_with_page_count' ) );
+		self::assertSame( 1, \CoreBlueprint\Core\Design\Editor\Assets::FLOW_PAGED_PAGE_COUNT_API );
 		self::assertTrue( method_exists( FlowRenderApi::class, 'is_pdf_available' ) );
 	}
 
@@ -91,6 +93,38 @@ final class CB_Design_Foundation_Flow_Render_Public_Api_Test extends WP_UnitTest
 
 		self::assertStringStartsWith( '%PDF-', $pdf );
 		self::assertGreaterThanOrEqual( 2, preg_match_all( '/\/Type\s*\/Page\b/', $pdf ) );
+	}
+
+	public function test_authoritative_pdf_count_has_one_or_more_actual_pages(): void {
+		if ( ! FlowRenderApi::is_pdf_available() ) {
+			self::markTestSkipped( 'Bundled PDF backend is not available in this runtime.' );
+		}
+		$single = FlowRenderApi::pdf_with_page_count(
+			$this->layout(), [ RenderBlock::text( 'Single A4 page' ) ], 'en_GB'
+		);
+		self::assertStringStartsWith( '%PDF-', $single['pdf'] );
+		self::assertSame( 1, $single['page_count'] );
+
+		$broken = FlowRenderApi::pdf_with_page_count(
+			$this->layout(),
+			[ RenderBlock::text( 'First page', [ 'break_after' => true ] ), RenderBlock::text( 'Second page' ) ],
+			'en_GB'
+		);
+		self::assertStringStartsWith( '%PDF-', $broken['pdf'] );
+		self::assertGreaterThanOrEqual( 2, $broken['page_count'] );
+		// Byte-level page markers are a secondary regression assertion only.
+		// The implementation obtains truth from the rendered Dompdf Canvas.
+		self::assertSame( preg_match_all( '/\\/Type\\s*\\/Page\\b/', $broken['pdf'] ), $broken['page_count'] );
+	}
+
+	public function test_authoritative_pdf_count_handles_natural_a4_overflow(): void {
+		if ( ! FlowRenderApi::is_pdf_available() ) {
+			self::markTestSkipped( 'Bundled PDF backend is not available in this runtime.' );
+		}
+		$long = array_fill( 0, 48, RenderBlock::text( str_repeat( 'Natural A4 overflow paragraph. ', 5 ) ) );
+		$pages = FlowRenderApi::pdf_with_page_count( $this->layout(), $long, 'en_GB' );
+		self::assertStringStartsWith( '%PDF-', $pages['pdf'] );
+		self::assertGreaterThanOrEqual( 2, $pages['page_count'] );
 	}
 
 	public function test_public_docs_keep_internal_renderers_outside_consumer_contract(): void {

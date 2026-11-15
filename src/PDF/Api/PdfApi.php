@@ -55,4 +55,15 @@ final class PdfApi {
 	public static function render( string $html, array $options = [] ): string {
 		return ( new Renderer() )->render( $html, $options );
 	}
+
+	/**
+	 * Return PDF bytes and trusted page count in one hardened Dompdf pass.
+	 * Caller options cannot enable remote resources, PHP or JavaScript.
+	 *
+	 * @param array<string,mixed> $options
+	 * @return array{pdf:string,page_count:int}
+	 */
+	public static function render_with_page_count( string $html, array $options = [] ): array {
+		return ( new Renderer() )->render_with_page_count( $html, $options );
+	}
 }
