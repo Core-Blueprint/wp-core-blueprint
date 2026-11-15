@@ -92,6 +92,8 @@ before(async () => {
   const destination = join(temporaryDirectory, 'design');
   await cp(new URL('../../assets/js/design/', import.meta.url), destination, { recursive: true });
   await convert(destination);
+  await cp(new URL('../../assets/js/document/', import.meta.url), join(temporaryDirectory, 'document'), {recursive: true});
+  await convert(join(temporaryDirectory, 'document'));
   globalThis.window = {};
   globalThis.Element = NodeElement;
   const imported = await Promise.all([
