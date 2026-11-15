@@ -121,6 +121,21 @@ test('DP-NAV-02C disallows cross-origin preview transport before network or PDF 
 	host.destroy();
 });
 
+test('DP-NAV-02C same-origin REST write endpoints are never valid PDF preview transports', async () => {
+	let requests = 0;
+	const root = makeRoot(async () => {requests++;});
+	const host = createFlowPagedPreviewHost({root});
+	for (const endpoint of [
+		'https://site.test/wp-json/core-blueprint/v1/reports-designer/save',
+		'https://site.test/wp-admin/admin-ajax.php',
+	]) {
+		await assert.rejects(host.render({...request, endpoint}),
+			/FLOW_PAGED_PREVIEW_ENDPOINT_UNTRUSTED/);
+	}
+	assert.equal(requests, 0);
+	host.destroy();
+});
+
 test('DP-NAV-02C cancellation defeats stale debounced PDF requests', async () => {
 	let fetched = 0;
 	const root = makeRoot(async () => { fetched++; });
