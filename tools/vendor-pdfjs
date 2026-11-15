@@ -28,6 +28,13 @@ OPTIONAL = ("build/pdf.renderer.min.mjs", "build/pdf.sandbox.min.mjs")
 DIRECTORIES = ("cmaps/", "standard_fonts/", "wasm/")
 MAX_FILE_BYTES = 16 * 1024 * 1024
 MAX_TOTAL_BYTES = 32 * 1024 * 1024
+# Package-provided bytes remain SHA-pinned separately from Base-owned
+# webserver configuration for strict ESM MIME delivery.
+PDFJS_MIME_RULE = (
+    "# Core Blueprint PDF.js: JavaScript modules require a JavaScript MIME type.\n"
+    "# Scoped to this bundled PDF.js directory (display module and worker).\n"
+    "AddType text/javascript .mjs\n"
+)
 
 
 def fail(message: str) -> "NoReturn":
@@ -49,6 +56,12 @@ def verify() -> None:
     manifest_file = OUTPUT / "manifest.json"
     if not manifest_file.is_file():
         fail("PDF.js vendor manifest is absent; run tools/vendor-pdfjs first.")
+    # Do not include server policy in the npm-verified package inventory. Its
+    # exact first-party bytes are checked independently and packaged by Base.
+    mime_file = OUTPUT / ".htaccess"
+    if (not mime_file.is_file() or mime_file.is_symlink()
+            or mime_file.read_bytes() != PDFJS_MIME_RULE.encode("ascii")):
+        fail("PDF.js local JavaScript MIME policy missing or modified.")
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
     if manifest.get("package") != PACKAGE or manifest.get("license") != "Apache-2.0":
         fail("PDF.js version/license mismatch.")
@@ -58,7 +71,8 @@ def verify() -> None:
         fail("PDF.js vendor manifest is incomplete.")
     current_files = {
         path.relative_to(OUTPUT).as_posix()
-        for path in OUTPUT.rglob("*") if path.is_file() and path.name != "manifest.json"
+        for path in OUTPUT.rglob("*") if path.is_file()
+        and path != manifest_file and path != mime_file
     }
     if current_files != set(files):
         fail("PDF.js vendor contains untracked or missing runtime artifacts.")
@@ -146,6 +160,9 @@ def vendor() -> None:
             target = OUTPUT / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
+        # The package tarball is intact; this local webserver policy is
+        # deliberately not attributed to Mozilla's npm release.
+        (OUTPUT / ".htaccess").write_text(PDFJS_MIME_RULE, encoding="ascii")
         manifest = {
             "package": PACKAGE,
             "version": VERSION,
