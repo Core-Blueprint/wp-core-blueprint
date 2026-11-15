@@ -25,6 +25,8 @@ test('CX02D-P1: supported Designer ESM and global facade never expose Base-manag
 		const dest = join(temporary, 'design');
 		await cp(new URL('../../assets/js/design/', import.meta.url), dest, {recursive: true});
 		await convert(dest);
+		await cp(new URL('../../assets/js/document/', import.meta.url), join(temporary, 'document'), {recursive: true});
+		await convert(join(temporary, 'document'));
 		globalThis.window = {};
 		const module = (path) => import(pathToFileURL(join(dest, path)).href);
 		const publicEditor = await module('editor.mjs');
