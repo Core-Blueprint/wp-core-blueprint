@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+"""Pin Mozilla pdfjs-dist for Core Blueprint's self-hosted document viewer.
+
+No runtime CDN. Fetch only via npm's official registry using npm pack and
+verify the exact package tarball against its npm dist.integrity (SHA-512).
+Never install npm scripts or a node_modules runtime dependency. Vendor the
+minimum display/worker modules and the runtime CMap/font/WASM assets.
+The emitted vendor files MUST be committed before the canonical build.
+"""
+from __future__ import annotations
+
+import base64
+import hashlib
+import json
+from pathlib import Path, PurePosixPath
+import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
+
+SOURCE = Path(__file__).resolve().parents[1]
+OUTPUT = SOURCE / "assets" / "vendor" / "pdfjs"
+VERSION = "6.5.438"
+PACKAGE = "pdfjs-dist@" + VERSION
+PINNED = ("build/pdf.min.mjs", "build/pdf.worker.min.mjs", "LICENSE")
+OPTIONAL = ("build/pdf.renderer.min.mjs", "build/pdf.sandbox.min.mjs")
+DIRECTORIES = ("cmaps/", "standard_fonts/", "wasm/")
+MAX_FILE_BYTES = 16 * 1024 * 1024
+MAX_TOTAL_BYTES = 32 * 1024 * 1024
+
+
+def fail(message: str) -> "NoReturn":
+    raise SystemExit("[pdfjs-vendor] ERROR: " + message)
+
+
+def run(*args: str) -> str:
+    result = subprocess.run(args, check=False, capture_output=True, text=True, cwd=SOURCE)
+    if result.returncode:
+        fail("command failed: " + " ".join(args) + "\n" + result.stderr[-700:])
+    return result.stdout.strip()
+
+
+def hash_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def verify() -> None:
+    manifest_file = OUTPUT / "manifest.json"
+    if not manifest_file.is_file():
+        fail("PDF.js vendor manifest is absent; run tools/vendor-pdfjs first.")
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    if manifest.get("package") != PACKAGE or manifest.get("license") != "Apache-2.0":
+        fail("PDF.js version/license mismatch.")
+    files = manifest.get("files")
+    if not isinstance(files, dict) or not set(PINNED).issubset(files):
+        fail("PDF.js vendor manifest is incomplete.")
+    if (OUTPUT / "pdf.min.mjs").name not in files or (OUTPUT / "pdf.worker.min.mjs").name not in files:
+        fail("PDF.js display/worker module entries are absent.")
+    current_files = {
+        path.relative_to(OUTPUT).as_posix()
+        for path in OUTPUT.rglob("*") if path.is_file() and path.name != "manifest.json"
+    }
+    if current_files != set(files):
+        fail("PDF.js vendor contains untracked or missing runtime artifacts.")
+    size = 0
+    for relative, digest in files.items():
+        path = OUTPUT / relative
+        if path.is_symlink() or not path.is_file():
+            fail("Missing/symlinked artifact: " + relative)
+        payload = path.read_bytes()
+        if len(payload) > MAX_FILE_BYTES or hash_bytes(payload) != digest:
+            fail("Modified or oversized artifact: " + relative)
+        size += len(payload)
+    if size > MAX_TOTAL_BYTES:
+        fail("Vendor exceeds static byte budget.")
+    print(f"[pdfjs-vendor] PASS: {PACKAGE}, {len(files)} assets, {size} bytes")
+
+
+def vendor() -> None:
+    if not shutil.which("npm"):
+        fail("npm is required once on the developer workstation.")
+    integrity = json.loads(run("npm", "view", PACKAGE, "dist.integrity", "--json"))
+    if not isinstance(integrity, str) or not integrity.startswith("sha512-"):
+        fail("npm dist.integrity must be a SHA-512 SRI string.")
+    with tempfile.TemporaryDirectory(prefix="cb-pdfjs-vendor-") as temp:
+        work = Path(temp)
+        tar_name = run("npm", "pack", PACKAGE, "--ignore-scripts", "--silent", "--pack-destination", str(work)).splitlines()[-1]
+        archive = work / tar_name
+        blob = archive.read_bytes()
+        sha512 = base64.b64encode(hashlib.sha512(blob).digest()).decode("ascii")
+        if "sha512-" + sha512 != integrity:
+            fail("Official npm tarball SRI mismatch: no files will be installed.")
+        selected = {}
+        with tarfile.open(archive, "r:gz") as tar:
+            for member in tar.getmembers():
+                if not member.isfile() or not member.name.startswith("package/"):
+                    continue
+                relative = member.name[len("package/"):]
+                if relative not in PINNED + OPTIONAL and not relative.startswith(DIRECTORIES):
+                    continue
+                normalized = PurePosixPath(relative)
+                if normalized.is_absolute() or ".." in normalized.parts:
+                    fail("Unsafe package path.")
+                if member.size > MAX_FILE_BYTES:
+                    fail("Oversized npm package member.")
+                stream = tar.extractfile(member)
+                if stream is None:
+                    fail("Missing npm package member.")
+                selected[relative] = stream.read()
+        if not set(PINNED).issubset(selected):
+            fail("Pinned PDF.js npm release lacks required modules/license.")
+        payloads = {
+            relative.removeprefix("build/"): data
+            for relative, data in selected.items()
+        }
+        size = sum(map(len, payloads.values()))
+        if size > MAX_TOTAL_BYTES:
+            fail("PDF.js vendor size budget exceeded.")
+        if OUTPUT.exists():
+            if OUTPUT.is_symlink():
+                fail("Refusing a symlinked vendor destination.")
+            shutil.rmtree(OUTPUT)
+        for relative, data in payloads.items():
+            target = OUTPUT / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        manifest = {
+            "package": PACKAGE,
+            "version": VERSION,
+            "license": "Apache-2.0",
+            "source": "https://registry.npmjs.org/pdfjs-dist",
+            "integrity": integrity,
+            "files": {name: hash_bytes(data) for name, data in sorted(payloads.items())},
+        }
+        (OUTPUT / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    verify()
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--check"]:
+        verify()
+    elif not sys.argv[1:]:
+        vendor()
+    else:
+        fail("Usage: python3 tools/vendor-pdfjs [--check]")
