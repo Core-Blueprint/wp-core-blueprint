@@ -253,6 +253,32 @@ class ReleaseBuilderTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             builder.package_bytes(self.source, lazy, revision)
 
+    def test_pdfjs_deferred_loader_keeps_static_designer_import_and_revision(self):
+        """Deferred display bridge must be in the stamped Designer cache identity."""
+        loader = self.source / 'assets/js/document/pdfjs-loader.js'
+        loader.parent.mkdir(parents=True, exist_ok=True)
+        loader.write_text(
+            "export const loadBundledPdfJs = () => import('@cb-core/pdfjs-display');\\n"
+        )
+        adapter = self.source / 'assets/js/design/document/flow/pdfjs-page-source.js'
+        adapter.parent.mkdir(parents=True, exist_ok=True)
+        adapter.write_text(
+            "import {loadBundledPdfJs} from '../../../document/pdfjs-loader.js';\\n"
+            "export {loadBundledPdfJs};\\n"
+        )
+        first = builder.design_module_revision(self.source)
+        packaged = builder.package_bytes(self.source, adapter, first).decode()
+        self.assertIn(
+            f"../../../document/pdfjs-loader.js?cb-design={first}",
+            packaged,
+        )
+        loader.write_text(
+            "export const loadBundledPdfJs = () => import('@cb-core/pdfjs-display');"
+            " // revised\\n"
+        )
+        second = builder.design_module_revision(self.source)
+        self.assertNotEqual(first, second)
+
     def test_design_revision_does_not_rewrite_non_design_javascript(self):
         runtime = self.source / 'assets/js/runtime.js'
         runtime.write_text("import './dependency.js';\\n")
