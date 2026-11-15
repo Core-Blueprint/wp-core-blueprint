@@ -32,6 +32,8 @@ before(async () => {
 	const copiedDesignDirectory = join(tempDirectory, 'design');
 	await cp(designDirectory, copiedDesignDirectory, { recursive: true });
 	await convertJsTreeToMjs(copiedDesignDirectory);
+	await cp(new URL('../../assets/js/document/', import.meta.url), join(tempDirectory, 'document'), {recursive: true});
+	await convertJsTreeToMjs(join(tempDirectory, 'document'));
 	globalThis.window = {};
 	publicEditor = await import(pathToFileURL(join(copiedDesignDirectory, 'editor.mjs')).href);
 });
