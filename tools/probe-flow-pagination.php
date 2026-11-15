@@ -8,6 +8,8 @@ declare(strict_types=1);
  * Run: php tools/probe-flow-pagination.php
  * No WordPress boot, site data, DB, network, persistent PDF or vendor patches.
  * This does NOT implement interactive A4 page surfaces.
+ * Gate 2 additionally measures per-page clipped PDF-point rectangles from
+ * the same renderer callbacks. Geometry is evidence, not a UI hit target.
  */
 
 const CB_DP_PROBE_MAX_CALLBACKS = 20000;
@@ -75,7 +77,8 @@ function cb_dp_probe_cases(): array {
 
 /**
  * @return array{page_count:int,rendered_pages:list<int>,regions:array<string,list<int>>,
- *  fragments:int,invalid:list<string>,pdf_valid:bool,callback_count:int}
+ *  fragments:int,invalid:list<string>,pdf_valid:bool,callback_count:int,
+ *  page_dimensions:array{width:float,height:float},geometry:array<string,mixed>}
  */
 function cb_dp_probe_render( string $html, string $cache ): array {
     $options = new \Dompdf\Options();
@@ -96,6 +99,19 @@ function cb_dp_probe_render( string $html, string $cache ): array {
     $invalid = [];
     $fragments = 0;
     $callback_count = 0;
+    $projected_boxes = [];
+    $fully_outside = 0;
+    $clipped_fragments = 0;
+    $sample_ids = [ 'r0' => true, 'r1' => true, 'r1.0' => true, 'r2' => true ];
+    $page_size = [
+        'width' => (float) $dompdf->getCanvas()->get_width(),
+        'height' => (float) $dompdf->getCanvas()->get_height(),
+    ];
+    if ( ! is_finite( $page_size['width'] ) || ! is_finite( $page_size['height'] )
+        || $page_size['width'] < 100 || $page_size['height'] < 100
+        || $page_size['width'] > 2000 || $page_size['height'] > 2000 ) {
+        throw new RuntimeException( 'Invalid physical PDF page dimensions.' );
+    }
     $dompdf->setCallbacks( [
         [
             'event' => 'begin_page_render',
@@ -113,7 +129,7 @@ function cb_dp_probe_render( string $html, string $cache ): array {
         ],
         [
             'event' => 'end_frame',
-            'f' => static function ( $frame, $canvas ) use ( &$regions, &$invalid, &$fragments, &$callback_count ): void {
+            'f' => static function ( $frame, $canvas ) use ( &$regions, &$invalid, &$fragments, &$callback_count, &$projected_boxes, &$fully_outside, &$clipped_fragments, $page_size, $sample_ids ): void {
                 $callback_count++;
                 if ( $callback_count > CB_DP_PROBE_MAX_CALLBACKS ) {
                     throw new RuntimeException( 'Callback count exceeded safety bound.' );
@@ -158,6 +174,34 @@ function cb_dp_probe_render( string $html, string $cache ): array {
                     $invalid[] = 'out-of-range frame geometry';
                     return;
                 }
+                // Dompdf's physical coordinate system is PDF points, page local.
+                // A frame may cross an A4 page boundary, particularly a split
+                // parent or text block. Use intersection, never modulo by page
+                // height or extrapolation from the continuous HTML preview.
+                $left = max( 0.0, $x );
+                $top = max( 0.0, $y );
+                $right = min( $page_size['width'], $x + $width );
+                $bottom = min( $page_size['height'], $y + $height );
+                if ( $right <= $left || $bottom <= $top ) {
+                    $fully_outside++;
+                    $invalid[] = 'frame does not intersect its physical PDF page';
+                    return;
+                }
+                $is_clipped = $x < 0 || $y < 0
+                    || $x + $width > $page_size['width']
+                    || $y + $height > $page_size['height'];
+                if ( $is_clipped ) {
+                    $clipped_fragments++;
+                }
+                if ( isset( $sample_ids[ $id ] ) ) {
+                    $projected_boxes[ $id ][ $page ][] = [
+                        'x' => round( $left, 2 ),
+                        'y' => round( $top, 2 ),
+                        'width' => round( $right - $left, 2 ),
+                        'height' => round( $bottom - $top, 2 ),
+                        'clipped' => $is_clipped,
+                    ];
+                }
                 $regions[ $id ][ $page ] = true;
             },
         ],
@@ -172,6 +216,11 @@ function cb_dp_probe_render( string $html, string $cache ): array {
         ksort( $pages, SORT_NUMERIC );
         $region_pages[ $id ] = array_map( 'intval', array_keys( $pages ) );
     }
+    ksort( $projected_boxes, SORT_STRING );
+    foreach ( $projected_boxes as &$page_boxes ) {
+        ksort( $page_boxes, SORT_NUMERIC );
+    }
+    unset( $page_boxes );
     return [
         'page_count' => $count,
         'rendered_pages' => array_map( 'intval', array_keys( $rendered_pages ) ),
@@ -180,6 +229,13 @@ function cb_dp_probe_render( string $html, string $cache ): array {
         'invalid' => array_values( array_unique( $invalid ) ),
         'pdf_valid' => is_string( $pdf ) && str_starts_with( $pdf, '%PDF-' ),
         'callback_count' => $callback_count,
+        'page_dimensions' => $page_size,
+        'geometry' => [
+            'unit' => 'pdf-pt',
+            'samples' => $projected_boxes,
+            'clipped_fragments' => $clipped_fragments,
+            'fully_outside' => $fully_outside,
+        ],
     ];
 }
 
@@ -188,6 +244,35 @@ function cb_dp_probe_verified( string $name, array $data ): bool {
         || count( $data['rendered_pages'] ) !== $data['page_count']
         || $data['rendered_pages'] !== range( 1, $data['page_count'] ) ) {
         return false;
+    }
+    // Gate 2: every reported semantic region must retain a non-empty,
+    // page-local rectangle in the sampled per-page projection. Page count and
+    // semantic identity alone do not prove usable interaction geometry.
+    $size = $data['page_dimensions'];
+    $geometry = $data['geometry'];
+    if ( $geometry['unit'] !== 'pdf-pt' || $geometry['fully_outside'] !== 0
+        || abs( $size['width'] - 595.28 ) > 1.0
+        || abs( $size['height'] - 841.89 ) > 1.0 ) {
+        return false;
+    }
+    foreach ( $geometry['samples'] as $id => $page_boxes ) {
+        $pages = $data['regions'][ $id ] ?? [];
+        if ( array_map( 'intval', array_keys( $page_boxes ) ) !== $pages ) {
+            return false;
+        }
+        foreach ( $page_boxes as $boxes ) {
+            if ( $boxes === [] ) {
+                return false;
+            }
+            foreach ( $boxes as $box ) {
+                if ( $box['width'] <= 0 || $box['height'] <= 0
+                    || $box['x'] < 0 || $box['y'] < 0
+                    || $box['x'] + $box['width'] > $size['width'] + 0.02
+                    || $box['y'] + $box['height'] > $size['height'] + 0.02 ) {
+                    return false;
+                }
+            }
+        }
     }
     $region = static fn ( string $id ): array => $data['regions'][ $id ] ?? [];
     return match ( $name ) {
