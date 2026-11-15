@@ -14,6 +14,7 @@ use CoreBlueprint\Core\Mail\Designer\Renderer;
 use CoreBlueprint\Core\Mail\Designer\TemplateRegistry;
 use CoreBlueprint\Core\Mail\Designer\WordPressIntegration;
 use CoreBlueprint\Core\Mail\Settings as MailSettings;
+use CoreBlueprint\Core\Permissions\PrivilegedAccessRegistry;
 
 final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 	private mixed $original_settings;
@@ -98,6 +99,15 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		$admin_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
 		try {
 			wp_set_current_user( $admin_id );
+			// Core Blueprint denies newly created privileged users until approved.
+			// Exercise that production gate, then admit this isolated test actor.
+			$admin = get_userdata( $admin_id );
+			self::assertInstanceOf( \WP_User::class, $admin );
+			self::assertFalse( PrivilegedAccessRegistry::is_approved( $admin ) );
+			self::assertFalse( current_user_can( 'manage_options' ) );
+			self::assertTrue( PrivilegedAccessRegistry::approve( $admin, 0, 'mail_mc02b_test_fixture' ) );
+			self::assertTrue( PrivilegedAccessRegistry::is_approved( $admin ) );
+			self::assertTrue( current_user_can( 'manage_options' ) );
 			$settings = MailSettings::defaults();
 			$settings['designer_enabled'] = true;
 			MailSettings::save( $settings );
