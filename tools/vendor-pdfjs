@@ -90,6 +90,13 @@ def vendor() -> None:
         metadata = json.loads(metadata_raw)
     except ValueError:
         fail("Official npm package metadata is not valid JSON.")
+    # npm view --json officially wraps a single matching result in an
+    # array on some npm versions. Accept exactly one record, never a version
+    # range, while still enforcing package name + exact pinned version.
+    if isinstance(metadata, list):
+        if len(metadata) != 1:
+            fail("Official npm metadata returned an ambiguous version selection.")
+        metadata = metadata[0]
     if not isinstance(metadata, dict) or metadata.get("name") != "pdfjs-dist" or metadata.get("version") != VERSION:
         fail("Official npm metadata does not identify the exact pinned PDF.js release.")
     dist = metadata.get("dist")
