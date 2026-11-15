@@ -43,6 +43,11 @@ PACKAGE_EXCLUDED_FILES = frozenset({
 })
 FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
 DESIGN_MODULE_ROOT = Path("assets/js/design")
+PDFJS_MIME_POLICY = (
+    b"# Core Blueprint PDF.js: JavaScript modules require a JavaScript MIME type.\n"
+    b"# Scoped to this bundled PDF.js directory (display module and worker).\n"
+    b"AddType text/javascript .mjs\n"
+)
 DESIGN_IMPORT_RE = re.compile(
     r"(?P<prefix>\b(?:from|import)\s+)(?P<quote>['\"])(?P<specifier>\.{1,2}/[^'\"?]+\.js)(?P=quote)"
 )
@@ -74,6 +79,10 @@ def check_pdfjs_vendor(source: Path) -> None:
     """Fail closed when a PDF viewer is not exactly the audited local build."""
     directory = source / "assets/vendor/pdfjs"
     manifest_path = directory / "manifest.json"
+    mime_file = directory / ".htaccess"
+    if (not mime_file.is_file() or mime_file.is_symlink()
+        or mime_file.read_bytes() != PDFJS_MIME_POLICY):
+        fail("PDF.js JavaScript MIME policy is missing, linked or modified.")
     if not manifest_path.is_file():
         fail("Pinned local PDF.js bundle is missing; vendor and commit 6.5.438 first.")
     try:
@@ -89,7 +98,8 @@ def check_pdfjs_vendor(source: Path) -> None:
         fail("PDF.js package provenance/version/license is invalid.")
     actual = {
         item.relative_to(directory).as_posix()
-        for item in directory.rglob("*") if item.is_file() and item != manifest_path
+        for item in directory.rglob("*")
+        if item.is_file() and item != manifest_path and item != mime_file
     }
     if actual != set(hashes):
         fail("PDF.js runtime file inventory does not match its manifest.")
