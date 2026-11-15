@@ -99,6 +99,7 @@ final class Bootstrap {
 			wp_dequeue_script_module( '@cb-core/reports-preferences' );
 		}
 		DesignEditorAssets::enqueue_platform();
+		DesignEditorAssets::enqueue_document_pdf_viewer();
 		wp_enqueue_style(
 			'cb-core-reports-designer',
 			CB_CORE_URL . 'assets/css/pages/reports-designer.css',
