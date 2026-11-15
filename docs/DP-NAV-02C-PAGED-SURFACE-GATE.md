@@ -46,7 +46,35 @@ does not establish exact positional parity, text-line offsets, repeated table
 headers, embedded images, browser rendering or interactive hit testing. Its
 output must be inspected before committing any production page mapping.
 
-## Gate 2 — actual Foundation paged-source contract (not yet implemented)
+## Gate 1 user-run result — confirmed candidate (2026-11-15)
+
+At `cd805f2f2a2f89e3383a10cca6cfdee0783f71c3`, Chris executed
+the standalone probe with the bundled Dompdf 3.1.6: **5/5 PASS**, no
+invalid callbacks, `PROOF_CANDIDATE` and exit code 0.
+Actual page counts: 1, 4, 4, 4, 2. One split paragraph yielded the same
+semantic ID on pages 1–4; the table's rows mapped to physical pages
+1–4 and the nested container preserved identity across pages.
+
+**This is page membership only.** It does not imply correct per-page frame
+rectangles, PDF visual parity or interactive A4 Designer surfaces. A new
+bounded Gate 2 probe now samples PDF-point rectangles clipped to each
+physical page. It rejects non-intersecting frames and requires a coherent
+sampled region-page map. A positive result is still a projection candidate,
+not proof of pixel-perfect hit targets.
+
+**Gate 2 operator step:**
+
+```bash
+php -l tools/probe-flow-pagination.php
+php tools/probe-flow-pagination.php > /tmp/cb-dpnav02c-geometry.json
+```
+
+Summarize `status`, `proof`, `page_dimensions`, `geometry.clipped_fragments`,
+`geometry.fully_outside`, `invalid` and
+`geometry.samples` for the five cases. Preserve the full JSON locally.
+A failing result is a diagnostic gate, not a reason to weaken bounds.
+
+## Gate 3 — actual Foundation paged-source contract (not yet implemented)
 
 Only after Gate 1 evidence:
 
