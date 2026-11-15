@@ -39,6 +39,41 @@ final class DesignerPreview {
 	}
 
 	/**
+	 * Canonical paged Designer snapshot: PDF and semantic regions come from
+	 * the SAME Dompdf render. No unsaved document or report is persisted.
+	 *
+	 * @param array{project:array<string,mixed>,fields:array<string,mixed>} $native
+	 * @return array{pdf:string,page_count:int,page_width_pt:float,page_height_pt:float,regions:array<string,mixed>,source:string}
+	 */
+	public function render_paged_with_source( array $native ): array {
+		$report = $this->preview_report();
+		$data = $report['report_data'] ?? null;
+		if ( ! is_array( $data ) ) {
+			throw new \RuntimeException( 'Reports Designer snapshot unavailable.' );
+		}
+		$locale = get_locale();
+		if ( '' === trim( $locale ) ) {
+			$locale = 'en_US';
+		}
+		$document = $this->compiler->compile( $report, $data, $locale, $native );
+		$result = FlowRenderApi::pdf_with_page_regions(
+			$document['layout'],
+			$document['blocks'],
+			$document['locale'],
+			$document['presentation'],
+			$document['preview_regions']
+		);
+		return [
+			'pdf' => $result['pdf'],
+			'page_count' => $result['page_count'],
+			'page_width_pt' => $result['page_width_pt'],
+			'page_height_pt' => $result['page_height_pt'],
+			'regions' => $result['regions'],
+			'source' => (int) ( $report['id'] ?? 0 ) > 0 ? 'archived' : 'sample',
+		];
+	}
+
+	/**
 	 * TL-1C Library-only proof: fixed synthetic report, never archived storage,
 	 * actual site identity, current user, branding attachments or live metrics.
 	 * Existing Reports Designer preview intentionally retains its own behavior.
