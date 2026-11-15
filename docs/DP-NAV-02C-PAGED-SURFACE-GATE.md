@@ -120,19 +120,39 @@ FlowRenderApi::pdf_with_page_regions(
   on the DP-NAV-02C feature branch, but **runtime tests, Level 1/2, ZIP and
   browser FIELD remain OPEN**.
 
-## Gate 3B — interactive paged browser viewer (SOURCE CANDIDATE / NOT CONNECTED)
+## Gate 3B — canonical PDF.js Document Flow integration (SOURCE WIRED / VENDOR AND FIELD OPEN)
 
-A bounded two-part page-surface and pinned PDF.js adapter have now been added
-on this unmerged feature branch, along with optional CSS and Node tests.
-See `docs/DP-NAV-02C-GATE3B-PAGE-SURFACE.md` for exact capabilities,
-source-only evidence, the unbundled PDF.js dependency, security and next gates.
-No WordPress consumer, transport or page visual is yet connected.
+**Approved product architecture (Chris, 2026-11-15):** all paginated
+Document Designers use Base-owned Dompdf on the server and PDF.js in the
+browser. Reports is the first reference consumer; Contracts and future
+Document Flow consumers reuse the exact same Base page-view API. Mail remains
+HTML-only. PDF.js must never own History, Save, DND or domain commands.
 
-A safe local PDF page renderer, authenticated unsaved-preview transport,
-trusted fragment overlay, native selection/Inspector/Layers/DND mapping,
-and actual DP-NAV-01 DOM targets are required. Gate 3A is not evidence
-that the user can see or edit separated A4 pages.
+Implementation on this **unmerged** branch now includes a strict
+same-origin no-store Reports preview endpoint for unsaved validated
+`{project,fields}`; `DesignerPreview::render_paged_with_source()` compiles
+real PDF bytes, authoritative physical page count and semantic fragment boxes
+in **one** hardened Dompdf render; `createFlowPagedPreviewHost()` handles
+bounded JSON, request cancellation/debounce, lazy PDF.js resolution and
+ownership of the standard paged surface; the first-party Reports adapter
+opts in via `cbCorePlatformV1.documentPaged`. Shared DND/selection receive
+validated semantic nodes and Base page navigation receives real page IDs.
+The older continuous iframe remains only for non-paged legacy host cases.
 
+A standalone `tools/vendor-pdfjs` recipe now pins official
+`pdfjs-dist@6.5.438`, npm SHA-512 SRI, Apache-2.0 notices, local display and
+worker modules, CMaps, fonts and WASM assets; `tools/build-release` refuses
+any missing or checksum-divergent bundle. **The official binary npm vendor
+files themselves are NOT YET PRESENT in this branch and have not been
+reviewed or committed.** Thus no successful actual PDF.js browser render,
+installable paged ZIP or production qualification can be claimed.
+
+New JS and PHP integration tests are source-committed but not run in the
+user's real full checkout. Current Gate 3B remains HOLD until vendor
+admission, L1, disposable L2, fresh ZIP and sandbox evidence.
+
+See `docs/DP-NAV-02C-GATE3B-PAGE-SURFACE.md` for bounded visual source
+details and the separate Document Rendering Reliability Gate.
 ## Gate 3 — actual Foundation paged-source contract (in progress)
 
 Only after Gate 1 evidence:
