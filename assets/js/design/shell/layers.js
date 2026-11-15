@@ -366,6 +366,32 @@ const normalizeReorder = (reorder, fallbackIndex, siblingCount) => {
 	});
 };
 
+/** Shared Foundation projection of a layer's registered actions and reorder limits. */
+export const projectDesignerLayerContextActions = ({actions = {}, reorder = null} = {}) => {
+	if (!actions || typeof actions !== 'object' || Array.isArray(actions)) {
+		throw new TypeError('DESIGNER_LAYER_ACTIONS_INVALID');
+	}
+	const menuActions = {...actions};
+	if (reorder !== null) {
+		if (!Number.isSafeInteger(reorder.index)
+			|| !Number.isSafeInteger(reorder.minIndex) || !Number.isSafeInteger(reorder.maxIndex)
+			|| reorder.minIndex < 0 || reorder.maxIndex < reorder.minIndex
+			|| reorder.index < reorder.minIndex || reorder.index > reorder.maxIndex
+			|| typeof reorder.onMove !== 'function') {
+			throw new TypeError('DESIGNER_LAYER_REORDER_INVALID');
+		}
+		menuActions.moveUp = {
+			disabled: reorder.index <= reorder.minIndex,
+			onActivate: () => reorder.onMove(reorder.index - 1),
+		};
+		menuActions.moveDown = {
+			disabled: reorder.index >= reorder.maxIndex,
+			onActivate: () => reorder.onMove(reorder.index + 1),
+		};
+	}
+	return Object.freeze(menuActions);
+};
+
 const normalizeTreeKey = (item, fallback) => {
 	const raw = item?.key ?? item?.path ?? fallback;
 	const key = Array.isArray(raw) ? JSON.stringify(raw) : String(raw ?? '').trim();
@@ -438,11 +464,19 @@ export const createDesignerLayerTree = ({
 		if (restoreFocus && returnFocus?.isConnected) returnFocus.focus();
 	};
 
-	const openMenu = ({ actions, children, label, anchor, returnFocus, x = null, y = null }) => {
+	const openMenu = ({ actions, children, label, anchor, returnFocus, x = null, y = null, isCurrent = null }) => {
+		if (disposed || !anchor || anchor.ownerDocument !== documentRef
+			|| typeof anchor.getBoundingClientRect !== 'function'
+			|| (isCurrent !== null && typeof isCurrent !== 'function')) return false;
+		const current = () => {
+			try { return isCurrent === null || isCurrent() === true; }
+			catch (_) { return false; }
+		};
+		if (!current()) return false;
 		const entries = ['moveUp', 'moveDown', 'hide', 'show', 'remove']
 			.map((name) => ({ name, config: normalizeAction(actions[name]) }))
 			.filter(({ config }) => config !== null);
-		if (!entries.length || !documentRef.body) return;
+		if (!entries.length || !documentRef.body) return false;
 		closeMenu();
 
 		const popup = documentRef.createElement('div');
@@ -494,6 +528,7 @@ export const createDesignerLayerTree = ({
 			remove.textContent = confirmation.confirmLabel;
 			remove.addEventListener('click', () => {
 				if (activeMenu?.popup !== popup || action.disabled) return;
+				if (!current()) { closeMenu(); return; }
 				closeMenu({ restoreFocus: true });
 				action.onActivate();
 			});
@@ -525,6 +560,7 @@ export const createDesignerLayerTree = ({
 			button.disabled = config.disabled;
 			button.addEventListener('click', () => {
 				if (config.disabled || typeof config.onActivate !== 'function') return;
+				if (!current()) { closeMenu(); return; }
 				if (name === 'remove'
 					&& (countDescendants(children) > 0 || config.confirmation !== null)) {
 					// Invalid consumer semantics must never trigger a remove.
@@ -587,6 +623,7 @@ export const createDesignerLayerTree = ({
 		documentRef.defaultView?.addEventListener('resize', dismissOnViewport);
 		documentRef.defaultView?.addEventListener('scroll', dismissOnViewport, true);
 		popup.querySelector('[role="menuitem"]:not(:disabled)')?.focus();
+		return true;
 	};
 	const configLabels = (name) => config.layerActionLabels?.[name] || ACTION_DEFINITIONS[name].label;
 
@@ -722,18 +759,7 @@ export const createDesignerLayerTree = ({
 				const expandable = children.length > 0;
 				const expanded = expandable && !collapsedKeys.has(key);
 				const reorder = normalizeReorder(item.reorder, siblingIndex, normalized.length);
-				const actions = { ...(item.actions || {}) };
-
-				if (reorder) {
-					actions.moveUp = {
-						disabled: reorder.index <= reorder.minIndex,
-						onActivate: () => reorder.onMove(reorder.index - 1),
-					};
-					actions.moveDown = {
-						disabled: reorder.index >= reorder.maxIndex,
-						onActivate: () => reorder.onMove(reorder.index + 1),
-					};
-				}
+				const actions = projectDesignerLayerContextActions({actions: item.actions || {}, reorder});
 
 				const itemPath = item.ref?.kind ? item.ref : (Array.isArray(item.path) ? [...item.path] : null);
 				const itemSelect = selectionAdapter && itemPath
@@ -935,6 +961,11 @@ export const createDesignerLayerTree = ({
 		patch,
 		bindDragDrop,
 		syncDragDrop,
+		// Canvas consumers use the exact Layers menu, even for collapsed nodes.
+		openActions(options) {
+			return !disposed && options && typeof options === 'object'
+				? openMenu(options) === true : false;
+		},
 		destroy() {
 			if (disposed) return;
 			disposed = true;

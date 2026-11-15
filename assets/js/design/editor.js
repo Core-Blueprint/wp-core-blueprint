@@ -10,6 +10,7 @@ import { createDesignerDragDropController } from './shell/drag-drop.js';
 import { createDesignerInteractionPresentation } from './shell/interaction-presentation.js';
 import { createDesignerCanvasNavigation } from './shell/canvas-navigation.js';
 import { createDesignerContextMenu } from './shell/context-menu.js';
+import { projectDesignerLayerContextActions } from './shell/layers.js';
 import { createDesignerElementsPalette } from './shell/elements-palette.js';
 import { designerDropZoneId, resolveDesignerDropPlacement, resolveDesignerInsertPlacement, resolveDesignerMovePlacement } from './shell/drop-placement.js';
 import {
@@ -1449,6 +1450,92 @@ export const attachTrustedDesignerHost = ({
 					}};
 				},
 			});
+			// One Foundation-owned action menu serves Layers and the trusted
+			// native canvas. Reports interactions stay above its sandboxed iframe.
+			let canvasMenuRequest = 0;
+			// A later pointer interaction cancels pending context-menu publication.
+			stagedRoot.addEventListener('pointerdown', () => { canvasMenuRequest++; }, {signal, capture: true});
+			const openCanvasActions = (event, keyboard = false) => {
+				if (signal.aborted || host?.state !== 'READY' || dnd.active
+					|| stagedRoot.dataset.cbDesignDndActive === 'true'
+					|| event.defaultPrevented || event.target?.closest?.('input, textarea, select, [contenteditable]')) return false;
+				const source = event.target?.closest?.('[data-cb-design-node-path]');
+				if (!source || !dropSurface.contains(source) || source.ownerDocument !== doc) return false;
+				let path;
+				try { path = JSON.parse(source.dataset.cbDesignNodePath || ''); }
+				catch (_) { return false; }
+				if (!Array.isArray(path) || path.length > 32
+					|| path.some(index => !Number.isSafeInteger(index) || index < 0)) return false;
+				try {
+					const project = editor.project();
+					const node = nodeAt(project.root, path);
+					if (!node || node.type !== source.dataset.cbDesignNodeType) return false;
+					const parent = path.length ? nodeAt(project.root, path.slice(0, -1)) : null;
+					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1));
+					const interaction = projectDesignerLayerInteractions({
+						node, parent, path, policy,
+						commandIds: {remove: prefix + '.remove', reorder: prefix + '.reorder', set: prefix + '.set'},
+						execute: (id, input) => editor.execute(id, input),
+						isReady: () => !signal.aborted && host?.state === 'READY',
+					});
+					const actions = projectDesignerLayerContextActions({
+						actions: interaction.actions, reorder: interaction.reorder,
+					});
+					if (!Object.keys(actions).some(name =>
+						['moveUp', 'moveDown', 'hide', 'show', 'remove'].includes(name))) return false;
+					const primary = editor.selection()?.primary;
+					if (primary?.kind !== 'node' || JSON.stringify(primary.path) !== JSON.stringify(path)) {
+						const ref = {kind: 'node', path: [...path]};
+						editor.select([ref], ref);
+					}
+					// Selection may repaint the canvas; resolve its fresh live anchor.
+					if (editor.project() !== project
+						|| editor.selection()?.primary?.kind !== 'node'
+						|| JSON.stringify(editor.selection().primary.path) !== JSON.stringify(path)) return false;
+					// Host selection schedules a render which replaces Mail DOM and
+					// Layers rows. Publish only AFTER that canonical render completes;
+					// otherwise tree.render() closes the just-opened menu.
+					const requestId = ++canvasMenuRequest;
+					const clientX = keyboard || !Number.isFinite(event.clientX) ? null : event.clientX;
+					const clientY = keyboard || !Number.isFinite(event.clientY) ? null : event.clientY;
+					const summary = activeRegistry.profileId === 'base/reports'
+						? profileModule.layerSummaryFor?.(node) : null;
+					const typeLabel = platformFieldLabel(node.type);
+					const label = typeof summary === 'string' && [...summary].length <= 45 && summary
+						? typeLabel + ' · ' + summary : typeLabel;
+					void host.refresh('selection').then(() => {
+						if (requestId !== canvasMenuRequest || signal.aborted
+							|| host?.state !== 'READY' || dnd.active || editor.project() !== project
+							|| editor.selection()?.primary?.kind !== 'node'
+							|| JSON.stringify(editor.selection().primary.path) !== JSON.stringify(path)) return;
+						const anchor = [...dropSurface.querySelectorAll('[data-cb-design-node-path]')]
+							.find(element => element.dataset.cbDesignNodePath === JSON.stringify(path)
+								&& element.dataset.cbDesignNodeType === node.type);
+						if (!anchor) return;
+						tree.openActions({
+							actions, children: node.children, label, anchor, returnFocus: anchor,
+							x: clientX, y: clientY,
+							isCurrent: () => requestId === canvasMenuRequest
+								&& !signal.aborted && host?.state === 'READY'
+								&& !dnd.active && editor.project() === project
+								&& nodeAt(project.root, path) === node
+								&& dropSurface.contains(anchor)
+								&& editor.selection()?.primary?.kind === 'node'
+								&& JSON.stringify(editor.selection().primary.path) === JSON.stringify(path),
+						});
+					}).catch(() => { /* Refused refresh: never publish stale actions. */ });
+					event.preventDefault();
+					event.stopPropagation();
+					return true;
+				} catch (_) { return false; } // Forged/stale renderer hints fail closed.
+			};
+			dropSurface.addEventListener('contextmenu', event => openCanvasActions(event), {signal});
+			dropSurface.addEventListener('keydown', event => {
+				const contextKey = event.key === 'ContextMenu' && !event.altKey && !event.ctrlKey && !event.metaKey;
+				const shiftF10 = event.key === 'F10' && event.shiftKey
+					&& !event.altKey && !event.ctrlKey && !event.metaKey;
+				if (contextKey || shiftF10) openCanvasActions(event, true);
+			}, {signal});
 			// The Host requires an EMPTY render-surface through offscreen staging.
 			// Initialize the Base presentation only after its successful commit.
 			const activateInteractions = () => {
@@ -2040,6 +2127,7 @@ const publicApi = Object.freeze({
 			createRow: createDesignerLayerRow,
 			createTree: createDesignerLayerTree,
 			projectInteractions: projectDesignerLayerInteractions,
+			projectMenuActions: projectDesignerLayerContextActions,
 		}),
 		selection: Object.freeze({
 			createController: createDesignerSelectionController,

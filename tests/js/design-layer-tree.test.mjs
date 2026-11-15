@@ -61,6 +61,8 @@ class FakeElement extends EventTarget {
 		this.type = '';
 		this.textContent = '';
 		this.className = '';
+		this.offsetWidth = 200;
+		this.offsetHeight = 160;
 	}
 	append(...children) {
 		children.forEach((child) => {
@@ -119,15 +121,21 @@ class FakeElement extends EventTarget {
 		this.children.forEach(visit);
 		return matches;
 	}
+	getBoundingClientRect() { return {left: 20, right: 180, top: 20, bottom: 40}; }
 	focus() {
 		this.ownerDocument.activeElement = this;
 		this.dispatchEvent(new Event('focus'));
 	}
 }
 
-class FakeDocument {
+class FakeDocument extends EventTarget {
 	constructor() {
+		super();
 		this.activeElement = null;
+		this.body = this.createElement('body');
+		this.documentElement = {clientWidth: 1024, clientHeight: 768};
+		this.defaultView = {innerWidth: 1024, innerHeight: 768,
+			addEventListener() {}, removeEventListener() {}};
 	}
 	createElement(tagName) {
 		return new FakeElement(this, tagName);
@@ -414,4 +422,43 @@ test('C1 modified arrow key is not intercepted by Layers keyboard navigation',()
 	select.dispatchEvent(event);
 	assert.equal(document.activeElement,select);
 	assert.equal(event.defaultPrevented,false);
+});
+
+test('Canvas calls the same Layers presenter, including when layer rows are collapsed', () => {
+	const tree = createDesignerLayerTree({documentRef: document});
+	tree.render(nestedItems());
+	tree.collapse('[0]');
+	assert.equal(tree.row('[0,0]'), null);
+	const anchor = document.createElement('div');
+	document.body.append(anchor);
+	let moved = 0;
+	assert.equal(tree.openActions({anchor, returnFocus: anchor, label: 'Heading',
+		actions: {moveUp: {onActivate: () => {moved++;}}}, children: [], x: 30, y: 80}), true);
+	const popup = document.body.children.at(-1);
+	assert.equal(popup.getAttribute('role'), 'menu');
+	assert.equal(popup.dataset.cbDesignLayerContextMenu, '1');
+	popup.children[0].dispatchEvent(new Event('click'));
+	assert.equal(moved, 1);
+	tree.destroy();
+	anchor.remove();
+});
+test('Canvas menu rejects stale removal after confirmation before mutation', () => {
+	const tree = createDesignerLayerTree({documentRef: document});
+	const anchor = document.createElement('div');
+	document.body.append(anchor);
+	let current = true, removed = 0;
+	const open = () => tree.openActions({anchor, returnFocus: anchor, label: 'Section',
+		actions: {remove: {onActivate: () => {removed++;}}},
+		children: [{children: []}], isCurrent: () => current});
+	assert.equal(open(), true);
+	const popup = document.body.children.at(-1);
+	popup.children.find(element => element.dataset.cbDesignLayerContextAction === 'remove')
+		.dispatchEvent(new Event('click'));
+	assert.equal(popup.getAttribute('role'), 'alertdialog');
+	current = false;
+	popup.children.at(-1).children.at(-1).dispatchEvent(new Event('click'));
+	assert.equal(removed, 0);
+	assert.equal(open(), false);
+	tree.destroy();
+	anchor.remove();
 });
