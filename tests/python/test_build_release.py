@@ -73,12 +73,24 @@ class ReleaseBuilderTest(unittest.TestCase):
             },
         }
         (vendor / 'manifest.json').write_text(json.dumps(manifest))
+        mime_file = vendor / '.htaccess'
+        mime_file.write_bytes(builder.PDFJS_MIME_POLICY)
         packaged = [p.relative_to(self.source).as_posix()
                     for p in builder.collect_files(self.source)]
         self.assertIn('assets/vendor/pdfjs/pdf.min.mjs', packaged)
         self.assertIn('assets/vendor/pdfjs/pdf.worker.min.mjs', packaged)
         self.assertIn('assets/vendor/pdfjs/LICENSE', packaged)
+        self.assertIn('assets/vendor/pdfjs/.htaccess', packaged)
+        self.assertNotIn('.htaccess', manifest['files'],
+                         'Base-owned hosting policy is not an npm package asset')
         (vendor / 'pdf.worker.min.mjs').write_bytes(b'corrupted')
+        with self.assertRaises(SystemExit):
+            builder.collect_files(self.source)
+        (vendor / 'pdf.worker.min.mjs').write_bytes(files['pdf.worker.min.mjs'])
+        mime_file.write_bytes(b'AddType application/octet-stream .mjs\\n')
+        with self.assertRaises(SystemExit):
+            builder.collect_files(self.source)
+        mime_file.unlink()
         with self.assertRaises(SystemExit):
             builder.collect_files(self.source)
 
