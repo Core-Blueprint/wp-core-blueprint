@@ -132,18 +132,27 @@ function cb_dp_probe_render( string $html, string $cache ): array {
                 }
                 $page = $canvas->get_page_number();
                 $box = $frame->get_border_box();
+                // Dompdf 3.1.6 returns four coordinates twice: numeric
+                // [0,1,2,3] plus matching named [x,y,w,h]. Never treat
+                // its eight-entry tuple as four independent coordinates.
                 if ( ! is_int( $page ) || $page < 1 || $page > 500
-                    || ! is_array( $box ) || count( $box ) !== 4 ) {
+                    || ! is_array( $box )
+                    || array_keys( $box ) !== [ 0, 'x', 1, 'y', 2, 'w', 3, 'h' ] ) {
                     $invalid[] = 'invalid physical page or frame geometry';
                     return;
                 }
-                foreach ( $box as $number ) {
-                    if ( ! is_numeric( $number ) || ! is_finite( (float) $number ) ) {
-                        $invalid[] = 'non-finite frame coordinate';
+                foreach ( [ 0 => 'x', 1 => 'y', 2 => 'w', 3 => 'h' ] as $index => $name ) {
+                    if ( ! is_numeric( $box[ $index ] ) || ! is_numeric( $box[ $name ] )
+                        || ! is_finite( (float) $box[ $index ] )
+                        || ! is_finite( (float) $box[ $name ] )
+                        || (float) $box[ $index ] !== (float) $box[ $name ] ) {
+                        $invalid[] = 'inconsistent or non-finite frame coordinate';
                         return;
                     }
                 }
-                [ $x, $y, $width, $height ] = array_map( 'floatval', array_values( $box ) );
+                [ $x, $y, $width, $height ] = array_map(
+                    'floatval', [ $box[0], $box[1], $box[2], $box[3] ]
+                );
                 if ( $x < -1 || $y < -1 || $width <= 0 || $height <= 0
                     || $x > 2000 || $y > 2000 || $width > 2000 || $height > 2000 ) {
                     $invalid[] = 'out-of-range frame geometry';
