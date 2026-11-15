@@ -1,0 +1,3 @@
+# Core Blueprint PDF.js: JavaScript modules require a JavaScript MIME type.
+# Scoped to this bundled PDF.js directory (display module and worker).
+AddType text/javascript .mjs
