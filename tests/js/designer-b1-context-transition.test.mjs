@@ -84,8 +84,16 @@ test('B1 Native Mail retains a trusted resource catalog without a competing visu
   assert.match(php, /enqueue_select_picker\( \\CoreBlueprint\\Core\\UI\\Assets::SELECT_PICKER_PRESENTATION_CORE \)/);
   assert.match(native, /import '@cb-core\/select-picker';/);
   assert.match(php, /'@cb-core\/reports-platform', '@cb-core\/select-picker'/);
-  assert.ok(native.indexOf('await host.mount(') < native.indexOf('contextSlot.append(contextControl);'));
-  assert.ok(native.indexOf('contextSlot.append(contextControl);') < native.indexOf('selected.hidden=true;'));
+  const hostMounted = native.indexOf('await host.mount(');
+  const toolbarControlMounted = native.indexOf('contextSlot.append(contextControl);', hostMounted);
+  const hostPickerHidden = native.indexOf('selected.hidden=true;', toolbarControlMounted);
+  assert.ok(hostMounted > 0 && toolbarControlMounted > hostMounted);
+  assert.ok(hostPickerHidden > toolbarControlMounted,
+    'the authorized Host Picker stays hidden only after the trusted toolbar is mounted');
+  const initialBrowser = native.indexOf("if(mail?.dataset.cbMailSelection==='1')");
+  assert.ok(initialBrowser > 0 && initialBrowser < hostMounted,
+    'MC-02A initial Browser never mounts a Host before a real Mail design is selected');
+  assert.match(native.slice(initialBrowser, hostMounted), /selected\.hidden=true;[\s\S]*installMailTemplateActions\(\{[\s\S]*initialSelection:true/);
   assert.match(native, /selected\.setAttribute\('aria-hidden','true'\)/);
   assert.match(native, /selected\.tabIndex=-1/);
   assert.doesNotMatch(native, /picker\.enhance\(selected,\{variant:'header'\}\)/);

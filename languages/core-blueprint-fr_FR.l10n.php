@@ -539,6 +539,10 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'This template contains images or embedded media. JSON export supports asset-free templates only.' => 'Ce modèle contient des images ou des médias intégrés. L’export JSON ne prend en charge que les modèles sans ressources multimédias.',
     'Saved Mail template' => 'Modèle d’e-mail enregistré',
     'Offline JSON import/export for native saved Mail templates.' => 'Importation et exportation JSON hors ligne pour les modèles d’e-mail natifs enregistrés.',
+    // MC-02A: Mail Browser-first entry and accessible launch copy.
+    'Open Mail Designer' => 'Ouvrir le concepteur d’e-mails',
+    'Open with Core Blueprint' => 'Ouvrir avec Core Blueprint',
+    'Choose a Mail design in the Browser to begin editing.' => 'Choisissez un modèle d’e-mail dans le navigateur pour commencer à le modifier.',
 ] );
 
 return $catalog;

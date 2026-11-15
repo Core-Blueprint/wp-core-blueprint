@@ -9,6 +9,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const source = readFileSync(resolve(root, 'assets/js/design/mail/saved-library.js'), 'utf8');
 const platform = readFileSync(resolve(root, 'assets/js/design/platform/wordpress-save-adapter.js'), 'utf8');
 const bridge = readFileSync(resolve(root, 'assets/js/design/mail/saved-controls.js'), 'utf8');
+const page = readFileSync(resolve(root, 'src/Mail/Admin/Page.php'), 'utf8');
+const browserSource = readFileSync(resolve(root, 'assets/js/core/template-browser.js'), 'utf8');
 const mailAssets = readFileSync(resolve(root, 'src/Mail/Admin/DesignerAssets.php'), 'utf8');
 const backend = readFileSync(resolve(root, 'src/Mail/Designer/SavedTemplateController.php'), 'utf8');
 const phpSource = readFileSync(resolve(root, 'src/Mail/Designer/SavedTemplateSource.php'), 'utf8');
@@ -52,7 +54,7 @@ function harness({configOrigin = 'https://example.test', saved = {}} = {}) {
 		openTemplateBrowser:async (options) => {
 			browser.calls++;
 			browser.selected=options;
-			return true;
+			return saved.browserResult ?? true;
 		},
 		loadForApply:async () => saved.reply,
 		showModal:async (options) => {
@@ -64,7 +66,8 @@ function harness({configOrigin = 'https://example.test', saved = {}} = {}) {
 	const transformed = source
 		.replace(/^import\s+\{[^}]+\}\s+from\s+['"][^'"]+['"];\s*$/gm,'')
 		.replace(/^export function bindMailTemplates/m, 'function bindMailTemplates')
-		+ '\nglobalThis.__test = {api, authorizedUrl, bindMailTemplates, canCapture, targetOf};';
+		.replace(/^export function beginMailDesignSelection/m, 'function beginMailDesignSelection')
+		+ '\nglobalThis.__test = {api, authorizedUrl, bindMailTemplates, beginMailDesignSelection, canCapture, targetOf};';
 	runInNewContext(transformed, sandbox, {filename:'saved-library.js'});
 	const browserTrigger = sandbox.document.createElement('button');
 	return {api:sandbox.__test, sandbox, events, browser, notices, http, buttons, browserTrigger};
@@ -247,8 +250,9 @@ test('T3-02 Mail-only static bootstrap binds both early and late to a READY nati
 	assert.doesNotMatch(platform, /\bimport\s*\(/);
 	assert.doesNotMatch(bridge, /\bimport\s*\(/);
 	assert.match(bridge, /import \{registerNativeMailTemplateActions\} from '@cb-core\/base-platform-v1'/);
-	assert.match(bridge, /import \{bindMailTemplates\} from '@cb-core\/mail-saved-library'/);
-	assert.match(bridge, /registerNativeMailTemplateActions\(bindMailTemplates\)/);
+	assert.match(bridge, /import \{bindMailTemplates, beginMailDesignSelection\} from '@cb-core\/mail-saved-library'/);
+	assert.match(bridge, /registerNativeMailTemplateActions\(context => context\?\.initialSelection === true/);
+	assert.match(bridge, /beginMailDesignSelection\(context\) : bindMailTemplates\(context\)/);
 	assert.match(platform, /function installMailTemplateActions\(context\)/);
 	assert.match(platform, /pendingMailTemplateContext=context/);
 	assert.match(platform, /export function registerNativeMailTemplateActions\(binder\)/);
@@ -293,10 +297,61 @@ test('T3-02 READY Host binding succeeds before and after Mail bootstrap registra
 		assert.equal(api.registerNativeMailTemplateActions(bind), false, 'duplicate binder refused');
 		api.installMailTemplateActions({host:{state:'NOT_READY'},root:{isConnected:true}});
 		assert.equal(calls.length, 1, 'not-READY Host never binds');
+		api.installMailTemplateActions({initialSelection:true,root:{isConnected:true},scopeToken:'signed'});
+		assert.equal(calls.length, 2, 'the initial Browser binds without a Host');
+		assert.equal(events.length, 2, 'independent pagehide cleanup for both contexts');
 		assert.deepEqual(notifications, [], 'no unexpected fallback warnings');
 	};
 	exercise(true);
 	exercise(false);
+});
+
+test('MC-02A landing has only the native launch and initial Browser is design-only', () => {
+	assert.match(page, /name="cb_mail_browser" value="1"/);
+	assert.match(page, /Open with Core Blueprint/);
+	assert.doesNotMatch(page, /<select id="cb-mail-platform-template" name="template"/);
+	assert.match(page, /data-cb-mail-selection/);
+	assert.match(platform, /if\(mail\?\.dataset\.cbMailSelection==='1'\)/);
+	assert.match(platform, /url\.searchParams\.delete\('cb_mail_browser'\)/);
+	assert.match(browserSource, /if \( !designsOnly \) sidebar\.append\( templateButton \)/);
+});
+
+test('MC-02A first Browser admits only a registered design and cannot Save or Apply', async () => {
+	let finish;
+	const pending = new Promise(resolve => { finish = resolve; });
+	const h = harness({saved:{browserResult:pending}});
+	let opened=0, canceled=0;
+	const stop = h.api.beginMailDesignSelection({
+		root:{isConnected:true},scopeToken:'signed-token',
+		designs:[{id:'bookings.confirmed',title:'Booking confirmed',provider:'Bookings'}],
+		onOpenDesign:async()=>{opened++;return true;},
+		onCancel:()=>{canceled++;},
+	});
+	assert.equal(h.browser.calls,1);
+	assert.equal(h.browser.selected.designsOnly,true);
+	assert.equal(await h.browser.selected.onChoose({source:'core-blueprint-mail-saved',id:'anything'}),false);
+	assert.equal(await h.browser.selected.onOpenDesign({id:'unregistered'}),false);
+	assert.equal(opened,0);
+	assert.equal(await h.browser.selected.onOpenDesign({id:'bookings.confirmed'}),true);
+	assert.equal(opened,1);
+	finish(true);
+	await new Promise(resolve=>setImmediate(resolve));
+	assert.equal(canceled,0);
+	assert.equal(h.http.length,0,'no Mail REST write without a Host');
+	stop();
+});
+
+test('MC-02A closing the first Browser returns to landing without choosing or writing', async () => {
+	let canceled=0;
+	const h=harness({saved:{browserResult:false}});
+	h.api.beginMailDesignSelection({
+		root:{isConnected:true},scopeToken:'signed-token',
+		designs:[{id:'wordpress.a',title:'WordPress email',provider:'WordPress'}],
+		onOpenDesign:async()=>true,onCancel:()=>{canceled++;},
+	});
+	await new Promise(resolve=>setImmediate(resolve));
+	assert.equal(canceled,1);
+	assert.equal(h.http.length,0);
 });
 
 test('T3-02 release-safe Designer module graph excludes every dynamic import in the new bridge', () => {

@@ -105,6 +105,8 @@ function createBrowser( root, options = {} ) {
             .map( ( item ) => ( { kind: 'design', id: item.id,
                 title: item.title, provider: item.provider } ) ) : [];
     const hasDesigns = designs.length > 0;
+    const designsOnly = contextual && options.designsOnly === true;
+    if ( designsOnly && !hasDesigns ) throw new TypeError( 'A design is required.' );
     if ( contextual && ( typeof options.contextToken !== 'string' || !options.contextToken ) ) {
         throw new TypeError( 'A server-issued Designer scope token is required.' );
     }
@@ -178,7 +180,7 @@ function createBrowser( root, options = {} ) {
         syncNavigation();
         refresh();
     } );
-    sidebar.append( templateButton );
+    if ( !designsOnly ) sidebar.append( templateButton );
     const origins = [
         [ '', 'all', 'All templates' ],
         [ 'built-in', 'builtin', 'Built-in' ],
@@ -197,7 +199,7 @@ function createBrowser( root, options = {} ) {
             syncNavigation();
             refresh();
         } );
-        collections.append( button );
+        if ( !designsOnly ) collections.append( button );
         return button;
     } );
     function updateResultHeading() {
@@ -791,7 +793,7 @@ function createBrowser( root, options = {} ) {
  * selected template access, owner permissions and disabled draft semantics.
  */
 async function open( { contextToken, onChoose, title, designs = [], activeDesignId = '',
-    onOpenDesign = null, onSaveAs = null, saveAsLabel = '' } = {} ) {
+    onOpenDesign = null, onSaveAs = null, saveAsLabel = '', designsOnly = false } = {} ) {
     if ( typeof contextToken !== 'string' || !contextToken || typeof onChoose !== 'function' ) {
         throw new TypeError( 'Designer token and onChoose callback are required.' );
     }
@@ -804,7 +806,7 @@ async function open( { contextToken, onChoose, title, designs = [], activeDesign
     let updateConfirmAction = null;
     let browser = null;
     browser = createBrowser( root, {
-        mode: 'designer', contextToken,
+        mode: 'designer', contextToken, designsOnly,
         designs: typeof onOpenDesign === 'function' ? designs : [],
         activeDesignId, onSaveAs, saveAsLabel, notice,
         onStateChange: () => {

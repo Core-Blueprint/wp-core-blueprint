@@ -558,7 +558,9 @@ test('Base Mail launch reuses the branded Designer CTA while preserving its GET 
 	assert.match(page, /CoreBlueprintMark::data_uri\(\)/);
 	assert.match(page, /cb-core-design-launch__mark/);
 	assert.match(page, /cb-core-design-launch__label/);
-	assert.match(page, /Design with Core Blueprint/);
+	assert.match(page, /Open with Core Blueprint/);
+	assert.match(page, /name="cb_mail_browser" value="1"/);
+	assert.doesNotMatch(page, /<select id="cb-mail-platform-template" name="template"/);
 	assert.match(buttons, /\.cb-core-design-launch-wrap\s*\{/);
 	assert.match(buttons, /\.cb-core-design-launch\s*\{[\s\S]*min-height:\s*64px/);
 	assert.match(buttons, /\.cb-core-design-launch__mark\s*\{[\s\S]*object-fit:\s*contain/);

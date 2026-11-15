@@ -227,6 +227,40 @@ export function bindMailTemplates({host, root, contextSlot, trigger, designs = [
 	};
 }
 
+/**
+ * MC-02A Browser-first admission. An operational design must be selected
+ * before the trusted Mail Host can exist; Template Apply requires that Host.
+ */
+export function beginMailDesignSelection({root, scopeToken, designs = [], onOpenDesign, onCancel} = {}) {
+	if (root?.isConnected !== true || typeof scopeToken !== 'string' || !scopeToken
+		|| !Array.isArray(designs) || typeof onOpenDesign !== 'function'
+		|| typeof onCancel !== 'function') throw new Error('MAIL_SAVED_CONTEXT_REFUSED');
+	const allowed = new Set(designs.filter(item => item && typeof item.id === 'string'
+		&& item.id && typeof item.title === 'string' && item.title
+		&& typeof item.provider === 'string').map(item => item.id));
+	if (!allowed.size) throw new Error('MAIL_SAVED_CONTEXT_REFUSED');
+	let navigating = false;
+	void openTemplateBrowser({
+		contextToken: scopeToken, title: label('browser', 'Browser'),
+		designs, designsOnly: true, activeDesignId: '',
+		onChoose: async () => false, // No document target exists for an Apply.
+		onOpenDesign: async item => {
+			if (navigating || !item || typeof item.id !== 'string' || !allowed.has(item.id)) return false;
+			const opened = await onOpenDesign(item);
+			if (opened === true) navigating = true;
+			return opened === true;
+		},
+	}).then(() => {
+		if (!navigating && root.isConnected) onCancel();
+	}).catch(() => {
+		if (!navigating && root.isConnected) {
+			toast.error(errorMessage());
+			onCancel();
+		}
+	});
+	return () => { navigating = true; };
+}
+
 function mountManagement(root) {
 	const surface = root.querySelector('[data-cb-mail-saved-list]');
 	if (!surface) return;

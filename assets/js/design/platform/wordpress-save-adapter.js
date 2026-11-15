@@ -17,7 +17,7 @@ const issue=(code)=>Object.assign(new Error(code),{code});
 let mailTemplateActionBinder=null;
 let pendingMailTemplateContext=null;
 function installMailTemplateActions(context) {
-	if(context?.host?.state!=='READY'||!context.root?.isConnected)return;
+	if((context?.initialSelection!==true&&context?.host?.state!=='READY')||!context.root?.isConnected)return;
 	if(!mailTemplateActionBinder){
 		pendingMailTemplateContext=context;
 		return;
@@ -246,6 +246,10 @@ async function activate() {
 	const profileId=mail?'base/mail':'base/reports';
 	const selected=mail?screen.querySelector('[data-cb-mail-template-select]'):null;
 	const resourceKey=mail?(selected?.value||mail.dataset.cbMailTemplate||''):'maintenance';
+	const mailDesigns=selected ? Array.from(selected.options).filter(option=>option.value).map(option=>({
+		id:option.value, title:option.textContent.trim(),
+		provider:option.parentElement?.label||'',
+	})) : [];
 	// Preserve the PHP-rendered status element until Host READY or refusal.
 	const loadingContext=origin.querySelector('[data-cb-platform-base-context]') ||
 		(origin.matches('[data-cb-platform-base-context]') ? origin : null);
@@ -259,6 +263,37 @@ async function activate() {
 		if(startupHeader)startupHeader.hidden=false;
 		showRefusal(panel,code);
 	};
+	if(mail?.dataset.cbMailSelection==='1') {
+		// No Host, editor or Save authority exists before explicit design choice.
+		// The scope is tied to a real resource but used only for Browser metadata.
+		const close=screen.querySelector('[data-cb-platform-header-close]');
+		if(!selected||!mailDesigns.length||!mail.dataset.cbMailScope||!close){
+			screen.dataset.cbPlatformFailed='true';
+			screen.setAttribute('aria-busy','false');
+			if(startupHeader)startupHeader.hidden=false;
+			showRefusal(origin,'HOST_CONTEXT_REFUSED');
+			return;
+		}
+		selected.hidden=true;
+		selected.setAttribute('aria-hidden','true');
+		selected.tabIndex=-1;
+		if(startupHeader)startupHeader.hidden=false;
+		screen.setAttribute('aria-busy','false');
+		installMailTemplateActions({
+			initialSelection:true,root:mail,scopeToken:mail.dataset.cbMailScope,
+			designs:mailDesigns,
+			onOpenDesign:async item=>{
+				if(!item||typeof item.id!=='string'||!mailDesigns.some(design=>design.id===item.id))return false;
+				const url=new URL(location.href);
+				url.searchParams.set('template',item.id);
+				url.searchParams.delete('cb_mail_browser');
+				location.assign(url.href);
+				return true;
+			},
+			onCancel:()=>location.assign(close.href),
+		});
+		return;
+	}
 	const previous=origin.querySelector('[data-cb-design-shell]');
 	if(previous)previous.hidden=true;
 	const panel=document.createElement('div');
@@ -381,10 +416,7 @@ async function activate() {
 		if(mail) {
 			// Install after Exit Guard registration: Browser design switches
 			// must use the same Save / Discard authority as Close.
-			const designs = selected ? Array.from(selected.options).filter(option=>option.value).map(option=>({
-				id:option.value, title:option.textContent.trim(),
-				provider:option.parentElement?.label||'',
-			})) : [];
+			const designs=mailDesigns;
 			const openDesign = async item => {
 				if(!selected||host.state!=='READY'||!item||typeof item.id!=='string'
 					||!designs.some(design=>design.id===item.id))return false;

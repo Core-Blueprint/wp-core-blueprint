@@ -44,7 +44,7 @@ final class Page extends PageBase {
 	public function capability(): string { return 'manage_options'; }
 
 	/**
-	 * Build native, escaped optgroups for the existing landing and Header Picker.
+	 * Build escaped optgroups for the native Host Picker and initial Browser.
 	 * Only active validated registry entries are present. No parallel selector.
 	 *
 	 * @param array<string,array<string,mixed>> $templates
@@ -170,8 +170,13 @@ final class Page extends PageBase {
 				echo '<div class="wrap cb-core-wrap"><section class="cb-core-panel"><h2>' . esc_html__( 'Mail Designer unavailable', 'core-blueprint' ) . '</h2><p>' . esc_html__( 'Enable Mail Designer and register at least one template before editing.', 'core-blueprint' ) . '</p></section></div>';
 			} else {
 				$editor_mode = DesignEditorAssets::platform_fullscreen_requested();
+				// Only an explicit launcher without a selected template opens the Browser.
+				// Deep links to a registered design still mount its own Host directly.
+				$selection_requested = $editor_mode && ! isset( $_GET['template'] )
+					&& isset( $_GET['cb_mail_browser'] ) && is_string( $_GET['cb_mail_browser'] )
+					&& '1' === wp_unslash( $_GET['cb_mail_browser'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only route.
 				$landing_url = add_query_arg(
-					[ 'page' => self::SLUG, 'tab' => 'templates', 'template' => $template_id ],
+					[ 'page' => self::SLUG, 'tab' => 'templates' ],
 					admin_url( 'admin.php' )
 				);
 				?>
@@ -182,14 +187,11 @@ final class Page extends PageBase {
 								<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="cb-core-mail-designer__launch-form">
 									<input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>">
 									<input type="hidden" name="tab" value="templates">
-									<label class="cb-core-field__label" for="cb-mail-platform-template"><?php esc_html_e( 'Template', 'core-blueprint' ); ?></label>
-									<select id="cb-mail-platform-template" name="template" required>
-										<?php echo $options_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- options escaped during composition. ?>
-									</select>
+									<input type="hidden" name="cb_mail_browser" value="1">
 									<div class="cb-core-design-launch-wrap">
-										<button type="submit" name="cb_designer" value="1" class="button button-primary cb-core-button cb-core-button--primary cb-core-design-launch" aria-label="<?php esc_attr_e( 'Open Designer Mode', 'core-blueprint' ); ?>">
+										<button type="submit" name="cb_designer" value="1" class="button button-primary cb-core-button cb-core-button--primary cb-core-design-launch" aria-label="<?php esc_attr_e( 'Open Mail Designer', 'core-blueprint' ); ?>">
 											<img class="cb-core-design-launch__mark" src="<?php echo esc_attr( CoreBlueprintMark::data_uri() ); ?>" alt="" aria-hidden="true">
-											<span class="cb-core-design-launch__label"><?php esc_html_e( 'Design with Core Blueprint', 'core-blueprint' ); ?></span>
+											<span class="cb-core-design-launch__label"><?php esc_html_e( 'Open with Core Blueprint', 'core-blueprint' ); ?></span>
 										</button>
 									</div>
 								</form>
@@ -214,9 +216,9 @@ final class Page extends PageBase {
 							</a>
 						</header>
 						<div class="cb-core-platform-screen__body">
-							<div data-cb-mail-designer data-cb-mail-template="<?php echo esc_attr( $template_id ); ?>" data-cb-mail-scope="<?php echo esc_attr( (string) \CoreBlueprint\Core\TemplateLibrary\DesignerScope::issue( \CoreBlueprint\Core\Mail\Designer\NativeTemplateSource::SOURCE_ID, \CoreBlueprint\Core\Design\Document\Repository::MAIL, $template_id ) ); ?>">
+							<div data-cb-mail-designer data-cb-mail-selection="<?php echo $selection_requested ? '1' : '0'; ?>" data-cb-mail-template="<?php echo esc_attr( $template_id ); ?>" data-cb-mail-scope="<?php echo esc_attr( (string) \CoreBlueprint\Core\TemplateLibrary\DesignerScope::issue( \CoreBlueprint\Core\Mail\Designer\NativeTemplateSource::SOURCE_ID, \CoreBlueprint\Core\Design\Document\Repository::MAIL, $template_id ) ); ?>">
 								<div data-cb-platform-base-context>
-									<p role="status"><?php esc_html_e( 'Verifying the Designer and loading the selected template…', 'core-blueprint' ); ?></p>
+									<p role="status"><?php $selection_requested ? esc_html_e( 'Choose a Mail design in the Browser to begin editing.', 'core-blueprint' ) : esc_html_e( 'Verifying the Designer and loading the selected template…', 'core-blueprint' ); ?></p>
 								</div>
 							</div>
 						</div>
