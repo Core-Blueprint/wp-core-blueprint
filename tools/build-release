@@ -329,6 +329,26 @@ def package_payloads(source: Path, files: list[Path], revision: str) -> dict[str
             imports.add(dependency)
         graph[path] = sorted(imports)
 
+    # The verified PHP InstalledVerifier requires *every* static import to
+    # appear as its own graph node, not just as an installed file digest.
+    # This single first-party PDF.js resolver lives beside (not inside)
+    # assets/js/design, preserving the static-only Designer source policy.
+    # It is a terminal node because the only deferred import is the
+    # locally registered, pinned WordPress PDF.js display module.
+    external_imports = {
+        dependency
+        for imports in graph.values()
+        for dependency in imports
+        if dependency not in graph
+    }
+    deferred_loader = "assets/js/document/pdfjs-loader.js"
+    if external_imports - {deferred_loader}:
+        fail("Unapproved external Designer module graph dependency.")
+    if deferred_loader in external_imports:
+        if deferred_loader not in payloads:
+            fail("Approved PDF.js loader is missing from packaged source.")
+        graph[deferred_loader] = []
+
     build_input = b"".join(
         _length_prefix(path) + _length_prefix(digest)
         for path, digest in sorted(files_sha.items())
