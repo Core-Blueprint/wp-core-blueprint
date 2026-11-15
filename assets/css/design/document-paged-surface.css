@@ -60,9 +60,10 @@
 	appearance: none;
 	-webkit-appearance: none;
 }
+/* Hover/focus are local; canonical Base DF-D3 paints selected outlines.
+ * Do not stack a second selection rectangle on top of shared presentation. */
 .cb-core-flow-paged__region:enabled:hover,
-.cb-core-flow-paged__region:focus-visible,
-.cb-core-flow-paged__region.is-selected {
+.cb-core-flow-paged__region:focus-visible {
 	border-color: var(--cb-color-accent, #1369be);
 	outline: none;
 	box-shadow: 0 0 0 1px rgb(255 255 255 / 70%) inset;
@@ -77,4 +78,13 @@
 	.cb-core-flow-paged,
 	.cb-core-flow-paged__page,
 	.cb-core-flow-paged__region { scroll-behavior: auto; transition: none; }
+}
+
+@media (forced-colors: active) {
+	.cb-core-flow-paged__region:enabled:hover,
+	.cb-core-flow-paged__region:focus-visible {
+		border-color: Highlight;
+		outline: 2px solid Highlight;
+		outline-offset: 0;
+	}
 }
