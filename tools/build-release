@@ -102,7 +102,19 @@ def check_pdfjs_vendor(source: Path) -> None:
 
 
 def collect_files(source: Path) -> list[Path]:
-    check_pdfjs_vendor(source)
+    # Test-builder fixtures deliberately contain a minimal (pre-Document)
+    # plugin, not a full installed Base runtime. Require the pinned bundle
+    # only when a real PDF.js consumer/asset declaration exists. Never allow
+    # a viewer-capable runtime to be packaged without verified local assets.
+    viewer_adapter = source / "assets/js/design/document/flow/pdfjs-page-source.js"
+    asset_registry = source / "src/Design/Editor/Assets.php"
+    asset_declared = (
+        asset_registry.is_file()
+        and "@cb-core/pdfjs-display" in asset_registry.read_text(encoding="utf-8")
+    )
+    if (viewer_adapter.is_file() or asset_declared
+        or (source / "assets/vendor/pdfjs").exists()):
+        check_pdfjs_vendor(source)
     files: list[Path] = []
 
     for relative in ROOT_FILES:
