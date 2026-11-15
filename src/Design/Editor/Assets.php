@@ -36,6 +36,8 @@ final class Assets {
 	public const FLOW_PREVIEW_NESTED_REGIONS_API = 1;
 	/** Optional true Dompdf pagination count from the same PDF render (not HTML page geometry). */
 	public const FLOW_PAGED_PAGE_COUNT_API = 1;
+	/** MC-02B: authorized, resource-scoped and fictional Mail Dynamic Data palette. */
+	public const MAIL_BINDING_CATALOG_API = 1;
 	/** A consumer may authoritatively withhold Save without Base re-enabling it on idle/error. */
 	public const SAVE_AUTHORITY_UI_API = 1;
 	/** Public opt-in contract for compact Inspector sections and textarea growth. */

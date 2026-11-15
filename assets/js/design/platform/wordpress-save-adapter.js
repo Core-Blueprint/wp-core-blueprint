@@ -213,6 +213,11 @@ export async function loadWordPressContext(profileId,resourceKey,contextEpoch){
 		||loaded.resourceKey!==resourceKey||loaded.contextEpoch!==contextEpoch
 		||typeof loaded.storeRevision!=='string'
 		||!loaded.bootstrap||!loaded.project||!loaded.fields)throw issue('HOST_CONTEXT_REFUSED');
+	// The catalog is attached to the SAME authenticated resource context.
+	// Never use a cached provider list after a Browser resource switch.
+	if(profileId==='base/mail'&&(loaded.mailBindingCatalog?.version!==1
+		||loaded.mailBindingCatalog.resourceKey!==resourceKey
+		||!Array.isArray(loaded.mailBindingCatalog.items)))throw issue('HOST_CONTEXT_REFUSED');
 	return loaded;
 }
 
@@ -332,6 +337,7 @@ async function activate() {
 			},
 			createSaveAdapter:createWordPressSaveAdapter,
 			notifySave:notifyDesignerSave,
+			mailBindingCatalog:mail?loaded.mailBindingCatalog:null,
 		});
 		await host.mount({bootstrap:loaded.bootstrap,project:loaded.project,persistedFields:loaded.fields});
 		// Host-READY is the only point where the native toolbar may replace the

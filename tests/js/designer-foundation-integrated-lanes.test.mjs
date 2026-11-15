@@ -44,3 +44,18 @@ test('cross-lane: document navigation and true PDF page count survive Mail/Conte
 	assert.match(renderer, /getCanvas\(\)->get_page_count\(\)/);
 	assert.match(frame, /frameBoxHeight/);
 });
+
+test('MC-02B adds scoped Dynamic Data without replacing Browser-first, canvas context or page nav', async () => {
+	const editor = await source('assets/js/design/editor.js');
+	const php = await source('src/Mail/Designer/BindingRegistry.php');
+	const transport = await source('src/Design/Editor/PlatformTransport.php');
+	const wp = await source('assets/js/design/platform/wordpress-save-adapter.js');
+	assert.match(editor, /projectNativeMailBindingTokens\(mailBindingCatalog, context\.resourceId\)/);
+	assert.doesNotMatch(editor, /const mailData = \[/);
+	assert.match(php, /function catalog_for_resource\(/);
+	assert.match(php, /SYNTHETIC_EXAMPLES/);
+	assert.match(transport, /mailBindingCatalog/);
+	assert.match(wp, /mailBindingCatalog:mail\?loaded\.mailBindingCatalog:null/);
+	assert.match(editor, /tree\.openActions\(\{/);
+	assert.match(editor, /configureDesignerPageNavigation\(stagedRoot, \{signal\}\)/);
+});

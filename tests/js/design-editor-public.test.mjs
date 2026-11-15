@@ -1124,3 +1124,52 @@ test('DF-EXIT-01: both public session factories expose synchronous baseline rest
 	assert.equal(profile.discardToBaseline(), true);
 	profile.dispose();
 });
+
+test('MC-02B projects only current resource and provider from versioned catalog', () => {
+	const item = (id, provider, group, label, example = 'Example value') => ({id, provider, group, label, example});
+	const catalog = {
+		version: 1, resourceKey: 'bookings.customer-confirmed', provider: 'bookings',
+		items: [
+			item('site.name', 'core', 'site', 'Site name', 'Example Site'),
+			item('action.label', 'core', 'action', 'Action label', 'Continue'),
+			item('booking.customer_name', 'bookings', 'bookings', 'Customer name', 'Jane Example'),
+			item('booking.manage_url', 'bookings', 'bookings', 'Manage URL', 'https://example.invalid'),
+		],
+	};
+	const tokens = publicEditor.projectNativeMailBindingTokens(catalog, 'bookings.customer-confirmed');
+	assert.equal(tokens.length, 4);
+	assert.ok(Object.isFrozen(tokens));
+	assert.equal(tokens[2].value, '{{booking.customer_name}}');
+	assert.match(tokens[2].description, /Bookings · Bookings · Example: Jane Example/);
+	assert.equal(tokens[2].action, 'copy');
+	assert.deepEqual(publicEditor.projectNativeMailBindingTokens(catalog, 'wordpress.new-user'), []);
+	assert.deepEqual(publicEditor.projectNativeMailBindingTokens({...catalog, version: 2}, catalog.resourceKey), []);
+	assert.deepEqual(publicEditor.projectNativeMailBindingTokens({...catalog, provider: 'lms'}, catalog.resourceKey), []);
+	assert.deepEqual(publicEditor.projectNativeMailBindingTokens({...catalog,
+		items: [...catalog.items, item('lms.student_name', 'lms', 'lms', 'Learner', 'Private')]
+	}, catalog.resourceKey), [], 'one cross-provider item invalidates the complete snapshot');
+	assert.deepEqual(publicEditor.projectNativeMailBindingTokens({...catalog,
+		items: [...catalog.items, catalog.items[0]]
+	}, catalog.resourceKey), [], 'duplicate IDs are rejected without partial admission');
+	assert.deepEqual(publicEditor.projectNativeMailBindingTokens({...catalog,
+		items: [item('user.email', 'core', 'user', 'Email\nInjected')]
+	}, catalog.resourceKey), []);
+	assert.deepEqual(publicEditor.projectNativeMailBindingTokens({...catalog,
+		items: Array.from({length: 97}, (_, n) => item('booking.field' + n, 'bookings', 'bookings', 'Field ' + n))
+	}, catalog.resourceKey), []);
+});
+
+test('MC-02B keeps only approved WordPress shared IDs on WordPress resources', () => {
+	const catalog = {
+		version: 1, resourceKey: 'wordpress.password-reset', provider: 'core',
+		items: [
+			{id: 'action.label', provider: 'core', group: 'action', label: 'Action label', example: 'Continue'},
+			{id: 'site.url', provider: 'core', group: 'site', label: 'Site URL', example: 'https://example.invalid'},
+		],
+	};
+	const tokens = publicEditor.projectNativeMailBindingTokens(catalog, catalog.resourceKey);
+	assert.deepEqual(tokens.map(t => t.id), ['action.label', 'site.url']);
+	assert.deepEqual(publicEditor.projectNativeMailBindingTokens({...catalog,
+		items: [...catalog.items, {id: 'core.unadmitted', provider: 'core', group: 'site', label: 'Unadmitted', example: 'x'}]
+	}, catalog.resourceKey), []);
+});

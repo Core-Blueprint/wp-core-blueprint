@@ -44,7 +44,7 @@ final class Renderer {
 		try {
 			return ( new ProjectRenderer() )->render(
 				is_array( $project ) ? $project : $template['project'],
-				$fields, BindingRegistry::preview_values(), [ 'editor_markers' => true ]
+				$fields, BindingRegistry::synthetic_preview_values(), [ 'editor_markers' => true ]
 			);
 		} catch ( \Throwable $error ) {
 			return null;

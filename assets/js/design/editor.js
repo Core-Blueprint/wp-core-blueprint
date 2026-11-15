@@ -967,12 +967,56 @@ const configurePlatformSidebars = (root, signal) => {
  * Do not expose this constructor on window.cbCore or treat its bootstrap
  * argument as proof of authorization: the Host validates trusted evidence.
  */
+/**
+ * MC-02B: copy-only palette descriptors from one scoped server admission.
+ * Never accept bindings from a document, URL, Browser item, or global window.
+ * A malformed or stale catalog closes the palette instead of leaking a provider.
+ */
+export const projectNativeMailBindingTokens = (catalog, resourceKey) => {
+	const empty = Object.freeze([]);
+	const validProvider = value => typeof value === 'string'
+		&& /^[a-z][a-z0-9_-]{0,47}$/.test(value);
+	const validKey = value => typeof value === 'string' && value.length <= 96
+		&& /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)+$/.test(value);
+	if (!catalog || typeof catalog !== 'object' || Array.isArray(catalog)
+		|| catalog.version !== 1 || !validKey(resourceKey)
+		|| catalog.resourceKey !== resourceKey || !validProvider(catalog.provider)
+		|| !Array.isArray(catalog.items) || catalog.items.length > 96) return empty;
+	const core = new Set(['site.name', 'site.url', 'site.admin_email',
+		'user.display_name', 'user.login', 'user.email', 'action.url', 'action.label']);
+	const seen = new Set();
+	const tokens = [];
+	for (const item of catalog.items) {
+		if (!item || typeof item !== 'object' || Array.isArray(item)
+			|| !validKey(item.id) || seen.has(item.id)
+			|| !validProvider(item.provider)
+			|| (item.provider === 'core' ? !core.has(item.id)
+				: item.provider !== catalog.provider)
+			|| typeof item.group !== 'string' || !/^[a-z][a-z0-9_-]{0,47}$/.test(item.group)
+			|| typeof item.label !== 'string' || !item.label.trim()
+			|| item.label.length > 120 || /[\x00-\x1f\x7f]/.test(item.label)
+			|| typeof item.example !== 'string' || item.example.length > 180
+			|| /[\x00-\x1f\x7f]/.test(item.example)) return empty;
+		seen.add(item.id);
+		const providerLabel = item.provider === 'core' ? 'WordPress'
+			: item.provider.replace(/[-_]/g, ' ').replace(/\b[a-z]/g, c => c.toUpperCase());
+		const groupLabel = item.group.replace(/[-_]/g, ' ').replace(/\b[a-z]/g, c => c.toUpperCase());
+		tokens.push(Object.freeze({
+			id: item.id, label: item.label, value: '{{' + item.id + '}}',
+			description: providerLabel + ' · ' + groupLabel + ' · Example: ' + item.example,
+			state: 'interactive', action: 'copy',
+		}));
+	}
+	return Object.freeze(tokens);
+};
+
 export const attachTrustedDesignerHost = ({
 	root, canvasRoot, bootstrap, runtimeModules,
 	createHost = createPlatformHost,
 	createSaveAdapter,
 	loadReceipt,
 	notifySave = null,
+	mailBindingCatalog = null,
 } = {}) => {
 	if (!(root instanceof Element) || !root.matches('[data-cb-design-shell]')) {
 		throw new TypeError('Designer Platform requires a canonical shell root.');
@@ -1297,17 +1341,9 @@ export const attachTrustedDesignerHost = ({
 			// Native Mail and Maintenance Reports share the exact public
 			// Elements renderer; only the registered profile owns commands.
 			const doc = stagedRoot.ownerDocument;
-			const mailData = [
-				['Site name','site.name'], ['Site URL','site.url'],
-				['Admin email','site.admin_email'], ['Display name','user.display_name'],
-				['Username','user.login'], ['User email','user.email'],
-				['Action URL','action.url'],
-			];
 			const nativeTokens = activeRegistry.profileId === 'base/mail'
-				? mailData.map(([label, key]) => ({
-					id: key, label, value: '{{' + key + '}}',
-					state: 'interactive', action: 'copy',
-				})) : [];
+				? projectNativeMailBindingTokens(mailBindingCatalog, context.resourceId)
+				: Object.freeze([]);
 			// Palette state follows the live document and selection. A trusted profile
 			// can further restrict insertability (for example Reports singletons).
 			// The registered command still enforces all domain rules.

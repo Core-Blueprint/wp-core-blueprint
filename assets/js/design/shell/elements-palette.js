@@ -122,6 +122,13 @@ export const createDesignerElementsPalette = ({
 		label.className = 'cb-core-design-shell__palette-item-label';
 		label.textContent = entry.label;
 		control.append(label);
+		if (source === 'dynamic-data' && entry.description) {
+			const metadata = documentRef.createElement('span');
+			metadata.className = 'cb-core-design-shell__dynamic-item-meta';
+			metadata.textContent = entry.description;
+			control.classList.add('cb-core-design-shell__dynamic-item--described');
+			control.append(metadata);
+		}
 		control.title = source === 'dynamic-data' ? entry.value : title;
 		if (interactive) {
 			control.setAttribute('aria-label', source === 'dynamic-data'

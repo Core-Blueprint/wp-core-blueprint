@@ -156,3 +156,18 @@ test('descriptor input is validated and plain text never becomes markup', () => 
 	assert.equal(cards(palette)[0].children.at(-1).textContent, '<img src=x onerror=alert(1)>');
 	palette.destroy();
 });
+
+test('MC-02B describes Dynamic Data with inert provider/group/example metadata', () => {
+	const doc = fakeDocument();
+	const palette = createDesignerElementsPalette({
+		documentRef: doc, elements: [],
+		dynamicData: [{
+			...tokens[0], description: 'WordPress · Site · Example: Example Site',
+		}], onIntent() {},
+	});
+	const token = cards(palette, 'dynamic-data')[0];
+	assert.equal(token.children.at(-1).textContent, 'WordPress · Site · Example: Example Site');
+	assert.equal(token.children.at(-1).className, 'cb-core-design-shell__dynamic-item-meta');
+	assert.equal(token.title, '{{site.name}}');
+	palette.destroy();
+});

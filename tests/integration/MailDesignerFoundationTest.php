@@ -92,6 +92,78 @@ final class CB_Mail_Designer_Foundation_Test extends WP_UnitTestCase {
 		}
 	}
 
+
+	public function test_mc02b_catalog_scopes_provider_bindings_and_never_exposes_real_preview_values(): void {
+		$previous_user = get_current_user_id();
+		$admin_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		try {
+			wp_set_current_user( $admin_id );
+			$settings = MailSettings::defaults();
+			$settings['designer_enabled'] = true;
+			MailSettings::save( $settings );
+			BindingRegistry::all(); // Boot Base's eight shared IDs first.
+
+			// Register a fully admitted synthetic Bookings resource. We do not
+			// require a Bookings plugin install for this Base contract test.
+			$document = \CoreBlueprint\Core\Mail\Designer\WordPressTemplates::default_document( 'wordpress.new-user' );
+			self::assertIsArray( $document );
+			self::assertTrue( TemplateRegistry::register( [
+				'id' => 'bookings.test-notification', 'provider' => 'bookings',
+				'group' => 'bookings', 'label' => 'Test booking notification',
+				'document' => $document,
+			] ) );
+			$keys = [
+				'customer_name', 'customer_email', 'customer_phone', 'customer_notes',
+				'type_name', 'status', 'date', 'start_time', 'end_time',
+				'timezone', 'location', 'manage_url', 'manage_line', 'resource_names',
+			];
+			foreach ( $keys as $key ) {
+				$id = 'booking.' . $key;
+				self::assertTrue( BindingRegistry::register( [
+					'id' => $id, 'provider' => 'bookings', 'group' => 'bookings',
+					'label' => 'Booking ' . $key, 'preview' => 'live-site.example/private-secret',
+					'resolver' => static fn ( array $context ): string => 'REAL_PRIVATE_VALUE',
+				] ) );
+			}
+			self::assertTrue( BindingRegistry::register( [
+				'id' => 'lms.student_name', 'provider' => 'lms', 'group' => 'lms',
+				'label' => 'Learner name', 'preview' => 'REAL_LEARNER',
+				'resolver' => static fn ( array $context ): string => 'REAL_LEARNER',
+			] ) );
+			$catalog = BindingRegistry::catalog_for_resource( 'bookings.test-notification' );
+			self::assertIsArray( $catalog );
+			self::assertSame( 1, $catalog['version'] );
+			self::assertSame( 'bookings.test-notification', $catalog['resourceKey'] );
+			self::assertSame( 'bookings', $catalog['provider'] );
+			self::assertCount( 22, $catalog['items'] );
+			$ids = array_column( $catalog['items'], 'id' );
+			foreach ( $keys as $key ) self::assertContains( 'booking.' . $key, $ids );
+			self::assertContains( 'action.label', $ids );
+			self::assertNotContains( 'lms.student_name', $ids );
+			$json = wp_json_encode( $catalog );
+			self::assertIsString( $json );
+			self::assertStringNotContainsString( 'REAL_PRIVATE_VALUE', $json );
+			self::assertStringNotContainsString( 'live-site.example', $json );
+			self::assertStringNotContainsString( 'REAL_LEARNER', $json );
+			self::assertStringNotContainsString( 'resolver', $json );
+			self::assertStringContainsString( 'example.invalid', $json );
+			$core = BindingRegistry::catalog_for_resource( 'wordpress.new-user' );
+			self::assertIsArray( $core );
+			self::assertCount( 8, $core['items'] );
+			self::assertNotContains( 'booking.customer_name', array_column( $core['items'], 'id' ) );
+			$preview = BindingRegistry::synthetic_preview_values();
+			self::assertSame( 'Example Site', $preview['site.name'] );
+			self::assertSame( 'admin@example.invalid', $preview['site.admin_email'] );
+			self::assertSame( 'Jane Example', $preview['booking.customer_name'] );
+			self::assertSame( 'Example value', $preview['lms.student_name'] );
+			self::assertNull( BindingRegistry::catalog_for_resource( 'bookings.nonexistent' ) );
+			wp_set_current_user( 0 );
+			self::assertNull( BindingRegistry::catalog_for_resource( 'bookings.test-notification' ) );
+		} finally {
+			wp_set_current_user( $previous_user );
+		}
+	}
+
 	public function test_wordpress_templates_use_the_single_mail_design_profile(): void {
 		$templates = TemplateRegistry::all();
 		self::assertArrayHasKey( 'wordpress.password-reset', $templates );

@@ -203,6 +203,11 @@ final class PlatformTransport {
 			'actorId' => (int)get_current_user_id(), 'resourceType' => $identity['type'],
 			'resourceKey' => $resource, 'storeRevision' => $revision,
 			'project' => $doc['project'], 'fields' => $doc['fields'],
+			// Read-only Mail palette data from the SAME authorized context.
+			// Report contexts receive no Mail or other provider metadata.
+			...( Mail::PROFILE === $profile ? [
+				'mailBindingCatalog' => \CoreBlueprint\Core\Mail\Designer\BindingRegistry::catalog_for_resource( $resource ),
+			] : [] ),
 		] );
 	}
 
