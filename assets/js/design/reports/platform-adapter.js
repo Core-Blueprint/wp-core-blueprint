@@ -1,4 +1,6 @@
 import {createFlowPreviewHost} from '../document/flow/preview-host.js';
+import {createFlowPagedPreviewHost} from '../document/flow/paged-preview-host.js';
+import {configureDesignerPageNavigation} from '@cb-core/design-editor';
 import {
 	insertNodeCommand, removeNodeCommand, reorderNodeCommand, moveNodeCommand, setPropertyCommand,
 } from '../core/commands.js';
@@ -252,6 +254,7 @@ const previewPathForRegion = (region, project) => {
 export function createRenderAdapter({root,document:doc,profileId}) {
 	if (!root || !doc || profileId !== 'base/reports') throw new TypeError('HOST_MODULE_MISSING');
 	let editor = null, container = null, frame = null, preview = null, dropLayer = null, destroyed = false;
+	let pagedHost = null, pagedCanvas = null, pagedMode = false;
 	let activeSignal = null, request = null, connectedObserver = null;
 	let lastDocumentKey = '', lastProject = null, requestedSerial = 0, lastSelection = null, lastRegions = [];
 	const el = (tag, cls, value = '') => {
@@ -276,6 +279,15 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		return {endpoint, nonce: config.nonce};
 	};
 	const selectedRegion = (selection) => previewRegionForPath(selection, lastProject);
+	const resolvePagedRegion = regionId => {
+		const path = previewPathForRegion(regionId, lastProject);
+		const node = path === null ? null : nodeAt(lastProject?.root, path);
+		if (!node || !path || typeof node.type !== 'string') return null;
+		return {
+			path, type: node.type,
+			draggable: !['reports.header', 'reports.footer'].includes(node.type),
+		};
+	};
 	const stopObserver = () => {
 		connectedObserver?.disconnect();
 		connectedObserver = null;
@@ -308,6 +320,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		const alreadyReported = container?.classList.contains('is-preview-error') === true;
 		stopObserver();
 		if (preview) preview.render('');
+		pagedHost?.cancel();
 		if (container) {
 			container.dataset.cbReportsPreviewSource = 'error';
 			container.classList.remove('is-fetching');
@@ -323,8 +336,8 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 		}
 		lastDocumentKey = '';
 	};
-	const showCompiled = (html, source) => {
-		if (destroyed || activeSignal?.aborted) return;
+	const showProvenance = source => {
+		if (destroyed || activeSignal?.aborted || !container) return;
 		const note = container.querySelector('[data-cb-reports-preview-note]');
 		container.dataset.cbReportsPreviewSource = source;
 		note.textContent = source === 'sample'
@@ -332,6 +345,10 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			: 'Most recent archived report. Historical values, not live status.';
 		note.hidden = false;
 		container.classList.remove('is-fetching', 'is-preview-error');
+	};
+	const showCompiled = (html, source) => {
+		if (destroyed || activeSignal?.aborted) return;
+		showProvenance(source);
 		schedulePreview(html);
 	};
 
@@ -346,6 +363,9 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			surface.setAttribute('aria-pressed',
 				surface.dataset.cbDesignNodeDragSource === key ? 'true' : 'false');
 		}
+		// The native PDF.js surface owns its own semantic focus and buttons;
+		// Host selection remains the only authority for their selected state.
+		pagedHost?.setSelection(selectedRegion(lastSelection));
 	};
 	// The isolated renderer sends only bounded, generation-verified geometry.
 	// This adapter creates same-document proxy zones outside the iframe; the
@@ -485,23 +505,43 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			container.style.position = 'relative';
 			const note = el('p', 'cb-reports-platform__preview-note', 'Loading report preview…');
 			note.dataset.cbReportsPreviewNote = '1';
-			frame = el('iframe', 'cb-reports-platform__preview-frame');
-			frame.setAttribute('title', 'Maintenance report preview');
-			// The native Designer's trusted parent hit regions own all hover and
-			// selection interaction; the sandboxed iframe remains render-only.
-			// Do not alter its sandbox, CSP or existing message verification.
-			frame.style.pointerEvents = 'none';
+			pagedMode = doc.defaultView?.cbCorePlatformV1?.documentPaged === true;
+			if (pagedMode) {
+				pagedCanvas = el('div', 'cb-reports-platform__paged-canvas');
+			} else {
+				// Continuous Flow remains available only to older hosts that
+				// have not declared the canonical Document Paged capability.
+				frame = el('iframe', 'cb-reports-platform__preview-frame');
+				frame.setAttribute('title', 'Maintenance report preview');
+				frame.style.pointerEvents = 'none';
+			}
 			dropLayer = el('div', 'cb-reports-platform__drop-layer');
 			dropLayer.style.position = 'absolute';
 			dropLayer.style.inset = '0';
 			dropLayer.style.zIndex = '5';
 			dropLayer.style.pointerEvents = 'none';
-			container.append(note, frame, dropLayer);
+			container.append(note, pagedMode ? pagedCanvas : frame, dropLayer);
 			root.append(container);
-			preview = createFlowPreviewHost(frame, {onActivate, onRegions});
+			if (pagedMode) {
+				const designerRoot = root.closest?.('[data-cb-design-shell]');
+				const navigation = designerRoot
+					? configureDesignerPageNavigation(designerRoot) : null;
+				if (!navigation) throw new TypeError('REPORTS_PAGE_NAVIGATION_UNAVAILABLE');
+				pagedHost = createFlowPagedPreviewHost({
+					root: pagedCanvas, navigation,
+					resolveRegion: resolvePagedRegion,
+					onActivate: intent => onActivate(intent.regionId),
+					onSource: showProvenance,
+					onError: showError,
+					signal,
+				});
+			} else {
+				preview = createFlowPreviewHost(frame, {onActivate, onRegions});
+			}
 		},
 		async update({project, selection, signal}) {
-			if (destroyed || signal?.aborted || activeSignal?.aborted || !container || !preview) {
+			if (destroyed || signal?.aborted || activeSignal?.aborted || !container
+				|| (!preview && !pagedHost)) {
 				throw new TypeError('RENDER_STALE');
 			}
 			validateProject(project);
@@ -511,7 +551,8 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			const documentKey = JSON.stringify({project, fields});
 			// Base paints selection in the parent overlay. Suppress the legacy
 			// iframe-only selection outline without changing other Flow previews.
-			preview.setSelection(null);
+			preview?.setSelection(null);
+			pagedHost?.setSelection(selectedRegion(selection));
 			if (documentKey === lastDocumentKey) return;
 			// A prior iframe's geometry is never usable for a new project revision.
 			clearRegions();
@@ -530,6 +571,20 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			note.textContent = 'Updating report preview…';
 			try {
 				const {endpoint, nonce} = resolveEndpoint();
+				if (pagedHost) {
+					const pagedEndpoint = endpoint.replace('/reports-designer/preview',
+						'/reports-designer/preview-paged');
+					const config = doc.defaultView.cbCorePlatformV1;
+					const ready = await pagedHost.render({
+						endpoint: pagedEndpoint, nonce, documentJSON: documentKey,
+						workerSrc: config.pdfjsWorker,
+						requestSignal: localRequest.signal,
+					});
+					if (ready && !destroyed && serial === requestedSerial) {
+						lastDocumentKey = documentKey;
+					}
+					return;
+				}
 				const response = await doc.defaultView.fetch(endpoint, {
 					method: 'POST',
 					credentials: 'same-origin',
@@ -557,7 +612,12 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			}
 		},
 		syncSelection({selection}) {
-			if (!destroyed) { lastSelection = selection; preview?.setSelection(null); syncInteractionSelection(); }
+			if (!destroyed) {
+				lastSelection = selection;
+				preview?.setSelection(null);
+				pagedHost?.setSelection(selectedRegion(selection));
+				syncInteractionSelection();
+			}
 		},
 		captureFocus() { return null; },
 		restoreFocus() {},
@@ -569,6 +629,9 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			stopObserver();
 			preview?.destroy();
 			preview = null;
+			pagedHost?.destroy();
+			pagedHost = null;
+			pagedCanvas = null;
 			editor = null;
 			container?.remove();
 			container = null;
