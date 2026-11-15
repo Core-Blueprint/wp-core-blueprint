@@ -63,11 +63,13 @@ test('Mail Browser uses the canonical workspace and rejects competing Save engin
 	assert.match(css, /\.cb-template-browser__collections/);
 });
 
-test('landing saved manager enqueues all static imports and never leaves an unowned loading fallback', () => {
+test('Browser-first Mail enqueues static imports without restoring the removed Saved Mail manager', () => {
 	assert.match(mailAssets, /UiAssets::enqueue_toasts\( UiAssets::TOAST_PRESENTATION_CORE \)/);
 	assert.match(mailAssets, /TemplateLibraryAssets::enqueue\(\)/);
 	assert.match(mailAssets, /'@cb-core\/mail-saved-library'/);
-	assert.match(mail, /status\.textContent = label\('loading', 'Loading saved templates…'\)/);
+	assert.match(mail, /beginMailDesignSelection\(/);
+	assert.match(mail, /openTemplateBrowser\(\{/);
+	assert.doesNotMatch(mail, /Loading saved templates…/);
 	assert.doesNotMatch(read('src/Mail/Admin/Page.php'), /<div data-cb-mail-saved-list role="status"><\?php esc_html_e\( 'Loading saved templates…'/);
 });
 
@@ -104,6 +106,8 @@ test('Designer Browser renders three panes with compact resource rows and separa
 			'const createActionMenu = () => null;')
 		.replace("import { createImportControl } from '@cb-core/template-resource-import';",
 			'const createImportControl = () => null;')
+		.replace("import { createJsonImportControl } from '@cb-core/template-json-import';",
+			'const createJsonImportControl = () => null;')
 		.replace("import { createBulkControl } from '@cb-core/template-bulk';",
 			'const createBulkControl = () => null;')
 		.replace('export { createBrowser, open, loadForApply };','')
@@ -211,6 +215,8 @@ test('Browser modal closes before a design navigation; Apply callback is never u
 			'const createActionMenu = () => null;')
 		.replace("import { createImportControl } from '@cb-core/template-resource-import';",
 			'const createImportControl = () => null;')
+		.replace("import { createJsonImportControl } from '@cb-core/template-json-import';",
+			'const createJsonImportControl = () => null;')
 		.replace("import { createBulkControl } from '@cb-core/template-bulk';",
 			'const createBulkControl = () => null;')
 		.replace('export { createBrowser, open, loadForApply };','')
