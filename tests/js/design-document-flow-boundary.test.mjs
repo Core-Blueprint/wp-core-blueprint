@@ -20,3 +20,19 @@ test('Shared editor core does not import Flow or Document modules', () => {
 		assert.doesNotMatch(code, /design\/document|\/flow\//i, file);
 	}
 });
+
+test('DP-NAV-02C deferred PDF.js loader preserves Base static module admission', () => {
+	const adapter = readFileSync(
+		new URL('assets/js/design/document/flow/pdfjs-page-source.js', root), 'utf8',
+	);
+	const bridge = readFileSync(
+		new URL('assets/js/document/pdfjs-loader.js', root), 'utf8',
+	);
+	assert.match(adapter, /from ['"]\.\.\/\.\.\/\.\.\/document\/pdfjs-loader\.js['"]/);
+	assert.doesNotMatch(adapter, /\bimport\s*\(/,
+		'Designer source must contain only static imports');
+	assert.equal((bridge.match(/\bimport\s*\(/g) || []).length, 1);
+	assert.match(bridge, /import\(['"]@cb-core\/pdfjs-display['"]\)/);
+	assert.doesNotMatch(bridge, /https?:\/\/|fetch\s*\(/,
+		'The PDF.js bridge may not request external scripts or URLs');
+});
