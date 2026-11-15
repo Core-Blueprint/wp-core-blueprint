@@ -1,6 +1,6 @@
 import {createFlowPreviewHost} from '../document/flow/preview-host.js';
 import {createFlowPagedPreviewHost} from '../document/flow/paged-preview-host.js';
-import {configureDesignerPageNavigation} from '@cb-core/design-editor';
+import {configureDesignerPageNavigation} from '../shell/page-navigation.js';
 import {
 	insertNodeCommand, removeNodeCommand, reorderNodeCommand, moveNodeCommand, setPropertyCommand,
 } from '../core/commands.js';
@@ -363,9 +363,9 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			surface.setAttribute('aria-pressed',
 				surface.dataset.cbDesignNodeDragSource === key ? 'true' : 'false');
 		}
-		// The native PDF.js surface owns its own semantic focus and buttons;
-		// Host selection remains the only authority for their selected state.
-		pagedHost?.setSelection(selectedRegion(lastSelection));
+		// Paged document selection is handled by update() for the active
+		// canonical Host revision. This legacy iframe proxy refresh never
+		// changes an independent PDF.js selection.
 	};
 	// The isolated renderer sends only bounded, generation-verified geometry.
 	// This adapter creates same-document proxy zones outside the iframe; the
@@ -551,7 +551,7 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			const documentKey = JSON.stringify({project, fields});
 			// Base paints selection in the parent overlay. Suppress the legacy
 			// iframe-only selection outline without changing other Flow previews.
-			preview?.setSelection(null);
+			if (preview) preview.setSelection(null);
 			pagedHost?.setSelection(selectedRegion(selection));
 			if (documentKey === lastDocumentKey) return;
 			// A prior iframe's geometry is never usable for a new project revision.
