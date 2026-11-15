@@ -35,6 +35,10 @@ before(async () => {
     : new URL('../../assets/js/design/', import.meta.url),
   dest, { recursive: true });
   await convert(dest);
+  // The real Designer now statically imports the Base document bridge.
+  // Mirror its sibling asset directory in this isolated ESM worktree.
+  await cp(new URL('../../assets/js/document/', import.meta.url), join(temp, 'document'), {recursive: true});
+  await convert(join(temp, 'document'));
   globalThis.window = {};
   editor = await import(pathToFileURL(join(dest, 'editor.mjs')).href);
 });
