@@ -1,6 +1,8 @@
 """Failure-path and artifact tests; native PHP/WordPress gates run separately."""
 import importlib.machinery
 import importlib.util
+import hashlib
+import json
 import tempfile
 import unittest
 import zipfile
@@ -35,6 +37,50 @@ class ReleaseBuilderTest(unittest.TestCase):
         )
         (design / 'shell/fixture.js').write_text("export const fixture = 1;\\n")
         self.output = self.root / 'dist'
+
+    def test_pdfjs_viewer_runtime_requires_pinned_vendor_even_in_test_fixture(self):
+        """The guard is conditional on actual viewer use, never on build mode."""
+        adapter = self.source / 'assets/js/design/document/flow/pdfjs-page-source.js'
+        adapter.parent.mkdir(parents=True, exist_ok=True)
+        adapter.write_text('export const viewer = true;\\n')
+        with self.assertRaises(SystemExit):
+            builder.collect_files(self.source)
+
+    def test_pdfjs_asset_registration_requires_pinned_vendor(self):
+        assets = self.source / 'src/Design/Editor/Assets.php'
+        assets.parent.mkdir(parents=True, exist_ok=True)
+        assets.write_text("<?php // @cb-core/pdfjs-display\\n")
+        with self.assertRaises(SystemExit):
+            builder.collect_files(self.source)
+
+    def test_pdfjs_vendor_manifest_checks_all_asset_bytes_and_inventory(self):
+        """The actual viewer may only package matching local package bytes."""
+        vendor = self.source / 'assets/vendor/pdfjs'
+        vendor.mkdir(parents=True)
+        files = {
+            'pdf.min.mjs': b'export const version = "6.5.438";\\n',
+            'pdf.worker.min.mjs': b'/* matching local worker */\\n',
+            'LICENSE': b'Apache License, Version 2.0\\n',
+        }
+        for name, content in files.items():
+            (vendor / name).write_bytes(content)
+        manifest = {
+            'package': 'pdfjs-dist@6.5.438',
+            'license': 'Apache-2.0',
+            'files': {
+                name: hashlib.sha256(content).hexdigest()
+                for name, content in files.items()
+            },
+        }
+        (vendor / 'manifest.json').write_text(json.dumps(manifest))
+        packaged = [p.relative_to(self.source).as_posix()
+                    for p in builder.collect_files(self.source)]
+        self.assertIn('assets/vendor/pdfjs/pdf.min.mjs', packaged)
+        self.assertIn('assets/vendor/pdfjs/pdf.worker.min.mjs', packaged)
+        self.assertIn('assets/vendor/pdfjs/LICENSE', packaged)
+        (vendor / 'pdf.worker.min.mjs').write_bytes(b'corrupted')
+        with self.assertRaises(SystemExit):
+            builder.collect_files(self.source)
 
     def archive(self, path, extra=False):
         with zipfile.ZipFile(path, 'w') as archive:
