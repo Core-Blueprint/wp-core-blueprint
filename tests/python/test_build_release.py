@@ -279,6 +279,68 @@ class ReleaseBuilderTest(unittest.TestCase):
         second = builder.design_module_revision(self.source)
         self.assertNotEqual(first, second)
 
+    def _make_pdfjs_manifest_graph_fixture(self):
+        """A minimal real Platform manifest with an external trusted import."""
+        required = [
+            'src/Design/Integrity/ArtifactManifest.php',
+            'assets/js/design/platform/host.js',
+            'assets/css/design/editor-shell.css',
+            'assets/js/design/document/flow/pdfjs-page-source.js',
+            'assets/js/document/pdfjs-loader.js',
+        ]
+        for name in required:
+            path = self.source / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('/* verified fixture */\\n')
+        adapter = self.source / 'assets/js/design/document/flow/pdfjs-page-source.js'
+        adapter.write_text(
+            "import {loadBundledPdfJs} from '../../../document/pdfjs-loader.js';\\n"
+            "export {loadBundledPdfJs};\\n"
+        )
+        bridge = self.source / 'assets/js/document/pdfjs-loader.js'
+        bridge.write_text(
+            "export const loadBundledPdfJs = () => import('@cb-core/pdfjs-display');\\n"
+        )
+        files = [
+            self.source / 'assets/js/design/editor.js',
+            self.source / 'assets/js/design/shell/fixture.js',
+            *(self.source / name for name in required),
+        ]
+        return files, adapter, bridge
+
+    def test_pdfjs_external_loader_is_attested_graph_leaf_for_php_verifier(self):
+        files, adapter, bridge = self._make_pdfjs_manifest_graph_fixture()
+        with mock.patch.object(builder, '_platform_source_sha', return_value='a' * 40):
+            packaged = builder.package_payloads(
+                self.source, files, builder.design_module_revision(self.source)
+            )
+        manifest = json.loads(packaged['artifact-manifest.json'])
+        adapter_key = adapter.relative_to(self.source).as_posix()
+        bridge_key = bridge.relative_to(self.source).as_posix()
+        self.assertIn(bridge_key, manifest['moduleGraph'][adapter_key])
+        self.assertEqual([], manifest['moduleGraph'][bridge_key])
+        self.assertIn(bridge_key, manifest['files'])
+        self.assertEqual(
+            hashlib.sha256(packaged[bridge_key]).hexdigest(),
+            manifest['files'][bridge_key],
+        )
+        self.assertNotIn(bridge_key, manifest['packageIdentity']['moduleStamps'])
+
+    def test_unapproved_external_designer_import_still_fails_closed(self):
+        files, adapter, _bridge = self._make_pdfjs_manifest_graph_fixture()
+        unapproved = self.source / 'assets/js/unapproved-loader.js'
+        unapproved.write_text('export const loaded = true;\\n')
+        adapter.write_text(
+            "import {loaded} from '../../../unapproved-loader.js';\\n"
+            "export {loaded};\\n"
+        )
+        with mock.patch.object(builder, '_platform_source_sha', return_value='a' * 40):
+            with self.assertRaises(SystemExit):
+                builder.package_payloads(
+                    self.source, files + [unapproved],
+                    builder.design_module_revision(self.source),
+                )
+
     def test_design_revision_does_not_rewrite_non_design_javascript(self):
         runtime = self.source / 'assets/js/runtime.js'
         runtime.write_text("import './dependency.js';\\n")
