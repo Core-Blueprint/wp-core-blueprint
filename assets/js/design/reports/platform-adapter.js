@@ -572,8 +572,18 @@ export function createRenderAdapter({root,document:doc,profileId}) {
 			try {
 				const {endpoint, nonce} = resolveEndpoint();
 				if (pagedHost) {
-					const pagedEndpoint = endpoint.replace('/reports-designer/preview',
-						'/reports-designer/preview-paged');
+					// WordPress permalinks may use an encoded ?rest_route query.
+					// Never string-replace its serialized URL, which may contain %2F.
+					const parsed = new URL(endpoint, doc.baseURI);
+					if (parsed.searchParams.has('rest_route')) {
+						parsed.searchParams.set('rest_route',
+							'/core-blueprint/v1/reports-designer/preview-paged');
+					} else if (parsed.pathname.endsWith('/reports-designer/preview')) {
+						parsed.pathname += '-paged';
+					} else {
+						throw new TypeError('REPORTS_PREVIEW_UNAVAILABLE');
+					}
+					const pagedEndpoint = parsed.href;
 					const config = doc.defaultView.cbCorePlatformV1;
 					const ready = await pagedHost.render({
 						endpoint: pagedEndpoint, nonce, documentJSON: documentKey,
