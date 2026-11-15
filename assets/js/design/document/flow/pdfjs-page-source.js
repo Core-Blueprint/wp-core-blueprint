@@ -85,3 +85,15 @@ export const createBundledPdfJsPageSource = async ({
 };
 
 export const BUNDLED_PDFJS_VERSION = PINNED_PDFJS_VERSION;
+
+/**
+ * WordPress owns the import map. Import only when the Document Designer
+ * needs a page image, never from Mail or the global admin shell.
+ */
+export const loadBundledPdfJs = async () => {
+	const pdfjs = await import('@cb-core/pdfjs-display');
+	if (pdfjs?.version !== PINNED_PDFJS_VERSION || typeof pdfjs.getDocument !== 'function') {
+		throw new TypeError('FLOW_PAGED_PDFJS_UNAVAILABLE');
+	}
+	return pdfjs;
+};
