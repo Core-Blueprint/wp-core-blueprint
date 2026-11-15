@@ -166,6 +166,8 @@ def runtime_hashes(source: Path) -> dict[str, str]:
 def design_module_revision(source: Path) -> str:
     root = source / DESIGN_MODULE_ROOT
     modules = list(root.rglob("*.js"))
+    if not modules:
+        fail("Design Foundation module graph is missing.")
     # The single approved deferred display-module bridge lives outside
     # assets/js/design so it cannot bypass the Platform's static-import
     # admission. Still bind its exact bytes into the same Design revision:
@@ -174,8 +176,6 @@ def design_module_revision(source: Path) -> str:
     if deferred_pdfjs_loader.is_file():
         modules.append(deferred_pdfjs_loader)
     modules.sort(key=lambda item: item.relative_to(source).as_posix())
-    if not modules:
-        fail("Design Foundation module graph is missing.")
 
     digest = hashlib.sha256()
     for path in modules:
