@@ -1228,3 +1228,40 @@ dialog.cb-core-modal.cb-core-modal--fullscreen .cb-core-modal__body:has(> .cb-te
         width: 100%;
     }
 }
+
+/* MC-02C: optional JSON import reuses the canonical import toolbar grammar.
+ * The source selector appears only if more than one authorized provider opts in.
+ * Hidden controls never reserve grid/flex space. */
+.cb-template-browser__json-import-source[hidden],
+.cb-template-browser__json-import[hidden] {
+  display: none !important;
+}
+.cb-template-browser__json-import-source {
+  min-width: 125px;
+  max-width: 180px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--cb-border, #8c8f94);
+  border-radius: 7px;
+  background: var(--cb-surface-2, transparent);
+  color: inherit;
+}
+.cb-template-browser__json-import-confirm {
+  display: grid;
+  gap: 10px;
+  overflow-wrap: anywhere;
+}
+.cb-template-browser__json-import-confirm > p {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .cb-template-browser__json-import {
+    flex-wrap: wrap;
+    width: 100%;
+    margin-inline-start: 0;
+  }
+  .cb-template-browser__json-import-source {
+    flex: 1 1 135px;
+    max-width: none;
+  }
+}

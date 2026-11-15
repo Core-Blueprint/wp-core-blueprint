@@ -11,6 +11,7 @@ use CoreBlueprint\Core\Mail\DesignerState;
 use CoreBlueprint\Core\RequestContext;
 use CoreBlueprint\Core\DataExchange\Engine;
 use CoreBlueprint\Core\TemplateLibrary\TemplateActionSourceInterface;
+use CoreBlueprint\Core\TemplateLibrary\TemplateJsonImportSourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateApplySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateCategorySourceInterface;
 use CoreBlueprint\Core\TemplateLibrary\TemplateDesignerAuthorityInterface;
@@ -32,6 +33,7 @@ defined( 'ABSPATH' ) || exit;
 final class SavedTemplateSource implements
 	TemplateApplySourceInterface,
 	TemplateActionSourceInterface,
+	TemplateJsonImportSourceInterface,
 	TemplateDesignerAuthorityInterface,
 	TemplateCategorySourceInterface,
 	TemplateSortedSourceInterface,
@@ -68,6 +70,31 @@ final class SavedTemplateSource implements
 		// Uses the same Mail-owned, synthetic-binding project renderer as the
 		// immutable defaults; no new template storage, write or live mail data.
 		return LibraryPreview::render( $read['document'], $expected_version );
+	}
+
+
+	/** Stable Mail-owned IDs; not operational resource keys. */
+	public function json_import_destination_prefix(): string { return 'mail.saved.'; }
+
+	/** Source-scoped JSON create-only import, independently of ZIP packages. */
+	public function can_import_json( int $user_id ): bool {
+		return $this->can_browse( $user_id );
+	}
+
+	public function preview_json_import( string $file, string $destination_id, int $user_id ): array {
+		if ( ! $this->can_import_json( $user_id ) ) {
+			return [ 'status' => 'refused' ];
+		}
+		return SavedTemplateController::preview_import_file( $file, $destination_id );
+	}
+
+	public function apply_json_import(
+		string $file, string $destination_id, string $fingerprint, int $user_id
+	): array {
+		if ( ! $this->can_import_json( $user_id ) ) {
+			return [ 'status' => 'refused' ];
+		}
+		return SavedTemplateController::apply_import_file( $file, $destination_id, $fingerprint );
 	}
 
 	public function can_manage( string $template_id, int $user_id ): bool {

@@ -181,38 +181,64 @@ final class SavedTemplateController {
 		return [ 'intent' => 'create_personal_copy', 'destination_id' => $destination ];
 	}
 
-	public static function preview( \WP_REST_Request $request ): \WP_REST_Response {
-		$data = self::import_payload( $request, false );
-		if ( null === $data ) return self::reply( [ 'status' => 'invalid' ] );
-		$preview = Engine::preview_json( $data['file'], Foundation::MODE_CREATE_ONLY,
-			self::import_context( $data['destinationId'] )
+	/**
+	 * Shared provider-owned Data Exchange implementation for both the former
+	 * Mail REST surface and the canonical Template Library JSON import.
+	 * Only metadata leaves preview; never an operational Mail design.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function preview_import_file( string $file, string $destination ): array {
+		if ( '' === $file || strlen( $file ) > 1150000
+			|| ! SavedTemplateStore::valid_id( $destination ) ) {
+			return [ 'status' => 'invalid' ];
+		}
+		$preview = Engine::preview_json( $file, Foundation::MODE_CREATE_ONLY,
+			self::import_context( $destination )
 		);
 		if ( is_wp_error( $preview ) || ! ( $preview['valid'] ?? false )
 			|| ( $preview['record_count'] ?? 0 ) !== 1
 			|| ( $preview['counts'][Foundation::OP_CREATE] ?? 0 ) !== 1
 			|| ! is_string( $preview['fingerprint'] ?? null ) ) {
-			return self::reply( [ 'status' => 'invalid' ] );
+			return [ 'status' => 'invalid' ];
 		}
-		// Expose only the public preview contract; never the document/opaque plan.
-		return self::reply( [ 'status' => 'ready', 'preview' => $preview ] );
+		return [ 'status' => 'ready', 'preview' => $preview ];
+	}
+
+	/** @return array<string,mixed> */
+	public static function apply_import_file(
+		string $file, string $destination, string $fingerprint
+	): array {
+		if ( '' === $file || strlen( $file ) > 1150000
+			|| ! SavedTemplateStore::valid_id( $destination )
+			|| 1 !== preg_match( '/^[a-f0-9]{64}$/D', $fingerprint ) ) {
+			return [ 'status' => 'invalid' ];
+		}
+		$result = Engine::apply_json( $file, Foundation::MODE_CREATE_ONLY,
+			$fingerprint, self::import_context( $destination )
+		);
+		if ( is_wp_error( $result ) ) return [ 'status' => 'invalid' ];
+		if ( ( $result['status'] ?? null ) !== 'complete'
+			|| ( $result['applied_count'] ?? null ) !== 1
+			|| ( $result['record_count'] ?? null ) !== 1
+			|| ( $result['items'][0]['reference'] ?? null ) !== $destination ) {
+			return [ 'status' => 'unknown' ];
+		}
+		return [ 'status' => 'created', 'id' => $destination, 'revision' => 1 ];
+	}
+
+	public static function preview( \WP_REST_Request $request ): \WP_REST_Response {
+		$data = self::import_payload( $request, false );
+		if ( null === $data ) return self::reply( [ 'status' => 'invalid' ] );
+		return self::reply( self::preview_import_file( $data['file'], $data['destinationId'] ) );
 	}
 
 	public static function import( \WP_REST_Request $request ): \WP_REST_Response {
 		$data = self::import_payload( $request, true );
 		if ( null === $data ) return self::reply( [ 'status' => 'invalid' ] );
-		$result = Engine::apply_json( $data['file'], Foundation::MODE_CREATE_ONLY,
-			$data['fingerprint'], self::import_context( $data['destinationId'] )
-		);
-		if ( is_wp_error( $result ) ) return self::reply( [ 'status' => 'invalid' ] );
-		if ( ( $result['status'] ?? null ) !== 'complete'
-			|| ( $result['applied_count'] ?? null ) !== 1
-			|| ( $result['record_count'] ?? null ) !== 1
-			|| ( $result['items'][0]['reference'] ?? null ) !== $data['destinationId'] ) {
-			return self::reply( [ 'status' => 'unknown' ] );
-		}
-		return self::reply( [
-			'status' => 'created', 'id' => $data['destinationId'], 'revision' => 1,
-		], 201 );
+		return self::reply( self::apply_import_file(
+			$data['file'], $data['destinationId'], $data['fingerprint']
+		), 201 );
 	}
 
 	private function __construct() {}

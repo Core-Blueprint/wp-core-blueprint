@@ -108,18 +108,10 @@ final class DesignerAssets {
 				],
 			] ) . ';', 'before'
 		);
-		wp_register_script_module(
-			'@cb-core/mail-saved-portability',
-			CB_CORE_URL . 'assets/js/design/mail/saved-portability.js',
-			[],
-			is_file( CB_CORE_DIR . 'assets/js/design/mail/saved-portability.js' )
-				? substr( hash_file( 'sha256', CB_CORE_DIR . 'assets/js/design/mail/saved-portability.js' ), 0, 16 )
-				: CB_CORE_VERSION
-		);
 		wp_enqueue_script_module(
 			'@cb-core/mail-saved-library',
 			CB_CORE_URL . 'assets/js/design/mail/saved-library.js',
-			[ '@cb-core/template-browser', '@cb-core/modal', '@cb-core/toast', '@cb-core/mail-saved-portability' ],
+			[ '@cb-core/template-browser', '@cb-core/modal', '@cb-core/toast' ],
 			is_file( CB_CORE_DIR . 'assets/js/design/mail/saved-library.js' )
 				? substr( hash_file( 'sha256', CB_CORE_DIR . 'assets/js/design/mail/saved-library.js' ), 0, 16 )
 				: CB_CORE_VERSION

@@ -197,11 +197,6 @@ final class Page extends PageBase {
 								</form>
 							</section>
 						</div>
-						<section class="cb-core-panel" data-cb-mail-saved-manager aria-label="<?php esc_attr_e( 'Saved Mail templates', 'core-blueprint' ); ?>">
-							<h2><?php esc_html_e( 'Saved Mail templates', 'core-blueprint' ); ?></h2>
-							<p><?php esc_html_e( 'Manage reusable personal and site templates here. Edit live WordPress and extension notification designs in the Mail Designer.', 'core-blueprint' ); ?></p>
-							<div data-cb-mail-saved-list role="status"><?php esc_html_e( 'Template operation could not be verified. Reload before retrying.', 'core-blueprint' ); ?></div>
-						</section>
 					</div>
 				<?php else : ?>
 					<div class="cb-core-platform-screen" data-cb-platform-screen aria-busy="true">

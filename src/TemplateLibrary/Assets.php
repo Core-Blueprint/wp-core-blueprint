@@ -40,6 +40,13 @@ final class Assets {
 			[ '@cb-core/modal' ],
 			self::version( 'assets/js/core/template-resource-import.js' )
 		);
+
+		wp_enqueue_script_module(
+			'@cb-core/template-json-import',
+			CB_CORE_URL . 'assets/js/core/template-json-import.js',
+			[ '@cb-core/modal' ],
+			self::version( 'assets/js/core/template-json-import.js' )
+		);
 		wp_enqueue_script_module(
 			'@cb-core/template-bulk',
 			CB_CORE_URL . 'assets/js/core/template-bulk.js',
@@ -49,7 +56,7 @@ final class Assets {
 		wp_enqueue_script_module(
 			self::MODULE_ID,
 			CB_CORE_URL . 'assets/js/core/template-browser.js',
-			[ '@cb-core/modal', '@cb-core/template-actions', '@cb-core/template-resource-import', '@cb-core/template-bulk' ],
+			[ '@cb-core/modal', '@cb-core/template-actions', '@cb-core/template-resource-import', '@cb-core/template-json-import', '@cb-core/template-bulk' ],
 			self::version( 'assets/js/core/template-browser.js' )
 		);
 		if ( ! self::$data_registered ) {
@@ -110,6 +117,8 @@ final class Assets {
 			'exportJson'  => __( 'Export JSON', 'core-blueprint' ),
 			'exportZip'   => __( 'Export ZIP', 'core-blueprint' ),
 			'importZip'   => __( 'Import ZIP', 'core-blueprint' ),
+			'importJson'  => __( 'Import JSON', 'core-blueprint' ),
+			'importAsNew' => __( 'Import as new copy', 'core-blueprint' ),
 			'importDestination' => __( 'Import destination', 'core-blueprint' ),
 			'importFile'  => __( 'ZIP package', 'core-blueprint' ),
 			'importPreview' => __( 'Preview package', 'core-blueprint' ),

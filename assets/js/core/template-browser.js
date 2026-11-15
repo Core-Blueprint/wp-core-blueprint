@@ -10,6 +10,7 @@
 import { show as showModal } from '@cb-core/modal';
 import { createActionMenu } from '@cb-core/template-actions';
 import { createImportControl } from '@cb-core/template-resource-import';
+import { createJsonImportControl } from '@cb-core/template-json-import';
 import { createBulkControl } from '@cb-core/template-bulk';
 
 const dataElement = typeof document !== 'undefined'
@@ -123,6 +124,8 @@ function createBrowser( root, options = {} ) {
         previewFrame: null, previewFocus: null,
         view: hasDesigns ? 'designs' : 'templates', designProvider: '',
     };
+    // Declared before the initial syncNavigation() call; assigned after the toolbar.
+    let jsonImportControl = null;
     const shell = el( 'section', [ 'cb-template-browser', 'cb-template-browser--workspace',
         hasDesigns ? 'cb-template-browser--with-sections' : '',
         contextual ? 'cb-template-browser--modal' : '' ].filter( Boolean ).join( ' ' ) );
@@ -213,6 +216,7 @@ function createBrowser( root, options = {} ) {
     }
     function syncNavigation() {
         shell.dataset.browserView = state.view;
+        jsonImportControl?.setVisible( state.view === 'templates' );
         if ( designButton ) designButton.setAttribute( 'aria-pressed', String( state.view === 'designs' ) );
         templateButton.setAttribute( 'aria-pressed', String( state.view === 'templates' ) );
         originButtons.forEach( ( item ) => item.setAttribute( 'aria-pressed',
@@ -378,6 +382,21 @@ function createBrowser( root, options = {} ) {
         onChanged: () => load( true ),
     } ) : null;
     if ( importControl ) toolbar.append( importControl.node );
+    // Optional provider JSON import, separate from the ZIP resource importer.
+    // No Mail-specific runtime, server-side writer or source-specific URL
+    // exists in the shared Browser; the source descriptor opts in explicitly.
+    jsonImportControl = !designsOnly ? createJsonImportControl( {
+        label, restRoot: settings.restRoot, nonce: settings.nonce,
+        contextToken: token,
+        isCurrent: () => !state.destroyed && state.view === 'templates',
+        onNotice: text => {
+            if ( state.destroyed ) return;
+            state.actionFeedback = text;
+            message.textContent = text;
+        },
+        onChanged: () => load( true ),
+    } ) : null;
+    if ( jsonImportControl ) toolbar.append( jsonImportControl.node );
     // Global Library alone owns bulk selection. Designer Use stays single-select.
     const bulkControl = !contextual ? createBulkControl( {
         label, nonce: settings.nonce, restRoot: settings.restRoot,
@@ -690,6 +709,7 @@ function createBrowser( root, options = {} ) {
         syncCategoryField();
         syncSortField();
         syncSearchLabel();
+        jsonImportControl?.setVisible( state.view === 'templates' );
         if ( state.view === 'designs' ) {
             renderDesigns();
             return;
@@ -748,6 +768,7 @@ function createBrowser( root, options = {} ) {
         if ( state.destroyed || !Array.isArray( data.sources ) ) return;
         state.sources = data.sources;
         importControl?.updateSources( data.sources );
+        jsonImportControl?.updateSources( data.sources );
         if ( !contextual ) {
             const fill = ( select, items ) => {
                 if ( !select ) return;
@@ -780,6 +801,7 @@ function createBrowser( root, options = {} ) {
             state.destroyed = true;
             state.controller?.abort();
             importControl?.destroy();
+            jsonImportControl?.destroy();
             bulkControl?.destroy();
             disposeActionMenus();
             clearTimeout( state.timer );

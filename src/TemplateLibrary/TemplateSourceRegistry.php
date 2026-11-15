@@ -103,6 +103,118 @@ final class TemplateSourceRegistry {
 	}
 
 	/**
+	 * Optional JSON import advertised only for a registered, currently
+	 * authorized source, independent of ResourcePackage ZIP import.
+	 * @param array{extension:string,designer:string}|null $scope
+	 */
+	public static function supports_json_import( string $source_id, ?array $scope ): bool {
+		self::collect_if_ready();
+		$source = self::$sources[ $source_id ] ?? null;
+		$actor = get_current_user_id();
+		if ( $actor < 1 || ! TemplateQuery::valid_id( $source_id )
+			|| ! $source instanceof TemplateJsonImportSourceInterface
+			|| ! self::allowed( $source )
+			|| ( null !== $scope && ( $source->extension_id() !== ( $scope['extension'] ?? null )
+				|| $source->designer_type() !== ( $scope['designer'] ?? null ) ) ) ) return false;
+		try {
+			return $source->can_import_json( $actor );
+		} catch ( \Throwable ) {
+			return false;
+		}
+	}
+
+	/**
+	 * Advertise a bounded create-only prefix, not a permission token.
+	 * @param array{extension:string,designer:string}|null $scope
+	 * @return array{version:int,destinationPrefix:string}|null
+	 */
+	public static function json_import_descriptor( string $source_id, ?array $scope ): ?array {
+		if ( ! self::supports_json_import( $source_id, $scope ) ) return null;
+		$source = self::$sources[ $source_id ] ?? null;
+		if ( ! $source instanceof TemplateJsonImportSourceInterface ) return null;
+		try {
+			$prefix = $source->json_import_destination_prefix();
+			if ( ! is_string( $prefix ) || strlen( $prefix ) > 64
+				|| 1 !== preg_match( '/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*\.$/D', $prefix ) ) return null;
+			return [ 'version' => 1, 'destinationPrefix' => $prefix ];
+		} catch ( \Throwable ) {
+			return null;
+		}
+	}
+
+	/**
+	 * Two-phase, create-only provider-owned JSON import. Never accepts a
+	 * document, existing saved ID to overwrite, or an operational Design ID.
+	 *
+	 * @param array{extension:string,designer:string}|null $scope
+	 * @return array<string,mixed>
+	 */
+	public static function import_json(
+		string $source_id, string $phase, string $file, string $destination_id,
+		?string $fingerprint, ?array $scope
+	): array {
+		if ( ! in_array( $phase, [ 'preview', 'apply' ], true )
+			|| ! TemplateQuery::valid_id( $destination_id )
+			|| '' === $file || strlen( $file ) > 1150000
+			|| ( 'apply' === $phase && ( ! is_string( $fingerprint )
+				|| 1 !== preg_match( '/^[a-f0-9]{64}$/D', $fingerprint ) ) )
+			|| ( 'preview' === $phase && null !== $fingerprint )
+			|| ! self::supports_json_import( $source_id, $scope ) ) {
+			return [ 'status' => 'refused' ];
+		}
+		$actor = get_current_user_id();
+		$source = self::$sources[ $source_id ] ?? null;
+		$descriptor = self::json_import_descriptor( $source_id, $scope );
+		if ( null === $descriptor
+			|| ! str_starts_with( $destination_id, $descriptor['destinationPrefix'] )
+			|| strlen( $destination_id ) <= strlen( $descriptor['destinationPrefix'] )
+			|| ! $source instanceof TemplateJsonImportSourceInterface ) {
+			return [ 'status' => 'refused' ];
+		}
+		try {
+			$result = 'preview' === $phase
+				? $source->preview_json_import( $file, $destination_id, $actor )
+				: $source->apply_json_import( $file, $destination_id, (string) $fingerprint, $actor );
+			// A revoke or source switch during provider execution cannot be
+			// reported as certain success, especially after an attempted write.
+			if ( $actor !== get_current_user_id()
+				|| ! self::supports_json_import( $source_id, $scope ) ) {
+				return [ 'status' => 'unknown' ];
+			}
+			if ( ! is_array( $result ) ) return [ 'status' => 'unknown' ];
+			if ( in_array( $result['status'] ?? null, [ 'refused', 'invalid', 'unsupported' ], true ) ) {
+				return [ 'status' => $result['status'] ];
+			}
+			if ( 'preview' === $phase && ( $result['status'] ?? null ) === 'ready' ) {
+				$preview = $result['preview'] ?? null;
+				if ( ! is_array( $preview ) || ( $preview['valid'] ?? null ) !== true
+					|| ( $preview['record_count'] ?? null ) !== 1
+					|| ( $preview['counts']['create'] ?? null ) !== 1
+					|| ! is_string( $preview['fingerprint'] ?? null )
+					|| 1 !== preg_match( '/^[a-f0-9]{64}$/D', $preview['fingerprint'] ) ) {
+					return [ 'status' => 'invalid' ];
+				}
+				return [ 'status' => 'ready', 'source' => $source_id,
+					'destinationId' => $destination_id,
+					'preview' => [
+						'valid' => true, 'record_count' => 1,
+						'counts' => [ 'create' => 1 ],
+						'fingerprint' => $preview['fingerprint'],
+					] ];
+			}
+			if ( 'apply' === $phase && ( $result['status'] ?? null ) === 'created'
+				&& ( $result['id'] ?? null ) === $destination_id
+				&& ( $result['revision'] ?? null ) === 1 ) {
+				return [ 'status' => 'created', 'source' => $source_id,
+					'id' => $destination_id, 'revision' => 1 ];
+			}
+		} catch ( \Throwable ) {
+			// Uncertain post-commit effects are never retried automatically.
+		}
+		return [ 'status' => 'unknown' ];
+	}
+
+	/**
 	 * Per-item UI capability hint, not a right to download.
 	 * Never advertises ZIP for a provider with only JSON support.
 	 */

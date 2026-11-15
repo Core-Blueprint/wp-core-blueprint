@@ -22,6 +22,11 @@ final class BrowserController {
 			'callback' => [ self::class, 'manage' ],
 			'permission_callback' => [ self::class, 'manage_permitted' ],
 		] );
+		register_rest_route( 'core-blueprint/v1', '/template-library/import-json', [
+			'methods' => 'POST',
+			'callback' => [ self::class, 'import_json' ],
+			'permission_callback' => [ self::class, 'manage_permitted' ],
+		] );
 		register_rest_route( 'core-blueprint/v1', '/template-library/bulk-export', [
 			'methods' => 'POST',
 			'callback' => [ self::class, 'bulk_export' ],
@@ -161,6 +166,54 @@ final class BrowserController {
 	}
 
 	/**
+	 * Bounded provider-owned JSON import with mandatory preview/fingerprint
+	 * before any create. No public path, arbitrary endpoint or user-supplied
+	 * owner is accepted; both global and scoped callers are checked live.
+	 */
+	public static function import_json( WP_REST_Request $request ): WP_REST_Response {
+		$scope = self::scope( $request );
+		if ( false === $scope || ! self::manage_permitted( $request ) ) {
+			return new WP_REST_Response( [ 'status' => 'refused' ], 403 );
+		}
+		if ( strlen( $request->get_body() ) > 2500000 ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$raw = json_decode( $request->get_body() );
+		$data = $request->get_json_params();
+		if ( ! $raw instanceof \stdClass || ! is_array( $data ) || array_is_list( $data )
+			|| ! is_string( $data['phase'] ?? null )
+			|| ! is_string( $data['source'] ?? null )
+			|| ! is_string( $data['file'] ?? null )
+			|| ! is_string( $data['destinationId'] ?? null ) ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$phase = $data['phase'];
+		$keys = array_keys( $data );
+		sort( $keys, SORT_STRING );
+		$expected = 'apply' === $phase
+			? [ 'destinationId', 'file', 'fingerprint', 'phase', 'source' ]
+			: [ 'destinationId', 'file', 'phase', 'source' ];
+		if ( $keys !== $expected
+			|| ! TemplateQuery::valid_id( $data['source'] )
+			|| ! TemplateQuery::valid_id( $data['destinationId'] )
+			|| '' === $data['file'] || strlen( $data['file'] ) > 1150000
+			|| ! in_array( $phase, [ 'preview', 'apply' ], true )
+			|| ( 'apply' === $phase && ! is_string( $data['fingerprint'] ?? null ) ) ) {
+			return new WP_REST_Response( [ 'status' => 'invalid' ], 400 );
+		}
+		$result = TemplateSourceRegistry::import_json(
+			$data['source'], $phase, $data['file'], $data['destinationId'],
+			'apply' === $phase ? $data['fingerprint'] : null, $scope
+		);
+		$code = match ( $result['status'] ?? null ) {
+			'ready' => 200, 'created' => 201, 'invalid' => 400,
+			'refused' => 403, 'unsupported' => 422,
+			default => 503,
+		};
+		return new WP_REST_Response( $result, $code );
+	}
+
+	/**
 	 * Read-only batch transport. A bundle is delivered only after every record
 	 * independently passes the canonical provider-owned export-json authority.
 	 * Never accepts document bytes or a path from the browser.
@@ -291,6 +344,7 @@ final class BrowserController {
 					? [ TemplateSort::TITLE_ASC ] : [],
 				'previews' => TemplateSourceRegistry::supports_preview( $id )
 					? [ TemplatePreviewSourceInterface::API_VERSION ] : [],
+				'jsonImport' => TemplateSourceRegistry::json_import_descriptor( $id, $scope ),
 				'resourceImportDestination' => null === $scope
 					? TemplateSourceRegistry::resource_import_destination( $id ) : null,
 			], array_keys( $sources ), array_values( $sources ) ),
