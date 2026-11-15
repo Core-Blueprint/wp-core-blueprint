@@ -35,12 +35,8 @@ export const createBundledPdfJsPageSource = async ({
 } = {}) => {
 	if (!pdfjs || pdfjs.version !== PINNED_PDFJS_VERSION
 		|| typeof pdfjs.getDocument !== 'function'
-		|| !pdfjs.GlobalWorkerOptions || !pdfjs.GlobalWorkerOptions.workerSrc) {
-		// An unset workerSrc is accepted: it will be assigned below.
-		if (!pdfjs || pdfjs.version !== PINNED_PDFJS_VERSION
-			|| typeof pdfjs.getDocument !== 'function' || !pdfjs.GlobalWorkerOptions) {
-			throw new TypeError('FLOW_PAGED_PDFJS_UNAVAILABLE');
-		}
+		|| !pdfjs.GlobalWorkerOptions) {
+		throw new TypeError('FLOW_PAGED_PDFJS_UNAVAILABLE');
 	}
 	const workerUrl = validatedWorkerUrl(workerSrc, baseUrl);
 	const bytes = pdfBytes instanceof Uint8Array

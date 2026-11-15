@@ -147,6 +147,7 @@ test('DP-NAV-02C refuses mismatched page count and excessive raster budget befor
 	assert.throws(() => createFlowPagedSurface({root, pageSource: source, projection: geometry(2)}),
 		/FLOW_PAGED_PAGE_COUNT_MISMATCH/);
 	assert.deepEqual(root.children, []);
+	root.ownerDocument.defaultView.devicePixelRatio = 2;
 	assert.throws(() => createFlowPagedSurface({
 		root, pageSource: pdfPageSource(), projection: geometry(), zoom: 2,
 	}), /FLOW_PAGED_SURFACE_CANVAS_BUDGET_EXCEEDED/);

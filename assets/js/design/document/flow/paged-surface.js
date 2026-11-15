@@ -170,9 +170,12 @@ export const createFlowPagedSurface = ({
 	let generation = 1;
 
 	for (let index = 1; index <= descriptor.page_count; index++) {
-		const view = pageView(doc, index, descriptor.page_count, descriptor, labels, onActivate);
+		const activate = onActivate === null ? null : intent => {
+			if (!destroyed) onActivate(intent);
+		};
+		const view = pageView(doc, index, descriptor.page_count, descriptor, labels, activate);
 		view.section.style.width = expectedWidth + 'px';
-		view.section.style.height = expectedHeight + 'px';
+		// CSS aspect-ratio owns height as the sheet shrinks on narrow screens.
 		view.section.style.maxWidth = '100%';
 		views.push(view);
 		pages.push({id: 'pdf-page-' + index, label: 'Page ' + index});
@@ -181,11 +184,13 @@ export const createFlowPagedSurface = ({
 	root.classList?.add('cb-core-flow-paged');
 	const evict = () => {
 		if (rendered.size <= MAX_RENDERED_PAGES) return;
-		for (const index of rendered.keys()) {
+		const candidates = [...rendered.keys()].filter(index => index !== activePage);
+		// Prefer offscreen eviction, but enforce the memory cap even when
+		// more than three pages are simultaneously observed as visible.
+		candidates.sort((left, right) => Number(visible.has(left)) - Number(visible.has(right)));
+		for (const index of candidates) {
 			if (rendered.size <= MAX_RENDERED_PAGES) break;
-			if (index === activePage || visible.has(index)) continue;
-			const view = views[index - 1];
-			view.visual.replaceChildren();
+			views[index - 1].visual.replaceChildren();
 			rendered.delete(index);
 		}
 	};
@@ -318,7 +323,8 @@ export const createFlowPagedSurface = ({
 		rendered.clear();
 		root.replaceChildren();
 		root.classList?.remove('cb-core-flow-paged');
-		try { pageSource.destroy?.(); } catch (_) { /* Best effort. */ }
+		try { Promise.resolve(pageSource.destroy?.()).catch(() => {}); }
+		catch (_) { /* Best effort. */ }
 		// The owning Designer Session disposes its page-navigation controller.
 	};
 	signal?.addEventListener('abort', destroy, {once: true});
