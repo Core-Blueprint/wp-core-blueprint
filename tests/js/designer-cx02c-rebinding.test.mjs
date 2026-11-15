@@ -68,6 +68,8 @@ before(async () => {
 	const dest = join(temp, 'design');
 	await cp(new URL('../../assets/js/design/', import.meta.url), dest, {recursive: true});
 	await convert(dest);
+	await cp(new URL('../../assets/js/document/', import.meta.url), join(temp, 'document'), {recursive: true});
+	await convert(join(temp, 'document'));
 	globalThis.document = {
 		activeElement: null,
 		documentElement: {classList: {add() {}, remove() {}}},
