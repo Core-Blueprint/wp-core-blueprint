@@ -39,6 +39,7 @@ class CheckEntrypointTest(unittest.TestCase):
         write('tests/public-design-mixed-charset-json-regression.php')
         write('tests/public-design-save-envelope-identity-regression.php')
         write('tests/public-design-mail-save-contract-regression.php')
+        write('tests/public-logs-mail-ai-hardening-regression.php')
         write('tests/public-routing-feed-regression.php')
         write('tests/public-mail-template-provider-contract-regression.php')
         write('tests/public-mail-extension-designer-regression.php')
@@ -99,6 +100,7 @@ class CheckEntrypointTest(unittest.TestCase):
                 'php|tests/public-design-mixed-charset-json-regression.php',
                 'php|tests/public-design-save-envelope-identity-regression.php',
                 'php|tests/public-design-mail-save-contract-regression.php',
+                'php|tests/public-logs-mail-ai-hardening-regression.php',
                 'php|tests/public-routing-feed-regression.php',
                 'php|tests/public-mail-template-provider-contract-regression.php',
                 'php|tests/public-mail-extension-designer-regression.php',
