@@ -16,7 +16,7 @@ use CoreBlueprint\Core\Governance\ContextSanitizer;
 defined( 'ABSPATH' ) || exit;
 
 final class Privacy {
-	private const RAW_CONTENT_KEY_PATTERN = '/(?:^|[_-])(?:prompt|response|request|payload|body|content|message|input|output)(?:$|[_-])/i';
+	private const RAW_CONTENT_KEY_PATTERN = '/(?:^|[_-])(?:prompt|prompts|response|responses|request|requests|payload|payloads|body|bodies|content|contents|message|messages|input|inputs|output|outputs|instruction|instructions|conversation|conversations|history|histories|transcript|transcripts|completion|completions|text)(?:$|[_-])/i';
 	private const SAFE_METADATA_SUFFIX = '/(?:_type|_count|_bytes|_hash|_id|_code)$/i';
 
 	/** @param array<string|int,mixed> $context @return array<string|int,mixed> */
@@ -73,10 +73,14 @@ final class Privacy {
 		$out = [];
 		foreach ( $value as $key => $child ) {
 			$key_string = is_int( $key ) ? '' : (string) $key;
+			// Consumers use camelCase as well as snake_case/hyphenated keys.
+			// Normalize the key before checking content aliases; never inspect
+			// or reproduce its value to decide whether it is safe to retain.
+			$normalized = preg_replace( '/(?<=[a-z0-9])(?=[A-Z])/', '_', $key_string ) ?? $key_string;
 			if (
 				'' !== $key_string
-				&& 1 === preg_match( self::RAW_CONTENT_KEY_PATTERN, $key_string )
-				&& 1 !== preg_match( self::SAFE_METADATA_SUFFIX, $key_string )
+				&& 1 === preg_match( self::RAW_CONTENT_KEY_PATTERN, $normalized )
+				&& 1 !== preg_match( self::SAFE_METADATA_SUFFIX, $normalized )
 			) {
 				$out[ $key ] = '[redacted:metadata-only]';
 				continue;
