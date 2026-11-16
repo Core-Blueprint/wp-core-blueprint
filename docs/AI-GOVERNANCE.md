@@ -39,7 +39,7 @@ It records bounded metadata such as:
 
 Raw prompts, responses, request bodies, authorization material, cookies and secret-bearing fields are not part of the automatic evidence model.
 
-Consumer-reported context passes through the AI Governance privacy boundary and Base's canonical governance sanitizer/redactor before storage.
+Consumer-reported context passes through the AI Governance privacy boundary and Base's canonical governance sanitizer/redactor before storage. Raw-content keys in snake_case, kebab-case, camelCase and common plural forms (for example `systemPrompt`, `messages`, `responseBody`, `toolOutput` and `conversationHistory`) are redacted. Metadata endings such as `_count`, `_type`, `_bytes`, `_id`, `_hash` and `_code` are preserved when they contain legitimate bounded metadata. Consumers remain responsible for submitting evidence metadata rather than raw content under arbitrary keys.
 
 ## Canonical datastore
 
