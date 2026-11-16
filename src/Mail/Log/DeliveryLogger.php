@@ -70,8 +70,10 @@ final class DeliveryLogger {
 			? max( 0, (int) $data['cb_duration_ms'] )
 			: self::duration();
 
-		$code = sanitize_key( (string) $error->get_error_code() );
-		$text = sanitize_text_field( $error->get_error_message() );
+		// Provider and SMTP error messages are untrusted free text: they can echo
+		// credentials, remote request data or message content. Preserve only a
+		// bounded, known machine error code in both operational and audit logs.
+		$code = self::safe_error_code( (string) $error->get_error_code() );
 
 		Repository::insert( [
 			'status'           => 'failed',
@@ -85,7 +87,7 @@ final class DeliveryLogger {
 			'reply_to'         => $message['reply_to'],
 			'subject'          => $message['subject'],
 			'error_code'       => $code,
-			'error_message'    => $text,
+			'error_message'    => '',
 			'attachment_count' => count( $message['attachments'] ),
 			'embed_count'      => count( $message['embeds'] ),
 			'duration_ms'      => $duration,
@@ -97,10 +99,26 @@ final class DeliveryLogger {
 		AuditLog::log( 'system.mail_failed', 'warning', [
 			'provider'   => $provider,
 			'error_code' => $code,
-			'message'    => $text,
 		] );
 
 		self::$started = 0.0;
+	}
+
+	/** Only known, stable machine identifiers may cross the log boundary. */
+	private static function safe_error_code( string $raw ): string {
+		$code = sanitize_key( $raw );
+		$known = [
+			'wp_mail_failed',
+			'http_request_failed',
+			'phpmailer_exception',
+			'mail_configuration_invalid',
+			'mail_attachment_unreadable',
+			'mail_attachment_read_failed',
+			'brevo_embeds_unsupported',
+		];
+		return in_array( $code, $known, true ) || 1 === preg_match( '/^brevo_http_[1-5][0-9]{2}$/D', $code )
+			? $code
+			: 'mail_delivery_failed';
 	}
 
 	private static function duration(): int {
