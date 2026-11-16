@@ -28,6 +28,7 @@ for required in \
   tests/public-design-mixed-charset-json-regression.php \
   tests/public-design-save-envelope-identity-regression.php \
   tests/public-design-mail-save-contract-regression.php \
+  tests/public-logs-mail-ai-hardening-regression.php \
   tests/public-routing-feed-regression.php \
   tests/public-mail-template-provider-contract-regression.php \
   tests/public-mail-extension-designer-regression.php \
@@ -80,6 +81,7 @@ php tests/public-design-document-storage-regression.php
 php tests/public-design-mixed-charset-json-regression.php
 php tests/public-design-save-envelope-identity-regression.php
 php tests/public-design-mail-save-contract-regression.php
+php tests/public-logs-mail-ai-hardening-regression.php
 php tests/public-routing-feed-regression.php
 php tests/public-mail-template-provider-contract-regression.php
 php tests/public-mail-extension-designer-regression.php
