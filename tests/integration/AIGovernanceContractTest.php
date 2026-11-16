@@ -116,6 +116,42 @@ final class CB_Base_AI_Governance_Contract_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'do not persist this key', (string) $row->context );
 	}
 
+	public function test_reported_activity_redacts_camelcase_plural_and_nested_content(): void {
+		$id = Activity::record( [
+			'operation' => 'core-blueprint-test/camel-case-redaction',
+			'outcome' => 'succeeded',
+			'context' => [
+				'systemPrompt' => 'never-persist-this-system-prompt',
+				'messages' => [ 'never-persist-this-message' ],
+				'responseBody' => 'never-persist-this-body',
+				'nested' => [
+					'toolOutput' => 'never-persist-this-output',
+					'conversationHistory' => 'never-persist-this-history',
+					'errorMessage' => 'never-persist-this-error',
+				],
+				'messageCount' => 2,
+				'inputType' => 'object',
+				'responseBodyHash' => 'sha256-only',
+				'approval_id' => 'approval-17',
+			],
+		] );
+
+		$this->assertIsString( $id );
+		$row = Repository::get( $id );
+		$this->assertNotNull( $row );
+		foreach ( [ 'systemPrompt', 'messages', 'responseBody' ] as $key ) {
+			$this->assertSame( '[redacted:metadata-only]', $row->context_decoded[ $key ] );
+		}
+		foreach ( [ 'toolOutput', 'conversationHistory', 'errorMessage' ] as $key ) {
+			$this->assertSame( '[redacted:metadata-only]', $row->context_decoded['nested'][ $key ] );
+		}
+		$this->assertSame( 2, $row->context_decoded['messageCount'] );
+		$this->assertSame( 'object', $row->context_decoded['inputType'] );
+		$this->assertSame( 'sha256-only', $row->context_decoded['responseBodyHash'] );
+		$this->assertSame( 'approval-17', $row->context_decoded['approval_id'] );
+		$this->assertStringNotContainsString( 'never-persist-this', (string) $row->context );
+	}
+
 	public function test_consumer_activity_inherits_only_observed_trace_context(): void {
 		$parent_id = wp_generate_uuid4();
 		$correlation_id = wp_generate_uuid4();
