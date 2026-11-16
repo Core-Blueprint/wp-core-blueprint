@@ -82,6 +82,32 @@ The shared left-rail `createDesignerNavigation` serves workflow/task stages and 
 
 **DP-NAV-02 — Authoritative page projection.** Evaluate bounded paged-preview/preview metadata from Base's real PDF/Flow pagination without extracting pages from continuous HTML height. Security, performance, CSS/reflow, rendered-page targets and alignment to final paged PDF must be proven. No fake page counts.
 
+## DP-NAV-03 external Document Flow consumers — source contract
+
+The consumer does **not** register a second Document Profile or PDF renderer.
+Base exposes `profiles['document-flow'].createFlowPagedPreviewHost` through
+`@cb-core/design-editor`, the `configureDesignerPageNavigation` public
+controller, and `Assets::enqueue_document_pdf_viewer()`. The API capability
+`Assets::FLOW_PAGED_CONSUMER_API = 1` authorizes an external versioned
+REST namespace only when the consumer opts into `endpointNamespace`.
+
+The external consumer owns an authenticated, read-only REST `POST` endpoint
+`/{extension-slug}/v1/{purpose}/preview-paged`, accepting its own bounded
+unsaved document format and producing Base's exact `{status:'ready',
+source:'sample'|'archived', pdf_base64, projection}` envelope. It MUST use
+the public Base `FlowRenderApi::pdf_with_page_regions()` on the SAME
+domain-compiled document; never infer pages from HTML height.
+
+The Base host enforces same-origin URL, exact versioned namespace and
+`preview-paged` terminal route segments; HTTPS/nonce, session, capability,
+editing lease, bounded body and no-store responses are consumer-owned admission.
+The preview is not a Save endpoint. Neither the preview transport nor the
+document profile may own domain data or mutation authority.
+
+Contracts and Reports share this page-view path; their Elements and Dynamic
+Data registries, document semantics, permissions and persistence remain
+domain-specific. Existing native Base Reports behavior is unchanged.
+
 **DP-NAV-03 — Consumer adoption.** Reports, then Contracts, provide verified page metadata and scoped navigation callbacks through the public Base API; never duplicate the toolbar/dropdown.
 
 **DP-NAV-04 — Cross-consumer acceptance.** One/two/many pages, re-render changing count, viewport/reflow, scroll positioning, keyboard, touch, Save/History invariance and PDF parity.
