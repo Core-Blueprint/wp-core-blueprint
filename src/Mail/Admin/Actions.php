@@ -178,6 +178,10 @@ final class Actions {
 	public static function clear_log(): void {
 		self::guard( 'cb_core_mail_clear_log' );
 		$deleted = Repository::clear();
+		if ( false === $deleted ) {
+			self::set_result( 'error', __( 'An error occurred.', 'core-blueprint' ) );
+			self::redirect( 'logs' );
+		}
 		AuditLog::log( 'mail_log_cleared', 'warning', [ 'deleted' => $deleted ] );
 		self::set_result( 'success', sprintf(
 			/* translators: %d: number of deleted mail log rows */
