@@ -176,14 +176,12 @@ final class Repository {
 		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', self::table() ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- identifier is bound via %i.
 	}
 
-	public static function clear(): int {
+	/** Return the confirmed affected-row count, or false on database failure. */
+	public static function clear(): int|false {
 		global $wpdb;
 		$table = self::table();
-		$rows  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- identifier is bound via %i.
-		if ( $rows > 0 ) {
-			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $table ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- identifier is bound via %i.
-		}
-		return $rows;
+		$deleted = $wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $table ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- identifier is bound via %i.
+		return false === $deleted ? false : (int) $deleted;
 	}
 
 	public static function prune( int $days ): int {
