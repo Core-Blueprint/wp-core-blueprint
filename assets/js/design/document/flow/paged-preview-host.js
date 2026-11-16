@@ -27,9 +27,10 @@ const decodePdf = encoded => {
 	return bytes;
 };
 
-const endpointUrl = (endpoint, baseUrl) => {
+const endpointUrl = (endpoint, baseUrl, namespace) => {
 	if (typeof endpoint !== 'string' || !endpoint
-		|| typeof baseUrl !== 'string') {
+		|| typeof baseUrl !== 'string' || typeof namespace !== 'string'
+		|| !/^[a-z][a-z0-9-]{1,63}\/v[1-9][0-9]?$/.test(namespace)) {
 		throw new TypeError('FLOW_PAGED_PREVIEW_ENDPOINT_INVALID');
 	}
 	const base = new URL(baseUrl);
@@ -43,8 +44,15 @@ const endpointUrl = (endpoint, baseUrl) => {
 	// never a Save, import or arbitrary REST endpoint.
 	const route = target.searchParams.has('rest_route')
 		? target.searchParams.get('rest_route') : target.pathname;
-	if (typeof route !== 'string'
-		|| !/(?:^|\/)core-blueprint\/v1\/[a-z0-9/-]+\/preview-paged$/.test(route)) {
+	const marker = '/' + namespace + '/';
+	const pos = typeof route === 'string' ? route.indexOf(marker) : -1;
+	const suffix = pos >= 0 ? route.slice(pos + marker.length) : '';
+	const segments = suffix.split('/');
+	// Only versioned REST preview paths; never post to Save, import or admin-ajax.
+	if (pos < 0 || segments.length < 2 || segments.at(-1) !== 'preview-paged'
+		|| segments.slice(0, -1).some(part => !/^[a-z0-9-]+$/.test(part))
+		|| (target.search && (target.searchParams.size !== 1
+			|| !target.searchParams.has('rest_route')))) {
 		throw new TypeError('FLOW_PAGED_PREVIEW_ENDPOINT_UNTRUSTED');
 	}
 	return target.href;
@@ -52,6 +60,7 @@ const endpointUrl = (endpoint, baseUrl) => {
 
 export const createFlowPagedPreviewHost = ({
 	root, navigation = null, resolveRegion = null, onActivate = null,
+	endpointNamespace = 'core-blueprint/v1',
 	onSource = null, onError = null, signal = null,
 	pdfJsLoader = loadBundledPdfJs,
 	pageSourceFactory = createBundledPdfJsPageSource,
@@ -62,6 +71,8 @@ export const createFlowPagedPreviewHost = ({
 		|| (onError !== null && typeof onError !== 'function')
 		|| (resolveRegion !== null && typeof resolveRegion !== 'function')
 		|| typeof pdfJsLoader !== 'function' || typeof pageSourceFactory !== 'function'
+		|| typeof endpointNamespace !== 'string'
+		|| !/^[a-z][a-z0-9-]{1,63}\/v[1-9][0-9]?$/.test(endpointNamespace)
 		|| signal?.aborted) {
 		throw new TypeError('FLOW_PAGED_PREVIEW_HOST_INVALID');
 	}
@@ -92,7 +103,7 @@ export const createFlowPagedPreviewHost = ({
 			|| requestSignal?.aborted) {
 			throw new TypeError('FLOW_PAGED_PREVIEW_REQUEST_INVALID');
 		}
-		const target = endpointUrl(endpoint, baseUrl);
+		const target = endpointUrl(endpoint, baseUrl, endpointNamespace);
 		cancel();
 		const generation = serial;
 		const abortController = new AbortController();
