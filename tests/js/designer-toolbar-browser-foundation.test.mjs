@@ -18,7 +18,7 @@ const css = read('assets/css/components/template-library.css');
 test('canonical toolbar zones preserve all controls with Close at the right edge', () => {
 	assert.match(editor, /startZone\.append\(brand\)/);
 	assert.match(editor, /centerZone\.append\(viewport\)/);
-	assert.match(editor, /centerZone\.append\(documentGroup\)/);
+	assert.match(editor, /centerZone\.append\(createDesignerPageNavigationControl\(doc\)\)/);
 	assert.match(editor, /endZone\.append\(resourceGroup, operationGroup\)/);
 	assert.match(editor, /operationGroup\.append\(history, save, closeSlot\)/);
 	assert.match(editor, /resourceGroup\.append\(browserButton\)/);
