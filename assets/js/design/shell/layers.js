@@ -988,6 +988,12 @@ export const createDesignerLayerTree = ({
 			return !disposed && options && typeof options === 'object'
 				? openMenu(options) === true : false;
 		},
+		/** Share the same Base popup lifecycle with external Canvas controllers. */
+		closeActions(options = {}) {
+			if (disposed) return false;
+			closeMenu(options);
+			return true;
+		},
 		destroy() {
 			if (disposed) return;
 			disposed = true;
