@@ -12,6 +12,20 @@ Base owns its toolbar control, menu, focus and keyboard behavior. A consumer own
 
 **Do not infer page count from the height of `FlowRenderApi::preview_html()`.** That preview is continuous HTML and explicitly has no authoritative PDF page breaks or page numbers. PDF is the authoritative paged output. Consumers must opt in only when their page projection is genuinely known and corresponds to their rendered paged document.
 
+## Canonical Pages control across Document Designers
+
+Native Maintenance Reports and external Document Designer consumers use the same
+Base-owned `createDesignerPageNavigationControl(document)` factory to create the
+centered `file-text` icon button, accessible group and disabled-by-default
+presentation. An extension opts in on the existing Designer Shell with
+`data-cb-design-shell-page-navigation-opt-in`; Base's launcher mounts the
+control. Consumers must not render their own Pages buttons, groups or menus.
+
+`Assets::DESIGNER_PAGE_NAVIGATION_CHROME_API = 1` advertises this opt-in
+contract. The existing public `configureDesignerPageNavigation` remains the
+only page controller; consumers supply trusted PDF page data and navigation
+authority, not a renderer or toolbar UI. Base native Mail does not opt in.
+
 ## Capability and imports
 
 PHP: `CoreBlueprint\Core\Design\Editor\Assets::DESIGNER_PAGE_NAVIGATION_API >= 1` in the **installed matching Base ZIP**. Do not treat source presence in another checkout as proof.
