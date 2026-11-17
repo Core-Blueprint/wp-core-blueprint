@@ -44,6 +44,7 @@ class Element {
   }
   setAttribute(name, value) { this.attributes.set(name, String(value)); }
   getAttribute(name) { return this.attributes.get(name) ?? null; }
+  hasAttribute(name) { return this.attributes.has(name); }
   removeAttribute(name) { this.attributes.delete(name); }
   matches(selector) {
     if (selector.startsWith('.')) return this.className.split(/\s+/).includes(selector.slice(1));
@@ -73,9 +74,12 @@ const tagged = (name, tag = 'button') => {
 };
 
 const fixture = withPages => {
+  const doc = {createElement: tag => new Element(tag)};
   const root = new Element();
   root.dataset.cbDesignTitle = 'Contracts Designer';
   const shell = new Element();
+  shell.ownerDocument = doc;
+  if (withPages) shell.setAttribute('data-cb-design-shell-page-navigation-opt-in', '');
   const toolbar = new Element('div', 'cb-core-design-shell__toolbar cb-core-design-shell__toolbar--designer');
   shell.append(toolbar);
 
@@ -99,11 +103,10 @@ const fixture = withPages => {
   const fullscreen = tagged('data-cb-design-shell-fullscreen');
   operations.append(save, fullscreen);
   toolbar.append(context, history, viewportGroup);
-  if (withPages) toolbar.append(pageGroup);
   toolbar.append(operations);
 
   const sandbox = {
-    document: {createElement: tag => new Element(tag)},
+    document: doc,
     config: {},
     bindSaveState: () => {},
     configureSidebar: () => {},
@@ -112,20 +115,23 @@ const fixture = withPages => {
     enhanceHeaderContext: () => {},
   };
   sandbox.composeHeader = undefined;
+  let factoryCount = 0;
   runInNewContext(realComposeHeader + '\ncomposeHeader(root, shell, shellApi);', {
     ...sandbox, root, shell,
     shellApi: {
       icons: {decorate: () => {}},
+      createPageNavigationControl: () => { factoryCount++; return pageGroup; },
       configureViewports: () => {},
       configureHistory: () => {},
     },
   }, {timeout: 1000});
 
-  return {shell, toolbar, history, save, fullscreen, viewportGroup, pageGroup, pageButton};
+  return {shell, toolbar, history, save, fullscreen, viewportGroup, pageGroup, pageButton, factoryCount};
 };
 
 test('DP-NAV-02: classic Contracts header relocation retains the original Page Navigation trigger', () => {
-  const {shell, toolbar, history, save, fullscreen, viewportGroup, pageGroup, pageButton} = fixture(true);
+  const {shell, toolbar, history, save, fullscreen, viewportGroup, pageGroup, pageButton, factoryCount} = fixture(true);
+  assert.equal(factoryCount, 1, 'Base creates exactly one Pages group');
   const center = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--center');
   const end = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--end');
   assert.ok(center, 'Base must construct its canonical center zone');
@@ -139,7 +145,8 @@ test('DP-NAV-02: classic Contracts header relocation retains the original Page N
 });
 
 test('DP-NAV-02: classic Mail header remains valid without an opted-in Pages control', () => {
-  const {shell, toolbar, save, fullscreen} = fixture(false);
+  const {shell, toolbar, save, fullscreen, factoryCount} = fixture(false);
+  assert.equal(factoryCount, 0, 'Mail never receives document Pages UI');
   assert.strictEqual(shell.querySelector('[data-cb-design-shell-page-navigation]'), null);
   assert.ok(toolbar.querySelector('[data-cb-design-shell-primary-action]') === save);
   assert.ok(toolbar.querySelector('[data-cb-design-shell-fullscreen]') === fullscreen);
