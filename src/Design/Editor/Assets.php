@@ -58,6 +58,8 @@ final class Assets {
 	public const DESIGNER_DUPLICATE_API = 1;
 	/** Optional shared flat context menu presenter; no domain authority. */
 	public const DESIGNER_CONTEXT_MENU_API = 1;
+	/** Shared native/extension context actions using the exact Base Layers popup. */
+	public const DESIGNER_CANONICAL_ACTION_MENU_API = 1;
 	/** Public fail-closed Exit Guard, not an A2-06 receipt/recovery API. */
 	public const DESIGNER_EXIT_GUARD_API = 4;
 	public const SHELL_STYLE = 'cb-core-design-editor-shell';
