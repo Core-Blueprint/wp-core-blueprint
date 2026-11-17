@@ -36,7 +36,7 @@ final class CB_Designer_Layer_Interaction_Contract_Test extends WP_UnitTestCase 
 		self::assertStringContainsString( "icon: 'arrow-up'", $layers );
 		self::assertStringContainsString( "icon: 'arrow-down'", $layers );
 		self::assertStringContainsString( "icon: 'trash-2'", $layers );
-		self::assertStringContainsString( "['moveUp', 'moveDown', 'hide', 'show', 'remove']", $layers );
+		self::assertStringContainsString( "['moveUp', 'moveDown', 'hide', 'show', 'duplicate', 'remove']", $layers );
 		self::assertStringContainsString( 'for (const actionName of quickActions)', $layers );
 		self::assertStringContainsString( "menuTrigger.setAttribute('aria-haspopup', 'menu');", $layers );
 		self::assertStringContainsString( 'iconOnly: true', $layers );
