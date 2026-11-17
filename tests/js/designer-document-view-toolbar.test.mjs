@@ -64,11 +64,13 @@ test('document view toolbar toggles fit/fixed without write, reports event mode 
 test('native toolbar keeps Mail widths, Reports page navigation disabled until real page descriptors', async () => {
 	const editor = await source('../../assets/js/design/editor.js');
 	const icons = await source('../../assets/js/design/shell/icons.js');
+	const chrome = await source('../../assets/js/design/shell/page-navigation-control.js');
 	const css = await source('../../assets/css/design/platform-fullscreen.css');
 	assert.match(editor, /if \(profileId === 'base\/mail'\) \{[\s\S]*?data-cb-design-shell-viewport-group/);
-	assert.match(editor, /data-cb-design-shell-page-navigation/);
-	assert.match(editor, /documentButton\.disabled = true/);
-	assert.match(editor, /decorateDesignerControl\(documentButton, 'file-text'/);
+	assert.match(editor, /centerZone\.append\(createDesignerPageNavigationControl\(doc\)\)/);
+	assert.match(chrome, /data-cb-design-shell-page-navigation/);
+	assert.match(chrome, /trigger\.disabled = true/);
+	assert.match(chrome, /decorateDesignerControl\(trigger, 'file-text'/);
 	assert.match(editor, /activeRegistry\.profileId === 'base\/mail'[\s\S]*?configureDesignerViewports\(stagedRoot/);
 	assert.match(editor, /activeRegistry\.profileId === 'base\/reports'[\s\S]*?configureDesignerPageNavigation\(stagedRoot/);
 	assert.match(editor, /configureDocumentView: configureDesignerDocumentView/);
