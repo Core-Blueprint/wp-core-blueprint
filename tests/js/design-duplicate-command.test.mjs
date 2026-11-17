@@ -115,6 +115,7 @@ test('DP-DUP-08: Mail disables Duplicate at max node count without mutating the 
  assert.equal(mail.layerPolicyFor(root.children[0].children[0],root.children[0],0,p).duplicate,true);
  root.children[0].children.push(heading());
  assert.equal(mail.validateProject(p),true);
- assert.equal(mail.layerPolicyFor(root.children[0].children[0],root.children[0],0,p).duplicate,false);
+ assert.equal(mail.layerPolicyFor(root.children[0].children[0],root.children[0],0,p).duplicate,true);
+ assert.equal(mail.layerPolicyFor(root.children[0].children[0],root.children[0],0,p).duplicateAvailable,false);
  assert.equal(mail.resolveCommand('mail.duplicate').canApply(p,{path:[0,0]}),false);
 });

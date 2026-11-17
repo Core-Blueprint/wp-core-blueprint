@@ -121,7 +121,8 @@ export const layerPolicyFor = (node, parent, index, project = null) => {
 	const maxIndex = hasParent ? parent.children.length - 1 : -1;
 	return Object.freeze({
 		remove: hasParent && !fixedColumn,
-		duplicate: hasParent && !fixedColumn && duplicateFits(project,node),
+		duplicate: hasParent && !fixedColumn,
+		duplicateAvailable: duplicateFits(project,node),
 		reorder: reorderParent && !fixedColumn && Number.isSafeInteger(index)
 			? Object.freeze({minIndex: 0, maxIndex}) : null,
 		visibility: null,

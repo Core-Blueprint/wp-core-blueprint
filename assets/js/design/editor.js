@@ -1504,7 +1504,7 @@ export const attachTrustedDesignerHost = ({
 					const interaction = projectDesignerLayerInteractions({
 						node, parent, path, policy,
 						commandIds: {remove: prefix + '.remove', duplicate: prefix + '.duplicate', reorder: prefix + '.reorder', set: prefix + '.set'},
-						canDuplicate: () => policy.duplicate === true,
+						canDuplicate: () => policy.duplicateAvailable !== false,
 						execute: (id, input) => editor.execute(id, input),
 						isReady: () => !signal.aborted && host?.state === 'READY',
 					});
@@ -1827,7 +1827,7 @@ export const attachTrustedDesignerHost = ({
 							set: prefix + '.set',
 						},
 						execute: (id, input) => editor.execute(id, input),
-						canDuplicate: () => policy.duplicate === true,
+						canDuplicate: () => policy.duplicateAvailable !== false,
 						isReady: () => !signal.aborted && host.state === 'READY',
 					});
 					return {

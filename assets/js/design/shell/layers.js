@@ -279,7 +279,8 @@ export const projectDesignerLayerInteractions = ({
 			(name) => typeof commandIds[name] !== 'string' || !commandIds[name]
 		)) throw new TypeError('DESIGNER_LAYER_POLICY_INVALID');
 
-	if (policy.duplicate !== undefined && typeof policy.duplicate !== 'boolean') {
+	if ((policy.duplicate !== undefined && typeof policy.duplicate !== 'boolean')
+		|| (policy.duplicateAvailable !== undefined && typeof policy.duplicateAvailable !== 'boolean')) {
 		throw new TypeError('DESIGNER_LAYER_POLICY_INVALID');
 	}
 	const actions = {};

@@ -191,7 +191,8 @@ export const layerPolicyFor = (node, parent, index, project = null) => {
 		? Object.freeze({key: 'enabled', shownValue: 'on', hiddenValue: 'off'}) : null;
 	return Object.freeze({
 		remove: editable,
-		duplicate: editable && !singletons.has(node.type) && duplicateFits(project,node),
+		duplicate: editable && !singletons.has(node.type),
+		duplicateAvailable: duplicateFits(project,node),
 		reorder: editable && Number.isSafeInteger(index) && index >= minIndex && index <= maxIndex
 			? Object.freeze({minIndex, maxIndex}) : null,
 		visibility,
