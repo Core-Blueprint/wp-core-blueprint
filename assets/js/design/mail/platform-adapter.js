@@ -1,4 +1,4 @@
-import {insertNodeCommand,removeNodeCommand,reorderNodeCommand,moveNodeCommand,setPropertyCommand} from '../core/commands.js';
+import {insertNodeCommand,duplicateNodeCommand,removeNodeCommand,reorderNodeCommand,moveNodeCommand,setPropertyCommand} from '../core/commands.js';
 import {nodeAt} from '../core/tree.js';
 import {sanitizeMailMarkup,createMailRichTextControls} from './rich-text-controls.js';
 const PROVIDER='core.blueprint', ROOT='core.blueprint.mail';
@@ -56,6 +56,7 @@ const inputOK=(d,i)=>{
  if(!i||typeof i!=='object'||Array.isArray(i))return false;
  switch(d?.id){
  case 'mail.insert':return pathOK(i.parentPath)&&Number.isSafeInteger(i.index)&&i.index>=0&&PALETTE.includes(i.type)&&Object.keys(i).length===3;
+ case 'mail.duplicate':return pathOK(i.path)&&i.path.length>0&&Object.keys(i).length===1;
  case 'mail.remove':return pathOK(i.path)&&i.path.length>0&&Object.keys(i).length===1;
  case 'mail.reorder':return pathOK(i.parentPath)&&Number.isSafeInteger(i.fromIndex)&&Number.isSafeInteger(i.toIndex)&&i.fromIndex>=0&&i.toIndex>=0&&Object.keys(i).length===3;
  case 'mail.move':return pathOK(i.fromPath)&&i.fromPath.length>0&&pathOK(i.parentPath)
@@ -73,6 +74,12 @@ const CMDS=Object.freeze({
  'mail.insert':cmd('mail.insert',(p,i)=>{
   const at=nodeAt(p.root,i.parentPath);return parentOK(at,i.type)&&i.index<=at.children.length;
  },(p,i)=>insertNodeCommand(i.parentPath,i.index,node(i.type)).apply(p)),
+ 'mail.duplicate':cmd('mail.duplicate',(p,i)=>{
+  const at=nodeAt(p.root,i.path);
+  if(!at||at.type==='mail.column')return false;
+  try{validateProject(duplicateNodeCommand(i.path).apply(p).project);return true;}
+  catch{return false;}
+ },(p,i)=>duplicateNodeCommand(i.path).apply(p)),
  'mail.remove':cmd('mail.remove',(p,i)=>{
   const at=nodeAt(p.root,i.path);return !!at&&at.type!=='mail.column';
  },(p,i)=>removeNodeCommand(i.path).apply(p)),
@@ -103,6 +110,7 @@ export const layerPolicyFor = (node, parent, index) => {
 	const maxIndex = hasParent ? parent.children.length - 1 : -1;
 	return Object.freeze({
 		remove: hasParent && !fixedColumn,
+		duplicate: hasParent && !fixedColumn,
 		reorder: reorderParent && !fixedColumn && Number.isSafeInteger(index)
 			? Object.freeze({minIndex: 0, maxIndex}) : null,
 		visibility: null,

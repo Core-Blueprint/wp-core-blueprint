@@ -2,7 +2,7 @@ import {createFlowPreviewHost} from '../document/flow/preview-host.js';
 import {createFlowPagedPreviewHost} from '../document/flow/paged-preview-host.js';
 import {configureDesignerPageNavigation} from '../shell/page-navigation.js';
 import {
-	insertNodeCommand, removeNodeCommand, reorderNodeCommand, moveNodeCommand, setPropertyCommand,
+	insertNodeCommand, duplicateNodeCommand, removeNodeCommand, reorderNodeCommand, moveNodeCommand, setPropertyCommand,
 } from '../core/commands.js';
 import {nodeAt} from '../core/tree.js';
 
@@ -85,12 +85,14 @@ export function validateProject(project) {
 }
 const validateInput=(d,i)=>{
 	if(!exact(i,d.id==='reports.insert'?['parentPath','index','type']
+		:d.id==='reports.duplicate'?['path']
 		:d.id==='reports.remove'?['path']
 		:d.id==='reports.reorder'?['parentPath','fromIndex','toIndex']
 		:d.id==='reports.move'?['fromPath','parentPath','index']
 		:d.id==='reports.set'?['path','key','value']:[]))return false;
 	if(d.id==='reports.insert')return validPath(i.parentPath)&&Number.isSafeInteger(i.index)
 		&&i.index>=0&&Object.hasOwn(defaults,i.type);
+	if(d.id==='reports.duplicate')return validPath(i.path)&&i.path.length>0;
 	if(d.id==='reports.remove')return validPath(i.path)&&i.path.length>0;
 	if(d.id==='reports.reorder')return validPath(i.parentPath)
 		&&Number.isSafeInteger(i.fromIndex)&&i.fromIndex>=0
@@ -138,6 +140,11 @@ const table=Object.freeze({
 			type:i.type,provider:PROVIDER,properties:{...defaults[i.type]},children:[],
 		}).apply(p);
 	}),
+	'reports.duplicate':command('reports.duplicate',(p,i)=>{
+		const node=nodeAt(p.root,i.path);
+		if(!node||singletons.has(node.type))throw new TypeError('COMMAND_REFUSED');
+		return duplicateNodeCommand(i.path).apply(p);
+	}),
 	'reports.remove':command('reports.remove',(p,i)=>removeNodeCommand(i.path).apply(p)),
 	'reports.reorder':command('reports.reorder',(p,i)=>{
 		const parent=nodeAt(p.root,i.parentPath);
@@ -173,6 +180,7 @@ export const layerPolicyFor = (node, parent, index) => {
 		? Object.freeze({key: 'enabled', shownValue: 'on', hiddenValue: 'off'}) : null;
 	return Object.freeze({
 		remove: editable,
+		duplicate: editable && !singletons.has(node.type),
 		reorder: editable && Number.isSafeInteger(index) && index >= minIndex && index <= maxIndex
 			? Object.freeze({minIndex, maxIndex}) : null,
 		visibility,

@@ -34,6 +34,33 @@ export const insertNodeCommand = (parentPath, index, node) => {
 	}));
 };
 
+/**
+ * Base-owned structural duplicate, one History transition.
+ * Domain owners must admit cardinality, nested structure and identity refs.
+ * prepareClone is an optional trusted synchronous identity remapper.
+ */
+export const duplicateNodeCommand = (path, prepareClone = null) => {
+	const source = normalizePath(path);
+	if (!source.length || (prepareClone !== null && typeof prepareClone !== 'function')) {
+		throw new TypeError('Duplicate requires a non-root node and optional clone preparer.');
+	}
+	const parentPath = source.slice(0, -1), index = source.at(-1) + 1;
+	return command('duplicate-node', (project) => {
+		const original = nodeAt(project.root, source);
+		if (!original) throw new RangeError('Unable to duplicate an unknown tree node.');
+		const copy = cloneValue(original);
+		const prepared = prepareClone === null ? copy : prepareClone(copy);
+		if (prepared && typeof prepared.then === 'function') {
+			throw new TypeError('Duplicate node preparation must be synchronous.');
+		}
+		return {
+			project: withRoot(project, insertChild(project.root, parentPath, index, prepared)),
+			remapSelection: selectedPath => remapPathAfterInsertion(selectedPath, parentPath, index),
+			selectPath: [...parentPath, index],
+		};
+	});
+};
+
 export const removeNodeCommand = (path) => {
 	const target = normalizePath(path);
 	return command('remove-node', (project) => ({

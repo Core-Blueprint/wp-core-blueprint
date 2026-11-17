@@ -36,3 +36,11 @@ test('context menu publication follows canonical Host repaint, not the stale can
 	assert.match(code, /event\.preventDefault\(\)/);
 	assert.match(code, /nodeAt\(project\.root, path\) === node/);
 });
+
+test('Duplicate is projected through the same Base Layers and Canvas menus', () => {
+	assert.match(layers, /duplicate: Object\.freeze\(\{/);
+	assert.match(layers, /'hide', 'show', 'duplicate', 'remove'/);
+	assert.match(editor, /duplicate: prefix \+ '\.duplicate'/);
+	assert.match(editor, /canDuplicate: \(\) => profileModule\.resolveCommand\(prefix \+ '\.duplicate'\)/);
+	assert.match(editor, /\['moveUp', 'moveDown', 'hide', 'show', 'duplicate', 'remove'\]/);
+});

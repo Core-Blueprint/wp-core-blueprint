@@ -20,6 +20,7 @@ import {
 	buildInspectorContext,
 	handleEditorShortcut,
 	insertNodeCommand,
+	duplicateNodeCommand,
 	moveNodeCommand,
 	nodeAt,
 	normalizePath,
@@ -1502,7 +1503,9 @@ export const attachTrustedDesignerHost = ({
 					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1));
 					const interaction = projectDesignerLayerInteractions({
 						node, parent, path, policy,
-						commandIds: {remove: prefix + '.remove', reorder: prefix + '.reorder', set: prefix + '.set'},
+						commandIds: {remove: prefix + '.remove', duplicate: prefix + '.duplicate', reorder: prefix + '.reorder', set: prefix + '.set'},
+						canDuplicate: () => profileModule.resolveCommand(prefix + '.duplicate')
+							?.canApply(editor.project(), {path: [...path]}) === true,
 						execute: (id, input) => editor.execute(id, input),
 						isReady: () => !signal.aborted && host?.state === 'READY',
 					});
@@ -1510,7 +1513,7 @@ export const attachTrustedDesignerHost = ({
 						actions: interaction.actions, reorder: interaction.reorder,
 					});
 					if (!Object.keys(actions).some(name =>
-						['moveUp', 'moveDown', 'hide', 'show', 'remove'].includes(name))) return false;
+						['moveUp', 'moveDown', 'hide', 'show', 'duplicate', 'remove'].includes(name))) return false;
 					const primary = editor.selection()?.primary;
 					if (primary?.kind !== 'node' || JSON.stringify(primary.path) !== JSON.stringify(path)) {
 						const ref = {kind: 'node', path: [...path]};
@@ -1820,10 +1823,13 @@ export const attachTrustedDesignerHost = ({
 						node, parent, path, policy,
 						commandIds: {
 							remove: prefix + '.remove',
+							duplicate: prefix + '.duplicate',
 							reorder: prefix + '.reorder',
 							set: prefix + '.set',
 						},
 						execute: (id, input) => editor.execute(id, input),
+						canDuplicate: () => profileModule.resolveCommand(prefix + '.duplicate')
+							?.canApply(editor.project(), {path: [...path]}) === true,
 						isReady: () => !signal.aborted && host.state === 'READY',
 					});
 					return {
@@ -2055,6 +2061,7 @@ export const attachTrustedDesignerHost = ({
 export const profiles = PROFILE_APIS;
 export const commands = Object.freeze({
 	insertNode: insertNodeCommand,
+	duplicateNode: duplicateNodeCommand,
 	moveNode: moveNodeCommand,
 	removeNode: removeNodeCommand,
 	reorderNode: reorderNodeCommand,
@@ -2102,6 +2109,7 @@ export {
 	decorateDesignerControl,
 	decorateDesignerElement,
 	insertNodeCommand,
+	duplicateNodeCommand,
 	moveNodeCommand,
 	removeNodeCommand,
 	reorderNodeCommand,
