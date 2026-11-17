@@ -373,6 +373,18 @@ html.cb-core-design-shell-focus-mode .cb-hud {
 
 
 /*
+ * DP-NAV-04 — Base-owned document toolbar geometry for native and consumers.
+ * Equal Start/End tracks center Pages against the full wide toolbar.
+ * At <=1280px, keep the established intrinsic End rail and responsive
+ * horizontal scrolling so History, Save and Close never overlap.
+ */
+@media (min-width: 1281px) {
+	.cb-core-design-shell__toolbar--designer.cb-core-design-shell__toolbar--document {
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	}
+}
+
+/*
  * FIELD-06E R2 — preserve exactly one Grid row for Start / Center / End.
  * The End rail owns the intrinsic width of its actions; the Start rail absorbs
  * the flexible space without pushing Browser behind History. The compact

@@ -132,6 +132,8 @@ const fixture = withPages => {
 test('DP-NAV-02: classic Contracts header relocation retains the original Page Navigation trigger', () => {
   const {shell, toolbar, history, save, fullscreen, viewportGroup, pageGroup, pageButton, factoryCount} = fixture(true);
   assert.equal(factoryCount, 1, 'Base creates exactly one Pages group');
+  assert.ok(toolbar.className.split(/\s+/).includes('cb-core-design-shell__toolbar--document'),
+    'Base must mark document toolbars for centered desktop layout');
   const center = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--center');
   const end = toolbar.querySelector('.cb-core-design-shell__toolbar-zone--end');
   assert.ok(center, 'Base must construct its canonical center zone');
@@ -147,6 +149,8 @@ test('DP-NAV-02: classic Contracts header relocation retains the original Page N
 test('DP-NAV-02: classic Mail header remains valid without an opted-in Pages control', () => {
   const {shell, toolbar, save, fullscreen, factoryCount} = fixture(false);
   assert.equal(factoryCount, 0, 'Mail never receives document Pages UI');
+  assert.ok(!toolbar.className.split(/\s+/).includes('cb-core-design-shell__toolbar--document'),
+    'Mail must not receive document-specific toolbar geometry');
   assert.strictEqual(shell.querySelector('[data-cb-design-shell-page-navigation]'), null);
   assert.ok(toolbar.querySelector('[data-cb-design-shell-primary-action]') === save);
   assert.ok(toolbar.querySelector('[data-cb-design-shell-fullscreen]') === fullscreen);

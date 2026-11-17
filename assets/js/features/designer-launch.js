@@ -514,6 +514,7 @@
 		end.append(resourceGroup, operationGroup);
 
 		toolbar.classList.add('cb-core-design-shell__toolbar--designer');
+		if (pageNavigationRequested) toolbar.classList.add('cb-core-design-shell__toolbar--document');
 		toolbar.dataset.cbDesignShellHeader = 'true';
 		toolbar.replaceChildren(start, center, end);
 		if (viewportGroup) shellApi.configureViewports(shell);

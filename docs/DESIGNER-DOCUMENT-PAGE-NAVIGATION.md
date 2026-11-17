@@ -26,6 +26,17 @@ contract. The existing public `configureDesignerPageNavigation` remains the
 only page controller; consumers supply trusted PDF page data and navigation
 authority, not a renderer or toolbar UI. Base native Mail does not opt in.
 
+### Shared Page Navigation toolbar alignment
+
+Native Maintenance Reports and externally opted-in Document Designers both
+mark Base's toolbar with `cb-core-design-shell__toolbar--document`. At
+desktop widths above 1280px, two equal flexible outer grid tracks
+(`minmax(0, 1fr) auto minmax(0, 1fr)`) place Pages at the physical center,
+independently of title length and right-side action count. At 1280px and
+below, the canonical intrinsic End rail remains in effect; at 700px and
+below, the single-row horizontal scroller preserves accessible controls.
+Base, never the consumer, owns this layout and its responsive fallbacks.
+
 ## Capability and imports
 
 PHP: `CoreBlueprint\Core\Design\Editor\Assets::DESIGNER_PAGE_NAVIGATION_API >= 1` in the **installed matching Base ZIP**. Do not treat source presence in another checkout as proof.

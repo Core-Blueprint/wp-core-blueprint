@@ -653,6 +653,7 @@ const composePlatformChrome = (root, profileId) => {
 	const toolbar = node('div', 'cb-core-design-shell__toolbar cb-core-design-shell__toolbar--designer', {
 		role: 'toolbar', 'aria-label': 'Designer actions',
 	});
+	if (profileId === 'base/reports') toolbar.classList.add('cb-core-design-shell__toolbar--document');
 	const startZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--start');
 	const centerZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--center');
 	const endZone = node('div', 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--end');
