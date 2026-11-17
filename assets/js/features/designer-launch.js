@@ -389,7 +389,10 @@
 		const historyGroup = toolbar.querySelector('[data-cb-design-shell-undo]')?.closest('.cb-core-design-shell__toolbar-group') ?? null;
 		const viewportGroup = toolbar.querySelector('[data-cb-design-shell-viewport]')?.closest('.cb-core-design-shell__toolbar-group') ?? null;
 		// Keep the public Page Navigation controller's original DOM trigger alive.
-		const pageNavigationGroup = toolbar.querySelector('[data-cb-design-shell-page-navigation-group]');
+		const pageNavigationRequested = shell.hasAttribute('data-cb-design-shell-page-navigation-opt-in');
+		const pageNavigationGroup = pageNavigationRequested
+			? shellApi.createPageNavigationControl?.(shell.ownerDocument) : null;
+		if (pageNavigationRequested && !pageNavigationGroup) throw new Error('DESIGNER_PAGE_NAVIGATION_CHROME_UNAVAILABLE');
 		const fullscreen = toolbar.querySelector('[data-cb-design-shell-fullscreen]');
 		const contextSwitcher = toolbar.querySelector('[data-cb-design-shell-context]');
 		const save = toolbar.querySelector('[data-cb-design-shell-primary-action]');
