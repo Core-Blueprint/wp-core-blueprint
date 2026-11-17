@@ -255,11 +255,13 @@ test('DP-NAV-01 supports exactly 500 bounded page descriptors, not 501', () => {
 
 test('DP-NAV-01 native Reports button no longer triggers width toggle and API is public', () => {
 	assert.match(editorSource, /import \{ configureDesignerPageNavigation \} from '.\/shell\/page-navigation\.js'/);
-	assert.match(editorSource, /button\('Pages', 'data-cb-design-shell-page-navigation'\)/);
+	assert.match(editorSource, /centerZone\.append\(createDesignerPageNavigationControl\(doc\)\)/);
+	assert.match(editorSource, /createPageNavigationControl: createDesignerPageNavigationControl/);
 	assert.match(editorSource, /configureDesignerPageNavigation\(stagedRoot, \{signal\}\)/);
 	assert.match(editorSource, /configurePageNavigation: configureDesignerPageNavigation/);
 	assert.doesNotMatch(editorSource, /configureDesignerDocumentView\(stagedRoot/);
 	assert.doesNotMatch(editorSource, /button\('Document view', 'data-cb-design-shell-document-view-toggle'\)/);
 	assert.match(assetSource, /public const DESIGNER_PAGE_NAVIGATION_API = 1;/);
+	assert.match(assetSource, /public const DESIGNER_PAGE_NAVIGATION_CHROME_API = 1;/);
 	assert.match(shellSource, /root\.querySelector\?\.\('\.cb-core-design-shell__page-menu:not\(\[hidden\]\)'\)/);
 });
