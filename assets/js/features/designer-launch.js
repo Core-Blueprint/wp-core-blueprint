@@ -388,6 +388,11 @@
 
 		const historyGroup = toolbar.querySelector('[data-cb-design-shell-undo]')?.closest('.cb-core-design-shell__toolbar-group') ?? null;
 		const viewportGroup = toolbar.querySelector('[data-cb-design-shell-viewport]')?.closest('.cb-core-design-shell__toolbar-group') ?? null;
+		// Keep the public Page Navigation controller's original DOM trigger alive.
+		const pageNavigationRequested = shell.hasAttribute('data-cb-design-shell-page-navigation-opt-in');
+		const pageNavigationGroup = pageNavigationRequested
+			? shellApi.createPageNavigationControl?.(shell.ownerDocument) : null;
+		if (pageNavigationRequested && !pageNavigationGroup) throw new Error('DESIGNER_PAGE_NAVIGATION_CHROME_UNAVAILABLE');
 		const fullscreen = toolbar.querySelector('[data-cb-design-shell-fullscreen]');
 		const contextSwitcher = toolbar.querySelector('[data-cb-design-shell-context]');
 		const save = toolbar.querySelector('[data-cb-design-shell-primary-action]');
@@ -470,6 +475,7 @@
 		const center = document.createElement('div');
 		center.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--center';
 		if (viewportGroup) center.append(viewportGroup);
+		if (pageNavigationGroup) center.append(pageNavigationGroup);
 
 		const end = document.createElement('div');
 		end.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--end';
@@ -508,6 +514,7 @@
 		end.append(resourceGroup, operationGroup);
 
 		toolbar.classList.add('cb-core-design-shell__toolbar--designer');
+		if (pageNavigationRequested) toolbar.classList.add('cb-core-design-shell__toolbar--document');
 		toolbar.dataset.cbDesignShellHeader = 'true';
 		toolbar.replaceChildren(start, center, end);
 		if (viewportGroup) shellApi.configureViewports(shell);

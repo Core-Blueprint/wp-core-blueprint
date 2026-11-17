@@ -38,6 +38,8 @@ final class Assets {
 	public const FLOW_PAGED_PAGE_COUNT_API = 1;
 	/** DP-NAV-02C: PDF.js-powered paginated Document Flow viewport, Base-owned. */
 	public const FLOW_PAGED_DOCUMENT_VIEW_API = 1;
+	/** Public versioned external REST consumer opt-in for the shared paged viewer. */
+	public const FLOW_PAGED_CONSUMER_API = 1;
 	private const PDFJS_VERSION = '6.5.438';
 	private const PDFJS_VIEW_STYLE = 'cb-core-design-paged-document';
 	/** MC-02B: authorized, resource-scoped and fictional Mail Dynamic Data palette. */
@@ -50,6 +52,8 @@ final class Assets {
 	public const CANVAS_NAVIGATION_API = 2;
 	/** Opt-in verified document-page navigation, independent of Flow PDF pagination. */
 	public const DESIGNER_PAGE_NAVIGATION_API = 1;
+	/** Shared native/external Pages UI; extension consumers only declare an opt-in. */
+	public const DESIGNER_PAGE_NAVIGATION_CHROME_API = 1;
 	/** Optional shared flat context menu presenter; no domain authority. */
 	public const DESIGNER_CONTEXT_MENU_API = 1;
 	/** Public fail-closed Exit Guard, not an A2-06 receipt/recovery API. */
@@ -349,6 +353,15 @@ final class Assets {
 	 * Loaded only on actual document Designer routes, never on Mail.
 	 */
 	public static function enqueue_document_pdf_viewer(): void {
+		// Consumer document Designers need the SAME pinned PDF.js display module
+		// as native Reports. Keep it a dynamic import-map dependency so Mail and
+		// unrelated admin routes never load the large vendor bundle.
+		wp_register_script_module(
+			'@cb-core/pdfjs-display',
+			CB_CORE_URL . 'assets/vendor/pdfjs/pdf.min.mjs',
+			[],
+			self::PDFJS_VERSION
+		);
 		wp_enqueue_style(
 			self::PDFJS_VIEW_STYLE,
 			CB_CORE_URL . 'assets/css/design/document-paged-surface.css',

@@ -39,7 +39,11 @@ test('cross-lane: document navigation and true PDF page count survive Mail/Conte
 	const renderer = await source('src/PDF/Renderer.php');
 	const frame = await source('assets/js/design/document/flow/preview-host.js');
 	assert.match(editor, /configureDesignerPageNavigation\(stagedRoot, \{signal\}\)/);
-	assert.match(editor, /data-cb-design-shell-page-navigation/);
+	const chrome = await source('assets/js/design/shell/page-navigation-control.js');
+	assert.match(editor, /centerZone\.append\(createDesignerPageNavigationControl\(doc\)\)/);
+	assert.match(editor, /createPageNavigationControl: createDesignerPageNavigationControl/);
+	assert.match(chrome, /data-cb-design-shell-page-navigation/);
+	assert.match(chrome, /decorateDesignerControl\(trigger, 'file-text'/);
 	assert.match(api, /pdf_with_page_count/);
 	assert.match(renderer, /getCanvas\(\)->get_page_count\(\)/);
 	assert.match(frame, /frameBoxHeight/);

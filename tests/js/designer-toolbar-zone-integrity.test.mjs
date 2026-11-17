@@ -8,6 +8,19 @@ const native = read('assets/css/design/platform-fullscreen.css');
 const shell = read('assets/css/design/editor-shell.css');
 const editor = read('assets/js/design/editor.js');
 
+test('DP-NAV-04: native Reports and external Documents share Base wide center alignment', () => {
+	const launch = read('assets/js/features/designer-launch.js');
+	assert.match(editor, /if \(profileId === 'base\/reports'\) toolbar\.classList\.add\('cb-core-design-shell__toolbar--document'\)/);
+	assert.match(launch, /if \(pageNavigationRequested\) toolbar\.classList\.add\('cb-core-design-shell__toolbar--document'\)/);
+	const wide = shared.match(/@media \(min-width: 1281px\) \{([\s\S]*?)\n\}/)?.[1];
+	assert.ok(wide, 'Base defines the document toolbar geometry');
+	assert.match(wide, /\.cb-core-design-shell__toolbar--designer\.cb-core-design-shell__toolbar--document\s*\{\s*grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/);
+	assert.doesNotMatch(wide, /position:\s*absolute/, 'Page Navigation stays in the three-zone grid');
+	assert.match(native, /grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/);
+	assert.match(shared, /@media \(max-width: 1280px\)[\s\S]*?grid-template-columns: minmax\(0, 1fr\) max-content max-content;/);
+	assert.match(shared, /@media \(max-width: 700px\)[\s\S]*?grid-template-columns: max-content max-content max-content;/);
+});
+
 test('FIELD-06E: Start/Center/End remain Base grid zones with Flexbox inside', () => {
 	assert.match(shell, /\.cb-core-design-shell__toolbar--designer\s*\{\s*position: relative;\s*display: grid;/);
 	assert.match(shell, /\.cb-core-design-shell__toolbar-zone\s*\{\s*display: flex;/);
