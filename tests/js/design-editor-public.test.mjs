@@ -1108,6 +1108,43 @@ test('CM-1 refuses changed permissions, context and disabled actions with focus 
 	controller.destroy();
 	assert.equal(documentRef.body.children.length, 0);
 	assert.throws(() => controller.open(), /DESTROYED/);
+
+	// CM-2: canonical Canvas mode delegates its actual menu to the same Base
+	// Layers presenter, retaining immutable target and canInvoke guards.
+	let presentation = null, closed = 0;
+	const canonicalPresenter = {
+		openActions(options) { presentation = options; return true; },
+		closeActions() { closed++; return true; },
+	};
+	const canvasInvocations = [];
+	const canonical = publicEditor.createDesignerContextMenu({
+		root, viewport, actionPresenter: canonicalPresenter,
+		getContextKey: () => context,
+		getTargetInfo: () => ({label: 'Section', children: [{children: []}]}),
+		getItems: () => [{id: 'moveUp', disabled: true}, {id: 'duplicate'}, {id: 'remove'}],
+		canInvoke: ({actionId}) => actionId === 'remove' || actionId === 'duplicate',
+		onInvoke: action => canvasInvocations.push(action),
+	});
+	const releaseCanonical = canonical.registerTarget(node, {kind: 'node', id: 'n1'});
+	assert.equal(canonical.open({target: {kind: 'node', id: 'n1'}, invoker: node}), true);
+	assert.deepEqual(Object.keys(presentation.actions), ['moveUp', 'duplicate', 'remove']);
+	assert.equal(presentation.actions.moveUp.disabled, true);
+	assert.equal(presentation.actions.remove.label, undefined, 'Base owns Delete label');
+	assert.equal(presentation.label, 'Section');
+	assert.equal(presentation.children.length, 1, 'Base owns nested removal confirmation');
+	assert.equal(presentation.isCurrent(), true);
+	presentation.actions.remove.onActivate();
+	assert.equal(canvasInvocations.length, 1);
+	assert.equal(canvasInvocations[0].actionId, 'remove');
+	assert.ok(closed > 0);
+	assert.equal(canonical.open({target: {kind: 'node', id: 'n1'}, invoker: node}), true);
+	context = 'document/3';
+	assert.equal(presentation.isCurrent(), false, 'stale canvas menu must fail closed');
+	presentation.actions.duplicate.onActivate();
+	assert.equal(canvasInvocations.length, 1, 'stale Duplicate never reaches the consumer');
+	assert.equal(releaseCanonical(), true);
+	canonical.destroy();
+	assert.throws(() => canonical.open(), /DESTROYED/);
 });
 
 
