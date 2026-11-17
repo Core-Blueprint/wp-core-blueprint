@@ -19,6 +19,7 @@ const ACTION_DEFINITIONS = Object.freeze({
 		icon: 'eye',
 		label: 'Show element',
 	}),
+	duplicate: Object.freeze({icon:'copy',label:'Duplicate element'}),
 	remove: Object.freeze({
 		icon: 'trash-2',
 		label: 'Delete element',
@@ -217,13 +218,13 @@ export const createDesignerLayerRow = ({
 	// The tree opts in to the context menu. Keep the public standalone
 	// row's existing callbacks usable for consumers without that controller.
 	const quickActions = typeof onOpenMenu === 'function'
-		? ['hide', 'show'] : ['moveUp', 'moveDown', 'hide', 'show', 'remove'];
+		? ['hide', 'show'] : ['moveUp', 'moveDown', 'hide', 'show', 'duplicate', 'remove'];
 	for (const actionName of quickActions) {
 		const actionConfig = normalizeAction(actions[actionName]);
 		if (!actionConfig) continue;
 		actionContainer.append(createActionButton(documentRef, actionName, actionConfig));
 	}
-	const hasMenu = ['moveUp', 'moveDown', 'remove'].some((name) => normalizeAction(actions[name]));
+	const hasMenu = ['moveUp', 'moveDown', 'duplicate', 'remove'].some((name) => normalizeAction(actions[name]));
 	if (hasMenu && typeof onOpenMenu === 'function') {
 		const menuTrigger = createActionButton(documentRef, 'menu', {
 			disabled: false,
@@ -267,7 +268,7 @@ export const createDesignerLayerRow = ({
  * command dispatch. No DOM, profile names or document mutation lives here.
  */
 export const projectDesignerLayerInteractions = ({
-	node, parent = null, path, policy, commandIds, execute, isReady,
+	node, parent = null, path, policy, commandIds, execute, isReady, canDuplicate = null,
 } = {}) => {
 	if (!node || typeof node !== 'object' || !Array.isArray(node.children)
 		|| !Array.isArray(path) || path.some((i) => !Number.isSafeInteger(i) || i < 0)
@@ -278,6 +279,10 @@ export const projectDesignerLayerInteractions = ({
 			(name) => typeof commandIds[name] !== 'string' || !commandIds[name]
 		)) throw new TypeError('DESIGNER_LAYER_POLICY_INVALID');
 
+	if ((policy.duplicate !== undefined && typeof policy.duplicate !== 'boolean')
+		|| (policy.duplicateAvailable !== undefined && typeof policy.duplicateAvailable !== 'boolean')) {
+		throw new TypeError('DESIGNER_LAYER_POLICY_INVALID');
+	}
 	const actions = {};
 	const parentPath = path.slice(0, -1);
 	const index = path.at(-1);
@@ -286,6 +291,23 @@ export const projectDesignerLayerInteractions = ({
 		actions.remove = {
 			onActivate: () => {
 				if (isReady()) execute(commandIds.remove, {path: [...path]});
+			},
+		};
+	}
+
+	if (policy.duplicate === true) {
+		if (!parent || !path.length || typeof commandIds.duplicate !== 'string'
+			|| !commandIds.duplicate || typeof canDuplicate !== 'function') {
+			throw new TypeError('DESIGNER_LAYER_POLICY_INVALID');
+		}
+		const permitted = () => {
+			try { return isReady() && canDuplicate() === true; }
+			catch (_) { return false; }
+		};
+		actions.duplicate = {
+			disabled: !permitted(),
+			onActivate: () => {
+				if (permitted()) execute(commandIds.duplicate, {path: [...path]});
 			},
 		};
 	}
@@ -473,7 +495,7 @@ export const createDesignerLayerTree = ({
 			catch (_) { return false; }
 		};
 		if (!current()) return false;
-		const entries = ['moveUp', 'moveDown', 'hide', 'show', 'remove']
+		const entries = ['moveUp', 'moveDown', 'hide', 'show', 'duplicate', 'remove']
 			.map((name) => ({ name, config: normalizeAction(actions[name]) }))
 			.filter(({ config }) => config !== null);
 		if (!entries.length || !documentRef.body) return false;
@@ -817,7 +839,7 @@ export const createDesignerLayerTree = ({
 				layer.select.addEventListener('focus', () => { focusedKey = key; });
 				layer.select.addEventListener('keydown', (event) => {
 					if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
-						if (['moveUp', 'moveDown', 'remove'].some((name) => normalizeAction(actions[name]))) {
+						if (['moveUp', 'moveDown', 'duplicate', 'remove'].some((name) => normalizeAction(actions[name]))) {
 							event.preventDefault();
 							openMenu({ actions, children, label: item.label,
 								anchor: row, returnFocus: layer.select });
@@ -874,7 +896,7 @@ export const createDesignerLayerTree = ({
 				});
 
 				row.addEventListener('contextmenu', (event) => {
-					if (!['moveUp', 'moveDown', 'remove'].some((name) => normalizeAction(actions[name]))) return;
+					if (!['moveUp', 'moveDown', 'duplicate', 'remove'].some((name) => normalizeAction(actions[name]))) return;
 					event.preventDefault();
 					event.stopPropagation();
 					openMenu({ actions, children, label: item.label, anchor: row,
@@ -965,6 +987,12 @@ export const createDesignerLayerTree = ({
 		openActions(options) {
 			return !disposed && options && typeof options === 'object'
 				? openMenu(options) === true : false;
+		},
+		/** Share the same Base popup lifecycle with external Canvas controllers. */
+		closeActions(options = {}) {
+			if (disposed) return false;
+			closeMenu(options);
+			return true;
 		},
 		destroy() {
 			if (disposed) return;

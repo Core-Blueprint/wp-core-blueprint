@@ -20,6 +20,7 @@ import {
 	buildInspectorContext,
 	handleEditorShortcut,
 	insertNodeCommand,
+	duplicateNodeCommand,
 	moveNodeCommand,
 	nodeAt,
 	normalizePath,
@@ -1499,10 +1500,11 @@ export const attachTrustedDesignerHost = ({
 					const node = nodeAt(project.root, path);
 					if (!node || node.type !== source.dataset.cbDesignNodeType) return false;
 					const parent = path.length ? nodeAt(project.root, path.slice(0, -1)) : null;
-					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1));
+					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1), project);
 					const interaction = projectDesignerLayerInteractions({
 						node, parent, path, policy,
-						commandIds: {remove: prefix + '.remove', reorder: prefix + '.reorder', set: prefix + '.set'},
+						commandIds: {remove: prefix + '.remove', duplicate: prefix + '.duplicate', reorder: prefix + '.reorder', set: prefix + '.set'},
+						canDuplicate: () => policy.duplicateAvailable !== false,
 						execute: (id, input) => editor.execute(id, input),
 						isReady: () => !signal.aborted && host?.state === 'READY',
 					});
@@ -1510,7 +1512,7 @@ export const attachTrustedDesignerHost = ({
 						actions: interaction.actions, reorder: interaction.reorder,
 					});
 					if (!Object.keys(actions).some(name =>
-						['moveUp', 'moveDown', 'hide', 'show', 'remove'].includes(name))) return false;
+						['moveUp', 'moveDown', 'hide', 'show', 'duplicate', 'remove'].includes(name))) return false;
 					const primary = editor.selection()?.primary;
 					if (primary?.kind !== 'node' || JSON.stringify(primary.path) !== JSON.stringify(path)) {
 						const ref = {kind: 'node', path: [...path]};
@@ -1815,15 +1817,17 @@ export const attachTrustedDesignerHost = ({
 					const ref = Object.freeze({kind: 'node', path: Object.freeze([...path])});
 					const parentPath = path.slice(0, -1);
 					const parent = path.length ? nodeAt(project.root, parentPath) : null;
-					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1));
+					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1), project);
 					const interaction = projectDesignerLayerInteractions({
 						node, parent, path, policy,
 						commandIds: {
 							remove: prefix + '.remove',
+							duplicate: prefix + '.duplicate',
 							reorder: prefix + '.reorder',
 							set: prefix + '.set',
 						},
 						execute: (id, input) => editor.execute(id, input),
+						canDuplicate: () => policy.duplicateAvailable !== false,
 						isReady: () => !signal.aborted && host.state === 'READY',
 					});
 					return {
@@ -2055,6 +2059,7 @@ export const attachTrustedDesignerHost = ({
 export const profiles = PROFILE_APIS;
 export const commands = Object.freeze({
 	insertNode: insertNodeCommand,
+	duplicateNode: duplicateNodeCommand,
 	moveNode: moveNodeCommand,
 	removeNode: removeNodeCommand,
 	reorderNode: reorderNodeCommand,
@@ -2102,6 +2107,7 @@ export {
 	decorateDesignerControl,
 	decorateDesignerElement,
 	insertNodeCommand,
+	duplicateNodeCommand,
 	moveNodeCommand,
 	removeNodeCommand,
 	reorderNodeCommand,

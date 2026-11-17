@@ -1,6 +1,7 @@
 export { EditorState } from './editor-state.js';
 export {
 	insertNodeCommand,
+	duplicateNodeCommand,
 	moveNodeCommand,
 	removeNodeCommand,
 	reorderNodeCommand,

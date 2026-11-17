@@ -11,6 +11,8 @@ const isElement = (el, doc) => el && el.ownerDocument === doc
 
 export const createDesignerContextMenu = ({
 	root, viewport, getContextKey, getItems, canInvoke, onInvoke,
+	// New conformant Designers share the existing Base Layers presenter.
+	actionPresenter = null, getTargetInfo = null,
 	ariaLabel = 'Canvas actions',
 } = {}) => {
 	const doc = root?.ownerDocument;
@@ -18,6 +20,9 @@ export const createDesignerContextMenu = ({
 		|| !root.contains(viewport) || !doc?.body
 		|| typeof getContextKey !== 'function' || typeof getItems !== 'function'
 		|| typeof canInvoke !== 'function' || typeof onInvoke !== 'function'
+		|| (actionPresenter !== null && (typeof actionPresenter.openActions !== 'function'
+			|| typeof actionPresenter.closeActions !== 'function'))
+		|| (getTargetInfo !== null && typeof getTargetInfo !== 'function')
 		|| activeMenus.has(viewport)) {
 		throw new TypeError('DESIGNER_CONTEXT_MENU_CONFIG_INVALID');
 	}
@@ -67,10 +72,11 @@ export const createDesignerContextMenu = ({
 		const prepared = [];
 		for (const item of supplied) {
 			if (!item || typeof item !== 'object' || !validId(item.id)
-				|| typeof item.label !== 'string' || !item.label.trim()
+				|| ((typeof item.label !== 'string' || !item.label.trim())
+					&& !(actionPresenter && ['moveUp', 'moveDown', 'hide', 'show', 'duplicate', 'remove'].includes(item.id)))
 				|| seen.has(item.id) || item.children !== undefined) return [];
 			seen.add(item.id);
-			prepared.push(Object.freeze({id: item.id, label: item.label.trim(), disabled: item.disabled === true}));
+			prepared.push(Object.freeze({id: item.id, label: typeof item.label === 'string' ? item.label.trim() : null, disabled: item.disabled === true}));
 		}
 		return prepared;
 	};
@@ -89,7 +95,8 @@ export const createDesignerContextMenu = ({
 		items = [];
 		menu.hidden = true;
 		menu.replaceChildren();
-		if (restoreFocus) {
+		if (actionPresenter) actionPresenter.closeActions({restoreFocus});
+		if (restoreFocus && !actionPresenter) {
 			const target = previous.invoker?.isConnected !== false
 				? previous.invoker : viewport;
 			(target?.focus || viewport.focus)?.call(target || viewport, {preventScroll: true});
@@ -149,6 +156,46 @@ export const createDesignerContextMenu = ({
 			? invoker : element || viewport;
 		opened = {target: resolved, element, context, invoker: candidateInvoker};
 		items = supplied;
+		if (actionPresenter) {
+			let info = null;
+			try {
+				info = getTargetInfo?.(Object.freeze({target: resolved})) ?? null;
+				if (info !== null && (typeof info !== 'object' || Array.isArray(info)
+					|| (info.children !== undefined && !Array.isArray(info.children))
+					|| (info.label !== undefined && typeof info.label !== 'string'))) {
+					throw new TypeError('DESIGNER_CONTEXT_MENU_TARGET_INFO_INVALID');
+				}
+			} catch (_) { opened = null; items = []; return false; }
+			const actions = Object.fromEntries(supplied.map(item => [item.id, Object.freeze({
+				disabled: item.disabled,
+				...(item.label !== null ? {label: item.label} : {}),
+				onActivate: () => invoke(item.id),
+			})]));
+			let rendered = false;
+			try {
+				rendered = actionPresenter.openActions({
+					actions, children: info?.children ?? [], label: info?.label || 'Element',
+					anchor: candidateInvoker, returnFocus: candidateInvoker,
+					x: Number.isFinite(clientX) ? clientX : null,
+					y: Number.isFinite(clientY) ? clientY : null,
+					isCurrent: () => {
+						try {
+							return opened?.target === resolved && opened?.context === context
+								&& currentContext() === context
+								&& (element === null || (element.isConnected !== false
+									&& viewport.contains(element) && targets.get(element) === resolved));
+						} catch (_) { return false; }
+					},
+				}) === true;
+			} catch (_) { rendered = false; }
+			if (!rendered) { opened = null; items = []; return false; }
+			if (typeof CustomEvent === 'function') {
+				root.dispatchEvent(new CustomEvent('cb:design-context-menu:open', {
+					bubbles: true, detail: Object.freeze({target: resolved}),
+				}));
+			}
+			return true;
+		}
 		const fragment = doc.createDocumentFragment();
 		for (const item of supplied) {
 			const button = doc.createElement('button');
@@ -248,11 +295,13 @@ export const createDesignerContextMenu = ({
 	};
 	listen(viewport, 'contextmenu', onContextMenu);
 	listen(root, 'keydown', onRootKeyDown);
-	listen(menu, 'keydown', onMenuKeyDown);
-	listen(doc, 'pointerdown', onDocumentPointer, true);
-	listen(doc, 'focusin', onFocusOutside, true);
+	if (!actionPresenter) {
+		listen(menu, 'keydown', onMenuKeyDown);
+		listen(doc, 'pointerdown', onDocumentPointer, true);
+		listen(doc, 'focusin', onFocusOutside, true);
+	}
 	listen(root, 'cb:design-shell:contextchanged', () => close());
-	doc.body.append(menu);
+	if (!actionPresenter) doc.body.append(menu);
 	activeMenus.set(viewport, true);
 	return Object.freeze({
 		registerTarget, open, close,
