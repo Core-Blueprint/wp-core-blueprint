@@ -141,7 +141,13 @@ test('actual Base header composition retains the consumer Store warning node', a
 		},
 		replaceChildren(...children) { replaced = children; },
 	};
-	const shell = { querySelector: (selector) => selector === '.cb-core-design-shell__toolbar' ? toolbar : null };
+	const shell = {
+		hasAttribute(name) {
+			assert.equal(name, 'data-cb-design-shell-page-navigation-opt-in');
+			return false; // This non-document consumer never requests a Pages control.
+		},
+		querySelector: (selector) => selector === '.cb-core-design-shell__toolbar' ? toolbar : null,
+	};
 	const compile = new Function(
 		'document', 'config', 'bindSaveState', 'configureSidebar',
 		'composePanelToggles', 'appendBrandedModeTitle',
