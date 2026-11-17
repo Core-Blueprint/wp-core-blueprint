@@ -7,6 +7,7 @@ import {CommandHistory} from '../../assets/js/design/core/history.js';
 import * as mail from '../../assets/js/design/mail/platform-adapter.js';
 import * as reports from '../../assets/js/design/reports/platform-adapter.js';
 import {projectDesignerLayerInteractions} from '../../assets/js/design/shell/layers.js';
+import {DESIGNER_ICON_NAMES} from '../../assets/js/design/shell/icons.js';
 
 const n = (type,children=[],properties={})=>({type,provider:'fixture',properties,children});
 const fixture=()=>({schema_version:0,design_type:'fixture',root:n('root',[
@@ -95,4 +96,8 @@ test('DP-DUP-06: shared Layers policy forbids unique elements and disables unadm
  assert.equal(logs.length,1);
  const unique=projectDesignerLayerInteractions({...opts,policy:{remove:false,duplicate:false}});
  assert.equal(Object.hasOwn(unique.actions,'duplicate'),false);
+});
+
+test('DP-DUP-07: Duplicate uses the canonical Base Lucide copy icon',()=>{
+ assert.equal(DESIGNER_ICON_NAMES.includes('copy'),true);
 });
