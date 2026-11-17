@@ -170,7 +170,18 @@ const table=Object.freeze({
  * ordinary root sections reorder between them, nested elements within their
  * parent. Only nodes with an actual persisted 'enabled' field may be hidden.
  */
-export const layerPolicyFor = (node, parent, index) => {
+const duplicateNodeCount = node => 1 + (node.children || []).reduce((sum,child)=>sum+duplicateNodeCount(child),0);
+const duplicateDocumentSize = new WeakMap();
+const duplicateFits = (project,node) => {
+ if(!project || !project.root) return true; // legacy profile-only policy callers
+ let total = Object.isFrozen(project) ? duplicateDocumentSize.get(project) : undefined;
+ if(total === undefined) {
+  total = duplicateNodeCount(project.root);
+  if(Object.isFrozen(project)) duplicateDocumentSize.set(project,total);
+ }
+ return total + duplicateNodeCount(node) <= 256;
+};
+export const layerPolicyFor = (node, parent, index, project = null) => {
 	const anchoredNode = node?.type === 'reports.header' || node?.type === 'reports.footer';
 	const editable = !!parent && !anchoredNode;
 	const anchoredParent = parent?.type === TYPE;
@@ -180,7 +191,7 @@ export const layerPolicyFor = (node, parent, index) => {
 		? Object.freeze({key: 'enabled', shownValue: 'on', hiddenValue: 'off'}) : null;
 	return Object.freeze({
 		remove: editable,
-		duplicate: editable && !singletons.has(node.type),
+		duplicate: editable && !singletons.has(node.type) && duplicateFits(project,node),
 		reorder: editable && Number.isSafeInteger(index) && index >= minIndex && index <= maxIndex
 			? Object.freeze({minIndex, maxIndex}) : null,
 		visibility,

@@ -103,14 +103,25 @@ const CMDS=Object.freeze({
  * and dispatches the registered commands. Mail has no persisted visibility
  * property, so this profile does not advertise Hide/Show.
  */
-export const layerPolicyFor = (node, parent, index) => {
+const duplicateNodeCount = node => 1 + (node.children || []).reduce((sum,child)=>sum+duplicateNodeCount(child),0);
+const duplicateDocumentSize = new WeakMap();
+const duplicateFits = (project,node) => {
+ if(!project || !project.root) return true; // legacy profile-only policy callers
+ let total = Object.isFrozen(project) ? duplicateDocumentSize.get(project) : undefined;
+ if(total === undefined) {
+  total = duplicateNodeCount(project.root);
+  if(Object.isFrozen(project)) duplicateDocumentSize.set(project,total);
+ }
+ return total + duplicateNodeCount(node) <= 5000;
+};
+export const layerPolicyFor = (node, parent, index, project = null) => {
 	const hasParent = !!parent;
 	const fixedColumn = node?.type === 'mail.column';
 	const reorderParent = hasParent && parent.type !== 'mail.columns';
 	const maxIndex = hasParent ? parent.children.length - 1 : -1;
 	return Object.freeze({
 		remove: hasParent && !fixedColumn,
-		duplicate: hasParent && !fixedColumn,
+		duplicate: hasParent && !fixedColumn && duplicateFits(project,node),
 		reorder: reorderParent && !fixedColumn && Number.isSafeInteger(index)
 			? Object.freeze({minIndex: 0, maxIndex}) : null,
 		visibility: null,

@@ -101,3 +101,20 @@ test('DP-DUP-06: shared Layers policy forbids unique elements and disables unadm
 test('DP-DUP-07: Duplicate uses the canonical Base Lucide copy icon',()=>{
  assert.equal(DESIGNER_ICON_NAMES.includes('copy'),true);
 });
+
+// DP-DUP-08: menu eligibility remains bounded for full Mail templates.
+test('DP-DUP-08: Mail disables Duplicate at max node count without mutating the document',()=>{
+ const m=(type,properties,children=[])=>({type,provider:'core.blueprint',properties,children});
+ const heading=()=>m('mail.heading',{text:'Heading',fontSize:28,align:'left',color:'#1f2937',spacing:16});
+ const section=()=>m('mail.section',{background:'#ffffff',padding:32,spacing:0},[]);
+ const root=m('core.blueprint.mail',{background:'#f3f4f6',contentBackground:'#ffffff',textColor:'#1f2937',
+ accentColor:'#2563eb',fontFamily:'Arial, Helvetica, sans-serif',width:600,padding:32},[section()]);
+ const p={schema_version:1,design_type:'core.blueprint.mail',root};
+ root.children[0].children=Array.from({length:4997},heading);
+ assert.equal(mail.validateProject(p),true);
+ assert.equal(mail.layerPolicyFor(root.children[0].children[0],root.children[0],0,p).duplicate,true);
+ root.children[0].children.push(heading());
+ assert.equal(mail.validateProject(p),true);
+ assert.equal(mail.layerPolicyFor(root.children[0].children[0],root.children[0],0,p).duplicate,false);
+ assert.equal(mail.resolveCommand('mail.duplicate').canApply(p,{path:[0,0]}),false);
+});

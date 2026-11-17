@@ -1500,12 +1500,11 @@ export const attachTrustedDesignerHost = ({
 					const node = nodeAt(project.root, path);
 					if (!node || node.type !== source.dataset.cbDesignNodeType) return false;
 					const parent = path.length ? nodeAt(project.root, path.slice(0, -1)) : null;
-					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1));
+					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1), project);
 					const interaction = projectDesignerLayerInteractions({
 						node, parent, path, policy,
 						commandIds: {remove: prefix + '.remove', duplicate: prefix + '.duplicate', reorder: prefix + '.reorder', set: prefix + '.set'},
-						canDuplicate: () => profileModule.resolveCommand(prefix + '.duplicate')
-							?.canApply(editor.project(), {path: [...path]}) === true,
+						canDuplicate: () => policy.duplicate === true,
 						execute: (id, input) => editor.execute(id, input),
 						isReady: () => !signal.aborted && host?.state === 'READY',
 					});
@@ -1818,7 +1817,7 @@ export const attachTrustedDesignerHost = ({
 					const ref = Object.freeze({kind: 'node', path: Object.freeze([...path])});
 					const parentPath = path.slice(0, -1);
 					const parent = path.length ? nodeAt(project.root, parentPath) : null;
-					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1));
+					const policy = profileModule.layerPolicyFor(node, parent, path.at(-1), project);
 					const interaction = projectDesignerLayerInteractions({
 						node, parent, path, policy,
 						commandIds: {
@@ -1828,8 +1827,7 @@ export const attachTrustedDesignerHost = ({
 							set: prefix + '.set',
 						},
 						execute: (id, input) => editor.execute(id, input),
-						canDuplicate: () => profileModule.resolveCommand(prefix + '.duplicate')
-							?.canApply(editor.project(), {path: [...path]}) === true,
+						canDuplicate: () => policy.duplicate === true,
 						isReady: () => !signal.aborted && host.state === 'READY',
 					});
 					return {
