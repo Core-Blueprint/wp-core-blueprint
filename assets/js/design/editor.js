@@ -65,6 +65,7 @@ import {
 } from './shell/viewports.js';
 import { configureDesignerDocumentView } from './shell/document-view.js';
 import { configureDesignerPageNavigation } from './shell/page-navigation.js';
+import { createDesignerPageNavigationControl } from './shell/page-navigation-control.js';
 import { configureDesignerHistory } from './shell/history.js';
 
 const PROFILE_APIS = Object.freeze({
@@ -694,17 +695,7 @@ const composePlatformChrome = (root, profileId) => {
 	} else {
 		// The document icon is page navigation, never a width/zoom switch.
 		// No Flow page descriptors are available until a trusted consumer provides them.
-		const documentGroup = node('div', 'cb-core-design-shell__toolbar-group cb-core-design-shell__page-navigation', {
-			'data-cb-design-shell-page-navigation-group': '',
-			role: 'group', 'aria-label': 'Document pages',
-		});
-		const documentButton = button('Pages', 'data-cb-design-shell-page-navigation');
-		decorateDesignerControl(documentButton, 'file-text', {
-			iconOnly: true, label: 'Page navigation unavailable',
-		});
-		documentButton.disabled = true;
-		documentGroup.append(documentButton);
-		centerZone.append(documentGroup);
+		centerZone.append(createDesignerPageNavigationControl(doc));
 	}
 	const history = node('div', 'cb-core-design-shell__toolbar-group', {
 		role: 'group', 'aria-label': 'History',
@@ -2134,6 +2125,7 @@ const publicApi = Object.freeze({
 		configureHistory: configureDesignerHistory,
 		configureDocumentView: configureDesignerDocumentView,
 		configurePageNavigation: configureDesignerPageNavigation,
+		createPageNavigationControl: createDesignerPageNavigationControl,
 		sidebarRoles: DESIGNER_SIDEBAR_ROLES,
 		viewportOrder: DESIGNER_VIEWPORT_ORDER,
 		paletteRoles: DESIGNER_PALETTE_ROLES,
