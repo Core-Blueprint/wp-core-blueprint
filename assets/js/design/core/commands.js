@@ -2,6 +2,7 @@ import { cloneFrozen, cloneValue } from './value.js';
 import {
 	insertChild,
 	moveNode,
+	nodeAt,
 	remapPathAfterMove,
 	normalizePath,
 	removeNode,
