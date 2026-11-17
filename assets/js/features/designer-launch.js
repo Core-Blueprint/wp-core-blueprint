@@ -388,6 +388,8 @@
 
 		const historyGroup = toolbar.querySelector('[data-cb-design-shell-undo]')?.closest('.cb-core-design-shell__toolbar-group') ?? null;
 		const viewportGroup = toolbar.querySelector('[data-cb-design-shell-viewport]')?.closest('.cb-core-design-shell__toolbar-group') ?? null;
+		// Keep the public Page Navigation controller's original DOM trigger alive.
+		const pageNavigationGroup = toolbar.querySelector('[data-cb-design-shell-page-navigation-group]');
 		const fullscreen = toolbar.querySelector('[data-cb-design-shell-fullscreen]');
 		const contextSwitcher = toolbar.querySelector('[data-cb-design-shell-context]');
 		const save = toolbar.querySelector('[data-cb-design-shell-primary-action]');
@@ -470,6 +472,7 @@
 		const center = document.createElement('div');
 		center.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--center';
 		if (viewportGroup) center.append(viewportGroup);
+		if (pageNavigationGroup) center.append(pageNavigationGroup);
 
 		const end = document.createElement('div');
 		end.className = 'cb-core-design-shell__toolbar-zone cb-core-design-shell__toolbar-zone--end';
