@@ -165,6 +165,18 @@ final class AdminAssetCatalog {
 	 * @internal PageRegistry is the public caller.
 	 */
 	public static function enqueue_component_requirement( string $component, ScreenContext $context ): void {
+		// Public management UI is opt-in and uses the native adapter for standalone screens.
+		switch ( $component ) {
+			case 'toolbars':
+				UiAssets::enqueue_management_toolbar();
+				return;
+			case 'management-table':
+				UiAssets::enqueue_management_table();
+				return;
+			case 'management-workspace':
+				UiAssets::enqueue_management_workspace();
+				return;
+		}
 		$map = [
 			'actions'            => [ 'component.actions' ],
 			'badges'             => [ 'component.badges' ],

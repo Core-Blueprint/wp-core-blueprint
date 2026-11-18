@@ -256,3 +256,9 @@ The resulting contract uses `.cb-core-desc.cb-core-dual[data-active]`, `.cb-core
 Private/page-specific styles such as `table-cols`, `policy-table`, `log-table`, Scanner/Reports-specific table rules and other feature composition CSS are **not** promoted by this contract merely because more than one Base screen uses them. A future public primitive requires a genuinely reusable markup/behavior contract first.
 
 Navigation and status-navigation tile variants are not promoted by the `metric-tiles` contract.
+
+## Management Workspace v1 (candidate)
+
+The opt-in management pattern uses public `PageRegistry` components `management-workspace`, `toolbars`, `management-table`, plus the `row-action-menu` Foundation. These declare Base-owned styles and interaction; consumers own routes, data queries, form submissions, capabilities and nonces.
+
+Markup and implementation boundaries are documented in [`MANAGEMENT-WORKSPACE-FOUNDATION.md`](MANAGEMENT-WORKSPACE-FOUNDATION.md). This is a source candidate pending integrated WordPress and browser acceptance; do not treat as Golden or a published stable API until qualified.

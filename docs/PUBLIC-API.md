@@ -389,3 +389,7 @@ The following are **not** public v1 API: `Integrity\Rest\ScanController`, `Resul
 ## Explicitly not public
 
 The historical `cb_core_event_labels`, `cb_core_safeguard_status_*`, `cb_core_module_status_*` per-module filter families, `Modules\Resolver`, HUD `display|integrations|wordpress` sections, HUD `note` items, and render-time HUD mutation filters are not part of the v1 public API. New integrations use the canonical declarative registries above.
+
+## Management Workspace v1 (candidate, not stable)
+
+Core Blueprint Base provides optional semantic UI requirements: `components: ['management-workspace','toolbars','management-table']` and `foundations: ['row-action-menu']` through `PageRegistry`/registered screen requirements. `CoreBlueprint\\Core\\UI\\Assets::enqueue_management_toolbar()`, `::enqueue_management_table()`, `::enqueue_management_workspace()` and `::enqueue_row_action_menu()` provide opt-in standalone access, with automatic Core Admin/native presentation selection. `CoreBlueprint\\Core\\UI\\RowActionMenu::render()` renders a declarative accessible overflow menu; consumers retain authorization, forms and mutations. Candidate specification: `docs/MANAGEMENT-WORKSPACE-FOUNDATION.md`. This API is **not yet Golden or release-qualified**.

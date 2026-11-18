@@ -60,6 +60,7 @@ final class PageRegistry {
 		'modal',
 		'object-picker',
 		'interactive-grid',
+		'row-action-menu',
 		'reorder',
 		'segmented-control',
 		'select-picker',
@@ -82,6 +83,8 @@ final class PageRegistry {
 		'form-controls',
 		'integration-grid',
 		'kv-table',
+		'management-table',
+		'management-workspace',
 		'master-switch',
 		'metric-tiles',
 		'nav-tabs',
@@ -91,6 +94,7 @@ final class PageRegistry {
 		'radio-cards',
 		'state-badges',
 		'status',
+		'toolbars',
 	];
 
 	/**
@@ -426,6 +430,9 @@ final class PageRegistry {
 				break;
 			case 'segmented-control':
 				UiAssets::enqueue_segmented_control( UiAssets::SEGMENTED_CONTROL_PRESENTATION_CORE );
+				break;
+			case 'row-action-menu':
+				UiAssets::enqueue_row_action_menu();
 				break;
 			case 'icons':
 				UiAssets::enqueue_icons();

@@ -700,6 +700,82 @@ final class Assets {
 
 
 
+
+	/**
+	 * Canonical Search & Filter Toolbar composition. Core Admin reuses the
+	 * existing cb-core-toolbar CSS, while standalone screens receive a scoped
+	 * token-optional native adapter. Query execution belongs to consumers.
+	 */
+	public static function enqueue_management_toolbar( ?string $presentation = null ): void {
+		$core = self::management_is_core( $presentation );
+		self::enqueue_management_css(
+			$core ? 'cb-core-css-filter-bar' : 'cb-core-css-management-toolbar-native',
+			$core ? 'assets/css/components/filter-bar.css' : 'assets/css/components/management-toolbar-native.css',
+			$core
+		);
+	}
+
+	/** Management table is visual composition only, not a data-query engine. */
+	public static function enqueue_management_table( ?string $presentation = null ): void {
+		self::enqueue_management_css(
+			'cb-core-css-management-table',
+			'assets/css/components/management-table.css',
+			self::management_is_core( $presentation )
+		);
+	}
+
+	/** Shared Overview/Add/Edit header and form layout composition. */
+	public static function enqueue_management_workspace( ?string $presentation = null ): void {
+		self::enqueue_management_css(
+			'cb-core-css-management-workspace',
+			'assets/css/components/management-workspace.css',
+			self::management_is_core( $presentation )
+		);
+	}
+
+	/**
+	 * Generic progressive-enhancement row action popover. Domain actions,
+	 * POST forms, capabilities, nonces and confirmation remain consumer-owned.
+	 */
+	public static function enqueue_row_action_menu( ?string $presentation = null ): void {
+		self::enqueue_management_css(
+			'cb-core-css-row-action-menu',
+			'assets/css/components/row-action-menu.css',
+			self::management_is_core( $presentation )
+		);
+		self::enqueue_icons();
+		wp_enqueue_script_module(
+			'@cb-core/row-action-menu',
+			CB_CORE_URL . 'assets/js/core/row-action-menu.js',
+			[],
+			self::asset_revision( 'assets/js/core/row-action-menu.js' )
+		);
+	}
+
+	private static function management_is_core( ?string $presentation ): bool {
+		if ( null === $presentation ) {
+			return self::is_core_admin_screen();
+		}
+		return 'core' === $presentation;
+	}
+
+	private static function enqueue_management_css( string $handle, string $path, bool $core ): void {
+		if ( $core && ! wp_style_is( 'cb-core-css-tokens', 'enqueued' ) ) {
+			wp_enqueue_style(
+				'cb-core-css-tokens',
+				CB_CORE_URL . 'assets/css/tokens.css',
+				[],
+				CB_CORE_VERSION
+			);
+		}
+		wp_enqueue_style(
+			$handle,
+			CB_CORE_URL . $path,
+			$core ? [ 'cb-core-css-tokens' ] : [],
+			self::asset_revision( $path )
+		);
+	}
+
 	/**
 	 * Enqueue the shared semantic Button Foundation.
 	 *
