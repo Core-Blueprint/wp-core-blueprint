@@ -546,6 +546,8 @@ $catalog['messages'] = array_replace( $catalog['messages'], [
     'Open Mail Designer' => 'Ouvrir le concepteur d’e-mails',
     'Open with Core Blueprint' => 'Ouvrir avec Core Blueprint',
     'Choose a Mail design in the Browser to begin editing.' => 'Choisissez un modèle d’e-mail dans le navigateur pour commencer à le modifier.',
+    // BASE-MW-02: accessible default label for the shared row action menu.
+    'More actions' => 'Autres actions',
 ] );
 
 return $catalog;
