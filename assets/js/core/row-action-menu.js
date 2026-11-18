@@ -79,7 +79,7 @@ document.addEventListener('click', event => {
 		event.preventDefault();
 		const alreadyOpen = active?.root === root;
 		if (alreadyOpen) close();
-		else open(root);
+		else open(root, true);
 		return;
 	}
 	if (!active) return;
