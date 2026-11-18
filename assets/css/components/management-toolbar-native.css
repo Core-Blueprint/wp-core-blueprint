@@ -1,0 +1,39 @@
+/* Scoped native-admin adapter for the existing Base cb-core-toolbar composition. */
+.cb-core-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: var(--cb-space-3, 12px);
+	padding: var(--cb-space-3, 12px);
+	background: var(--cb-surface-1, #fff);
+	border: 1px solid var(--cb-border, #c3c4c7);
+	border-radius: var(--cb-radius-md, 4px);
+}
+.cb-core-toolbar--compact { align-items: center; }
+.cb-core-toolbar__field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--cb-space-1, 4px);
+	min-width: 0;
+}
+.cb-core-toolbar__field--grow { flex: 1 1 260px; }
+.cb-core-toolbar__label {
+	font-weight: 600;
+	font-size: var(--cb-fs-xs, 12px);
+	color: var(--cb-text-muted, #646970);
+}
+.cb-core-toolbar__field > input,
+.cb-core-toolbar__field > select,
+.cb-core-toolbar__actions-row > button,
+.cb-core-toolbar__actions-row > .button { min-height: 32px; box-sizing: border-box; }
+.cb-core-toolbar__actions { display: flex; align-items: flex-end; margin-inline-start: auto; }
+.cb-core-toolbar__actions-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cb-core-toolbar__toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; }
+@media (max-width: 480px) {
+	.cb-core-toolbar { flex-direction: column; align-items: stretch; }
+	.cb-core-toolbar__field,
+	.cb-core-toolbar__actions { width: 100%; margin-inline-start: 0; }
+	.cb-core-toolbar__field > input,
+	.cb-core-toolbar__field > select { width: 100%; }
+	.cb-core-toolbar__actions-row { justify-content: flex-end; }
+}

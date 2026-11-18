@@ -1,0 +1,45 @@
+/* Core Blueprint public Management Workspace presentation (tokens optional). */
+.cb-core-management-workspace {
+	display: grid;
+	gap: var(--cb-space-4, 16px);
+	min-width: 0;
+}
+.cb-core-management-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: var(--cb-space-3, 12px);
+}
+.cb-core-management-header__title { margin: 0; }
+.cb-core-management-header__description {
+	margin: var(--cb-space-1, 4px) 0 0;
+	color: var(--cb-text-muted, #646970);
+}
+.cb-core-management-header__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--cb-space-2, 8px);
+	align-items: center;
+	margin-inline-start: auto;
+}
+.cb-core-management-form {
+	display: grid;
+	gap: var(--cb-space-4, 16px);
+	max-width: 880px;
+	min-width: 0;
+}
+.cb-core-management-form__actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--cb-space-2, 8px);
+}
+.cb-core-management-results {
+	color: var(--cb-text-muted, #646970);
+	font-size: var(--cb-fs-sm, 13px);
+}
+@media (max-width: 600px) {
+	.cb-core-management-header { flex-direction: column; }
+	.cb-core-management-header__actions { margin-inline-start: 0; width: 100%; }
+}
