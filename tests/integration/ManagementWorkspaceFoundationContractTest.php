@@ -70,7 +70,8 @@ final class CB_Management_Workspace_Foundation_Contract_Test extends WP_UnitTest
 		self::assertStringContainsString( 'type="submit"', $html );
 		self::assertStringContainsString( 'data-archive-id="42"', $html );
 		self::assertStringNotContainsString( 'onclick=', $html );
-		self::assertStringContainsString( 'More actions for &lt;item&gt;', $html );
+		self::assertStringContainsString( 'aria-label="More actions for', $html );
+		self::assertStringNotContainsString( '<item>', $html );
 		self::assertStringContainsString( 'data-cb-core-row-menu-trigger', $html );
 	}
 
